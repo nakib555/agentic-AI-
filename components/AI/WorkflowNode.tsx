@@ -1,0 +1,151 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
+import { ActiveIcon, CompletedIcon, FailedIcon, PendingIcon } from './icons';
+import type { MessageError, ToolCallEvent } from '../../types';
+import { ToolCallStep } from './ToolCallStep';
+import { MarkdownComponents } from '../Markdown/markdownComponents';
+
+
+export type WorkflowNodeStatus = 'pending' | 'active' | 'done' | 'failed';
+export type WorkflowNodeType = 'plan' | 'task' | 'tool';
+
+export type WorkflowNodeData = {
+  id: string;
+  type: WorkflowNodeType;
+  title: string;
+  status: WorkflowNodeStatus;
+  details?: string | ToolCallEvent | MessageError;
+};
+
+const getStatusIcon = (status: WorkflowNodeStatus) => {
+  switch (status) {
+    case 'active': return <ActiveIcon />;
+    case 'done': return <CompletedIcon />;
+    case 'failed': return <FailedIcon />;
+    case 'pending':
+    default: return <PendingIcon />;
+  }
+};
+
+const getTypeIcon = (type: WorkflowNodeType) => {
+    switch (type) {
+        case 'plan': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-slate-500"><path fillRule="evenodd" d="M4.25 2A2.25 2.25 0 0 0 2 4.25v7.5A2.25 2.25 0 0 0 4.25 14h7.5A2.25 2.25 0 0 0 14 11.75v-7.5A2.25 2.25 0 0 0 11.75 2h-7.5ZM3.5 4.25a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-.75.75h-7.5a.75.75 0 0 1-.75-.75v-7.5Zm3.22 2.22a.75.75 0 0 1 1.06 0L10 8.69l1.72-1.72a.75.75 0 1 1 1.06 1.06l-2.25 2.25a.75.75 0 0 1-1.06 0l-2.25-2.25a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>;
+        case 'task': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-slate-500"><path d="M4.5 2A1.5 1.5 0 0 0 3 3.5v9A1.5 1.5 0 0 0 4.5 14h7a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 11.5 2h-7ZM8 6a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0V7a1 1 0 0 1 1-1Z" /></svg>;
+        case 'tool': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-purple-500"><path d="M4.5 2A1.5 1.5 0 0 0 3 3.5v9A1.5 1.5 0 0 0 4.5 14h7a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 11.5 2h-7ZM5.5 8a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H6a.5.5 0 0 1-.5-.5Z" /></svg>;
+        default: return null;
+    }
+}
+
+const renderDetails = (node: WorkflowNodeData) => {
+    if (!node.details) return null;
+
+    // Check if details object is a ToolCallEvent
+    if (typeof node.details === 'object' && node.details !== null && 'call' in node.details && 'id' in node.details) {
+        return <ToolCallStep event={node.details as ToolCallEvent} nodeType={node.type} />;
+    }
+
+    if (node.status === 'failed' && typeof node.details === 'object' && 'message' in node.details) {
+        const error = node.details as MessageError;
+        return (
+            <div className="text-xs space-y-1">
+                <p className="font-semibold text-red-700 dark:text-red-300">{error.message}</p>
+                {error.code && <p><span className="font-semibold">Code:</span> {error.code}</p>}
+                {error.details && <pre className="whitespace-pre-wrap font-mono bg-red-100/50 dark:bg-red-900/20 p-2 rounded-md">{error.details}</pre>}
+            </div>
+        );
+    }
+    
+    if (typeof node.details === 'string') {
+        return (
+            <div className="workflow-details-markdown text-xs text-slate-800 dark:text-slate-300">
+                <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw, rehypeHighlight, rehypeKatex]}
+                    components={{
+                        ...MarkdownComponents,
+                        h1: (props: any) => <h1 className="text-base font-bold my-2 pb-1 border-b border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100" {...props} />,
+                        h2: (props: any) => <h2 className="text-sm font-bold my-1.5 pb-1 border-b border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100" {...props} />,
+                        p: (props: any) => <p className="mb-2 leading-normal" {...props} />,
+                        ul: (props: any) => <ul className="list-disc list-inside mb-2 space-y-1" {...props} />,
+                        ol: (props: any) => <ol className="list-decimal list-inside mb-2 space-y-1" {...props} />,
+                        li: (props: any) => <li className="pl-1" {...props} />,
+                        blockquote: (props: any) => <blockquote className="border-l-4 border-purple-400 dark:border-purple-600 bg-slate-200/50 dark:bg-slate-800/60 p-3 my-2 rounded-lg text-slate-600 dark:text-slate-400" {...props} />,
+                        table: (props: any) => <div className="overflow-x-auto"><table className="table-auto w-full my-2 border-collapse border border-slate-300 dark:border-slate-600" {...props} /></div>,
+                        th: (props: any) => <th className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-800 dark:text-slate-200" {...props} />,
+                        td: (props: any) => <td className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-800 dark:text-slate-300" {...props} />,
+                        mark: (props: any) => React.createElement('mark', { style: { backgroundColor: 'var(--highlight-bg)', color: 'var(--highlight-text)' }, className: "rounded-sm px-1 py-0.5", ...props }),
+                    }}
+                >
+                    {node.details}
+                </ReactMarkdown>
+            </div>
+        );
+    }
+    
+    return null;
+}
+
+export const WorkflowNode = ({ node }: { node: WorkflowNodeData }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const hasDetails = !!node.details;
+  const isClickable = hasDetails || node.status === 'failed';
+
+  return (
+    <div className="w-full">
+      <button
+        onClick={() => isClickable && setIsOpen(!isOpen)}
+        disabled={!isClickable}
+        className={`w-full flex items-center gap-4 p-3 rounded-lg border transition-all ${
+          isClickable ? 'cursor-pointer' : 'cursor-default'
+        } ${
+          node.status === 'active' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700' :
+          node.status === 'failed' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700' :
+          'bg-white/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+        }`}
+      >
+        <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
+            <AnimatePresence mode="wait" initial={false}>
+                {getStatusIcon(node.status)}
+            </AnimatePresence>
+        </div>
+
+        <div className="flex-1 min-w-0 flex items-center gap-3 text-left">
+            <div className="flex-shrink-0">{getTypeIcon(node.type)}</div>
+            <p className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{node.title}</p>
+        </div>
+
+        {isClickable && (
+          <motion.div animate={{ rotate: isOpen ? 90 : 0 }} className="text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
+          </motion.div>
+        )}
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0, marginTop: 0 }}
+            animate={{ height: 'auto', opacity: 1, marginTop: '8px' }}
+            exit={{ height: 0, opacity: 0, marginTop: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div className="p-3 bg-slate-100/70 dark:bg-slate-900/30 rounded-lg border border-slate-200/80 dark:border-slate-700/80">
+                {renderDetails(node)}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
