@@ -37,10 +37,12 @@ const getStatusIcon = (status: WorkflowNodeStatus) => {
   }
 };
 
+const CheckboxIcon = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-slate-500 dark:text-slate-400"><path d="M2.5 3A1.5 1.5 0 0 0 1 4.5v7A1.5 1.5 0 0 0 2.5 13h11a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 13.5 3h-11ZM2 4.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-7Z" /></svg>;
+
 const getTypeIcon = (type: WorkflowNodeType) => {
     switch (type) {
-        case 'plan': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-slate-500"><path fillRule="evenodd" d="M4.25 2A2.25 2.25 0 0 0 2 4.25v7.5A2.25 2.25 0 0 0 4.25 14h7.5A2.25 2.25 0 0 0 14 11.75v-7.5A2.25 2.25 0 0 0 11.75 2h-7.5ZM3.5 4.25a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-.75.75h-7.5a.75.75 0 0 1-.75-.75v-7.5Zm3.22 2.22a.75.75 0 0 1 1.06 0L10 8.69l1.72-1.72a.75.75 0 1 1 1.06 1.06l-2.25 2.25a.75.75 0 0 1-1.06 0l-2.25-2.25a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>;
-        case 'task': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-slate-500"><path d="M4.5 2A1.5 1.5 0 0 0 3 3.5v9A1.5 1.5 0 0 0 4.5 14h7a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 11.5 2h-7ZM8 6a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0V7a1 1 0 0 1 1-1Z" /></svg>;
+        case 'plan': return <CheckboxIcon />;
+        case 'task': return <CheckboxIcon />;
         case 'tool': return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-purple-500"><path d="M4.5 2A1.5 1.5 0 0 0 3 3.5v9A1.5 1.5 0 0 0 4.5 14h7a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 11.5 2h-7ZM5.5 8a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H6a.5.5 0 0 1-.5-.5Z" /></svg>;
         default: return null;
     }
@@ -95,6 +97,25 @@ const renderDetails = (node: WorkflowNodeData) => {
     return null;
 }
 
+const StyledTitle = ({ title }: { title: string }) => {
+    const match = title.match(/^(.*?)\s*\*\s*\*\*(.*?)\*\*$/);
+
+    if (match) {
+        const mainText = match[1].trim();
+        const emphasisText = match[2].trim();
+        return (
+            <>
+                {mainText}
+                <span className="text-slate-500 dark:text-slate-400 font-normal ml-2">
+                    * <strong className="font-semibold text-slate-700 dark:text-slate-300">{emphasisText}</strong>
+                </span>
+            </>
+        );
+    }
+
+    return <>{title}</>;
+};
+
 export const WorkflowNode = ({ node }: { node: WorkflowNodeData }) => {
   const [isOpen, setIsOpen] = useState(false);
   const hasDetails = !!node.details;
@@ -110,7 +131,7 @@ export const WorkflowNode = ({ node }: { node: WorkflowNodeData }) => {
         } ${
           node.status === 'active' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700' :
           node.status === 'failed' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700' :
-          'bg-white/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+          'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600'
         }`}
       >
         <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
@@ -121,7 +142,9 @@ export const WorkflowNode = ({ node }: { node: WorkflowNodeData }) => {
 
         <div className="flex-1 min-w-0 flex items-center gap-3 text-left">
             <div className="flex-shrink-0">{getTypeIcon(node.type)}</div>
-            <p className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{node.title}</p>
+            <p className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+                <StyledTitle title={node.title} />
+            </p>
         </div>
 
         {isClickable && (

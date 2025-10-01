@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
     const [isCopied, setIsCopied] = useState(false);
     const match = /language-(\w+)/.exec(className || '');
+    // Default to 'text' if no language is specified.
     const language = match ? match[1] : 'text';
   
     const handleCopy = () => {
@@ -23,6 +24,20 @@ export const CodeBlock = ({ node, inline, className, children, ...props }: any) 
   
     if (inline) {
       return <code className="bg-slate-200 dark:bg-slate-700 rounded-sm px-1 py-0.5 font-['Fira_Code',_monospace] text-sm" {...props}>{children}</code>;
+    }
+
+    // Special, simpler rendering for plain text blocks
+    if (language.toLowerCase() === 'text') {
+        return (
+            <div className="my-4 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-sm p-4">
+                <pre className="m-0 p-0 bg-transparent whitespace-pre-wrap">
+                    {/* Use a normal sans-serif font for text blocks */}
+                    <code className="font-sans text-slate-800 dark:text-slate-300">
+                        {children}
+                    </code>
+                </pre>
+            </div>
+        );
     }
   
     return (

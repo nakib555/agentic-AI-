@@ -6,106 +6,16 @@
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion, Variants } from 'framer-motion';
 import type { MessageError, ToolCallEvent } from '../../types';
-import { WorkflowNode, WorkflowNodeData, WorkflowNodeType } from './WorkflowNode';
+import { WorkflowNode } from './WorkflowNode';
 import { WorkflowConnector } from './WorkflowConnector';
 import { ActiveIcon } from './icons';
+import { parseAgenticWorkflow, type WorkflowNodeData } from '../../services/workflowParser';
 
 type ThinkingWorkflowProps = {
   text: string;
   toolCallEvents?: ToolCallEvent[];
   isThinkingComplete: boolean;
   error?: MessageError;
-};
-
-const parseAgenticWorkflow = (
-  rawText: string,
-  toolCallEvents: ToolCallEvent[] = [],
-  isThinkingComplete: boolean,
-  error?: MessageError
-): WorkflowNodeData[] => {
-    // This regex captures "[STEP] Title:" and the content until the next "[STEP]" or end of string.
-    const stepRegex = /\[STEP\]\s*(.*?):\s*([\s\S]*?)(?=\[STEP\]|$)/gs;
-    let match;
-    const stepNodes: WorkflowNodeData[] = [];
-    let stepIndex = 0;
-
-    // 1. Parse all text-based steps from the raw thinking text
-    while ((match = stepRegex.exec(rawText)) !== null) {
-        const title = match[1].trim();
-        const details = match[2].trim();
-
-        if (title.toLowerCase() === 'final answer') {
-            continue; // Exclude the final answer from the workflow visualization
-        }
-
-        // Infer node type for better icon representation
-        let type: WorkflowNodeType = 'plan';
-        const lowerTitle = title.toLowerCase();
-        if (lowerTitle.includes('execute') || lowerTitle.includes('search')) {
-            type = 'task';
-        }
-
-        stepNodes.push({
-            id: `step-${stepIndex++}`,
-            type: type,
-            title: title,
-            // Status will be set in the final polish stage
-            status: 'pending', 
-            details: details || 'No details provided.',
-        });
-    }
-
-    // 2. Create nodes for any tool calls that have occurred, filtering out longRunningTask
-    const toolCallNodes: WorkflowNodeData[] = toolCallEvents
-        .filter(event => event.call.name !== 'longRunningTask')
-        .map(event => ({
-            id: event.id,
-            type: 'tool',
-            title: `Tool: ${event.call.name}`,
-            status: event.result ? 'done' : 'active',
-            details: event,
-        }));
-    
-    const allNodes = [...stepNodes, ...toolCallNodes];
-    if (allNodes.length === 0) return [];
-
-    // 3. Apply final status updates based on the overall state
-    if (error) {
-        const lastActiveNode = allNodes.slice().reverse().find(n => n.status === 'active');
-        if (lastActiveNode) {
-            lastActiveNode.status = 'failed';
-            lastActiveNode.details = error;
-        } else if (allNodes.length > 0) {
-            allNodes[allNodes.length - 1].status = 'failed';
-            allNodes[allNodes.length - 1].details = error;
-        }
-        // Mark preceding nodes as done
-        for (const node of allNodes) {
-            if (node.status === 'pending') node.status = 'done';
-            if (node.status === 'failed') break;
-        }
-    } else if (isThinkingComplete) {
-        allNodes.forEach(node => {
-            if (node.status !== 'failed') node.status = 'done';
-        });
-    } else {
-        // Mark all text steps as 'done', as their text has been generated.
-        stepNodes.forEach(node => node.status = 'done');
-        
-        const hasActiveTools = toolCallNodes.some(n => n.status === 'active');
-        
-        // If there are no active tools, the AI's "focus" is on the last text-based
-        // step it generated. We mark this as 'active' for better visualization.
-        if (!hasActiveTools && allNodes.length > 0) {
-            const lastNode = allNodes[allNodes.length - 1];
-            // Only mark text-based nodes as active. Tool nodes manage their own status.
-            if (lastNode.type === 'plan' || lastNode.type === 'task') {
-              lastNode.status = 'active';
-            }
-        }
-    }
-    
-    return allNodes;
 };
 
 const itemWrapperVariants: Variants = {
@@ -155,7 +65,7 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, err
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800/60 rounded-2xl max-w-[90%] sm:max-w-2xl w-full border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+    <div className="bg-white dark:bg-slate-800 rounded-lg max-w-[90%] sm:max-w-2xl w-full border border-slate-200 dark:border-slate-700 p-4">
         <button 
           className="flex items-center gap-3 w-full text-left"
           onClick={() => setIsOpen(!isOpen)}
@@ -167,8 +77,8 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, err
             </div>
             <span className="font-semibold text-slate-800 dark:text-slate-200 flex-1">Thinking Process</span>
             <div className="ml-auto text-slate-400">
-                <motion.div animate={{ rotate: isOpen ? 90 : 0 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clipRule="evenodd" /></svg>
+                <motion.div animate={{ rotate: isOpen ? 0 : -90 }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
                 </motion.div>
             </div>
         </button>
