@@ -85,7 +85,7 @@ const renderDetails = (node: WorkflowNodeData) => {
                         table: (props: any) => <div className="overflow-x-auto"><table className="table-auto w-full my-2 border-collapse border border-slate-300 dark:border-slate-600" {...props} /></div>,
                         th: (props: any) => <th className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-800 dark:text-slate-200" {...props} />,
                         td: (props: any) => <td className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-800 dark:text-slate-300" {...props} />,
-                        mark: (props: any) => React.createElement('mark', { style: { backgroundColor: 'var(--highlight-bg)', color: 'var(--highlight-text)' }, className: "rounded-sm px-1 py-0.5", ...props }),
+                        mark: (props: any) => React.createElement('mark', { style: { display: 'inline', visibility: 'visible', position: 'static', left: 'auto', top: 'auto', width: 'auto', height: 'auto', zIndex: 'auto', color: 'rgb(255, 255, 255)', backgroundColor: 'rgb(66, 66, 66)', padding: '2.4px 4.8px', margin: '0px', border: '0px solid rgba(255, 255, 255, 0.05)' }, className: "rounded-sm", ...props }),
                     }}
                 >
                     {node.details}

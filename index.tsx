@@ -70,7 +70,7 @@ const App = () => {
   const activeModel = chatHistory.find(c => c.id === currentChatId)?.model || uiSelectedModel;
 
   return (
-    <div className="flex h-screen bg-white dark:bg-slate-900">
+    <div className="flex h-screen bg-white dark:bg-[#1E1E1E]">
       <Sidebar 
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen}

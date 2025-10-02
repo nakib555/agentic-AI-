@@ -23,26 +23,12 @@ export const CodeBlock = ({ node, inline, className, children, ...props }: any) 
     };
   
     if (inline) {
-      return <code className="bg-slate-200 dark:bg-slate-700 rounded-sm px-1 py-0.5 font-['Fira_Code',_monospace] text-sm" {...props}>{children}</code>;
-    }
-
-    // Special, simpler rendering for plain text blocks
-    if (language.toLowerCase() === 'text') {
-        return (
-            <div className="my-4 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-sm p-4">
-                <pre className="m-0 p-0 bg-transparent whitespace-pre-wrap">
-                    {/* Use a normal sans-serif font for text blocks */}
-                    <code className="font-sans text-slate-800 dark:text-slate-300">
-                        {children}
-                    </code>
-                </pre>
-            </div>
-        );
+      return <code className="bg-slate-200 dark:bg-slate-700 rounded px-1 py-0.5 font-['Fira_Code',_monospace] font-medium text-sm text-slate-900 dark:text-slate-200" {...props}>{children}</code>;
     }
   
     return (
-      <div className="my-4 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-sm">
-        <div className="flex justify-between items-center px-4 py-2 bg-slate-200/50 dark:bg-slate-700/50 rounded-t-md">
+      <div className="my-4 rounded-lg bg-slate-100 dark:bg-[#1E1E1E] border border-slate-200 dark:border-[rgba(255,255,255,0.08)] text-sm overflow-hidden">
+        <div className="flex justify-between items-center px-4 py-2 bg-slate-200/50 dark:bg-[#171717]">
           <span className="text-xs font-sans text-slate-500 dark:text-slate-400 font-medium capitalize">{language}</span>
           <button
             onClick={handleCopy}
@@ -62,7 +48,7 @@ export const CodeBlock = ({ node, inline, className, children, ...props }: any) 
             </AnimatePresence>
           </button>
         </div>
-        <pre className="p-4 overflow-x-auto bg-transparent !m-0 !p-4 whitespace-pre" {...props}>
+        <pre className="p-4 overflow-x-auto bg-transparent dark:bg-[#151719] !m-0 !p-4 whitespace-pre" {...props}>
             <code className={`font-['Fira_Code',_monospace] ${className}`}>
                 {children}
             </code>
