@@ -1,0 +1,80 @@
+/* Basic scrollbar styling for a light theme */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; } /* slate-100 */
+::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; } /* slate-400 */
+::-webkit-scrollbar-thumb:hover { background: #64748b; } /* slate-500 */
+
+.dark ::-webkit-scrollbar-track { background: #181818; }
+.dark ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+body { font-family: 'Inter', sans-serif; }
+
+/* Accessibility utility to hide elements visually but keep them available for screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Theme-aware CSS Variables for AI-generated HTML */
+:root {
+  --card-bg: #ffffff;
+  --card-text: #1e293b;
+  --highlight-bg: #f1f5f9; /* slate-100 */
+  --highlight-text: #1e293b; /* slate-800 */
+  --highlight-border: #e2e8f0; /* slate-200 */
+  --gradient-start: #7c3aed;
+  --gradient-end: #3730a3;
+  --border-color: #e2e8f0;
+  --svg-fill: currentColor;
+  --callout-info-bg: #eff6ff;
+  --callout-info-border: #93c5fd;
+  --callout-info-text: #1e3a8a;
+  --callout-info-icon: '#3b82f6';
+  --callout-success-bg: #f0fdf4;
+  --callout-success-border: #86efac;
+  --callout-success-text: #166534;
+  --callout-success-icon: '#22c55e';
+  --callout-warning-bg: #fefce8;
+  --callout-warning-border: #fde047;
+  --callout-warning-text: #854d0e;
+  --callout-warning-icon: '#eab308';
+  --callout-danger-bg: #fef2f2;
+  --callout-danger-border: #fca5a5;
+  --callout-danger-text: #991b1b;
+  --callout-danger-icon: '#ef4444';
+}
+.dark {
+  --card-bg: #1e1e1e;
+  --card-text: #e2e8f0;
+  --highlight-bg: #2d2d2d;
+  --highlight-text: #e2e8f0;
+  --highlight-border: #444;
+  --gradient-start: #14b8a6; /* teal-500 */
+  --gradient-end: #0f766e; /* teal-700 */
+  --border-color: #333;
+  --svg-fill: currentColor;
+  --callout-info-bg: rgba(59, 130, 246, 0.15);
+  --callout-info-border: rgba(59, 130, 246, 0.4);
+  --callout-info-text: #93c5fd;
+  --callout-info-icon: '#93c5fd';
+  --callout-success-bg: rgba(74, 222, 128, 0.15);
+  --callout-success-border: rgba(74, 222, 128, 0.4);
+  --callout-success-text: #86efac;
+  --callout-success-icon: '#86efac';
+  --callout-warning-bg: rgba(250, 204, 21, 0.15);
+  --callout-warning-border: rgba(250, 204, 21, 0.4);
+  --callout-warning-text: #fde047;
+  --callout-warning-icon: '#fde047';
+  --callout-danger-bg: rgba(248, 113, 113, 0.15);
+  --callout-danger-border: rgba(248, 113, 113, 0.4);
+  --callout-danger-text: #fca5a5;
+  --callout-danger-icon: '#fca5a5';
+}

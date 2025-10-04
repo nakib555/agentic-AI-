@@ -4,18 +4,18 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom/client';
-import { useChat } from './src/hooks/useChat';
-import { Sidebar } from './src/components/Sidebar/Sidebar';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getAvailableModels } from './src/services/modelService';
-import type { Model } from './src/services/modelService';
-import { useTheme } from './src/hooks/useTheme';
-import { useSidebar } from './src/hooks/useSidebar';
-import { ChatHeader } from './src/components/Chat/ChatHeader';
-import { ChatArea } from './src/components/Chat/ChatArea';
+import type { Model } from '../services/modelService';
+import { getAvailableModels } from '../services/modelService';
+import { useChat } from '../hooks/useChat';
+import { useTheme } from '../hooks/useTheme';
+import { useSidebar } from '../hooks/useSidebar';
+import { Sidebar } from './Sidebar/Sidebar';
+import { ChatHeader } from './Chat/ChatHeader';
+import { ChatArea } from './Chat/ChatArea';
 
-const App = () => {
+
+export const App = () => {
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
   const [modelsLoading, setModelsLoading] = useState(true);
   const [uiSelectedModel, setUiSelectedModel] = useState('');
@@ -70,7 +70,7 @@ const App = () => {
   const activeModel = chatHistory.find(c => c.id === currentChatId)?.model || uiSelectedModel;
 
   return (
-    <div className="flex h-screen bg-white dark:bg-[#1E1E1E]">
+    <div className="flex h-screen bg-white dark:bg-[#121212]">
       <Sidebar 
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen}
@@ -124,6 +124,3 @@ const App = () => {
     </div>
   );
 };
-
-const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
-root.render(<App />);
