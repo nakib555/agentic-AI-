@@ -14,25 +14,47 @@ declare global {
   }
 }
 
+// Define a more comprehensive map for language aliases. This helps ensure that common
+// markdown language tags are correctly mapped to Monaco's language identifiers for syntax highlighting.
 const monacoLanguageMap: { [key: string]: string } = {
     js: 'javascript',
+    jsx: 'javascript',
     ts: 'typescript',
+    tsx: 'typescript',
     py: 'python',
-    jsx: 'javascript', // Monaco treats JSX as JS
-    tsx: 'typescript', // Monaco treats TSX as TS
     shell: 'shell',
     bash: 'shell',
+    sh: 'shell',
+    html: 'html',
+    css: 'css',
+    json: 'json',
+    yaml: 'yaml',
+    yml: 'yaml',
+    md: 'markdown',
+    sql: 'sql',
+    java: 'java',
+    c: 'c',
+    cpp: 'cpp',
+    csharp: 'csharp',
+    go: 'go',
+    rust: 'rust',
 };
 
 
-export const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
+type CodeBlockProps = {
+    language?: string;
+    children: React.ReactNode;
+};
+
+// FIX: Updated component definition to use React.FC. This correctly types the component
+// to accept special React props like 'key', resolving the type error when this
+// component is rendered inside a list.
+export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
     const [isCopied, setIsCopied] = useState(false);
     const editorRef = useRef<HTMLDivElement>(null);
     const editorInstanceRef = useRef<any>(null); // To hold the editor instance
-    const [editorHeight, setEditorHeight] = useState('auto');
     const { theme } = useTheme();
 
-    const match = /language-(\w+)/.exec(className || '');
     const codeContent = String(children).replace(/\n$/, '');
 
     const handleCopy = () => {
@@ -46,22 +68,24 @@ export const CodeBlock = ({ node, inline, className, children, ...props }: any) 
     };
   
     useEffect(() => {
-        if (inline) return;
+        // This effect handles creating, updating, and destroying the editor instance.
+        let editor: any = null; // monaco editor instance
 
-        const initMonaco = () => {
-            if (editorRef.current && window.monaco && !editorInstanceRef.current) {
-                const rawLanguage = match ? match[1].toLowerCase() : 'plaintext';
+        const setupMonaco = () => {
+            if (editorRef.current && window.monaco) {
+                const rawLanguage = language ? language.toLowerCase() : 'plaintext';
                 const monacoLang = monacoLanguageMap[rawLanguage] || rawLanguage;
-
+                
                 const effectiveTheme = theme === 'system' 
                     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
                     : theme;
 
-                const editor = window.monaco.editor.create(editorRef.current, {
+                editor = window.monaco.editor.create(editorRef.current, {
                     value: codeContent,
                     language: monacoLang,
                     theme: effectiveTheme === 'dark' ? 'vs-dark' : 'vs',
                     readOnly: true,
+                    domReadOnly: true,
                     automaticLayout: true,
                     minimap: { enabled: false },
                     scrollBeyondLastLine: false,
@@ -71,65 +95,62 @@ export const CodeBlock = ({ node, inline, className, children, ...props }: any) 
                     fontFamily: "'Fira Code', monospace",
                     padding: { top: 16, bottom: 16 },
                     scrollbar: {
+                        alwaysConsumeMouseWheel: false,
                         vertical: 'auto',
                         horizontal: 'auto',
                         verticalScrollbarSize: 8,
                         horizontalScrollbarSize: 8,
                     },
                 });
-
                 editorInstanceRef.current = editor;
 
                 const updateHeight = () => {
-                    const contentHeight = editor.getContentHeight();
-                    const newHeight = Math.min(600, contentHeight); // Max height of 600px
-                    setEditorHeight(`${newHeight}px`);
+                    if (editorInstanceRef.current && editorRef.current) {
+                        const contentHeight = editorInstanceRef.current.getContentHeight();
+                        const newHeight = Math.min(600, contentHeight); // Max height of 600px
+                        
+                        requestAnimationFrame(() => {
+                            if (editorRef.current) {
+                                editorRef.current.style.height = `${newHeight}px`;
+                            }
+                        });
+                    }
                 };
                 
                 editor.onDidContentSizeChange(updateHeight);
                 updateHeight();
-
-                return () => {
-                    editor.dispose();
-                    editorInstanceRef.current = null;
-                };
             }
         };
-
-        let disposeEditor: (() => void) | undefined;
+        
         if (window.monaco) {
-            disposeEditor = initMonaco();
+            setupMonaco();
         } else {
-            window.addEventListener('monaco-loaded', initMonaco, { once: true });
+            // If monaco is not loaded yet, add a one-time listener.
+            window.addEventListener('monaco-loaded', setupMonaco, { once: true });
         }
 
         return () => {
-            disposeEditor?.();
-            window.removeEventListener('monaco-loaded', initMonaco);
+            // Cleanup function to run when the component unmounts or dependencies change.
+            window.removeEventListener('monaco-loaded', setupMonaco);
+            if (editor) {
+                editor.dispose();
+                editorInstanceRef.current = null;
+            }
         };
-    }, []); // Run only once on mount
-
-     // Effect to update theme
-     useEffect(() => {
-        if (editorInstanceRef.current && window.monaco) {
-            const effectiveTheme = theme === 'system' 
-                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-                : theme;
-            window.monaco.editor.setTheme(effectiveTheme === 'dark' ? 'vs-dark' : 'vs');
-        }
-    }, [theme]);
-  
-    if (inline) {
-      return <code className="inline-code" {...props}>{children}</code>;
-    }
+    }, [language, codeContent, theme]); // Re-run effect if language, content, or theme changes.
     
+    const formattedLanguage = language ? language.charAt(0).toUpperCase() + language.slice(1) : 'Code';
+
     return (
       <div className="my-4 rounded-lg text-sm overflow-hidden shadow-lg dark:shadow-2xl dark:shadow-black/30 bg-[#1e1e1e]">
-        <div className="flex justify-end items-center px-4 py-2 bg-slate-100 dark:bg-[#171717] border-b border-slate-200 dark:border-[rgba(255,255,255,0.08)]">
+        <div className="flex justify-between items-center px-4 py-2 bg-slate-100 dark:bg-[#171717] border-b border-slate-200 dark:border-[rgba(255,255,255,0.08)]">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">
+            {formattedLanguage}
+          </span>
           <button
             onClick={handleCopy}
             aria-label={isCopied ? 'Copied!' : 'Copy code'}
-            className="flex items-center space-x-2 p-1 rounded-md text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition-colors duration-150 active:scale-95 focus:outline-none focus:ring-2 focus:ring-teal-400"
+            className="flex items-center space-x-2 p-1 rounded-md text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition-colors duration-150 active:scale-95"
           >
             <AnimatePresence mode="wait" initial={false}>
               {isCopied ? (
@@ -147,7 +168,7 @@ export const CodeBlock = ({ node, inline, className, children, ...props }: any) 
             </span>
           </button>
         </div>
-        <div ref={editorRef} style={{ height: editorHeight, transition: 'height 0.2s ease-out' }}></div>
+        <div ref={editorRef} style={{ height: 'auto' }}></div>
       </div>
     );
   };

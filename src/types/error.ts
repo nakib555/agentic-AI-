@@ -2,13 +2,6 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import type { FunctionCall } from '@google/genai';
-
-export type ToolCallEvent = {
-    id: string;
-    call: FunctionCall;
-    result?: string;
-};
 
 export type MessageError = {
     code?: string;
@@ -33,28 +26,3 @@ export class ToolError extends Error {
         this.cause = cause;
     }
 }
-
-export type Attachment = {
-  name: string;
-  mimeType: string;
-  data: string; // base64 encoded string
-};
-
-export type Message = {
-  id: string;
-  role: 'user' | 'model';
-  text: string;
-  isThinking?: boolean;
-  toolCallEvents?: ToolCallEvent[];
-  error?: MessageError;
-  isHidden?: boolean;
-  attachments?: Attachment[];
-};
-
-export type ChatSession = {
-    id: string;
-    title: string;
-    messages: Message[];
-    model: string;
-    isLoading?: boolean;
-};

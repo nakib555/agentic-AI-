@@ -20,6 +20,7 @@ export const CRITICAL_RULES = `
     *   Never invent or simulate tool outputs. Always execute the tool and wait for the actual result from the system.
     *   If a tool returns an error, you MUST analyze the error in your next thinking step and decide on a corrective action. Do not ignore failures.
 
-4.  **MULTI-RESPONSE ANSWERS**:
-    *   For very long final answers that require multiple turns, you MUST end each part (except the very last one) with the command \`[AUTO_CONTINUE]\`. This command ONLY applies to the content of "[STEP] Final Answer".
+4.  **MULTI-RESPONSE ANSWERS & TASK COMPLETION**:
+    *   You are obligated to complete the entire task, even if it takes multiple responses.
+    *   For very long final answers, you MUST break the response into parts and end each part (except the very last one) with the command \`[AUTO_CONTINUE]\`. This signals to the system that you have more to say and will continue your work. This command ONLY applies to the content of "[STEP] Final Answer".
 `;

@@ -33,7 +33,10 @@ type ErrorDisplayProps = {
   error: MessageError;
 };
 
-export const ErrorDisplay = ({ error }: ErrorDisplayProps) => {
+// FIX: Updated component to use React.FC to correctly type it as a functional component,
+// which implicitly allows for standard React props like 'key'. This resolves the type
+// error when the component is rendered inside a map function in AiMessage.tsx.
+export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error }) => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const suggestion = getErrorMessageSuggestion(error.code);
 
@@ -48,8 +51,8 @@ export const ErrorDisplay = ({ error }: ErrorDisplayProps) => {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0 -16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clipRule="evenodd" /></svg>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-start gap-2 flex-wrap">
-              <p className="font-semibold text-red-800 dark:text-red-200">{error.message}</p>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+              <p className="font-semibold text-red-800 dark:text-red-200 break-words">{error.message}</p>
               {error.code && <span className="text-xs font-mono bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 px-1.5 py-0.5 rounded-md flex-shrink-0">{error.code}</span>}
             </div>
             

@@ -4,19 +4,17 @@
  */
 
 import React, { useMemo } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import rehypeRaw from 'rehype-raw';
 import { motion, AnimatePresence, MotionProps } from 'framer-motion';
 import type { Message } from '../../types';
-import { ThinkingWorkflow } from './ThinkingWorkflow';
+import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { TypingIndicator } from '../Chat/TypingIndicator';
 import { MarkdownComponents } from '../Markdown/markdownComponents';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
 import { parseMessageText } from '../../utils/messageParser';
-import { MapDisplay } from './MapDisplay';
+import { ImageDisplay } from '../AI/ImageDisplay';
+import { VideoDisplay } from '../AI/VideoDisplay';
+import { DownloadRawResponseButton } from '../Chat/DownloadRawResponseButton';
+import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 
 const animationProps: MotionProps = {
   initial: { opacity: 0, y: 20 },
@@ -25,31 +23,43 @@ const animationProps: MotionProps = {
 };
 
 const renderFinalAnswer = (text: string) => {
-    const mapRegex = /\[MAP_COMPONENT\](\{.*?\})\[\/MAP_COMPONENT\]/s;
-    const parts = text.split(mapRegex);
+    // This regex splits the text by component tags, keeping the tags in the result array.
+    const componentRegex = /(\[(?:VIDEO|IMAGE)_COMPONENT\].*?\[\/(?:VIDEO|IMAGE)_COMPONENT\])/s;
+    const parts = text.split(componentRegex).filter(part => part);
 
     return parts.map((part, index) => {
-        if (index % 2 === 1) { // This is the JSON part
+        const videoMatch = part.match(/\[VIDEO_COMPONENT\](\{.*?\})\[\/VIDEO_COMPONENT\]/s);
+        const imageMatch = part.match(/\[IMAGE_COMPONENT\](\{.*?\})\[\/IMAGE_COMPONENT\]/s);
+
+        const renderError = (component: string, details: string) => (
+            <ErrorDisplay key={index} error={{ message: `Failed to render ${component} component due to invalid data.`, details }} />
+        );
+        
+        if (videoMatch) {
             try {
-                const mapData = JSON.parse(part);
-                return <MapDisplay key={index} {...mapData} />;
+                const videoData = JSON.parse(videoMatch[1]);
+                return <VideoDisplay key={index} {...videoData} />;
             } catch (e) {
-                console.error("Failed to parse map JSON:", e);
-                return <React.Fragment key={index}><ErrorDisplay error={{ message: "Failed to render map component due to invalid data.", details: part }} /></React.Fragment>;
+                console.error("Failed to parse video JSON:", e);
+                return renderError('video', videoMatch[1]);
             }
-        } else if (part) { // This is the regular text part, ensure it's not empty
-            const processedPart = part.replace(/==(.*?)==/g, '<mark>$1</mark>');
-            return (
-                <ReactMarkdown
-                    key={index}
-                    remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[rehypeRaw, rehypeKatex]}
-                    components={MarkdownComponents}
-                >
-                    {processedPart}
-                </ReactMarkdown>
-            );
         }
+        
+        if (imageMatch) {
+            try {
+                const imageData = JSON.parse(imageMatch[1]);
+                return <ImageDisplay key={index} {...imageData} />;
+            } catch (e) {
+                console.error("Failed to parse image JSON:", e);
+                return renderError('image', imageMatch[1]);
+            }
+        }
+        
+        // If no component tag is matched, render as standard markdown.
+        if (part) {
+            return <ManualCodeRenderer key={index} text={part} components={MarkdownComponents} />;
+        }
+        
         return null;
     });
 };
@@ -77,12 +87,18 @@ export const AiMessage: React.FC<{ msg: Message }> = ({ msg }) => {
             {isThinking && !finalAnswerText && !error && <TypingIndicator />}
         </AnimatePresence>
 
+        {/* Render a separate error message only if the workflow is not displayed (e.g., error on first turn) */}
         {error && !thinkingText && <ErrorDisplay error={error} />}
 
         {finalAnswerText && (
              <div className="markdown-content max-w-none w-full max-w-[90%] sm:max-w-2xl">
                 {renderFinalAnswer(finalAnswerText)}
             </div>
+        )}
+
+        {/* Add download button when response is complete and not an error */}
+        {thinkingIsComplete && text && !error && (
+            <DownloadRawResponseButton rawText={text} />
         )}
     </motion.div>
   );

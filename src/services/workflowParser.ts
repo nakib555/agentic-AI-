@@ -44,11 +44,14 @@ export const parseAgenticWorkflow = (
         }
 
         // Infer node type for better icon representation
-        let type: WorkflowNodeType = 'plan';
+        let type: WorkflowNodeType = 'plan'; // Default to 'plan' for strategic steps like 'Think', 'Adapt'
         const lowerTitle = title.toLowerCase();
-        if (lowerTitle.includes('execute') || lowerTitle.includes('search')) {
+        const taskKeywords = ['execute', 'search', 'fetch', 'get', 'process', 'act'];
+
+        if (taskKeywords.some(keyword => lowerTitle.includes(keyword))) {
             type = 'task';
         }
+
 
         stepNodes.push({
             id: `step-${stepIndex++}`,
@@ -60,9 +63,8 @@ export const parseAgenticWorkflow = (
         });
     }
 
-    // 2. Create nodes for any tool calls that have occurred, filtering out longRunningTask
+    // 2. Create nodes for any tool calls that have occurred
     const toolCallNodes: WorkflowNodeData[] = toolCallEvents
-        .filter(event => event.call.name !== 'longRunningTask')
         .map(event => ({
             id: event.id,
             type: 'tool',

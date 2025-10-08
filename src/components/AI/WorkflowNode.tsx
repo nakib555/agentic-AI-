@@ -3,15 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
 import { ActiveIcon, CompletedIcon, FailedIcon, PendingIcon } from './icons';
 import type { MessageError, ToolCallEvent } from '../../types';
 import { ToolCallStep } from './ToolCallStep';
+import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 
 
@@ -69,13 +66,7 @@ const renderDetails = (node: WorkflowNodeData) => {
     if (typeof node.details === 'string') {
         return (
             <div className="text-xs text-slate-800 dark:text-slate-300">
-                <ReactMarkdown
-                    remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
-                    components={WorkflowMarkdownComponents}
-                >
-                    {node.details}
-                </ReactMarkdown>
+                <ManualCodeRenderer text={node.details} components={WorkflowMarkdownComponents} />
             </div>
         );
     }

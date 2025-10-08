@@ -9,9 +9,10 @@ import { systemInstruction } from '../prompts/system';
 import type { Message, MessageError } from '../types';
 
 // Define the type for chat history based on the expected structure for the API
+// FIX: Expanded ChatHistory to support multimodal and tool-use content.
 type ChatHistory = {
     role: 'user' | 'model';
-    parts: { text: string }[];
+    parts: ({ text: string } | { inlineData: { mimeType: string; data: string; } } | { functionResponse: any } | { functionCall: any })[];
 }[];
 
 /**

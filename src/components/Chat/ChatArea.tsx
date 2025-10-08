@@ -13,7 +13,7 @@ import type { Message } from '../../types';
 type ChatAreaProps = {
   messages: Message[];
   isLoading: boolean;
-  sendMessage: (message: string) => void;
+  sendMessage: (message: string, files?: File[]) => void;
   modelsLoading: boolean;
 };
 

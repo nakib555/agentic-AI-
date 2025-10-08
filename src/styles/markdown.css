@@ -6,49 +6,6 @@
 .markdown-content > div:first-child { margin-top: 0; }
 .markdown-content > div:last-child { margin-bottom: 0; }
 
-/* Style for highlighted text via <mark> or ==text== */
-.text-highlight {
-  display: inline-block;
-  color: var(--highlight-text);
-  background-color: var(--highlight-bg);
-  border: 1px solid var(--highlight-border);
-  padding: 1px 6px;
-  border-radius: 6px;
-  font-size: 95%;
-  line-height: 1.4;
-  vertical-align: middle;
-  word-break: break-word;
-  transform: translateY(-1px); /* Fine-tune vertical alignment */
-}
-
-/* Style for inline `code` snippets */
-.inline-code {
-  display: inline-block;
-  font-family: 'Fira Code', monospace;
-  color: var(--highlight-text);
-  background-color: var(--highlight-bg);
-  border: 1px solid var(--highlight-border);
-  padding: 1px 6px;
-  border-radius: 6px;
-  font-size: 85%;
-  line-height: 1.5;
-  vertical-align: middle;
-  word-break: break-word;
-  transform: translateY(-1px); /* Fine-tune vertical alignment */
-  transition: all 0.2s ease-in-out;
-  cursor: default;
-}
-
-.inline-code:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.1);
-  border-color: #2dd4bf; /* teal-400 */
-}
-
-.dark .inline-code:hover {
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
-}
-
 /* Bubble style for AI-generated HTML */
 .bubble {
   display: inline-block;
@@ -173,4 +130,39 @@
   left: 0.25rem;
   top: -0.1rem;
   font-size: 2rem;
+}
+
+/* KaTeX Math Formula Styling */
+.katex {
+  font-size: 1.1em !important;
+  padding: 0.1em 0.3em;
+  margin: 0 0.15em;
+  border-radius: 0.25rem;
+  background-color: #f1f5f9; /* slate-100 */
+  color: #334155; /* slate-700 */
+}
+.dark .katex {
+  background-color: #334155; /* slate-700 */
+  color: #e2e8f0; /* slate-200 */
+}
+
+.katex-display {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 1em;
+  margin: 1em 0;
+  border-radius: 0.5rem;
+  background-color: #f8fafc; /* slate-50 */
+  border: 1px solid #e2e8f0; /* slate-200 */
+}
+.dark .katex-display {
+  background-color: #1e293b; /* slate-800 */
+  border-color: #334155; /* slate-700 */
+}
+
+/* Ensure KaTeX display equations don't have extra margin from surrounding <p> tags */
+.markdown-content p > .katex-display {
+    margin-top: 0;
+    margin-bottom: 0;
 }

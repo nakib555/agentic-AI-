@@ -10,7 +10,7 @@ import { AiMessage } from './AiMessage';
 
 export const MessageComponent: React.FC<{ msg: Message }> = ({ msg }) => {
   if (msg.role === 'user') {
-    return <UserMessage text={msg.text} />;
+    return <UserMessage msg={msg} />;
   }
   
   if (msg.role === 'model') {

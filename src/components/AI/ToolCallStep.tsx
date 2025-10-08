@@ -5,13 +5,10 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeKatex from 'rehype-katex';
-import remarkMath from 'remark-math';
 import type { ToolCallEvent } from '../../types';
-import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { type WorkflowNodeType } from './WorkflowNode';
+import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
+import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 
 const LoadingDots = () => (
     <div className="flex gap-1 items-center">
@@ -52,13 +49,7 @@ export const ToolCallStep = ({ event, nodeType }: { event: ToolCallEvent, nodeTy
                     <div>
                         <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Result</p>
                         <div className="text-xs text-slate-700 dark:text-slate-300">
-                            <ReactMarkdown
-                                remarkPlugins={[remarkGfm, remarkMath]}
-                                rehypePlugins={[rehypeKatex]}
-                                components={WorkflowMarkdownComponents}
-                            >
-                                {result}
-                            </ReactMarkdown>
+                            <ManualCodeRenderer text={result} components={WorkflowMarkdownComponents} />
                         </div>
                     </div>
                 ) : (

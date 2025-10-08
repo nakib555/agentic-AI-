@@ -14,17 +14,16 @@ type MessageListProps = {
 
 export const MessageList = ({ messages }: MessageListProps) => {
   const messageListRef = useRef<HTMLDivElement>(null);
+  const lastMessageText = messages[messages.length - 1]?.text;
 
   useEffect(() => {
     if (messageListRef.current) {
-      // A small timeout allows the content to render before scrolling
-      setTimeout(() => {
-        if (messageListRef.current) {
-          messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
-        }
-      }, 100);
+      messageListRef.current.scrollTo({
+        top: messageListRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
     }
-  }, [messages]);
+  }, [messages.length, lastMessageText]); // Trigger on new messages or when the last message's text updates
 
   const visibleMessages = messages.filter(msg => !msg.isHidden);
 
