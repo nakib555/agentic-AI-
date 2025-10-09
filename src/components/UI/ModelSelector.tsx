@@ -35,7 +35,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({ models, selectedMo
   };
 
   return (
-    <div className="relative" ref={selectorRef}>
+    <div className="relative w-full sm:w-auto" ref={selectorRef}>
       <button
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
@@ -60,7 +60,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({ models, selectedMo
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg z-10 overflow-hidden"
+            className="absolute top-full right-0 mt-2 w-full sm:w-64 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg z-10 overflow-hidden"
             role="listbox"
           >
             {models.map(model => (

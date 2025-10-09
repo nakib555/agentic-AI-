@@ -1,17 +1,13 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect } from 'react';
 import { imageStore } from '../../services/imageStore';
 
 type ImageDisplayProps = {
   imageKey: string; // The key to retrieve the image from IndexedDB
   prompt: string;
+  caption?: string;
 };
 
-export const ImageDisplay = ({ imageKey, prompt }: ImageDisplayProps) => {
+export const ImageDisplay = ({ imageKey, prompt, caption }: ImageDisplayProps) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -95,9 +91,14 @@ export const ImageDisplay = ({ imageKey, prompt }: ImageDisplayProps) => {
         )}
       </div>
       <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-start justify-between gap-4">
-        <p className="text-sm italic text-slate-600 dark:text-slate-400" title={prompt}>
-          {prompt}
-        </p>
+        <div className="flex-1">
+            <p className="font-serif italic text-slate-700 dark:text-slate-300" title={`Full prompt: ${prompt}`}>
+                “{caption || prompt}”
+            </p>
+            <p className="text-right text-xs mt-2 font-serif text-teal-600 dark:text-teal-400">
+                — *for your eyes only* 💋
+            </p>
+        </div>
         {imageUrl && (
           <button
             onClick={handleDownload}

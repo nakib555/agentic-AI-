@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// FIX: Removed invalid 'aistudio' from react import.
 import React, { useRef, useEffect } from 'react';
 import type { Message } from '../../types';
 import { MessageComponent } from './Message';
@@ -28,16 +29,18 @@ export const MessageList = ({ messages }: MessageListProps) => {
   const visibleMessages = messages.filter(msg => !msg.isHidden);
 
   return (
-    <div className="flex-1 overflow-y-auto px-2 scroll-smooth" ref={messageListRef}>
-      {visibleMessages.length === 0 ? (
-        <WelcomeScreen />
-      ) : (
-        <div className="space-y-4 md:space-y-6" role="log" aria-live="polite">
-          {visibleMessages.map((msg) => (
-            <MessageComponent key={msg.id} msg={msg} />
-          ))}
-        </div>
-      )}
+    <div className="flex-1 overflow-y-auto scroll-smooth" ref={messageListRef}>
+      <div className="h-full px-4 sm:px-6 md:px-8">
+        {visibleMessages.length === 0 ? (
+          <WelcomeScreen />
+        ) : (
+          <div className="space-y-4 md:space-y-6 py-4" role="log" aria-live="polite">
+            {visibleMessages.map((msg) => (
+              <MessageComponent key={msg.id} msg={msg} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

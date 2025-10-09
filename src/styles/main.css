@@ -1,12 +1,44 @@
-/* Basic scrollbar styling for a light theme */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #f1f5f9; } /* slate-100 */
-::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; } /* slate-400 */
-::-webkit-scrollbar-thumb:hover { background: #64748b; } /* slate-500 */
+/* --- Modern, Cross-Browser Scrollbar Styling --- */
 
-.dark ::-webkit-scrollbar-track { background: #181818; }
-.dark ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
-.dark ::-webkit-scrollbar-thumb:hover { background: #555; }
+/* For Firefox */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.5) transparent; /* thumb track */
+}
+
+.dark html {
+  scrollbar-color: rgba(100, 116, 139, 0.6) transparent;
+}
+
+/* For Webkit-based browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.4);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.7);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(71, 85, 105, 0.4);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.7);
+}
+
+
+/* --- General Styles --- */
 
 body { font-family: 'Inter', sans-serif; }
 
@@ -74,10 +106,23 @@ body { font-family: 'Inter', sans-serif; }
 }
 
 /* Constrain the main application layout to the viewport height, preventing the
-   entire page from scrolling when deeply nested content (like the thinking
-   workflow) overflows its container. This forces internal scrollable areas
+   entire page from scrolling. This forces internal scrollable areas
    to function as intended. */
 html, body, #root {
     height: 100%;
-    overflow: hidden;
+}
+
+/* Placeholder styling for the contentEditable div chat input */
+.content-editable-input[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #94a3b8; /* text-slate-400 */
+  pointer-events: none;
+  line-height: 1.5rem;
+}
+
+.dark .content-editable-input[data-placeholder]:empty::before {
+  color: #64748b; /* text-slate-500 */
 }

@@ -20,7 +20,7 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
   const { text, attachments } = msg;
   return (
     <motion.div {...animationProps} className="w-full flex justify-end">
-      <div className="markdown-content-user max-w-[85%] sm:max-w-2xl w-fit p-3 sm:p-4 rounded-2xl bg-teal-600 text-white rounded-br-none shadow-sm break-words">
+      <div className="markdown-content-user max-w-[85%] w-fit p-3 sm:p-4 rounded-2xl bg-teal-600 text-white rounded-br-none shadow-sm break-words">
         {attachments && attachments.length > 0 && (
             <div className="flex flex-col gap-2 p-2 mb-2 bg-teal-700/50 rounded-lg">
                 {attachments.map((attachment, index) => (

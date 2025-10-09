@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// FIX: Removed invalid 'aistudio' from react import.
 import React from 'react';
 import { ModelSelector } from '../UI/ModelSelector';
 import type { Model } from '../../services/modelService';
@@ -16,7 +17,7 @@ type ChatHeaderProps = {
 };
 
 export const ChatHeader = ({ setIsSidebarOpen, models, selectedModel, onModelChange, disabled }: ChatHeaderProps) => (
-  <header className="p-4 flex items-center justify-between md:justify-end">
+  <header className="py-4 px-4 sm:px-6 md:px-8 flex items-center justify-between md:justify-end">
       {/* Hamburger Menu for Mobile */}
       <button
         onClick={() => setIsSidebarOpen(true)}

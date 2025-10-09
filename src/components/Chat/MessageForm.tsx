@@ -16,20 +16,18 @@ type MessageFormProps = {
 export const MessageForm = ({ onSubmit, isLoading }: MessageFormProps) => {
   const [inputValue, setInputValue] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const { isRecording, startRecording, stopRecording, isSupported } = useVoiceInput({
-    onTranscriptUpdate: (transcript) => {
-        setInputValue(transcript);
-    },
+    onTranscriptUpdate: setInputValue,
   });
 
-  // Effect to auto-resize the textarea
+  // Effect to sync state to the contentEditable div. This is necessary for updates
+  // that don't originate from user typing, such as voice input or clearing the form.
   useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto'; // Reset height to allow shrinking
-      textarea.style.height = `${textarea.scrollHeight}px`; // Set to content height
+    if (inputRef.current && inputRef.current.innerText !== inputValue) {
+      inputRef.current.innerText = inputValue;
     }
   }, [inputValue]);
 
@@ -67,12 +65,10 @@ export const MessageForm = ({ onSubmit, isLoading }: MessageFormProps) => {
     }
   };
   
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault(); // Prevent new line
-      if (e.currentTarget.form) {
-          e.currentTarget.form.requestSubmit();
-      }
+      handleSubmit(e);
     }
   };
 
@@ -87,7 +83,7 @@ export const MessageForm = ({ onSubmit, isLoading }: MessageFormProps) => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="p-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2"
+                className="p-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
             >
                 {attachedFiles.map((file, index) => (
                   <AttachedFilePreview 
@@ -118,18 +114,20 @@ export const MessageForm = ({ onSubmit, isLoading }: MessageFormProps) => {
                 <path d="M12 4C13.1046 4 14 4.89543 14 6V7.67451C15.8457 8.21661 17.2166 9.58752 17.7587 11.4332H19.4332C20.5378 11.4332 21.4332 12.3287 21.4332 13.4332C21.4332 14.5378 20.5378 15.4332 19.4332 15.4332H17.7587C17.2166 17.2789 15.8457 18.6498 14 19.1919V20.8665C14 21.9711 13.1046 22.8665 12 22.8665C10.8954 22.8665 10 21.9711 10 20.8665V19.1919C8.15432 18.6498 6.7834 17.2789 6.24131 15.4332H4.56681C3.46224 15.4332 2.56681 14.5378 2.56681 13.4332C2.56681 12.3287 3.46224 11.4332 4.56681 11.4332H6.24131C6.7834 9.58752 8.15432 8.21661 10 7.67451V6C10 4.89543 10.8954 4 12 4ZM12 9.14155C9.88142 9.14155 8.14155 10.8814 8.14155 13C8.14155 15.1186 9.88142 16.8584 12 16.8584C14.1186 16.8584 15.8584 15.1186 15.8584 13C15.8584 10.8814 14.1186 9.14155 12 9.14155Z" fill="currentColor"/>
               </svg>
             </div>
-
-            <textarea
-                ref={textareaRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={isRecording ? 'Listening...' : "Attach files or send a command to the AI..."}
-                aria-label="Chat input"
-                disabled={isLoading}
-                rows={1}
-                className="flex-grow w-full bg-transparent text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none disabled:opacity-50 max-h-48"
-            />
+            
+            <div className="relative flex-grow">
+              <div
+                  ref={inputRef}
+                  contentEditable={!isLoading}
+                  onInput={(e) => setInputValue(e.currentTarget.innerText)}
+                  onKeyDown={handleKeyDown}
+                  aria-label="Chat input"
+                  role="textbox"
+                  data-placeholder={isRecording ? 'Listening...' : "Attach files or send a command to the AI..."}
+                  className={`content-editable-input w-full bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none max-h-48 overflow-y-auto ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              />
+            </div>
+            
              <button 
                 type="button" 
                 onClick={() => fileInputRef.current?.click()}

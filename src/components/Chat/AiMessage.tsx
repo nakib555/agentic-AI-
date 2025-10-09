@@ -94,7 +94,7 @@ export const AiMessage: React.FC<{ msg: Message }> = ({ msg }) => {
         {error && !thinkingText && <ErrorDisplay error={error} />}
 
         {finalAnswerText && (
-             <div className="markdown-content max-w-none w-full max-w-[90%] sm:max-w-2xl">
+             <div className="markdown-content max-w-none w-full max-w-[90%]">
                 {renderFinalAnswer(finalAnswerText)}
             </div>
         )}

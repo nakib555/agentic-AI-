@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { MessageError } from '../../types';
 
-const getErrorMessageSuggestion = (code?: string): string | null => {
+export const getErrorMessageSuggestion = (code?: string): string | null => {
     switch (code) {
         case 'MODEL_NOT_FOUND':
             return 'The selected model could not be found. Please choose a different model from the selector at the top.';
@@ -21,6 +21,14 @@ const getErrorMessageSuggestion = (code?: string): string | null => {
             return 'A tool required by the AI failed to execute correctly. See details for more information.';
         case 'TOOL_NOT_FOUND':
             return 'The AI tried to use a tool that does not exist. This may be a model hallucination issue.';
+        case 'GEOLOCATION_PERMISSION_DENIED':
+            return 'To fix this, please allow location access in your browser settings and try your request again.';
+        case 'GEOLOCATION_UNAVAILABLE':
+            return 'Your location could not be determined. Please ensure you have a stable network connection and that location services are enabled on your device.';
+        case 'GEOLOCATION_TIMEOUT':
+            return 'The request for your location took too long. Please check your network connection and try again.';
+        case 'NETWORK_ERROR':
+            return 'A network problem occurred. Please check your internet connection and try again.';
         default:
             if (code?.startsWith('TOOL_')) {
                 return 'An error occurred while the AI was using one of its tools. Check the details for more technical information.';
@@ -44,7 +52,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error }) => {
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[90%] sm:max-w-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 p-4 rounded-2xl"
+        className="w-full max-w-[90%] bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 p-4 rounded-2xl"
       >
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 text-red-500 dark:text-red-400 pt-0.5">

@@ -65,7 +65,7 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, err
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg max-w-[90%] sm:max-w-2xl w-full border border-slate-200 dark:border-slate-700 p-4">
+    <div className="bg-white dark:bg-slate-800 rounded-lg max-w-[90%] w-full border border-slate-200 dark:border-slate-700 p-4">
         <button 
           className="flex items-center gap-3 w-full text-left"
           onClick={() => setIsOpen(!isOpen)}

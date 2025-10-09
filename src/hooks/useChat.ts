@@ -185,7 +185,29 @@ export const useChat = (initialModel: string) => {
             if (err instanceof ToolError) {
                 throw err; // Re-throw custom tool errors directly
             }
+
             const originalError = err instanceof Error ? err : new Error(String(err));
+            const lowerCaseMessage = originalError.message.toLowerCase();
+
+            // Refine generic tool errors into specific, structured ToolErrors.
+            // This centralizes error classification before it enters the agentic loop.
+            if (name === 'getCurrentLocation') {
+                if (lowerCaseMessage.includes('denied')) {
+                    throw new ToolError(name, 'GEOLOCATION_PERMISSION_DENIED', originalError.message, originalError);
+                }
+                if (lowerCaseMessage.includes('unavailable')) {
+                    throw new ToolError(name, 'GEOLOCATION_UNAVAILABLE', originalError.message, originalError);
+                }
+                if (lowerCaseMessage.includes('timed out')) {
+                    throw new ToolError(name, 'GEOLOCATION_TIMEOUT', originalError.message, originalError);
+                }
+            }
+            
+            if (lowerCaseMessage.includes('network issue') || lowerCaseMessage.includes('failed to fetch')) {
+                throw new ToolError(name, 'NETWORK_ERROR', originalError.message, originalError);
+            }
+
+            // Fallback for any other errors.
             throw new ToolError(name, 'TOOL_EXECUTION_FAILED', originalError.message, originalError);
         }
     };
@@ -217,7 +239,28 @@ export const useChat = (initialModel: string) => {
         },
         onError: (error: MessageError) => {
             console.error("Error received in useChat:", error);
-            updateLastMessage(activeChatId!, () => ({ error, isThinking: false }));
+            
+            // The error from the agentic loop has a specific code, but the message might be technical.
+            // Here, we refine the message for a better user experience before showing it in the UI.
+            const finalError = { ...error };
+
+            switch (error.code) {
+                case 'GEOLOCATION_PERMISSION_DENIED':
+                    finalError.message = 'Geolocation access was denied.';
+                    break;
+                case 'GEOLOCATION_UNAVAILABLE':
+                    finalError.message = 'Could not determine your location.';
+                    break;
+                case 'GEOLOCATION_TIMEOUT':
+                    finalError.message = 'The request for your location timed out.';
+                    break;
+                case 'NETWORK_ERROR':
+                    finalError.message = 'A network issue prevented a tool from completing its task.';
+                    break;
+                // No default case needed; other errors will show their original message.
+            }
+            
+            updateLastMessage(activeChatId!, () => ({ error: finalError, isThinking: false }));
             completeChatLoading(activeChatId!);
         },
     };

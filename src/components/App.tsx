@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// FIX: Removed invalid 'aistudio' from react import.
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Model } from '../services/modelService';
@@ -70,7 +71,7 @@ export const App = () => {
   const activeModel = chatHistory.find(c => c.id === currentChatId)?.model || uiSelectedModel;
 
   return (
-    <div className="flex h-screen bg-white dark:bg-[#121212]">
+    <div className="flex h-full bg-white dark:bg-[#121212]">
       <Sidebar 
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen}
@@ -105,7 +106,7 @@ export const App = () => {
       </AnimatePresence>
 
       <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 flex flex-col w-full max-w-4xl mx-auto px-4 sm:px-6 min-h-0">
+        <div className="flex-1 flex flex-col w-full max-w-6xl mx-auto min-h-0">
            <ChatHeader
               setIsSidebarOpen={setIsSidebarOpen}
               models={availableModels}

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// FIX: Removed invalid 'aistudio' from react import.
 import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { MessageList } from './MessageList';
@@ -20,7 +21,7 @@ type ChatAreaProps = {
 export const ChatArea = ({ messages, isLoading, sendMessage, modelsLoading }: ChatAreaProps) => (
   <div className="flex-1 flex flex-col pb-4 min-h-0">
     <MessageList messages={messages} />
-    <div className="mt-auto pt-4">
+    <div className="mt-auto pt-4 px-4 sm:px-6 md:px-8">
       <AnimatePresence>
         {messages.length === 0 && !isLoading && (
           <FloatingPrompts onPromptClick={sendMessage} />

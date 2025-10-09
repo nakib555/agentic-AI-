@@ -10,6 +10,7 @@ import type { MessageError, ToolCallEvent } from '../../types';
 import { ToolCallStep } from './ToolCallStep';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
+import { getErrorMessageSuggestion } from '../UI/ErrorDisplay';
 
 
 export type WorkflowNodeStatus = 'pending' | 'active' | 'done' | 'failed';
@@ -54,11 +55,13 @@ const renderDetails = (node: WorkflowNodeData) => {
 
     if (node.status === 'failed' && typeof node.details === 'object' && 'message' in node.details) {
         const error = node.details as MessageError;
+        const suggestion = getErrorMessageSuggestion(error.code);
         return (
-            <div className="text-xs space-y-1">
+            <div className="text-xs space-y-1 text-red-800 dark:text-red-300">
                 <p className="font-semibold text-red-700 dark:text-red-300">{error.message}</p>
                 {error.code && <p><span className="font-semibold">Code:</span> {error.code}</p>}
-                {error.details && <pre className="whitespace-pre-wrap font-mono bg-red-100/50 dark:bg-red-900/20 p-2 rounded-md">{error.details}</pre>}
+                {suggestion && <p className="mt-1 p-2 bg-red-100/50 dark:bg-red-900/20 rounded-md"><span className="font-semibold">Suggestion:</span> {suggestion}</p>}
+                {error.details && <pre className="whitespace-pre-wrap font-['Fira_Code',_monospace] bg-red-100/50 dark:bg-red-900/20 p-2 rounded-md mt-1">{error.details}</pre>}
             </div>
         );
     }

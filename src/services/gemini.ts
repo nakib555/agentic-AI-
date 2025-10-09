@@ -21,18 +21,22 @@ type ChatHistory = {
  * @returns A structured MessageError with user-friendly content.
  */
 export const parseApiError = (error: any): MessageError => {
-    // Extract message and details for logging and classification
+    // Extract message, details, and status for robust classification
     let message = 'An unexpected API error occurred';
     let details = '';
+    let status = '';
     
     if (error instanceof Error) {
         message = error.message;
         details = error.stack || error.toString();
     } else if (typeof error === 'object' && error !== null) {
-        // Handle Gemini API's specific structured error response like:
-        // {"error":{"code":429,"message":"...", "status":"..."}}
+        // Handle Google API's specific structured error response like:
+        // {"error":{"code":429,"message":"...", "status":"RESOURCE_EXHAUSTED"}}
         if (error.error && typeof error.error.message === 'string') {
             message = error.error.message;
+            if (error.error.status && typeof error.error.status === 'string') {
+                status = error.error.status;
+            }
         } else if (typeof error.message === 'string') {
             message = error.message;
         }
@@ -47,9 +51,10 @@ export const parseApiError = (error: any): MessageError => {
     }
 
     const lowerCaseMessage = message.toLowerCase();
+    const lowerCaseStatus = status.toLowerCase();
 
     // 1. Invalid API Key
-    if (lowerCaseMessage.includes('api key not valid') || lowerCaseMessage.includes('api key not found') || lowerCaseMessage.includes('permission denied')) {
+    if (lowerCaseMessage.includes('api key not valid') || lowerCaseMessage.includes('api key not found') || lowerCaseStatus === 'permission_denied') {
         return {
             code: 'INVALID_API_KEY',
             message: 'Invalid or Missing API Key',
@@ -58,7 +63,7 @@ export const parseApiError = (error: any): MessageError => {
     }
 
     // 2. Rate Limiting / Quota Exceeded
-    if (lowerCaseMessage.includes('429') || lowerCaseMessage.includes('resource has been exhausted') || lowerCaseMessage.includes('rate limit')) {
+    if (lowerCaseStatus === 'resource_exhausted' || lowerCaseMessage.includes('429') || lowerCaseMessage.includes('rate limit')) {
         return {
             code: 'RATE_LIMIT_EXCEEDED',
             message: 'API Rate Limit Exceeded',
@@ -76,7 +81,7 @@ export const parseApiError = (error: any): MessageError => {
     }
     
     // 4. Model Not Found
-    if (lowerCaseMessage.includes('404') || lowerCaseMessage.includes('model not found')) {
+    if (lowerCaseStatus === 'not_found' || lowerCaseMessage.includes('404') || lowerCaseMessage.includes('model not found')) {
         return {
             code: 'MODEL_NOT_FOUND',
             message: 'Model Not Found',
@@ -85,7 +90,7 @@ export const parseApiError = (error: any): MessageError => {
     }
     
     // 5. Invalid Argument (e.g., malformed request)
-    if (lowerCaseMessage.includes('400') || lowerCaseMessage.includes('invalid argument') || lowerCaseMessage.includes('bad request')) {
+    if (lowerCaseStatus === 'invalid_argument' || lowerCaseMessage.includes('400') || lowerCaseMessage.includes('bad request')) {
         return {
             code: 'INVALID_ARGUMENT',
             message: 'Invalid Request Sent',
@@ -142,7 +147,8 @@ export const generateChatTitle = async (messages: Message[]): Promise<string> =>
                 contents: prompt,
             });
             
-            const generatedTitle = response.text.trim().replace(/["']/g, '');
+            const text = response.text;
+            const generatedTitle = text ? text.trim().replace(/["']/g, '') : '';
             const isGeneric = !generatedTitle || ['new chat', 'untitled chat'].includes(generatedTitle.toLowerCase());
 
             // If the AI returns a generic or empty title, fall back to the first user message.

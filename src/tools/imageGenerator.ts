@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
+import { FunctionDeclaration, Type, GoogleGenAI, Modality } from "@google/genai";
 import { imageStore } from '../services/imageStore';
 
 // Helper function to convert base64 to Blob
@@ -33,7 +33,6 @@ export const imageGeneratorDeclaration: FunctionDeclaration = {
 export const executeImageGenerator = async (args: { prompt: string }): Promise<string> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-    const mimeType = 'image/png';
     
     // 1. Enhance the user's prompt for better image quality
     const enhancementPrompt = `
@@ -62,30 +61,59 @@ export const executeImageGenerator = async (args: { prompt: string }): Promise<s
     
     const enhancedPrompt = enhancementResponse.text.trim();
 
-    // 2. Generate the image using the enhanced prompt
-    const response = await ai.models.generateImages({
-        model: 'imagen-4.0-generate-001',
-        prompt: enhancedPrompt,
-        config: {
-          numberOfImages: 1,
-          outputMimeType: mimeType,
-          aspectRatio: '1:1',
-        },
+    // 2. Generate a short caption from the enhanced prompt
+    const captionPrompt = `Based on the following detailed image prompt, create a single, short, elegant, one-sentence caption.
+
+    Prompt: "${enhancedPrompt}"
+    
+    Caption:`;
+
+    const captionResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: captionPrompt,
+    });
+    // Clean up any quotes the model might add around the caption
+    const caption = captionResponse.text.trim().replace(/^["']|["']$/g, '');
+
+    // 3. Generate the image using the enhanced prompt with gemini-2.5-flash-image
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [
+          { text: enhancedPrompt },
+        ],
+      },
+      config: {
+          responseModalities: [Modality.IMAGE, Modality.TEXT],
+      },
     });
 
-    if (!response.generatedImages || response.generatedImages.length === 0) {
+    // 4. Parse the response to find the image data
+    let base64ImageBytes: string | undefined;
+    let mimeType = 'image/png'; // Default mimeType
+
+    if (response.candidates && response.candidates.length > 0) {
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
+                base64ImageBytes = part.inlineData.data;
+                mimeType = part.inlineData.mimeType;
+                break; // Found the image, stop looking
+            }
+        }
+    }
+
+    if (!base64ImageBytes) {
         throw new Error('Image generation failed. The model did not return an image.');
     }
     
-    const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-    
-    // 3. Convert to blob and save to IndexedDB
+    // 5. Convert to blob and save to IndexedDB
     const imageBlob = base64ToBlob(base64ImageBytes, mimeType);
     const imageKey = await imageStore.saveImage(imageBlob);
     
     const imageData = {
         imageKey: imageKey,
-        prompt: enhancedPrompt, // Return the enhanced prompt for display
+        prompt: enhancedPrompt, // Return the enhanced prompt for the title tooltip
+        caption: caption, // Return the short caption for display
     };
 
     // Return a component tag with a reference (key) instead of the full base64 data.
