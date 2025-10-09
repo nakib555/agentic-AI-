@@ -3,16 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Editor, { OnMount } from '@monaco-editor/react';
 import { useTheme } from '../../hooks/useTheme';
 
-// Define monaco on window for TypeScript
-declare global {
-  interface Window {
-    monaco: any; 
-  }
-}
 
 // Define a more comprehensive map for language aliases. This helps ensure that common
 // markdown language tags are correctly mapped to Monaco's language identifiers for syntax highlighting.
@@ -46,13 +41,9 @@ type CodeBlockProps = {
     children: React.ReactNode;
 };
 
-// FIX: Updated component definition to use React.FC. This correctly types the component
-// to accept special React props like 'key', resolving the type error when this
-// component is rendered inside a list.
 export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
     const [isCopied, setIsCopied] = useState(false);
-    const editorRef = useRef<HTMLDivElement>(null);
-    const editorInstanceRef = useRef<any>(null); // To hold the editor instance
+    const [height, setHeight] = useState('0px');
     const { theme } = useTheme();
 
     const codeContent = String(children).replace(/\n$/, '');
@@ -66,79 +57,25 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
             console.error('Failed to copy code: ', err);
         });
     };
+
+    const handleEditorDidMount: OnMount = (editor) => {
+        const updateHeight = () => {
+            const contentHeight = editor.getContentHeight();
+            const newHeight = Math.min(600, contentHeight); // Max height of 600px
+            setHeight(`${newHeight}px`);
+        };
+
+        // Set initial height and update on content changes
+        editor.onDidContentSizeChange(updateHeight);
+        updateHeight();
+    };
   
-    useEffect(() => {
-        // This effect handles creating, updating, and destroying the editor instance.
-        let editor: any = null; // monaco editor instance
-
-        const setupMonaco = () => {
-            if (editorRef.current && window.monaco) {
-                const rawLanguage = language ? language.toLowerCase() : 'plaintext';
-                const monacoLang = monacoLanguageMap[rawLanguage] || rawLanguage;
-                
-                const effectiveTheme = theme === 'system' 
-                    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-                    : theme;
-
-                editor = window.monaco.editor.create(editorRef.current, {
-                    value: codeContent,
-                    language: monacoLang,
-                    theme: effectiveTheme === 'dark' ? 'vs-dark' : 'vs',
-                    readOnly: true,
-                    domReadOnly: true,
-                    automaticLayout: true,
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    wordWrap: 'on',
-                    contextmenu: false,
-                    fontSize: 13,
-                    fontFamily: "'Fira Code', monospace",
-                    padding: { top: 16, bottom: 16 },
-                    scrollbar: {
-                        alwaysConsumeMouseWheel: false,
-                        vertical: 'auto',
-                        horizontal: 'auto',
-                        verticalScrollbarSize: 8,
-                        horizontalScrollbarSize: 8,
-                    },
-                });
-                editorInstanceRef.current = editor;
-
-                const updateHeight = () => {
-                    if (editorInstanceRef.current && editorRef.current) {
-                        const contentHeight = editorInstanceRef.current.getContentHeight();
-                        const newHeight = Math.min(600, contentHeight); // Max height of 600px
-                        
-                        requestAnimationFrame(() => {
-                            if (editorRef.current) {
-                                editorRef.current.style.height = `${newHeight}px`;
-                            }
-                        });
-                    }
-                };
-                
-                editor.onDidContentSizeChange(updateHeight);
-                updateHeight();
-            }
-        };
-        
-        if (window.monaco) {
-            setupMonaco();
-        } else {
-            // If monaco is not loaded yet, add a one-time listener.
-            window.addEventListener('monaco-loaded', setupMonaco, { once: true });
-        }
-
-        return () => {
-            // Cleanup function to run when the component unmounts or dependencies change.
-            window.removeEventListener('monaco-loaded', setupMonaco);
-            if (editor) {
-                editor.dispose();
-                editorInstanceRef.current = null;
-            }
-        };
-    }, [language, codeContent, theme]); // Re-run effect if language, content, or theme changes.
+    const effectiveTheme = theme === 'system' 
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : theme;
     
+    const rawLanguage = language ? language.toLowerCase() : 'plaintext';
+    const monacoLang = monacoLanguageMap[rawLanguage] || rawLanguage;
     const formattedLanguage = language ? language.charAt(0).toUpperCase() + language.slice(1) : 'Code';
 
     return (
@@ -150,7 +87,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
           <button
             onClick={handleCopy}
             aria-label={isCopied ? 'Copied!' : 'Copy code'}
-            className="flex items-center space-x-2 p-1 rounded-md text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition-colors duration-150 active:scale-95"
+            className="flex items-center space-x-2 p-1 rounded-md text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition-colors duration-150 active:scale-95 focus:outline-none"
           >
             <AnimatePresence mode="wait" initial={false}>
               {isCopied ? (
@@ -168,7 +105,29 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
             </span>
           </button>
         </div>
-        <div ref={editorRef} style={{ height: 'auto' }}></div>
+        <Editor
+          height={height}
+          language={monacoLang}
+          value={codeContent}
+          theme={effectiveTheme === 'dark' ? 'vs-dark' : 'vs'}
+          onMount={handleEditorDidMount}
+          options={{
+            readOnly: true,
+            domReadOnly: true,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            wordWrap: 'on',
+            contextmenu: false,
+            fontSize: 13,
+            fontFamily: "'Fira Code', monospace",
+            padding: { top: 16, bottom: 16 },
+            scrollbar: {
+                alwaysConsumeMouseWheel: false,
+            },
+            renderLineHighlight: 'none',
+            cursorWidth: 0,
+          }}
+        />
       </div>
     );
   };

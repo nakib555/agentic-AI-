@@ -3,128 +3,138 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo, useState } from 'react';
-import { AnimatePresence, motion, Variants } from 'framer-motion';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { MessageError, ToolCallEvent } from '../../types';
 import { WorkflowNode } from './WorkflowNode';
-import { WorkflowConnector } from './WorkflowConnector';
-import { ActiveIcon } from './icons';
-import { parseAgenticWorkflow } from '../../services/workflowParser';
+import { parseAgenticWorkflow, ParsedWorkflow } from '../../services/workflowParser';
+import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
+import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 
 type ThinkingWorkflowProps = {
   text: string;
   toolCallEvents?: ToolCallEvent[];
   isThinkingComplete: boolean;
   error?: MessageError;
+  duration: number | null;
+  startTime?: number;
+  isVisible: boolean;
+  onToggleVisibility: () => void;
 };
 
-const itemWrapperVariants: Variants = {
-    initial: { opacity: 0, y: 15, scale: 0.98 },
-    animate: {
-        opacity: 1, y: 0, scale: 1, x: 0,
-        transition: { duration: 0.4, ease: [0.25, 1, 0.5, 1] }
-    },
-    exit: {
-        opacity: 0, scale: 0.95,
-        transition: { duration: 0.2, ease: [0.5, 0, 0.75, 0] }
-    },
-    shake: {
-        x: [0, -4, 4, -4, 4, 0],
-        transition: { duration: 0.4 }
-    }
+const Header = ({ duration, startTime, isThinkingComplete, isVisible, onToggleVisibility }: { 
+    duration: number | null, 
+    startTime?: number, 
+    isThinkingComplete: boolean,
+    isVisible: boolean,
+    onToggleVisibility: () => void,
+}) => {
+    const [elapsed, setElapsed] = useState(0);
+
+    useEffect(() => {
+        setElapsed(0); // Reset on new thinking process
+        if (!isThinkingComplete && startTime) {
+            const timer = setInterval(() => {
+                const seconds = Math.floor((Date.now() - startTime) / 1000);
+                setElapsed(seconds);
+            }, 1000);
+            return () => clearInterval(timer);
+        }
+    }, [isThinkingComplete, startTime]);
+    
+    const displayDuration = isThinkingComplete && duration !== null ? duration.toFixed(1) : elapsed;
+
+    return (
+        <button 
+            onClick={onToggleVisibility}
+            className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer hover:bg-white/5 dark:hover:bg-white/5 transition-colors rounded-t-xl"
+            aria-expanded={isVisible}
+            aria-controls="thinking-details"
+        >
+            <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-400">
+                    <path fillRule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v1.25a.75.75 0 0 1-1.5 0V2.75A.75.75 0 0 1 10 2ZM5.207 4.207a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0Zm9.586 0a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06a.75.75 0 0 1 0-1.06ZM10 15.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Zm0-1.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" clipRule="evenodd" />
+                </svg>
+                <span className="font-semibold text-slate-200 text-sm">Thought for {displayDuration}s</span>
+            </div>
+            <motion.div animate={{ rotate: isVisible ? -180 : 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }}>
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-400">
+                    <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                </svg>
+            </motion.div>
+        </button>
+    );
 };
 
-const InitialLoadingState = () => (
-    <motion.div
-      key="initial-loading"
-      variants={itemWrapperVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      className="flex items-center justify-center p-4 text-sm text-slate-500 dark:text-slate-400 w-full"
-    >
-      <ActiveIcon />
-      <span className="ml-3 font-medium">Analyzing request...</span>
-    </motion.div>
-);
 
-
-export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, error }: ThinkingWorkflowProps) => {
-  const [isOpen, setIsOpen] = useState(true);
-  const workflowNodes = useMemo(
+export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, error, duration, startTime, isVisible, onToggleVisibility }: ThinkingWorkflowProps) => {
+  const { plan, executionLog } = useMemo(
     () => parseAgenticWorkflow(text, toolCallEvents, isThinkingComplete, error), 
     [text, toolCallEvents, isThinkingComplete, error]
   );
   
-  const showInitialLoadingState = workflowNodes.length === 0 && !isThinkingComplete && !error;
+  const executionLogRef = useRef<HTMLUListElement>(null);
 
-  // Render nothing if there are no steps and thinking is complete. This avoids showing an
-  // empty box for simple, single-response answers.
-  if (workflowNodes.length === 0 && !showInitialLoadingState) {
+  // Auto-scroll the execution log to the bottom when new items are added.
+  useEffect(() => {
+    if (executionLogRef.current) {
+      executionLogRef.current.scrollTop = executionLogRef.current.scrollHeight;
+    }
+  }, [executionLog]);
+
+  if (plan.trim() === '' && executionLog.length === 0 && isThinkingComplete) {
       return null;
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg max-w-[90%] w-full border border-slate-200 dark:border-slate-700 p-4">
-        <button 
-          className="flex items-center gap-3 w-full text-left"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-expanded={isOpen}
-          aria-controls="thinking-workflow-content"
-        >
-            <div className="w-4 h-4 bg-teal-200 dark:bg-teal-900/50 rounded-full flex items-center justify-center flex-shrink-0">
-                <div className={`w-2 h-2 ${isThinkingComplete ? 'bg-teal-500' : 'bg-teal-500 animate-pulse'} rounded-full`}></div>
-            </div>
-            <span className="font-semibold text-slate-800 dark:text-slate-200 flex-1">Thinking Process</span>
-            <div className="ml-auto text-slate-400">
-                <motion.div animate={{ rotate: isOpen ? 0 : -90 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
-                </motion.div>
-            </div>
-        </button>
+    <div className="bg-[#2D2D2D] dark:bg-[#202123] rounded-xl max-w-[90%] w-full">
+        <Header 
+            duration={duration} 
+            startTime={startTime} 
+            isThinkingComplete={isThinkingComplete}
+            isVisible={isVisible}
+            onToggleVisibility={onToggleVisibility}
+        />
       
         <AnimatePresence initial={false}>
-          {isOpen && (
-            <motion.div
-              id="thinking-workflow-content"
-              initial="collapsed"
-              animate="open"
-              exit="collapsed"
-              variants={{
-                  open: { opacity: 1, height: 'auto', marginTop: '16px' },
-                  collapsed: { opacity: 0, height: 0, marginTop: '0px' },
-              }}
-              transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
-              className="overflow-hidden"
-            >
-              <ul className="flex flex-col items-center w-full">
-                  <AnimatePresence mode="wait">
-                      {showInitialLoadingState ? (
-                          <li key="initial-loading-li" className="w-full">
-                            <InitialLoadingState />
-                          </li>
-                      ) : (
-                        workflowNodes.map((node, index) => (
-                            <motion.li
-                                key={node.id}
-                                layout="position"
-                                variants={itemWrapperVariants}
-                                initial="initial"
-                                animate={node.status === 'failed' ? 'shake' : 'animate'}
-                                exit="exit"
-                                className="w-full flex flex-col items-center"
-                            >
-                                {index > 0 && (
-                                    <WorkflowConnector isActive={node.status !== 'pending'} />
-                                )}
-                                <WorkflowNode node={node} />
-                            </motion.li>
-                        ))
-                      )}
-                  </AnimatePresence>
-              </ul>
-            </motion.div>
-          )}
+            {isVisible && (
+                <motion.div
+                    id="thinking-details"
+                    key="content"
+                    initial="collapsed"
+                    animate="open"
+                    exit="collapsed"
+                    variants={{
+                        open: { opacity: 1, height: 'auto' },
+                        collapsed: { opacity: 0, height: 0 }
+                    }}
+                    transition={{ duration: 0.4, ease: 'easeInOut' }}
+                    className="overflow-hidden flex flex-col max-h-[500px]"
+                >
+                    {/* --- SECTION 1: PLANNING --- */}
+                    <div className="px-4 pt-2 pb-4 border-b border-slate-600/50">
+                        <ManualCodeRenderer text={plan} components={WorkflowMarkdownComponents} />
+                    </div>
+
+                    {/* --- SECTION 2: EXECUTION LOG --- */}
+                    <ul ref={executionLogRef} className="flex-1 flex flex-col w-full gap-4 p-4 overflow-y-auto execution-log">
+                        <AnimatePresence>
+                            {executionLog.map((node) => (
+                                <motion.li
+                                    key={node.id}
+                                    layout="position"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.25, 1, 0.5, 1] } }}
+                                    exit={{ opacity: 0, y: -10, transition: { duration: 0.2, ease: [0.5, 0, 0.75, 0] } }}
+                                    className="w-full flex flex-col items-start"
+                                >
+                                    <WorkflowNode node={node} />
+                                </motion.li>
+                            ))}
+                        </AnimatePresence>
+                    </ul>
+                </motion.div>
+            )}
         </AnimatePresence>
     </div>
   );

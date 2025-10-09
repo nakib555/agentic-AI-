@@ -11,6 +11,7 @@ import { runAgenticLoop } from '../services/agenticLoop';
 import { type Message, type ToolCallEvent, type MessageError, ToolError } from '../types';
 import { fileToBase64 } from '../utils/fileUtils';
 import { useChatHistory } from './useChatHistory';
+import { parseMessageText } from '../utils/messageParser';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -98,7 +99,14 @@ export const useChat = (initialModel: string) => {
     
     const userMessageObj: Message = { id: generateId(), role: 'user', text: userMessage, isHidden, attachments: attachmentsData };
     const modelMessageId = generateId();
-    const modelPlaceholder: Message = { id: modelMessageId, role: 'model', text: '', isThinking: true, toolCallEvents: [] };
+    const modelPlaceholder: Message = { 
+        id: modelMessageId, 
+        role: 'model', 
+        text: '', 
+        isThinking: true, 
+        toolCallEvents: [],
+        startTime: Date.now(),
+    };
 
     // --- 2. Construct Correct API History ---
     const currentChat = chatHistory.find(c => c.id === activeChatId);
@@ -130,11 +138,15 @@ export const useChat = (initialModel: string) => {
             
             // Case 2: Model message. This can translate to one or two API turns (model and user/function).
             if (msg.role === 'model') {
+                // Parse the message text to separate thinking from the final answer.
+                // Only the final answer and tool calls should be part of the history.
+                const { finalAnswerText } = parseMessageText(msg.text, false, !!msg.error);
+
                 const turns = [];
                 const modelParts: any[] = [];
 
-                if (msg.text) {
-                    modelParts.push({ text: msg.text });
+                if (finalAnswerText) {
+                    modelParts.push({ text: finalAnswerText });
                 }
 
                 // Append any function calls the model made in this turn.
@@ -234,7 +246,7 @@ export const useChat = (initialModel: string) => {
             });
         },
         onComplete: (finalText: string) => {
-            updateLastMessage(activeChatId!, () => ({ text: finalText, isThinking: false }));
+            updateLastMessage(activeChatId!, () => ({ text: finalText, isThinking: false, endTime: Date.now() }));
             completeChatLoading(activeChatId!);
         },
         onError: (error: MessageError) => {
@@ -260,7 +272,7 @@ export const useChat = (initialModel: string) => {
                 // No default case needed; other errors will show their original message.
             }
             
-            updateLastMessage(activeChatId!, () => ({ error: finalError, isThinking: false }));
+            updateLastMessage(activeChatId!, () => ({ error: finalError, isThinking: false, endTime: Date.now() }));
             completeChatLoading(activeChatId!);
         },
     };

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence, MotionProps } from 'framer-motion';
 import type { Message } from '../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
@@ -17,6 +17,7 @@ import { ImageDisplay } from '../AI/ImageDisplay';
 import { VideoDisplay } from '../AI/VideoDisplay';
 import { DownloadRawResponseButton } from './DownloadRawResponseButton';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
+import { FormattedBlock } from '../Markdown/FormattedBlock';
 
 const animationProps: MotionProps = {
   initial: { opacity: 0, y: 20 },
@@ -26,13 +27,13 @@ const animationProps: MotionProps = {
 
 const renderFinalAnswer = (text: string) => {
     // This regex splits the text by component tags, keeping the tags in the result array.
-    // FIX: Removed MAP_COMPONENT from regex as it's not implemented.
-    const componentRegex = /(\[(?:VIDEO|IMAGE)_COMPONENT\].*?\[\/(?:VIDEO|IMAGE)_COMPONENT\])/s;
+    const componentRegex = /(\[(?:VIDEO|IMAGE)_COMPONENT\].*?\[\/(?:VIDEO|IMAGE)_COMPONENT\]|\[FORMATTED_BLOCK\].*?\[\/FORMATTED_BLOCK\])/s;
     const parts = text.split(componentRegex).filter(part => part);
 
     return parts.map((part, index) => {
         const videoMatch = part.match(/\[VIDEO_COMPONENT\](\{.*?\})\[\/VIDEO_COMPONENT\]/s);
         const imageMatch = part.match(/\[IMAGE_COMPONENT\](\{.*?\})\[\/IMAGE_COMPONENT\]/s);
+        const formattedBlockMatch = part.match(/\[FORMATTED_BLOCK\](.*?)\[\/FORMATTED_BLOCK\]/s);
 
         const renderError = (component: string, details: string) => (
             <ErrorDisplay key={index} error={{ message: `Failed to render ${component} component due to invalid data.`, details }} />
@@ -57,6 +58,16 @@ const renderFinalAnswer = (text: string) => {
                 return renderError('image', imageMatch[1]);
             }
         }
+
+        if (formattedBlockMatch) {
+            try {
+                const content = formattedBlockMatch[1];
+                return <FormattedBlock key={index} content={content} />;
+            } catch (e) {
+                console.error("Failed to parse formatted block:", e);
+                return renderError('formatted block', part);
+            }
+        }
         
         // If no component tag is matched, render as standard markdown.
         if (part) {
@@ -69,31 +80,42 @@ const renderFinalAnswer = (text: string) => {
 
 export const AiMessage: React.FC<{ msg: Message }> = ({ msg }) => {
   const { text, isThinking, toolCallEvents, error } = msg;
+  const [isThinkingVisible, setIsThinkingVisible] = useState(true);
 
+  // The parser now uses the `isThinking` and `error` flags to prevent flickering.
   const { thinkingText, finalAnswerText } = useMemo(
-    () => parseMessageText(text, !!isThinking),
-    [text, isThinking]
+    () => parseMessageText(text, !!isThinking, !!error),
+    [text, isThinking, error]
   );
   
   const thinkingIsComplete = !isThinking || !!error;
+  
+  const hasThinkingProcess = thinkingText && thinkingText.trim() !== '';
 
   return (
     <motion.div {...animationProps} className="w-full flex flex-col items-start gap-4">
-        <ThinkingWorkflow 
-            text={thinkingText} 
-            toolCallEvents={toolCallEvents}
-            isThinkingComplete={thinkingIsComplete}
-            error={error}
-        />
+        {hasThinkingProcess && (
+            <ThinkingWorkflow 
+                text={thinkingText} 
+                toolCallEvents={toolCallEvents}
+                isThinkingComplete={thinkingIsComplete}
+                error={error}
+                duration={null}
+                startTime={undefined}
+                isVisible={isThinkingVisible}
+                onToggleVisibility={() => setIsThinkingVisible(!isThinkingVisible)}
+            />
+        )}
         
         <AnimatePresence>
             {isThinking && !finalAnswerText && !error && <TypingIndicator />}
         </AnimatePresence>
 
-        {/* Render a separate error message only if the workflow is not displayed (e.g., error on first turn) */}
-        {error && !thinkingText && <ErrorDisplay error={error} />}
+        {/* If an error occurred, display it prominently. This makes the error clear to the user. */}
+        {error && <ErrorDisplay error={error} />}
 
-        {finalAnswerText && (
+        {/* Only render the final answer if there's text AND no error occurred. */}
+        {finalAnswerText && !error && (
              <div className="markdown-content max-w-none w-full max-w-[90%]">
                 {renderFinalAnswer(finalAnswerText)}
             </div>

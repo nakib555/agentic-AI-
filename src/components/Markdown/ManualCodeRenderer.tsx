@@ -18,50 +18,55 @@ type ManualCodeRendererProps = {
 };
 
 export const ManualCodeRenderer: React.FC<ManualCodeRendererProps> = ({ text, components }) => {
-  // Regex to split the text by code blocks, keeping the delimiters (the code blocks themselves).
-  const blockRegex = /(```(?:[a-zA-Z0-9\-_]+)?\n[\s\S]*?\n```)/g;
-  const parts = text.split(blockRegex).filter(part => part);
+  // Split the text by the code block delimiter to handle streaming correctly.
+  const parts = text.split('```');
 
   return (
     <>
       {parts.map((part, index) => {
-        // Check if the current part is a code block.
-        if (part.startsWith('```') && part.endsWith('```')) {
-          const match = part.match(/^```([a-zA-Z0-9\-_]+)?\n([\s\S]*?)\n```$/);
-          if (match) {
-            const language = match[1];
-            // Trim the final newline from the code block content.
-            // FIX: Add a fallback for match[2] to prevent runtime errors if it's undefined
-            // and to satisfy the type-checker that `children` is always provided to `CodeBlock`.
-            const code = (match[2] || '').trimEnd();
-            // FIX: Pass `code` as a JSX child to resolve a TypeScript type error where passing `children`
-            // as a prop conflicts with the special `key` prop.
-            return <CodeBlock key={index} language={language}>{code}</CodeBlock>;
+        // Even-indexed parts (0, 2, 4...) are regular markdown text.
+        if (index % 2 === 0) {
+          if (part === '') return null; // Avoid rendering empty markdown sections.
+          return (
+            <ReactMarkdown
+              key={index}
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeRaw, rehypeKatex]}
+              components={{
+                ...components,
+                // Override 'code' to handle inline code snippets within markdown sections.
+                code: ({ children }) => <InlineCode children={children ?? ''} />,
+              }}
+            >
+              {part}
+            </ReactMarkdown>
+          );
+        }
+
+        // Odd-indexed parts (1, 3, 5...) are code blocks.
+        const firstNewlineIndex = part.indexOf('\n');
+        let language = '';
+        let code = '';
+
+        // During streaming, a part with no newline might just be the language specifier.
+        if (firstNewlineIndex === -1 && !part.includes(' ')) {
+          language = part.trim();
+          code = '';
+        } else {
+          // If there is a newline, the first line is potentially the language.
+          const firstLine = part.substring(0, firstNewlineIndex).trim();
+          // A valid language specifier is a single word with no spaces.
+          if (firstNewlineIndex !== -1 && !firstLine.includes(' ')) {
+            language = firstLine;
+            code = part.substring(firstNewlineIndex + 1);
+          } else {
+            // No valid language specifier found, so the whole part is treated as code.
+            language = '';
+            code = part;
           }
         }
         
-        // If it's not a code block, it's regular markdown text that may contain inline code.
-        // We render this part with ReactMarkdown, but provide a custom renderer for `code`
-        // that specifically handles the inline case. This preserves paragraph flow.
-        return (
-          <ReactMarkdown
-            key={index}
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[rehypeRaw, rehypeKatex]}
-            components={{
-              ...components,
-              // This custom code renderer is scoped to text that is NOT a full code block.
-              // It will only be triggered for inline code snippets.
-              // FIX: Provide a fallback for children to prevent passing undefined, which violates InlineCode's required prop type.
-              // Also, pass `children` as an explicit prop to fix the type error.
-              code: ({ children }) => {
-                return <InlineCode children={children ?? ''} />;
-              },
-            }}
-          >
-            {part}
-          </ReactMarkdown>
-        );
+        return <CodeBlock key={index} language={language}>{code}</CodeBlock>;
       })}
     </>
   );

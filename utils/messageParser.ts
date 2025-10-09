@@ -10,58 +10,46 @@ type ParseResult = {
 
 /**
  * Parses the raw text from a model's message into distinct "thinking" and "final answer" parts.
+ * This function uses the `isThinking` and `hasError` flags to provide context and prevent UI flickering.
  * @param text The raw text content from the message.
  * @param isThinking A boolean indicating if the model is still processing.
+ * @param hasError A boolean indicating if an error occurred.
  * @returns An object containing `thinkingText` and `finalAnswerText`.
  */
-export const parseMessageText = (text: string, isThinking: boolean): ParseResult => {
+export const parseMessageText = (text: string, isThinking: boolean, hasError: boolean): ParseResult => {
   const finalAnswerMarker = '[STEP] Final Answer';
-  const stepMarker = '[STEP]';
   const finalAnswerIndex = text.lastIndexOf(finalAnswerMarker);
-  const hasThinkingSteps = text.includes(stepMarker);
-  const thinkingIsComplete = !isThinking;
 
-  let thinkingText = '';
-  let finalAnswerText = '';
-
+  // Rule 1: Highest priority. If the final answer marker exists, we can definitively split the text.
+  // This is true whether the stream is still technically "thinking" or not.
   if (finalAnswerIndex !== -1) {
-    // Case 1: Ideal case with a final answer marker.
-    thinkingText = text.substring(0, finalAnswerIndex);
+    const thinkingText = text.substring(0, finalAnswerIndex);
     const rawFinalAnswer = text.substring(finalAnswerIndex + finalAnswerMarker.length);
-    finalAnswerText = rawFinalAnswer.replace(/\[AUTO_CONTINUE\]/g, '').trim();
-  } else if (thinkingIsComplete) {
-      // Case 2: Thinking is complete, but the marker is missing. We need to parse.
-      if (!hasThinkingSteps) {
-          // Sub-case 2a: No steps at all, so the whole response is the final answer.
-          thinkingText = '';
-          finalAnswerText = text.trim();
-      } else {
-          // Sub-case 2b: There are steps. Assume everything that is not a step is the final answer.
-          // This regex finds all step blocks.
-          const stepRegex = /\[STEP\]\s*(.*?):\s*([\s\S]*?)(?=\[STEP\]|$)/g;
-          const matches = [...text.matchAll(stepRegex)];
-          
-          if (matches.length > 0) {
-              // Find the end of the last matched step block.
-              const lastMatch = matches[matches.length - 1];
-              const lastMatchEnd = (lastMatch.index || 0) + lastMatch[0].length;
-              
-              // Everything up to that point is considered thinking text.
-              thinkingText = text.substring(0, lastMatchEnd);
-              
-              // Anything after the last step is the final answer.
-              finalAnswerText = text.substring(lastMatchEnd).trim();
-          } else {
-              // Should not be reached due to `hasThinkingSteps` check, but as a fallback:
-              thinkingText = '';
-              finalAnswerText = text.trim();
-          }
-      }
-  } else {
-      // Case 3: We are still actively thinking. The entire text is part of the workflow.
-      thinkingText = text;
-      finalAnswerText = '';
+    const finalAnswerText = rawFinalAnswer.replace(/\[AUTO_CONTINUE\]/g, '').trim();
+    return { thinkingText, finalAnswerText };
   }
 
-  return { thinkingText, finalAnswerText };
+  // Rule 2: If an error occurred mid-thought, ALL text is considered part of the failed thinking process.
+  // The final answer should be empty because it was never reached.
+  if (hasError) {
+    return { thinkingText: text, finalAnswerText: '' };
+  }
+  
+  // Rule 3: If there's no final answer marker, check if the model is still actively thinking.
+  // If it is, ALL text so far is considered part of the thinking process, even if it doesn't
+  // have a `[STEP]` marker yet. This prevents an initial flicker of content in the final answer area.
+  if (isThinking) {
+    return { thinkingText: text, finalAnswerText: '' };
+  }
+
+  // Rule 4: At this point, thinking is complete and there is no error.
+  // If the text contains any STEP markers but no Final Answer marker, it's an incomplete thought process.
+  // Treat the entire text as thinking to keep it in the thought bubble.
+  if (text.includes('[STEP]')) {
+      return { thinkingText: text, finalAnswerText: '' };
+  }
+
+  // Rule 5: If none of the above conditions are met (not thinking, no error, no markers),
+  // then the entire response must be a direct final answer (e.g., from a simple query).
+  return { thinkingText: '', finalAnswerText: text.trim() };
 };

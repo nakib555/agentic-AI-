@@ -10,4 +10,5 @@ export type ChatSession = {
     messages: Message[];
     model: string;
     isLoading?: boolean;
+    createdAt: number;
 };

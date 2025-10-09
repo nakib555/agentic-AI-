@@ -4,60 +4,77 @@
  */
 
 import type { MessageError, ToolCallEvent } from '../types';
-import type { WorkflowNodeType } from '../components/AI/WorkflowNode';
+import type { WorkflowNodeData } from '../components/AI/WorkflowNode';
 
-export type WorkflowNodeData = {
-  id: string;
-  type: WorkflowNodeType;
-  title: string;
-  status: 'pending' | 'active' | 'done' | 'failed';
-  details?: string | ToolCallEvent | MessageError;
+export type ParsedWorkflow = {
+  plan: string;
+  executionLog: WorkflowNodeData[];
 };
 
+// Generic workflow keywords that should be treated as procedural rather than titles.
+const GENERIC_STEP_KEYWORDS = new Set(['think', 'act', 'observe', 'adapt', 'system']);
+
 /**
- * Parses the raw thinking text from the AI into a structured list of workflow nodes.
+ * Splits the raw thinking text into the initial plan and the subsequent execution steps.
+ * @param rawText The raw text from the AI's thinking process.
+ * @returns An object containing the plan text and the execution text.
+ */
+const splitPlanFromExecution = (rawText: string): { planText: string, executionText: string } => {
+    const stepMarker = '[STEP]';
+    const firstStepIndex = rawText.indexOf(stepMarker);
+
+    if (firstStepIndex === -1) {
+        // If there are no [STEP] markers, the whole text is considered part of the plan/initial thought.
+        return { planText: rawText, executionText: '' };
+    }
+
+    const planText = rawText.substring(0, firstStepIndex).trim();
+    const executionText = rawText.substring(firstStepIndex).trim();
+    
+    return { planText, executionText };
+};
+
+
+/**
+ * Parses the raw thinking text from the AI into a structured format for the two-panel UI.
  * @param rawText The raw text from the AI's thinking process.
  * @param toolCallEvents A list of tool call events that have occurred.
  * @param isThinkingComplete A boolean indicating if the entire thinking process is finished.
  * @param error An optional error object if the process failed.
- * @returns An array of `WorkflowNodeData` representing the steps.
+ * @returns A `ParsedWorkflow` object with separated plan and execution log.
  */
 export const parseAgenticWorkflow = (
   rawText: string,
   toolCallEvents: ToolCallEvent[] = [],
   isThinkingComplete: boolean,
   error?: MessageError
-): WorkflowNodeData[] => {
+): ParsedWorkflow => {
+    const { planText, executionText } = splitPlanFromExecution(rawText);
+
     // This regex captures "[STEP] Title:" and the content until the next "[STEP]" or end of string.
     const stepRegex = /\[STEP\]\s*(.*?):\s*([\s\S]*?)(?=\[STEP\]|$)/gs;
     let match;
-    const stepNodes: WorkflowNodeData[] = [];
+    const executionNodes: WorkflowNodeData[] = [];
     let stepIndex = 0;
 
-    // 1. Parse all text-based steps from the raw thinking text
-    while ((match = stepRegex.exec(rawText)) !== null) {
-        const title = match[1].trim();
-        const details = match[2].trim();
+    // 1. Parse all text-based execution steps from the execution text
+    while ((match = stepRegex.exec(executionText)) !== null) {
+        let title = match[1].trim();
+        let details = match[2].trim();
 
         if (title.toLowerCase() === 'final answer') {
             continue; // Exclude the final answer from the workflow visualization
         }
 
-        // Infer node type for better icon representation
-        let type: WorkflowNodeType = 'plan'; // Default to 'plan' for strategic steps like 'Think', 'Adapt'
-        const lowerTitle = title.toLowerCase();
-        const taskKeywords = ['execute', 'search', 'fetch', 'get', 'process', 'act'];
-
-        if (taskKeywords.some(keyword => lowerTitle.includes(keyword))) {
-            type = 'task';
+        // For generic steps like "Observe:", treat the details as the primary content.
+        if (GENERIC_STEP_KEYWORDS.has(title.toLowerCase())) {
+            title = ''; // The title itself isn't informative, so we hide it.
         }
 
-
-        stepNodes.push({
+        executionNodes.push({
             id: `step-${stepIndex++}`,
-            type: type,
+            type: 'plan', // All text-based steps are 'plan' type for rendering.
             title: title,
-            // Status will be set in the final polish stage
             status: 'pending', 
             details: details || 'No details provided.',
         });
@@ -65,52 +82,69 @@ export const parseAgenticWorkflow = (
 
     // 2. Create nodes for any tool calls that have occurred
     const toolCallNodes: WorkflowNodeData[] = toolCallEvents
-        .map(event => ({
-            id: event.id,
-            type: 'tool',
-            title: `Tool: ${event.call.name}`,
-            status: event.result ? 'done' : 'active',
-            details: event,
-        }));
+        .map(event => {
+            const isGoogleSearch = event.call.name === 'googleSearch';
+            return {
+                id: event.id,
+                type: isGoogleSearch ? 'googleSearch' : 'tool',
+                title: isGoogleSearch ? (event.call.args.query ?? 'Searching...') : `Tool: ${event.call.name}`,
+                status: event.result ? 'done' : 'active',
+                details: event,
+            }
+        });
     
-    const allNodes = [...stepNodes, ...toolCallNodes];
-    if (allNodes.length === 0) return [];
+    const allExecutionNodes = [...executionNodes, ...toolCallNodes];
 
     // 3. Apply final status updates based on the overall state
     if (error) {
-        const lastActiveNode = allNodes.slice().reverse().find(n => n.status === 'active');
-        if (lastActiveNode) {
-            lastActiveNode.status = 'failed';
-            lastActiveNode.details = error;
-        } else if (allNodes.length > 0) {
-            allNodes[allNodes.length - 1].status = 'failed';
-            allNodes[allNodes.length - 1].details = error;
+        let failureAssigned = false;
+        // Search backwards to find the last step that wasn't already successfully completed.
+        for (let i = allExecutionNodes.length - 1; i >= 0; i--) {
+            const node = allExecutionNodes[i];
+            if (node.status === 'active' || node.status === 'pending') {
+                node.status = 'failed';
+                node.details = error;
+                failureAssigned = true;
+                break; // Only fail the most recent in-progress step
+            }
         }
-        // Mark preceding nodes as done
-        for (const node of allNodes) {
-            if (node.status === 'pending') node.status = 'done';
-            if (node.status === 'failed') break;
+        
+        // If all nodes were already 'done', or if there were no nodes, the error
+        // happened after the last known step. We add a new node to show the error.
+        if (!failureAssigned) {
+            allExecutionNodes.push({
+                id: `error-${stepIndex++}`,
+                type: 'task',
+                title: 'Error Occurred',
+                status: 'failed',
+                details: error
+            });
         }
+        
+        // Now, ensure all steps *before* the failure are marked as 'done'.
+        let failurePointReached = false;
+        allExecutionNodes.forEach(node => {
+            if (node.status === 'failed') {
+                failurePointReached = true;
+            }
+            if (node.status === 'pending' && !failurePointReached) {
+                node.status = 'done';
+            }
+        });
     } else if (isThinkingComplete) {
-        allNodes.forEach(node => {
+        allExecutionNodes.forEach(node => {
             if (node.status !== 'failed') node.status = 'done';
         });
     } else {
-        // Mark all text steps as 'done', as their text has been generated.
-        stepNodes.forEach(node => node.status = 'done');
-        
+        executionNodes.forEach(node => node.status = 'done');
         const hasActiveTools = toolCallNodes.some(n => n.status === 'active');
-        
-        // If there are no active tools, the AI's "focus" is on the last text-based
-        // step it generated. We mark this as 'active' for better visualization.
-        if (!hasActiveTools && allNodes.length > 0) {
-            const lastNode = allNodes[allNodes.length - 1];
-            // Only mark text-based nodes as active. Tool nodes manage their own status.
-            if (lastNode.type === 'plan' || lastNode.type === 'task') {
+        if (!hasActiveTools && allExecutionNodes.length > 0) {
+            const lastNode = allExecutionNodes[allExecutionNodes.length - 1];
+            if (lastNode.type === 'plan') {
               lastNode.status = 'active';
             }
         }
     }
     
-    return allNodes;
+    return { plan: planText, executionLog: allExecutionNodes };
 };

@@ -16,9 +16,15 @@ export const useChatHistory = () => {
   // Load from local storage
   useEffect(() => {
     try {
-      const savedHistory = localStorage.getItem('chatHistory');
+      const savedHistoryJSON = localStorage.getItem('chatHistory');
       const savedChatId = localStorage.getItem('currentChatId');
-      const history = savedHistory ? JSON.parse(savedHistory) : [];
+      
+      // Add a migration step to add createdAt timestamp to chats that don't have it.
+      const history = (savedHistoryJSON ? JSON.parse(savedHistoryJSON) : []).map((chat: any) => ({
+          ...chat,
+          createdAt: chat.createdAt || Date.now() // Add timestamp if missing
+      }));
+
       setChatHistory(history);
 
       if (savedChatId && savedChatId !== 'null') {
@@ -78,6 +84,7 @@ export const useChatHistory = () => {
         messages: [],
         model: initialModel,
         isLoading: false,
+        createdAt: Date.now(),
     };
     setChatHistory(prev => [newChat, ...prev]);
     setCurrentChatId(newChatId);

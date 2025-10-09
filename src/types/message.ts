@@ -26,4 +26,6 @@ export type Message = {
   error?: MessageError;
   isHidden?: boolean;
   attachments?: Attachment[];
+  startTime?: number;
+  endTime?: number;
 };

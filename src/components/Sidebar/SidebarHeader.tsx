@@ -12,19 +12,13 @@ type SidebarHeaderProps = {
 };
 
 export const SidebarHeader = ({ isCollapsed, setIsOpen }: SidebarHeaderProps) => (
-  <div className={`flex items-center mb-8 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+  <div className={`flex items-center mb-6 h-8 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
     <div className="flex items-center gap-2 overflow-hidden">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-teal-600 flex-shrink-0">
-        <path d="M12 4C13.1046 4 14 4.89543 14 6V7.67451C15.8457 8.21661 17.2166 9.58752 17.7587 11.4332H19.4332C20.5378 11.4332 21.4332 12.3287 21.4332 13.4332C21.4332 14.5378 20.5378 15.4332 19.4332 15.4332H17.7587C17.2166 17.2789 15.8457 18.6498 14 19.1919V20.8665C14 21.9711 13.1046 22.8665 12 22.8665C10.8954 22.8665 10 21.9711 10 20.8665V19.1919C8.15432 18.6498 6.7834 17.2789 6.24131 15.4332H4.56681C3.46224 15.4332 2.56681 14.5378 2.56681 13.4332C2.56681 12.3287 3.46224 11.4332 4.56681 11.4332H6.24131C6.7834 9.58752 8.15432 8.21661 10 7.67451V6C10 4.89543 10.8954 4 12 4ZM12 9.14155C9.88142 9.14155 8.14155 10.8814 8.14155 13C8.14155 15.1186 9.88142 16.8584 12 16.8584C14.1186 16.8584 15.8584 15.1186 15.8584 13C15.8584 10.8814 14.1186 9.14155 12 9.14155Z" fill="currentColor"/>
-      </svg>
-      <motion.span 
-          className="text-2xl font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap"
-          initial={false}
-          animate={{ width: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1 }}
-          transition={{ duration: 0.2, ease: 'easeInOut' }}
-      >
-          Gemini
-      </motion.span>
+        <button className="p-1 -ml-1" aria-label="Home">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-slate-800 dark:text-slate-100">
+              <path d="M12.243 2.25c-1.552 0-2.887 1.09-3.413 2.53-.083.228.065.46.303.46h.01c1.4 0 2.352.488 2.352 1.76 0 1.272-.952 1.76-2.352 1.76h-.01c-.238 0-.386.232-.303.46.526 1.44 1.861 2.53 3.413 2.53 2.29 0 4.155-1.864 4.155-4.15S14.533 2.25 12.243 2.25zm0 10c-1.552 0-2.887 1.09-3.413 2.53-.083.228.065.46.303.46h.01c1.4 0 2.352.488 2.352 1.76 0 1.272-.952 1.76-2.352 1.76h-.01c-.238 0-.386.232-.303.46.526 1.44 1.861 2.53 3.413 2.53 2.29 0 4.155-1.864 4.155-4.15S14.533 12.25 12.243 12.25z"/>
+            </svg>
+        </button>
     </div>
     <button
         onClick={() => setIsOpen(false)}

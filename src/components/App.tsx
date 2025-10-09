@@ -6,6 +6,7 @@
 // FIX: Removed invalid 'aistudio' from react import.
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { loader } from '@monaco-editor/react';
 import type { Model } from '../services/modelService';
 import { getAvailableModels } from '../services/modelService';
 import { useChat } from '../hooks/useChat';
@@ -15,6 +16,13 @@ import { Sidebar } from './Sidebar/Sidebar';
 import { ChatHeader } from './Chat/ChatHeader';
 import { ChatArea } from './Chat/ChatArea';
 
+// Configure the Monaco Editor loader to fetch assets from a CDN.
+// This is done once at the top level of the application.
+loader.config({
+  paths: {
+    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs'
+  }
+});
 
 export const App = () => {
   const [availableModels, setAvailableModels] = useState<Model[]>([]);

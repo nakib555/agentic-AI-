@@ -7,6 +7,8 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Components } from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 type CalloutProps = {
   type: 'info' | 'success' | 'warning' | 'danger';
@@ -28,7 +30,8 @@ export const Callout = ({ type, title, children }: CalloutProps) => (
     {title && (
       <div className="callout-title">
         <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeKatex]}
             components={titleComponents}
         >
             {title.trim()}
