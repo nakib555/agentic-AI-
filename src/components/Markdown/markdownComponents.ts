@@ -4,7 +4,6 @@
  */
 
 import React from 'react';
-import { Callout } from './Callout';
 import { Bubble } from './Bubble';
 import { StyledLink } from './StyledLink';
 
@@ -32,15 +31,6 @@ const BlockquoteRouter = (props: any) => {
     if (childrenArray.length > 0 && React.isValidElement(childrenArray[0])) {
         const firstLineText = getNodeText(childrenArray[0]).trim();
         
-        // Check for Callout syntax: > [!TYPE] Title
-        const calloutMatch = firstLineText.match(/^\[!(INFO|SUCCESS|WARNING|DANGER)\]\s*(.*)/is);
-        if (calloutMatch) {
-            const type = calloutMatch[1].toLowerCase() as any;
-            const title = calloutMatch[2];
-            const content = childrenArray.slice(1);
-            return React.createElement(Callout, { type, title, children: content });
-        }
-
         // Check for Bubble syntax: > (bubble) Text
         const bubbleMatch = firstLineText.match(/^\(bubble\)\s*(.*)/is);
         if (bubbleMatch) {

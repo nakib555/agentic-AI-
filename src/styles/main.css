@@ -82,22 +82,6 @@ body { font-family: 'Inter', sans-serif; }
   --gradient-end: #3730a3;
   --border-color: #e2e8f0;
   --svg-fill: currentColor;
-  --callout-info-bg: #eff6ff;
-  --callout-info-border: #93c5fd;
-  --callout-info-text: #1e3a8a;
-  --callout-info-icon: '#3b82f6';
-  --callout-success-bg: #f0fdf4;
-  --callout-success-border: #86efac;
-  --callout-success-text: #166534;
-  --callout-success-icon: '#22c55e';
-  --callout-warning-bg: #fefce8;
-  --callout-warning-border: #fde047;
-  --callout-warning-text: #854d0e;
-  --callout-warning-icon: '#eab308';
-  --callout-danger-bg: #fef2f2;
-  --callout-danger-border: #fca5a5;
-  --callout-danger-text: #991b1b;
-  --callout-danger-icon: '#ef4444';
 }
 .dark {
   --card-bg: #1e1e1e;
@@ -106,22 +90,6 @@ body { font-family: 'Inter', sans-serif; }
   --gradient-end: #0f766e; /* teal-700 */
   --border-color: #333;
   --svg-fill: currentColor;
-  --callout-info-bg: rgba(59, 130, 246, 0.15);
-  --callout-info-border: rgba(59, 130, 246, 0.4);
-  --callout-info-text: #93c5fd;
-  --callout-info-icon: '#93c5fd';
-  --callout-success-bg: rgba(74, 222, 128, 0.15);
-  --callout-success-border: rgba(74, 222, 128, 0.4);
-  --callout-success-text: #86efac;
-  --callout-success-icon: '#86efac';
-  --callout-warning-bg: rgba(250, 204, 21, 0.15);
-  --callout-warning-border: rgba(250, 204, 21, 0.4);
-  --callout-warning-text: #fde047;
-  --callout-warning-icon: '#fde047';
-  --callout-danger-bg: rgba(248, 113, 113, 0.15);
-  --callout-danger-border: rgba(248, 113, 113, 0.4);
-  --callout-danger-text: #fca5a5;
-  --callout-danger-icon: '#fca5a5';
 }
 
 /* Constrain the main application layout to the viewport height, preventing the

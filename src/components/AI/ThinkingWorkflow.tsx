@@ -96,7 +96,18 @@ const SectionHeader: React.FC<{
 type SectionKey = 'goal' | 'todo' | 'tools' | 'execution';
 
 export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, error, duration, startTime, isVisible, onToggleVisibility }: ThinkingWorkflowProps) => {
-  const [openSections, setOpenSections] = useState<SectionKey[]>(['goal', 'todo', 'execution']);
+  const [openSections, setOpenSections] = useState<SectionKey[]>([]);
+  const hasAppearedRef = useRef({ goal: false, todo: false, tools: false, execution: false });
+  const prevStartTimeRef = useRef(startTime);
+
+  // Reset state when a new thinking process begins (identified by a change in startTime)
+  useEffect(() => {
+    if (startTime !== prevStartTimeRef.current) {
+      setOpenSections([]);
+      hasAppearedRef.current = { goal: false, todo: false, tools: false, execution: false };
+      prevStartTimeRef.current = startTime;
+    }
+  }, [startTime]);
 
   const handleToggle = (key: SectionKey) => {
     setOpenSections(prevOpen => {
@@ -122,6 +133,54 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, err
   
   const executionLogRef = useRef<HTMLUListElement>(null);
 
+  const hasGoalAnalysis = goalAnalysis.trim() !== '';
+  const hasTodoList = todoList.trim() !== '';
+  const hasTools = tools.trim() !== '';
+  const hasExecutionLog = executionLog.length > 0;
+
+  // Effect to automatically open/close sections as content streams in
+  useEffect(() => {
+      let nextOpenSections = [...openSections];
+      let didChange = false;
+
+      const updateSections = (openKey: SectionKey, closeKey?: SectionKey) => {
+          // Close previous section if specified
+          if (closeKey) {
+              const closeIndex = nextOpenSections.indexOf(closeKey);
+              if (closeIndex > -1) {
+                  nextOpenSections.splice(closeIndex, 1);
+                  didChange = true;
+              }
+          }
+          // Open current section
+          if (!nextOpenSections.includes(openKey)) {
+              nextOpenSections.push(openKey);
+              didChange = true;
+          }
+      };
+      
+      if (hasGoalAnalysis && !hasAppearedRef.current.goal) {
+          hasAppearedRef.current.goal = true;
+          updateSections('goal');
+      }
+      if (hasTodoList && !hasAppearedRef.current.todo) {
+          hasAppearedRef.current.todo = true;
+          updateSections('todo', 'goal');
+      }
+      if (hasTools && !hasAppearedRef.current.tools) {
+          hasAppearedRef.current.tools = true;
+          updateSections('tools', 'todo');
+      }
+      if (hasExecutionLog && !hasAppearedRef.current.execution) {
+          hasAppearedRef.current.execution = true;
+          updateSections('execution', 'tools');
+      }
+
+      if (didChange) {
+          setOpenSections(nextOpenSections);
+      }
+  }, [hasGoalAnalysis, hasTodoList, hasTools, hasExecutionLog, openSections]);
+
   useEffect(() => {
     if (executionLogRef.current) {
       executionLogRef.current.scrollTop = executionLogRef.current.scrollHeight;
@@ -134,11 +193,6 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, err
     return { executionHeaderTitle: 'Execution Complete', executionStatusIcon: <CompletedIcon /> };
   }, [isThinkingComplete, error]);
   
-  const hasGoalAnalysis = goalAnalysis.trim() !== '';
-  const hasTodoList = todoList.trim() !== '';
-  const hasTools = tools.trim() !== '';
-  const hasExecutionLog = executionLog.length > 0;
-
   const visibleSections = [
     error && 'error',
     hasGoalAnalysis && 'goal',

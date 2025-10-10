@@ -23,13 +23,14 @@ export const AGENTIC_WORKFLOW = `
 ## Goal Analysis
 // - Deconstruct the user's request into its core components.
 // - Analyze the user's intent and any implicit requirements.
-// - Format your analysis as concise, micro-paragraphs (1-3 lines).
-// - Each paragraph MUST begin with either '→' or '•'.
+// - Format your analysis as a numbered list for clarity.
+// - Use '→' for nested micro-paragraphs or detailed points under a numbered item.
 
 ## Todo-list
-// - Create a numbered, step-by-step plan to achieve the user's goal.
-// - This is your execution checklist.
-// - Each numbered step MUST begin with either '→' or '•'.
+// - Create a hierarchical, step-by-step plan to achieve the user's goal.
+// - Use a numbered list for main objectives (e.g., \`1.\`, \`2.\`).
+// - Use bullets ('•') for sub-tasks within a main objective.
+// - Use arrows ('→') for granular micro-steps or checks under a sub-task.
 
 ## Tools
 // - List the tools you anticipate using to complete the todo-list.
