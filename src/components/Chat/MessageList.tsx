@@ -15,21 +15,21 @@ type MessageListProps = {
 
 export const MessageList = ({ messages }: MessageListProps) => {
   const messageListRef = useRef<HTMLDivElement>(null);
+  // An invisible element at the end of the list to act as a scroll anchor.
+  const bottomRef = useRef<HTMLDivElement>(null);
   const lastMessageText = messages[messages.length - 1]?.text;
 
   useEffect(() => {
-    if (messageListRef.current) {
-      messageListRef.current.scrollTo({
-        top: messageListRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
+    // The scrollIntoView method is more robust than calculating scrollHeight,
+    // especially with dynamic content. It prevents conflicting scroll animations
+    // during rapid streaming updates, which caused the previous glitching.
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length, lastMessageText]); // Trigger on new messages or when the last message's text updates
 
   const visibleMessages = messages.filter(msg => !msg.isHidden);
 
   return (
-    <div className="flex-1 overflow-y-auto scroll-smooth" ref={messageListRef}>
+    <div className="flex-1 overflow-y-auto" ref={messageListRef}>
       <div className="h-full px-4 sm:px-6 md:px-8">
         {visibleMessages.length === 0 ? (
           <WelcomeScreen />
@@ -38,6 +38,8 @@ export const MessageList = ({ messages }: MessageListProps) => {
             {visibleMessages.map((msg) => (
               <MessageComponent key={msg.id} msg={msg} />
             ))}
+            {/* The invisible anchor element that we scroll to. */}
+            <div ref={bottomRef} />
           </div>
         )}
       </div>

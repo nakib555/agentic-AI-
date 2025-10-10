@@ -35,7 +35,7 @@ export const parseMessageText = (text: string, isThinking: boolean, hasError: bo
 
   // A "definite workflow" contains planning headers or intermediate step markers.
   // The absence of these implies a direct answer is being streamed.
-  const isDefiniteWorkflow = text.includes('## Initial Plan/Goal Analysis') 
+  const isDefiniteWorkflow = text.includes('## Goal Analysis') 
       || text.includes('[STEP] Act:') 
       || text.includes('[STEP] Observe:') 
       || text.includes('[STEP] Adapt:');
@@ -48,7 +48,7 @@ export const parseMessageText = (text: string, isThinking: boolean, hasError: bo
     } else {
       // If it's not a definite workflow, it's likely a direct answer stream.
       // We return empty strings to prevent the "Thought" bubble from flickering on,
-      // while allowing the typing indicator to show. The content will be populated by Rule 1 once complete.
+      // while allowing the typing indicator to show. The content will be populated by Rule 1 or 4 once complete.
       return { thinkingText: '', finalAnswerText: '' };
     }
   }

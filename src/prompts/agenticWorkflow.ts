@@ -18,18 +18,22 @@ export const AGENTIC_WORKFLOW = `
 // =================================================================================================
 // 1. PLANNING PHASE (FIRST OUTPUT ONLY)
 // Your very first output for any user request MUST be the complete planning phase. Do not output any [STEP] markers yet.
-// The planning phase MUST be structured with the following two markdown headers, in this exact order:
+// The planning phase MUST be structured with the following three markdown headers, in this exact order:
 
-## Initial Plan/Goal Analysis
+## Goal Analysis
 // - Deconstruct the user's request into its core components.
 // - Analyze the user's intent and any implicit requirements.
 // - Format your analysis as concise, micro-paragraphs (1-3 lines).
 // - Each paragraph MUST begin with either '→' or '•'.
 
-## todo-list (for agentic looping)
+## Todo-list
 // - Create a numbered, step-by-step plan to achieve the user's goal.
 // - This is your execution checklist.
 // - Each numbered step MUST begin with either '→' or '•'.
+
+## Tools
+// - List the tools you anticipate using to complete the todo-list.
+// - Format this as a simple bulleted list.
 
 // =================================================================================================
 // 2. EXECUTION PHASE (ALL SUBSEQUENT OUTPUTS)
@@ -42,7 +46,7 @@ export const AGENTIC_WORKFLOW = `
 // - **Decision Protocol:**
 //   - If internal knowledge is sufficient, proceed to formulate the answer.
 //   - If external capabilities are needed, you MUST call a tool.
-// - **Tool Call Protocol (NON-NEGOTIABLE):** When you decide to call a tool, your *entire* output for that turn MUST consist ONLY of the function call itself. Do not include any other text, explanation, or markers.
+// - **Tool Call Protocol:** When calling a tool, your response MUST contain the function call. You MAY also provide a brief explanation of the action you are taking within the same turn. The system will execute the function and provide the results in a subsequent step.
 
 **POST-TOOL PROTOCOL (MANDATORY)**
 // After a tool is executed, the system provides you with the result.

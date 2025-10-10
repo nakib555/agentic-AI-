@@ -7,7 +7,9 @@ import type { MessageError, ToolCallEvent } from '../types';
 import type { WorkflowNodeData } from '../components/AI/WorkflowNode';
 
 export type ParsedWorkflow = {
-  plan: string;
+  goalAnalysis: string;
+  todoList: string;
+  tools: string;
   executionLog: WorkflowNodeData[];
 };
 
@@ -50,6 +52,16 @@ export const parseAgenticWorkflow = (
   error?: MessageError
 ): ParsedWorkflow => {
     const { planText, executionText } = splitPlanFromExecution(rawText);
+
+    // Parse the planning phase into its three distinct sections using regex
+    const goalAnalysisMatch = planText.match(/## Goal Analysis\s*([\s\S]*?)(?=## Todo-list|$)/s);
+    const todoListMatch = planText.match(/## Todo-list\s*([\s\S]*?)(?=## Tools|$)/s);
+    const toolsMatch = planText.match(/## Tools\s*([\s\S]*?)$/s);
+
+    const goalAnalysis = goalAnalysisMatch ? goalAnalysisMatch[1].trim() : '';
+    const todoList = todoListMatch ? todoListMatch[1].trim() : '';
+    const tools = toolsMatch ? toolsMatch[1].trim() : '';
+
 
     // This regex captures "[STEP] Title:" and the content until the next "[STEP]" or end of string.
     const stepRegex = /\[STEP\]\s*(.*?):\s*([\s\S]*?)(?=\[STEP\]|$)/gs;
@@ -146,5 +158,5 @@ export const parseAgenticWorkflow = (
         }
     }
     
-    return { plan: planText, executionLog: allExecutionNodes };
+    return { goalAnalysis, todoList, tools, executionLog: allExecutionNodes };
 };

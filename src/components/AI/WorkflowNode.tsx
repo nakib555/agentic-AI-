@@ -32,13 +32,13 @@ const renderDetails = (node: WorkflowNodeData) => {
 
     if (node.status === 'failed' && typeof node.details === 'object' && 'message' in node.details) {
         const error = node.details as MessageError;
-        const suggestion = getErrorMessageSuggestion(error.code);
         return (
-            <div className="text-xs space-y-1 text-red-800 dark:text-red-300">
-                <p className="font-semibold text-red-700 dark:text-red-300">{error.message}</p>
-                {error.code && <p><span className="font-semibold">Code:</span> {error.code}</p>}
-                {suggestion && <p className="mt-1 p-2 bg-red-100/50 dark:bg-red-900/20 rounded-md"><span className="font-semibold">Suggestion:</span> {suggestion}</p>}
-                {error.details && <pre className="whitespace-pre-wrap font-['Fira_Code',_monospace] bg-red-100/50 dark:bg-red-900/20 p-2 rounded-md mt-1">{error.details}</pre>}
+            <div className="text-sm space-y-1 text-red-300">
+                <p>
+                    <span className="font-semibold">Step Failed:</span>{' '}
+                    {error.message}
+                    <span className="text-xs block text-red-400/80 mt-1">See the error summary above for more details.</span>
+                </p>
             </div>
         );
     }
