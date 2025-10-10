@@ -9,6 +9,7 @@ import { ToolCallStep } from './ToolCallStep';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { getErrorMessageSuggestion } from '../UI/ErrorDisplay';
+import { TypingWrapper } from './TypingWrapper';
 
 
 export type WorkflowNodeStatus = 'pending' | 'active' | 'done' | 'failed';
@@ -47,7 +48,9 @@ const renderDetails = (node: WorkflowNodeData) => {
     if (typeof node.details === 'string') {
         return (
             <div className="text-sm text-slate-300 workflow-markdown">
-                <ManualCodeRenderer text={node.details} components={WorkflowMarkdownComponents} />
+                <TypingWrapper fullText={node.details} isComplete={node.status !== 'active'}>
+                    {(text) => <ManualCodeRenderer text={text} components={WorkflowMarkdownComponents} />}
+                </TypingWrapper>
             </div>
         );
     }

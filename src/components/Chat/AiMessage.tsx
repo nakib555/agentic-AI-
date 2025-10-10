@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence, MotionProps } from 'framer-motion';
 import type { Message } from '../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
@@ -18,6 +18,7 @@ import { VideoDisplay } from '../AI/VideoDisplay';
 import { DownloadRawResponseButton } from './DownloadRawResponseButton';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { FormattedBlock } from '../Markdown/FormattedBlock';
+import { TypingWrapper } from '../AI/TypingWrapper';
 
 const animationProps: MotionProps = {
   initial: { opacity: 0, y: 20 },
@@ -79,8 +80,7 @@ const renderFinalAnswer = (text: string) => {
 };
 
 export const AiMessage: React.FC<{ msg: Message }> = ({ msg }) => {
-  const { text, isThinking, toolCallEvents, error } = msg;
-  const [isThinkingVisible, setIsThinkingVisible] = useState(true);
+  const { text, isThinking, toolCallEvents, error, startTime } = msg;
 
   // The parser now uses the `isThinking` and `error` flags to prevent flickering.
   const { thinkingText, finalAnswerText } = useMemo(
@@ -89,7 +89,6 @@ export const AiMessage: React.FC<{ msg: Message }> = ({ msg }) => {
   );
   
   const thinkingIsComplete = !isThinking || !!error;
-  
   const hasThinkingProcess = thinkingText && thinkingText.trim() !== '';
 
   return (
@@ -101,23 +100,23 @@ export const AiMessage: React.FC<{ msg: Message }> = ({ msg }) => {
                 isThinkingComplete={thinkingIsComplete}
                 error={error}
                 duration={null}
-                startTime={undefined}
-                isVisible={isThinkingVisible}
-                onToggleVisibility={() => setIsThinkingVisible(!isThinkingVisible)}
+                startTime={startTime}
             />
         )}
         
         <AnimatePresence>
-            {isThinking && !finalAnswerText && !error && <TypingIndicator />}
+            {isThinking && !finalAnswerText && !thinkingText && !error && <TypingIndicator />}
         </AnimatePresence>
 
         {/* If an error occurred, display it prominently. This makes the error clear to the user. */}
         {error && <ErrorDisplay error={error} />}
 
-        {/* Only render the final answer if there's text AND no error occurred. */}
+        {/* Render the final answer if it exists and there's no error */}
         {finalAnswerText && !error && (
              <div className="markdown-content max-w-none w-full max-w-[90%]">
-                {renderFinalAnswer(finalAnswerText)}
+                <TypingWrapper fullText={finalAnswerText} isComplete={!isThinking} startTime={startTime}>
+                    {(text) => <>{renderFinalAnswer(text)}</>}
+                </TypingWrapper>
             </div>
         )}
 
