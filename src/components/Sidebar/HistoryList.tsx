@@ -13,7 +13,6 @@ type HistoryListProps = {
   currentChatId: string | null;
   searchQuery: string;
   isCollapsed: boolean;
-  onNewChat: () => void;
   onLoadChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
 };
@@ -22,17 +21,20 @@ const groupChatsByMonth = (chats: ChatSession[]): { [key: string]: ChatSession[]
     const groups: { [key: string]: ChatSession[] } = {};
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterdayStart = todayStart - 86400000;
 
-    const sortedChats = [...chats].sort((a, b) => b.createdAt - a.createdAt);
-
-    sortedChats.forEach(chat => {
+    // The `history` prop is already sorted newest to oldest from the parent hook.
+    // Iterating and pushing will maintain this order within groups.
+    chats.forEach(chat => {
         const chatDate = new Date(chat.createdAt);
         let groupKey: string;
 
         if (chat.createdAt >= todayStart) {
             groupKey = 'Today';
+        } else if (chat.createdAt >= yesterdayStart) {
+            groupKey = 'Yesterday';
         } else {
-            groupKey = chatDate.toLocaleString('default', { month: 'long' });
+            groupKey = chatDate.toLocaleString('default', { month: 'long', year: 'numeric' });
         }
 
         if (!groups[groupKey]) {
@@ -42,6 +44,7 @@ const groupChatsByMonth = (chats: ChatSession[]): { [key: string]: ChatSession[]
     });
     return groups;
 };
+
 
 const NoResults = () => (
     <motion.div 
@@ -55,13 +58,14 @@ const NoResults = () => (
     </motion.div>
 );
 
-export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, onNewChat, onLoadChat, onDeleteChat }: HistoryListProps) => {
+export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, onLoadChat, onDeleteChat }: HistoryListProps) => {
     const filteredHistory = history.filter(item =>
         item.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const groupedHistory = groupChatsByMonth(filteredHistory);
-    const groupOrder = ['Today', ...Object.keys(groupedHistory).filter(k => k !== 'Today').sort((a, b) => new Date(b) as any - (new Date(a) as any))];
+    // Establish a chronological sort order for the group titles.
+    const groupOrder = ['Today', 'Yesterday', ...Object.keys(groupedHistory).filter(k => k !== 'Today' && k !== 'Yesterday').sort((a, b) => new Date(b).getTime() - new Date(a).getTime())];
 
 
     if (isCollapsed) return null;
@@ -78,14 +82,6 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                             <div key={groupName}>
                                 <h3 className="px-2 text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">{groupName}</h3>
                                 <div className="space-y-0.5">
-                                    {groupName === 'Today' && (
-                                        <button 
-                                            onClick={onNewChat}
-                                            className="w-full text-left px-2 py-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 rounded-md transition-colors"
-                                        >
-                                            New conversation
-                                        </button>
-                                    )}
                                     {chatsInGroup.map((item) => (
                                         <HistoryItem 
                                             key={item.id} 
@@ -102,9 +98,6 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                             </div>
                         )
                     })}
-                    <button className="px-2 py-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 rounded-md transition-colors">
-                        See all
-                    </button>
                 </div>
             ) : (
                 <NoResults />

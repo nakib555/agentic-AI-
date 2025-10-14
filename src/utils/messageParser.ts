@@ -32,34 +32,22 @@ export const parseMessageText = (text: string, isThinking: boolean, hasError: bo
   if (hasError) {
     return { thinkingText: text, finalAnswerText: '' };
   }
-
-  // A "definite workflow" contains planning headers or intermediate step markers.
-  // The absence of these implies a direct answer is being streamed.
-  const isDefiniteWorkflow = text.includes('## Goal Analysis') 
-      || text.includes('[STEP] Act:') 
-      || text.includes('[STEP] Observe:') 
-      || text.includes('[STEP] Adapt:');
-
-  // Rule 3: Handle streaming state
+  
+  // Rule 3: If the model is still actively thinking, ALL text so far is considered part of the
+  // thinking process. This is the key change to prevent content from flickering between the
+  // final answer area and the thought bubble during streaming.
   if (isThinking) {
-    if (isDefiniteWorkflow) {
-      // If we've identified a workflow, all streaming text is part of the thinking process.
-      return { thinkingText: text, finalAnswerText: '' };
-    } else {
-      // If it's not a definite workflow, it's likely a direct answer stream.
-      // We return empty strings to prevent the "Thought" bubble from flickering on,
-      // while allowing the typing indicator to show. The content will be populated by Rule 1 or 4 once complete.
-      return { thinkingText: '', finalAnswerText: '' };
-    }
+    return { thinkingText: text, finalAnswerText: '' };
   }
 
-  // Rule 4: Handle completed state (isThinking is false)
-  if (isDefiniteWorkflow) {
-    // If thinking is done but the text indicates an incomplete workflow (no Final Answer),
-    // keep everything in the "Thought" bubble.
-    return { thinkingText: text, finalAnswerText: '' };
-  } else {
-    // If it's not a workflow and thinking is done, it's a direct final answer.
-    return { thinkingText: '', finalAnswerText: text.trim() };
+  // Rule 4: At this point, thinking is complete and there is no error.
+  // If the text contains any workflow markers but no Final Answer marker, it's an incomplete thought process.
+  // Treat the entire text as thinking to keep it in the thought bubble.
+  if (text.includes('[STEP]') || text.includes('## Goal Analysis')) {
+      return { thinkingText: text, finalAnswerText: '' };
   }
+
+  // Rule 5: If none of the above conditions are met (not thinking, no error, no markers),
+  // then the entire response must be a direct final answer (e.g., from a simple query).
+  return { thinkingText: '', finalAnswerText: text.trim() };
 };

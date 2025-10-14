@@ -12,9 +12,9 @@ type WorkflowConnectorProps = {
 
 export const WorkflowConnector = ({ isActive }: WorkflowConnectorProps) => {
   return (
-    <div className="h-8 w-5 flex justify-center" aria-hidden="true">
-      <svg width="2" height="100%" viewBox="0 0 2 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M1 0V32" stroke="currentColor" className="text-slate-200 dark:text-slate-700" strokeWidth="2" />
+    <div className="h-full w-5 flex justify-center" aria-hidden="true">
+      <svg width="2" height="100%" viewBox="0 0 2 32" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M1 0V32" stroke="currentColor" className="text-slate-700" strokeWidth="2" />
         {isActive && (
           <motion.path
             d="M1 0V32"

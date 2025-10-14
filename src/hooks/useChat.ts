@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useMemo, useCallback, useEffect } from 'react';
+import { useMemo, useCallback, useEffect, useRef } from 'react';
 import type { FunctionCall } from "@google/genai";
 import { generateChatTitle } from '../services/gemini';
 import { toolImplementations } from '../tools';
@@ -30,6 +30,7 @@ export const useChat = (initialModel: string) => {
     completeChatLoading,
     updateChatTitle,
   } = useChatHistory();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Effect to automatically generate a title for new chats
   useEffect(() => {
@@ -57,7 +58,7 @@ export const useChat = (initialModel: string) => {
       return [{
         id: 'initial-loading-placeholder',
         role: 'model' as const,
-        text: '[STEP] System: Loading chat history...',
+        text: '',
         isThinking: true,
       }];
     }
@@ -72,7 +73,17 @@ export const useChat = (initialModel: string) => {
     return chatHistory.find(c => c.id === currentChatId)?.isLoading ?? false;
   }, [isHistoryLoading, chatHistory, currentChatId]);
 
+  const cancelGeneration = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
+
   const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean } = {}) => {
+    // If a generation is already in progress, cancel it before starting a new one.
+    if (isLoading) {
+      cancelGeneration();
+    }
+    abortControllerRef.current = new AbortController();
+
     const { isHidden = false } = options;
     let activeChatId = currentChatId;
 
@@ -186,7 +197,6 @@ export const useChat = (initialModel: string) => {
     addMessagesToChat(activeChatId, [userMessageObj, modelPlaceholder]);
 
     const toolExecutor = async (name: string, args: any): Promise<string> => {
-        await new Promise(resolve => setTimeout(resolve, 300));
         const toolImplementation = toolImplementations[name];
         if (!toolImplementation) {
             throw new ToolError(name, 'TOOL_NOT_FOUND', `Tool "${name}" not found.`);
@@ -200,20 +210,6 @@ export const useChat = (initialModel: string) => {
 
             const originalError = err instanceof Error ? err : new Error(String(err));
             const lowerCaseMessage = originalError.message.toLowerCase();
-
-            // Refine generic tool errors into specific, structured ToolErrors.
-            // This centralizes error classification before it enters the agentic loop.
-            if (name === 'getCurrentLocation') {
-                if (lowerCaseMessage.includes('denied')) {
-                    throw new ToolError(name, 'GEOLOCATION_PERMISSION_DENIED', originalError.message, originalError);
-                }
-                if (lowerCaseMessage.includes('unavailable')) {
-                    throw new ToolError(name, 'GEOLOCATION_UNAVAILABLE', originalError.message, originalError);
-                }
-                if (lowerCaseMessage.includes('timed out')) {
-                    throw new ToolError(name, 'GEOLOCATION_TIMEOUT', originalError.message, originalError);
-                }
-            }
             
             if (lowerCaseMessage.includes('network issue') || lowerCaseMessage.includes('failed to fetch')) {
                 throw new ToolError(name, 'NETWORK_ERROR', originalError.message, originalError);
@@ -229,7 +225,11 @@ export const useChat = (initialModel: string) => {
             updateLastMessage(activeChatId!, () => ({ text: fullText }));
         },
         onNewToolCalls: (toolCalls: FunctionCall[]): Promise<ToolCallEvent[]> => {
-            const newToolCallEvents: ToolCallEvent[] = toolCalls.map(fc => ({ id: generateId(), call: fc }));
+            const newToolCallEvents: ToolCallEvent[] = toolCalls.map(fc => ({ 
+                id: generateId(), 
+                call: fc,
+                startTime: Date.now(), // Record start time
+            }));
             updateLastMessage(activeChatId!, (lastMsg) => {
                 const updatedEvents = [...(lastMsg.toolCallEvents || []), ...newToolCallEvents];
                 return { toolCallEvents: updatedEvents };
@@ -240,7 +240,7 @@ export const useChat = (initialModel: string) => {
             updateLastMessage(activeChatId!, (lastMsg) => {
                 if (!lastMsg.toolCallEvents) return {};
                 const updatedEvents = lastMsg.toolCallEvents.map(event => 
-                    event.id === eventId ? { ...event, result } : event
+                    event.id === eventId ? { ...event, result, endTime: Date.now() } : event // Record end time
                 );
                 return { toolCallEvents: updatedEvents };
             });
@@ -248,6 +248,19 @@ export const useChat = (initialModel: string) => {
         onComplete: (finalText: string) => {
             updateLastMessage(activeChatId!, () => ({ text: finalText, isThinking: false, endTime: Date.now() }));
             completeChatLoading(activeChatId!);
+            abortControllerRef.current = null;
+        },
+        onCancel: () => {
+            updateLastMessage(activeChatId!, (lastMsg) => {
+                const newText = lastMsg.text ? `${lastMsg.text.trim()}\n\n**(Generation stopped by user)**` : `**(Generation stopped by user)**`;
+                return {
+                    text: newText,
+                    isThinking: false,
+                    endTime: Date.now(),
+                };
+            });
+            completeChatLoading(activeChatId!);
+            abortControllerRef.current = null;
         },
         onError: (error: MessageError) => {
             console.error("Error received in useChat:", error);
@@ -274,6 +287,7 @@ export const useChat = (initialModel: string) => {
             
             updateLastMessage(activeChatId!, () => ({ error: finalError, isThinking: false, endTime: Date.now() }));
             completeChatLoading(activeChatId!);
+            abortControllerRef.current = null;
         },
     };
 
@@ -283,8 +297,9 @@ export const useChat = (initialModel: string) => {
       history: historyForApi,
       toolExecutor,
       callbacks,
+      signal: abortControllerRef.current.signal,
     });
   };
   
-  return { messages, sendMessage, isLoading, chatHistory, currentChatId, startNewChat, loadChat, deleteChat, clearAllChats };
+  return { messages, sendMessage, isLoading, chatHistory, currentChatId, startNewChat, loadChat, deleteChat, clearAllChats, cancelGeneration };
 };

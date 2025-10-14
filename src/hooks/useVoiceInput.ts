@@ -79,6 +79,11 @@ export const useVoiceInput = ({ onTranscriptUpdate }: UseVoiceInputProps) => {
         }
         if (isRecording || !recognitionRef.current) return;
         
+        // Defensively abort any lingering session before starting a new one.
+        // This can help prevent 'audio-capture' errors if the previous session
+        // did not terminate cleanly.
+        recognitionRef.current?.abort();
+        
         // Request microphone permission before starting
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(() => {

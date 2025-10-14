@@ -113,3 +113,41 @@ html, body, #root {
 .dark .content-editable-input[data-placeholder]:empty::before {
   color: #64748b; /* text-slate-500 */
 }
+
+/* --- Chat Area Background Pattern --- */
+.chat-background {
+  position: relative;
+  /* Apply a solid background color to the chat area itself */
+  background-color: #ffffff;
+  /* Layer the dot pattern image on top of the solid color */
+  background-image: url("data:image/svg+xml,%3csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='2' cy='2' r='1' fill='%23e2e8f0'/%3e%3c/svg%3e");
+}
+
+.dark .chat-background {
+  background-color: #121212;
+  background-image: url("data:image/svg+xml,%3csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='2' cy='2' r='1' fill='%23334155'/%3e%3c/svg%3e");
+}
+
+/* --- Monaco Editor Display-Only Enhancements --- */
+/* These rules make the read-only code blocks feel static and non-interactive. */
+
+/* Disable text selection and change mouse cursor in the code display area. Scrolling remains functional. */
+.monaco-editor .view-lines {
+  pointer-events: none;
+  cursor: default !important;
+}
+
+/* Hide the blinking cursor layer completely */
+.monaco-editor .cursors-layer {
+  display: none !important;
+}
+
+/* Ensure the cursor remains default even on specific text hover areas */
+.monaco-editor .monaco-mouse-cursor-text {
+  cursor: default !important;
+}
+
+/* Remove any focus outline that might appear on the editor's hidden textarea */
+.monaco-editor textarea:focus {
+  outline: none !important;
+}

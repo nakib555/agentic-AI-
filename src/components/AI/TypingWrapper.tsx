@@ -7,50 +7,68 @@ import React, { useState, useEffect, useRef } from 'react';
 
 type TypingWrapperProps = {
   fullText: string;
-  isComplete: boolean;
-  startTime?: number;
-  typingSpeed?: number;
+  isAnimating: boolean;
+  onComplete?: () => void;
+  typingSpeed?: number; // Milliseconds per word
   children: (displayedText: string) => React.ReactNode;
 };
 
 export const TypingWrapper: React.FC<TypingWrapperProps> = ({
-    fullText,
-    isComplete,
-    startTime,
-    typingSpeed = 10,
-    children
+  fullText,
+  isAnimating,
+  onComplete,
+  typingSpeed = 40, // Milliseconds per word
+  children,
 }) => {
-    const [displayedText, setDisplayedText] = useState('');
-    const prevStartTimeRef = useRef(startTime);
+  const [displayedText, setDisplayedText] = useState('');
+  const targetTextRef = useRef(fullText);
+  const onCompleteRef = useRef(onComplete);
 
-    useEffect(() => {
-      // Reset for new messages, identified by a change in startTime
-      if (startTime !== undefined && startTime !== prevStartTimeRef.current) {
-        setDisplayedText('');
-        prevStartTimeRef.current = startTime;
+  // Keep the onComplete callback ref updated without causing re-renders
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  // Keep the targetText ref updated with the latest fullText from props
+  useEffect(() => {
+    targetTextRef.current = fullText;
+  }, [fullText]);
+
+  // This effect manages the animation loop itself. It starts/stops based on `isAnimating`.
+  useEffect(() => {
+    if (!isAnimating) {
+      // When animation stops, reset the displayed text and call onComplete.
+      setDisplayedText('');
+      if (onCompleteRef.current) {
+        onCompleteRef.current();
       }
-    }, [startTime]);
-  
-    useEffect(() => {
-      if (isComplete) {
-        if (displayedText !== fullText) {
-          setDisplayedText(fullText);
+      return;
+    }
+    
+    // Start with a clean slate whenever a new animation sequence begins.
+    setDisplayedText('');
+
+    const intervalId = setInterval(() => {
+      setDisplayedText((currentDisplayedText) => {
+        const currentTarget = targetTextRef.current;
+        // If we haven't displayed the full target text yet...
+        if (currentDisplayedText.length < currentTarget.length) {
+          // Find the next chunk (word and/or space) to append.
+          const remainingText = currentTarget.substring(currentDisplayedText.length);
+          const match = remainingText.match(/^(\s*\S+)/); // Match leading spaces and the next word.
+          const nextChunk = match ? match[0] : remainingText; // Fallback to remaining text if no match.
+          return currentDisplayedText + nextChunk;
         }
-        return;
-      }
-  
-      if (displayedText.length >= fullText.length) {
-        return;
-      }
-  
-      const timeoutId = setTimeout(() => {
-        // Append a chunk of text for a smoother, more natural typing feel
-        const nextIndex = Math.min(displayedText.length + 5, fullText.length);
-        setDisplayedText(fullText.substring(0, nextIndex));
-      }, typingSpeed);
-  
-      return () => clearTimeout(timeoutId);
-    }, [displayedText, fullText, isComplete, typingSpeed]);
+        
+        // If we've caught up, return the text as is. The interval will continue checking
+        // in case the targetTextRef is updated with more streaming content.
+        return currentDisplayedText;
+      });
+    }, typingSpeed);
 
-    return <>{children(displayedText)}</>;
+    // Cleanup function to clear the interval when the effect stops.
+    return () => clearInterval(intervalId);
+  }, [isAnimating, typingSpeed]); // This effect only re-runs when `isAnimating` state changes.
+
+  return <>{children(displayedText)}</>;
 };

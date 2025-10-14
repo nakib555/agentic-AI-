@@ -22,6 +22,7 @@ export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
     <PromptButton icon="🧠" text="Reasoning" onClick={() => onPromptClick("What is the capital of France?")} />
     <PromptButton icon="🎬" text="Video" onClick={() => onPromptClick("Generate a video of a cat playing a piano.")} />
     <PromptButton icon="🎨" text="Image" onClick={() => onPromptClick("Generate an image of a robot eating spaghetti.")} />
+    <PromptButton icon="🤔" text="MCQ" onClick={() => onPromptClick("Ask me a multiple choice question about physics.")} />
     <PromptButton icon="💻" text="Code" onClick={() => onPromptClick("Calculate the 15th Fibonacci number using JavaScript.")} />
     <PromptButton icon="📍" text="Nearby" onClick={() => onPromptClick("Find coffee shops near me.")} />
     <PromptButton icon="📊" text="Table" onClick={() => onPromptClick("Create a markdown table comparing the features of Gemini 2.5 Pro and Gemini 2.5 Flash.")} />

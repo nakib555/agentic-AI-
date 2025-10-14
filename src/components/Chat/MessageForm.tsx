@@ -11,9 +11,10 @@ import { AttachedFilePreview } from './AttachedFilePreview';
 type MessageFormProps = {
   onSubmit: (message: string, files?: File[]) => void;
   isLoading: boolean;
+  onCancel: () => void;
 };
 
-export const MessageForm = ({ onSubmit, isLoading }: MessageFormProps) => {
+export const MessageForm = ({ onSubmit, isLoading, onCancel }: MessageFormProps) => {
   const [inputValue, setInputValue] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const inputRef = useRef<HTMLDivElement>(null);
@@ -71,6 +72,19 @@ export const MessageForm = ({ onSubmit, isLoading }: MessageFormProps) => {
       handleSubmit(e);
     }
   };
+  
+  const hasInput = inputValue.trim().length > 0 || attachedFiles.length > 0;
+
+  const buttonBaseClasses = "flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-200 ease-in-out active:scale-90";
+  let buttonStateClasses = '';
+
+  if (isLoading) {
+    buttonStateClasses = 'bg-slate-900 text-white dark:bg-slate-200 dark:text-black hover:bg-red-600 dark:hover:bg-red-500';
+  } else if (hasInput) {
+    buttonStateClasses = 'bg-slate-900 text-white dark:bg-slate-200 dark:text-black';
+  } else {
+    buttonStateClasses = 'bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed';
+  }
 
   return (
     <form 
@@ -112,7 +126,8 @@ export const MessageForm = ({ onSubmit, isLoading }: MessageFormProps) => {
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Attach file"
                 title="Attach file"
-                className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 disabled:cursor-not-allowed transition-colors"
+                disabled={isLoading}
+                className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
@@ -137,7 +152,7 @@ export const MessageForm = ({ onSubmit, isLoading }: MessageFormProps) => {
                     disabled={isLoading}
                     aria-label={isRecording ? 'Stop recording' : 'Start recording'}
                     title={isRecording ? 'Stop recording' : 'Start recording'}
-                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 disabled:cursor-not-allowed transition-all ${isRecording ? 'bg-red-500/20 !text-red-500' : ''}`}
+                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 disabled:cursor-not-allowed disabled:opacity-50 transition-all ${isRecording ? 'bg-red-500/20 !text-red-500' : ''}`}
                 >
                     {isRecording ? (
                         <motion.div initial={{ scale: 1 }} animate={{ scale: 1.1 }} transition={{ duration: 0.4, repeat: Infinity, repeatType: 'reverse' }}>
@@ -148,21 +163,25 @@ export const MessageForm = ({ onSubmit, isLoading }: MessageFormProps) => {
                     )}
                 </button>
              )}
+            <button
+                type={isLoading ? 'button' : 'submit'}
+                onClick={isLoading ? onCancel : undefined}
+                disabled={!isLoading && !hasInput}
+                aria-label={isLoading ? "Stop generating" : "Send message"}
+                title={isLoading ? "Stop generating" : "Send message"}
+                className={`${buttonBaseClasses} ${buttonStateClasses}`}
+            >
+                {isLoading ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                        <path d="M4 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4Z" />
+                    </svg>
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m0 0l-6.75-6.75M12 19.5l6.75-6.75" />
+                    </svg>
+                )}
+            </button>
         </div>
-        
-        <button 
-            type="submit" 
-            disabled={isLoading || (!inputValue.trim() && attachedFiles.length === 0)}
-            aria-label="Send message"
-            title="Send message"
-            className="absolute bottom-3 right-3 flex-shrink-0 w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center text-white hover:bg-teal-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors shadow-lg shadow-teal-500/20"
-        >
-            {attachedFiles.length > 0 ? (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 17a.75.75 0 0 1-.75-.75V5.612L5.03 9.83a.75.75 0 0 1-1.06-1.06l5.5-5.5a.75.75 0 0 1 1.06 0l5.5 5.5a.75.75 0 0 1-1.06 1.06L10.75 5.612V16.25a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" /></svg>
-            ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M3.105 3.105a1.5 1.5 0 0 1 2.122 0l7.656 7.656-7.656 7.657a1.5 1.5 0 1 1-2.122-2.122L9.06 12 3.105 6.045a1.5 1.5 0 0 1 0-2.122Z" clipRule="evenodd" /></svg>
-            )}
-        </button>
     </form>
   );
 };

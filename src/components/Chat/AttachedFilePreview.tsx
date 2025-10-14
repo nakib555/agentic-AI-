@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -11,7 +12,6 @@ type AttachedFilePreviewProps = {
   onRemove: () => void;
 };
 
-// FIX: Use React.FC to ensure the component type correctly handles special React props like 'key'.
 export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, onRemove }) => {
   return (
     <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 bg-slate-200 dark:bg-slate-700/80 px-2 py-1.5 rounded-full w-full max-w-full">

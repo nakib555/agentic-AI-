@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -41,9 +42,6 @@ type ErrorDisplayProps = {
   error: MessageError;
 };
 
-// FIX: Updated component to use React.FC to correctly type it as a functional component,
-// which implicitly allows for standard React props like 'key'. This resolves the type
-// error when the component is rendered inside a map function in AiMessage.tsx.
 export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error }) => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const suggestion = getErrorMessageSuggestion(error.code);

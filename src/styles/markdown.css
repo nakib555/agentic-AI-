@@ -63,17 +63,26 @@
 }
 
 /* KaTeX Math Formula Styling */
-.katex {
+
+/* Apply font size and color directly to the rendered HTML portion of KaTeX */
+.katex .katex-html {
   font-size: 1.1em !important;
+  color: #334155; /* slate-700 */
+}
+
+.dark .katex .katex-html {
+  color: #e2e8f0; /* slate-200 */
+}
+
+/* Style the main container for inline math for background and spacing */
+.katex {
   padding: 0.1em 0.3em;
   margin: 0 0.15em;
   border-radius: 0.25rem;
   background-color: #f1f5f9; /* slate-100 */
-  color: #334155; /* slate-700 */
 }
 .dark .katex {
   background-color: #334155; /* slate-700 */
-  color: #e2e8f0; /* slate-200 */
 }
 
 .katex-display {
@@ -90,6 +99,12 @@
   background-color: #1e293b; /* slate-800 */
   border-color: #334155; /* slate-700 */
 }
+
+/* KaTeX flicker fix: Explicitly hide the MathML portion of KaTeX's output.
+   The main KaTeX stylesheet is supposed to handle this, but this rule adds
+   an extra layer of protection to prevent a "flash of unstyled content"
+   where the raw MathML might briefly appear during streaming or slow loads. */
+
 
 /* Ensure KaTeX display equations don't have extra margin from surrounding <p> tags */
 .markdown-content p > .katex-display {

@@ -13,22 +13,30 @@ export const codeExecutorDeclaration: FunctionDeclaration = {
     properties: {
       language: {
         type: Type.STRING,
-        description: 'The programming language of the code block (e.g., "javascript", "python").'
+        description: 'The programming language of the code block (e.g., "javascript").'
       },
       code: {
         type: Type.STRING,
         description: 'The code snippet to execute.'
+      },
+      libraries: {
+        type: Type.ARRAY,
+        description: 'An optional array of CDN URLs for external libraries to import (e.g., "https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js").',
+        items: {
+          type: Type.STRING,
+        },
       },
     },
     required: ['language', 'code'],
   },
 };
 
-const executeJavaScript = (code: string): Promise<string> => {
+const executeJavaScript = (code: string, libraries: string[] = []): Promise<string> => {
     return new Promise((resolve) => {
         // Use a Web Worker for sandboxed execution
         const workerCode = `
             self.onmessage = function(e) {
+                const { code, libraries } = e.data;
                 const logs = [];
                 const originalLog = console.log;
                 // Override console.log to capture output
@@ -45,9 +53,15 @@ const executeJavaScript = (code: string): Promise<string> => {
                 };
 
                 try {
+                    // Import external libraries if provided
+                    if (libraries && libraries.length > 0) {
+                        importScripts(...libraries);
+                    }
+
                     // Use an async IIFE to support top-level await and capture promise results
                     const result = (async () => {
-                        return await eval(e.data);
+                        // "use strict"; is important for security and catching common errors.
+                        return await eval("'use strict';" + code);
                     })();
                     
                     result.then(finalResult => {
@@ -100,56 +114,20 @@ const executeJavaScript = (code: string): Promise<string> => {
             URL.revokeObjectURL(workerUrl);
         };
 
-        worker.postMessage(code);
+        worker.postMessage({ code, libraries });
     });
 };
 
-// Mock a simple factorial function for the Python simulation
-const factorial = (n: number): number => {
-    if (n < 0) throw new Error("Factorial is not defined for negative numbers.");
-    if (n === 0) return 1;
-    return n * factorial(n - 1);
-};
-
-const executePythonMock = (code: string): string => {
-    // Simulate a very basic Python interpreter for demonstration purposes.
-    const printRegex = /print\((.*?)\)/;
-    const factorialRegex = /factorial\(([0-9]+)\)/;
-    
-    if (printRegex.test(code)) {
-        const match = code.match(printRegex);
-        if (match && match[1]) {
-            const content = match[1].replace(/['"]/g, ''); // remove quotes
-            return `Console output: ${content}`;
-        }
-    }
-
-    if (factorialRegex.test(code)) {
-        const match = code.match(factorialRegex);
-        if (match && match[1]) {
-            try {
-                const num = parseInt(match[1], 10);
-                return `Result: ${factorial(num)}`;
-            } catch (e: any) {
-                return `Error: ${e.message}`;
-            }
-        }
-    }
-    
-    return "Error: This is a mock Python environment and only supports 'print(\"text\")' and 'factorial(number)'.";
-};
-
-export const executeCode = async (args: { language: string, code: string }): Promise<string> => {
-    const { language, code } = args;
+export const executeCode = async (args: { language: string, code: string, libraries?: string[] }): Promise<string> => {
+    const { language, code, libraries } = args;
 
     switch (language.toLowerCase()) {
         case 'javascript':
         case 'js':
-            return executeJavaScript(code);
-        case 'python':
-        case 'py':
-            return executePythonMock(code);
+        case 'typescript': // Treat TS as JS since we don't have a transpiler
+        case 'ts':
+            return executeJavaScript(code, libraries);
         default:
-            return `Error: Language "${language}" is not supported. Supported languages are JavaScript and Python (mock).`;
+            return `Error: Language "${language}" is not supported. Only JavaScript and TypeScript (executed as JavaScript) are available in this sandboxed browser environment.`;
     }
 };

@@ -16,11 +16,12 @@ type ChatAreaProps = {
   isLoading: boolean;
   sendMessage: (message: string, files?: File[]) => void;
   modelsLoading: boolean;
+  onCancel: () => void;
 };
 
-export const ChatArea = ({ messages, isLoading, sendMessage, modelsLoading }: ChatAreaProps) => (
+export const ChatArea = ({ messages, isLoading, sendMessage, modelsLoading, onCancel }: ChatAreaProps) => (
   <div className="flex-1 flex flex-col pb-4 min-h-0">
-    <MessageList messages={messages} />
+    <MessageList messages={messages} sendMessage={sendMessage} />
     <div className="mt-auto pt-4 px-4 sm:px-6 md:px-8">
       <AnimatePresence>
         {messages.length === 0 && !isLoading && (
@@ -28,7 +29,11 @@ export const ChatArea = ({ messages, isLoading, sendMessage, modelsLoading }: Ch
         )}
       </AnimatePresence>
       <div className="relative">
-        <MessageForm onSubmit={sendMessage} isLoading={isLoading || modelsLoading} />
+        <MessageForm 
+          onSubmit={sendMessage} 
+          isLoading={isLoading || modelsLoading} 
+          onCancel={onCancel}
+        />
       </div>
     </div>
   </div>

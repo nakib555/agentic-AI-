@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Editor, { OnMount } from '@monaco-editor/react';
 import { useTheme } from '../../hooks/useTheme';
 
+// Type for the Monaco Editor instance, extracted from the OnMount callback.
+type EditorInstance = Parameters<OnMount>[0];
 
 // Define a more comprehensive map for language aliases. This helps ensure that common
 // markdown language tags are correctly mapped to Monaco's language identifiers for syntax highlighting.
@@ -43,7 +45,8 @@ type CodeBlockProps = {
 
 export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
     const [isCopied, setIsCopied] = useState(false);
-    const [height, setHeight] = useState('0px');
+    const editorRef = useRef<EditorInstance | null>(null);
+    const [editorHeight, setEditorHeight] = useState('0px');
     const { theme } = useTheme();
 
     const codeContent = String(children).replace(/\n$/, '');
@@ -57,17 +60,31 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
             console.error('Failed to copy code: ', err);
         });
     };
+    
+    const updateEditorHeight = useCallback(() => {
+        const editor = editorRef.current;
+        if (editor) {
+            // Force a layout recalculation before measuring. This is crucial for ensuring
+            // getContentHeight() returns an accurate value, especially during streaming.
+            editor.layout();
+            const contentHeight = editor.getContentHeight();
+            setEditorHeight(`${contentHeight}px`);
+        }
+    }, []);
 
     const handleEditorDidMount: OnMount = (editor) => {
-        const updateHeight = () => {
-            const contentHeight = editor.getContentHeight();
-            const newHeight = Math.min(600, contentHeight); // Max height of 600px
-            setHeight(`${newHeight}px`);
+        editorRef.current = editor;
+        
+        // This is the primary event listener for resizing when content changes.
+        const disposable = editor.onDidContentSizeChange(updateEditorHeight);
+        
+        // Use requestAnimationFrame for the initial height calculation to ensure the editor is fully rendered.
+        requestAnimationFrame(updateEditorHeight);
+        
+        return () => {
+            // Clean up the event listener when the component unmounts.
+            disposable.dispose();
         };
-
-        // Set initial height and update on content changes
-        editor.onDidContentSizeChange(updateHeight);
-        updateHeight();
     };
   
     const effectiveTheme = theme === 'system' 
@@ -87,6 +104,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
           <button
             onClick={handleCopy}
             aria-label={isCopied ? 'Copied!' : 'Copy code'}
+            title={isCopied ? 'Copied!' : 'Copy code'}
             className="flex items-center space-x-2 p-1 rounded-md text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition-colors duration-150 active:scale-95 focus:outline-none"
           >
             <AnimatePresence mode="wait" initial={false}>
@@ -105,29 +123,40 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
             </span>
           </button>
         </div>
-        <Editor
-          height={height}
-          language={monacoLang}
-          value={codeContent}
-          theme={effectiveTheme === 'dark' ? 'vs-dark' : 'vs'}
-          onMount={handleEditorDidMount}
-          options={{
-            readOnly: true,
-            domReadOnly: true,
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            contextmenu: false,
-            fontSize: 13,
-            fontFamily: "'Fira Code', monospace",
-            padding: { top: 16, bottom: 16 },
-            scrollbar: {
-                alwaysConsumeMouseWheel: false,
-            },
-            renderLineHighlight: 'none',
-            cursorWidth: 0,
-          }}
-        />
+        {/* This wrapper div handles the scrolling */}
+        <div className="max-h-[600px] overflow-y-auto">
+            <Editor
+              height={editorHeight}
+              language={monacoLang}
+              value={codeContent}
+              theme={effectiveTheme === 'dark' ? 'vs-dark' : 'vs'}
+              onMount={handleEditorDidMount}
+              options={{
+                readOnly: true,
+                domReadOnly: true,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                wordWrap: 'on',
+                contextmenu: false,
+                fontSize: 13,
+                fontFamily: "'Fira Code', monospace",
+                padding: { top: 16, bottom: 16 },
+                scrollbar: {
+                    vertical: 'hidden', // Hide the editor's internal scrollbar
+                    alwaysConsumeMouseWheel: false,
+                },
+                renderLineHighlight: 'none',
+                cursorWidth: 0,
+                // New options to remove focus and interactivity
+                occurrencesHighlight: 'off',
+                selectionHighlight: false,
+                folding: false,
+                links: false,
+                hover: { enabled: false },
+                lightbulb: { enabled: false },
+              }}
+            />
+        </div>
       </div>
     );
   };

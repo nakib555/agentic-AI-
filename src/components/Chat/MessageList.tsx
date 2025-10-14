@@ -11,9 +11,10 @@ import { WelcomeScreen } from './WelcomeScreen';
 
 type MessageListProps = {
   messages: Message[];
+  sendMessage: (message: string, files?: File[]) => void;
 };
 
-export const MessageList = ({ messages }: MessageListProps) => {
+export const MessageList = ({ messages, sendMessage }: MessageListProps) => {
   const messageListRef = useRef<HTMLDivElement>(null);
   // An invisible element at the end of the list to act as a scroll anchor.
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -36,7 +37,7 @@ export const MessageList = ({ messages }: MessageListProps) => {
         ) : (
           <div className="space-y-4 md:space-y-6 py-4" role="log" aria-live="polite">
             {visibleMessages.map((msg) => (
-              <MessageComponent key={msg.id} msg={msg} />
+              <MessageComponent key={msg.id} msg={msg} sendMessage={sendMessage} />
             ))}
             {/* The invisible anchor element that we scroll to. */}
             <div ref={bottomRef} />

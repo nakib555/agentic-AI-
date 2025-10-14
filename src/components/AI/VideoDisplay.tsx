@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -52,6 +53,10 @@ export const VideoDisplay = ({ videoKey, prompt }: VideoDisplayProps) => {
                 <video
                     src={videoUrl}
                     controls
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
                     className="w-full h-full"
                     aria-label={prompt || "Generated video"}
                 />

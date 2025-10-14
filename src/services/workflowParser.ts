@@ -4,7 +4,7 @@
  */
 
 import type { MessageError, ToolCallEvent } from '../types';
-import type { WorkflowNodeData } from '../components/AI/WorkflowNode';
+import type { WorkflowNodeData, WorkflowNodeType } from '../components/AI/WorkflowNode';
 
 export type ParsedWorkflow = {
   goalAnalysis: string;
@@ -14,31 +14,10 @@ export type ParsedWorkflow = {
 };
 
 // Generic workflow keywords that should be treated as procedural rather than titles.
-const GENERIC_STEP_KEYWORDS = new Set(['think', 'act', 'observe', 'adapt', 'system']);
+const GENERIC_STEP_KEYWORDS = new Set(['observe', 'adapt', 'system']);
 
 /**
- * Splits the raw thinking text into the initial plan and the subsequent execution steps.
- * @param rawText The raw text from the AI's thinking process.
- * @returns An object containing the plan text and the execution text.
- */
-const splitPlanFromExecution = (rawText: string): { planText: string, executionText: string } => {
-    const stepMarker = '[STEP]';
-    const firstStepIndex = rawText.indexOf(stepMarker);
-
-    if (firstStepIndex === -1) {
-        // If there are no [STEP] markers, the whole text is considered part of the plan/initial thought.
-        return { planText: rawText, executionText: '' };
-    }
-
-    const planText = rawText.substring(0, firstStepIndex).trim();
-    const executionText = rawText.substring(firstStepIndex).trim();
-    
-    return { planText, executionText };
-};
-
-
-/**
- * Parses the raw thinking text from the AI into a structured format for the two-panel UI.
+ * Parses the raw thinking text from the AI into a structured format for the UI.
  * @param rawText The raw text from the AI's thinking process.
  * @param toolCallEvents A list of tool call events that have occurred.
  * @param isThinkingComplete A boolean indicating if the entire thinking process is finished.
@@ -51,112 +30,137 @@ export const parseAgenticWorkflow = (
   isThinkingComplete: boolean,
   error?: MessageError
 ): ParsedWorkflow => {
-    const { planText, executionText } = splitPlanFromExecution(rawText);
-
-    // Parse the planning phase into its three distinct sections using regex
-    const goalAnalysisMatch = planText.match(/## Goal Analysis\s*([\s\S]*?)(?=## Todo-list|$)/s);
-    const todoListMatch = planText.match(/## Todo-list\s*([\s\S]*?)(?=## Tools|$)/s);
-    const toolsMatch = planText.match(/## Tools\s*([\s\S]*?)$/s);
+    // Robustly find and extract planning sections first, regardless of their position.
+    const goalAnalysisMatch = rawText.match(/## Goal Analysis\s*([\s\S]*?)(?=## Todo-list|## Tools|\[STEP\]|$)/s);
+    const todoListMatch = rawText.match(/## Todo-list\s*([\s\S]*?)(?=## Tools|\[STEP\]|$)/s);
+    const toolsMatch = rawText.match(/## Tools\s*([\s\S]*?)(?=\[STEP\]|$)/s);
 
     const goalAnalysis = goalAnalysisMatch ? goalAnalysisMatch[1].trim() : '';
     const todoList = todoListMatch ? todoListMatch[1].trim() : '';
     const tools = toolsMatch ? toolsMatch[1].trim() : '';
+    
+    // Remove the planning sections from the raw text to isolate the execution log.
+    let executionText = rawText;
+    if (goalAnalysisMatch) executionText = executionText.replace(goalAnalysisMatch[0], '');
+    if (todoListMatch) executionText = executionText.replace(todoListMatch[0], '');
+    if (toolsMatch) executionText = executionText.replace(toolsMatch[0], '');
+    executionText = executionText.trim();
 
+    // --- Interleaving Logic for Chronological Workflow ---
 
-    // This regex captures "[STEP] Title:" and the content until the next "[STEP]" or end of string.
+    // 1. Parse all text-based steps
+    const textNodes: WorkflowNodeData[] = [];
     const stepRegex = /\[STEP\]\s*(.*?):\s*([\s\S]*?)(?=\[STEP\]|$)/gs;
     let match;
-    const executionNodes: WorkflowNodeData[] = [];
     let stepIndex = 0;
-
-    // 1. Parse all text-based execution steps from the execution text
     while ((match = stepRegex.exec(executionText)) !== null) {
         let title = match[1].trim();
+        const lowerCaseTitle = title.toLowerCase();
         let details = match[2].trim();
 
-        if (title.toLowerCase() === 'final answer') {
-            continue; // Exclude the final answer from the workflow visualization
+        if (lowerCaseTitle === 'final answer') {
+            continue;
         }
 
-        // For generic steps like "Observe:", treat the details as the primary content.
-        if (GENERIC_STEP_KEYWORDS.has(title.toLowerCase())) {
-            title = ''; // The title itself isn't informative, so we hide it.
+        let type: WorkflowNodeType = 'plan';
+
+        if (lowerCaseTitle === 'think' || lowerCaseTitle === 'observe' || lowerCaseTitle === 'adapt') {
+            type = 'thought';
+            // Prepend the original title (e.g., "Think:") to the details for context.
+            details = `${title}: ${details}`;
+            title = 'Thinking'; // A generic title for the data object.
+        } else if (lowerCaseTitle === 'act') {
+            type = 'act_marker'; // Use a special type for positioning tool calls.
+        } else if (GENERIC_STEP_KEYWORDS.has(lowerCaseTitle)) {
+            details = `${title}: ${details}`;
+            title = '';
         }
 
-        executionNodes.push({
+        textNodes.push({
             id: `step-${stepIndex++}`,
-            type: 'plan', // All text-based steps are 'plan' type for rendering.
+            type: type,
             title: title,
             status: 'pending', 
             details: details || 'No details provided.',
         });
     }
 
-    // 2. Create nodes for any tool calls that have occurred
-    const toolCallNodes: WorkflowNodeData[] = toolCallEvents
-        .map(event => {
-            const isGoogleSearch = event.call.name === 'googleSearch';
-            return {
-                id: event.id,
-                type: isGoogleSearch ? 'googleSearch' : 'tool',
-                title: isGoogleSearch ? (event.call.args.query ?? 'Searching...') : `Tool: ${event.call.name}`,
-                status: event.result ? 'done' : 'active',
-                details: event,
-            }
-        });
-    
-    const allExecutionNodes = [...executionNodes, ...toolCallNodes];
+    // 2. Create a queue of tool call nodes
+    const toolNodesQueue = toolCallEvents.map(event => {
+        const isGoogleSearch = event.call.name === 'googleSearch';
+        const duration = event.startTime && event.endTime ? (event.endTime - event.startTime) / 1000 : null;
 
-    // 3. Apply final status updates based on the overall state
+        return {
+            id: event.id,
+            type: isGoogleSearch ? 'googleSearch' : 'tool',
+            title: isGoogleSearch ? (event.call.args.query ?? 'Searching...') : event.call.name,
+            status: event.result ? 'done' : 'active',
+            details: event,
+            duration: duration,
+        } as WorkflowNodeData;
+    });
+
+    // 3. Interleave tool nodes, replacing 'Act' steps
+    const finalExecutionLog: WorkflowNodeData[] = [];
+    for (const textNode of textNodes) {
+        // An "Act" marker is a placeholder for a tool call. Replace it with the actual tool node.
+        if (textNode.type === 'act_marker') {
+            if (toolNodesQueue.length > 0) {
+                const toolNode = toolNodesQueue.shift();
+                if (toolNode) {
+                    finalExecutionLog.push(toolNode);
+                }
+            }
+        } else {
+            // For all other nodes (Think, Observe, Plan, etc.), just add them.
+            finalExecutionLog.push(textNode);
+        }
+    }
+    
+    // Add any remaining tool nodes that didn't have a corresponding "Act" step (e.g., if text stream was cut off)
+    finalExecutionLog.push(...toolNodesQueue);
+
+
+    // 4. Apply final status updates to the entire interleaved log
     if (error) {
         let failureAssigned = false;
-        // Search backwards to find the last step that wasn't already successfully completed.
-        for (let i = allExecutionNodes.length - 1; i >= 0; i--) {
-            const node = allExecutionNodes[i];
+        for (let i = finalExecutionLog.length - 1; i >= 0; i--) {
+            const node = finalExecutionLog[i];
             if (node.status === 'active' || node.status === 'pending') {
                 node.status = 'failed';
                 node.details = error;
                 failureAssigned = true;
-                break; // Only fail the most recent in-progress step
+                break;
             }
         }
-        
-        // If all nodes were already 'done', or if there were no nodes, the error
-        // happened after the last known step. We add a new node to show the error.
         if (!failureAssigned) {
-            allExecutionNodes.push({
-                id: `error-${stepIndex++}`,
-                type: 'task',
-                title: 'Error Occurred',
-                status: 'failed',
-                details: error
-            });
+            finalExecutionLog.push({ id: `error-${stepIndex++}`, type: 'task', title: 'Error Occurred', status: 'failed', details: error });
         }
         
-        // Now, ensure all steps *before* the failure are marked as 'done'.
         let failurePointReached = false;
-        allExecutionNodes.forEach(node => {
-            if (node.status === 'failed') {
-                failurePointReached = true;
-            }
-            if (node.status === 'pending' && !failurePointReached) {
-                node.status = 'done';
-            }
+        finalExecutionLog.forEach(node => {
+            if (node.status === 'failed') failurePointReached = true;
+            if (node.status !== 'failed' && !failurePointReached) node.status = 'done';
         });
+
     } else if (isThinkingComplete) {
-        allExecutionNodes.forEach(node => {
+        finalExecutionLog.forEach(node => {
             if (node.status !== 'failed') node.status = 'done';
         });
     } else {
-        executionNodes.forEach(node => node.status = 'done');
-        const hasActiveTools = toolCallNodes.some(n => n.status === 'active');
-        if (!hasActiveTools && allExecutionNodes.length > 0) {
-            const lastNode = allExecutionNodes[allExecutionNodes.length - 1];
-            if (lastNode.type === 'plan') {
-              lastNode.status = 'active';
+        // Find the last node that isn't 'done' and mark it 'active'.
+        let lastActiveNodeFound = false;
+        for (let i = finalExecutionLog.length - 1; i >= 0; i--) {
+            const node = finalExecutionLog[i];
+            if (!lastActiveNodeFound && node.status !== 'done') {
+                node.status = 'active';
+                lastActiveNodeFound = true;
+            } else if (node.status !== 'done') {
+                // Any pending steps before the active one are considered done.
+                node.status = 'done';
             }
         }
     }
     
-    return { goalAnalysis, todoList, tools, executionLog: allExecutionNodes };
+    return { goalAnalysis, todoList, tools, executionLog: finalExecutionLog };
 };

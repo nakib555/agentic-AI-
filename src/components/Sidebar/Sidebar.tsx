@@ -155,7 +155,6 @@ export const Sidebar = ({
                                             currentChatId={currentChatId}
                                             searchQuery={searchQuery}
                                             isCollapsed={isCollapsed}
-                                            onNewChat={handleNewChat}
                                             onLoadChat={onLoadChat}
                                             onDeleteChat={onDeleteChat}
                                         />

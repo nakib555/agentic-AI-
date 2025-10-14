@@ -19,6 +19,7 @@ type AgenticLoopCallbacks = {
     onNewToolCalls: (toolCalls: FunctionCall[]) => Promise<ToolCallEvent[]>;
     onToolResult: (eventId: string, result: string) => void;
     onComplete: (finalText: string) => void;
+    onCancel: () => void;
     onError: (error: MessageError) => void;
 };
 
@@ -27,6 +28,7 @@ type RunAgenticLoopParams = {
     history: ChatHistory;
     toolExecutor: (name: string, args: any) => Promise<string>;
     callbacks: AgenticLoopCallbacks;
+    signal: AbortSignal;
 };
 
 const MAX_RETRIES = 3;
@@ -41,10 +43,12 @@ export const runAgenticLoop = async ({
     history,
     toolExecutor,
     callbacks,
+    signal,
 }: RunAgenticLoopParams): Promise<void> => {
     let keepProcessing = true;
     // Accumulates the full text of the model's response across multiple loop iterations.
     let fullModelResponseText = '';
+    let hasError = false;
 
     // The history for initializing the chat should be all messages EXCEPT the last one.
     const historyForChat = history.slice(0, -1);
@@ -55,15 +59,24 @@ export const runAgenticLoop = async ({
     let messagePayload: string | Part[] | { functionResponse: { name: string; response: { result: string; }; }; }[] = lastUserTurn.parts;
     
     do {
+        if (signal.aborted) { break; }
+
         let stream: AsyncGenerator<GenerateContentResponse> | undefined;
         let apiError: unknown = null;
         
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            if (signal.aborted) { break; }
+
             try {
                 stream = await chat.sendMessageStream({ message: messagePayload });
                 apiError = null;
                 break;
             } catch (error) {
+                // Ignore AbortError from user cancellation
+                if ((error as Error).name === 'AbortError') {
+                    apiError = error;
+                    break;
+                }
                 console.error(`Agentic loop API call failed (attempt ${attempt + 1}/${MAX_RETRIES}):`, error);
                 apiError = error;
                 const structuredError = parseApiError(error);
@@ -79,11 +92,16 @@ export const runAgenticLoop = async ({
             }
         }
         
+        if (signal.aborted) { break; }
+
         if (apiError || !stream) {
-            const finalError = apiError || new Error("Failed to get a response stream from the API.");
-            const structuredError = parseApiError(finalError);
-            callbacks.onError(structuredError);
+            if ((apiError as Error)?.name !== 'AbortError') {
+                const finalError = apiError || new Error("Failed to get a response stream from the API.");
+                const structuredError = parseApiError(finalError);
+                callbacks.onError(structuredError);
+            }
             keepProcessing = false;
+            hasError = true;
         } else {
             try {
                 const functionCallsToProcess: FunctionCall[] = [];
@@ -91,6 +109,8 @@ export const runAgenticLoop = async ({
                 let lastChunk: GenerateContentResponse | undefined;
 
                 for await (const chunk of stream) {
+                    if (signal.aborted) { break; }
+
                     lastChunk = chunk;
                     let chunkText = '';
                     const parts = chunk.candidates?.[0]?.content?.parts;
@@ -115,12 +135,23 @@ export const runAgenticLoop = async ({
                     }
                 }
                 
+                if (signal.aborted) { break; }
+
                 const finishReason = lastChunk?.candidates?.[0]?.finishReason;
                 const shouldAutoContinue = finishReason === 'MAX_TOKENS';
+
+                // Detect if the model has only outputted a plan and stopped, as per its instructions.
+                // If so, we must re-engage it to start the execution phase.
+                const isPlanningPhaseOnly = (
+                    (currentTurnText.includes('## Goal Analysis') || currentTurnText.includes('## Todo-list')) &&
+                    !currentTurnText.includes('[STEP]') &&
+                    functionCallsToProcess.length === 0
+                );
 
                 if (functionCallsToProcess.length > 0) {
                     const toolCallEvents = await callbacks.onNewToolCalls(functionCallsToProcess);
                     const functionResponses = await Promise.all(toolCallEvents.map(async (event) => {
+                        if (signal.aborted) throw new Error('Aborted');
                         const { call } = event;
                         const result = await toolExecutor(call.name, call.args);
                         callbacks.onToolResult(event.id, result);
@@ -136,10 +167,17 @@ export const runAgenticLoop = async ({
                     }
                     messagePayload = "Continue";
                     keepProcessing = true;
-                } else {
+                } else if (isPlanningPhaseOnly) {
+                    // This was a planning-only response. Send a "Continue" message to
+                    // trigger the execution phase.
+                    messagePayload = "Continue";
+                    keepProcessing = true;
+                }
+                else {
                     keepProcessing = false;
                 }
             } catch (error) {
+                 if (signal.aborted) { break; }
                  console.error("Agentic loop post-API call failed:", error);
                  let structuredError: MessageError;
  
@@ -154,10 +192,18 @@ export const runAgenticLoop = async ({
                  }
                  callbacks.onError(structuredError);
                  keepProcessing = false;
+                 hasError = true;
             }
         }
-    } while (keepProcessing);
+    } while (keepProcessing && !signal.aborted);
 
-    const finalCleanedText = fullModelResponseText.replace(/\[AUTO_CONTINUE\]/g, '').trim();
-    callbacks.onComplete(finalCleanedText);
+    if (signal.aborted) {
+        callbacks.onCancel();
+        return;
+    }
+
+    if (!hasError) {
+        const finalCleanedText = fullModelResponseText.replace(/\[AUTO_CONTINUE\]/g, '').trim();
+        callbacks.onComplete(finalCleanedText);
+    }
 };

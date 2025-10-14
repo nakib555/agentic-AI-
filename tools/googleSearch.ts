@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { FunctionDeclaration, Type } from "@google/genai";
+import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
 
 export const googleSearchDeclaration: FunctionDeclaration = {
   name: 'googleSearch',
@@ -17,55 +17,42 @@ export const googleSearchDeclaration: FunctionDeclaration = {
   },
 };
 
-// Mock database for more realistic search results
-const searchDatabase: { [key: string]: string } = {
-  'capital of france': `
-## Search Results for "capital of France"
+export const executeGoogleSearch = async (args: { query: string }): Promise<string> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+    
+    // The prompt is crucial. It guides the model to use the search results to formulate a direct answer.
+    const prompt = `Based on a web search, provide a comprehensive answer for the following query: "${args.query}"`;
 
-### Paris - Wikipedia
-**Paris** is the capital and most populous city of France. It is an important center of finance, diplomacy, commerce, fashion, gastronomy, science, and arts in Europe.
-  `,
-  'formula 1': `
-## Search Results for "Formula 1"
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+      },
+    });
 
-### Formula 1 World Champions - Wikipedia
-The **FIA Formula One World Championship** is the highest class of international racing for open-wheel single-seater formula racing cars. The reigning champion is **Max Verstappen**.
+    const summary = response.text;
+    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+    
+    const sources = groundingChunks
+      .map(chunk => chunk.web && ({ uri: chunk.web.uri, title: chunk.web.title }))
+      .filter((source): source is { uri: string, title: string } => Boolean(source && source.uri && source.title));
 
-### Recent F1 News - Motorsport.com
-Max Verstappen secured his third consecutive world title during the 2023 season, dominating the field with a record-breaking number of wins.
+    // Deduplicate sources based on URI to avoid showing the same link multiple times.
+    const uniqueSources = Array.from(new Map(sources.map(s => [s.uri, s])).values());
+      
+    const resultData = {
+      query: args.query,
+      summary: summary,
+      sources: uniqueSources,
+    };
 
-*   **2023 Champion:** Max Verstappen
-*   **Team:** Red Bull Racing
-  `,
-  'latest formula 1 news': `
-## Latest F1 News (Real-time)
-
-**Breaking:** Sources report that a major team is announcing a surprise driver swap for the upcoming season. Official announcements are expected within the hour.
-
-**Current Standings:** After the last race, Max Verstappen leads the driver's championship by 12 points.
-    `
-};
-
-export const executeGoogleSearch = (args: { query: string }): string => {
-  console.log(`Performing Google search for: ${args.query}`);
-  const lowerCaseQuery = args.query.toLowerCase();
-  
-  // Simulate a network failure for demonstration
-  if (lowerCaseQuery.includes('fail network search')) {
-    throw new Error("Unable to connect to Google Search due to a network issue.");
+    // This special string will be parsed by the UI to render the search results component.
+    return `[GOOGLE_SEARCH_RESULTS]${JSON.stringify(resultData)}[/GOOGLE_SEARCH_RESULTS]`;
+  } catch (err) {
+    console.error("Google Search tool failed:", err);
+    const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during the search.";
+    return `Error performing search: ${errorMessage}`;
   }
-
-  // Use more robust matching to find the correct result.
-  if (lowerCaseQuery.includes('capital of france') || lowerCaseQuery.includes('france capital')) {
-    return searchDatabase['capital of france'];
-  }
-  if (lowerCaseQuery.includes('latest formula 1') || lowerCaseQuery.includes('f1 news')) {
-      return searchDatabase['latest formula 1 news'];
-  }
-  if (lowerCaseQuery.includes('formula 1') || lowerCaseQuery.includes('f1')) {
-    return searchDatabase['formula 1'];
-  }
-
-  // Fallback for unmatched queries
-  return `No search results found for "${args.query}". Please try a different query.`;
 };

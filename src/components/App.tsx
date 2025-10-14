@@ -49,6 +49,7 @@ export const App = () => {
     loadChat,
     deleteChat,
     clearAllChats,
+    cancelGeneration,
   } = useChat(uiSelectedModel);
   
 
@@ -113,7 +114,7 @@ export const App = () => {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden chat-background">
         <div className="flex-1 flex flex-col w-full max-w-6xl mx-auto min-h-0">
            <ChatHeader
               setIsSidebarOpen={setIsSidebarOpen}
@@ -127,6 +128,7 @@ export const App = () => {
               isLoading={isLoading}
               sendMessage={sendMessage}
               modelsLoading={modelsLoading}
+              onCancel={cancelGeneration}
            />
         </div>
       </main>

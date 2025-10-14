@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -12,7 +13,9 @@ export const TypingIndicator = () => (
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
-      className="flex items-center gap-1.5 ml-2 p-3 bg-slate-100/80 dark:bg-slate-800/80 rounded-full w-fit"
+      className="flex items-center gap-1.5 p-3"
+      aria-label="AI is thinking"
+      role="status"
     >
       <motion.div
         className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full"

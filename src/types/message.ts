@@ -9,6 +9,8 @@ export type ToolCallEvent = {
     id: string;
     call: FunctionCall;
     result?: string;
+    startTime?: number;
+    endTime?: number;
 };
 
 export type Attachment = {

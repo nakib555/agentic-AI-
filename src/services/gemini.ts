@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -9,7 +10,6 @@ import { systemInstruction } from '../prompts/system';
 import type { Message, MessageError } from '../types';
 
 // Define the type for chat history based on the expected structure for the API
-// FIX: Expanded ChatHistory to support multimodal and tool-use content.
 type ChatHistory = {
     role: 'user' | 'model';
     parts: ({ text: string } | { inlineData: { mimeType: string; data: string; } } | { functionResponse: any } | { functionCall: any })[];
@@ -109,8 +109,7 @@ export const parseApiError = (error: any): MessageError => {
 export const initChat = (model: string, history?: ChatHistory) => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
-    // Handle any model aliases from the UI for internal mapping
-    const modelToUse = model === 'gemini-2.5-flash-fast' ? 'gemini-2.5-flash' : model;
+    const modelToUse = model;
 
     return ai.chats.create({
       model: modelToUse,
