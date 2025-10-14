@@ -153,10 +153,29 @@ export const runAgenticLoop = async ({
                     const functionResponses = await Promise.all(toolCallEvents.map(async (event) => {
                         if (signal.aborted) throw new Error('Aborted');
                         const { call } = event;
-                        const result = await toolExecutor(call.name, call.args);
-                        callbacks.onToolResult(event.id, result);
-                        return { functionResponse: { name: call.name, response: { result } } };
+                        try {
+                            const result = await toolExecutor(call.name, call.args);
+                            callbacks.onToolResult(event.id, result);
+                            return { functionResponse: { name: call.name, response: { result } } };
+                        } catch (error) {
+                            console.error(`Tool '${call.name}' execution failed, informing model:`, error);
+                            let errorResult: string;
+                            if (error instanceof ToolError) {
+                                errorResult = `Tool execution failed. Code: ${error.code}. Reason: ${error.originalMessage}`;
+                            } else if (error instanceof Error) {
+                                errorResult = `Tool execution failed. Reason: ${error.message}`;
+                            } else {
+                                errorResult = 'An unknown error occurred during tool execution.';
+                            }
+                            
+                            callbacks.onToolResult(event.id, errorResult);
+                            
+                            return { functionResponse: { name: call.name, response: { result: errorResult } } };
+                        }
                     }));
+                    
+                    if (signal.aborted) { break; }
+
                     messagePayload = functionResponses;
                     keepProcessing = true;
                 } else if (currentTurnText.trim().endsWith('[AUTO_CONTINUE]') || shouldAutoContinue) {
@@ -179,17 +198,9 @@ export const runAgenticLoop = async ({
             } catch (error) {
                  if (signal.aborted) { break; }
                  console.error("Agentic loop post-API call failed:", error);
-                 let structuredError: MessageError;
- 
-                 if (error instanceof ToolError) {
-                     structuredError = {
-                         code: error.code,
-                         message: `Error in '${error.toolName}' tool: ${error.originalMessage}`,
-                         details: error.cause?.stack || error.stack,
-                     };
-                 } else {
-                     structuredError = parseApiError(error);
-                 }
+                 // ToolErrors are now handled within the tool execution logic and sent back to the model.
+                 // This catch block now primarily handles API stream errors or other unhandled exceptions.
+                 const structuredError = parseApiError(error);
                  callbacks.onError(structuredError);
                  keepProcessing = false;
                  hasError = true;

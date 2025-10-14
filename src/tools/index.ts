@@ -4,12 +4,13 @@
  */
 
 import { googleSearchDeclaration, executeGoogleSearch } from './googleSearch';
-import { getCurrentLocationDeclaration, executeGetCurrentLocation } from './location';
+import { getCurrentLocationDeclaration, executeGetCurrentLocation, requestLocationPermissionDeclaration, executeRequestLocationPermission } from './location';
 import { getWeatherDeclaration, executeGetCurrentWeather } from './weather';
 import { imageGeneratorDeclaration, executeImageGenerator } from './imageGenerator';
 import { videoGeneratorDeclaration, executeVideoGenerator } from './videoGenerator';
 import { codeExecutorDeclaration, executeCode } from './codeExecutor';
 import { calculatorDeclaration, executeCalculator } from './calculator';
+import { displayMapDeclaration, executeDisplayMap, searchAndDisplayMapDeclaration, executeSearchAndDisplayMap } from './map';
 
 
 // Export all tool declarations for the model
@@ -21,6 +22,9 @@ export const toolDeclarations = [
   videoGeneratorDeclaration,
   codeExecutorDeclaration,
   calculatorDeclaration,
+  displayMapDeclaration,
+  requestLocationPermissionDeclaration,
+  searchAndDisplayMapDeclaration,
 ];
 
 // Map of tool names to their implementation
@@ -32,4 +36,7 @@ export const toolImplementations: Record<string, (args: any) => string | Promise
   'generateVideo': executeVideoGenerator,
   'executeCode': executeCode,
   'calculator': executeCalculator,
+  'displayMap': executeDisplayMap,
+  'requestLocationPermission': executeRequestLocationPermission,
+  'searchAndDisplayMap': executeSearchAndDisplayMap,
 };

@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import type { ToolCallEvent } from '../../types';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
+import { LocationPermissionRequest } from './LocationPermissionRequest';
 
 const LoadingDots = () => (
     <div className="flex gap-1 items-center">
@@ -19,10 +20,23 @@ const LoadingDots = () => (
 
 const RESULT_TRUNCATE_LENGTH = 300; // characters
 
-const ToolResultDisplay: React.FC<{ result: string }> = ({ result }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const isLongResult = result.length > RESULT_TRUNCATE_LENGTH;
+type ToolResultDisplayProps = {
+    result: string;
+    sendMessage: (message: string, files?: File[], options?: { isHidden: boolean }) => void;
+};
 
+const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessage }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    
+    // Check for the special location permission request tag
+    const permissionRequestMatch = result.match(/\[LOCATION_PERMISSION_REQUEST\](.*?)\[\/LOCATION_PERMISSION_REQUEST\]/s);
+
+    if (permissionRequestMatch) {
+        const text = permissionRequestMatch[1];
+        return <LocationPermissionRequest text={text} sendMessage={sendMessage} />;
+    }
+
+    const isLongResult = result.length > RESULT_TRUNCATE_LENGTH;
     const displayedResult = isLongResult && !isExpanded 
         ? `${result.substring(0, RESULT_TRUNCATE_LENGTH)}...` 
         : result;
@@ -50,7 +64,12 @@ const ToolResultDisplay: React.FC<{ result: string }> = ({ result }) => {
     );
 };
 
-export const ToolCallStep = ({ event }: { event: ToolCallEvent }) => {
+type ToolCallStepProps = {
+    event: ToolCallEvent;
+    sendMessage: (message: string, files?: File[], options?: { isHidden: boolean }) => void;
+};
+
+export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
     const { call, result } = event;
     const { args } = call;
     const argEntries = Object.entries(args);
@@ -70,7 +89,7 @@ export const ToolCallStep = ({ event }: { event: ToolCallEvent }) => {
         )}
         <div className="pt-2">
             {result ? (
-                <ToolResultDisplay result={result} />
+                <ToolResultDisplay result={result} sendMessage={sendMessage} />
             ) : (
                 <div className="flex items-center gap-2 text-xs text-slate-400">
                     <span>Executing</span>

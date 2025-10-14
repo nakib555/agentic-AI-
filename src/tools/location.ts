@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -54,4 +53,19 @@ export const executeGetCurrentLocation = (): Promise<string> => {
       );
     }
   });
+};
+
+export const requestLocationPermissionDeclaration: FunctionDeclaration = {
+  name: 'requestLocationPermission',
+  description: "Asks the user for location permission after it was previously denied. This will render a special UI prompt for the user.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {},
+  },
+};
+
+export const executeRequestLocationPermission = (): string => {
+    const message = "To find places near you, I need access to your location. Could you please grant permission?";
+    // This special string will be parsed by the UI to render a permission request component.
+    return `[LOCATION_PERMISSION_REQUEST]${message}[/LOCATION_PERMISSION_REQUEST]`;
 };

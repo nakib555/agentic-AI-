@@ -20,6 +20,7 @@ type ThinkingWorkflowProps = {
   isThinkingComplete: boolean;
   isLiveGeneration: boolean;
   error?: MessageError;
+  sendMessage: (message: string, files?: File[]) => void;
 };
 
 // --- Helper Component for Auto-Scrolling Content ---
@@ -77,7 +78,7 @@ const StatusIcon = ({ status }: { status: WorkflowNodeStatus }) => {
 };
 
 
-export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isLiveGeneration, error }: ThinkingWorkflowProps) => {
+export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isLiveGeneration, error, sendMessage }: ThinkingWorkflowProps) => {
     type SectionName = 'goal' | 'todo' | 'tools';
     type AnimationState = 'pending' | 'animating' | 'complete';
 
@@ -305,7 +306,7 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isL
                                                         </div>
 
                                                         <div className={`flex-1 min-w-0 ${!isLastNode ? 'pb-8' : 'pb-2'}`}>
-                                                            <WorkflowNode node={node} />
+                                                            <WorkflowNode node={node} sendMessage={sendMessage} />
                                                         </div>
                                                     </motion.li>
                                                 );

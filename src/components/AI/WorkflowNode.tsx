@@ -24,6 +24,11 @@ export type WorkflowNodeData = {
   duration?: number | null;
 };
 
+type WorkflowNodeProps = {
+  node: WorkflowNodeData;
+  sendMessage: (message: string, files?: File[]) => void;
+};
+
 const getNodeVisuals = (node: WorkflowNodeData) => {
     let icon: React.ReactNode;
     let title: string = node.title;
@@ -61,11 +66,11 @@ const getNodeVisuals = (node: WorkflowNodeData) => {
 };
 
 
-const renderDetails = (node: WorkflowNodeData) => {
+const renderDetails = (node: WorkflowNodeData, sendMessage: WorkflowNodeProps['sendMessage']) => {
     if (!node.details) return null;
 
     if (typeof node.details === 'object' && 'call' in node.details && 'id' in node.details) {
-        return <ToolCallStep event={node.details as ToolCallEvent} />;
+        return <ToolCallStep event={node.details as ToolCallEvent} sendMessage={sendMessage} />;
     }
 
     if (node.status === 'failed' && typeof node.details === 'object' && 'message' in node.details) {
@@ -95,7 +100,7 @@ const renderDetails = (node: WorkflowNodeData) => {
     return null;
 }
 
-export const WorkflowNode = ({ node }: { node: WorkflowNodeData }) => {
+export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
     // This type is for internal processing and should not be rendered.
     if (node.type === 'act_marker') {
         return null;
@@ -170,7 +175,7 @@ export const WorkflowNode = ({ node }: { node: WorkflowNodeData }) => {
                         className="overflow-hidden"
                     >
                         <div className="border-t border-slate-700/50 px-4 pt-3 pb-4">
-                            {renderDetails(node)}
+                            {renderDetails(node, sendMessage)}
                         </div>
                     </motion.div>
                 )}

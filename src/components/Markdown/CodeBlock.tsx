@@ -9,7 +9,8 @@ import Editor, { OnMount } from '@monaco-editor/react';
 import { useTheme } from '../../hooks/useTheme';
 
 // Type for the Monaco Editor instance, extracted from the OnMount callback.
-type EditorInstance = Parameters<OnMount>[0];
+// FIX: Using 'any' as a workaround for a potential type resolution issue where Parameters<OnMount>[0] resolves to 'unknown'.
+type EditorInstance = any;
 
 // Define a more comprehensive map for language aliases. This helps ensure that common
 // markdown language tags are correctly mapped to Monaco's language identifiers for syntax highlighting.

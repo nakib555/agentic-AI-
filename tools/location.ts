@@ -4,6 +4,7 @@
  */
 
 import { FunctionDeclaration, Type } from "@google/genai";
+import { ToolError } from '../types';
 
 export const getCurrentLocationDeclaration: FunctionDeclaration = {
   name: 'getCurrentLocation',
@@ -17,7 +18,7 @@ export const getCurrentLocationDeclaration: FunctionDeclaration = {
 export const executeGetCurrentLocation = (): Promise<string> => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error("Geolocation is not supported by this browser."));
+      reject(new ToolError("getCurrentLocation", "GEOLOCATION_UNSUPPORTED", "Geolocation is not supported by this browser."));
     } else {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -25,22 +26,46 @@ export const executeGetCurrentLocation = (): Promise<string> => {
           resolve(`Current location: Latitude ${latitude.toFixed(4)}, Longitude ${longitude.toFixed(4)}`);
         },
         (error) => {
-          let errorMessage = "An unknown error occurred while fetching location.";
+          let code: string;
+          let message: string;
+
           switch(error.code) {
             case error.PERMISSION_DENIED:
-              errorMessage = "User denied the request for Geolocation.";
+              code = 'GEOLOCATION_PERMISSION_DENIED';
+              message = "User denied the request for Geolocation.";
               break;
             case error.POSITION_UNAVAILABLE:
-              errorMessage = "Location information is unavailable.";
+              code = 'GEOLOCATION_UNAVAILABLE';
+              message = "Location information is unavailable.";
               break;
             case error.TIMEOUT:
-              errorMessage = "The request to get user location timed out.";
+              code = 'GEOLOCATION_TIMEOUT';
+              message = "The request to get user location timed out.";
+              break;
+            default:
+              code = 'GEOLOCATION_UNKNOWN_ERROR';
+              message = "An unknown error occurred while fetching location.";
               break;
           }
-          reject(new Error(errorMessage));
+          reject(new ToolError("getCurrentLocation", code, message, new Error(error.message)));
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     }
   });
+};
+
+export const requestLocationPermissionDeclaration: FunctionDeclaration = {
+  name: 'requestLocationPermission',
+  description: "Asks the user for location permission after it was previously denied. This will render a special UI prompt for the user.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {},
+  },
+};
+
+export const executeRequestLocationPermission = (): string => {
+    const message = "To find places near you, I need access to your location. Could you please grant permission?";
+    // This special string will be parsed by the UI to render a permission request component.
+    return `[LOCATION_PERMISSION_REQUEST]${message}[/LOCATION_PERMISSION_REQUEST]`;
 };

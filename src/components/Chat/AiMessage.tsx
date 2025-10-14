@@ -19,6 +19,7 @@ import { FormattedBlock } from '../Markdown/FormattedBlock';
 import { TypingIndicator } from './TypingIndicator';
 import { TypingWrapper } from '../AI/TypingWrapper';
 import { McqComponent } from '../AI/McqComponent';
+import { MapDisplay } from '../AI/MapDisplay';
 
 const animationProps: MotionProps = {
   initial: { opacity: 0, y: 20 },
@@ -71,7 +72,7 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
    * It also strips incomplete tags from the end of the streaming text to prevent flicker.
    */
   const renderProgressiveAnswer = (text: string) => {
-    const componentRegex = /(\[(?:VIDEO|IMAGE|GOOGLE_SEARCH_RESULTS|FORMATTED_BLOCK|MCQ_COMPONENT)\].*?\[\/(?:VIDEO|IMAGE|GOOGLE_SEARCH_RESULTS|FORMATTED_BLOCK|MCQ_COMPONENT)\])/s;
+    const componentRegex = /(\[(?:VIDEO|IMAGE|GOOGLE_SEARCH_RESULTS|FORMATTED_BLOCK|MCQ_COMPONENT|MAP_COMPONENT)\].*?\[\/(?:VIDEO|IMAGE|GOOGLE_SEARCH_RESULTS|FORMATTED_BLOCK|MCQ_COMPONENT|MAP_COMPONENT)\])/s;
     const parts = text.split(componentRegex).filter(part => part);
 
     return parts.map((part, index) => {
@@ -80,6 +81,7 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
         const googleSearchMatch = part.match(/\[GOOGLE_SEARCH_RESULTS\](\{.*?\})\[\/GOOGLE_SEARCH_RESULTS\]/s);
         const formattedBlockMatch = part.match(/\[FORMATTED_BLOCK_COMPONENT\](.*?)\[\/FORMATTED_BLOCK_COMPONENT\]/s);
         const mcqMatch = part.match(/\[MCQ_COMPONENT\](\{.*?\})\[\/MCQ_COMPONENT\]/s);
+        const mapMatch = part.match(/\[MAP_COMPONENT\](\{.*?\})\[\/MAP_COMPONENT\]/s);
 
         const renderError = (component: string, details: string) => (
             <ErrorDisplay key={`${id}-${index}`} error={{ message: `Failed to render ${component} component due to invalid data.`, details }} />
@@ -134,8 +136,18 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
                 return renderError('MCQ', mcqMatch[1]);
             }
         }
+
+        if (mapMatch) {
+            try {
+                const mapData = JSON.parse(mapMatch[1]);
+                return <MapDisplay key={`${id}-${index}`} {...mapData} />;
+            } catch (e) {
+                console.error("Failed to parse map JSON:", e);
+                return renderError('map', mapMatch[1]);
+            }
+        }
         
-        const cleanedPart = part.replace(/\[(VIDEO|IMAGE|GOOGLE_SEARCH_RESULTS|FORMATTED_BLOCK|MCQ_COMPONENT)[^\]]*$/, '');
+        const cleanedPart = part.replace(/\[(VIDEO|IMAGE|GOOGLE_SEARCH_RESULTS|FORMATTED_BLOCK|MCQ_COMPONENT|MAP_COMPONENT)[^\]]*$/, '');
         if (cleanedPart) {
             return <ManualCodeRenderer key={`${id}-${index}`} text={cleanedPart} components={MarkdownComponents} />;
         }
@@ -189,6 +201,7 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
                                 isThinkingComplete={thinkingIsComplete}
                                 isLiveGeneration={!!isThinking}
                                 error={error}
+                                sendMessage={sendMessage}
                             />
                         </motion.div>
                     )}
