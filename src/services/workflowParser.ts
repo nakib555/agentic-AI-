@@ -87,13 +87,13 @@ export const parseAgenticWorkflow = (
 
     // 2. Create a queue of tool call nodes
     const toolNodesQueue = toolCallEvents.map(event => {
-        const isGoogleSearch = event.call.name === 'googleSearch';
+        const isDuckDuckGoSearch = event.call.name === 'duckduckgoSearch';
         const duration = event.startTime && event.endTime ? (event.endTime - event.startTime) / 1000 : null;
 
         return {
             id: event.id,
-            type: isGoogleSearch ? 'googleSearch' : 'tool',
-            title: isGoogleSearch ? (event.call.args.query ?? 'Searching...') : event.call.name,
+            type: isDuckDuckGoSearch ? 'duckduckgoSearch' : 'tool',
+            title: isDuckDuckGoSearch ? (event.call.args.query ?? 'Searching...') : event.call.name,
             status: event.result ? 'done' : 'active',
             details: event,
             duration: duration,

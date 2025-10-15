@@ -16,7 +16,7 @@ const Highlight = ({ text, highlight }: { text: string, highlight: string }) => 
         <span>
             {parts.map((part, i) =>
                 regex.test(part) ? (
-                    <span key={i} className="bg-teal-200/80 dark:bg-teal-500/50 font-semibold rounded-sm">{part}</span>
+                    <span key={i} className="bg-teal-200/30 dark:bg-teal-500/30 font-semibold rounded-sm px-0.5">{part}</span>
                 ) : (
                     <span key={i}>{part}</span>
                 )
@@ -45,13 +45,13 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
         <div className="relative group">
             <button 
                 onClick={onClick} 
-                className={`w-full text-sm truncate p-2 rounded-md text-left flex items-center gap-3 transition-colors ${active ? 'bg-slate-200/80 text-slate-800 dark:bg-slate-700/80 dark:text-slate-100' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700/50'} ${isCollapsed ? 'justify-center' : ''} ${!isCollapsed ? 'pr-8' : ''}`}
+                className={`w-full text-sm truncate p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-black/10 text-slate-800 dark:bg-white/10 dark:text-slate-100' : 'text-slate-600 hover:bg-black/5 dark:text-slate-400 dark:hover:bg-white/5'} ${isCollapsed ? 'justify-center' : ''} ${!isCollapsed ? 'pr-8' : ''}`}
             >
                 <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
                     {isLoading ? (
                          <div className="w-2.5 h-2.5 bg-green-500 dark:bg-green-400 rounded-full animate-pulse"></div>
                     ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-500 dark:text-slate-400"><path fillRule="evenodd" d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0 -16Zm-2.5 8.5a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 0 1.5h-3.5a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-500 dark:text-slate-400"><path d="M3.5 2.75a.75.75 0 0 0-1.5 0v14.5a.75.75 0 0 0 1.5 0v-4.392l1.657-.348a6.445 6.445 0 0 1 4.271 0l.415.083a.75.75 0 0 0 .433-.69V8.69a.75.75 0 0 0-.433-.69l-.415-.083a6.446 6.446 0 0 1-4.271 0L3.5 7.568V2.75Z" /></svg>
                     )}
                 </div>
                 <motion.span 

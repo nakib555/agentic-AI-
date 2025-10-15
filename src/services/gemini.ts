@@ -1,13 +1,12 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { toolDeclarations } from '../tools';
+import { toolDeclarations } from '../../tools';
 import { systemInstruction } from '../prompts/system';
-import type { Message, MessageError } from '../types';
+import type { Message, MessageError } from '../../types';
 
 // Define the type for chat history based on the expected structure for the API
 type ChatHistory = {
@@ -146,8 +145,8 @@ export const generateChatTitle = async (messages: Message[]): Promise<string> =>
                 contents: prompt,
             });
             
-            const text = response.text;
-            const generatedTitle = text ? text.trim().replace(/["']/g, '') : '';
+            const text = response.text ?? '';
+            const generatedTitle = text.trim().replace(/["']/g, '');
             const isGeneric = !generatedTitle || ['new chat', 'untitled chat'].includes(generatedTitle.toLowerCase());
 
             // If the AI returns a generic or empty title, fall back to the first user message.

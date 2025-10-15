@@ -5,7 +5,7 @@
 
 import type { FunctionCall, GenerateContentResponse } from '@google/genai';
 import { initChat, parseApiError } from './gemini';
-import { type ToolCallEvent, type MessageError, ToolError } from '../types';
+import { type ToolCallEvent, type MessageError, ToolError } from '../../types';
 
 type Part = { text: string } | { inlineData: { mimeType: string; data: string; } } | { functionResponse: any };
 
@@ -140,14 +140,6 @@ export const runAgenticLoop = async ({
                 const finishReason = lastChunk?.candidates?.[0]?.finishReason;
                 const shouldAutoContinue = finishReason === 'MAX_TOKENS';
 
-                // Detect if the model has only outputted a plan and stopped, as per its instructions.
-                // If so, we must re-engage it to start the execution phase.
-                const isPlanningPhaseOnly = (
-                    (currentTurnText.includes('## Goal Analysis') || currentTurnText.includes('## Todo-list')) &&
-                    !currentTurnText.includes('[STEP]') &&
-                    functionCallsToProcess.length === 0
-                );
-
                 if (functionCallsToProcess.length > 0) {
                     const toolCallEvents = await callbacks.onNewToolCalls(functionCallsToProcess);
                     const functionResponses = await Promise.all(toolCallEvents.map(async (event) => {
@@ -184,11 +176,6 @@ export const runAgenticLoop = async ({
                         fullModelResponseText += continueMarker;
                         callbacks.onTextChunk(fullModelResponseText);
                     }
-                    messagePayload = "Continue";
-                    keepProcessing = true;
-                } else if (isPlanningPhaseOnly) {
-                    // This was a planning-only response. Send a "Continue" message to
-                    // trigger the execution phase.
                     messagePayload = "Continue";
                     keepProcessing = true;
                 }

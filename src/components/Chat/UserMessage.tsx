@@ -6,7 +6,7 @@
 import React from 'react';
 import { motion, MotionProps } from 'framer-motion';
 import { MarkdownComponents } from '../Markdown/markdownComponents';
-import type { Message } from '../../types';
+import type { Message } from '../../../types';
 import { FileIcon } from '../UI/FileIcon';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 
@@ -20,9 +20,9 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
   const { text, attachments } = msg;
   return (
     <motion.div {...animationProps} className="w-full flex justify-end">
-      <div className="markdown-content-user max-w-[85%] w-fit p-3 sm:p-4 rounded-2xl bg-teal-600 text-white rounded-br-none shadow-sm break-words">
+      <div className="markdown-content-user max-w-[85%] w-fit p-3 sm:p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-none shadow-lg break-words">
         {attachments && attachments.length > 0 && (
-            <div className="flex flex-col gap-2 p-2 mb-2 bg-teal-700/50 rounded-lg">
+            <div className="flex flex-col gap-2 p-2 mb-2 bg-black/20 rounded-lg">
                 {attachments.map((attachment, index) => (
                     <div key={index} className="flex items-center gap-2">
                         <FileIcon filename={attachment.name} className="flex-shrink-0 w-5 h-5" />

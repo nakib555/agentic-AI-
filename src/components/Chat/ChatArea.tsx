@@ -9,7 +9,7 @@ import { AnimatePresence } from 'framer-motion';
 import { MessageList } from './MessageList';
 import { MessageForm } from './MessageForm';
 import { FloatingPrompts } from './FloatingPrompts';
-import type { Message } from '../../types';
+import type { Message } from '../../../types';
 
 type ChatAreaProps = {
   messages: Message[];
@@ -24,7 +24,7 @@ export const ChatArea = ({ messages, isLoading, sendMessage, modelsLoading, onCa
     <MessageList messages={messages} sendMessage={sendMessage} />
     <div className="mt-auto pt-4 px-4 sm:px-6 md:px-8">
       <AnimatePresence>
-        {messages.length === 0 && !isLoading && (
+        {messages.length === 0 && !isLoading && !modelsLoading && (
           <FloatingPrompts onPromptClick={sendMessage} />
         )}
       </AnimatePresence>

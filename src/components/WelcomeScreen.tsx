@@ -9,14 +9,14 @@ import { motion } from 'framer-motion';
 
 const CapabilityCard = ({ icon, title, description, delay }: { icon: React.ReactNode, title: string, description: string, delay: number }) => (
     <motion.div 
-        className="bg-white/5 dark:bg-black/20 p-4 rounded-xl border border-white/10 h-full"
+        className="bg-white dark:bg-black/20 p-4 rounded-xl border border-gray-200 dark:border-white/10 h-full"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut", delay }}
     >
         <div className="text-2xl mb-3">{icon}</div>
-        <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">{title}</h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400">{description}</p>
+        <h3 className="font-semibold text-gray-800 dark:text-slate-100 mb-1">{title}</h3>
+        <p className="text-sm text-gray-600 dark:text-slate-400">{description}</p>
     </motion.div>
 );
 

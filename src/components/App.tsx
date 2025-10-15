@@ -80,7 +80,7 @@ export const App = () => {
   const activeModel = chatHistory.find(c => c.id === currentChatId)?.model || uiSelectedModel;
 
   return (
-    <div className="flex h-full bg-white dark:bg-[#121212]">
+    <div className="flex h-full bg-transparent">
       <Sidebar 
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen}
@@ -106,7 +106,7 @@ export const App = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 bg-black/50 z-10 md:hidden"
+            className="fixed inset-0 bg-black/60 z-10 md:hidden"
             role="button"
             aria-label="Close sidebar"
             tabIndex={0}
@@ -115,7 +115,7 @@ export const App = () => {
       </AnimatePresence>
 
       <main className="flex-1 flex flex-col overflow-hidden chat-background">
-        <div className="flex-1 flex flex-col w-full max-w-6xl mx-auto min-h-0">
+        <div className="flex-1 flex flex-col w-full max-w-4xl mx-auto min-h-0">
            <ChatHeader
               setIsSidebarOpen={setIsSidebarOpen}
               models={availableModels}

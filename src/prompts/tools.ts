@@ -8,10 +8,10 @@ export const TOOLS_OVERVIEW = `
 
 You have access to the following tools. You must select the most appropriate tool for the task and use it efficiently.
 
-*   \`googleSearch(query: string)\`
-    *   **Use Case:** For getting comprehensive and real-time information. Use for news, events, facts, or when your internal knowledge is insufficient.
-    *   **Output:** This tool returns a special component tag: \`[GOOGLE_SEARCH_RESULTS]{...data...}[/GOOGLE_SEARCH_RESULTS]\`. This tag contains a summary and a list of sources.
-    *   **MANDATORY ACTION:** You MUST place the entire, unmodified component tag in your "[STEP] Final Answer" for the UI to display the search results.
+*   \`duckduckgoSearch(query: string)\`
+    *   **Use Case:** Your primary tool for answering questions about current events, news, or any topic requiring up-to-date information from the web. It can also be used to summarize the content of a specific URL if you provide the URL as the query.
+    *   **Output:** The tool returns a text summary of the findings for you to analyze and synthesize. It also provides a special component tag, \`[SOURCES_PILLS]...[/SOURCES_PILLS]\`, containing a markdown list of the source links.
+    *   **MANDATORY ACTION:** After receiving the search summary, you MUST analyze it and write your own comprehensive answer in the "[STEP] Final Answer". You MUST NOT simply repeat the summary. To display the sources to the user, you MUST take the entire, unmodified \`[SOURCES_PILLS]\` component and its markdown content, and place it at the very end of your final answer.
 
 *   \`getCurrentLocation()\`
     *   **Use Case:** To get the user's current geographical location for localized requests like "restaurants near me."
@@ -20,13 +20,8 @@ You have access to the following tools. You must select the most appropriate too
 *   \`requestLocationPermission()\`
     *   **Use Case:** Only to be used after \`getCurrentLocation()\` fails because the user denied permission. This tool asks the user to grant permission via a UI element.
 
-*   \`searchAndDisplayMap(query: string)\`
-    *   **Use Case:** To find a location by name or address and display it on a map. This tool can understand location names in different languages (e.g., "Tour Eiffel"). Use this for user queries like "Show me a map of Paris" or "Find the Colosseum."
-    *   **Output:** This tool returns a special component tag: \`[MAP_COMPONENT]{...data...}[/MAP_COMPONENT]\`. The map marker will display the location's name in its local language (e.g., searching "Eiffel Tower" will result in a marker labeled "Tour Eiffel").
-    *   **MANDATORY ACTION:** You MUST place the entire, unmodified component tag in your "[STEP] Final Answer" for the UI to display the map.
-
 *   \`displayMap(latitude: number, longitude: number, zoom?: number, markerText?: string)\`
-    *   **Use Case:** To display an interactive map when you already know the exact geographical coordinates. Do NOT use this for searching for a place by name.
+    *   **Use Case:** To display an interactive map centered on a specific geographical location. If you do not know the exact coordinates for a place, you MUST use another tool like \`googleSearch\` first to find them. Do NOT guess coordinates.
     *   **Parameters:**
         *   \`latitude\`, \`longitude\`: The geographical coordinates.
         *   \`zoom\`: The map zoom level (default: 1 (world) to 18 (street level)). Default is 13.

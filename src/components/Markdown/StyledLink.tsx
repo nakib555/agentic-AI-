@@ -27,7 +27,7 @@ export const StyledLink: React.FC<StyledLinkProps> = ({ href, children }) => {
       target="_blank" // Open in a new tab
       rel="noopener noreferrer" // Security measure
       onClick={handleClick}
-      className="text-teal-500 font-medium hover:text-teal-400 underline decoration-teal-500/50 hover:decoration-teal-400 decoration-dotted underline-offset-4 transition-colors"
+      className="text-teal-500 dark:text-teal-400 font-medium hover:text-teal-600 dark:hover:text-teal-300 underline decoration-teal-500/40 hover:decoration-teal-600/60 dark:decoration-teal-400/40 dark:hover:decoration-teal-300/60 decoration-wavy underline-offset-4 transition-colors"
       title={`Opens external link: ${href}`}
     >
       {children}

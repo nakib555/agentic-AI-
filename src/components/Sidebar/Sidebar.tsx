@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NavItem } from './NavItem';
-import type { ChatSession } from '../../types';
+import type { ChatSession } from '../../../types';
 import type { Theme } from '../../hooks/useTheme';
 import { SidebarHeader } from './SidebarHeader';
 import { SearchInput } from './SearchInput';
@@ -42,8 +42,6 @@ export const Sidebar = ({
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
     const [isResizing, setIsResizing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeNav, setActiveNav] = useState('Chat'); // Default active item based on screenshot
-    const [isHistoryVisible, setIsHistoryVisible] = useState(true);
 
     useEffect(() => {
         const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
@@ -77,17 +75,18 @@ export const Sidebar = ({
 
     const handleNewChat = () => {
         onNewChat();
-        setActiveNav('Chat');
         setSearchQuery('');
-    };
-    
-    // When a chat is loaded from history, set "Chat" as active
-    useEffect(() => {
-        if (currentChatId) {
-            setActiveNav('Chat');
+        if (!isDesktop) {
+            setIsOpen(false);
         }
-    }, [currentChatId]);
+    };
 
+    const handleLoadChat = (id: string) => {
+        onLoadChat(id);
+        if (!isDesktop) {
+            setIsOpen(false);
+        }
+    };
 
     const desktopVariants = {
         open: { width, translateX: '0%' },
@@ -103,10 +102,14 @@ export const Sidebar = ({
             animate={animateState}
             variants={variants}
             transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-            className="bg-slate-100/80 dark:bg-black/80 backdrop-blur-lg border-r border-slate-200 dark:border-slate-800 p-4 flex-col flex fixed inset-y-0 left-0 z-20 w-72 max-w-[80vw] md:relative md:translate-x-0 md:shrink-0 md:w-auto group"
+            className="bg-gray-100/80 dark:bg-black/20 backdrop-blur-xl border-r border-gray-200 dark:border-white/10 p-4 flex-col flex fixed inset-y-0 left-0 z-20 w-80 max-w-[80vw] md:relative md:translate-x-0 md:shrink-0 md:w-auto group"
         >
             <div id="sidebar-content" className="flex flex-col h-full overflow-hidden">
-                <SidebarHeader isCollapsed={isCollapsed} setIsOpen={setIsOpen} />
+                <SidebarHeader 
+                    isCollapsed={isCollapsed} 
+                    setIsOpen={setIsOpen} 
+                    onNewChat={handleNewChat}
+                />
                 
                 <SearchInput 
                     isCollapsed={isCollapsed} 
@@ -114,58 +117,28 @@ export const Sidebar = ({
                     setSearchQuery={setSearchQuery}
                 />
 
-                <nav className="flex flex-col gap-1 my-2">
-                    <NavItem 
-                        icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="m13.483 5.665 2.858-2.858a.75.75 0 0 0-1.06-1.06L12.425 4.603 9.25 1.428a.75.75 0 0 0-1.06 1.061l3.176 3.176-3.023 3.023a.75.75 0 0 0 0 1.06l1.272 1.273a.75.75 0 0 0 1.06 0l9.43-9.431a.75.75 0 0 0 0-1.06l-2.857-2.858-2.857 2.857Zm-3.02 9.311 3.176-3.176a.75.75 0 0 0-1.06-1.06l-3.176 3.176-2.857-2.857a.75.75 0 0 0-1.06 1.06L7.34 15.19l-2.52 2.52a.75.75 0 0 0 1.06 1.06l2.52-2.52 1.273 1.273a.75.75 0 0 0 1.06 0Z" /></svg>}
-                        text="Chat"
-                        active={activeNav === 'Chat'}
-                        isCollapsed={isCollapsed}
-                        onClick={handleNewChat}
-                    />
-                </nav>
-
-                <AnimatePresence>
-                    {!isCollapsed && (
-                        <motion.div 
-                            className="flex flex-col flex-1 min-h-0"
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto', transition: { delay: 0.1 } }}
-                            exit={{ opacity: 0, height: 0 }}
-                        >
-                            <div className="my-2 pt-4 border-t border-slate-200 dark:border-slate-800">
-                                <NavItem 
-                                    icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>}
-                                    text="History"
-                                    active={isHistoryVisible}
+                <div className="flex-1 flex flex-col min-h-0 mt-4">
+                    <AnimatePresence>
+                        {!isCollapsed && (
+                            <motion.div
+                                className="flex flex-col flex-1 min-h-0"
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto', transition: { delay: 0.1, duration: 0.3 } }}
+                                exit={{ opacity: 0, height: 0, transition: { duration: 0.2 } }}
+                            >
+                                <HistoryList 
+                                    history={history}
+                                    currentChatId={currentChatId}
+                                    searchQuery={searchQuery}
                                     isCollapsed={isCollapsed}
-                                    onClick={() => setIsHistoryVisible(!isHistoryVisible)}
+                                    onLoadChat={handleLoadChat}
+                                    onDeleteChat={onDeleteChat}
                                 />
-                            </div>
-                            <AnimatePresence>
-                                {isHistoryVisible && (
-                                     <motion.div
-                                        className="flex flex-col flex-1 min-h-0"
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                     >
-                                        <HistoryList 
-                                            history={history}
-                                            currentChatId={currentChatId}
-                                            searchQuery={searchQuery}
-                                            isCollapsed={isCollapsed}
-                                            onLoadChat={onLoadChat}
-                                            onDeleteChat={onDeleteChat}
-                                        />
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
                 
-
                 <SidebarFooter 
                     theme={theme}
                     setTheme={setTheme}
@@ -188,14 +161,14 @@ export const Sidebar = ({
                 tabIndex={0}
             >
                 <div 
-                    className={`h-full w-[1.5px] bg-slate-300 dark:bg-slate-600 mx-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${isResizing ? '!opacity-100 !bg-teal-500' : ''}`}
+                    className={`h-full w-px bg-gray-300 dark:bg-white/10 mx-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${isResizing ? '!opacity-100 !bg-blue-500' : ''}`}
                 ></div>
             </div>
 
              {/* Collapse Button for Desktop */}
              <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="hidden md:flex absolute top-5 -right-3 z-30 w-6 h-6 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:border-slate-300 dark:hover:border-slate-500 transition-all focus:outline-none focus:ring-2 focus:ring-teal-400"
+                    className="hidden md:flex absolute top-5 -right-3 z-30 w-6 h-6 bg-white dark:bg-[#2D2D2D] border border-gray-200 dark:border-white/10 rounded-full items-center justify-center text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-100 hover:border-gray-300 dark:hover:border-slate-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-400"
                     aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                     title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >

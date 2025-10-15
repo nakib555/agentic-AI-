@@ -5,14 +5,14 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion, MotionProps, AnimatePresence } from 'framer-motion';
-import type { Message } from '../../types';
+import type { Message } from '../../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { MarkdownComponents } from '../Markdown/markdownComponents';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
 import { parseMessageText } from '../../utils/messageParser';
 import { ImageDisplay } from '../AI/ImageDisplay';
 import { VideoDisplay } from '../AI/VideoDisplay';
-import { GoogleSearchResults } from '../AI/GoogleSearchResults';
+import { SourcesPills } from '../AI/SourcesPills';
 import { DownloadRawResponseButton } from './DownloadRawResponseButton';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { FormattedBlock } from '../Markdown/FormattedBlock';
@@ -72,13 +72,13 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
    * It also strips incomplete tags from the end of the streaming text to prevent flicker.
    */
   const renderProgressiveAnswer = (text: string) => {
-    const componentRegex = /(\[(?:VIDEO|IMAGE|GOOGLE_SEARCH_RESULTS|FORMATTED_BLOCK|MCQ_COMPONENT|MAP_COMPONENT)\].*?\[\/(?:VIDEO|IMAGE|GOOGLE_SEARCH_RESULTS|FORMATTED_BLOCK|MCQ_COMPONENT|MAP_COMPONENT)\])/s;
+    const componentRegex = /(\[(?:VIDEO_COMPONENT|IMAGE_COMPONENT|SOURCES_PILLS|FORMATTED_BLOCK_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT)\].*?\[\/(?:VIDEO_COMPONENT|IMAGE_COMPONENT|SOURCES_PILLS|FORMATTED_BLOCK_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT)\])/s;
     const parts = text.split(componentRegex).filter(part => part);
 
     return parts.map((part, index) => {
         const videoMatch = part.match(/\[VIDEO_COMPONENT\](\{.*?\})\[\/VIDEO_COMPONENT\]/s);
         const imageMatch = part.match(/\[IMAGE_COMPONENT\](\{.*?\})\[\/IMAGE_COMPONENT\]/s);
-        const googleSearchMatch = part.match(/\[GOOGLE_SEARCH_RESULTS\](\{.*?\})\[\/GOOGLE_SEARCH_RESULTS\]/s);
+        const sourcesMatch = part.match(/\[SOURCES_PILLS\]([\s\S]*?)\[\/SOURCES_PILLS\]/s);
         const formattedBlockMatch = part.match(/\[FORMATTED_BLOCK_COMPONENT\](.*?)\[\/FORMATTED_BLOCK_COMPONENT\]/s);
         const mcqMatch = part.match(/\[MCQ_COMPONENT\](\{.*?\})\[\/MCQ_COMPONENT\]/s);
         const mapMatch = part.match(/\[MAP_COMPONENT\](\{.*?\})\[\/MAP_COMPONENT\]/s);
@@ -107,13 +107,13 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
             }
         }
 
-        if (googleSearchMatch) {
+        if (sourcesMatch) {
             try {
-                const searchData = JSON.parse(googleSearchMatch[1]);
-                return <GoogleSearchResults key={`${id}-${index}`} {...searchData} />;
+                const markdownContent = sourcesMatch[1].trim();
+                return <SourcesPills key={`${id}-${index}`} markdownContent={markdownContent} />;
             } catch (e) {
-                console.error("Failed to parse Google Search JSON:", e);
-                return renderError('Google Search', googleSearchMatch[1]);
+                console.error("Failed to parse Sources Pills markdown:", e);
+                return renderError('Sources Pills', sourcesMatch[1]);
             }
         }
 
@@ -140,14 +140,28 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
         if (mapMatch) {
             try {
                 const mapData = JSON.parse(mapMatch[1]);
-                return <MapDisplay key={`${id}-${index}`} {...mapData} />;
+                return (
+                    <motion.div
+                        key={`${id}-${index}`}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
+                    >
+                        <MapDisplay {...mapData} />
+                    </motion.div>
+                );
             } catch (e) {
                 console.error("Failed to parse map JSON:", e);
                 return renderError('map', mapMatch[1]);
             }
         }
         
-        const cleanedPart = part.replace(/\[(VIDEO|IMAGE|GOOGLE_SEARCH_RESULTS|FORMATTED_BLOCK|MCQ_COMPONENT|MAP_COMPONENT)[^\]]*$/, '');
+        // This new, more robust regex correctly identifies the start of any component tag
+        // and removes it and everything that follows from the final streaming part.
+        // This prevents raw, incomplete JSON or markdown from flickering in the UI.
+        const incompleteTagRegex = /\[(VIDEO_COMPONENT|IMAGE_COMPONENT|SOURCES_PILLS|FORMATTED_BLOCK_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT)\].*$/s;
+        const cleanedPart = part.replace(incompleteTagRegex, '');
+
         if (cleanedPart) {
             return <ManualCodeRenderer key={`${id}-${index}`} text={cleanedPart} components={MarkdownComponents} />;
         }
@@ -162,25 +176,26 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
 
   return (
     <motion.div {...animationProps} className="w-full flex flex-col items-start gap-4">
-        {hasThinkingProcess && (
+      {/* RENDER THINKING PROCESS FIRST */}
+      {hasThinkingProcess && (
             <>
                 <button
                     onClick={() => setIsThinkingDetailsVisible(prev => !prev)}
-                    className="w-full max-w-[90%] flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-[#2D2D2D] dark:bg-[#202123] hover:bg-opacity-90 transition-colors text-left"
+                    className="w-full max-w-[90%] flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-black/30 transition-colors text-left"
                     aria-expanded={isThinkingDetailsVisible}
                     aria-controls={`thinking-details-${id}`}
                     title={isThinkingDetailsVisible ? "Collapse thought process" : "Expand thought process"}
                 >
-                    <div className="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-400">
+                    <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-500 dark:text-slate-400">
                             <path fillRule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v1.25a.75.75 0 0 1-1.5 0V2.75A.75.75 0 0 1 10 2ZM5.207 4.207a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0Zm9.586 0a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06a.75.75 0 0 1 0-1.06ZM10 15.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Zm0-1.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" clipRule="evenodd" />
                         </svg>
-                        <span className="font-semibold text-slate-200 text-sm">
+                        <span className="font-semibold text-gray-700 dark:text-slate-200 text-sm">
                             {thinkingIsComplete ? `Thought took ${displayDuration}s` : `Thinking for ${displayDuration}s`}
                         </span>
                     </div>
                     <motion.div animate={{ rotate: isThinkingDetailsVisible ? 0 : -90 }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-500 dark:text-slate-400">
                           <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
                         </svg>
                     </motion.div>
@@ -208,25 +223,31 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
                 </AnimatePresence>
             </>
         )}
-        
-        {isWaitingForFinalAnswer && <TypingIndicator />}
-        
-        {error && <ErrorDisplay error={error} />}
+      
+      {/* AI Message Content */}
+      {/* This container has no visible styling; its content renders directly on the chat background. */}
+      {(hasFinalAnswer || error || isWaitingForFinalAnswer) && (
+        <div className="w-full max-w-[90%] flex flex-col gap-4">
+          {isWaitingForFinalAnswer && <TypingIndicator />}
+          
+          {error && <ErrorDisplay error={error} />}
 
-        {hasFinalAnswer && !error && (
-             <div className="markdown-content max-w-none w-full">
-                <TypingWrapper 
-                  fullText={finalAnswerText} 
-                  isAnimating={isStreamingFinalAnswer}
-                >
-                  {(displayedText) => renderProgressiveAnswer(isStreamingFinalAnswer ? displayedText : finalAnswerText)}
-                </TypingWrapper>
-            </div>
-        )}
+          {hasFinalAnswer && !error && (
+              <div className="markdown-content max-w-none w-full">
+                  <TypingWrapper 
+                    fullText={finalAnswerText} 
+                    isAnimating={isStreamingFinalAnswer}
+                  >
+                    {(displayedText) => renderProgressiveAnswer(isStreamingFinalAnswer ? displayedText : finalAnswerText)}
+                  </TypingWrapper>
+              </div>
+          )}
+        </div>
+      )}
 
-        {thinkingIsComplete && text && !error && (
-            <DownloadRawResponseButton rawText={text} />
-        )}
+      {thinkingIsComplete && text && !error && (
+          <DownloadRawResponseButton rawText={text} />
+      )}
     </motion.div>
   );
 };

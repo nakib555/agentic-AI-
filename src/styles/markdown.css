@@ -9,7 +9,7 @@
 /* Bubble style for AI-generated HTML */
 .bubble {
   display: inline-block;
-  background: #4f46e5; /* indigo-600 */
+  background: #14b8a6; /* teal-500 */
   color: #ffffff;
   border-radius: 18px;
   padding: 10px 16px;
@@ -20,28 +20,17 @@
   word-break: break-word;
 }
 .dark .bubble {
-  background: #3730a3; /* indigo-800 */
+  background: #0f766e; /* teal-700 */
 }
 
 /* Custom Blockquote styles */
 .custom-blockquote {
   position: relative;
-  padding-left: 2.5rem; /* Space for the quote mark */
+  padding-left: 1.5rem;
+  border-left: 4px solid #3B82F6; /* blue-500 */
 }
-
-.custom-blockquote::before {
-  content: '“';
-  position: absolute;
-  left: 0rem;
-  top: 0rem;
-  font-size: 3rem;
-  font-family: Georgia, serif;
-  color: #d8b4fe; /* purple-300 */
-  line-height: 1;
-}
-
-.dark .custom-blockquote::before {
-  color: #14b8a6; /* teal-500 */
+.dark .custom-blockquote {
+  border-left: 4px solid #14b8a6; /* teal-500 */
 }
 
 /* Ensure paragraphs inside the blockquote don't add extra margins */
@@ -54,12 +43,8 @@
 
 /* Compact version for workflow view */
 .custom-blockquote-workflow {
-  padding-left: 2rem;
-}
-.custom-blockquote-workflow::before {
-  left: 0.25rem;
-  top: -0.1rem;
-  font-size: 2rem;
+  padding-left: 1rem;
+  border-left: 3px solid #14b8a6; /* teal-500 */
 }
 
 /* KaTeX Math Formula Styling */
@@ -67,7 +52,7 @@
 /* Apply font size and color directly to the rendered HTML portion of KaTeX */
 .katex .katex-html {
   font-size: 1.1em !important;
-  color: #334155; /* slate-700 */
+  color: #1F2937; /* gray-800 */
 }
 
 .dark .katex .katex-html {
@@ -79,10 +64,12 @@
   padding: 0.1em 0.3em;
   margin: 0 0.15em;
   border-radius: 0.25rem;
-  background-color: #f1f5f9; /* slate-100 */
+  background-color: #F3F4F6; /* gray-100 */
+  border: 1px solid #E5E7EB; /* gray-200 */
 }
 .dark .katex {
   background-color: #334155; /* slate-700 */
+  border-color: #475569; /* slate-600 */
 }
 
 .katex-display {
@@ -92,8 +79,8 @@
   padding: 1em;
   margin: 1em 0;
   border-radius: 0.5rem;
-  background-color: #f8fafc; /* slate-50 */
-  border: 1px solid #e2e8f0; /* slate-200 */
+  background-color: #F9FAFB; /* gray-50 */
+  border: 1px solid #E5E7EB; /* gray-200 */
 }
 .dark .katex-display {
   background-color: #1e293b; /* slate-800 */

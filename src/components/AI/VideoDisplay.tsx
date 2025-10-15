@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -47,8 +46,8 @@ export const VideoDisplay = ({ videoKey, prompt }: VideoDisplayProps) => {
   }, [videoKey]);
 
   return (
-    <div className="my-4 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md">
-        <div className="aspect-video w-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+    <div className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-200/10 shadow-lg bg-white dark:bg-white/5">
+        <div className="aspect-video w-full bg-slate-900/50 flex items-center justify-center">
             {videoUrl ? (
                 <video
                     src={videoUrl}
@@ -61,7 +60,7 @@ export const VideoDisplay = ({ videoKey, prompt }: VideoDisplayProps) => {
                     aria-label={prompt || "Generated video"}
                 />
             ) : (
-                <div className="text-sm text-slate-500 dark:text-slate-400 p-4 text-center">
+                <div className="text-sm text-slate-400 p-4 text-center">
                     {error ? (
                     <span>{error}</span>
                     ) : (
@@ -77,8 +76,8 @@ export const VideoDisplay = ({ videoKey, prompt }: VideoDisplayProps) => {
             )}
         </div>
         {prompt && (
-             <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
-                <p className="text-sm font-serif italic text-slate-600 dark:text-slate-400" title={prompt}>
+             <div className="p-4 bg-gray-50 dark:bg-black/20 backdrop-blur-sm border-t border-gray-200 dark:border-slate-200/10">
+                <p className="text-sm font-serif italic text-gray-600 dark:text-slate-300" title={prompt}>
                     {prompt}
                 </p>
              </div>

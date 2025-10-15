@@ -5,16 +5,16 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import type { ToolCallEvent } from '../../types';
+import type { ToolCallEvent } from '../../../types';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { LocationPermissionRequest } from './LocationPermissionRequest';
 
 const LoadingDots = () => (
     <div className="flex gap-1 items-center">
-        <motion.div className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0 }} />
-        <motion.div className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }} />
-        <motion.div className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }} />
+        <motion.div className="w-1.5 h-1.5 bg-gray-500 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0 }} />
+        <motion.div className="w-1.5 h-1.5 bg-gray-500 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }} />
+        <motion.div className="w-1.5 h-1.5 bg-gray-500 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }} />
     </div>
 );
 
@@ -43,7 +43,7 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
 
     return (
         <div>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Result</p>
+            <p className="text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">Result</p>
             <motion.div
                 className="overflow-hidden"
                 animate={{ height: 'auto' }}
@@ -54,7 +54,7 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
             {isLongResult && (
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="text-xs font-semibold text-blue-500 hover:text-blue-400 dark:text-teal-400 dark:hover:text-teal-300 mt-2"
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-teal-400 dark:hover:text-teal-300 mt-2"
                     aria-expanded={isExpanded}
                 >
                     {isExpanded ? 'Show Less' : 'Show More'}
@@ -72,17 +72,19 @@ type ToolCallStepProps = {
 export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
     const { call, result } = event;
     const { args } = call;
+
+    // --- Default UI for all other tools ---
     const argEntries = Object.entries(args);
   
     return (
       <div className="min-w-0 flex-1 text-sm space-y-3">
         {argEntries.length > 0 && (
-          <div className="text-xs font-['Fira_Code',_monospace] space-y-1.5 bg-slate-800/70 p-2 rounded-md">
-            <p className="text-xs font-semibold text-slate-400 mb-1">Parameters</p>
+          <div className="text-xs font-['Fira_Code',_monospace] space-y-1.5 bg-gray-100 dark:bg-slate-800/70 p-2 rounded-md">
+            <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-1">Parameters</p>
             {argEntries.map(([key, value]) => (
               <div key={key} className="grid grid-cols-[auto,1fr] gap-x-2 items-start">
-                <span className="text-slate-500 font-medium capitalize">{key}:</span>
-                <span className="text-slate-300 break-all">{String(value)}</span>
+                <span className="text-gray-500 dark:text-slate-500 font-medium capitalize">{key}:</span>
+                <span className="text-gray-700 dark:text-slate-300 break-all">{String(value)}</span>
               </div>
             ))}
           </div>
@@ -91,7 +93,7 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
             {result ? (
                 <ToolResultDisplay result={result} sendMessage={sendMessage} />
             ) : (
-                <div className="flex items-center gap-2 text-xs text-slate-400">
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
                     <span>Executing</span>
                     <LoadingDots />
                 </div>

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Message } from '../../types';
+import type { Message } from '../../../types';
 import { UserMessage } from './UserMessage';
 import { AiMessage } from './AiMessage';
 

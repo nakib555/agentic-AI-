@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import type { ChatSession } from '../../types';
+import type { ChatSession } from '../../../types';
 import { HistoryItem } from './HistoryItem';
 
 type HistoryListProps = {
@@ -71,7 +71,7 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
     if (isCollapsed) return null;
 
     return (
-        <div className="flex-1 overflow-y-auto min-h-0 text-sm">
+        <div className="flex-1 overflow-y-auto min-h-0 text-sm modern-scrollbar">
             {Object.keys(groupedHistory).length > 0 ? (
                 <div className="space-y-4">
                     {groupOrder.map(groupName => {
@@ -80,7 +80,7 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
 
                         return (
                             <div key={groupName}>
-                                <h3 className="px-2 text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">{groupName}</h3>
+                                <h3 className="px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{groupName}</h3>
                                 <div className="space-y-0.5">
                                     {chatsInGroup.map((item) => (
                                         <HistoryItem 

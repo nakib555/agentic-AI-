@@ -1,65 +1,20 @@
-/* --- Modern, Cross-Browser Scrollbar Styling --- */
+/* --- Hide all scrollbars while maintaining scrollability --- */
 
 /* For Firefox */
-html {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.5) transparent; /* thumb track */
-}
-
-.dark html {
-  scrollbar-color: rgba(100, 116, 139, 0.6) transparent;
+* {
+  scrollbar-width: none;
 }
 
 /* For Webkit-based browsers (Chrome, Safari, Edge) */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.4);
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(148, 163, 184, 0.7);
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background-color: rgba(71, 85, 105, 0.4);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(100, 116, 139, 0.7);
-}
-
-/* --- Scrollbar for Execution & Plan Logs --- */
-.execution-log,
-.plan-log,
-.workflow-container-log {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(100, 116, 139, 0.6) transparent;
-}
-
-.execution-log::-webkit-scrollbar-thumb,
-.plan-log::-webkit-scrollbar-thumb,
-.workflow-container-log::-webkit-scrollbar-thumb {
-  background-color: rgba(71, 85, 105, 0.4);
-}
-
-.execution-log::-webkit-scrollbar-thumb:hover,
-.plan-log::-webkit-scrollbar-thumb:hover,
-.workflow-container-log::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(100, 116, 139, 0.7);
+*::-webkit-scrollbar {
+  display: none;
 }
 
 /* --- General Styles --- */
 
-body { font-family: 'Inter', sans-serif; }
+body { 
+  font-family: 'Inter', sans-serif; 
+}
 
 /* Accessibility utility to hide elements visually but keep them available for screen readers */
 .sr-only {
@@ -97,6 +52,7 @@ body { font-family: 'Inter', sans-serif; }
    to function as intended. */
 html, body, #root {
     height: 100%;
+    overflow: hidden;
 }
 
 /* Placeholder styling for the contentEditable div chat input */
@@ -104,28 +60,29 @@ html, body, #root {
   content: attr(data-placeholder);
   position: absolute;
   left: 0;
-  top: 0;
-  color: #94a3b8; /* text-slate-400 */
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6B7280; /* text-gray-500 */
   pointer-events: none;
   line-height: 1.5rem;
 }
 
 .dark .content-editable-input[data-placeholder]:empty::before {
-  color: #64748b; /* text-slate-500 */
+  color: #94a3b8; /* text-slate-400 */
 }
 
 /* --- Chat Area Background Pattern --- */
 .chat-background {
   position: relative;
-  /* Apply a solid background color to the chat area itself */
-  background-color: #ffffff;
-  /* Layer the dot pattern image on top of the solid color */
-  background-image: url("data:image/svg+xml,%3csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='2' cy='2' r='1' fill='%23e2e8f0'/%3e%3c/svg%3e");
+  background-color: #F9FAFB; /* gray-50 */
+  background-image: radial-gradient(#E5E7EB 1px, transparent 1px); /* gray-200 */
+  background-size: 20px 20px;
 }
 
 .dark .chat-background {
   background-color: #121212;
-  background-image: url("data:image/svg+xml,%3csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='2' cy='2' r='1' fill='%23334155'/%3e%3c/svg%3e");
+  background-image: radial-gradient(#2A2A2A 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 /* --- Monaco Editor Display-Only Enhancements --- */
@@ -150,4 +107,24 @@ html, body, #root {
 /* Remove any focus outline that might appear on the editor's hidden textarea */
 .monaco-editor textarea:focus {
   outline: none !important;
+}
+
+/* Custom scrollbar for workflow logs and history list */
+.modern-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #4b5563 #1f2937; /* thumb color track color */
+}
+.modern-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.modern-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.modern-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #4b5563; /* slate-600 */
+    border-radius: 10px;
+    border: 3px solid transparent;
+}
+.modern-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #6b7280; /* slate-500 */
 }

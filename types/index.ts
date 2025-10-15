@@ -8,6 +8,8 @@ export type ToolCallEvent = {
     id: string;
     call: FunctionCall;
     result?: string;
+    startTime?: number;
+    endTime?: number;
 };
 
 export type MessageError = {
@@ -26,7 +28,6 @@ export class ToolError extends Error {
         public originalMessage: string,
         cause?: Error
     ) {
-        // The message of this ToolError instance will be what's thrown.
         super(`Tool '${toolName}' failed with code ${code}. Reason: ${originalMessage}`);
         this.name = 'ToolError';
         this.code = code;
@@ -49,6 +50,8 @@ export type Message = {
   error?: MessageError;
   isHidden?: boolean;
   attachments?: Attachment[];
+  startTime?: number;
+  endTime?: number;
 };
 
 export type ChatSession = {
@@ -57,4 +60,5 @@ export type ChatSession = {
     messages: Message[];
     model: string;
     isLoading?: boolean;
+    createdAt: number;
 };

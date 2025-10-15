@@ -15,12 +15,12 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed }: { theme: Theme, se
     ];
 
     return (
-        <div className={`p-1 rounded-lg bg-slate-200/60 dark:bg-slate-700/50 flex transition-all ${isCollapsed ? 'flex-col gap-1' : 'justify-between'}`}>
+        <div className={`p-1 rounded-lg bg-black/5 dark:bg-white/5 flex transition-all ${isCollapsed ? 'flex-col gap-1' : 'justify-between'}`}>
             {buttons.map(btn => (
                 <button
                     key={btn.value}
                     onClick={() => setTheme(btn.value as Theme)}
-                    className={`flex-1 flex items-center justify-center gap-2 p-1.5 rounded-md text-sm transition-colors ${theme === btn.value ? 'bg-white text-slate-800 shadow-sm dark:bg-slate-800 dark:text-slate-100' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'}`}
+                    className={`flex-1 flex items-center justify-center gap-2 p-1.5 rounded-md text-sm transition-colors ${theme === btn.value ? 'bg-white text-slate-800 shadow-sm dark:bg-black/20 dark:text-slate-100' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'}`}
                     aria-label={`Set theme to ${btn.label}`}
                     title={`Set theme to ${btn.label}`}
                     aria-pressed={theme === btn.value}

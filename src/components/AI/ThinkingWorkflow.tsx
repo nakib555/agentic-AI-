@@ -5,7 +5,7 @@
 
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { MessageError, ToolCallEvent } from '../../types';
+import type { MessageError, ToolCallEvent } from '../../../types';
 import { WorkflowNode, type WorkflowNodeStatus } from './WorkflowNode';
 import { parseAgenticWorkflow } from '../../services/workflowParser';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
@@ -52,15 +52,15 @@ const SectionHeader: React.FC<{
 }> = ({ title, statusIcon, isOpen, onToggle }) => (
     <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between gap-2 px-4 py-2 hover:bg-white/5 transition-colors"
+        className="w-full flex items-center justify-between gap-2 px-4 py-2 hover:bg-gray-200/50 dark:hover:bg-white/5 transition-colors"
         aria-expanded={isOpen}
     >
         <div className="flex items-center gap-3">
             {statusIcon}
-            <span className="font-semibold text-slate-200 text-sm">{title}</span>
+            <span className="font-semibold text-gray-800 dark:text-slate-200 text-sm">{title}</span>
         </div>
         <motion.div animate={{ rotate: isOpen ? 0 : -90 }}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-500 dark:text-slate-400">
                 <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
             </svg>
         </motion.div>
@@ -188,7 +188,7 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isL
 
     const visibleSections = [ error && 'error', goalAnalysis && 'goal', todoList && 'todo', tools && 'tools', executionLog.length > 0 && 'execution' ].filter(Boolean);
     const lastVisibleSection = visibleSections[visibleSections.length - 1];
-    const getSectionClassName = (sectionName: string) => lastVisibleSection === sectionName ? '' : 'border-b border-slate-600/50';
+    const getSectionClassName = (sectionName: string) => lastVisibleSection === sectionName ? '' : 'border-b border-gray-200 dark:border-slate-600/50';
 
     const renderSectionContent = (content: string, sectionName: SectionName, ref: React.RefObject<HTMLDivElement>) => (
          <div ref={ref} className="px-4 pt-2 pb-4 overflow-y-auto max-h-[240px] plan-log">
@@ -210,19 +210,19 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isL
     );
 
     return (
-        <div className="bg-[#2D2D2D] dark:bg-[#202123] rounded-xl max-w-[90%] w-full">
+        <div className="bg-gray-100 dark:bg-[#202123] rounded-xl max-w-[90%] w-full">
             <div className="overflow-y-auto max-h-[500px] workflow-container-log">
                 {error && (
                     <div className={`p-4 ${getSectionClassName('error')}`}>
                          <motion.div
                             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
-                            className="bg-red-900/30 border border-red-500/40 p-3 rounded-lg flex items-start gap-3"
+                            className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-500/40 p-3 rounded-lg flex items-start gap-3"
                          >
                             <div className="flex-shrink-0 text-red-400 pt-0.5">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0 -16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clipRule="evenodd" /></svg>
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-red-300 break-words">{error.message}</p>
+                                <p className="font-semibold text-red-700 dark:text-red-300 break-words">{error.message}</p>
                             </div>
                         </motion.div>
                     </div>

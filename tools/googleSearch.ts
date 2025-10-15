@@ -32,7 +32,7 @@ export const executeGoogleSearch = async (args: { query: string }): Promise<stri
       },
     });
 
-    const summary = response.text;
+    const summary = response.text ?? '';
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
     
     const sources = groundingChunks

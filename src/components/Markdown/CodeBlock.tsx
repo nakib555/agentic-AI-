@@ -97,8 +97,8 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
     const formattedLanguage = language ? language.charAt(0).toUpperCase() + language.slice(1) : 'Code';
 
     return (
-      <div className="my-4 rounded-lg text-sm overflow-hidden shadow-lg dark:shadow-2xl dark:shadow-black/30 bg-[#1e1e1e]">
-        <div className="flex justify-between items-center px-4 py-2 bg-slate-100 dark:bg-[#171717] border-b border-slate-200 dark:border-[rgba(255,255,255,0.08)]">
+      <div className="my-4 rounded-lg text-sm overflow-hidden shadow-lg dark:shadow-2xl dark:shadow-black/30 bg-gray-50 dark:bg-[#1e1e1e]">
+        <div className="flex justify-between items-center px-4 py-2 bg-gray-100 dark:bg-[#171717] border-b border-gray-200 dark:border-[rgba(255,255,255,0.08)]">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">
             {formattedLanguage}
           </span>
@@ -125,7 +125,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
           </button>
         </div>
         {/* This wrapper div handles the scrolling */}
-        <div className="max-h-[600px] overflow-y-auto">
+        <div className="overflow-y-auto" style={{ maxHeight: '60vh' }}>
             <Editor
               height={editorHeight}
               language={monacoLang}

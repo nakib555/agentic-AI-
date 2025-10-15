@@ -6,9 +6,9 @@
 import { useMemo, useCallback, useEffect, useRef } from 'react';
 import type { FunctionCall } from "@google/genai";
 import { generateChatTitle } from '../services/gemini';
-import { toolImplementations } from '../tools';
+import { toolImplementations } from '../../tools';
 import { runAgenticLoop } from '../services/agenticLoop';
-import { type Message, type ToolCallEvent, type MessageError, ToolError } from '../types';
+import { type Message, type ToolCallEvent, type MessageError, ToolError } from '../../types';
 import { fileToBase64 } from '../utils/fileUtils';
 import { useChatHistory } from './useChatHistory';
 import { parseMessageText } from '../utils/messageParser';
@@ -42,12 +42,18 @@ export const useChat = (initialModel: string) => {
       // Prevent re-triggering by immediately updating the title
       updateChatTitle(currentChatId!, "Generating title...");
       
-      generateChatTitle(currentChat.messages).then(newTitle => {
-          // The title from generateChatTitle is already cleaned, vetted, and has a fallback.
-          // We just need to apply it and handle truncation.
-          const finalTitle = newTitle.length > 45 ? newTitle.substring(0, 42) + '...' : newTitle;
-          updateChatTitle(currentChatId!, finalTitle);
-      });
+      generateChatTitle(currentChat.messages)
+        .then(newTitle => {
+            // The title from generateChatTitle is already cleaned, vetted, and has a fallback.
+            // We just need to apply it and handle truncation.
+            const finalTitle = newTitle.length > 45 ? newTitle.substring(0, 42) + '...' : newTitle;
+            updateChatTitle(currentChatId!, finalTitle);
+        })
+        .catch(err => {
+            console.error("Failed to generate and update chat title:", err);
+            // Revert to a generic title if generation fails
+            updateChatTitle(currentChatId!, "Chat"); 
+        });
     }
   }, [chatHistory, currentChatId, updateChatTitle]);
 
@@ -263,7 +269,7 @@ export const useChat = (initialModel: string) => {
             abortControllerRef.current = null;
         },
         onError: (error: MessageError) => {
-            console.error("Error received in useChat:", error);
+            console.error("Error in agentic loop:", error);
             
             // The error from the agentic loop has a specific code, but the message might be technical.
             // Here, we refine the message for a better user experience before showing it in the UI.

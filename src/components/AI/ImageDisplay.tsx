@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -71,8 +70,8 @@ export const ImageDisplay = ({ imageKey, prompt, caption }: ImageDisplayProps) =
   };
 
   return (
-    <div className="my-4 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md">
-      <div className="aspect-square w-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+    <div className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-200/10 shadow-lg bg-white dark:bg-white/5">
+      <div className="aspect-square w-full bg-slate-900/50 flex items-center justify-center">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -81,7 +80,7 @@ export const ImageDisplay = ({ imageKey, prompt, caption }: ImageDisplayProps) =
             loading="lazy"
           />
         ) : (
-          <div className="text-sm text-slate-500 dark:text-slate-400 p-4 text-center">
+          <div className="text-sm text-slate-400 p-4 text-center">
             {error ? (
               <span>{error}</span>
             ) : (
@@ -96,19 +95,16 @@ export const ImageDisplay = ({ imageKey, prompt, caption }: ImageDisplayProps) =
           </div>
         )}
       </div>
-      <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-start justify-between gap-4">
+      <div className="p-4 bg-gray-50 dark:bg-black/20 backdrop-blur-sm border-t border-gray-200 dark:border-slate-200/10 flex items-start justify-between gap-4">
         <div className="flex-1">
-            <p className="font-serif italic text-slate-700 dark:text-slate-300" title={`Full prompt: ${prompt}`}>
+            <p className="font-serif italic text-gray-600 dark:text-slate-300" title={`Full prompt: ${prompt}`}>
                 “{caption || prompt}”
-            </p>
-            <p className="text-right text-xs mt-2 font-serif text-teal-600 dark:text-teal-400">
-                — *for your eyes only* 💋
             </p>
         </div>
         {imageUrl && (
           <button
             onClick={handleDownload}
-            className="flex-shrink-0 mt-1 p-1.5 rounded-full text-slate-500 hover:bg-slate-200 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors"
+            className="flex-shrink-0 mt-1 p-1.5 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-800 dark:hover:text-slate-100 transition-colors"
             title="Download image"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">

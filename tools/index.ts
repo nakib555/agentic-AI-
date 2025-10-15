@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { googleSearchDeclaration, executeGoogleSearch } from './googleSearch';
+import { duckduckgoSearchDeclaration, executeDuckDuckGoSearch } from './duckduckgo';
 import { getCurrentLocationDeclaration, executeGetCurrentLocation, requestLocationPermissionDeclaration, executeRequestLocationPermission } from './location';
 import { getWeatherDeclaration, executeGetCurrentWeather } from './weather';
 import { imageGeneratorDeclaration, executeImageGenerator } from './imageGenerator';
@@ -15,7 +15,7 @@ import { displayMapDeclaration, executeDisplayMap } from './map';
 
 // Export all tool declarations for the model
 export const toolDeclarations = [
-  googleSearchDeclaration,
+  duckduckgoSearchDeclaration,
   getCurrentLocationDeclaration,
   getWeatherDeclaration,
   imageGeneratorDeclaration,
@@ -28,7 +28,7 @@ export const toolDeclarations = [
 
 // Map of tool names to their implementation
 export const toolImplementations: Record<string, (args: any) => string | Promise<string>> = {
-  'googleSearch': executeGoogleSearch,
+  'duckduckgoSearch': executeDuckDuckGoSearch,
   'getCurrentLocation': executeGetCurrentLocation,
   'getCurrentWeather': executeGetCurrentWeather,
   'generateImage': executeImageGenerator,
