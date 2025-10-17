@@ -16,7 +16,7 @@ const Highlight = ({ text, highlight }: { text: string, highlight: string }) => 
         <span>
             {parts.map((part, i) =>
                 regex.test(part) ? (
-                    <span key={i} className="bg-teal-200/30 dark:bg-teal-500/30 font-semibold rounded-sm px-0.5">{part}</span>
+                    <span key={i} className="bg-black/10 dark:bg-white/10 font-semibold rounded-sm px-0.5">{part}</span>
                 ) : (
                     <span key={i}>{part}</span>
                 )

@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Model } from '../../services/modelService';
 import { ModelSelector } from '../UI/ModelSelector';
@@ -26,7 +26,7 @@ type SettingsModalProps = {
 };
 
 const SettingField: React.FC<{ label: string; description: string; children: React.ReactNode }> = ({ label, description, children }) => (
-    <div className="space-y-3 pt-6 border-t border-gray-200 dark:border-white/10 first:pt-0 first:border-t-0">
+    <div className="space-y-3 pt-6 first:pt-0">
         <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
             {label}
         </label>
@@ -43,16 +43,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     defaultSystemPrompt, defaultTemperature, defaultMaxTokens, disabled 
 }) => {
     
-    const systemPromptRef = useRef<HTMLDivElement>(null);
-
-    // Effect to synchronize the contentEditable div's content with the React state.
-    // This is necessary because contentEditable is an uncontrolled component.
-    useEffect(() => {
-        if (systemPromptRef.current && systemPromptRef.current.innerText !== systemPrompt) {
-            systemPromptRef.current.innerText = systemPrompt;
-        }
-    }, [systemPrompt]);
-
     const handleReset = () => {
         // Note: Model is not reset as it's a primary choice.
         setSystemPrompt(defaultSystemPrompt);
@@ -68,7 +58,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="settings-title"
@@ -78,7 +68,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="bg-white dark:bg-[#202123] rounded-2xl shadow-xl w-full max-w-md border border-gray-200 dark:border-white/10 flex flex-col"
+            className="bg-white dark:bg-[#202123] rounded-2xl shadow-xl w-full max-w-md border border-gray-200 dark:border-white/10 flex flex-col max-h-[90vh]"
             onClick={(e) => e.stopPropagation()} // Prevent closing modal when clicking inside
           >
             {/* Header */}
@@ -109,21 +99,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </SettingField>
 
               <SettingField label="System Prompt" description="Add a custom instruction to guide the AI's behavior, persona, and responses for new chats.">
-                <div className="relative">
-                    <div
-                        ref={systemPromptRef}
-                        contentEditable={!disabled}
-                        onInput={e => setSystemPrompt(e.currentTarget.innerText)}
-                        className="w-full h-24 p-2 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 modern-scrollbar overflow-y-auto"
-                        aria-disabled={disabled}
-                        role="textbox"
-                    />
-                    {!systemPrompt.trim() && (
-                        <span className="absolute top-2 left-2 text-sm text-gray-500 dark:text-slate-400 pointer-events-none">
-                            e.g., You are a helpful and friendly assistant that explains complex topics in simple terms.
-                        </span>
-                    )}
-                </div>
+                <textarea
+                    value={systemPrompt}
+                    onChange={e => setSystemPrompt(e.target.value)}
+                    disabled={disabled}
+                    placeholder="e.g., You are a helpful and friendly assistant that explains complex topics in simple terms."
+                    className="w-full min-h-[96px] max-h-48 p-2 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 modern-scrollbar overflow-y-auto placeholder-gray-500 dark:placeholder-slate-400 resize-none"
+                    aria-disabled={disabled}
+                />
               </SettingField>
 
               <SettingField label={`Temperature: ${temperature.toFixed(1)}`} description="Controls randomness. Lower values are more deterministic, higher values are more creative.">

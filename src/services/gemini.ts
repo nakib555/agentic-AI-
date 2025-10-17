@@ -116,26 +116,24 @@ export const initChat = (model: string, history?: ChatHistory, settings?: ChatSe
 
     const modelToUse = model;
 
-    const generationConfig: any = {};
+    const config: any = {
+        systemInstruction: settings?.systemPrompt
+            ? `${settings.systemPrompt}\n\n${systemInstruction}`
+            : systemInstruction,
+        tools: [{ functionDeclarations: toolDeclarations }],
+    };
+    
     if (settings?.temperature !== undefined) {
-      generationConfig.temperature = settings.temperature;
+      config.temperature = settings.temperature;
     }
     if (settings?.maxOutputTokens && settings.maxOutputTokens > 0) {
-      generationConfig.maxOutputTokens = settings.maxOutputTokens;
+      config.maxOutputTokens = settings.maxOutputTokens;
     }
-    
-    const finalSystemInstruction = settings?.systemPrompt
-      ? `${settings.systemPrompt}\n\n${systemInstruction}`
-      : systemInstruction;
 
     return ai.chats.create({
       model: modelToUse,
       history,
-      config: {
-        systemInstruction: finalSystemInstruction,
-        tools: [{ functionDeclarations: toolDeclarations }],
-        ...(Object.keys(generationConfig).length > 0 && { generationConfig }),
-      },
+      config,
     });
 };
 

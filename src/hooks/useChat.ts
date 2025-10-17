@@ -36,6 +36,7 @@ export const useChat = (initialModel: string, settings: ChatSettings) => {
     completeChatLoading,
     updateChatTitle,
     updateChatModel,
+    updateChatSettings,
   } = useChatHistory();
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -322,5 +323,5 @@ export const useChat = (initialModel: string, settings: ChatSettings) => {
     });
   };
   
-  return { messages, sendMessage, isLoading, chatHistory, currentChatId, startNewChat, loadChat, deleteChat, clearAllChats, cancelGeneration, updateChatModel };
+  return { messages, sendMessage, isLoading, chatHistory, currentChatId, startNewChat, loadChat, deleteChat, clearAllChats, cancelGeneration, updateChatModel, updateChatSettings };
 };

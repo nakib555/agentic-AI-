@@ -129,6 +129,13 @@ export const useChatHistory = () => {
     setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, model } : s));
   }, []);
 
+  const updateChatSettings = useCallback((chatId: string, newSettings: Partial<Pick<ChatSession, 'systemPrompt' | 'temperature' | 'maxOutputTokens'>>) => {
+    setChatHistory(prev => prev.map(s => {
+      if (s.id !== chatId) return s;
+      return { ...s, ...newSettings };
+    }));
+  }, []);
+
   return { 
     chatHistory, 
     currentChatId,
@@ -143,5 +150,6 @@ export const useChatHistory = () => {
     completeChatLoading,
     updateChatTitle,
     updateChatModel,
+    updateChatSettings,
   };
 };

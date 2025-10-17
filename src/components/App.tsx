@@ -62,6 +62,7 @@ export const App = () => {
     clearAllChats,
     cancelGeneration,
     updateChatModel,
+    updateChatSettings,
   } = useChat(uiSelectedModel, { systemPrompt, temperature, maxOutputTokens: maxTokens });
   
 
@@ -87,7 +88,16 @@ export const App = () => {
     localStorage.setItem('agentic-systemPrompt', systemPrompt);
     localStorage.setItem('agentic-temperature', String(temperature));
     localStorage.setItem('agentic-maxTokens', String(maxTokens));
-  }, [systemPrompt, temperature, maxTokens]);
+
+    // Also update the settings for the currently active chat session
+    if (currentChatId) {
+        updateChatSettings(currentChatId, {
+            systemPrompt,
+            temperature,
+            maxOutputTokens: maxTokens,
+        });
+    }
+  }, [systemPrompt, temperature, maxTokens, currentChatId, updateChatSettings]);
   
   // Handler for model selector: updates the model for the current chat or the next new chat.
   const handleModelChange = (modelId: string) => {
