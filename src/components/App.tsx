@@ -15,6 +15,7 @@ import { useSidebar } from '../hooks/useSidebar';
 import { Sidebar } from './Sidebar/Sidebar';
 import { ChatHeader } from './Chat/ChatHeader';
 import { ChatArea } from './Chat/ChatArea';
+import { SettingsModal } from './Settings/SettingsModal';
 
 // Configure the Monaco Editor loader to fetch assets from a CDN.
 // This is done once at the top level of the application.
@@ -24,11 +25,21 @@ loader.config({
   }
 });
 
+const DEFAULT_SYSTEM_PROMPT = '';
+const DEFAULT_TEMPERATURE = 0.7;
+const DEFAULT_MAX_TOKENS = 0; // 0 or undefined means use model default
+
 export const App = () => {
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
   const [modelsLoading, setModelsLoading] = useState(true);
   const [uiSelectedModel, setUiSelectedModel] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
+  // Settings State
+  const [systemPrompt, setSystemPrompt] = useState<string>(() => localStorage.getItem('agentic-systemPrompt') || DEFAULT_SYSTEM_PROMPT);
+  const [temperature, setTemperature] = useState<number>(() => parseFloat(localStorage.getItem('agentic-temperature') || `${DEFAULT_TEMPERATURE}`));
+  const [maxTokens, setMaxTokens] = useState<number>(() => parseInt(localStorage.getItem('agentic-maxTokens') || `${DEFAULT_MAX_TOKENS}`, 10));
+
   const { theme, setTheme } = useTheme();
   const {
     isSidebarOpen,
@@ -50,7 +61,8 @@ export const App = () => {
     deleteChat,
     clearAllChats,
     cancelGeneration,
-  } = useChat(uiSelectedModel);
+    updateChatModel,
+  } = useChat(uiSelectedModel, { systemPrompt, temperature, maxOutputTokens: maxTokens });
   
 
   // Effect to fetch models on startup
@@ -69,11 +81,20 @@ export const App = () => {
       setModelsLoading(false);
     });
   }, []);
+
+  // Effect to save settings to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('agentic-systemPrompt', systemPrompt);
+    localStorage.setItem('agentic-temperature', String(temperature));
+    localStorage.setItem('agentic-maxTokens', String(maxTokens));
+  }, [systemPrompt, temperature, maxTokens]);
   
-  // Handler for model selector: changing the model starts a new chat
+  // Handler for model selector: updates the model for the current chat or the next new chat.
   const handleModelChange = (modelId: string) => {
     setUiSelectedModel(modelId);
-    startNewChat();
+    if (currentChatId) {
+        updateChatModel(currentChatId, modelId);
+    }
   };
 
   // The model displayed should be the current chat's model, or the selected one for a new chat.
@@ -96,33 +117,12 @@ export const App = () => {
         onClearAllChats={clearAllChats}
         theme={theme}
         setTheme={setTheme}
+        onSettingsClick={() => setIsSettingsOpen(true)}
       />
-      
-      {/* Overlay for mobile */}
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 bg-black/60 z-10 md:hidden"
-            role="button"
-            aria-label="Close sidebar"
-            tabIndex={0}
-          />
-        )}
-      </AnimatePresence>
 
       <main className="flex-1 flex flex-col overflow-hidden chat-background">
         <div className="flex-1 flex flex-col w-full max-w-4xl mx-auto min-h-0">
-           <ChatHeader
-              setIsSidebarOpen={setIsSidebarOpen}
-              models={availableModels}
-              selectedModel={activeModel}
-              onModelChange={handleModelChange}
-              disabled={modelsLoading}
-           />
+           <ChatHeader setIsSidebarOpen={setIsSidebarOpen} />
            <ChatArea 
               messages={messages}
               isLoading={isLoading}
@@ -132,6 +132,24 @@ export const App = () => {
            />
         </div>
       </main>
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        models={availableModels}
+        selectedModel={activeModel}
+        onModelChange={handleModelChange}
+        disabled={modelsLoading}
+        systemPrompt={systemPrompt}
+        setSystemPrompt={setSystemPrompt}
+        temperature={temperature}
+        setTemperature={setTemperature}
+        maxTokens={maxTokens}
+        setMaxTokens={setMaxTokens}
+        defaultSystemPrompt={DEFAULT_SYSTEM_PROMPT}
+        defaultTemperature={DEFAULT_TEMPERATURE}
+        defaultMaxTokens={DEFAULT_MAX_TOKENS}
+      />
     </div>
   );
 };

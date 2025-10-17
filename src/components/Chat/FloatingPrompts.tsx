@@ -16,8 +16,8 @@ export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -20 }}
-    transition={{ duration: 0.3, ease: 'easeOut' }}
-    className="flex flex-wrap items-center justify-center gap-3 mb-4"
+    transition={{ duration: 0.3, ease: 'easeOut', delay: 0.4 }}
+    className="grid grid-cols-3 gap-2 sm:gap-4 mt-12 w-full max-w-md"
   >
     <PromptButton icon="🧠" text="Reasoning" onClick={() => onPromptClick("What is the capital of France?")} />
     <PromptButton icon="🎬" text="Video" onClick={() => onPromptClick("Generate a video of a cat playing a piano.")} />

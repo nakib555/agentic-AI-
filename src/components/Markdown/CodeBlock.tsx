@@ -154,7 +154,10 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
                 folding: false,
                 links: false,
                 hover: { enabled: false },
-                lightbulb: { enabled: false },
+                // FIX: The `enabled` property for the lightbulb requires a string literal of type `ShowLightbulbIconMode`.
+                // The value 'off' is correct, but casting to 'any' is necessary to bypass a potential type
+                // definition mismatch in the project's setup.
+                lightbulb: { enabled: 'off' as any },
               }}
             />
         </div>

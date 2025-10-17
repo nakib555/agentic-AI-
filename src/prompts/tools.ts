@@ -9,7 +9,7 @@ export const TOOLS_OVERVIEW = `
 You have access to the following tools. You must select the most appropriate tool for the task and use it efficiently.
 
 *   \`duckduckgoSearch(query: string)\`
-    *   **Use Case:** Your primary tool for answering questions about current events, news, or any topic requiring up-to-date information from the web. It can also be used to summarize the content of a specific URL if you provide the URL as the query.
+    *   **Use Case:** Dual-function tool. For general queries, it performs a web search. If the query provided is a valid URL (e.g., "https://www.example.com"), it will fetch and summarize the content of that specific webpage. Use this for questions about current events, facts, or to understand the content of a link.
     *   **Output:** The tool returns a text summary of the findings for you to analyze and synthesize. It also provides a special component tag, \`[SOURCES_PILLS]...[/SOURCES_PILLS]\`, containing a markdown list of the source links.
     *   **MANDATORY ACTION:** After receiving the search summary, you MUST analyze it and write your own comprehensive answer in the "[STEP] Final Answer". You MUST NOT simply repeat the summary. To display the sources to the user, you MUST take the entire, unmodified \`[SOURCES_PILLS]\` component and its markdown content, and place it at the very end of your final answer.
 
@@ -21,7 +21,7 @@ You have access to the following tools. You must select the most appropriate too
     *   **Use Case:** Only to be used after \`getCurrentLocation()\` fails because the user denied permission. This tool asks the user to grant permission via a UI element.
 
 *   \`displayMap(latitude: number, longitude: number, zoom?: number, markerText?: string)\`
-    *   **Use Case:** To display an interactive map centered on a specific geographical location. If you do not know the exact coordinates for a place, you MUST use another tool like \`googleSearch\` first to find them. Do NOT guess coordinates.
+    *   **Use Case:** To display an interactive map centered on a specific geographical location. If you do not know the exact coordinates for a place, you MUST use another tool like \`duckduckgoSearch\` first to find them. Do NOT guess coordinates.
     *   **Parameters:**
         *   \`latitude\`, \`longitude\`: The geographical coordinates.
         *   \`zoom\`: The map zoom level (default: 1 (world) to 18 (street level)). Default is 13.
@@ -41,7 +41,4 @@ You have access to the following tools. You must select the most appropriate too
     *   **Supported Languages:** \`javascript\` (or \`js\`), \`typescript\` (or \`ts\`). TypeScript code is executed directly as JavaScript.
     *   **Libraries:** You can load external libraries by providing an array of CDN URLs in the \`libraries\` parameter. For example, to use Lodash, you would include \`"https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"\`. Libraries are loaded before your code runs.
     *   **Note:** The execution environment is a secure, sandboxed JavaScript (browser) environment. It has no access to the DOM, file system, or Node.js APIs. Python and other languages are not supported. The tool's output will be the combined result of all \`console.log\` statements and the final return value of the script.
-
-*   \`calculator(expression: string)\`
-    *   **Use Case:** For evaluating mathematical expressions. Use this for arithmetic operations instead of writing code.
 `;

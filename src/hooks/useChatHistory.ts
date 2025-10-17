@@ -1,5 +1,3 @@
-
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -9,6 +7,12 @@ import { useState, useEffect, useCallback } from 'react';
 import type { ChatSession, Message } from '../types';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
+
+type ChatSettings = { 
+    systemPrompt: string; 
+    temperature: number; 
+    maxOutputTokens: number; 
+};
 
 export const useChatHistory = () => {
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
@@ -78,7 +82,7 @@ export const useChatHistory = () => {
     setCurrentChatId(null);
   }, []);
 
-  const createNewChat = useCallback((initialModel: string): string => {
+  const createNewChat = useCallback((initialModel: string, settings: ChatSettings): string => {
     const newChatId = generateId();
     const newChat: ChatSession = {
         id: newChatId,
@@ -87,6 +91,7 @@ export const useChatHistory = () => {
         model: initialModel,
         isLoading: false,
         createdAt: Date.now(),
+        ...settings,
     };
     setChatHistory(prev => [newChat, ...prev]);
     setCurrentChatId(newChatId);
@@ -120,6 +125,10 @@ export const useChatHistory = () => {
     setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, title } : s));
   }, []);
 
+  const updateChatModel = useCallback((chatId: string, model: string) => {
+    setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, model } : s));
+  }, []);
+
   return { 
     chatHistory, 
     currentChatId,
@@ -133,5 +142,6 @@ export const useChatHistory = () => {
     updateLastMessage,
     completeChatLoading,
     updateChatTitle,
+    updateChatModel,
   };
 };

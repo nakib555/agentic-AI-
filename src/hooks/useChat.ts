@@ -6,16 +6,22 @@
 import { useMemo, useCallback, useEffect, useRef } from 'react';
 import type { FunctionCall } from "@google/genai";
 import { generateChatTitle } from '../services/gemini';
-import { toolImplementations } from '../../tools';
+import { toolImplementations } from '../tools';
 import { runAgenticLoop } from '../services/agenticLoop';
 import { type Message, type ToolCallEvent, type MessageError, ToolError } from '../../types';
 import { fileToBase64 } from '../utils/fileUtils';
 import { useChatHistory } from './useChatHistory';
-import { parseMessageText } from '../utils/messageParser';
+import { parseMessageText } from '../../utils/messageParser';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-export const useChat = (initialModel: string) => {
+type ChatSettings = { 
+    systemPrompt: string; 
+    temperature: number; 
+    maxOutputTokens: number; 
+};
+
+export const useChat = (initialModel: string, settings: ChatSettings) => {
   const { 
     chatHistory, 
     currentChatId,
@@ -29,6 +35,7 @@ export const useChat = (initialModel: string) => {
     updateLastMessage,
     completeChatLoading,
     updateChatTitle,
+    updateChatModel,
   } = useChatHistory();
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -95,7 +102,7 @@ export const useChat = (initialModel: string) => {
 
     // --- 1. Setup Chat Session & User Message Object ---
     if (!activeChatId) {
-        activeChatId = createNewChat(initialModel);
+        activeChatId = createNewChat(initialModel, settings);
     }
 
     let attachmentsData: Message['attachments'] | undefined = undefined;
@@ -128,6 +135,13 @@ export const useChat = (initialModel: string) => {
     // --- 2. Construct Correct API History ---
     const currentChat = chatHistory.find(c => c.id === activeChatId);
     const modelForApi = currentChat?.model || initialModel;
+    
+    // Extract settings for the current chat session to pass to the API
+    const chatSettings = {
+        systemPrompt: currentChat?.systemPrompt,
+        temperature: currentChat?.temperature,
+        maxOutputTokens: currentChat?.maxOutputTokens,
+    };
     
     // Combine stored messages with the new user message for a complete history context.
     const allMessagesForApi = [...(currentChat?.messages || []), userMessageObj];
@@ -304,8 +318,9 @@ export const useChat = (initialModel: string) => {
       toolExecutor,
       callbacks,
       signal: abortControllerRef.current.signal,
+      settings: chatSettings,
     });
   };
   
-  return { messages, sendMessage, isLoading, chatHistory, currentChatId, startNewChat, loadChat, deleteChat, clearAllChats, cancelGeneration };
+  return { messages, sendMessage, isLoading, chatHistory, currentChatId, startNewChat, loadChat, deleteChat, clearAllChats, cancelGeneration, updateChatModel };
 };

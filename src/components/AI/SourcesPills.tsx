@@ -74,7 +74,8 @@ const PillContent: React.FC<{ source: Source }> = ({ source }) => {
 };
 
 
-export const SourcesPills = ({ markdownContent }: SourcesPillsProps) => {
+// FIX: Changed component signature to use React.FC to resolve a TypeScript error with the 'key' prop.
+export const SourcesPills: React.FC<SourcesPillsProps> = ({ markdownContent }) => {
   const sources = parseMarkdownLinks(markdownContent);
 
   if (!sources || sources.length === 0) {

@@ -4,7 +4,7 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { toolDeclarations } from '../../tools';
+import { toolDeclarations } from '../tools';
 import { systemInstruction } from '../prompts/system';
 import type { Message, MessageError } from '../../types';
 
@@ -13,6 +13,12 @@ type ChatHistory = {
     role: 'user' | 'model';
     parts: ({ text: string } | { inlineData: { mimeType: string; data: string; } } | { functionResponse: any } | { functionCall: any })[];
 }[];
+
+type ChatSettings = { 
+    systemPrompt?: string; 
+    temperature?: number; 
+    maxOutputTokens?: number; 
+};
 
 /**
  * Parses a generic Error from the Gemini API into a structured MessageError.
@@ -105,17 +111,30 @@ export const parseApiError = (error: any): MessageError => {
     };
 };
 
-export const initChat = (model: string, history?: ChatHistory) => {
+export const initChat = (model: string, history?: ChatHistory, settings?: ChatSettings) => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
     const modelToUse = model;
+
+    const generationConfig: any = {};
+    if (settings?.temperature !== undefined) {
+      generationConfig.temperature = settings.temperature;
+    }
+    if (settings?.maxOutputTokens && settings.maxOutputTokens > 0) {
+      generationConfig.maxOutputTokens = settings.maxOutputTokens;
+    }
+    
+    const finalSystemInstruction = settings?.systemPrompt
+      ? `${settings.systemPrompt}\n\n${systemInstruction}`
+      : systemInstruction;
 
     return ai.chats.create({
       model: modelToUse,
       history,
       config: {
-        systemInstruction,
+        systemInstruction: finalSystemInstruction,
         tools: [{ functionDeclarations: toolDeclarations }],
+        ...(Object.keys(generationConfig).length > 0 && { generationConfig }),
       },
     });
 };

@@ -45,7 +45,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
         <div className="relative group">
             <button 
                 onClick={onClick} 
-                className={`w-full text-sm truncate p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-black/10 text-slate-800 dark:bg-white/10 dark:text-slate-100' : 'text-slate-600 hover:bg-black/5 dark:text-slate-400 dark:hover:bg-white/5'} ${isCollapsed ? 'justify-center' : ''} ${!isCollapsed ? 'pr-8' : ''}`}
+                className={`w-full text-sm p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-black/10 text-slate-800 dark:bg-white/10 dark:text-slate-100' : 'text-slate-600 hover:bg-black/5 dark:text-slate-400 dark:hover:bg-white/5'} ${isCollapsed ? 'justify-center' : ''} ${!isCollapsed ? 'pr-8' : ''}`}
             >
                 <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
                     {isLoading ? (
@@ -72,6 +72,11 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clipRule="evenodd" /></svg>
                 </button>
+            )}
+             {isCollapsed && (
+                <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-white dark:bg-[#2D2D2D] text-slate-800 dark:text-slate-100 text-sm font-semibold rounded-md shadow-lg border border-gray-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    <Highlight text={text} highlight={searchQuery} />
+                </div>
             )}
         </div>
     );

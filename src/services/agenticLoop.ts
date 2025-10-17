@@ -14,6 +14,12 @@ type ChatHistory = {
     parts: Part[];
 }[];
 
+type ChatSettings = { 
+    systemPrompt?: string; 
+    temperature?: number; 
+    maxOutputTokens?: number; 
+};
+
 type AgenticLoopCallbacks = {
     onTextChunk: (fullText: string) => void;
     onNewToolCalls: (toolCalls: FunctionCall[]) => Promise<ToolCallEvent[]>;
@@ -28,6 +34,7 @@ type RunAgenticLoopParams = {
     history: ChatHistory;
     toolExecutor: (name: string, args: any) => Promise<string>;
     callbacks: AgenticLoopCallbacks;
+    settings: ChatSettings;
     signal: AbortSignal;
 };
 
@@ -43,6 +50,7 @@ export const runAgenticLoop = async ({
     history,
     toolExecutor,
     callbacks,
+    settings,
     signal,
 }: RunAgenticLoopParams): Promise<void> => {
     let keepProcessing = true;
@@ -52,7 +60,7 @@ export const runAgenticLoop = async ({
 
     // The history for initializing the chat should be all messages EXCEPT the last one.
     const historyForChat = history.slice(0, -1);
-    const chat = initChat(model, historyForChat);
+    const chat = initChat(model, historyForChat, settings);
     
     // The initial message payload is the last message in the history provided.
     const lastUserTurn = history[history.length - 1];
@@ -155,7 +163,7 @@ export const runAgenticLoop = async ({
                             if (error instanceof ToolError) {
                                 errorResult = `Tool execution failed. Code: ${error.code}. Reason: ${error.originalMessage}`;
                             } else if (error instanceof Error) {
-                                errorResult = `Tool execution failed. Reason: ${error.message}`;
+                                errorResult = `An unknown error occurred during tool execution. Reason: ${error.message}`;
                             } else {
                                 errorResult = 'An unknown error occurred during tool execution.';
                             }

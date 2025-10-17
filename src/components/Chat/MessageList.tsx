@@ -4,7 +4,7 @@
  */
 
 // FIX: Removed invalid 'aistudio' from react import.
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import type { Message } from '../../../types';
 import { MessageComponent } from './Message';
 import { WelcomeScreen } from './WelcomeScreen';
@@ -12,28 +12,53 @@ import { WelcomeScreen } from './WelcomeScreen';
 type MessageListProps = {
   messages: Message[];
   sendMessage: (message: string, files?: File[]) => void;
+  isLoading: boolean;
 };
 
-export const MessageList = ({ messages, sendMessage }: MessageListProps) => {
+export const MessageList = ({ messages, sendMessage, isLoading }: MessageListProps) => {
   const messageListRef = useRef<HTMLDivElement>(null);
-  // An invisible element at the end of the list to act as a scroll anchor.
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastMessageText = messages[messages.length - 1]?.text;
+  
+  // This state tracks if the user has manually scrolled away from the bottom.
+  const [isAutoScrollPaused, setIsAutoScrollPaused] = useState(false);
 
+  // This effect handles the core auto-scrolling logic.
   useEffect(() => {
-    // The scrollIntoView method is more robust than calculating scrollHeight,
-    // especially with dynamic content. It prevents conflicting scroll animations
-    // during rapid streaming updates, which caused the previous glitching.
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length, lastMessageText]); // Trigger on new messages or when the last message's text updates
+    // It only triggers if an AI response is in progress AND the user has not paused it.
+    if (isLoading && !isAutoScrollPaused) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    // When a message stream ends, we reset the pause state so the next message auto-scrolls again.
+    if (!isLoading) {
+      setIsAutoScrollPaused(false);
+    }
+  }, [messages.length, lastMessageText, isLoading, isAutoScrollPaused]);
+
+  /**
+   * This handler is attached to the scrollable message list. It determines whether
+   * to pause or resume auto-scrolling based on the user's scroll position.
+   */
+  const handleScroll = () => {
+    const element = messageListRef.current;
+    // We only care about user scrolling while the AI is generating a response.
+    if (!element || !isLoading) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = element;
+    // A small threshold helps account for rendering variations.
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 5;
+
+    // Pause if the user scrolls up, resume if they scroll back to the bottom.
+    setIsAutoScrollPaused(!isAtBottom);
+  };
 
   const visibleMessages = messages.filter(msg => !msg.isHidden);
 
   return (
-    <div className="flex-1 overflow-y-auto" ref={messageListRef}>
+    <div className="flex-1 overflow-y-auto" ref={messageListRef} onScroll={handleScroll}>
       <div className="h-full px-4 sm:px-6 md:px-8">
         {visibleMessages.length === 0 ? (
-          <WelcomeScreen />
+          <WelcomeScreen sendMessage={sendMessage} />
         ) : (
           <div className="space-y-4 md:space-y-6 py-4" role="log" aria-live="polite">
             {visibleMessages.map((msg) => (

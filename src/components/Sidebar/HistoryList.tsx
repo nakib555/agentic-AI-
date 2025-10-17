@@ -67,9 +67,6 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
     // Establish a chronological sort order for the group titles.
     const groupOrder = ['Today', 'Yesterday', ...Object.keys(groupedHistory).filter(k => k !== 'Today' && k !== 'Yesterday').sort((a, b) => new Date(b).getTime() - new Date(a).getTime())];
 
-
-    if (isCollapsed) return null;
-
     return (
         <div className="flex-1 overflow-y-auto min-h-0 text-sm modern-scrollbar">
             {Object.keys(groupedHistory).length > 0 ? (
@@ -80,13 +77,20 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
 
                         return (
                             <div key={groupName}>
-                                <h3 className="px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{groupName}</h3>
+                                <motion.h3 
+                                    className="px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 overflow-hidden"
+                                    initial={false}
+                                    animate={{ height: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1 }}
+                                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                                >
+                                    {groupName}
+                                </motion.h3>
                                 <div className="space-y-0.5">
                                     {chatsInGroup.map((item) => (
                                         <HistoryItem 
                                             key={item.id} 
                                             text={item.title} 
-                                            isCollapsed={false} 
+                                            isCollapsed={isCollapsed}
                                             searchQuery={searchQuery}
                                             active={item.id === currentChatId}
                                             onClick={() => onLoadChat(item.id)}
@@ -100,7 +104,7 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                     })}
                 </div>
             ) : (
-                <NoResults />
+                !isCollapsed && <NoResults />
             )}
         </div>
     );

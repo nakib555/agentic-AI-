@@ -3,4 +3,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// This file is intentionally left blank. The canonical tool is located in the root /tools directory.
+import { duckduckgoSearchDeclaration, executeDuckDuckGoSearch } from './duckduckgo';
+import { getCurrentLocationDeclaration, executeGetCurrentLocation, requestLocationPermissionDeclaration, executeRequestLocationPermission } from './location';
+import { imageGeneratorDeclaration, executeImageGenerator } from './imageGenerator';
+import { videoGeneratorDeclaration, executeVideoGenerator } from './videoGenerator';
+import { codeExecutorDeclaration, executeCode } from './codeExecutor';
+import { displayMapDeclaration, executeDisplayMap } from './map';
+
+
+// Export all tool declarations for the model
+export const toolDeclarations = [
+  duckduckgoSearchDeclaration,
+  getCurrentLocationDeclaration,
+  imageGeneratorDeclaration,
+  videoGeneratorDeclaration,
+  codeExecutorDeclaration,
+  displayMapDeclaration,
+  requestLocationPermissionDeclaration,
+];
+
+// Map of tool names to their implementation
+export const toolImplementations: Record<string, (args: any) => string | Promise<string>> = {
+  'duckduckgoSearch': executeDuckDuckGoSearch,
+  'getCurrentLocation': executeGetCurrentLocation,
+  'generateImage': executeImageGenerator,
+  'generateVideo': executeVideoGenerator,
+  'executeCode': executeCode,
+  'displayMap': executeDisplayMap,
+  'requestLocationPermission': executeRequestLocationPermission,
+};
