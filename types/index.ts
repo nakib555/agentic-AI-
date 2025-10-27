@@ -41,6 +41,11 @@ export type Attachment = {
   data: string; // base64 encoded string
 };
 
+export type Source = {
+  uri: string;
+  title: string;
+};
+
 export type Message = {
   id: string;
   role: 'user' | 'model';

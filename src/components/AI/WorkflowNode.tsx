@@ -10,7 +10,7 @@ import { ToolCallStep } from './ToolCallStep';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { TypingWrapper } from './TypingWrapper';
-import { SearchIcon, ThoughtIcon, TodoListIcon, ToolsIcon } from './icons';
+import { ObservationIcon, SearchIcon, ThoughtIcon, TodoListIcon, ToolsIcon } from './icons';
 import { SearchToolResult } from './SearchToolResult';
 
 
@@ -24,7 +24,7 @@ const LoadingDots = () => (
 
 
 export type WorkflowNodeStatus = 'pending' | 'active' | 'done' | 'failed';
-export type WorkflowNodeType = 'plan' | 'task' | 'tool' | 'duckduckgoSearch' | 'thought' | 'act_marker';
+export type WorkflowNodeType = 'plan' | 'task' | 'tool' | 'duckduckgoSearch' | 'thought' | 'act_marker' | 'observation';
 
 export type WorkflowNodeData = {
   id: string;
@@ -37,7 +37,7 @@ export type WorkflowNodeData = {
 
 type WorkflowNodeProps = {
   node: WorkflowNodeData;
-  sendMessage: (message: string, files?: File[]) => void;
+  sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
 };
 
 const getNodeVisuals = (node: WorkflowNodeData) => {
@@ -102,7 +102,8 @@ const renderDetails = (node: WorkflowNodeData, sendMessage: WorkflowNodeProps['s
                     fullText={detailsText}
                     isAnimating={node.status === 'active'}
                 >
-                    {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : detailsText} components={WorkflowMarkdownComponents} />}
+                    {/* FIX: Add isStreaming prop to ManualCodeRenderer */}
+                    {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : detailsText} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
                 </TypingWrapper>
             </div>
         );
@@ -164,8 +165,31 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
                         fullText={node.details as string}
                         isAnimating={node.status === 'active'}
                     >
-                        {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : node.details as string} components={WorkflowMarkdownComponents} />}
+                        {/* FIX: Add isStreaming prop to ManualCodeRenderer */}
+                        {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : node.details as string} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
                     </TypingWrapper>
+                </div>
+            </div>
+        );
+    }
+
+    // "Observation" nodes are rendered in a distinct box to show the result of a tool call.
+    if (node.type === 'observation') {
+        return (
+            <div className="bg-gray-100 dark:bg-black/10 p-3 rounded-lg">
+                <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 pt-0.5">
+                        <ObservationIcon />
+                    </div>
+                    <div className="text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
+                        <TypingWrapper
+                            fullText={node.details as string}
+                            isAnimating={node.status === 'active'}
+                        >
+                            {/* FIX: Add isStreaming prop to ManualCodeRenderer */}
+                            {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : node.details as string} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
+                        </TypingWrapper>
+                    </div>
                 </div>
             </div>
         );

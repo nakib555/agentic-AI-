@@ -4,14 +4,14 @@
  */
 
 import { useMemo, useCallback, useEffect, useRef } from 'react';
-import type { FunctionCall } from "@google/genai";
+import type { FunctionCall, Part } from "@google/genai";
 import { generateChatTitle } from '../services/gemini';
 import { toolImplementations } from '../tools';
 import { runAgenticLoop } from '../services/agenticLoop';
-import { type Message, type ToolCallEvent, type MessageError, ToolError } from '../../types';
+import { type Message, type ToolCallEvent, type MessageError, ToolError, ChatSession } from '../../types';
 import { fileToBase64 } from '../utils/fileUtils';
 import { useChatHistory } from './useChatHistory';
-import { parseMessageText } from '../../utils/messageParser';
+import { parseMessageText } from '../utils/messageParser';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -21,7 +21,12 @@ type ChatSettings = {
     maxOutputTokens: number; 
 };
 
-export const useChat = (initialModel: string, settings: ChatSettings) => {
+type ApiHistory = {
+    role: 'user' | 'model';
+    parts: Part[];
+}[];
+
+export const useChat = (initialModel: string, settings: ChatSettings, memoryContent: string) => {
   const { 
     chatHistory, 
     currentChatId,
@@ -33,6 +38,8 @@ export const useChat = (initialModel: string, settings: ChatSettings) => {
     createNewChat,
     addMessagesToChat,
     updateLastMessage,
+    setChatLoadingState,
+    updateMessage,
     completeChatLoading,
     updateChatTitle,
     updateChatModel,
@@ -91,14 +98,15 @@ export const useChat = (initialModel: string, settings: ChatSettings) => {
     abortControllerRef.current?.abort();
   }, []);
 
-  const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean } = {}) => {
+  const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean, isThinkingModeEnabled?: boolean } = {}) => {
     // If a generation is already in progress, cancel it before starting a new one.
     if (isLoading) {
       cancelGeneration();
     }
     abortControllerRef.current = new AbortController();
 
-    const { isHidden = false } = options;
+    const { isHidden = false, isThinkingModeEnabled = false } = options;
+    
     let activeChatId = currentChatId;
 
     // --- 1. Setup Chat Session & User Message Object ---
@@ -122,100 +130,96 @@ export const useChat = (initialModel: string, settings: ChatSettings) => {
         }
     }
     
-    const userMessageObj: Message = { id: generateId(), role: 'user', text: userMessage, isHidden, attachments: attachmentsData };
-    const modelMessageId = generateId();
+    const userMessageObj: Message = { 
+        id: generateId(), 
+        role: 'user', 
+        text: userMessage, 
+        isHidden, 
+        attachments: attachmentsData,
+    };
+
+    addMessagesToChat(activeChatId, [userMessageObj]);
+
+    // --- 3. Initiate Model Response ---
+    setChatLoadingState(activeChatId, true);
     const modelPlaceholder: Message = { 
-        id: modelMessageId, 
+        id: generateId(), 
         role: 'model', 
         text: '', 
         isThinking: true, 
         toolCallEvents: [],
         startTime: Date.now(),
     };
+    addMessagesToChat(activeChatId, [modelPlaceholder]);
 
-    // --- 2. Construct Correct API History ---
-    const currentChat = chatHistory.find(c => c.id === activeChatId);
-    const modelForApi = currentChat?.model || initialModel;
-    
-    // Extract settings for the current chat session to pass to the API
+    // --- 4. Construct Correct API History ---
+    const hasVideoAttachment = userMessageObj.attachments?.some(att => att.mimeType.startsWith('video/')) ?? false;
+    const modelFromChat = chatHistory.find(c => c.id === activeChatId)?.model || initialModel;
+
+    const modelForApi = isThinkingModeEnabled || hasVideoAttachment
+        ? 'gemini-2.5-pro'
+        : modelFromChat;
+        
     const chatSettings = {
-        systemPrompt: currentChat?.systemPrompt,
-        temperature: currentChat?.temperature,
-        maxOutputTokens: currentChat?.maxOutputTokens,
+        systemPrompt: chatHistory.find(c => c.id === activeChatId)?.systemPrompt,
+        temperature: chatHistory.find(c => c.id === activeChatId)?.temperature,
+        maxOutputTokens: chatHistory.find(c => c.id === activeChatId)?.maxOutputTokens,
+        thinkingBudget: isThinkingModeEnabled ? 32768 : undefined,
+        memoryContent: memoryContent,
     };
     
-    // Combine stored messages with the new user message for a complete history context.
-    const allMessagesForApi = [...(currentChat?.messages || []), userMessageObj];
+    // Get messages from before this turn and add the final user message.
+    const historyBeforeThisTurn = chatHistory.find(c => c.id === activeChatId)?.messages || [];
+    const allMessagesForApi = [...historyBeforeThisTurn, userMessageObj];
     
-    const historyForApi = allMessagesForApi
-        .filter(msg => !msg.isHidden)
-        .flatMap((msg: Message): any[] => {
-            // Case 1: User message (may have text and attachments).
-            if (msg.role === 'user') {
-                const parts: any[] = [];
-                if (msg.text) {
-                    parts.push({ text: msg.text });
-                }
-                if (msg.attachments) {
-                    msg.attachments.forEach(att => parts.push({
-                        inlineData: { mimeType: att.mimeType, data: att.data }
-                    }));
-                }
-                // The API requires at least one part. Add empty text if needed.
-                if (parts.length === 0) {
-                    parts.push({ text: '' });
-                }
-                return [{ role: 'user', parts }];
+    const historyForApi: ApiHistory = [];
+    allMessagesForApi.forEach((msg: Message) => {
+        if (msg.isHidden) return;
+
+        if (msg.role === 'user') {
+            const textToUse = msg.text;
+            const parts: Part[] = [];
+            if (textToUse) parts.push({ text: textToUse });
+            if (msg.attachments) {
+                msg.attachments.forEach(att => parts.push({
+                    inlineData: { mimeType: att.mimeType, data: att.data }
+                }));
             }
-            
-            // Case 2: Model message. This can translate to one or two API turns (model and user/function).
-            if (msg.role === 'model') {
-                // Parse the message text to separate thinking from the final answer.
-                // Only the final answer and tool calls should be part of the history.
-                const { finalAnswerText } = parseMessageText(msg.text, false, !!msg.error);
+            if (parts.length > 0) {
+                historyForApi.push({ role: 'user', parts });
+            }
+        } else if (msg.role === 'model') {
+            const { finalAnswerText } = parseMessageText(msg.text, false, !!msg.error);
+            const modelParts: Part[] = [];
+            const functionResponseParts: Part[] = [];
 
-                const turns = [];
-                const modelParts: any[] = [];
+            if (finalAnswerText) {
+                modelParts.push({ text: finalAnswerText });
+            }
 
-                if (finalAnswerText) {
-                    modelParts.push({ text: finalAnswerText });
-                }
-
-                // Append any function calls the model made in this turn.
-                if (msg.toolCallEvents && msg.toolCallEvents.length > 0) {
-                    msg.toolCallEvents.forEach(event => {
-                        modelParts.push({ functionCall: event.call });
-                    });
-                }
-                
-                // If the model produced any text or function calls, add the model turn.
-                if (modelParts.length > 0) {
-                    turns.push({ role: 'model', parts: modelParts });
-                }
-
-                // If tools were called and have results, create a subsequent 'user' turn with the function responses.
-                if (msg.toolCallEvents && msg.toolCallEvents.length > 0) {
-                    const functionResponses = msg.toolCallEvents
-                        .filter(event => event.result !== undefined)
-                        .map(event => ({
+            if (msg.toolCallEvents) {
+                msg.toolCallEvents.forEach(event => {
+                    modelParts.push({ functionCall: event.call });
+                    if (event.result !== undefined) {
+                        functionResponseParts.push({
                             functionResponse: {
                                 name: event.call.name,
                                 response: { result: event.result }
                             }
-                        }));
-                    
-                    if (functionResponses.length > 0) {
-                        turns.push({ role: 'user', parts: functionResponses });
+                        });
                     }
-                }
-                
-                return turns;
+                });
             }
-            return []; // Should never happen with valid Message objects
-        });
 
-    // Update the UI immediately with the user's message and a thinking placeholder.
-    addMessagesToChat(activeChatId, [userMessageObj, modelPlaceholder]);
+            if (modelParts.length > 0) {
+                historyForApi.push({ role: 'model', parts: modelParts });
+            }
+            if (functionResponseParts.length > 0) {
+                historyForApi.push({ role: 'user', parts: functionResponseParts });
+            }
+        }
+    });
+
 
     const toolExecutor = async (name: string, args: any): Promise<string> => {
         const toolImplementation = toolImplementations[name];
@@ -228,15 +232,7 @@ export const useChat = (initialModel: string, settings: ChatSettings) => {
             if (err instanceof ToolError) {
                 throw err; // Re-throw custom tool errors directly
             }
-
             const originalError = err instanceof Error ? err : new Error(String(err));
-            const lowerCaseMessage = originalError.message.toLowerCase();
-            
-            if (lowerCaseMessage.includes('network issue') || lowerCaseMessage.includes('failed to fetch')) {
-                throw new ToolError(name, 'NETWORK_ERROR', originalError.message, originalError);
-            }
-
-            // Fallback for any other errors.
             throw new ToolError(name, 'TOOL_EXECUTION_FAILED', originalError.message, originalError);
         }
     };
@@ -249,21 +245,21 @@ export const useChat = (initialModel: string, settings: ChatSettings) => {
             const newToolCallEvents: ToolCallEvent[] = toolCalls.map(fc => ({ 
                 id: generateId(), 
                 call: fc,
-                startTime: Date.now(), // Record start time
+                startTime: Date.now(),
             }));
-            updateLastMessage(activeChatId!, (lastMsg) => {
-                const updatedEvents = [...(lastMsg.toolCallEvents || []), ...newToolCallEvents];
-                return { toolCallEvents: updatedEvents };
-            });
+            updateLastMessage(activeChatId!, (lastMsg) => ({
+                toolCallEvents: [...(lastMsg.toolCallEvents || []), ...newToolCallEvents]
+            }));
             return Promise.resolve(newToolCallEvents);
         },
         onToolResult: (eventId: string, result: string) => {
             updateLastMessage(activeChatId!, (lastMsg) => {
                 if (!lastMsg.toolCallEvents) return {};
-                const updatedEvents = lastMsg.toolCallEvents.map(event => 
-                    event.id === eventId ? { ...event, result, endTime: Date.now() } : event // Record end time
-                );
-                return { toolCallEvents: updatedEvents };
+                return {
+                    toolCallEvents: lastMsg.toolCallEvents.map(event => 
+                        event.id === eventId ? { ...event, result, endTime: Date.now() } : event
+                    )
+                };
             });
         },
         onComplete: (finalText: string) => {
@@ -272,47 +268,23 @@ export const useChat = (initialModel: string, settings: ChatSettings) => {
             abortControllerRef.current = null;
         },
         onCancel: () => {
-            updateLastMessage(activeChatId!, (lastMsg) => {
-                const newText = lastMsg.text ? `${lastMsg.text.trim()}\n\n**(Generation stopped by user)**` : `**(Generation stopped by user)**`;
-                return {
-                    text: newText,
-                    isThinking: false,
-                    endTime: Date.now(),
-                };
-            });
+            updateLastMessage(activeChatId!, (lastMsg) => ({
+                text: `${lastMsg.text.trim()}\n\n**(Generation stopped by user)**`,
+                isThinking: false,
+                endTime: Date.now(),
+            }));
             completeChatLoading(activeChatId!);
             abortControllerRef.current = null;
         },
         onError: (error: MessageError) => {
             console.error("Error in agentic loop:", error);
-            
-            // The error from the agentic loop has a specific code, but the message might be technical.
-            // Here, we refine the message for a better user experience before showing it in the UI.
-            const finalError = { ...error };
-
-            switch (error.code) {
-                case 'GEOLOCATION_PERMISSION_DENIED':
-                    finalError.message = 'Geolocation access was denied.';
-                    break;
-                case 'GEOLOCATION_UNAVAILABLE':
-                    finalError.message = 'Could not determine your location.';
-                    break;
-                case 'GEOLOCATION_TIMEOUT':
-                    finalError.message = 'The request for your location timed out.';
-                    break;
-                case 'NETWORK_ERROR':
-                    finalError.message = 'A network issue prevented a tool from completing its task.';
-                    break;
-                // No default case needed; other errors will show their original message.
-            }
-            
-            updateLastMessage(activeChatId!, () => ({ error: finalError, isThinking: false, endTime: Date.now() }));
+            updateLastMessage(activeChatId!, () => ({ error: error, isThinking: false, endTime: Date.now() }));
             completeChatLoading(activeChatId!);
             abortControllerRef.current = null;
         },
     };
 
-    // --- 3. Run Agentic Loop ---
+    // --- 5. Run Agentic Loop ---
     await runAgenticLoop({
       model: modelForApi,
       history: historyForApi,

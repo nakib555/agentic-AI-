@@ -98,7 +98,7 @@ export const SearchToolResult = ({ query, sources }: SearchToolResultProps) => {
                     {hiddenCount > 0 && !showAll && (
                     <button
                         onClick={() => setShowAll(true)}
-                        className="text-sm text-slate-400 hover:text-slate-200 px-3 py-1.5 transition-colors"
+                        className="text-sm text-gray-600 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 px-3 py-1.5 transition-colors"
                     >
                         See All ({sources.length})
                     </button>

@@ -3,18 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Editor, { OnMount } from '@monaco-editor/react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTheme } from '../../hooks/useTheme';
 
-// Type for the Monaco Editor instance, extracted from the OnMount callback.
-// FIX: Using 'any' as a workaround for a potential type resolution issue where Parameters<OnMount>[0] resolves to 'unknown'.
-type EditorInstance = any;
 
 // Define a more comprehensive map for language aliases. This helps ensure that common
-// markdown language tags are correctly mapped to Monaco's language identifiers for syntax highlighting.
-const monacoLanguageMap: { [key: string]: string } = {
+// markdown language tags are correctly mapped to the syntax highlighter's language identifiers.
+const languageMap: { [key: string]: string } = {
     js: 'javascript',
     jsx: 'javascript',
     ts: 'typescript',
@@ -42,12 +40,11 @@ const monacoLanguageMap: { [key: string]: string } = {
 type CodeBlockProps = {
     language?: string;
     children: React.ReactNode;
+    isStreaming: boolean;
 };
 
-export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
+export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStreaming }) => {
     const [isCopied, setIsCopied] = useState(false);
-    const editorRef = useRef<EditorInstance | null>(null);
-    const [editorHeight, setEditorHeight] = useState('0px');
     const { theme } = useTheme();
 
     const codeContent = String(children).replace(/\n$/, '');
@@ -62,38 +59,12 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
         });
     };
     
-    const updateEditorHeight = useCallback(() => {
-        const editor = editorRef.current;
-        if (editor) {
-            // Force a layout recalculation before measuring. This is crucial for ensuring
-            // getContentHeight() returns an accurate value, especially during streaming.
-            editor.layout();
-            const contentHeight = editor.getContentHeight();
-            setEditorHeight(`${contentHeight}px`);
-        }
-    }, []);
-
-    const handleEditorDidMount: OnMount = (editor) => {
-        editorRef.current = editor;
-        
-        // This is the primary event listener for resizing when content changes.
-        const disposable = editor.onDidContentSizeChange(updateEditorHeight);
-        
-        // Use requestAnimationFrame for the initial height calculation to ensure the editor is fully rendered.
-        requestAnimationFrame(updateEditorHeight);
-        
-        return () => {
-            // Clean up the event listener when the component unmounts.
-            disposable.dispose();
-        };
-    };
-  
     const effectiveTheme = theme === 'system' 
         ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
         : theme;
     
     const rawLanguage = language ? language.toLowerCase() : 'plaintext';
-    const monacoLang = monacoLanguageMap[rawLanguage] || rawLanguage;
+    const highlighterLang = languageMap[rawLanguage] || rawLanguage;
     const formattedLanguage = language ? language.charAt(0).toUpperCase() + language.slice(1) : 'Code';
 
     return (
@@ -124,43 +95,37 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
             </span>
           </button>
         </div>
-        {/* This wrapper div handles the scrolling */}
-        <div className="overflow-y-auto" style={{ maxHeight: '60vh' }}>
-            <Editor
-              height={editorHeight}
-              language={monacoLang}
-              value={codeContent}
-              theme={effectiveTheme === 'dark' ? 'vs-dark' : 'vs'}
-              onMount={handleEditorDidMount}
-              options={{
-                readOnly: true,
-                domReadOnly: true,
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                wordWrap: 'on',
-                contextmenu: false,
-                fontSize: 13,
-                fontFamily: "'Fira Code', monospace",
-                padding: { top: 16, bottom: 16 },
-                scrollbar: {
-                    vertical: 'hidden', // Hide the editor's internal scrollbar
-                    alwaysConsumeMouseWheel: false,
-                },
-                renderLineHighlight: 'none',
-                cursorWidth: 0,
-                // New options to remove focus and interactivity
-                occurrencesHighlight: 'off',
-                selectionHighlight: false,
-                folding: false,
-                links: false,
-                hover: { enabled: false },
-                // FIX: The `enabled` property for the lightbulb requires a string literal of type `ShowLightbulbIconMode`.
-                // The value 'off' is correct, but casting to 'any' is necessary to bypass a potential type
-                // definition mismatch in the project's setup.
-                lightbulb: { enabled: 'off' as any },
-              }}
-            />
-        </div>
+        <motion.div
+            className="overflow-hidden"
+            animate={{ height: 'auto' }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+        >
+            <div className={!isStreaming ? "overflow-y-auto" : ""} style={{ maxHeight: !isStreaming ? '60vh' : undefined }}>
+                <SyntaxHighlighter
+                  language={highlighterLang}
+                  style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
+                  customStyle={{
+                    margin: 0,
+                    padding: '1rem',
+                    backgroundColor: 'transparent',
+                    fontSize: '13px',
+                    lineHeight: '1.5',
+                    fontFamily: "'Fira Code', monospace",
+                  }}
+                  codeTagProps={{
+                      style: {
+                          fontFamily: "inherit",
+                          fontSize: "inherit",
+                          lineHeight: "inherit",
+                      }
+                  }}
+                  wrapLines={true}
+                  wrapLongLines={true}
+                >
+                  {codeContent}
+                </SyntaxHighlighter>
+            </div>
+        </motion.div>
       </div>
     );
   };

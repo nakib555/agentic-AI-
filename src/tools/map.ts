@@ -4,6 +4,7 @@
  */
 
 import { FunctionDeclaration, Type } from "@google/genai";
+import { ToolError } from '../../types';
 
 export const displayMapDeclaration: FunctionDeclaration = {
   name: 'displayMap',
@@ -24,7 +25,7 @@ export const executeDisplayMap = (args: { latitude: number; longitude: number; z
   const { latitude, longitude, zoom = 13, markerText } = args;
 
   if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-      return 'Error: Latitude and longitude must be numbers.';
+      throw new ToolError('displayMap', 'INVALID_COORDINATES', 'Latitude and longitude must be numbers.');
   }
 
   const mapData = {

@@ -9,7 +9,7 @@ export type Model = {
   description: string;
 };
 
-const mockModels: Model[] = [
+export const validModels: Model[] = [
     { 
         id: 'gemini-2.5-pro', 
         name: 'Gemini 2.5 Pro', 
@@ -20,16 +20,6 @@ const mockModels: Model[] = [
         name: 'Gemini 2.5 Flash', 
         description: 'A fast and efficient model, balanced for performance and cost across a wide range of tasks.'
     },
-    { 
-        id: 'gemini-2.0-pro', 
-        name: 'Gemini 2.0 Pro', 
-        description: 'A powerful, previous-generation model for a wide range of advanced tasks.' 
-    },
-    { 
-        id: 'gemini-2.0-flash', 
-        name: 'Gemini 2.0 Flash', 
-        description: 'A fast and cost-effective previous-generation model for high-frequency applications.'
-    },
 ];
 
 /**
@@ -39,7 +29,7 @@ export const getAvailableModels = (): Promise<Model[]> => {
     return new Promise((resolve) => {
         // Simulate a network delay of 1 second
         setTimeout(() => {
-            resolve(mockModels);
+            resolve(validModels);
         }, 1000);
     });
 };

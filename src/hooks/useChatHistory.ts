@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { ChatSession, Message } from '../types';
+import { validModels } from '../services/modelService';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -25,11 +26,22 @@ export const useChatHistory = () => {
       const savedHistoryJSON = localStorage.getItem('chatHistory');
       const savedChatId = localStorage.getItem('currentChatId');
       
-      // Add a migration step to add createdAt timestamp to chats that don't have it.
-      const history = (savedHistoryJSON ? JSON.parse(savedHistoryJSON) : []).map((chat: any) => ({
-          ...chat,
-          createdAt: chat.createdAt || Date.now() // Add timestamp if missing
-      }));
+      const validModelIds = new Set(validModels.map(m => m.id));
+      const defaultModelId = validModels.find(m => m.id === 'gemini-2.5-flash')?.id || validModels[0].id;
+
+      // Add a migration step to add createdAt timestamp and validate model
+      const history = (savedHistoryJSON ? JSON.parse(savedHistoryJSON) : []).map((chat: any) => {
+          const migratedChat = {
+            ...chat,
+            createdAt: chat.createdAt || Date.now()
+          };
+
+          if (!migratedChat.model || !validModelIds.has(migratedChat.model)) {
+              migratedChat.model = defaultModelId;
+          }
+
+          return migratedChat;
+      });
 
       setChatHistory(history);
 
@@ -101,7 +113,7 @@ export const useChatHistory = () => {
   const addMessagesToChat = useCallback((chatId: string, messages: Message[]) => {
     setChatHistory(prev => prev.map(s => {
       if (s.id !== chatId) return s;
-      return { ...s, messages: [...s.messages, ...messages], isLoading: true };
+      return { ...s, messages: [...s.messages, ...messages] };
     }));
   }, []);
   
@@ -117,8 +129,25 @@ export const useChatHistory = () => {
       }));
   }, []);
 
+  const setChatLoadingState = useCallback((chatId: string, isLoading: boolean) => {
+      setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, isLoading } : s));
+  }, []);
+
   const completeChatLoading = useCallback((chatId: string) => {
-      setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, isLoading: false } : s));
+      setChatLoadingState(chatId, false);
+  }, [setChatLoadingState]);
+
+  const updateMessage = useCallback((chatId: string, messageId: string, update: Partial<Message>) => {
+    setChatHistory(prev => prev.map(chat => {
+        if (chat.id !== chatId) return chat;
+        const messageIndex = chat.messages.findIndex(m => m.id === messageId);
+        if (messageIndex === -1) return chat;
+        
+        const updatedMessages = [...chat.messages];
+        updatedMessages[messageIndex] = { ...updatedMessages[messageIndex], ...update };
+        
+        return { ...chat, messages: updatedMessages };
+    }));
   }, []);
 
   const updateChatTitle = useCallback((chatId: string, title: string) => {
@@ -147,6 +176,8 @@ export const useChatHistory = () => {
     createNewChat,
     addMessagesToChat,
     updateLastMessage,
+    setChatLoadingState,
+    updateMessage,
     completeChatLoading,
     updateChatTitle,
     updateChatModel,

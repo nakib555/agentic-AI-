@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,12 +7,14 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ManualCodeRenderer } from './ManualCodeRenderer';
 import { MarkdownComponents } from './markdownComponents';
+import { TypingWrapper } from '../AI/TypingWrapper';
 
 type FormattedBlockProps = {
   content: string;
+  isStreaming: boolean;
 };
 
-export const FormattedBlock: React.FC<FormattedBlockProps> = ({ content }) => {
+export const FormattedBlock: React.FC<FormattedBlockProps> = ({ content, isStreaming }) => {
   const [isRawVisible, setIsRawVisible] = useState(false);
   const cleanContent = content.trim();
 
@@ -49,7 +50,12 @@ export const FormattedBlock: React.FC<FormattedBlockProps> = ({ content }) => {
                     </pre>
                 ) : (
                     <div className="p-4 bg-white dark:bg-[#121212]">
-                       <ManualCodeRenderer text={cleanContent} components={MarkdownComponents} />
+                       <TypingWrapper
+                            fullText={cleanContent}
+                            isAnimating={isStreaming}
+                       >
+                           {(displayedText) => <ManualCodeRenderer text={isStreaming ? displayedText : cleanContent} components={MarkdownComponents} isStreaming={isStreaming} />}
+                       </TypingWrapper>
                     </div>
                 )}
             </motion.div>

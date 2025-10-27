@@ -5,6 +5,7 @@
 
 import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
 import { videoStore } from '../services/videoStore';
+import { ToolError } from '../../types';
 
 export const videoGeneratorDeclaration: FunctionDeclaration = {
   name: 'generateVideo',
@@ -68,7 +69,7 @@ export const executeVideoGenerator = async (args: { prompt: string }): Promise<s
 
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
     if (!downloadLink) {
-        throw new Error('Video generation succeeded but no download link was provided.');
+        throw new ToolError('generateVideo', 'NO_DOWNLOAD_LINK', 'Video generation succeeded but no download link was provided.');
     }
     
     // The link requires the API key to be appended for access.
@@ -77,7 +78,7 @@ export const executeVideoGenerator = async (args: { prompt: string }): Promise<s
     // Fetch the video data and store it as a blob
     const response = await fetch(fetchUrl);
     if (!response.ok) {
-        throw new Error(`Failed to download video: ${response.statusText}`);
+        throw new ToolError('generateVideo', 'DOWNLOAD_FAILED', `Failed to download video: ${response.statusText}`);
     }
     const videoBlob = await response.blob();
     const videoKey = await videoStore.saveVideo(videoBlob);
@@ -86,8 +87,8 @@ export const executeVideoGenerator = async (args: { prompt: string }): Promise<s
     return `[VIDEO_COMPONENT]${JSON.stringify(videoData)}[/VIDEO_COMPONENT]`;
   } catch (err) {
     console.error("Video generation tool failed:", err);
+    if (err instanceof ToolError) throw err;
     const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during video generation.";
-    // Return a user-friendly error message to the AI.
-    return `Error generating video: ${errorMessage}`;
+    throw new ToolError('generateVideo', 'GENERATION_FAILED', errorMessage, err as Error);
   }
 };

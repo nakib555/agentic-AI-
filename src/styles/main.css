@@ -1,14 +1,45 @@
-/* --- Hide all scrollbars while maintaining scrollability --- */
-
-/* For Firefox */
-* {
-  scrollbar-width: none;
-}
+/* --- Modern, Theme-Aware Scrollbar --- */
 
 /* For Webkit-based browsers (Chrome, Safari, Edge) */
-*::-webkit-scrollbar {
-  display: none;
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* For Firefox */
+/* Applying to html element for better specificity */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* thumb color track color */
+}
+
+.dark html {
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
 
 /* --- General Styles --- */
 
@@ -58,12 +89,8 @@ html, body, #root {
 /* Placeholder styling for the contentEditable div chat input */
 .content-editable-input[data-placeholder]:empty::before {
   content: attr(data-placeholder);
-  position: absolute;
-  left: 0.5rem; /* Corresponds to p-2 */
-  top: 0.5rem; /* Corresponds to p-2 */
   color: #6B7280; /* text-gray-500 */
   pointer-events: none;
-  line-height: 1.5rem;
 }
 
 .dark .content-editable-input[data-placeholder]:empty::before {
@@ -106,24 +133,4 @@ html, body, #root {
 /* Remove any focus outline that might appear on the editor's hidden textarea */
 .monaco-editor textarea:focus {
   outline: none !important;
-}
-
-/* Custom scrollbar for workflow logs and history list */
-.modern-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: #4b5563 #1f2937; /* thumb color track color */
-}
-.modern-scrollbar::-webkit-scrollbar {
-    width: 6px;
-}
-.modern-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
-.modern-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #4b5563; /* slate-600 */
-    border-radius: 10px;
-    border: 3px solid transparent;
-}
-.modern-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: #6b7280; /* slate-500 */
 }

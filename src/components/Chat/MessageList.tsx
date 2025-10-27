@@ -11,11 +11,13 @@ import { WelcomeScreen } from './WelcomeScreen';
 
 type MessageListProps = {
   messages: Message[];
-  sendMessage: (message: string, files?: File[]) => void;
+  sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
   isLoading: boolean;
+  ttsVoice: string;
+  isAutoPlayEnabled: boolean;
 };
 
-export const MessageList = ({ messages, sendMessage, isLoading }: MessageListProps) => {
+export const MessageList = ({ messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled }: MessageListProps) => {
   const messageListRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastMessageText = messages[messages.length - 1]?.text;
@@ -60,9 +62,9 @@ export const MessageList = ({ messages, sendMessage, isLoading }: MessageListPro
         {visibleMessages.length === 0 ? (
           <WelcomeScreen sendMessage={sendMessage} />
         ) : (
-          <div className="space-y-4 md:space-y-6 py-4" role="log" aria-live="polite">
+          <div className="space-y-8 md:space-y-10 py-4" role="log" aria-live="polite">
             {visibleMessages.map((msg) => (
-              <MessageComponent key={msg.id} msg={msg} sendMessage={sendMessage} />
+              <MessageComponent key={msg.id} msg={msg} sendMessage={sendMessage} ttsVoice={ttsVoice} isAutoPlayEnabled={isAutoPlayEnabled} />
             ))}
             {/* The invisible anchor element that we scroll to. */}
             <div ref={bottomRef} />

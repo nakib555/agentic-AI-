@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleGenAI } from "@google/genai";
+// FIX: Import the 'Part' type from the library to ensure type safety.
+import { GoogleGenAI, type Part } from "@google/genai";
 import { toolDeclarations } from '../tools';
 import { systemInstruction } from '../prompts/system';
 import type { Message, MessageError } from '../../types';
@@ -11,13 +12,15 @@ import type { Message, MessageError } from '../../types';
 // Define the type for chat history based on the expected structure for the API
 type ChatHistory = {
     role: 'user' | 'model';
-    parts: ({ text: string } | { inlineData: { mimeType: string; data: string; } } | { functionResponse: any } | { functionCall: any })[];
+    parts: Part[];
 }[];
 
 type ChatSettings = { 
     systemPrompt?: string; 
     temperature?: number; 
-    maxOutputTokens?: number; 
+    maxOutputTokens?: number;
+    thinkingBudget?: number;
+    memoryContent?: string;
 };
 
 /**
@@ -103,38 +106,21 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
 
+    // 6. Network Error
+    if (lowerCaseMessage.includes('failed to fetch')) {
+        return {
+            code: 'NETWORK_ERROR',
+            message: 'Network Error',
+            details: `A network problem occurred, possibly due to a lost internet connection. Original error: ${details}`
+        };
+    }
+
     // Fallback for other generic API or network errors
     return {
         code: 'API_ERROR',
         message: message, // Use the extracted message
         details: details, // Use the extracted details
     };
-};
-
-export const initChat = (model: string, history?: ChatHistory, settings?: ChatSettings) => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-
-    const modelToUse = model;
-
-    const config: any = {
-        systemInstruction: settings?.systemPrompt
-            ? `${settings.systemPrompt}\n\n${systemInstruction}`
-            : systemInstruction,
-        tools: [{ functionDeclarations: toolDeclarations }],
-    };
-    
-    if (settings?.temperature !== undefined) {
-      config.temperature = settings.temperature;
-    }
-    if (settings?.maxOutputTokens && settings.maxOutputTokens > 0) {
-      config.maxOutputTokens = settings.maxOutputTokens;
-    }
-
-    return ai.chats.create({
-      model: modelToUse,
-      history,
-      config,
-    });
 };
 
 const MAX_TITLE_RETRIES = 3;
@@ -194,4 +180,101 @@ export const generateChatTitle = async (messages: Message[]): Promise<string> =>
     console.warn("Title generation failed, falling back to first user message.");
     const firstUserMessage = messages.find(m => m.role === 'user')?.text || 'Untitled Chat';
     return firstUserMessage;
+};
+
+export const extractMemorySuggestions = async (conversation: Message[]): Promise<string[]> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+
+    const conversationTranscript = conversation
+        .filter(msg => !msg.isHidden)
+        .map(msg => `${msg.role}: ${msg.text.substring(0, 300)}`) // Truncate for efficiency
+        .join('\n');
+
+    const prompt = `
+        You are an AI assistant that identifies key, long-term information from a conversation to be saved to a user's memory profile.
+
+        RULES:
+        - Analyze the transcript and extract ONLY facts, preferences, or details that would be useful for the AI to remember in FUTURE conversations (e.g., "User likes dogs," "User is a software developer in London," "User's project is named 'Apollo'").
+        - Do NOT extract conversational fluff, temporary requests, or information that is only relevant to the current chat.
+        - The output MUST be a JSON array of strings. Each string should be a concise, self-contained statement.
+        - If no new, meaningful, long-term information is found, return an empty JSON array: [].
+        - Each statement should be a complete sentence.
+
+        EXAMPLE OUTPUT:
+        [
+            "The user's name is Alex.",
+            "The user is planning a trip to Japan in December.",
+            "The user prefers code examples in Python."
+        ]
+
+        ---
+        CONVERSATION TRANSCRIPT:
+        ${conversationTranscript}
+        ---
+        JSON OUTPUT:
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: { responseMimeType: 'application/json' },
+        });
+
+        const jsonText = response.text?.trim() || '[]';
+        // A simple parse is okay here because we requested JSON output.
+        const suggestions = JSON.parse(jsonText);
+
+        // Validate the structure of the parsed result.
+        if (Array.isArray(suggestions) && suggestions.every(s => typeof s === 'string')) {
+            return suggestions;
+        }
+        return []; // Return empty if structure is invalid
+    } catch (error) {
+        console.error("Memory suggestion extraction failed:", parseApiError(error));
+        return []; // Return empty on error
+    }
+};
+
+export const consolidateMemory = async (currentMemory: string, newSuggestions: string[]): Promise<string> => {
+    // If there are no new suggestions, no need to call the model.
+    if (newSuggestions.length === 0) {
+        return currentMemory;
+    }
+    
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+
+    const prompt = `
+        You are a memory consolidation AI. Your task is to integrate a list of new memory points with an existing user memory summary, creating a new, concise, and updated summary.
+
+        RULES:
+        - The final output MUST be a list of bullet points.
+        - Synthesize and merge related information.
+        - Remove redundant or outdated facts from the existing memory if the new points contradict or supersede them.
+        - The final summary should be no more than 150 words.
+
+        ---
+        EXISTING MEMORY:
+        ${currentMemory || 'No existing memory.'}
+        ---
+        NEW MEMORY POINTS TO INTEGRATE:
+        - ${newSuggestions.join('\n- ')}
+        ---
+        NEW CONSOLIDATED MEMORY:
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+        });
+
+        const newMemory = response.text?.trim();
+        // Return the new memory, or the old one if generation fails/is empty
+        return newMemory || currentMemory;
+    } catch (error) {
+        console.error("Memory consolidation failed:", parseApiError(error));
+        // On error, return the original memory to avoid data loss.
+        return currentMemory;
+    }
 };

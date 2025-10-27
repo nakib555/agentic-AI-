@@ -5,14 +5,10 @@
 
 import React from 'react';
 import { motion, Variants } from 'framer-motion';
-
-type Source = {
-  uri: string;
-  title: string;
-};
+import type { Source } from '../../../types';
 
 type SourcesPillsProps = {
-  markdownContent: string;
+  sources: Source[];
 };
 
 const pillVariants: Variants = {
@@ -34,19 +30,6 @@ const containerVariants: Variants = {
       delayChildren: 0.2,
     },
   },
-};
-
-const parseMarkdownLinks = (markdown: string): Source[] => {
-    const sources: Source[] = [];
-    if (!markdown) return sources;
-
-    // Regex to capture markdown links in a list format: "- [title](url)"
-    const regex = /-\s*\[([^\]]+)\]\(([^)]+)\)/g;
-    let match;
-    while ((match = regex.exec(markdown)) !== null) {
-        sources.push({ title: match[1].trim(), uri: match[2].trim() });
-    }
-    return sources;
 };
 
 // A regular component that returns the inner content of a pill.
@@ -75,9 +58,7 @@ const PillContent: React.FC<{ source: Source }> = ({ source }) => {
 
 
 // FIX: Changed component signature to use React.FC to resolve a TypeScript error with the 'key' prop.
-export const SourcesPills: React.FC<SourcesPillsProps> = ({ markdownContent }) => {
-  const sources = parseMarkdownLinks(markdownContent);
-
+export const SourcesPills: React.FC<SourcesPillsProps> = ({ sources }) => {
   if (!sources || sources.length === 0) {
     return null;
   }

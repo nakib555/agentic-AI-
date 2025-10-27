@@ -10,13 +10,16 @@ const Highlight = ({ text, highlight }: { text: string, highlight: string }) => 
     if (!highlight.trim()) {
         return <span>{text}</span>;
     }
-    const regex = new RegExp(`(${highlight})`, 'gi');
+    // Escape special regex characters from the user's search query to prevent errors.
+    const escapedHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedHighlight})`, 'gi');
     const parts = text.split(regex);
     return (
         <span>
             {parts.map((part, i) =>
-                regex.test(part) ? (
-                    <span key={i} className="bg-black/10 dark:bg-white/10 font-semibold rounded-sm px-0.5">{part}</span>
+                // Check if the part is the exact match for the highlight (case-insensitive)
+                part.toLowerCase() === highlight.toLowerCase() ? (
+                    <span key={i} className="bg-amber-200 dark:bg-amber-400 text-amber-900 dark:text-black rounded-sm px-0.5">{part}</span>
                 ) : (
                     <span key={i}>{part}</span>
                 )
@@ -45,7 +48,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
         <div className="relative group">
             <button 
                 onClick={onClick} 
-                className={`w-full text-sm p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-black/10 text-slate-800 dark:bg-white/10 dark:text-slate-100' : 'text-slate-600 hover:bg-black/5 dark:text-slate-400 dark:hover:bg-white/5'} ${isCollapsed ? 'justify-center' : ''} ${!isCollapsed ? 'pr-8' : ''}`}
+                className={`w-full text-sm p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-teal-100 text-teal-800 font-semibold dark:bg-teal-500/20 dark:text-teal-200' : 'text-slate-600 hover:bg-black/5 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-slate-100'} ${isCollapsed ? 'justify-center' : ''} ${!isCollapsed ? 'pr-8' : ''}`}
             >
                 <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
                     {isLoading ? (

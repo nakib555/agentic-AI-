@@ -33,7 +33,7 @@ const ResultDisplay: React.FC<{ text: string, type: 'success' | 'error' }> = ({ 
 
 export const LocationPermissionRequest: React.FC<{ 
     text: string;
-    sendMessage: (message: string, files?: File[], options?: { isHidden: boolean }) => void;
+    sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
 }> = ({ text, sendMessage }) => {
   const [status, setStatus] = useState<'idle' | 'pending' | 'granted' | 'denied'>('idle');
 

@@ -68,7 +68,7 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
     const groupOrder = ['Today', 'Yesterday', ...Object.keys(groupedHistory).filter(k => k !== 'Today' && k !== 'Yesterday').sort((a, b) => new Date(b).getTime() - new Date(a).getTime())];
 
     return (
-        <div className="flex-1 overflow-y-auto min-h-0 text-sm modern-scrollbar">
+        <div className="flex-1 overflow-y-auto min-h-0 text-sm">
             {Object.keys(groupedHistory).length > 0 ? (
                 <div className="space-y-4">
                     {groupOrder.map(groupName => {

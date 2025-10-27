@@ -26,11 +26,11 @@
 /* Custom Blockquote styles */
 .custom-blockquote {
   position: relative;
-  padding-left: 1.5rem;
-  border-left: 4px solid #3B82F6; /* blue-500 */
+  padding-left: 1rem;
+  border-left: 3px solid #d1d5db; /* gray-300 */
 }
 .dark .custom-blockquote {
-  border-left: 4px solid #14b8a6; /* teal-500 */
+  border-left-color: #4b5563; /* gray-600 */
 }
 
 /* Ensure paragraphs inside the blockquote don't add extra margins */
@@ -43,8 +43,8 @@
 
 /* Compact version for workflow view */
 .custom-blockquote-workflow {
-  padding-left: 1rem;
-  border-left: 3px solid #14b8a6; /* teal-500 */
+  padding-left: 0.75rem;
+  border-left-width: 2px;
 }
 
 /* KaTeX Math Formula Styling */
@@ -107,4 +107,27 @@
 
 .workflow-markdown li {
     margin-bottom: 0.25rem;
+}
+
+/* Highlight / Mark Tag Styling */
+.markdown-content mark {
+  background-color: #fef08a; /* yellow-200 */
+  color: #713f12; /* amber-900 */
+  padding: 0.1em 0.3em;
+  margin: 0 0.1em;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+.dark .markdown-content mark {
+  background-color: #fde047; /* yellow-400 */
+  color: #1e293b; /* slate-800 */
+}
+
+.markdown-content-user mark {
+  background-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  padding: 0.1em 0.3em;
+  margin: 0 0.1em;
+  border-radius: 0.25rem;
 }

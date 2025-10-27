@@ -64,11 +64,14 @@ export const parseAgenticWorkflow = (
 
         let type: WorkflowNodeType = 'plan';
 
-        if (lowerCaseTitle === 'think' || lowerCaseTitle === 'observe' || lowerCaseTitle === 'adapt') {
+        if (lowerCaseTitle === 'think' || lowerCaseTitle === 'adapt') {
             type = 'thought';
-            // Prepend the original title (e.g., "Think:") to the details for context.
             details = `${title}: ${details}`;
-            title = 'Thinking'; // A generic title for the data object.
+            title = 'Thinking';
+        } else if (lowerCaseTitle === 'observe') {
+            type = 'observation';
+            details = details;
+            title = 'Observation';
         } else if (lowerCaseTitle === 'act') {
             type = 'act_marker'; // Use a special type for positioning tool calls.
         } else if (GENERIC_STEP_KEYWORDS.has(lowerCaseTitle)) {
@@ -89,12 +92,15 @@ export const parseAgenticWorkflow = (
     const toolNodesQueue = toolCallEvents.map(event => {
         const isDuckDuckGoSearch = event.call.name === 'duckduckgoSearch';
         const duration = event.startTime && event.endTime ? (event.endTime - event.startTime) / 1000 : null;
+        
+        const isError = event.result?.startsWith('Tool execution failed');
+        const nodeStatus = event.result ? (isError ? 'failed' : 'done') : 'active';
 
         return {
             id: event.id,
             type: isDuckDuckGoSearch ? 'duckduckgoSearch' : 'tool',
             title: isDuckDuckGoSearch ? (event.call.args.query ?? 'Searching...') : event.call.name,
-            status: event.result ? 'done' : 'active',
+            status: nodeStatus,
             details: event,
             duration: duration,
         } as WorkflowNodeData;

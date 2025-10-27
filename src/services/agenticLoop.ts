@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { FunctionCall, GenerateContentResponse } from '@google/genai';
-import { initChat, parseApiError } from './gemini';
+import { GoogleGenAI, type FunctionCall, type GenerateContentResponse, type Part } from '@google/genai';
+import { parseApiError } from './gemini';
 import { type ToolCallEvent, type MessageError, ToolError } from '../../types';
-
-type Part = { text: string } | { inlineData: { mimeType: string; data: string; } } | { functionResponse: any };
+import { systemInstruction } from '../prompts/system';
+import { toolDeclarations } from '../tools';
 
 type ChatHistory = {
     role: 'user' | 'model';
@@ -17,7 +17,9 @@ type ChatHistory = {
 type ChatSettings = { 
     systemPrompt?: string; 
     temperature?: number; 
-    maxOutputTokens?: number; 
+    maxOutputTokens?: number;
+    thinkingBudget?: number;
+    memoryContent?: string;
 };
 
 type AgenticLoopCallbacks = {
@@ -44,6 +46,7 @@ const INITIAL_BACKOFF_MS = 1000;
 /**
  * Orchestrates a multi-turn conversation with the AI model, handling text generation,
  * function calling, and continuous execution based on the AI's responses.
+ * This version uses a recursive approach and the stateless `generateContentStream` API.
  */
 export const runAgenticLoop = async ({
     model,
@@ -53,163 +56,169 @@ export const runAgenticLoop = async ({
     settings,
     signal,
 }: RunAgenticLoopParams): Promise<void> => {
-    let keepProcessing = true;
-    // Accumulates the full text of the model's response across multiple loop iterations.
+    
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+    let currentHistory = [...history];
     let fullModelResponseText = '';
-    let hasError = false;
+    let hasCompleted = false;
 
-    // The history for initializing the chat should be all messages EXCEPT the last one.
-    const historyForChat = history.slice(0, -1);
-    const chat = initChat(model, historyForChat, settings);
-    
-    // The initial message payload is the last message in the history provided.
-    const lastUserTurn = history[history.length - 1];
-    let messagePayload: string | Part[] | { functionResponse: { name: string; response: { result: string; }; }; }[] = lastUserTurn.parts;
-    
-    do {
-        if (signal.aborted) { break; }
+    const executeTurn = async () => {
+        if (signal.aborted || hasCompleted) {
+            return;
+        }
 
         let stream: AsyncGenerator<GenerateContentResponse> | undefined;
         let apiError: unknown = null;
         
-        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-            if (signal.aborted) { break; }
+        // Build config for this turn
+        let finalSystemInstruction = systemInstruction;
+        if (settings?.memoryContent) {
+            const memoryPreamble = `
+// SECTION 0: CONVERSATION MEMORY
+// Here is a summary of key information from past conversations with this user. Use this to personalize your responses and maintain continuity.
+${settings.memoryContent}
+`;
+            finalSystemInstruction = `${memoryPreamble}\n${systemInstruction}`;
+        }
 
+        const config: any = {
+            systemInstruction: settings?.systemPrompt
+                ? `${settings.systemPrompt}\n\n${finalSystemInstruction}`
+                : finalSystemInstruction,
+            tools: [{ functionDeclarations: toolDeclarations }],
+        };
+        
+        if (settings?.temperature !== undefined) config.temperature = settings.temperature;
+        if (settings?.thinkingBudget) {
+            config.thinkingConfig = { thinkingBudget: settings.thinkingBudget };
+        } else if (settings?.maxOutputTokens && settings.maxOutputTokens > 0) {
+            config.maxOutputTokens = settings.maxOutputTokens;
+        }
+
+        // --- 1. API Call with Retry Logic ---
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            if (signal.aborted) return;
             try {
-                stream = await chat.sendMessageStream({ message: messagePayload });
+                stream = await ai.models.generateContentStream({
+                    model: model,
+                    contents: currentHistory,
+                    config: config
+                });
                 apiError = null;
                 break;
             } catch (error) {
-                // Ignore AbortError from user cancellation
-                if ((error as Error).name === 'AbortError') {
-                    apiError = error;
-                    break;
-                }
+                if ((error as Error).name === 'AbortError') { apiError = error; break; }
                 console.error(`Agentic loop API call failed (attempt ${attempt + 1}/${MAX_RETRIES}):`, error);
                 apiError = error;
                 const structuredError = parseApiError(error);
                 const isRetryable = structuredError.code === 'RATE_LIMIT_EXCEEDED' || structuredError.code === 'API_ERROR';
-
                 if (isRetryable && attempt < MAX_RETRIES - 1) {
-                    const delay = INITIAL_BACKOFF_MS * (2 ** attempt);
-                    console.log(`Retrying in ${delay}ms...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    await new Promise(resolve => setTimeout(resolve, INITIAL_BACKOFF_MS * (2 ** attempt)));
                 } else {
                     break;
                 }
             }
         }
-        
-        if (signal.aborted) { break; }
+
+        if (signal.aborted) return;
 
         if (apiError || !stream) {
             if ((apiError as Error)?.name !== 'AbortError') {
                 const finalError = apiError || new Error("Failed to get a response stream from the API.");
-                const structuredError = parseApiError(finalError);
-                callbacks.onError(structuredError);
+                callbacks.onError(parseApiError(finalError));
             }
-            keepProcessing = false;
-            hasError = true;
-        } else {
-            try {
-                const functionCallsToProcess: FunctionCall[] = [];
-                let currentTurnText = '';
-                let lastChunk: GenerateContentResponse | undefined;
+            hasCompleted = true;
+            return;
+        }
 
-                for await (const chunk of stream) {
-                    if (signal.aborted) { break; }
+        // --- 2. Process Stream for Text and Tool Calls ---
+        try {
+            const functionCallsToProcess: FunctionCall[] = [];
+            let currentTurnText = '';
+            let lastChunk: GenerateContentResponse | undefined;
+            const modelTurnParts: Part[] = [];
 
-                    lastChunk = chunk;
-                    let chunkText = '';
-                    const parts = chunk.candidates?.[0]?.content?.parts;
-                    if (parts) {
-                        for (const part of parts) {
-                            if (part.text) {
-                                chunkText += part.text;
-                            }
-                        }
-                    }
+            for await (const chunk of stream) {
+                if (signal.aborted) return;
+                lastChunk = chunk;
+                
+                const chunkText = chunk.text ?? '';
 
-                    if (chunkText) {
-                        currentTurnText += chunkText;
-                        fullModelResponseText += chunkText;
-                        // Send the full, accumulated text on every chunk. This makes the loop the
-                        // source of truth and prevents "vanishing text" bugs in the UI.
-                        callbacks.onTextChunk(fullModelResponseText);
-                    }
-                    
-                    if (chunk.functionCalls) {
-                        functionCallsToProcess.push(...chunk.functionCalls);
-                    }
+                if (chunkText) {
+                    currentTurnText += chunkText;
+                    fullModelResponseText += chunkText;
+                    callbacks.onTextChunk(fullModelResponseText);
                 }
                 
-                if (signal.aborted) { break; }
-
-                const finishReason = lastChunk?.candidates?.[0]?.finishReason;
-                const shouldAutoContinue = finishReason === 'MAX_TOKENS';
-
-                if (functionCallsToProcess.length > 0) {
-                    const toolCallEvents = await callbacks.onNewToolCalls(functionCallsToProcess);
-                    const functionResponses = await Promise.all(toolCallEvents.map(async (event) => {
-                        if (signal.aborted) throw new Error('Aborted');
-                        const { call } = event;
-                        try {
-                            const result = await toolExecutor(call.name, call.args);
-                            callbacks.onToolResult(event.id, result);
-                            return { functionResponse: { name: call.name, response: { result } } };
-                        } catch (error) {
-                            console.error(`Tool '${call.name}' execution failed, informing model:`, error);
-                            let errorResult: string;
-                            if (error instanceof ToolError) {
-                                errorResult = `Tool execution failed. Code: ${error.code}. Reason: ${error.originalMessage}`;
-                            } else if (error instanceof Error) {
-                                errorResult = `An unknown error occurred during tool execution. Reason: ${error.message}`;
-                            } else {
-                                errorResult = 'An unknown error occurred during tool execution.';
-                            }
-                            
-                            callbacks.onToolResult(event.id, errorResult);
-                            
-                            return { functionResponse: { name: call.name, response: { result: errorResult } } };
-                        }
-                    }));
-                    
-                    if (signal.aborted) { break; }
-
-                    messagePayload = functionResponses;
-                    keepProcessing = true;
-                } else if (currentTurnText.trim().endsWith('[AUTO_CONTINUE]') || shouldAutoContinue) {
-                    if (shouldAutoContinue && !currentTurnText.trim().endsWith('[AUTO_CONTINUE]')) {
-                        const continueMarker = ' [AUTO_CONTINUE]';
-                        fullModelResponseText += continueMarker;
-                        callbacks.onTextChunk(fullModelResponseText);
-                    }
-                    messagePayload = "Continue";
-                    keepProcessing = true;
+                if (chunk.functionCalls) {
+                    functionCallsToProcess.push(...chunk.functionCalls);
                 }
-                else {
-                    keepProcessing = false;
-                }
-            } catch (error) {
-                 if (signal.aborted) { break; }
-                 console.error("Agentic loop post-API call failed:", error);
-                 // ToolErrors are now handled within the tool execution logic and sent back to the model.
-                 // This catch block now primarily handles API stream errors or other unhandled exceptions.
-                 const structuredError = parseApiError(error);
-                 callbacks.onError(structuredError);
-                 keepProcessing = false;
-                 hasError = true;
             }
+            
+            if (signal.aborted) return;
+
+            // --- 3. Decide Next Action: Recurse with Tool Results or Complete ---
+            const finishReason = lastChunk?.candidates?.[0]?.finishReason;
+            const shouldAutoContinue = finishReason === 'MAX_TOKENS';
+
+            if (currentTurnText) {
+                modelTurnParts.push({ text: currentTurnText });
+            }
+
+            if (functionCallsToProcess.length > 0) {
+                functionCallsToProcess.forEach(fc => modelTurnParts.push({ functionCall: fc }));
+                currentHistory.push({ role: 'model', parts: modelTurnParts });
+                
+                const toolCallEvents = await callbacks.onNewToolCalls(functionCallsToProcess);
+                const functionResponses = await Promise.all(toolCallEvents.map(async (event) => {
+                    if (signal.aborted) throw new Error('Aborted');
+                    const { call } = event;
+                    try {
+                        const result = await toolExecutor(call.name, call.args);
+                        callbacks.onToolResult(event.id, result);
+                        return { functionResponse: { name: call.name, response: { result } } };
+                    } catch (error) {
+                        const errorResult = error instanceof ToolError
+                            ? `Tool execution failed. Code: ${error.code}. Reason: ${error.originalMessage}`
+                            : `An unknown error occurred. Reason: ${error instanceof Error ? error.message : String(error)}`;
+                        callbacks.onToolResult(event.id, errorResult);
+                        return { functionResponse: { name: call.name, response: { result: errorResult } } };
+                    }
+                }));
+                
+                if (signal.aborted) return;
+                currentHistory.push({ role: 'user', parts: functionResponses });
+                await executeTurn(); // Recursive call
+
+            } else if (currentTurnText.trim().endsWith('[AUTO_CONTINUE]') || shouldAutoContinue) {
+                 if (shouldAutoContinue && !currentTurnText.trim().endsWith('[AUTO_CONTINUE]')) {
+                    const continueMarker = ' [AUTO_CONTINUE]';
+                    fullModelResponseText += continueMarker;
+                    callbacks.onTextChunk(fullModelResponseText);
+                    currentTurnText += continueMarker;
+                 }
+                 currentHistory.push({ role: 'model', parts: [{ text: currentTurnText }] });
+                 currentHistory.push({ role: 'user', parts: [{ text: "Continue" }] });
+                 await executeTurn(); // Recursive call to continue generation
+            } else {
+                const finalCleanedText = fullModelResponseText.replace(/\[AUTO_CONTINUE\]/g, '').trim();
+                callbacks.onComplete(finalCleanedText);
+                hasCompleted = true;
+            }
+        } catch (error) {
+            if (signal.aborted) return;
+            console.error("Agentic loop stream processing failed:", error);
+            callbacks.onError(parseApiError(error));
+            hasCompleted = true;
         }
-    } while (keepProcessing && !signal.aborted);
+    };
+
+    // --- Start the recursive execution ---
+    await executeTurn();
 
     if (signal.aborted) {
-        callbacks.onCancel();
-        return;
-    }
-
-    if (!hasError) {
-        const finalCleanedText = fullModelResponseText.replace(/\[AUTO_CONTINUE\]/g, '').trim();
-        callbacks.onComplete(finalCleanedText);
+        if (!hasCompleted) {
+            callbacks.onCancel();
+        }
     }
 };

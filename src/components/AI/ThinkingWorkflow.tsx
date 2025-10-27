@@ -20,7 +20,7 @@ type ThinkingWorkflowProps = {
   isThinkingComplete: boolean;
   isLiveGeneration: boolean;
   error?: MessageError;
-  sendMessage: (message: string, files?: File[]) => void;
+  sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
 };
 
 // --- Helper Component for Auto-Scrolling Content ---
@@ -41,7 +41,8 @@ const AutoScrollingRenderer: React.FC<{
         }
     }, [text, isAnimating, scrollRef]);
 
-    return <ManualCodeRenderer text={text} components={components} />;
+    // FIX: Add isStreaming prop to ManualCodeRenderer
+    return <ManualCodeRenderer text={text} components={components} isStreaming={isAnimating} />;
 };
 
 const SectionHeader: React.FC<{
@@ -218,7 +219,7 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isL
                             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
                             className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-500/40 p-3 rounded-lg flex items-start gap-3"
                          >
-                            <div className="flex-shrink-0 text-red-400 pt-0.5">
+                            <div className="flex-shrink-0 text-red-500 dark:text-red-400 pt-0.5">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0 -16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clipRule="evenodd" /></svg>
                             </div>
                             <div className="flex-1 min-w-0">

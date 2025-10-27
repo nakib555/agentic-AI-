@@ -5,6 +5,7 @@
 
 import { FunctionDeclaration, Type, GoogleGenAI, Modality } from "@google/genai";
 import { imageStore } from '../services/imageStore';
+import { ToolError } from '../../types';
 
 // Helper function to convert base64 to Blob
 const base64ToBlob = (base64: string, mimeType: string): Blob => {
@@ -103,7 +104,7 @@ export const executeImageGenerator = async (args: { prompt: string }): Promise<s
     }
 
     if (!base64ImageBytes) {
-        throw new Error('Image generation failed. The model did not return an image.');
+        throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return an image.');
     }
     
     // 5. Convert to blob and save to IndexedDB
@@ -120,7 +121,8 @@ export const executeImageGenerator = async (args: { prompt: string }): Promise<s
     return `[IMAGE_COMPONENT]${JSON.stringify(imageData)}[/IMAGE_COMPONENT]`;
   } catch (err) {
     console.error("Image generation tool failed:", err);
+    if (err instanceof ToolError) throw err;
     const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during image generation.";
-    return `Error generating image: ${errorMessage}`;
+    throw new ToolError('generateImage', 'GENERATION_FAILED', errorMessage, err as Error);
   }
 };

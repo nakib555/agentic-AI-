@@ -18,7 +18,7 @@
     "rehype-katex": "latest",
     "framer-motion": "latest",
     "rehype-raw": "latest",
-    "@monaco-editor/react": "latest"
+    "react-syntax-highlighter": "latest"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

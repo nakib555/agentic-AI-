@@ -66,9 +66,9 @@ export const useVoiceInput = ({ onTranscriptUpdate }: UseVoiceInputProps) => {
         
         recognitionRef.current = recognition;
 
-        // Cleanup: stop recognition when the component unmounts
+        // Cleanup: abort recognition when the component unmounts for immediate resource release.
         return () => {
-            recognition.stop();
+            recognition.abort();
         };
     }, []); // Empty dependency array ensures this effect runs only once on mount
 
@@ -79,21 +79,20 @@ export const useVoiceInput = ({ onTranscriptUpdate }: UseVoiceInputProps) => {
         }
         if (isRecording || !recognitionRef.current) return;
         
-        // Defensively abort any lingering session before starting a new one.
-        // This can help prevent 'audio-capture' errors if the previous session
-        // did not terminate cleanly.
-        recognitionRef.current?.abort();
-        
-        // Request microphone permission before starting
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(() => {
-                setIsRecording(true);
-                recognitionRef.current?.start();
-            })
-            .catch((err) => {
-                console.error("Microphone access denied:", err);
-                alert("Microphone access is required for voice input. Please allow it in your browser settings.");
-            });
+        try {
+            // Defensively abort any lingering session before starting a new one.
+            // This is a robust way to prevent 'audio-capture' errors.
+            recognitionRef.current.abort();
+
+            // The start() method will handle microphone permission prompts automatically,
+            // avoiding potential resource conflicts from a separate getUserMedia call.
+            recognitionRef.current.start();
+            setIsRecording(true);
+        } catch (err) {
+            console.error("Error starting speech recognition:", err);
+            // The `onerror` event on the recognition instance will handle most errors,
+            // but this catch is a fallback for immediate issues with `start()`.
+        }
     }, [isRecording]);
 
     const stopRecording = useCallback(() => {

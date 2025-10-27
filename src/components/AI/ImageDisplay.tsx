@@ -7,12 +7,15 @@ import React, { useState, useEffect } from 'react';
 import { imageStore } from '../../services/imageStore';
 
 type ImageDisplayProps = {
-  imageKey: string; // The key to retrieve the image from IndexedDB
-  prompt: string;
+  imageKey?: string;
+  srcUrl?: string;
+  prompt?: string;
   caption?: string;
+  alt?: string;
 };
 
-export const ImageDisplay = ({ imageKey, prompt, caption }: ImageDisplayProps) => {
+// FIX: Changed component signature to use React.FC to resolve a TypeScript error with the 'key' prop.
+export const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageKey, srcUrl, prompt, caption, alt }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,32 +24,50 @@ export const ImageDisplay = ({ imageKey, prompt, caption }: ImageDisplayProps) =
     let objectUrl: string | null = null;
 
     const loadImage = async () => {
-      try {
-        const blob = await imageStore.getImage(imageKey);
-        if (blob) {
-          setImageBlob(blob); // Save the blob for downloading
-          objectUrl = URL.createObjectURL(blob);
-          setImageUrl(objectUrl);
-        } else {
-          setError('Image not found in local storage.');
+      // Prioritize srcUrl if provided
+      if (srcUrl) {
+          setImageUrl(srcUrl);
+          // Attempt to fetch the blob for the download functionality
+          fetch(srcUrl)
+            .then(res => {
+              if (!res.ok) throw new Error(`Failed to fetch image with status: ${res.status}`);
+              return res.blob();
+            })
+            .then(setImageBlob)
+            .catch(err => {
+              console.error("Could not fetch online image for download:", err);
+              // This is not a critical error, so we don't set the main error state
+            });
+          return;
+      }
+
+      if (imageKey) {
+        try {
+          const blob = await imageStore.getImage(imageKey);
+          if (blob) {
+            setImageBlob(blob);
+            objectUrl = URL.createObjectURL(blob);
+            setImageUrl(objectUrl);
+          } else {
+            setError('Image not found in local storage.');
+          }
+        } catch (err) {
+          console.error('Failed to load image from IndexedDB:', err);
+          setError('Failed to load image.');
         }
-      } catch (err) {
-        console.error('Failed to load image from IndexedDB:', err);
-        setError('Failed to load image.');
+      } else {
+        setError('No image source provided.');
       }
     };
 
-    if (imageKey) {
-      loadImage();
-    }
+    loadImage();
 
     return () => {
-      // Clean up the object URL to prevent memory leaks
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [imageKey]);
+  }, [imageKey, srcUrl]);
 
   const handleDownload = () => {
     if (!imageBlob) return;
@@ -55,19 +76,20 @@ export const ImageDisplay = ({ imageKey, prompt, caption }: ImageDisplayProps) =
     const link = document.createElement('a');
     link.href = url;
     
-    // Sanitize prompt for filename, limit length, and provide fallback
-    const sanitizedPrompt = prompt.toLowerCase().replace(/[\s\W]+/g, '-').substring(0, 50);
-    const filename = `${sanitizedPrompt || 'generated-image'}.png`;
+    const finalAlt = alt || prompt || 'generated-image';
+    const sanitizedAlt = finalAlt.toLowerCase().replace(/[\s\W]+/g, '-').substring(0, 50);
+    const filename = `${sanitizedAlt}.png`;
     link.download = filename;
 
-    // Trigger download
     document.body.appendChild(link);
     link.click();
     
-    // Clean up
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+  
+  const displayAlt = alt || prompt || "AI-generated visual content";
+  const displayCaption = caption || alt || prompt;
 
   return (
     <div className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-200/10 shadow-lg bg-white dark:bg-white/5">
@@ -75,7 +97,7 @@ export const ImageDisplay = ({ imageKey, prompt, caption }: ImageDisplayProps) =
         {imageUrl ? (
           <img
             src={imageUrl}
-            alt={prompt}
+            alt={displayAlt}
             className="w-full h-full object-cover"
             loading="lazy"
           />
@@ -96,12 +118,14 @@ export const ImageDisplay = ({ imageKey, prompt, caption }: ImageDisplayProps) =
         )}
       </div>
       <div className="p-4 bg-gray-50 dark:bg-black/20 backdrop-blur-sm border-t border-gray-200 dark:border-slate-200/10 flex items-start justify-between gap-4">
-        <div className="flex-1">
-            <p className="font-serif italic text-gray-600 dark:text-slate-300" title={`Full prompt: ${prompt}`}>
-                “{caption || prompt}”
-            </p>
+        <div className="flex-1 min-w-0">
+            {displayCaption && (
+              <p className="font-serif italic text-gray-600 dark:text-slate-300 break-words" title={`Full prompt: ${prompt}`}>
+                  “{displayCaption}”
+              </p>
+            )}
         </div>
-        {imageUrl && (
+        {imageUrl && imageBlob && (
           <button
             onClick={handleDownload}
             className="flex-shrink-0 mt-1 p-1.5 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-800 dark:hover:text-slate-100 transition-colors"

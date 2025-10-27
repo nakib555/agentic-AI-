@@ -56,7 +56,7 @@ export const MapDisplay = ({ latitude, longitude, zoom, markerText }: MapDisplay
   }, [latitude, longitude, zoom, markerText]);
 
   return (
-    <div className="my-4 rounded-xl overflow-hidden border border-slate-200/10 shadow-lg">
+    <div className="my-4 rounded-xl overflow-hidden border border-slate-200/10 shadow-lg relative z-0">
       <div
         ref={mapRef}
         className="h-80 w-full bg-slate-800"

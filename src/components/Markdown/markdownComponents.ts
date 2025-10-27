@@ -40,7 +40,7 @@ const BlockquoteRouter = (props: any) => {
     }
     
     // If no special syntax is matched, render a standard blockquote
-    return React.createElement('blockquote', { className: "custom-blockquote my-4 italic text-slate-500 dark:text-slate-400 break-words", ...props });
+    return React.createElement('blockquote', { className: "custom-blockquote my-4 text-slate-700 dark:text-slate-300 break-words", ...props });
 };
 
 // Helper function to determine if a list item's children are effectively empty
@@ -76,7 +76,7 @@ export const MarkdownComponents = {
     },
     blockquote: BlockquoteRouter,
     a: StyledLink,
-    table: (props: any) => React.createElement('div', { className: "my-4 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-200/10" }, React.createElement('table', { className: "w-full text-sm", ...props })),
+    table: (props: any) => React.createElement('div', { className: "my-4 overflow-x-auto" }, React.createElement('div', { className: "inline-block min-w-full" }, React.createElement('div', { className: "rounded-lg border border-slate-200 dark:border-slate-200/10" }, React.createElement('table', { className: "text-sm", ...props })))),
     thead: (props: any) => React.createElement('thead', { className: "bg-slate-100 dark:bg-black/20", ...props }),
     tr: (props: any) => React.createElement('tr', { className: "border-b border-slate-200 dark:border-slate-200/10 last:border-b-0", ...props }),
     th: (props: any) => React.createElement('th', { className: "px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200", ...props }),
@@ -102,7 +102,7 @@ export const WorkflowMarkdownComponents = {
         if (isLiEmpty(props)) return null;
         return React.createElement('li', { className: "pl-1", ...props });
     },
-    blockquote: (props: any) => React.createElement('blockquote', { className: "custom-blockquote custom-blockquote-workflow my-2 italic text-slate-400", ...props }),
+    blockquote: (props: any) => React.createElement('blockquote', { className: "custom-blockquote custom-blockquote-workflow my-2 text-slate-300", ...props }),
     table: (props: any) => React.createElement('div', { className: "overflow-x-auto" }, React.createElement('table', { className: "table-auto w-full my-2 border-collapse border border-slate-600", ...props })),
     th: (props: any) => React.createElement('th', { className: "border border-slate-600 px-2 py-1 text-slate-200", ...props }),
     td: (props: any) => React.createElement('td', { className: "border border-slate-600 px-2 py-1 text-slate-300", ...props }),

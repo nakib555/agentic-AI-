@@ -16,7 +16,7 @@ type NavItemProps = {
 
 export const NavItem = ({ icon, text, active, isCollapsed, onClick }: NavItemProps) => (
     <div className="relative group">
-        <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left ${active ? 'bg-black/10 text-slate-900 font-semibold dark:bg-white/10 dark:text-slate-50' : 'text-slate-600 hover:bg-black/5 dark:text-slate-400 dark:hover:bg-white/5'} ${isCollapsed ? 'justify-center' : ''}`}>
+        <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left ${active ? 'bg-black/10 text-slate-900 font-semibold dark:bg-white/10 dark:text-slate-50' : 'text-slate-600 hover:bg-black/5 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-slate-100'} ${isCollapsed ? 'justify-center' : ''}`}>
             <div className="flex-shrink-0 w-5 h-5">{icon}</div>
             <motion.span 
                 className="whitespace-nowrap overflow-hidden"
