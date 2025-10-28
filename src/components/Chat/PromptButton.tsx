@@ -15,9 +15,9 @@ export const PromptButton = ({ icon, text, onClick }: PromptButtonProps) => (
     <button
         type="button"
         onClick={onClick}
-        className="group flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/60 p-2 text-center text-slate-700 transition-all hover:bg-white/90 dark:border-white/10 dark:bg-black/20 dark:text-slate-300 dark:hover:bg-black/40 sm:p-4 sm:gap-3"
+        className="group flex items-center justify-center gap-2.5 rounded-full border border-slate-200 bg-white/60 px-4 py-2 text-slate-700 transition-all hover:bg-white/90 dark:border-white/10 dark:bg-black/20 dark:text-slate-300 dark:hover:bg-black/40"
     >
-        <span className="transform text-2xl transition-transform duration-200 group-hover:scale-110 sm:text-3xl">{icon}</span>
-        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 sm:text-sm">{text}</span>
+        <span className="text-lg">{icon}</span>
+        <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{text}</span>
     </button>
 );

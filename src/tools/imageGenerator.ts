@@ -6,6 +6,7 @@
 import { FunctionDeclaration, Type, GoogleGenAI, Modality } from "@google/genai";
 import { imageStore } from '../services/imageStore';
 import { ToolError } from '../../types';
+import { getText } from '../utils/geminiUtils';
 
 // Helper function to convert base64 to Blob
 const base64ToBlob = (base64: string, mimeType: string): Blob => {
@@ -60,7 +61,7 @@ export const executeImageGenerator = async (args: { prompt: string }): Promise<s
         contents: enhancementPrompt,
     });
     
-    const enhancedPrompt = (enhancementResponse.text ?? '').trim();
+    const enhancedPrompt = getText(enhancementResponse).trim();
 
     // 2. Generate a short caption from the enhanced prompt
     const captionPrompt = `Based on the following detailed image prompt, create a single, short, elegant, one-sentence caption.
@@ -74,7 +75,7 @@ export const executeImageGenerator = async (args: { prompt: string }): Promise<s
         contents: captionPrompt,
     });
     // Clean up any quotes the model might add around the caption
-    const caption = (captionResponse.text ?? '').trim().replace(/^["']|["']$/g, '');
+    const caption = getText(captionResponse).trim().replace(/^["']|["']$/g, '');
 
     // 3. Generate the image using the enhanced prompt with gemini-2.5-flash-image
     const response = await ai.models.generateContent({

@@ -5,6 +5,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { parseApiError } from './gemini';
+import { getText } from '../utils/geminiUtils';
 
 /**
  * Enhances a user's prompt by streaming a rewritten version from the Gemini API.
@@ -47,7 +48,7 @@ export async function* enhanceUserPromptStream(userInput: string): AsyncGenerato
 
     let hasYielded = false;
     for await (const chunk of responseStream) {
-      const chunkText = chunk.text;
+      const chunkText = getText(chunk);
       if (chunkText) {
         hasYielded = true;
         yield chunkText;

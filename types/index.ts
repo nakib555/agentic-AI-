@@ -57,6 +57,7 @@ export type Message = {
   attachments?: Attachment[];
   startTime?: number;
   endTime?: number;
+  isPinned?: boolean;
 };
 
 export type ChatSession = {

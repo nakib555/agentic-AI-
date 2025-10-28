@@ -74,8 +74,10 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ filename, fileKe
       return <img src={objectUrl} alt={filename} className="max-h-[60vh] w-auto h-auto object-contain" />;
     }
     if (mimeType === 'application/pdf' || mimeType === 'text/html') {
-        // Use iframe for native browser rendering of PDFs and HTML
-        return <iframe src={objectUrl} sandbox="allow-scripts" className="w-full h-[60vh] border-none bg-white" title={filename} />;
+        // Use an iframe for native browser rendering. The sandbox attribute is removed
+        // to prevent "blocked by Chrome" errors, especially for content from blob URLs
+        // which are handled by the browser's same-origin security model.
+        return <iframe src={objectUrl} className="w-full h-[60vh] border-none bg-white" title={filename} />;
     }
     // This case shouldn't be reached if isPreviewable is correct, but as a fallback:
     return <p className="p-4 text-sm text-slate-400">No preview available for this file type.</p>;

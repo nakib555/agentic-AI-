@@ -8,6 +8,7 @@ import { parseApiError } from './gemini';
 import { type ToolCallEvent, type MessageError, ToolError } from '../../types';
 import { systemInstruction } from '../prompts/system';
 import { toolDeclarations } from '../tools';
+import { getText } from '../utils/geminiUtils';
 
 type ChatHistory = {
     role: 'user' | 'model';
@@ -142,7 +143,7 @@ ${settings.memoryContent}
                 if (signal.aborted) return;
                 lastChunk = chunk;
                 
-                const chunkText = chunk.text ?? '';
+                const chunkText = getText(chunk);
 
                 if (chunkText) {
                     currentTurnText += chunkText;

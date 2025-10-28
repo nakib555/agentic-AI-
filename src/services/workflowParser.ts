@@ -63,8 +63,31 @@ export const parseAgenticWorkflow = (
         }
 
         let type: WorkflowNodeType = 'plan';
+        let agentName: string | undefined;
+        let handoff: { from: string; to: string } | undefined;
 
-        if (lowerCaseTitle === 'think' || lowerCaseTitle === 'adapt') {
+        // --- Multi-Agent Parsing ---
+        const agentMatch = details.match(/^\[AGENT:\s*([^\]]+)\]\s*/);
+        if (agentMatch) {
+            agentName = agentMatch[1].trim();
+            details = details.replace(agentMatch[0], '').trim();
+        }
+
+        const handoffMatch = title.match(/^Handoff:\s*(.*?)\s*->\s*(.*)/i);
+        if (handoffMatch) {
+            type = 'handoff';
+            handoff = { from: handoffMatch[1].trim(), to: handoffMatch[2].trim() };
+        } else if (lowerCaseTitle.startsWith('validate')) {
+            type = 'validation';
+        } else if (lowerCaseTitle.startsWith('guardian approval')) {
+            type = 'approval';
+        } else if (lowerCaseTitle.startsWith('corrective action')) {
+            type = 'correction';
+        } else if (lowerCaseTitle.startsWith('archive')) {
+            type = 'archival';
+        } else if (lowerCaseTitle.startsWith('audit')) {
+            type = 'audit';
+        } else if (lowerCaseTitle === 'think' || lowerCaseTitle === 'adapt') {
             type = 'thought';
             details = `${title}: ${details}`;
             title = 'Thinking';
@@ -85,6 +108,8 @@ export const parseAgenticWorkflow = (
             title: title,
             status: 'pending', 
             details: details || 'No details provided.',
+            agentName: agentName,
+            handoff: handoff,
         });
     }
 
@@ -108,12 +133,20 @@ export const parseAgenticWorkflow = (
 
     // 3. Interleave tool nodes, replacing 'Act' steps
     const finalExecutionLog: WorkflowNodeData[] = [];
+    let lastAgentName: string | undefined;
+
     for (const textNode of textNodes) {
+        if (textNode.agentName) {
+            lastAgentName = textNode.agentName;
+        }
+
         // An "Act" marker is a placeholder for a tool call. Replace it with the actual tool node.
         if (textNode.type === 'act_marker') {
             if (toolNodesQueue.length > 0) {
                 const toolNode = toolNodesQueue.shift();
                 if (toolNode) {
+                    // Inherit the agent name from the preceding "Think" step.
+                    toolNode.agentName = lastAgentName;
                     finalExecutionLog.push(toolNode);
                 }
             }
@@ -124,7 +157,10 @@ export const parseAgenticWorkflow = (
     }
     
     // Add any remaining tool nodes that didn't have a corresponding "Act" step (e.g., if text stream was cut off)
-    finalExecutionLog.push(...toolNodesQueue);
+    for (const toolNode of toolNodesQueue) {
+        toolNode.agentName = lastAgentName;
+        finalExecutionLog.push(toolNode);
+    }
 
 
     // 4. Apply final status updates to the entire interleaved log

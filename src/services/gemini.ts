@@ -4,10 +4,11 @@
  */
 
 // FIX: Import the 'Part' type from the library to ensure type safety.
-import { GoogleGenAI, type Part } from "@google/genai";
+import { GoogleGenAI, type GenerateContentResponse, type Part } from "@google/genai";
 import { toolDeclarations } from '../tools';
 import { systemInstruction } from '../prompts/system';
 import type { Message, MessageError } from '../../types';
+import { getText } from '../utils/geminiUtils';
 
 // Define the type for chat history based on the expected structure for the API
 type ChatHistory = {
@@ -148,7 +149,7 @@ export const generateChatTitle = async (messages: Message[]): Promise<string> =>
                 contents: prompt,
             });
             
-            const text = response.text ?? '';
+            const text = getText(response);
             const generatedTitle = text.trim().replace(/["']/g, '');
             const isGeneric = !generatedTitle || ['new chat', 'untitled chat'].includes(generatedTitle.toLowerCase());
 
@@ -221,7 +222,7 @@ export const extractMemorySuggestions = async (conversation: Message[]): Promise
             config: { responseMimeType: 'application/json' },
         });
 
-        const jsonText = response.text?.trim() || '[]';
+        const jsonText = getText(response).trim() || '[]';
         // A simple parse is okay here because we requested JSON output.
         const suggestions = JSON.parse(jsonText);
 
@@ -269,7 +270,7 @@ export const consolidateMemory = async (currentMemory: string, newSuggestions: s
             contents: prompt,
         });
 
-        const newMemory = response.text?.trim();
+        const newMemory = getText(response).trim();
         // Return the new memory, or the old one if generation fails/is empty
         return newMemory || currentMemory;
     } catch (error) {

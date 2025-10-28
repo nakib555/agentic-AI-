@@ -6,6 +6,7 @@
 import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
 import { videoStore } from '../services/videoStore';
 import { ToolError } from '../../types';
+import { getText } from '../utils/geminiUtils';
 
 export const videoGeneratorDeclaration: FunctionDeclaration = {
   name: 'generateVideo',
@@ -49,7 +50,7 @@ export const executeVideoGenerator = async (args: { prompt: string }): Promise<s
         contents: enhancementPrompt,
     });
     
-    const enhancedPrompt = (enhancementResponse.text ?? '').trim();
+    const enhancedPrompt = getText(enhancementResponse).trim();
 
     // 2. Generate the video using the enhanced prompt
     let operation = await ai.models.generateVideos({

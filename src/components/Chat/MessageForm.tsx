@@ -3,12 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, FormEvent, useRef, useEffect } from 'react';
+import React, { useState, FormEvent, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { fileToBase64, base64ToFile } from '../../utils/fileUtils';
 import { AttachedFilePreview } from './AttachedFilePreview';
 import { enhanceUserPromptStream } from '../../services/promptImprover';
+import { ProactiveAssistance } from './ProactiveAssistance';
 
 type MessageFormProps = {
   onSubmit: (message: string, files?: File[], options?: { isThinkingModeEnabled?: boolean }) => void;
@@ -22,17 +23,63 @@ type SavedFile = {
   data: string; // base64
 };
 
-export const MessageForm = ({ onSubmit, isLoading, onCancel }: MessageFormProps) => {
+// Define a handle type for the methods we want to expose via the ref.
+export type MessageFormHandle = {
+  attachFiles: (files: File[]) => void;
+};
+
+// A list of general-purpose actions for proactively assisting with complex text.
+const PROACTIVE_SUGGESTIONS = [
+  'Explain this',
+  'Find potential issues',
+  'Suggest improvements',
+  'Summarize this',
+];
+
+/**
+ * A heuristic function to detect if a block of text is complex (e.g., code, JSON, structured data)
+ * rather than simple prose, making it a candidate for proactive assistance.
+ * @param text The text to analyze.
+ * @returns True if the text appears complex, false otherwise.
+ */
+const isComplexText = (text: string): boolean => {
+    const lines = text.split('\n');
+    if (lines.length < 2) return false;
+
+    // Heuristics to detect code-like structure
+    const hasBraces = text.includes('{') || text.includes('}');
+    const hasParens = text.includes('(') || text.includes(')');
+    const hasSpecialChars = text.includes(';') || text.includes('=') || text.includes('=>') || text.includes('<') || text.includes('>');
+    const hasIndentation = lines.some(line => line.trim().length > 0 && (line.startsWith('  ') || line.startsWith('\t')));
+    const looksLikeProse = lines.every(line => /^[A-Z]/.test(line.trim()) && line.trim().endsWith('.'));
+
+    // A block of text is likely code if it has multiple lines, some structure, and doesn't look like plain prose.
+    return (hasBraces || hasParens || hasSpecialChars || hasIndentation) && !looksLikeProse;
+};
+
+
+export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ onSubmit, isLoading, onCancel }, ref) => {
   const [inputValue, setInputValue] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isThinkingModeEnabled, setIsThinkingModeEnabled] = useState(false);
+  const [proactiveSuggestions, setProactiveSuggestions] = useState<string[]>([]);
   const inputRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { isRecording, startRecording, stopRecording, isSupported } = useVoiceInput({
     onTranscriptUpdate: setInputValue,
   });
+
+  // Expose an `attachFiles` function to the parent component via the ref.
+  // This allows the parent (ChatArea) to add files from a drag-and-drop event.
+  useImperativeHandle(ref, () => ({
+    attachFiles: (files: File[]) => {
+      if (files && files.length > 0) {
+        setAttachedFiles(prev => [...prev, ...files]);
+      }
+    }
+  }));
 
   // Restore draft on component mount
   useEffect(() => {
@@ -87,6 +134,15 @@ export const MessageForm = ({ onSubmit, isLoading, onCancel }: MessageFormProps)
     }
   }, [inputValue, attachedFiles]);
 
+  // Effect for Proactive Assistance
+  useEffect(() => {
+    // Only show suggestions if there are no files attached, to keep the UI clean.
+    if (attachedFiles.length === 0 && isComplexText(inputValue)) {
+      setProactiveSuggestions(PROACTIVE_SUGGESTIONS);
+    } else {
+      setProactiveSuggestions([]);
+    }
+  }, [inputValue, attachedFiles]);
 
   // Effect to sync state from voice input and handle auto-resizing/scrolling of the input field.
   useEffect(() => {
@@ -163,6 +219,17 @@ export const MessageForm = ({ onSubmit, isLoading, onCancel }: MessageFormProps)
     }
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    // Wrap the input in a markdown code block for clarity and send with the suggestion as the prompt.
+    // Also, enable thinking mode for these complex requests.
+    const formattedMessage = `${suggestion}:\n\`\`\`\n${inputValue}\n\`\`\``;
+    onSubmit(formattedMessage, [], { isThinkingModeEnabled: true });
+    setInputValue('');
+    setAttachedFiles([]); // Should already be empty, but good to be explicit
+    localStorage.removeItem('messageDraft_text');
+    localStorage.removeItem('messageDraft_files');
+  };
+
   const handleMicClick = () => {
     if (isLoading) return;
     if (isRecording) {
@@ -197,6 +264,14 @@ export const MessageForm = ({ onSubmit, isLoading, onCancel }: MessageFormProps)
         className="bg-gray-200/50 dark:bg-[#202123] border border-gray-300 dark:border-white/10 rounded-2xl flex flex-col p-2" 
         onSubmit={handleSubmit}
     >
+        <AnimatePresence>
+            {proactiveSuggestions.length > 0 && (
+                <ProactiveAssistance
+                    suggestions={proactiveSuggestions}
+                    onSuggestionClick={handleSuggestionClick}
+                />
+            )}
+        </AnimatePresence>
         {/* File Preview Area */}
         <AnimatePresence>
           {attachedFiles.length > 0 && (
@@ -206,7 +281,7 @@ export const MessageForm = ({ onSubmit, isLoading, onCancel }: MessageFormProps)
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="p-2 grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-hidden"
+              className="p-2 grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-2 overflow-y-auto max-h-64"
             >
               {attachedFiles.map((file, index) => (
                 <motion.div key={`${file.name}-${index}`} layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
@@ -229,7 +304,7 @@ export const MessageForm = ({ onSubmit, isLoading, onCancel }: MessageFormProps)
                 className="hidden"
                 aria-hidden="true"
                 multiple
-                accept="image/*,video/*,application/pdf,.txt,.md,.csv,.json,.py,.js,.ts,.html,.css"
+                accept="image/*,video/*,audio/*,application/pdf,.txt,.md,.csv,.json,.py,.js,.ts,.html,.css,.xml,.rtf,.log,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
             />
 
             <button 
@@ -250,7 +325,7 @@ export const MessageForm = ({ onSubmit, isLoading, onCancel }: MessageFormProps)
                   onKeyDown={handleKeyDown}
                   aria-label="Chat input"
                   role="textbox"
-                  data-placeholder={isRecording ? 'Listening...' : "Ask anything"}
+                  data-placeholder={isRecording ? 'Listening...' : "Ask anything, or drop a file"}
                   className={`content-editable-input w-full bg-transparent text-gray-900 dark:text-slate-200 focus:outline-none ${isLoading || isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`}
                    style={{
                     minHeight: '28px', // Base height for a single line
@@ -348,4 +423,4 @@ export const MessageForm = ({ onSubmit, isLoading, onCancel }: MessageFormProps)
         </div>
     </form>
   );
-};
+});

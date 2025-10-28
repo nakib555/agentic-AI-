@@ -63,8 +63,12 @@ export const useChatHistory = () => {
 
   // Save to local storage
   useEffect(() => {
-    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-    localStorage.setItem('currentChatId', String(currentChatId));
+    try {
+      localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+      localStorage.setItem('currentChatId', String(currentChatId));
+    } catch (error) {
+      console.error("Failed to save chat history to localStorage:", error);
+    }
   }, [chatHistory, currentChatId]);
 
   const startNewChat = useCallback(() => {
@@ -150,6 +154,20 @@ export const useChatHistory = () => {
     }));
   }, []);
 
+  const toggleMessagePin = useCallback((chatId: string, messageId: string) => {
+    setChatHistory(prev => prev.map(chat => {
+        if (chat.id !== chatId) return chat;
+        const messageIndex = chat.messages.findIndex(m => m.id === messageId);
+        if (messageIndex === -1) return chat;
+        
+        const updatedMessages = [...chat.messages];
+        const currentMessage = updatedMessages[messageIndex];
+        updatedMessages[messageIndex] = { ...currentMessage, isPinned: !currentMessage.isPinned };
+        
+        return { ...chat, messages: updatedMessages };
+    }));
+  }, []);
+
   const updateChatTitle = useCallback((chatId: string, title: string) => {
     setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, title } : s));
   }, []);
@@ -178,6 +196,7 @@ export const useChatHistory = () => {
     updateLastMessage,
     setChatLoadingState,
     updateMessage,
+    toggleMessagePin,
     completeChatLoading,
     updateChatTitle,
     updateChatModel,

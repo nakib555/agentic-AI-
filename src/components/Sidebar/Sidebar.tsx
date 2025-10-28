@@ -26,9 +26,11 @@ type SidebarProps = {
     onLoadChat: (id: string) => void;
     onDeleteChat: (id: string) => void;
     onClearAllChats: () => void;
+    onUpdateChatTitle: (id: string, title: string) => void;
     theme: Theme;
     setTheme: (theme: Theme) => void;
     onSettingsClick: () => void;
+    onExportChat: (format: 'md' | 'json' | 'pdf') => void;
 };
 
 const mobileVariants = {
@@ -39,7 +41,7 @@ const mobileVariants = {
 export const Sidebar = ({ 
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
     history, currentChatId, onNewChat, onLoadChat, onDeleteChat, onClearAllChats, 
-    theme, setTheme, onSettingsClick
+    onUpdateChatTitle, theme, setTheme, onSettingsClick, onExportChat
 }: SidebarProps) => {
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
     const [isResizing, setIsResizing] = useState(false);
@@ -128,6 +130,7 @@ export const Sidebar = ({
                             isCollapsed={isCollapsed}
                             onLoadChat={handleLoadChat}
                             onDeleteChat={onDeleteChat}
+                            onUpdateChatTitle={onUpdateChatTitle}
                         />
                     </div>
                     
@@ -137,6 +140,8 @@ export const Sidebar = ({
                         isCollapsed={isCollapsed}
                         onClearAllChats={onClearAllChats}
                         onSettingsClick={onSettingsClick}
+                        onExportChat={onExportChat}
+                        isChatActive={!!currentChatId}
                     />
                 </div>
     

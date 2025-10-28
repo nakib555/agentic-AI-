@@ -15,9 +15,12 @@ type MessageListProps = {
   isLoading: boolean;
   ttsVoice: string;
   isAutoPlayEnabled: boolean;
+  currentChatId: string | null;
+  onTogglePin: (chatId: string, messageId: string) => void;
+  onShowThinkingProcess: (messageId: string) => void;
 };
 
-export const MessageList = ({ messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled }: MessageListProps) => {
+export const MessageList = ({ messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled, currentChatId, onTogglePin, onShowThinkingProcess }: MessageListProps) => {
   const messageListRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastMessageText = messages[messages.length - 1]?.text;
@@ -64,7 +67,16 @@ export const MessageList = ({ messages, sendMessage, isLoading, ttsVoice, isAuto
         ) : (
           <div className="space-y-8 md:space-y-10 py-4" role="log" aria-live="polite">
             {visibleMessages.map((msg) => (
-              <MessageComponent key={msg.id} msg={msg} sendMessage={sendMessage} ttsVoice={ttsVoice} isAutoPlayEnabled={isAutoPlayEnabled} />
+              <MessageComponent 
+                  key={msg.id} 
+                  msg={msg} 
+                  sendMessage={sendMessage} 
+                  ttsVoice={ttsVoice} 
+                  isAutoPlayEnabled={isAutoPlayEnabled}
+                  currentChatId={currentChatId}
+                  onTogglePin={onTogglePin}
+                  onShowThinkingProcess={onShowThinkingProcess}
+              />
             ))}
             {/* The invisible anchor element that we scroll to. */}
             <div ref={bottomRef} />

@@ -15,6 +15,7 @@ type HistoryListProps = {
   isCollapsed: boolean;
   onLoadChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
+  onUpdateChatTitle: (id: string, title: string) => void;
 };
 
 const groupChatsByMonth = (chats: ChatSession[]): { [key: string]: ChatSession[] } => {
@@ -58,7 +59,7 @@ const NoResults = () => (
     </motion.div>
 );
 
-export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, onLoadChat, onDeleteChat }: HistoryListProps) => {
+export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, onLoadChat, onDeleteChat, onUpdateChatTitle }: HistoryListProps) => {
     const filteredHistory = history.filter(item =>
         item.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -95,6 +96,7 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                                             active={item.id === currentChatId}
                                             onClick={() => onLoadChat(item.id)}
                                             onDelete={() => onDeleteChat(item.id)}
+                                            onUpdateTitle={(newTitle) => onUpdateChatTitle(item.id, newTitle)}
                                             isLoading={item.isLoading ?? false}
                                         />
                                     ))}

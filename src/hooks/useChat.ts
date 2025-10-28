@@ -44,6 +44,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     updateChatTitle,
     updateChatModel,
     updateChatSettings,
+    toggleMessagePin,
   } = useChatHistory();
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -295,5 +296,5 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     });
   };
   
-  return { messages, sendMessage, isLoading, chatHistory, currentChatId, startNewChat, loadChat, deleteChat, clearAllChats, cancelGeneration, updateChatModel, updateChatSettings };
+  return { messages, sendMessage, isLoading, chatHistory, currentChatId, startNewChat, loadChat, deleteChat, clearAllChats, cancelGeneration, updateChatModel, updateChatSettings, updateChatTitle, toggleMessagePin };
 };

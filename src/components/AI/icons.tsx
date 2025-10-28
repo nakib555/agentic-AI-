@@ -68,7 +68,7 @@ export const ToolsIcon = () => (
 export const ThoughtIcon = () => (
     <div className="w-5 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-          <path fillRule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v1.25a.75.75 0 0 1-1.5 0V2.75A.75.75 0 0 1 10 2ZM5.207 4.207a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0Zm9.586 0a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06a.75.75 0 0 1 0-1.06ZM10 15.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Zm0-1.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" clipRule="evenodd" />
+            <path fillRule="evenodd" d="M10 2.5c-3.14 0-5.5 2.36-5.5 5.5 0 2.28 1.43 4.24 3.5 5.08V16a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-2.92c2.07-.84 3.5-2.8 3.5-5.08 0-3.14-2.36-5.5-5.5-5.5ZM8.5 17a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5Z" clipRule="evenodd" />
         </svg>
     </div>
 );
@@ -76,7 +76,8 @@ export const ThoughtIcon = () => (
 export const ObservationIcon = () => (
     <div className="w-5 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-            <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z" clipRule="evenodd" />
+            <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+            <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.18l11-7A1.651 1.651 0 0 1 14.25 2.75h.5A1.651 1.651 0 0 1 16.4 4.3l-11 7a1.651 1.651 0 0 1-2.136-1.18l-1.6-6.5A1.651 1.651 0 0 1 .664 10.59ZM19.336 9.41a1.651 1.651 0 0 1 0 1.18l-11 7A1.651 1.651 0 0 1 5.75 17.25h-.5A1.651 1.651 0 0 1 3.6 15.7l11-7a1.651 1.651 0 0 1 2.136 1.18l1.6 6.5A1.651 1.651 0 0 1 19.336 9.41Z" clipRule="evenodd" />
         </svg>
     </div>
 );
@@ -85,6 +86,49 @@ export const SearchIcon = () => (
     <div className="w-5 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
           <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0 -11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
+        </svg>
+    </div>
+);
+
+export const HandoffIcon = () => (
+    <div className="w-5 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+            <path d="M3.5 2.75a.75.75 0 0 0-1.5 0v1.5c0 .414.336.75.75.75h13.5a.75.75 0 0 0 0-1.5H3.5v-1.5Z" />
+            <path d="M6.22 8.22a.75.75 0 0 1 1.06 0l2.25 2.25a.75.75 0 0 1 0 1.06l-2.25 2.25a.75.75 0 0 1-1.06-1.06L7.44 12 6.22 10.78a.75.75 0 0 1 0-1.06Z" />
+            <path d="M11.22 8.22a.75.75 0 0 1 1.06 0l2.25 2.25a.75.75 0 0 1 0 1.06l-2.25 2.25a.75.75 0 0 1-1.06-1.06L12.44 12l-1.22-1.22a.75.75 0 0 1 0-1.06Z" />
+        </svg>
+    </div>
+);
+
+export const ValidationIcon = () => (
+    <div className="w-5 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+            <path fillRule="evenodd" d="M10 1a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 1ZM13.06 3.44a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0ZM6.94 3.44a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 1 1-1.06 1.06L6.94 4.5a.75.75 0 0 1 0-1.06Zm-.184 6.346a.75.75 0 0 1 1.012.304 6.061 6.061 0 0 0 4.464 0 .75.75 0 1 1 1.012-.304 7.561 7.561 0 0 1-6.488 0ZM10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm0-1.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Z" clipRule="evenodd" />
+        </svg>
+    </div>
+);
+
+export const ApprovalIcon = () => (
+    <div className="w-5 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+            <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
+        </svg>
+    </div>
+);
+
+export const CorrectionIcon = () => (
+    <div className="w-5 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+            <path d="M10 3.5a1.5 1.5 0 0 1 3 0V4a1 1 0 0 0 1 1h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-1.172a3 3 0 0 0-2.121.879l-4.414 4.414A3 3 0 0 1 8.828 16H6a1 1 0 0 1-1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.121-.879l4.414-4.414A3 3 0 0 1 11.172 4H10V3.5Z" />
+        </svg>
+    </div>
+);
+
+export const ArchiveIcon = () => (
+    <div className="w-5 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+            <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h13A1.5 1.5 0 0 1 18 3.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 16.5v-13Z" />
+            <path d="M5.055 8.358a.75.75 0 0 1 .53-.223h8.83a.75.75 0 0 1 .53.223l-4.415 4.415-4.415-4.415Z" />
         </svg>
     </div>
 );

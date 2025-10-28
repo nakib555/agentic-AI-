@@ -5,6 +5,7 @@
 
 import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
 import { ToolError } from '../../types';
+import { getText } from '../utils/geminiUtils';
 
 export const duckduckgoSearchDeclaration: FunctionDeclaration = {
   name: 'duckduckgoSearch',
@@ -57,7 +58,7 @@ export const executeDuckDuckGoSearch = async (args: { query: string }): Promise<
     });
 
     // Use response.text directly as per Gemini API guidelines for grounding responses.
-    const summary = response.text?.trim() ?? '';
+    const summary = getText(response).trim() ?? '';
     
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
     

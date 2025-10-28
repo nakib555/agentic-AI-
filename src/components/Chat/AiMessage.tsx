@@ -7,7 +7,6 @@ import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { motion, MotionProps, AnimatePresence } from 'framer-motion';
 import { GoogleGenAI, Modality } from '@google/genai';
 import type { Message, Source } from '../../../types';
-import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { MarkdownComponents } from '../Markdown/markdownComponents';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
 import { parseMessageText } from '../../utils/messageParser';
@@ -24,6 +23,7 @@ import { decode, decodeAudioData } from '../../utils/audioUtils';
 import { audioCache } from '../../services/audioCache';
 import { audioManager } from '../../services/audioService';
 import { FileAttachment } from '../AI/FileAttachment';
+import { PinButton } from './PinButton';
 
 const animationProps: MotionProps = {
   initial: { opacity: 0, y: 20 },
@@ -149,9 +149,16 @@ const cleanTextForTts = (text: string): string => {
     return cleanedText;
 };
 
-export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void; ttsVoice: string; isAutoPlayEnabled: boolean; }> = ({ msg, sendMessage, ttsVoice, isAutoPlayEnabled }) => {
-  const { id, text, isThinking, toolCallEvents, error, startTime, endTime } = msg;
-  const [isThinkingDetailsVisible, setIsThinkingDetailsVisible] = useState(false);
+export const AiMessage: React.FC<{ 
+    msg: Message; 
+    sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void; 
+    ttsVoice: string; 
+    isAutoPlayEnabled: boolean;
+    currentChatId: string | null;
+    onTogglePin: (chatId: string, messageId: string) => void;
+    onShowThinkingProcess: (messageId: string) => void;
+}> = ({ msg, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, onTogglePin, onShowThinkingProcess }) => {
+  const { id, text, isThinking, error, startTime, endTime, isPinned } = msg;
   const [elapsed, setElapsed] = useState(0);
   const [audioState, setAudioState] = useState<'idle' | 'loading' | 'error' | 'playing'>('idle');
   const isPlaying = audioState === 'playing';
@@ -162,12 +169,12 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
   );
   
   const searchSources = useMemo((): Source[] => {
-    if (!toolCallEvents || toolCallEvents.length === 0) {
+    if (!msg.toolCallEvents || msg.toolCallEvents.length === 0) {
       return [];
     }
 
     const allSources: Source[] = [];
-    const searchEvents = toolCallEvents.filter(
+    const searchEvents = msg.toolCallEvents.filter(
       event => event.call.name === 'duckduckgoSearch' && event.result
     );
 
@@ -192,7 +199,7 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
 
     // Deduplicate sources based on URI
     return Array.from(new Map(allSources.map(s => [s.uri, s])).values());
-  }, [toolCallEvents]);
+  }, [msg.toolCallEvents]);
   
   const thinkingIsComplete = !isThinking || !!error;
   const hasThinkingProcess = thinkingText && thinkingText.trim() !== '';
@@ -410,7 +417,7 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
         }
         return null;
     });
-};
+  };
 
   // If we're in the initial waiting state, render only the indicator.
   if (isInitialWait) {
@@ -421,50 +428,24 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
     <motion.div {...animationProps} className="w-full flex flex-col items-start gap-4">
       {/* RENDER THINKING PROCESS FIRST */}
       {hasThinkingProcess && (
-            <>
-                <button
-                    onClick={() => setIsThinkingDetailsVisible(prev => !prev)}
-                    className="w-full max-w-[90%] flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-black/30 transition-colors text-left"
-                    aria-expanded={isThinkingDetailsVisible}
-                    aria-controls={`thinking-details-${id}`}
-                    title={isThinkingDetailsVisible ? "Collapse thought process" : "Expand thought process"}
-                >
-                    <div className="flex items-center gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-500 dark:text-slate-400">
-                            <path fillRule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v1.25a.75.75 0 0 1-1.5 0V2.75A.75.75 0 0 1 10 2ZM5.207 4.207a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0Zm9.586 0a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06a.75.75 0 0 1 0-1.06ZM10 15.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Zm0-1.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" clipRule="evenodd" />
-                        </svg>
-                        <span className="font-semibold text-gray-700 dark:text-slate-200 text-sm">
-                            {thinkingIsComplete ? `Thought took ${displayDuration}s` : `Thinking for ${displayDuration}s`}
-                        </span>
-                    </div>
-                    <motion.div animate={{ rotate: isThinkingDetailsVisible ? 0 : -90 }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-500 dark:text-slate-400">
-                          <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-                        </svg>
-                    </motion.div>
-                </button>
-
-                <AnimatePresence>
-                    {isThinkingDetailsVisible && (
-                        <motion.div
-                            id={`thinking-details-${id}`}
-                            initial="collapsed" animate="open" exit="collapsed"
-                            variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                            transition={{ duration: 0.3, ease: 'easeInOut' }}
-                            className="w-full"
-                        >
-                            <ThinkingWorkflow 
-                                text={thinkingText} 
-                                toolCallEvents={toolCallEvents}
-                                isThinkingComplete={thinkingIsComplete}
-                                isLiveGeneration={!!isThinking}
-                                error={error}
-                                sendMessage={sendMessage}
-                            />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </>
+            <button
+                onClick={() => onShowThinkingProcess(id)}
+                className="w-full max-w-[90%] flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-black/30 transition-colors text-left"
+                aria-controls="thinking-sidebar"
+                title="Show thought process"
+            >
+                <div className="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-500 dark:text-slate-400">
+                        <path fillRule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v1.25a.75.75 0 0 1-1.5 0V2.75A.75.75 0 0 1 10 2ZM5.207 4.207a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0Zm9.586 0a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06a.75.75 0 0 1 0-1.06ZM10 15.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Zm0-1.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" clipRule="evenodd" />
+                    </svg>
+                    <span className="font-semibold text-gray-700 dark:text-slate-200 text-sm">
+                        {thinkingIsComplete ? `Thought took ${displayDuration}s` : `Thinking for ${displayDuration}s`}
+                    </span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-500 dark:text-slate-400">
+                    <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L12.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                </svg>
+            </button>
         )}
       
       {/* AI Message Content */}
@@ -501,6 +482,14 @@ export const AiMessage: React.FC<{ msg: Message; sendMessage: (message: string, 
           <div className="flex items-center gap-2">
             <DownloadRawResponseButton rawText={text} />
             {hasFinalAnswer && <TtsButton isPlaying={isPlaying} isLoading={audioState === 'loading'} onClick={playOrStopAudio} />}
+            <PinButton 
+                isPinned={!!isPinned}
+                onClick={() => {
+                    if (currentChatId) {
+                        onTogglePin(currentChatId, id);
+                    }
+                }}
+            />
             <AnimatePresence>
                 {audioState === 'error' && (
                     <motion.div 

@@ -60,7 +60,6 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
                 animate={{ height: 'auto' }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
             >
-                {/* FIX: Add isStreaming prop to ManualCodeRenderer */}
                 <ManualCodeRenderer text={displayedResult} components={WorkflowMarkdownComponents} isStreaming={false} />
             </motion.div>
             {isLongResult && (
@@ -112,7 +111,7 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
     return (
       <div className="min-w-0 flex-1 text-sm space-y-3">
         {argEntries.length > 0 && (
-          <div className="text-xs font-['Fira_Code',_monospace] space-y-1.5 bg-gray-100 dark:bg-slate-800/70 p-2 rounded-md">
+          <div className="text-xs font-['Fira_Code',_monospace] space-y-1.5 border border-gray-200 dark:border-slate-700 p-2 rounded-md">
             <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-1">Parameters</p>
             {argEntries.map(([key, value]) => {
               // Special rendering for 'packages' to make dependencies clear

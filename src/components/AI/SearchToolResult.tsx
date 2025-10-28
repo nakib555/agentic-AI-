@@ -39,7 +39,7 @@ const SourcePill: React.FC<{ source: Source }> = ({ source }) => {
       href={source.uri}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-gray-50 dark:bg-[#4a4a4a] dark:hover:bg-[#5a5a5a] rounded-full text-sm text-gray-800 dark:text-slate-200 border border-gray-300 dark:border-slate-600/50 transition-colors"
+      className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-700/50 rounded-full text-xs font-medium text-gray-700 dark:text-slate-300 border border-gray-300 dark:border-slate-700 transition-colors"
       title={source.title}
     >
       <img
@@ -74,12 +74,12 @@ export const SearchToolResult = ({ query, sources }: SearchToolResultProps) => {
   const hiddenCount = sources ? sources.length - (visibleSources?.length ?? 0) : 0;
 
   return (
-    <div className="bg-gray-200 dark:bg-[#3a3a3a] p-4 rounded-lg">
+    <div className="bg-gray-50 dark:bg-black/10 p-3 rounded-lg border border-gray-200 dark:border-slate-700/50">
       {query && (
-        <div className="flex items-center gap-3 text-sm text-gray-800 dark:text-slate-200 mb-4">
+        <div className="flex items-center gap-3 text-sm text-gray-800 dark:text-slate-200 mb-3">
           <SearchIcon />
           <p className="font-medium">
-              {isLoading ? 'Searching the web for' : 'Results for'} "{query}"
+              {isLoading ? 'Searching for' : 'Results for'} "{query}"
           </p>
         </div>
       )}
@@ -98,7 +98,7 @@ export const SearchToolResult = ({ query, sources }: SearchToolResultProps) => {
                     {hiddenCount > 0 && !showAll && (
                     <button
                         onClick={() => setShowAll(true)}
-                        className="text-sm text-gray-600 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 px-3 py-1.5 transition-colors"
+                        className="text-xs font-medium text-gray-600 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 px-3 py-1.5 transition-colors"
                     >
                         See All ({sources.length})
                     </button>

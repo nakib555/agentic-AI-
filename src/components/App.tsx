@@ -4,10 +4,10 @@
  */
 
 // FIX: Removed invalid 'aistudio' from react import.
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Model } from '../services/modelService';
-import type { ChatSession } from '../../types';
+import type { ChatSession, Message } from '../../types';
 import { getAvailableModels } from '../services/modelService';
 import { useChat } from '../hooks/useChat';
 import { useTheme } from '../hooks/useTheme';
@@ -19,6 +19,8 @@ import { ChatArea } from './Chat/ChatArea';
 import { SettingsModal } from './Settings/SettingsModal';
 import { MemoryModal } from './Settings/MemoryModal';
 import { MemoryConfirmationModal } from './Settings/MemoryConfirmationModal';
+import { exportChatToMarkdown, exportChatToJson, exportChatToPdf } from '../utils/exportUtils';
+import { ThinkingSidebar } from './Sidebar/ThinkingSidebar';
 
 
 // Configure the Monaco Editor loader to fetch assets from a CDN.
@@ -37,6 +39,8 @@ export const App = () => {
   const [uiSelectedModel, setUiSelectedModel] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
+  const [isThinkingSidebarOpen, setIsThinkingSidebarOpen] = useState(false);
+  const [thinkingMessageIdForSidebar, setThinkingMessageIdForSidebar] = useState<string | null>(null);
   
   // Settings State - these act as the UI state, which is kept in sync with the active chat.
   const [systemPrompt, setSystemPrompt] = useState<string>(() => localStorage.getItem('agentic-systemPrompt') || DEFAULT_SYSTEM_PROMPT);
@@ -82,9 +86,19 @@ export const App = () => {
     cancelGeneration,
     updateChatModel,
     updateChatSettings,
+    updateChatTitle,
+    toggleMessagePin,
   } = useChat(uiSelectedModel, { systemPrompt, temperature, maxOutputTokens: maxTokens }, memoryContent);
   
   const prevChatHistoryRef = useRef<ChatSession[]>([]);
+
+  // Derive the message object for the sidebar. This will update whenever chatHistory changes.
+  const thinkingMessageForSidebar = useMemo(() => {
+    if (!thinkingMessageIdForSidebar || !currentChatId) return null;
+    const currentChat = chatHistory.find(c => c.id === currentChatId);
+    return currentChat?.messages.find(m => m.id === thinkingMessageIdForSidebar) ?? null;
+  }, [thinkingMessageIdForSidebar, currentChatId, chatHistory]);
+
 
   // Effect to automatically update the AI's memory when a chat finishes.
   useEffect(() => {
@@ -178,6 +192,45 @@ export const App = () => {
     }
   };
 
+  const handleExportChat = (format: 'md' | 'json' | 'pdf') => {
+    if (!currentChatId) {
+        alert("Please select a chat to export.");
+        return;
+    }
+    const currentChat = chatHistory.find(c => c.id === currentChatId);
+    if (currentChat) {
+        switch (format) {
+            case 'md':
+                exportChatToMarkdown(currentChat);
+                break;
+            case 'json':
+                exportChatToJson(currentChat);
+                break;
+            case 'pdf':
+                exportChatToPdf(currentChat);
+                break;
+        }
+    } else {
+        alert("Could not find the current chat session to export.");
+    }
+  };
+
+  const handleShowThinkingProcess = (messageId: string) => {
+    const currentChat = chatHistory.find(c => c.id === currentChatId);
+    if (currentChat) {
+      const message = currentChat.messages.find(m => m.id === messageId);
+      if (message && message.role === 'model') {
+        setThinkingMessageIdForSidebar(messageId);
+        setIsThinkingSidebarOpen(true);
+      }
+    }
+  };
+
+  const handleCloseThinkingSidebar = () => {
+    setIsThinkingSidebarOpen(false);
+    setThinkingMessageIdForSidebar(null);
+  };
+
   // The model displayed should be the current chat's model, or the selected one for a new chat.
   const activeModel = chatHistory.find(c => c.id === currentChatId)?.model || uiSelectedModel;
 
@@ -196,9 +249,11 @@ export const App = () => {
         onLoadChat={loadChat}
         onDeleteChat={deleteChat}
         onClearAllChats={clearAllChats}
+        onUpdateChatTitle={updateChatTitle}
         theme={theme}
         setTheme={setTheme}
         onSettingsClick={() => setIsSettingsOpen(true)}
+        onExportChat={handleExportChat}
       />
 
       <main className="flex-1 flex flex-col overflow-hidden chat-background">
@@ -216,9 +271,19 @@ export const App = () => {
               onCancel={cancelGeneration}
               ttsVoice={ttsVoice}
               isAutoPlayEnabled={isAutoPlayEnabled}
+              currentChatId={currentChatId}
+              onTogglePin={toggleMessagePin}
+              onShowThinkingProcess={handleShowThinkingProcess}
            />
         </div>
       </main>
+
+      <ThinkingSidebar
+        isOpen={isThinkingSidebarOpen}
+        onClose={handleCloseThinkingSidebar}
+        message={thinkingMessageForSidebar}
+        sendMessage={sendMessage}
+      />
 
       <SettingsModal
         isOpen={isSettingsOpen}
