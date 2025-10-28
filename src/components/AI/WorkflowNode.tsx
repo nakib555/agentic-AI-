@@ -10,7 +10,7 @@ import { ToolCallStep } from './ToolCallStep';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { TypingWrapper } from './TypingWrapper';
-import { ObservationIcon, SearchIcon, ThoughtIcon, TodoListIcon, ToolsIcon, HandoffIcon, ValidationIcon, ApprovalIcon, CorrectionIcon, ArchiveIcon } from './icons';
+import { ObservationIcon, SearchIcon, ThoughtIcon, TodoListIcon, ToolsIcon, HandoffIcon, ValidationIcon, CorrectionIcon } from './icons';
 import { SearchToolResult } from './SearchToolResult';
 import { getAgentColor } from '../../utils/agentUtils';
 
@@ -68,21 +68,15 @@ const getNodeVisuals = (node: WorkflowNodeData) => {
             if (toolEvent.call.name === 'executeCode') accentColor = 'gray';
             break;
         case 'validation':
-        case 'audit':
             icon = <ValidationIcon />;
             accentColor = 'cyan';
-            break;
-        case 'approval':
-            icon = <ApprovalIcon />;
-            accentColor = 'green';
             break;
         case 'correction':
             icon = <CorrectionIcon />;
             accentColor = 'amber';
             break;
-        case 'archival':
-            icon = <ArchiveIcon />;
-            accentColor = 'gray';
+        case 'thought':
+            icon = <ThoughtIcon />;
             break;
         default:
             icon = <TodoListIcon />; // Fallback icon
@@ -255,15 +249,15 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
 
     const accentClasses: { [key: string]: string } = {
         slate: 'border-gray-300 dark:border-slate-600/50',
-        blue: 'border-blue-500',
-        purple: 'border-purple-500',
-        indigo: 'border-indigo-500',
-        rose: 'border-rose-500',
-        gray: 'border-gray-500',
-        red: 'border-red-500',
-        cyan: 'border-cyan-500',
-        green: 'border-green-500',
-        amber: 'border-amber-500',
+        blue: 'border-blue-500/80',
+        purple: 'border-purple-500/80',
+        indigo: 'border-indigo-500/80',
+        rose: 'border-rose-500/80',
+        gray: 'border-gray-500/80',
+        red: 'border-red-500/80',
+        cyan: 'border-cyan-500/80',
+        green: 'border-green-500/80',
+        amber: 'border-amber-500/80',
     };
     
     const finalAccentClass = agentColorInfo ? agentColorInfo.border : accentClasses[accentColor] || 'border-gray-300';
@@ -271,7 +265,7 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
     const hasDetails = !!node.details;
 
     return (
-        <div className={`bg-white dark:bg-black/20 rounded-lg border-t-2 ${finalAccentClass} w-full shadow-sm`}>
+        <motion.div layout className={`bg-white dark:bg-black/20 rounded-lg border-l-4 ${finalAccentClass} w-full shadow-sm`}>
             <button
                 onClick={() => hasDetails && setIsOpen(!isOpen)}
                 className={`w-full flex items-center justify-between gap-2 p-3 text-left ${hasDetails ? 'cursor-pointer' : 'cursor-default'}`}
@@ -317,6 +311,6 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </motion.div>
     );
 };

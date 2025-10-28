@@ -50,7 +50,8 @@ const PlanSection: React.FC<{ icon: React.ReactNode; title: string; content: str
 };
 
 export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isLiveGeneration, error, sendMessage }: ThinkingWorkflowProps) => {
-    const executionLogRef = useRef<HTMLUListElement>(null);
+    const executionLogRef = useRef<HTMLDivElement>(null);
+    const lastExecutionLogLength = useRef(0);
 
     const { goalAnalysis, todoList, tools, executionLog } = useMemo(
         () => parseAgenticWorkflow(text, toolCallEvents, isThinkingComplete, error),
@@ -59,12 +60,13 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isL
 
     // Auto-scroll the execution log to keep the latest step in view.
     useEffect(() => {
-        if (executionLogRef.current) {
+        if (executionLogRef.current && executionLog.length > lastExecutionLogLength.current) {
             executionLogRef.current.scrollTo({
                 top: executionLogRef.current.scrollHeight,
                 behavior: 'smooth'
             });
         }
+        lastExecutionLogLength.current = executionLog.length;
     }, [executionLog]);
 
     const { executionHeaderTitle, executionStatusIcon } = useMemo(() => {
@@ -80,68 +82,82 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isL
     if (!hasAnyContent) return null;
 
     return (
-        <div className="space-y-6">
-            {error && (
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
-                    className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-500/40 p-3 rounded-lg flex items-start gap-3"
-                >
-                    <div className="flex-shrink-0 text-red-500 dark:text-red-400 pt-0.5">
-                        <FailedIcon />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-red-700 dark:text-red-300 break-words">{error.message}</p>
-                    </div>
-                </motion.div>
-            )}
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-1 lg:grid-cols-12 gap-x-8 gap-y-6 px-1 lg:px-4 h-full"
+        >
+            {/* Plan Column */}
             {hasPlan && (
-                <motion.div 
-                    initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-                    className="p-4 bg-white dark:bg-black/20 rounded-lg border border-gray-200 dark:border-white/10 space-y-4"
-                >
-                    <div className="flex items-center gap-2">
-                        <TodoListIcon />
-                        <h2 className="font-semibold text-gray-800 dark:text-slate-200">The Plan</h2>
+                <div className="lg:col-span-5">
+                    <div className="lg:sticky lg:top-4 self-start">
+                         <motion.div 
+                            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
+                            className="p-4 bg-white dark:bg-black/20 rounded-lg border border-gray-200 dark:border-white/10 space-y-4"
+                        >
+                            <div className="flex items-center gap-2">
+                                <TodoListIcon />
+                                <h2 className="font-semibold text-gray-800 dark:text-slate-200">The Plan</h2>
+                            </div>
+                            <PlanSection icon={<GoalAnalysisIcon />} title="Goal Analysis" content={goalAnalysis} isLive={isLiveGeneration} />
+                            <PlanSection icon={<TodoListIcon />} title="Todo-list" content={todoList} isLive={isLiveGeneration} />
+                            <PlanSection icon={<ToolsIcon />} title="Tools" content={tools} isLive={isLiveGeneration} />
+                        </motion.div>
                     </div>
-                    <PlanSection icon={<GoalAnalysisIcon />} title="Goal Analysis" content={goalAnalysis} isLive={isLiveGeneration} />
-                    <PlanSection icon={<TodoListIcon />} title="Todo-list" content={todoList} isLive={isLiveGeneration} />
-                    <PlanSection icon={<ToolsIcon />} title="Tools" content={tools} isLive={isLiveGeneration} />
-                </motion.div>
-            )}
-            {hasExecution && (
-                <div className="space-y-4">
-                    <div className="flex items-center gap-3 px-1">
-                        {executionStatusIcon}
-                        <h2 className="font-semibold text-gray-800 dark:text-slate-200">{executionHeaderTitle}</h2>
-                    </div>
-                    <ul ref={executionLogRef} className="flex flex-col w-full">
-                        <AnimatePresence>
-                            {executionLog.map((node, index) => {
-                                const isLastNode = index === executionLog.length - 1;
-                                const isActive = node.status === 'active';
-                                return (
-                                    <motion.li
-                                        key={node.id}
-                                        layout="position"
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.25, 1, 0.5, 1] } }}
-                                        exit={{ opacity: 0, y: -10, transition: { duration: 0.2, ease: [0.5, 0, 0.75, 0] } }}
-                                        className="flex items-start gap-4 w-full"
-                                    >
-                                        <div className="flex flex-col items-center self-stretch">
-                                            <StatusIcon status={node.status} />
-                                            {!isLastNode && <WorkflowConnector isActive={isActive} />}
-                                        </div>
-                                        <div className={`flex-1 min-w-0 ${!isLastNode ? 'pb-6' : 'pb-1'}`}>
-                                            <WorkflowNode node={node} sendMessage={sendMessage} />
-                                        </div>
-                                    </motion.li>
-                                );
-                            })}
-                        </AnimatePresence>
-                    </ul>
                 </div>
             )}
-        </div>
+
+            {/* Execution Column */}
+            <div className={hasPlan ? "lg:col-span-7" : "lg:col-span-12"}>
+                 {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+                        className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-500/40 p-3 rounded-lg flex items-start gap-3 mb-6"
+                    >
+                        <div className="flex-shrink-0 text-red-500 dark:text-red-400 pt-0.5">
+                            <FailedIcon />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-red-700 dark:text-red-300 break-words">{error.message}</p>
+                        </div>
+                    </motion.div>
+                )}
+                {hasExecution && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3 px-1">
+                            {executionStatusIcon}
+                            <h2 className="font-semibold text-gray-800 dark:text-slate-200">{executionHeaderTitle}</h2>
+                        </div>
+                        <ul className="flex flex-col w-full">
+                            <AnimatePresence>
+                                {executionLog.map((node, index) => {
+                                    const isLastNode = index === executionLog.length - 1;
+                                    const isActive = node.status === 'active';
+                                    return (
+                                        <motion.li
+                                            key={node.id}
+                                            layout
+                                            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.25, 1, 0.5, 1], delay: index * 0.05 } }}
+                                            exit={{ opacity: 0, transition: { duration: 0.2 } }}
+                                            className="flex items-start gap-3 w-full"
+                                        >
+                                            <div className="flex flex-col items-center self-stretch">
+                                                <StatusIcon status={node.status} />
+                                                {!isLastNode && <WorkflowConnector isActive={isActive} />}
+                                            </div>
+                                            <div className={`flex-1 min-w-0 ${!isLastNode ? 'pb-8' : 'pb-1'}`}>
+                                                <WorkflowNode node={node} sendMessage={sendMessage} />
+                                            </div>
+                                        </motion.li>
+                                    );
+                                })}
+                            </AnimatePresence>
+                        </ul>
+                    </div>
+                )}
+            </div>
+        </motion.div>
     );
 };

@@ -15,6 +15,8 @@ export type ParsedWorkflow = {
 
 // Generic workflow keywords that should be treated as procedural rather than titles.
 const GENERIC_STEP_KEYWORDS = new Set(['observe', 'adapt', 'system']);
+const ACTION_KEYWORDS = new Set(['act', 'action', 'tool call']);
+
 
 /**
  * Parses the raw thinking text from the AI into a structured format for the UI.
@@ -54,9 +56,9 @@ export const parseAgenticWorkflow = (
     let match;
     let stepIndex = 0;
     while ((match = stepRegex.exec(executionText)) !== null) {
-        let title = match[1].trim();
+        let title = match[1].trim().replace(/:$/, '').trim(); // Sanitize: remove trailing colons
+        let details = match[2].trim().replace(/\[AUTO_CONTINUE\]/g, '').trim(); // Sanitize: remove auto-continue markers
         const lowerCaseTitle = title.toLowerCase();
-        let details = match[2].trim();
 
         if (lowerCaseTitle === 'final answer') {
             continue;
@@ -79,23 +81,15 @@ export const parseAgenticWorkflow = (
             handoff = { from: handoffMatch[1].trim(), to: handoffMatch[2].trim() };
         } else if (lowerCaseTitle.startsWith('validate')) {
             type = 'validation';
-        } else if (lowerCaseTitle.startsWith('guardian approval')) {
-            type = 'approval';
         } else if (lowerCaseTitle.startsWith('corrective action')) {
             type = 'correction';
-        } else if (lowerCaseTitle.startsWith('archive')) {
-            type = 'archival';
-        } else if (lowerCaseTitle.startsWith('audit')) {
-            type = 'audit';
         } else if (lowerCaseTitle === 'think' || lowerCaseTitle === 'adapt') {
             type = 'thought';
-            details = `${title}: ${details}`;
-            title = 'Thinking';
+            // The details already contain the agent name, so we don't need to prepend title
         } else if (lowerCaseTitle === 'observe') {
             type = 'observation';
-            details = details;
             title = 'Observation';
-        } else if (lowerCaseTitle === 'act') {
+        } else if (ACTION_KEYWORDS.has(lowerCaseTitle)) {
             type = 'act_marker'; // Use a special type for positioning tool calls.
         } else if (GENERIC_STEP_KEYWORDS.has(lowerCaseTitle)) {
             details = `${title}: ${details}`;

@@ -409,7 +409,7 @@ export const AiMessage: React.FC<{
         // This new, more robust regex correctly identifies the start of any component tag
         // and removes it and everything that follows from the final streaming part.
         // This prevents raw, incomplete JSON or markdown from flickering in the UI.
-        const incompleteTagRegex = /\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|SOURCES_PILLS|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT)\].*$/s;
+        const incompleteTagRegex = /\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT)\].*$/s;
         const cleanedPart = part.replace(incompleteTagRegex, '');
 
         if (cleanedPart) {

@@ -67,12 +67,12 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                         exit="closed"
                         variants={variants}
                         transition={{ type: 'tween', duration: 0.4, ease: 'easeInOut' }}
-                        className="bg-gray-100 dark:bg-[#1e1e1e] border-l border-gray-200 dark:border-white/10 p-4 flex flex-col fixed inset-y-0 right-0 z-30 w-full max-w-lg shadow-2xl"
+                        className="bg-gray-100 dark:bg-[#1e1e1e] border-l border-gray-200 dark:border-white/10 flex flex-col fixed inset-y-0 right-0 z-30 w-full max-w-2xl shadow-2xl"
                         role="complementary"
                         aria-labelledby="thinking-sidebar-title"
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
+                        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
                             <h2 id="thinking-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Thought Process</h2>
                             <button
                                 onClick={onClose}
@@ -86,7 +86,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 overflow-y-auto mt-4 min-h-0 -mr-4 pr-4">
+                        <div className="flex-1 overflow-y-auto py-4 min-h-0">
                             {thinkingContent()}
                         </div>
                     </motion.aside>

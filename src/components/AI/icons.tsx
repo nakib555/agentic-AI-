@@ -13,7 +13,7 @@ export const PendingIcon = () => (
 export const ActiveIcon = () => (
   <motion.div key="active" className="relative w-5 h-5 flex items-center justify-center">
     <motion.div
-      className="w-3 h-3 bg-blue-500 dark:bg-blue-400 rounded-full"
+      className="w-3.5 h-3.5 bg-blue-500 dark:bg-blue-400 rounded-full"
       animate={{ scale: [1, 1.5, 1] }}
       transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
     />
@@ -108,27 +108,10 @@ export const ValidationIcon = () => (
     </div>
 );
 
-export const ApprovalIcon = () => (
-    <div className="w-5 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-            <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
-        </svg>
-    </div>
-);
-
 export const CorrectionIcon = () => (
     <div className="w-5 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
             <path d="M10 3.5a1.5 1.5 0 0 1 3 0V4a1 1 0 0 0 1 1h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-1.172a3 3 0 0 0-2.121.879l-4.414 4.414A3 3 0 0 1 8.828 16H6a1 1 0 0 1-1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.121-.879l4.414-4.414A3 3 0 0 1 11.172 4H10V3.5Z" />
-        </svg>
-    </div>
-);
-
-export const ArchiveIcon = () => (
-    <div className="w-5 h-5 flex items-center justify-center text-slate-500 dark:text-slate-400">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-            <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h13A1.5 1.5 0 0 1 18 3.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 16.5v-13Z" />
-            <path d="M5.055 8.358a.75.75 0 0 1 .53-.223h8.83a.75.75 0 0 1 .53.223l-4.415 4.415-4.415-4.415Z" />
         </svg>
     </div>
 );

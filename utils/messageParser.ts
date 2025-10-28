@@ -24,7 +24,12 @@ export const parseMessageText = (text: string, isThinking: boolean, hasError: bo
   // This is true whether the stream is still technically "thinking" or not.
   if (finalAnswerIndex !== -1) {
     const thinkingText = text.substring(0, finalAnswerIndex);
-    const rawFinalAnswer = text.substring(finalAnswerIndex + finalAnswerMarker.length);
+    let rawFinalAnswer = text.substring(finalAnswerIndex + finalAnswerMarker.length);
+    
+    // Strip the agent tag (e.g., ": [AGENT: Reporter]") from the beginning of the final answer.
+    const agentTagRegex = /^\s*:?\s*\[AGENT:\s*[^\]]+\]\s*/;
+    rawFinalAnswer = rawFinalAnswer.replace(agentTagRegex, '');
+
     const finalAnswerText = rawFinalAnswer.replace(/\[AUTO_CONTINUE\]/g, '').trim();
     return { thinkingText, finalAnswerText };
   }

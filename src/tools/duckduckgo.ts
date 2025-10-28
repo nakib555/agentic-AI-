@@ -44,9 +44,9 @@ export const executeDuckDuckGoSearch = async (args: { query: string }): Promise<
     }
 
     if (isUrl) {
-      prompt = `Please provide a comprehensive summary of the content at the following URL: "${args.query}". Focus on the main points and key information.`;
+      prompt = `Act as a research assistant. Analyze the content of the provided URL and generate a comprehensive, well-structured summary. Extract the key arguments, findings, and conclusions. The summary should be neutral and factual. URL: "${args.query}"`;
     } else {
-      prompt = `Based on a web search, provide a comprehensive answer for the following query: "${args.query}"`;
+      prompt = `You are a web research expert. Perform a web search to answer the following query comprehensively. Synthesize information from multiple sources to provide a detailed, accurate, and well-structured response. Query: "${args.query}"`;
     }
     
     const response = await ai.models.generateContent({

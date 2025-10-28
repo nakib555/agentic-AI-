@@ -9,6 +9,10 @@ import type { ToolCallEvent } from '../../../types';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { LocationPermissionRequest } from './LocationPermissionRequest';
+import { MapDisplay } from './MapDisplay';
+import { ImageDisplay } from './ImageDisplay';
+import { VideoDisplay } from './VideoDisplay';
+import { ErrorDisplay } from '../UI/ErrorDisplay';
 
 const LoadingDots = () => (
     <div className="flex gap-1 items-center">
@@ -27,6 +31,27 @@ type ToolResultDisplayProps = {
 
 const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessage }) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    
+    // Check for special component tags first to render visual elements
+    const imageMatch = result.match(/\[IMAGE_COMPONENT\](\{.*?\})\[\/IMAGE_COMPONENT\]/s);
+    if (imageMatch && imageMatch[1]) {
+        try {
+            const imageData = JSON.parse(imageMatch[1]);
+            return <ImageDisplay {...imageData} />;
+        } catch (e) {
+            return <ErrorDisplay error={{ message: 'Failed to render image component.', details: `Invalid JSON: ${e}` }} />;
+        }
+    }
+
+    const videoMatch = result.match(/\[VIDEO_COMPONENT\](\{.*?\})\[\/VIDEO_COMPONENT\]/s);
+    if (videoMatch && videoMatch[1]) {
+        try {
+            const videoData = JSON.parse(videoMatch[1]);
+            return <VideoDisplay {...videoData} />;
+        } catch (e) {
+            return <ErrorDisplay error={{ message: 'Failed to render video component.', details: `Invalid JSON: ${e}` }} />;
+        }
+    }
     
     // Check for the special location permission request tag
     const permissionRequestMatch = result.match(/\[LOCATION_PERMISSION_REQUEST\](.*?)\[\/LOCATION_PERMISSION_REQUEST\]/s);
@@ -105,6 +130,12 @@ type ToolCallStepProps = {
 export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
     const { call, result } = event;
     const { args } = call;
+
+    // Special rendering for the 'displayMap' tool call to embed the map directly.
+    if (call.name === 'displayMap') {
+        const { latitude, longitude, zoom, markerText } = args as { latitude: number, longitude: number, zoom?: number, markerText?: string };
+        return <MapDisplay latitude={latitude} longitude={longitude} zoom={zoom ?? 13} markerText={markerText} />;
+    }
 
     const argEntries = Object.entries(args);
   

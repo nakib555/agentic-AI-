@@ -33,6 +33,9 @@ You have access to the following tools. You must select the most appropriate too
     *   **Output:** This tool returns a special component tag: \`[MAP_COMPONENT]{...data...}[/MAP_COMPONENT]\`.
     *   **MANDATORY ACTION:** You MUST place the entire, unmodified component tag in your "[STEP] Final Answer" for the UI to display the map.
 
+*   \`analyzeMapVisually(latitude: number, longitude: number)\`
+    *   **Use Case:** After displaying a map with \`displayMap\`, use this tool if you need to "see" or understand the contents of the map to answer a follow-up question. It provides a textual description of landmarks and features at the given coordinates. Do not call this unless you need to reason about the map's contents.
+
 *   \`generateImage(prompt: string)\`
     *   **Use Case:** To create static visual content like photos, illustrations, and art based on a description. If a user requests multiple images, call this tool repeatedly for each image before presenting them all in the Final Answer.
 
