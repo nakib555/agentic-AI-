@@ -5,24 +5,29 @@ import 'dotenv/config';
 
 console.log('Starting build process...');
 
-// Robustly check for the API_KEY and provide a clear error message if it's missing.
-if (!process.env.API_KEY) {
+// Look for API_KEY or GEMINI_API_KEY
+const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+
+// Robustly check for the API key and provide a clear error message if it's missing.
+if (!apiKey) {
   console.error(`
-    \x1b[31m[BUILD ERROR]\x1b[0m API_KEY is missing.
+    \x1b[31m[BUILD ERROR]\x1b[0m API key is missing.
     
-    To fix this, you need to provide your Gemini API key.
+    To fix this, you need to provide your Gemini API key as an environment variable.
     
     \x1b[33mFor Local Development:\x1b[0m
     1. Create a file named '.env' in the root of your project.
-    2. Add the following line to it:
+    2. Add one of the following lines to it:
        API_KEY="YOUR_GEMINI_API_KEY_HERE"
+       or
+       GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
     
     \x1b[33mFor Deployment (e.g., Cloudflare Pages):\x1b[0m
     1. Go to your project's settings in your deployment provider.
     2. Find the 'Environment Variables' section.
-    3. Add a new variable with the name 'API_KEY' and your key as the value.
+    3. Add a new variable named either 'API_KEY' or 'GEMINI_API_KEY' with your key as the value.
     
-    The build will not proceed without the API_KEY.
+    The build will not proceed without the API key.
   `);
   process.exit(1);
 }
@@ -41,8 +46,8 @@ try {
     loader: { '.tsx': 'tsx' },
     define: {
       'process.env.NODE_ENV': '"production"',
-      // The check above ensures API_KEY is defined, so we can use it directly.
-      'process.env.API_KEY': JSON.stringify(process.env.API_KEY),
+      // The check above ensures apiKey is defined, so we can use it directly.
+      'process.env.API_KEY': JSON.stringify(apiKey),
     },
     logLevel: 'info',
   });
