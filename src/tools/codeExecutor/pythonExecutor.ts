@@ -5,7 +5,7 @@
 
 import { ToolError } from '../../types';
 
-export async function executePythonWithPyodide(code: string, packages: string[] = []): Promise<string> {
+export async function executePythonWithPyodide(code: string, packages: string[] = [], inputFiles: { filename: string, data: Uint8Array }[] = []): Promise<string> {
   return new Promise((resolve, reject) => {
     const workerCode = `
       let pyodide = null;
@@ -32,7 +32,7 @@ export async function executePythonWithPyodide(code: string, packages: string[] 
       };
 
       self.onmessage = async (event) => {
-        const { code, packages } = event.data;
+        const { code, packages, inputFiles } = event.data;
         let capturedStdout = '';
         
         try {
@@ -41,6 +41,16 @@ export async function executePythonWithPyodide(code: string, packages: string[] 
           py.setStdout({ batched: (str) => capturedStdout += str + '\\n' });
           py.setStderr({ batched: (str) => capturedStdout += '[STDERR] ' + str + '\\n' });
 
+          py.FS.mkdirTree('/main/input');
+          py.FS.mkdirTree('/main/output');
+          
+          if (inputFiles && inputFiles.length > 0) {
+            for (const file of inputFiles) {
+              py.FS.writeFile('/main/input/' + file.filename, file.data);
+            }
+            capturedStdout += 'Loaded input files: ' + inputFiles.map(f => f.filename).join(', ') + '\\n---\\n';
+          }
+
           if (packages && packages.length > 0) {
             await py.loadPackage('micropip');
             const micropip = py.pyimport('micropip');
@@ -48,8 +58,6 @@ export async function executePythonWithPyodide(code: string, packages: string[] 
             await micropip.install(packages);
             capturedStdout += 'Packages installed successfully.\\n---\\n';
           }
-          
-          py.FS.mkdirTree('/main/output');
           
           let finalResult = await py.runPythonAsync(code);
           
@@ -85,21 +93,24 @@ export async function executePythonWithPyodide(code: string, packages: string[] 
         } finally {
             try {
                 const py = pyodide;
-                if(py && py.FS.analyzePath('/main/output').exists) {
-                    const files = py.FS.readdir('/main/output');
-                    for (const file of files) {
-                        if (file !== '.' && file !== '..') {
-                            py.FS.unlink('/main/output/' + file);
+                if(py) {
+                    const cleanupDir = (dirPath) => {
+                        if (!py.FS.analyzePath(dirPath).exists) return;
+                        const entries = py.FS.readdir(dirPath);
+                        for (const entry of entries) {
+                            if (entry === '.' || entry === '..') continue;
+                            const fullPath = dirPath + '/' + entry;
+                            if (py.FS.isDir(py.FS.lookupPath(fullPath).node.mode)) {
+                                cleanupDir(fullPath);
+                            } else {
+                                py.FS.unlink(fullPath);
+                            }
                         }
-                    }
-                    py.FS.rmdir('/main/output');
+                        py.FS.rmdir(dirPath);
+                    };
+                    cleanupDir('/main');
                 }
-                if(py && py.FS.analyzePath('/main').exists) {
-                    py.FS.rmdir('/main');
-                }
-            } catch(e) {
-                // Ignore cleanup errors
-            }
+            } catch(e) { /* ignore cleanup errors */ }
         }
       };
     `;
@@ -166,6 +177,6 @@ export async function executePythonWithPyodide(code: string, packages: string[] 
       URL.revokeObjectURL(blob.toString());
     };
 
-    worker.postMessage({ code, packages });
+    worker.postMessage({ code, packages, inputFiles });
   });
 }

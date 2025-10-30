@@ -10,6 +10,7 @@ import { videoGeneratorDeclaration, executeVideoGenerator } from './videoGenerat
 import { codeExecutorDeclaration, executeCode } from './codeExecutor';
 import { displayMapDeclaration, executeDisplayMap, analyzeMapVisuallyDeclaration, executeAnalyzeMapVisually } from './map';
 import { captureCodeOutputScreenshotDeclaration, executeCaptureCodeOutputScreenshot } from './screenshot';
+import { calculatorDeclaration, executeCalculator } from './calculator';
 
 
 // Export all tool declarations for the model
@@ -23,6 +24,7 @@ export const toolDeclarations = [
   requestLocationPermissionDeclaration,
   analyzeMapVisuallyDeclaration,
   captureCodeOutputScreenshotDeclaration,
+  calculatorDeclaration,
 ];
 
 // Map of tool names to their implementation
@@ -36,4 +38,5 @@ export const toolImplementations: Record<string, (args: any) => string | Promise
   'requestLocationPermission': executeRequestLocationPermission,
   'analyzeMapVisually': executeAnalyzeMapVisually,
   'captureCodeOutputScreenshot': executeCaptureCodeOutputScreenshot,
+  'calculator': executeCalculator,
 };

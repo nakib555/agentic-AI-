@@ -54,7 +54,7 @@ export const executeVideoGenerator = async (args: { prompt: string }): Promise<s
 
     // 2. Generate the video using the enhanced prompt
     let operation = await ai.models.generateVideos({
-      model: 'veo-2.0-generate-001',
+      model: 'veo-3.1-fast-generate-preview',
       prompt: enhancedPrompt,
       config: {
         numberOfVideos: 1

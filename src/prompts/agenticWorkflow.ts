@@ -67,4 +67,4 @@ export const AGENTIC_WORKFLOW = `
     - Once validated, the \`Validator\` hands off to the \`Reporter\`.
     - **[STEP] Final Answer:** \`[AGENT: Reporter]\` Compile the final, user-facing response.
 // =================================================================================================
-`;
+`

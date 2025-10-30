@@ -11,7 +11,7 @@ import { executeWithPiston } from './codeExecutor/pistonExecutor';
 
 export const codeExecutorDeclaration: FunctionDeclaration = {
   name: 'executeCode',
-  description: 'Executes code in a secure sandboxed environment. Supports Python, JavaScript, and other languages. For Python, it can install packages from PyPI and perform network requests. For JavaScript, it can import libraries from CDNs and perform network requests. For other languages, it uses a more restricted environment without networking or package installation.',
+  description: 'Executes code in a secure sandboxed environment. Supports Python, JavaScript, and other languages. For Python, it can install packages from PyPI, perform network requests, and read user-provided files. For JavaScript, it can import libraries from CDNs and perform network requests. For other languages, it uses a more restricted environment without networking or package installation.',
   parameters: {
     type: Type.OBJECT,
     properties: {
@@ -32,6 +32,11 @@ export const codeExecutorDeclaration: FunctionDeclaration = {
         type: Type.ARRAY,
         description: '(JavaScript only) A list of CDN URLs for external libraries to import before running the code.',
         items: { type: Type.STRING }
+      },
+      input_filenames: {
+        type: Type.ARRAY,
+        description: '(Python only) A list of filenames the user attached in their prompt. The tool will automatically load these files into the /main/input/ directory for the script to use.',
+        items: { type: Type.STRING }
       }
     },
     required: ['language', 'code'],
@@ -39,13 +44,13 @@ export const codeExecutorDeclaration: FunctionDeclaration = {
 };
 
 // --- Main Dispatcher ---
-export const executeCode = async (args: { language: string; code: string; packages?: string[]; cdn_urls?: string[]; }): Promise<string> => {
-  const { language, code, packages, cdn_urls } = args;
+export const executeCode = async (args: { language: string; code: string; packages?: string[]; cdn_urls?: string[]; input_files?: { filename: string, data: Uint8Array }[] }): Promise<string> => {
+  const { language, code, packages, cdn_urls, input_files } = args;
   const lang = language.toLowerCase();
 
   try {
     if (lang === 'python' || lang === 'py') {
-      return await executePythonWithPyodide(code, packages);
+      return await executePythonWithPyodide(code, packages, input_files);
     }
 
     if (lang === 'javascript' || lang === 'js' || lang === 'html') {

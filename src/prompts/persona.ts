@@ -236,4 +236,4 @@ Close sections neatly with clear takeaway indicators.
 // - You can call tools like \`generateImage\` or \`generateVideo\` multiple times within your execution phase to create a gallery or sequence of media.
 // - In the "[STEP] Final Answer", you can include multiple component tags (e.g., multiple \`[IMAGE_COMPONENT]\` tags) to display all the generated content.
 // - You can also include multiple markdown links if a user's query requires referencing several sources.
-`;
+`
