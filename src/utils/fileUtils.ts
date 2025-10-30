@@ -28,6 +28,44 @@ export const fileToBase64 = (file: File): Promise<string> => {
 };
 
 /**
+ * Converts a File object to a base64 encoded string with progress reporting.
+ * @param file The file to convert.
+ * @param onProgress A callback function that receives progress from 0 to 100.
+ * @returns A promise that resolves with the base64 string (without the data URL prefix).
+ */
+export const fileToBase64WithProgress = (
+  file: File,
+  onProgress: (progress: number) => void
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const progress = Math.round((event.loaded / event.total) * 100);
+        onProgress(progress);
+      }
+    };
+    
+    reader.readAsDataURL(file);
+    
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64String = result.split(',')[1];
+      if (base64String) {
+        onProgress(100); // Ensure it completes at 100%
+        resolve(base64String);
+      } else {
+        reject(new Error("Failed to read file as base64 string."));
+      }
+    };
+    
+    reader.onerror = error => reject(error);
+  });
+};
+
+
+/**
  * Converts a base64 string back into a File object.
  * @param base64 The base64 encoded string (without the data URL prefix).
  * @param filename The name of the file.

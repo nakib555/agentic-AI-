@@ -6,7 +6,7 @@
 import React, { useState, FormEvent, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
-import { fileToBase64, base64ToFile } from '../../utils/fileUtils';
+import { fileToBase64WithProgress, base64ToFile } from '../../utils/fileUtils';
 import { AttachedFilePreview } from './AttachedFilePreview';
 import { enhanceUserPromptStream } from '../../services/promptImprover';
 import { ProactiveAssistance } from './ProactiveAssistance';
@@ -27,6 +27,14 @@ type SavedFile = {
 interface FileWithEditKey extends File {
   _editKey?: string;
 }
+
+type ProcessedFile = {
+  id: string;
+  file: FileWithEditKey;
+  progress: number;
+  base64Data: string | null;
+  error: string | null;
+};
 
 
 // Define a handle type for the methods we want to expose via the ref.
@@ -66,7 +74,7 @@ const isComplexText = (text: string): boolean => {
 
 export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ onSubmit, isLoading, onCancel }, ref) => {
   const [inputValue, setInputValue] = useState('');
-  const [attachedFiles, setAttachedFiles] = useState<FileWithEditKey[]>([]);
+  const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>([]);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isThinkingModeEnabled, setIsThinkingModeEnabled] = useState(false);
   const [proactiveSuggestions, setProactiveSuggestions] = useState<string[]>([]);
@@ -77,28 +85,54 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
     onTranscriptUpdate: setInputValue,
   });
 
+  const processAndSetFiles = (filesToProcess: FileWithEditKey[]) => {
+    const newProcessedFiles: ProcessedFile[] = filesToProcess.map(file => ({
+      id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+      file,
+      progress: 0,
+      base64Data: null,
+      error: null,
+    }));
+
+    setProcessedFiles(prev => [...prev, ...newProcessedFiles]);
+
+    newProcessedFiles.forEach(pf => {
+      fileToBase64WithProgress(pf.file, (progress) => {
+        setProcessedFiles(prev => prev.map(f => f.id === pf.id ? { ...f, progress } : f));
+      })
+      .then(base64Data => {
+        setProcessedFiles(prev => prev.map(f => f.id === pf.id ? { ...f, base64Data, progress: 100 } : f));
+      })
+      .catch(error => {
+        console.error("File processing error:", error);
+        setProcessedFiles(prev => prev.map(f => f.id === pf.id ? { ...f, error: error.message || 'Failed to read file' } : f));
+      });
+    });
+  };
+
   // Expose an `attachFiles` function to the parent component via the ref.
   // This allows the parent (ChatArea) to add files from a drag-and-drop event or "Edit" button.
   useImperativeHandle(ref, () => ({
     attachFiles: (incomingFiles: File[]) => {
       if (!incomingFiles || incomingFiles.length === 0) return;
+      
+      const newFilesToAdd: FileWithEditKey[] = [];
+      const existingEditKeys = new Set(processedFiles.map(pf => pf.file._editKey).filter(Boolean));
 
-      setAttachedFiles(prevFiles => {
-        const newFilesToAdd: FileWithEditKey[] = [];
-        const existingEditKeys = new Set(prevFiles.map(f => f._editKey).filter(Boolean));
-
-        for (const file of incomingFiles) {
-          const editableFile = file as FileWithEditKey;
-          if (editableFile._editKey) {
-            if (existingEditKeys.has(editableFile._editKey)) {
-              alert('This image is already attached for editing.');
-              continue; // Skip duplicate
-            }
+      for (const file of incomingFiles) {
+        const editableFile = file as FileWithEditKey;
+        if (editableFile._editKey) {
+          if (existingEditKeys.has(editableFile._editKey)) {
+            alert('This image is already attached for editing.');
+            continue; // Skip duplicate
           }
-          newFilesToAdd.push(editableFile);
         }
-        return [...prevFiles, ...newFilesToAdd];
-      });
+        newFilesToAdd.push(editableFile);
+      }
+      
+      if (newFilesToAdd.length > 0) {
+        processAndSetFiles(newFilesToAdd);
+      }
     }
   }));
 
@@ -114,8 +148,17 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
       try {
         const savedFiles: SavedFile[] = JSON.parse(savedFilesJSON);
         if (Array.isArray(savedFiles)) {
-          const restoredFiles = savedFiles.map(sf => base64ToFile(sf.data, sf.name, sf.mimeType));
-          setAttachedFiles(restoredFiles);
+          const restoredFiles: ProcessedFile[] = savedFiles.map(sf => {
+            const file = base64ToFile(sf.data, sf.name, sf.mimeType);
+            return {
+              id: `${file.name}-${file.size}-${Date.now()}`,
+              file,
+              progress: 100,
+              base64Data: sf.data,
+              error: null,
+            };
+          });
+          setProcessedFiles(restoredFiles);
         }
       } catch (error) {
         console.error("Failed to parse or restore saved files:", error);
@@ -126,48 +169,46 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
 
   // Auto-save draft on change
   useEffect(() => {
-    if (inputValue.trim() || attachedFiles.length > 0) {
+    if (inputValue.trim() || processedFiles.length > 0) {
       localStorage.setItem('messageDraft_text', inputValue);
-
-      const saveFiles = async () => {
+      
+      const filesToSave: SavedFile[] = processedFiles
+        .filter(pf => pf.base64Data) // Only save fully processed files
+        .map(pf => ({
+          name: pf.file.name,
+          mimeType: pf.file.type,
+          data: pf.base64Data!,
+        }));
+      
+      if (filesToSave.length > 0) {
         try {
-          const filesToSave: SavedFile[] = await Promise.all(
-            attachedFiles.map(async (file) => ({
-              name: file.name,
-              mimeType: file.type,
-              data: await fileToBase64(file),
-            }))
-          );
           localStorage.setItem('messageDraft_files', JSON.stringify(filesToSave));
         } catch (error) {
-          if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+           if (error instanceof DOMException && error.name === 'QuotaExceededError') {
             alert('Draft files are too large for localStorage and were not saved. Your text has been saved.');
           } else {
             console.error("Error saving files for draft:", error);
           }
         }
-      };
-
-      if (attachedFiles.length > 0) {
-        saveFiles();
       } else {
         localStorage.removeItem('messageDraft_files');
       }
+
     } else {
       localStorage.removeItem('messageDraft_text');
       localStorage.removeItem('messageDraft_files');
     }
-  }, [inputValue, attachedFiles]);
+  }, [inputValue, processedFiles]);
 
   // Effect for Proactive Assistance
   useEffect(() => {
     // Only show suggestions if there are no files attached, to keep the UI clean.
-    if (attachedFiles.length === 0 && isComplexText(inputValue)) {
+    if (processedFiles.length === 0 && isComplexText(inputValue)) {
       setProactiveSuggestions(PROACTIVE_SUGGESTIONS);
     } else {
       setProactiveSuggestions([]);
     }
-  }, [inputValue, attachedFiles]);
+  }, [inputValue, processedFiles]);
 
   // Effect to sync state from voice input and handle auto-resizing/scrolling of the input field.
   useEffect(() => {
@@ -192,22 +233,28 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      setAttachedFiles(prevFiles => [...prevFiles, ...Array.from(files)]);
+      processAndSetFiles(Array.from(files));
     }
     event.target.value = '';
   };
 
-  const handleRemoveFile = (index: number) => {
-    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+  const handleRemoveFile = (id: string) => {
+    setProcessedFiles(prev => prev.filter((pf) => pf.id !== id));
   };
   
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (isRecording) stopRecording();
-    if ((!inputValue.trim() && attachedFiles.length === 0) || isLoading || isEnhancing) return;
-    onSubmit(inputValue, attachedFiles, { isThinkingModeEnabled });
+    const isProcessingFiles = processedFiles.some(f => f.progress < 100 && !f.error);
+    if ((!inputValue.trim() && processedFiles.length === 0) || isLoading || isEnhancing || isProcessingFiles) return;
+
+    const filesToSend: File[] = processedFiles
+      .filter(f => f.base64Data && !f.error)
+      .map(f => base64ToFile(f.base64Data!, f.file.name, f.file.type));
+
+    onSubmit(inputValue, filesToSend, { isThinkingModeEnabled });
     setInputValue('');
-    setAttachedFiles([]);
+    setProcessedFiles([]);
     localStorage.removeItem('messageDraft_text');
     localStorage.removeItem('messageDraft_files');
   };
@@ -250,7 +297,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
     const formattedMessage = `${suggestion}:\n\`\`\`\n${inputValue}\n\`\`\``;
     onSubmit(formattedMessage, [], { isThinkingModeEnabled: true });
     setInputValue('');
-    setAttachedFiles([]); // Should already be empty, but good to be explicit
+    setProcessedFiles([]); // Should already be empty, but good to be explicit
     localStorage.removeItem('messageDraft_text');
     localStorage.removeItem('messageDraft_files');
   };
@@ -272,13 +319,14 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
     }
   };
   
-  const hasInput = inputValue.trim().length > 0 || attachedFiles.length > 0;
+  const isProcessingFiles = processedFiles.some(f => f.progress < 100 && !f.error);
+  const hasInput = inputValue.trim().length > 0 || processedFiles.length > 0;
   const hasText = inputValue.trim().length > 0;
 
   const sendButtonClasses = "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-200 ease-in-out";
   let sendButtonStateClasses = '';
 
-  if (hasInput && !isLoading && !isEnhancing) {
+  if (hasInput && !isLoading && !isEnhancing && !isProcessingFiles) {
     sendButtonStateClasses = 'bg-gray-400 dark:bg-slate-200 text-gray-800 dark:text-black';
   } else {
     sendButtonStateClasses = 'bg-gray-600 dark:bg-[#202123] text-gray-400 dark:text-slate-500';
@@ -299,7 +347,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
         </AnimatePresence>
         {/* File Preview Area */}
         <AnimatePresence>
-          {attachedFiles.length > 0 && (
+          {processedFiles.length > 0 && (
             <motion.div
               layout
               initial={{ opacity: 0, height: 0 }}
@@ -308,11 +356,13 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
               transition={{ duration: 0.3, ease: 'easeInOut' }}
               className="p-2 grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-2 overflow-y-auto max-h-64"
             >
-              {attachedFiles.map((file, index) => (
-                <motion.div key={`${file.name}-${index}`} layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
+              {processedFiles.map((pf) => (
+                <motion.div key={pf.id} layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
                   <AttachedFilePreview
-                    file={file}
-                    onRemove={() => handleRemoveFile(index)}
+                    file={pf.file}
+                    onRemove={() => handleRemoveFile(pf.id)}
+                    progress={pf.progress}
+                    error={pf.error}
                   />
                 </motion.div>
               ))}
@@ -388,7 +438,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
             </AnimatePresence>
 
             <AnimatePresence>
-              {hasText && attachedFiles.length === 0 && (
+              {hasText && processedFiles.length === 0 && (
                 <motion.button
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -423,7 +473,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
             <button
                 type="button"
                 onClick={() => setIsThinkingModeEnabled(!isThinkingModeEnabled)}
-                disabled={isLoading || isEnhancing || attachedFiles.length > 0}
+                disabled={isLoading || isEnhancing || processedFiles.length > 0}
                 aria-label={isThinkingModeEnabled ? 'Disable thinking mode' : 'Enable thinking mode (text only)'}
                 title={isThinkingModeEnabled ? 'Disable thinking mode for complex reasoning' : 'Enable thinking mode for complex reasoning (text only)'}
                 className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:cursor-not-allowed disabled:opacity-50 ${isThinkingModeEnabled ? 'bg-purple-400/20 !text-purple-400' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-300/50 dark:hover:bg-black/20'}`}
@@ -434,9 +484,9 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
             <button
                 type={isLoading ? 'button' : 'submit'}
                 onClick={isLoading ? onCancel : undefined}
-                disabled={!isLoading && (!hasInput || isEnhancing)}
+                disabled={!isLoading && (!hasInput || isEnhancing || isProcessingFiles)}
                 aria-label={isLoading ? "Stop generating" : "Send message"}
-                title={isLoading ? "Stop generating" : "Send message"}
+                title={isLoading ? "Stop generating" : (isProcessingFiles ? "Processing files..." : "Send message")}
                 className={`${sendButtonClasses} ${sendButtonStateClasses}`}
             >
                 {isLoading ? (
