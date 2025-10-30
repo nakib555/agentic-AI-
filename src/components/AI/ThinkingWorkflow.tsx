@@ -14,6 +14,7 @@ import { ActiveIcon, CompletedIcon, FailedIcon, GoalAnalysisIcon, PlannerIcon, T
 import { TypingWrapper } from './TypingWrapper';
 import { WorkflowConnector } from './WorkflowConnector';
 import { getAgentColor } from '../../utils/agentUtils';
+import { ErrorDisplay } from '../UI/ErrorDisplay';
 
 type ThinkingWorkflowProps = {
   text: string;
@@ -29,140 +30,106 @@ const StatusIcon = ({ status }: { status: 'pending' | 'active' | 'done' | 'faile
         case 'active': return <ActiveIcon />;
         case 'done': return <CompletedIcon />;
         case 'failed': return <FailedIcon />;
-        default: return <motion.div className="w-3 h-3 bg-slate-300 dark:bg-slate-600 rounded-full" />;
+        default: return <motion.div className="w-3 h-3 bg-slate-300 dark:bg-slate-600 rounded-full"></motion.div>;
     }
 };
 
-const PlanSection: React.FC<{ icon: React.ReactNode; title: string; content: string; isLive: boolean; }> = ({ icon, title, content, isLive }) => {
+const PlanSection: React.FC<{ icon: React.ReactNode; title: string; content: string; isStreaming: boolean; }> = ({ icon, title, content, isStreaming }) => {
     if (!content) return null;
+    const agentColor = getAgentColor('Planner');
     return (
         <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-3 mb-3">
                 {icon}
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300">{title}</h3>
+                <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-gray-800 dark:text-slate-200">{title}</h3>
+                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${agentColor.bg} ${agentColor.text}`}>Planner</span>
+                </div>
             </div>
-            <div className="pl-7 text-sm text-gray-600 dark:text-slate-400 workflow-markdown">
-                <TypingWrapper fullText={content} isAnimating={isLive}>
-                    {(text) => <ManualCodeRenderer text={isLive ? text : content} components={WorkflowMarkdownComponents} isStreaming={isLive} />}
+            <div className="pl-8 text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
+                <TypingWrapper fullText={content} isAnimating={isStreaming}>
+                    {(text) => <ManualCodeRenderer text={isStreaming ? text : content} components={WorkflowMarkdownComponents} isStreaming={isStreaming} />}
                 </TypingWrapper>
             </div>
         </div>
     );
 };
 
-export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isLiveGeneration, error, sendMessage }: ThinkingWorkflowProps) => {
-    const executionLogRef = useRef<HTMLDivElement>(null);
-    const lastExecutionLogLength = useRef(0);
-    const plannerColor = getAgentColor('Planner');
 
-    const { goalAnalysis, todoList, tools, executionLog } = useMemo(
-        () => parseAgenticWorkflow(text, toolCallEvents, isThinkingComplete, error),
-        [text, toolCallEvents, isThinkingComplete, error]
-    );
+export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
+  text,
+  toolCallEvents = [],
+  isThinkingComplete,
+  isLiveGeneration,
+  error,
+  sendMessage,
+}) => {
+  const { goalAnalysis, todoList, tools, executionLog } = useMemo(
+    () => parseAgenticWorkflow(text, toolCallEvents, isThinkingComplete, error),
+    [text, toolCallEvents, isThinkingComplete, error]
+  );
+  
+  const executionLogRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll the execution log to keep the latest step in view.
-    useEffect(() => {
-        if (executionLogRef.current && executionLog.length > lastExecutionLogLength.current) {
-            executionLogRef.current.scrollTo({
-                top: executionLogRef.current.scrollHeight,
-                behavior: 'smooth'
-            });
-        }
-        lastExecutionLogLength.current = executionLog.length;
-    }, [executionLog]);
+  useEffect(() => {
+    if (isLiveGeneration && executionLogRef.current) {
+      executionLogRef.current.scrollTop = executionLogRef.current.scrollHeight;
+    }
+  }, [executionLog, isLiveGeneration]);
+  
+  const hasPlan = goalAnalysis || todoList || tools;
 
-    const { executionHeaderTitle, executionStatusIcon } = useMemo(() => {
-        if (!isThinkingComplete) return { executionHeaderTitle: 'Execution Log', executionStatusIcon: <ActiveIcon /> };
-        if (error) return { executionHeaderTitle: 'Execution Failed', executionStatusIcon: <FailedIcon /> };
-        return { executionHeaderTitle: 'Execution Complete', executionStatusIcon: <CompletedIcon /> };
-    }, [isThinkingComplete, error]);
-
-    const hasPlan = goalAnalysis || todoList || tools;
-    const hasExecution = executionLog.length > 0;
-    const hasAnyContent = hasPlan || hasExecution || !!error;
-
-    if (!hasAnyContent) return null;
-
-    return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-x-8 gap-y-6 px-1 lg:px-4 h-full"
-        >
-            {/* Plan Column */}
-            {hasPlan && (
-                <div className="lg:col-span-5">
-                    <div className="lg:sticky lg:top-4 self-start">
-                         <motion.div 
-                            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
-                            className="p-4 bg-white dark:bg-black/20 rounded-lg border border-gray-200 dark:border-white/10 space-y-4"
-                        >
-                            <div className="flex items-center gap-3">
-                                <PlannerIcon />
-                                <h2 className="font-semibold text-gray-800 dark:text-slate-200">The Plan</h2>
-                                <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${plannerColor.bg} ${plannerColor.text}`}>
-                                    Planner
-                                </span>
-                            </div>
-                            <PlanSection icon={<GoalAnalysisIcon />} title="Goal Analysis" content={goalAnalysis} isLive={isLiveGeneration} />
-                            <PlanSection icon={<TodoListIcon />} title="Todo-list" content={todoList} isLive={isLiveGeneration} />
-                            <PlanSection icon={<ToolsIcon />} title="Tools" content={tools} isLive={isLiveGeneration} />
-                        </motion.div>
-                    </div>
-                </div>
-            )}
-
-            {/* Execution Column */}
-            <div className={hasPlan ? "lg:col-span-7" : "lg:col-span-12"}>
-                 {error && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
-                        className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-500/40 p-3 rounded-lg flex items-start gap-3 mb-6"
-                    >
-                        <div className="flex-shrink-0 text-red-500 dark:text-red-400 pt-0.5">
-                            <FailedIcon />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-red-700 dark:text-red-300 break-words">{error.message}</p>
-                        </div>
-                    </motion.div>
-                )}
-                {hasExecution && (
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3 px-1">
-                            {executionStatusIcon}
-                            <h2 className="font-semibold text-gray-800 dark:text-slate-200">{executionHeaderTitle}</h2>
-                        </div>
-                        <ul className="flex flex-col w-full">
-                            <AnimatePresence>
-                                {executionLog.map((node, index) => {
-                                    const isLastNode = index === executionLog.length - 1;
-                                    const isActive = node.status === 'active';
-                                    return (
-                                        <motion.li
-                                            key={node.id}
-                                            layout
-                                            initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: 'easeOut', delay: index * 0.08 } }}
-                                            exit={{ opacity: 0, transition: { duration: 0.2 } }}
-                                            className="flex items-start gap-3 w-full"
-                                        >
-                                            <div className="flex flex-col items-center self-stretch">
-                                                <StatusIcon status={node.status} />
-                                                {!isLastNode && <WorkflowConnector isActive={isActive} />}
-                                            </div>
-                                            <div className={`flex-1 min-w-0 ${!isLastNode ? 'pb-8' : 'pb-1'}`}>
-                                                <WorkflowNode node={node} sendMessage={sendMessage} />
-                                            </div>
-                                        </motion.li>
-                                    );
-                                })}
-                            </AnimatePresence>
-                        </ul>
-                    </div>
-                )}
+  return (
+    <div className="px-4 pb-4">
+      {error && (
+         <div className="mb-6">
+            <ErrorDisplay error={error} />
+         </div>
+      )}
+      
+      <div className="flex flex-col gap-8">
+        {/* Plan Section */}
+        {hasPlan && (
+            <div className="space-y-6">
+                <PlanSection icon={<PlannerIcon />} title="Plan" content={goalAnalysis} isStreaming={isLiveGeneration && !todoList} />
+                <PlanSection icon={<TodoListIcon />} title="Todo-list" content={todoList} isStreaming={isLiveGeneration && !tools} />
+                <PlanSection icon={<ToolsIcon />} title="Tools" content={tools} isStreaming={isLiveGeneration && executionLog.length === 0} />
             </div>
-        </motion.div>
-    );
+        )}
+
+        {/* Execution Log Section */}
+        {executionLog.length > 0 && (
+            <div>
+                <div className="flex items-center gap-3 mb-4">
+                    <GoalAnalysisIcon />
+                    <h3 className="text-base font-bold text-gray-800 dark:text-slate-200">Execution Log</h3>
+                </div>
+                <div ref={executionLogRef} className="pl-2 space-y-4">
+                    {executionLog.map((node, index) => (
+                        <div key={node.id} className="flex items-start">
+                            <div className="flex flex-col items-center mr-4">
+                                <StatusIcon status={node.status} />
+                                {index < executionLog.length - 1 && (
+                                    <WorkflowConnector isActive={node.status === 'done' && executionLog[index + 1]?.status !== 'pending'} />
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <AnimatePresence>
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.1 * index }}
+                                    >
+                                        <WorkflowNode node={node} sendMessage={sendMessage} />
+                                    </motion.div>
+                                </AnimatePresence>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+      </div>
+    </div>
+  );
 };
