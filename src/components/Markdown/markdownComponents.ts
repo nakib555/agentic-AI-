@@ -63,13 +63,13 @@ const isLiEmpty = (props: any): boolean => {
 
 // Main component map for standard markdown rendering in the chat.
 export const MarkdownComponents = {
-    h1: (props: any) => React.createElement('h1', { className: "text-3xl font-bold my-6 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
-    h2: (props: any) => React.createElement('h2', { className: "text-2xl font-bold my-5 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
-    h3: (props: any) => React.createElement('h3', { className: "text-xl font-bold my-4 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
-    h4: (props: any) => React.createElement('h4', { className: "text-lg font-bold my-3 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
-    p: (props: any) => React.createElement('p', { className: "mb-4 leading-relaxed text-slate-700 dark:text-slate-300 break-words", ...props }),
-    ul: (props: any) => React.createElement('ul', { className: "list-disc list-inside mb-4 space-y-2 text-slate-700 dark:text-slate-300", ...props }),
-    ol: (props: any) => React.createElement('ol', { className: "list-decimal list-inside mb-4 space-y-2 text-slate-700 dark:text-slate-300", ...props }),
+    h1: (props: any) => React.createElement('h1', { className: "text-2xl font-bold my-5 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
+    h2: (props: any) => React.createElement('h2', { className: "text-xl font-bold my-4 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
+    h3: (props: any) => React.createElement('h3', { className: "text-lg font-bold my-3 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
+    h4: (props: any) => React.createElement('h4', { className: "text-base font-bold my-2 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
+    p: (props: any) => React.createElement('p', { className: "text-sm mb-4 leading-relaxed text-slate-700 dark:text-slate-300 break-words", ...props }),
+    ul: (props: any) => React.createElement('ul', { className: "text-sm list-disc list-inside mb-4 space-y-2 text-slate-700 dark:text-slate-300", ...props }),
+    ol: (props: any) => React.createElement('ol', { className: "text-sm list-decimal list-inside mb-4 space-y-2 text-slate-700 dark:text-slate-300", ...props }),
     li: (props: any) => {
         if (isLiEmpty(props)) return null;
         return React.createElement('li', { className: "pl-2 break-words", ...props });
