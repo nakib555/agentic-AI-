@@ -23,7 +23,7 @@ export const WorkflowConnector = ({ isActive }: WorkflowConnectorProps) => {
             strokeWidth="2.5"
             initial={{ pathLength: 0 }}
             animate={{ pathLength: 1 }}
-            transition={{ duration: 0.8, ease: 'easeInOut' }}
+            transition={{ duration: 1.0, ease: 'easeInOut' }}
           />
         )}
       </svg>

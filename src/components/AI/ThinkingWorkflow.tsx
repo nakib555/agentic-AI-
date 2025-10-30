@@ -118,7 +118,7 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.1 * index }}
+                                        transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 * index }}
                                     >
                                         <WorkflowNode node={node} sendMessage={sendMessage} />
                                     </motion.div>
