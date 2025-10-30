@@ -10,69 +10,16 @@ import { fileToBase64WithProgress, base64ToFile } from '../../utils/fileUtils';
 import { AttachedFilePreview } from './AttachedFilePreview';
 import { enhanceUserPromptStream } from '../../services/promptImprover';
 import { ProactiveAssistance } from './ProactiveAssistance';
+import { type MessageFormHandle, type SavedFile, type ProcessedFile, type FileWithEditKey } from './MessageForm/types';
+import { PROACTIVE_SUGGESTIONS, isComplexText } from './MessageForm/utils';
 
-type MessageFormProps = {
+export type { MessageFormHandle };
+
+export const MessageForm = forwardRef<MessageFormHandle, {
   onSubmit: (message: string, files?: File[], options?: { isThinkingModeEnabled?: boolean }) => void;
   isLoading: boolean;
   onCancel: () => void;
-};
-
-type SavedFile = {
-  name: string;
-  mimeType: string;
-  data: string; // base64
-};
-
-// A custom File type to make TypeScript happy with our custom property.
-interface FileWithEditKey extends File {
-  _editKey?: string;
-}
-
-type ProcessedFile = {
-  id: string;
-  file: FileWithEditKey;
-  progress: number;
-  base64Data: string | null;
-  error: string | null;
-};
-
-
-// Define a handle type for the methods we want to expose via the ref.
-export type MessageFormHandle = {
-  attachFiles: (files: File[]) => void;
-};
-
-// A list of general-purpose actions for proactively assisting with complex text.
-const PROACTIVE_SUGGESTIONS = [
-  'Explain this',
-  'Find potential issues',
-  'Suggest improvements',
-  'Summarize this',
-];
-
-/**
- * A heuristic function to detect if a block of text is complex (e.g., code, JSON, structured data)
- * rather than simple prose, making it a candidate for proactive assistance.
- * @param text The text to analyze.
- * @returns True if the text appears complex, false otherwise.
- */
-const isComplexText = (text: string): boolean => {
-    const lines = text.split('\n');
-    if (lines.length < 2) return false;
-
-    // Heuristics to detect code-like structure
-    const hasBraces = text.includes('{') || text.includes('}');
-    const hasParens = text.includes('(') || text.includes(')');
-    const hasSpecialChars = text.includes(';') || text.includes('=') || text.includes('=>') || text.includes('<') || text.includes('>');
-    const hasIndentation = lines.some(line => line.trim().length > 0 && (line.startsWith('  ') || line.startsWith('\t')));
-    const looksLikeProse = lines.every(line => /^[A-Z]/.test(line.trim()) && line.trim().endsWith('.'));
-
-    // A block of text is likely code if it has multiple lines, some structure, and doesn't look like plain prose.
-    return (hasBraces || hasParens || hasSpecialChars || hasIndentation) && !looksLikeProse;
-};
-
-
-export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ onSubmit, isLoading, onCancel }, ref) => {
+}>(({ onSubmit, isLoading, onCancel }, ref) => {
   const [inputValue, setInputValue] = useState('');
   const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>([]);
   const [isEnhancing, setIsEnhancing] = useState(false);
