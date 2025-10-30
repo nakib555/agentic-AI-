@@ -51,7 +51,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filename, fileKey, mim
     document.body.removeChild(link);
   };
 
-  const renderPreview = () => {
+  const renderPreviewContent = () => {
     if (error) {
         return <p className="p-4 text-sm text-red-500 dark:text-red-400">{error}</p>;
     }
@@ -68,8 +68,11 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filename, fileKey, mim
     if (mimeType.startsWith('image/')) {
       return <img src={objectUrl} alt={filename} className="max-h-[60vh] w-auto h-auto object-contain" />;
     }
-    if (mimeType === 'application/pdf') {
-      return <embed src={objectUrl} type="application/pdf" className="w-full h-[60vh]" />;
+    if (mimeType === 'application/pdf' || mimeType === 'text/html') {
+        // Use an iframe for native browser rendering. The sandbox attribute is removed
+        // to prevent "blocked by Chrome" errors, especially for content from blob URLs
+        // which are handled by the browser's same-origin security model.
+        return <iframe src={objectUrl} className="w-full h-[60vh] border-none bg-white" title={filename} />;
     }
     return <p className="p-4 text-sm text-slate-400">No preview available for this file type.</p>;
   };
@@ -81,7 +84,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filename, fileKey, mim
         className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 shadow-lg bg-white dark:bg-[#1e1e1e]"
     >
         <div className="bg-gray-50 dark:bg-black/20 flex items-center justify-center p-2">
-            {renderPreview()}
+            {renderPreviewContent()}
         </div>
         <div className="p-3 bg-white dark:bg-[#202123]/50 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between gap-4">
             <span className="text-sm font-medium text-gray-700 dark:text-slate-300 truncate" title={filename}>{filename}</span>

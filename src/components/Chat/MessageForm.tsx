@@ -290,13 +290,12 @@ export const MessageForm = forwardRef<MessageFormHandle, {
     sendButtonStateClasses = 'bg-gray-600 dark:bg-[#202123] text-gray-400 dark:text-slate-500';
   }
 
-  // Use rounded-3xl when collapsed for a smoother radius transition than rounded-full
-  const formShapeClass = isExpanded ? 'rounded-2xl' : 'rounded-3xl';
-
   return (
-    <form 
-        className={`bg-gray-200/50 dark:bg-[#202123] border border-gray-300 dark:border-white/10 flex flex-col p-2 transition-all duration-200 ease-in-out ${formShapeClass}`} 
+    <motion.form 
+        className={`bg-gray-200/50 dark:bg-[#202123] border border-gray-300 dark:border-white/10 flex flex-col p-2`} 
         onSubmit={handleSubmit}
+        animate={{ borderRadius: isExpanded ? '1rem' : '1.5rem' }} // 1rem = rounded-2xl, 1.5rem = rounded-3xl
+        transition={{ duration: 0.2, ease: 'easeInOut' }}
     >
         <AnimatePresence>
             {proactiveSuggestions.length > 0 && (
@@ -370,7 +369,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                    style={{
                     minHeight: '28px', // Base height for a single line
                     maxHeight: '192px',
-                    transition: 'height 0.15s ease-out',
+                    transition: 'height 0.2s ease-in-out',
                   }}
               />
             </div>
@@ -461,6 +460,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 )}
             </button>
         </div>
-    </form>
+    </motion.form>
   );
 });

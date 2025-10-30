@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import type { Message } from '../../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
@@ -16,12 +16,31 @@ type ThinkingSidebarProps = {
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
 };
 
-const variants = {
+// Mobile variants for bottom-up animation
+const mobileVariants = {
+  open: { height: '50vh', y: 0 },
+  closed: { height: 0, y: '100%' },
+};
+
+// Desktop variants for side-in animation
+const desktopVariants = {
     open: { width: '24rem' }, // w-96
     closed: { width: 0 },
 };
 
 export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClose, message, sendMessage }) => {
+    // Determine if the current view is desktop based on window width
+    const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768); // Assuming 768px is breakpoint for md
+
+    useEffect(() => {
+        const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+        window.addEventListener('resize', checkDesktop);
+        return () => window.removeEventListener('resize', checkDesktop);
+    }, []);
+
+    // Select the appropriate variants based on screen size
+    const variants = isDesktop ? desktopVariants : mobileVariants;
+    const animateState = isOpen ? 'open' : 'closed';
 
     const thinkingContent = () => {
         if (!message) {
@@ -60,14 +79,26 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
     return (
         <motion.aside
             initial={false}
-            animate={isOpen ? 'open' : 'closed'}
+            animate={animateState}
             variants={variants}
             transition={{ type: 'spring', stiffness: 500, damping: 40 }}
-            className="bg-gray-100 dark:bg-[#1e1e1e] border-l border-gray-200 dark:border-white/10 flex-shrink-0 overflow-hidden"
+            className={`
+                flex-shrink-0 overflow-hidden
+                ${isDesktop 
+                    ? 'relative border-l border-gray-200 dark:border-white/10' // Desktop styling
+                    : 'fixed inset-x-0 bottom-0 z-30 bg-gray-100 dark:bg-[#1e1e1e] border-t border-gray-200 dark:border-white/10' // Mobile styling
+                }
+            `}
             role="complementary"
             aria-labelledby="thinking-sidebar-title"
         >
-            <div className="w-96 flex flex-col h-full">
+            <div className={`flex flex-col h-full ${isDesktop ? 'w-96' : 'w-full'}`}>
+                {/* Drag handle for mobile (decorative) */}
+                {!isDesktop && isOpen && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-2.5 h-1.5 w-16 bg-gray-300 dark:bg-slate-600 rounded-full cursor-grab"
+                         aria-hidden="true" // Decorative, not interactive
+                    ></div>
+                )}
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
                     <h2 id="thinking-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Thought Process</h2>
