@@ -3,14 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
 import type { MessageError, ToolCallEvent } from '../../../types';
 import { ToolCallStep } from './ToolCallStep';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { TypingWrapper } from './TypingWrapper';
-import { ObservationIcon, SearchIcon, ThoughtIcon, TodoListIcon, ToolsIcon, HandoffIcon, ValidationIcon, CorrectionIcon } from './icons';
+import { ObservationIcon, SearchIcon, TodoListIcon, HandoffIcon, ValidationIcon, CorrectionIcon, ExecutorIcon } from './icons';
 import { SearchToolResult } from './SearchToolResult';
 import { getAgentColor } from '../../utils/agentUtils';
 
@@ -46,48 +46,35 @@ type WorkflowNodeProps = {
 const getNodeVisuals = (node: WorkflowNodeData) => {
     let icon: React.ReactNode;
     let title: string = node.title;
-    let accentColor = 'slate';
 
     switch (node.type) {
         case 'plan':
             icon = <TodoListIcon />;
-            accentColor = 'slate';
             break;
         case 'duckduckgoSearch':
             icon = <SearchIcon />;
             title = `Search: "${node.title}"`;
-            accentColor = 'blue';
             break;
         case 'tool':
             const toolEvent = node.details as ToolCallEvent;
-            icon = <ToolsIcon />;
+            icon = <ExecutorIcon />;
             title = `Tool: ${toolEvent.call.name}`;
-            accentColor = 'purple';
-            if (toolEvent.call.name === 'generateImage') accentColor = 'indigo';
-            if (toolEvent.call.name === 'generateVideo') accentColor = 'rose';
-            if (toolEvent.call.name === 'executeCode') accentColor = 'gray';
             break;
         case 'validation':
             icon = <ValidationIcon />;
-            accentColor = 'cyan';
             break;
         case 'correction':
             icon = <CorrectionIcon />;
-            accentColor = 'amber';
             break;
         case 'thought':
-            icon = <ThoughtIcon />;
+            icon = <ExecutorIcon />;
             break;
         default:
             icon = <TodoListIcon />; // Fallback icon
             break;
     }
 
-    if (node.status === 'failed') {
-        accentColor = 'red';
-    }
-
-    return { icon, title, accentColor };
+    return { icon, title };
 };
 
 
@@ -162,15 +149,13 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
     }
 
     // --- Custom UI for DuckDuckGo Search Tool ---
-    // Instead of a collapsible card, render the results directly.
+    // This retains its boxed appearance for clarity as requested.
     if (node.type === 'duckduckgoSearch') {
         const event = node.details as ToolCallEvent;
         
-        // The definitive query is from the tool call arguments. Fall back to node title.
         const query = (event?.call?.args?.query as string) || node.title;
         let sources: { uri: string; title: string; }[] | undefined = undefined;
 
-        // If the tool has finished, parse its result string to find the sources.
         if (event?.result) {
             const sourcesMatch = event.result.match(/\[SOURCES_PILLS\]([\s\S]*?)\[\/SOURCES_PILLS\]/s);
             if (sourcesMatch) {
@@ -185,24 +170,23 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
                     sources = parsedSources;
                 } catch (e) {
                     console.error("Failed to parse search results markdown:", e);
-                    sources = []; // Error state: show no sources.
+                    sources = [];
                 }
             } else {
-                sources = []; // Result exists but no sources tag: show no sources.
+                sources = [];
             }
         }
         
-        // Always render SearchToolResult. It will show a loading state if `sources` is undefined.
         return <SearchToolResult query={query} sources={sources} />;
     }
     
-    // "Thought" nodes are rendered as simple text to distinguish them from "Action" cards.
+    // "Thought" nodes are rendered as simple text blocks without a container.
     if (node.type === 'thought') {
         const agentColorInfo = node.agentName ? getAgentColor(node.agentName) : null;
         return (
-            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-black/10 rounded-lg">
+            <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 pt-0.5">
-                    <ThoughtIcon />
+                    <ExecutorIcon />
                 </div>
                 <div className="flex-1 text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
                     {agentColorInfo && (
@@ -221,57 +205,33 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
         );
     }
 
-    // "Observation" nodes are rendered in a distinct box to show the result of a tool call.
+    // "Observation" nodes are also rendered without a distinct container.
     if (node.type === 'observation') {
         return (
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 pt-0.5">
-                        <ObservationIcon />
-                    </div>
-                    <div className="text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
-                        <TypingWrapper
-                            fullText={node.details as string}
-                            isAnimating={node.status === 'active'}
-                        >
-                            {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : node.details as string} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
-                        </TypingWrapper>
-                    </div>
+            <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 pt-0.5">
+                    <ObservationIcon />
+                </div>
+                <div className="text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
+                    <TypingWrapper
+                        fullText={node.details as string}
+                        isAnimating={node.status === 'active'}
+                    >
+                        {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : node.details as string} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
+                    </TypingWrapper>
                 </div>
             </div>
         );
     }
     
-    const [isOpen, setIsOpen] = useState(true);
-    const { icon, title, accentColor } = getNodeVisuals(node);
+    // --- Default rendering for all other tool calls and tasks ---
+    const { icon, title } = getNodeVisuals(node);
     const agentColorInfo = node.agentName ? getAgentColor(node.agentName) : null;
-
-
-    const accentClasses: { [key: string]: string } = {
-        slate: 'border-gray-300 dark:border-slate-600/50',
-        blue: 'border-blue-500/80',
-        purple: 'border-purple-500/80',
-        indigo: 'border-indigo-500/80',
-        rose: 'border-rose-500/80',
-        gray: 'border-gray-500/80',
-        red: 'border-red-500/80',
-        cyan: 'border-cyan-500/80',
-        green: 'border-green-500/80',
-        amber: 'border-amber-500/80',
-    };
-    
-    const finalAccentClass = agentColorInfo ? agentColorInfo.border : accentClasses[accentColor] || 'border-gray-300';
-
     const hasDetails = !!node.details;
 
     return (
-        <motion.div layout className={`bg-white dark:bg-black/20 rounded-lg border-l-4 ${finalAccentClass} w-full shadow-sm`}>
-            <button
-                onClick={() => hasDetails && setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between gap-2 p-3 text-left ${hasDetails ? 'cursor-pointer' : 'cursor-default'}`}
-                aria-expanded={isOpen}
-                disabled={!hasDetails}
-            >
+        <motion.div layout className="w-full">
+            <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="flex-shrink-0">{icon}</div>
                     <div className="flex-1 min-w-0 flex items-center flex-wrap gap-x-2 gap-y-1">
@@ -287,30 +247,14 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
                     {node.duration !== null && node.duration !== undefined && (
                         <span className="text-xs text-gray-500 dark:text-slate-400 font-mono">{node.duration.toFixed(1)}s</span>
                     )}
-                    {hasDetails && (
-                        <motion.div animate={{ rotate: isOpen ? 0 : -90 }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-500 dark:text-slate-400">
-                                <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-                            </svg>
-                        </motion.div>
-                    )}
                 </div>
-            </button>
+            </div>
 
-            <AnimatePresence>
-                {isOpen && hasDetails && (
-                    <motion.div
-                        initial="collapsed" animate="open" exit="collapsed"
-                        variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="overflow-hidden"
-                    >
-                        <div className="border-t border-gray-200 dark:border-slate-700/50 px-4 pt-3 pb-4">
-                            {renderDetails(node, sendMessage)}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {hasDetails && (
+                <div className="pl-8 pt-2">
+                    {renderDetails(node, sendMessage)}
+                </div>
+            )}
         </motion.div>
     );
 };

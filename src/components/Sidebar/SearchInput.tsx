@@ -10,12 +10,12 @@ const searchContainerVariants: Variants = {
     open: {
         height: 'auto',
         opacity: 1,
-        transition: { duration: 0.3, ease: 'easeInOut' },
+        transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
     },
     collapsed: {
         height: 0,
         opacity: 0,
-        transition: { duration: 0.3, ease: 'easeInOut' },
+        transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
     }
 };
 
@@ -36,7 +36,7 @@ export const SearchInput = ({ isCollapsed, searchQuery, setSearchQuery }: Search
         <input 
           type="text" 
           placeholder="Search" 
-          className="w-full pl-10 pr-16 py-2.5 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500"
+          className="w-full pl-10 pr-16 py-2.5 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />

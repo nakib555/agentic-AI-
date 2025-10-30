@@ -4,12 +4,17 @@
  */
 
 // FIX: Removed invalid 'aistudio' from react import.
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type ChatHeaderProps = {
   setIsSidebarOpen: (isOpen: boolean) => void;
   isSidebarCollapsed: boolean;
   setIsSidebarCollapsed: (collapsed: boolean) => void;
+  onImportChat: () => void;
+  onExportChat: (format: 'md' | 'json' | 'pdf') => void;
+  onShareChat: () => void;
+  isChatActive: boolean;
 };
 
 const ToggleIcon = () => (
@@ -18,33 +23,138 @@ const ToggleIcon = () => (
     </svg>
 );
 
-export const ChatHeader = ({ setIsSidebarOpen, isSidebarCollapsed, setIsSidebarCollapsed }: ChatHeaderProps) => (
-  <header className="py-4 px-4 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 z-10 bg-gray-50/80 dark:bg-[#121212]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10">
-      
-      {/* --- UNIFIED SIDEBAR TOGGLE --- */}
-      
-      {/* Mobile Button: Opens the sidebar */}
-      <button
-        onClick={() => setIsSidebarOpen(true)}
-        className="md:hidden p-2 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
-        aria-label="Open sidebar"
-        title="Open sidebar"
-      >
-          <ToggleIcon />
-      </button>
-
-      {/* Desktop Button: Collapses/expands the sidebar */}
-       <button
-        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        className="hidden md:block p-2 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
-        aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-      >
-          <ToggleIcon />
-      </button>
-
-      {/* This empty div keeps the toggle button aligned to the left */}
-      <div className="flex-1" />
-
-  </header>
+const MoreOptionsIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 682.667 682.667" xmlSpace="preserve" className="w-5 h-5">
+        <g>
+            <defs>
+                <clipPath id="b" clipPathUnits="userSpaceOnUse">
+                    <path d="M0 512h512V0H0Z" fill="currentColor" opacity="1"></path>
+                </clipPath>
+            </defs>
+            <mask id="a">
+                <rect width="100%" height="100%" fill="#ffffff" opacity="1"></rect>
+            </mask>
+            <g mask="url(#a)">
+                <g clipPath="url(#b)" transform="matrix(1.33333 0 0 -1.33333 0 682.667)">
+                    <path d="M0 0v-67.044h-359.948V0c0 6.629-5.374 12.003-12.003 12.003h-42.02c-6.629 0-12.003-5.374-12.003-12.003V-81.561c0-23.154 18.77-41.925 41.925-41.925h408.15c23.154 0 41.925 18.771 41.925 41.925V0c0 6.629-5.374 12.003-12.004 12.003H12.003C5.374 12.003 0 6.629 0 0Z" transform="translate(435.974 149.179)" fill="currentColor"></path>
+                    <path d="m0 0-49.801 63.767c-6.598 8.449-19.381 8.449-25.979 0L-125.581 0c-8.451-10.821-.741-26.626 12.99-26.626h28.215v-127.26h43.171v127.26h28.215C.741-26.626 8.452-10.821 0 0Z" transform="translate(231.554 416.203)" fill="currentColor"></path>
+                    <path d="m0 0 49.801-63.767c6.598-8.449 19.381-8.449 25.979 0L125.581 0c8.451 10.821.741 26.626-12.99 26.626H84.376v127.26H41.205V26.626H12.99C-.741 26.626-8.452 10.821 0 0Z" transform="translate(280.446 332.42)" fill="currentColor"></path>
+                    <path d="M0 0h-235.702c-10.786 0-19.53 8.744-19.53 19.53 0 10.786 8.744 19.53 19.53 19.53H0c10.786 0 19.53-8.744 19.53-19.53C19.53 8.744 10.786 0 0 0Z" transform="translate(373.851 186.827)" fill="currentColor"></path>
+                    <path d="M0 0h30.614c10.786 0 19.53-8.744 19.53-19.53 0-10.785-8.744-19.529-19.53-19.529h-235.702c-10.786 0-19.53 8.744-19.53 19.529 0 10.786 8.744 19.53 19.53 19.53H-80" transform="translate(343.237 153.327)" fill="currentColor"></path>
+                    <path d="M0 0h.025" transform="translate(303.237 153.327)" fill="currentColor"></path>
+                </g>
+            </g>
+        </g>
+    </svg>
 );
+
+const MenuItem: React.FC<{ onClick: () => void; disabled: boolean; children: React.ReactNode }> = ({ onClick, disabled, children }) => (
+    <li>
+        <button 
+            onClick={onClick}
+            disabled={disabled}
+            className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+            {children}
+        </button>
+    </li>
+);
+
+export const ChatHeader = ({ setIsSidebarOpen, isSidebarCollapsed, setIsSidebarCollapsed, onImportChat, onExportChat, onShareChat, isChatActive }: ChatHeaderProps) => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                menuRef.current && !menuRef.current.contains(event.target as Node) &&
+                buttonRef.current && !buttonRef.current.contains(event.target as Node)
+            ) {
+                setIsMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <header className="py-4 px-4 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 z-10 bg-gray-50/80 dark:bg-[#121212]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10">
+        
+        {/* --- UNIFIED SIDEBAR TOGGLE --- */}
+        
+        {/* Mobile Button: Opens the sidebar */}
+        <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="md:hidden p-2 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+            aria-label="Open sidebar"
+            title="Open sidebar"
+        >
+            <ToggleIcon />
+        </button>
+
+        {/* Desktop Button: Collapses/expands the sidebar */}
+        <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="hidden md:block p-2 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+            aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+            <ToggleIcon />
+        </button>
+
+        {/* This empty div keeps the toggle button aligned to the left */}
+        <div className="flex-1" />
+
+        <div className="relative">
+            <button
+                ref={buttonRef}
+                onClick={() => setIsMenuOpen(prev => !prev)}
+                className="p-2 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white rounded-full hover:bg-gray-200/50 dark:hover:bg-black/20"
+                aria-label="More chat options"
+                title="More chat options"
+                aria-haspopup="true"
+                aria-expanded={isMenuOpen}
+            >
+                <MoreOptionsIcon />
+            </button>
+            <AnimatePresence>
+                {isMenuOpen && (
+                    <motion.div
+                        ref={menuRef}
+                        initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        className="absolute right-0 top-full mt-2 w-56 bg-white/80 dark:bg-[#2D2D2D]/80 backdrop-blur-lg rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
+                    >
+                        <ul className="text-sm">
+                            <MenuItem onClick={onImportChat} disabled={false}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 0 0 1.09 1.03L9.25 4.636v8.614Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                                <span>Import Chat...</span>
+                            </MenuItem>
+                            <div className="h-px bg-gray-200 dark:bg-white/10 my-1"></div>
+                            <MenuItem onClick={onShareChat} disabled={!isChatActive}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M13 4.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM8.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5ZM12.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5Z" /><path d="M15.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /><path d="M4.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /></svg>
+                                <span>Share to Clipboard</span>
+                            </MenuItem>
+                            <div className="h-px bg-gray-200 dark:bg-white/10 my-1"></div>
+                            <MenuItem onClick={() => onExportChat('md')} disabled={!isChatActive}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                                <span>Export as Markdown</span>
+                            </MenuItem>
+                            <MenuItem onClick={() => onExportChat('json')} disabled={!isChatActive}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                                <span>Export as JSON</span>
+                            </MenuItem>
+                            <MenuItem onClick={() => onExportChat('pdf')} disabled={!isChatActive}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                                <span>Export as PDF</span>
+                            </MenuItem>
+                        </ul>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+  </header>
+)};

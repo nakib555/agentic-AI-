@@ -23,6 +23,12 @@ type SavedFile = {
   data: string; // base64
 };
 
+// A custom File type to make TypeScript happy with our custom property.
+interface FileWithEditKey extends File {
+  _editKey?: string;
+}
+
+
 // Define a handle type for the methods we want to expose via the ref.
 export type MessageFormHandle = {
   attachFiles: (files: File[]) => void;
@@ -60,7 +66,7 @@ const isComplexText = (text: string): boolean => {
 
 export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ onSubmit, isLoading, onCancel }, ref) => {
   const [inputValue, setInputValue] = useState('');
-  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [attachedFiles, setAttachedFiles] = useState<FileWithEditKey[]>([]);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isThinkingModeEnabled, setIsThinkingModeEnabled] = useState(false);
   const [proactiveSuggestions, setProactiveSuggestions] = useState<string[]>([]);
@@ -72,12 +78,27 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
   });
 
   // Expose an `attachFiles` function to the parent component via the ref.
-  // This allows the parent (ChatArea) to add files from a drag-and-drop event.
+  // This allows the parent (ChatArea) to add files from a drag-and-drop event or "Edit" button.
   useImperativeHandle(ref, () => ({
-    attachFiles: (files: File[]) => {
-      if (files && files.length > 0) {
-        setAttachedFiles(prev => [...prev, ...files]);
-      }
+    attachFiles: (incomingFiles: File[]) => {
+      if (!incomingFiles || incomingFiles.length === 0) return;
+
+      setAttachedFiles(prevFiles => {
+        const newFilesToAdd: FileWithEditKey[] = [];
+        const existingEditKeys = new Set(prevFiles.map(f => f._editKey).filter(Boolean));
+
+        for (const file of incomingFiles) {
+          const editableFile = file as FileWithEditKey;
+          if (editableFile._editKey) {
+            if (existingEditKeys.has(editableFile._editKey)) {
+              alert('This image is already attached for editing.');
+              continue; // Skip duplicate
+            }
+          }
+          newFilesToAdd.push(editableFile);
+        }
+        return [...prevFiles, ...newFilesToAdd];
+      });
     }
   }));
 
@@ -119,7 +140,11 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
           );
           localStorage.setItem('messageDraft_files', JSON.stringify(filesToSave));
         } catch (error) {
-          console.error("Error saving files for draft:", error);
+          if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+            alert('Draft files are too large for localStorage and were not saved. Your text has been saved.');
+          } else {
+            console.error("Error saving files for draft:", error);
+          }
         }
       };
 
@@ -261,7 +286,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
 
   return (
     <form 
-        className="bg-gray-200/50 dark:bg-[#202123] border border-gray-300 dark:border-white/10 rounded-2xl flex flex-col p-2" 
+        className="bg-gray-200/50 dark:bg-[#202123] border border-gray-300 dark:border-white/10 rounded-full flex flex-col p-2" 
         onSubmit={handleSubmit}
     >
         <AnimatePresence>
@@ -315,7 +340,11 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
                 disabled={isLoading || isEnhancing}
                 className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:bg-gray-300/50 dark:hover:bg-black/20 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+                <svg viewBox="0 0 50 50" fill="currentColor" className="w-5 h-5">
+                    <circle cx="25" cy="25" r="23" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                    <line x1="25" y1="14" x2="25" y2="36" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                    <line x1="14" y1="25" x2="36" y2="25" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                </svg>
             </button>
             <div className="relative flex-grow">
               <div

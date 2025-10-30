@@ -4,6 +4,7 @@
  */
 import type { FunctionCall } from '@google/genai';
 import type { MessageError } from './error';
+import type { ParsedWorkflow } from '../services/workflowParser';
 
 export type ToolCallEvent = {
     id: string;
@@ -19,6 +20,11 @@ export type Attachment = {
   data: string; // base64 encoded string
 };
 
+export type Source = {
+  uri: string;
+  title: string;
+};
+
 export type Message = {
   id: string;
   role: 'user' | 'model';
@@ -30,4 +36,8 @@ export type Message = {
   attachments?: Attachment[];
   startTime?: number;
   endTime?: number;
+  isPinned?: boolean;
+  suggestedActions?: string[];
+  plan?: ParsedWorkflow;
+  executionState?: 'pending_approval' | 'approved' | 'denied';
 };

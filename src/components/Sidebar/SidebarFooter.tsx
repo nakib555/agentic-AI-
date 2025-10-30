@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
 import { NavItem } from './NavItem';
 import { ThemeToggle } from './ThemeToggle';
 import type { Theme } from '../../hooks/useTheme';
@@ -15,41 +14,13 @@ type SidebarFooterProps = {
   isCollapsed: boolean;
   onClearAllChats: () => void;
   onSettingsClick: () => void;
-  onExportChat: (format: 'md' | 'json' | 'pdf') => void;
-  isChatActive: boolean;
 };
 
-const ExportIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-        <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
-        <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
-    </svg>
-);
-
-
-export const SidebarFooter = ({ theme, setTheme, isCollapsed, onClearAllChats, onSettingsClick, onExportChat, isChatActive }: SidebarFooterProps) => {
-  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
-  const exportMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
-        setIsExportMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
+export const SidebarFooter = ({ theme, setTheme, isCollapsed, onClearAllChats, onSettingsClick }: SidebarFooterProps) => {
   const handleClearAllChats = () => {
     if (window.confirm('Are you sure you want to delete all conversations? This action cannot be undone.')) {
       onClearAllChats();
     }
-  };
-
-  const handleExport = (format: 'md' | 'json' | 'pdf') => {
-    onExportChat(format);
-    setIsExportMenuOpen(false);
   };
 
   return (
@@ -67,30 +38,6 @@ export const SidebarFooter = ({ theme, setTheme, isCollapsed, onClearAllChats, o
             isCollapsed={isCollapsed}
             onClick={onSettingsClick}
         />
-        <div className="relative" ref={exportMenuRef}>
-            <AnimatePresence>
-              {isExportMenuOpen && (
-                  <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.15, ease: 'easeOut' }}
-                      className="absolute bottom-full mb-2 w-full bg-white dark:bg-[#2D2D2D] rounded-lg shadow-lg border border-gray-200 dark:border-white/10 p-1 z-10"
-                  >
-                      <button onClick={() => handleExport('md')} className="w-full text-left px-3 py-1.5 text-sm rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700">Export as Markdown</button>
-                      <button onClick={() => handleExport('json')} className="w-full text-left px-3 py-1.5 text-sm rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700">Export as JSON</button>
-                      <button onClick={() => handleExport('pdf')} className="w-full text-left px-3 py-1.5 text-sm rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700">Export as PDF</button>
-                  </motion.div>
-              )}
-            </AnimatePresence>
-            <NavItem 
-                icon={<ExportIcon />}
-                text="Export Chat"
-                isCollapsed={isCollapsed}
-                onClick={() => setIsExportMenuOpen(prev => !prev)}
-                disabled={!isChatActive}
-            />
-        </div>
         <NavItem 
             icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>}
             text="Clear conversations"

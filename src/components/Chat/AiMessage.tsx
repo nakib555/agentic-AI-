@@ -5,7 +5,7 @@
 
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { motion, MotionProps, AnimatePresence } from 'framer-motion';
-import { GoogleGenAI, Modality } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import type { Message, Source } from '../../../types';
 import { MarkdownComponents } from '../Markdown/markdownComponents';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
@@ -24,6 +24,10 @@ import { audioCache } from '../../services/audioCache';
 import { audioManager } from '../../services/audioService';
 import { FileAttachment } from '../AI/FileAttachment';
 import { PinButton } from './PinButton';
+import { SuggestedActions } from './SuggestedActions';
+import { ExecutionApproval } from '../AI/ExecutionApproval';
+import type { MessageFormHandle } from './MessageForm';
+
 
 const animationProps: MotionProps = {
   initial: { opacity: 0, y: 20 },
@@ -87,13 +91,12 @@ const TtsButton = ({
       <>
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 16 16"
+          viewBox="0 0 24 24"
           fill="currentColor"
           className="w-4 h-4"
         >
-          <path d="M8.5 4.5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0v-7Z" />
-          <path d="M5.5 6.5a.5.5 0 0 0-1 0v3a.5.5 0 0 0 1 0v-3Z" />
-          <path d="M11.5 5.5a.5.5 0 0 0-1 0v5a.5.5 0 0 0 1 0v-5Z" />
+          <path d="M12.52 3.25c-.5 0-1 .17-1.39.49L6.74 7.25H5c-1.52 0-2.75 1.23-2.75 2.75v4c0 1.52 1.23 2.75 2.75 2.75h1.74l4.39 3.51c.39.31.89.49 1.39.49 1.23 0 2.23-1 2.23-2.23V5.48c0-1.23-1-2.23-2.23-2.23zM3.75 14v-4c0-.69.56-1.25 1.25-1.25h1.25v6.5H5c-.69 0-1.25-.56-1.25-1.25zm9.5 4.52a.734.734 0 0 1-1.19.57l-4.31-3.45V8.36l4.31-3.45a.734.734 0 0 1 1.19.57zM17.54 8.84c-.28-.31-.75-.33-1.06-.05s-.33.75-.05 1.06c.53.59.83 1.36.83 2.16 0 .85-.33 1.66-.92 2.27a.75.75 0 0 0 .54 1.27c.19 0 .39-.08.54-.23.87-.89 1.34-2.07 1.34-3.31 0-1.17-.43-2.29-1.21-3.16z" />
+          <path d="M19.81 6.88c-.28-.31-.75-.34-1.06-.06s-.33.75-.06 1.06C19.7 9 20.25 10.47 20.25 12s-.57 3.04-1.61 4.18c-.28.31-.26.78.05 1.06.14.13.32.2.51.2.2 0 .41-.08.55-.24 1.29-1.42 2.01-3.26 2.01-5.2s-.69-3.72-1.94-5.12z" />
         </svg>
         <span className="hidden sm:inline">Listen</span>
       </>
@@ -150,15 +153,22 @@ const cleanTextForTts = (text: string): string => {
 };
 
 export const AiMessage: React.FC<{ 
-    msg: Message; 
+    msg: Message;
+    isLoading: boolean;
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void; 
     ttsVoice: string; 
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
     onTogglePin: (chatId: string, messageId: string) => void;
     onShowThinkingProcess: (messageId: string) => void;
-}> = ({ msg, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, onTogglePin, onShowThinkingProcess }) => {
-  const { id, text, isThinking, error, startTime, endTime, isPinned } = msg;
+    approveExecution: () => void;
+    denyExecution: () => void;
+    messageFormRef: React.RefObject<MessageFormHandle>;
+}> = ({ 
+    msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, onTogglePin, 
+    onShowThinkingProcess, approveExecution, denyExecution, messageFormRef
+}) => {
+  const { id, text, isThinking, error, startTime, endTime, isPinned, suggestedActions, plan, executionState } = msg;
   const [elapsed, setElapsed] = useState(0);
   const [audioState, setAudioState] = useState<'idle' | 'loading' | 'error' | 'playing'>('idle');
   const isPlaying = audioState === 'playing';
@@ -268,11 +278,21 @@ export const AiMessage: React.FC<{
             model: "gemini-2.5-flash-preview-tts",
             contents: [{ parts: [{ text: textToSpeak }] }],
             config: {
-                responseModalities: [Modality.AUDIO],
+                responseModalities: ['AUDIO'],
                 speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: ttsVoice } } },
             },
         });
-        const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+
+        let base64Audio: string | undefined;
+        if (response.candidates && response.candidates.length > 0) {
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData && part.inlineData.mimeType.startsWith('audio/')) {
+                    base64Audio = part.inlineData.data;
+                    break;
+                }
+            }
+        }
+        
         if (base64Audio) {
             const audioBuffer = await decodeAudioData(decode(base64Audio), audioManager.context, 24000, 1);
             audioCache.set(cacheKey, audioBuffer);
@@ -295,13 +315,19 @@ export const AiMessage: React.FC<{
   }, [isAutoPlayEnabled, thinkingIsComplete, hasFinalAnswer, playOrStopAudio]);
 
   // State 1: The initial wait, before any text or workflow has been generated.
-  const isInitialWait = !!isThinking && !hasThinkingProcess && !hasFinalAnswer && !error;
+  const isInitialWait = !!isThinking && !hasThinkingProcess && !hasFinalAnswer && !error && executionState !== 'pending_approval';
   
   // State 2: The workflow is visible, and the final answer is actively being streamed.
   const isStreamingFinalAnswer = !!isThinking && hasFinalAnswer && !error;
   
   // State 3: The workflow is visible, but we are still waiting for the final answer to start.
-  const isWaitingForFinalAnswer = !!isThinking && hasThinkingProcess && !hasFinalAnswer && !error;
+  const isWaitingForFinalAnswer = !!isThinking && hasThinkingProcess && !hasFinalAnswer && !error && executionState !== 'pending_approval';
+
+  const handleRunCode = useCallback((language: string, code: string) => {
+    // This prompt is more explicit and aligns with how the agent expects to receive tasks.
+    const userPrompt = `Please execute the following ${language} code block:\n\n\`\`\`${language}\n${code}\n\`\`\``;
+    sendMessage(userPrompt, undefined, { isThinkingModeEnabled: true });
+  }, [sendMessage]);
 
   /**
    * A renderer that progressively displays text and UI components.
@@ -325,6 +351,13 @@ export const AiMessage: React.FC<{
         const renderError = (component: string, details: string) => (
             <ErrorDisplay key={`${id}-${index}`} error={{ message: `Failed to render ${component} component due to invalid data.`, details }} />
         );
+
+        const handleEdit = (blob: Blob, key: string) => {
+            const file = new File([blob], "image-to-edit.png", { type: blob.type });
+            // Attach the unique key to the file object to check for duplicates later.
+            (file as any)._editKey = key;
+            messageFormRef.current?.attachFiles([file]);
+        };
         
         if (videoMatch) {
             try {
@@ -350,7 +383,7 @@ export const AiMessage: React.FC<{
         if (imageMatch) {
             try {
                 const imageData = JSON.parse(imageMatch[1]);
-                return <ImageDisplay key={`${id}-${index}`} {...imageData} />;
+                return <ImageDisplay key={`${id}-${index}`} onEdit={handleEdit} {...imageData} />;
             } catch (e) {
                 console.error("Failed to parse image JSON:", e);
                 return renderError('image', imageMatch[1]);
@@ -360,7 +393,7 @@ export const AiMessage: React.FC<{
         if (onlineImageMatch) {
             try {
                 const imageData = JSON.parse(onlineImageMatch[1]);
-                return <ImageDisplay key={`${id}-${index}`} srcUrl={imageData.url} alt={imageData.alt} caption={imageData.alt} />;
+                return <ImageDisplay key={`${id}-${index}`} onEdit={handleEdit} {...imageData} />;
             } catch (e) {
                 console.error("Failed to parse online image JSON:", e);
                 return renderError('online image', onlineImageMatch[1]);
@@ -413,7 +446,14 @@ export const AiMessage: React.FC<{
         const cleanedPart = part.replace(incompleteTagRegex, '');
 
         if (cleanedPart) {
-            return <ManualCodeRenderer key={`${id}-${index}`} text={cleanedPart} components={MarkdownComponents} isStreaming={isStreaming} />;
+            return <ManualCodeRenderer 
+                key={`${id}-${index}`} 
+                text={cleanedPart} 
+                components={MarkdownComponents} 
+                isStreaming={isStreaming} 
+                onRunCode={handleRunCode}
+                isRunDisabled={isLoading}
+            />;
         }
         return null;
     });
@@ -422,6 +462,17 @@ export const AiMessage: React.FC<{
   // If we're in the initial waiting state, render only the indicator.
   if (isInitialWait) {
     return <TypingIndicator />;
+  }
+
+  // --- Render Interactive Planning UI ---
+  if (executionState === 'pending_approval' && plan) {
+    return (
+        <ExecutionApproval 
+            plan={plan}
+            onApprove={approveExecution}
+            onDeny={denyExecution}
+        />
+    );
   }
 
   return (
@@ -476,6 +527,12 @@ export const AiMessage: React.FC<{
         <div className="w-full max-w-[90%]">
           <SourcesPills sources={searchSources} />
         </div>
+      )}
+
+      {thinkingIsComplete && suggestedActions && suggestedActions.length > 0 && !error && (
+         <div className="w-full max-w-[90%]">
+            <SuggestedActions actions={suggestedActions} onActionClick={(action) => sendMessage(action)} />
+         </div>
       )}
       
       {thinkingIsComplete && text && !error && (

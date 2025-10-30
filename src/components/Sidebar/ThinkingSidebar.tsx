@@ -67,7 +67,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                         exit="closed"
                         variants={variants}
                         transition={{ type: 'tween', duration: 0.4, ease: 'easeInOut' }}
-                        className="bg-gray-100 dark:bg-[#1e1e1e] border-l border-gray-200 dark:border-white/10 flex flex-col fixed inset-y-0 right-0 z-30 w-full max-w-2xl shadow-2xl"
+                        className="bg-gray-100 dark:bg-[#1e1e1e] border-l border-gray-200 dark:border-white/10 flex flex-col fixed inset-y-0 right-0 z-30 w-96 shadow-2xl"
                         role="complementary"
                         aria-labelledby="thinking-sidebar-title"
                     >

@@ -74,7 +74,7 @@ export const SearchToolResult = ({ query, sources }: SearchToolResultProps) => {
   const hiddenCount = sources ? sources.length - (visibleSources?.length ?? 0) : 0;
 
   return (
-    <div className="bg-gray-50 dark:bg-black/10 p-3 rounded-lg border border-gray-200 dark:border-slate-700/50">
+    <div className="bg-gray-50 dark:bg-black/10 p-3 rounded-2xl border border-gray-200 dark:border-slate-700/50">
       {query && (
         <div className="flex items-center gap-3 text-sm text-gray-800 dark:text-slate-200 mb-3">
           <SearchIcon />

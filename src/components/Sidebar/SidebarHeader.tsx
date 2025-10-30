@@ -25,8 +25,8 @@ export const SidebarHeader = ({ isCollapsed, setIsOpen, onNewChat }: SidebarHead
             <motion.span 
                 className="font-semibold text-sm whitespace-nowrap overflow-hidden text-slate-800 dark:text-slate-100"
                 initial={false}
-                animate={{ width: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1 }}
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                animate={{ width: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1, x: isCollapsed ? -5 : 0 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             >
                 New Chat
             </motion.span>

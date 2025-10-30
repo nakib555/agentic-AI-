@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Highlight = ({ text, highlight }: { text: string, highlight: string }) => {
     if (!highlight.trim()) {
@@ -42,7 +42,10 @@ type HistoryItemProps = {
 export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, searchQuery, active, isLoading, onClick, onDelete, onUpdateTitle }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(text);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
@@ -50,6 +53,21 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
             inputRef.current.select();
         }
     }, [isEditing]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                menuRef.current && !menuRef.current.contains(event.target as Node) &&
+                buttonRef.current && !buttonRef.current.contains(event.target as Node)
+            ) {
+                setIsMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
     
     // When the original text prop changes (e.g., from an auto-title generation),
     // update the local state if not currently editing.
@@ -84,11 +102,13 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
 
     const handleEditClick = (e: React.MouseEvent) => {
         e.stopPropagation();
+        setIsMenuOpen(false);
         setIsEditing(true);
     };
 
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
+        setIsMenuOpen(false);
         onDelete();
     };
 
@@ -97,7 +117,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
             <button 
                 onClick={isEditing ? undefined : onClick} 
                 disabled={isEditing}
-                className={`w-full text-sm p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-teal-100 text-teal-800 font-semibold dark:bg-teal-500/20 dark:text-teal-200' : 'text-slate-600 hover:bg-black/5 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-slate-100'} ${isCollapsed ? 'justify-center' : ''} ${!isCollapsed ? 'pr-16' : ''}`}
+                className={`w-full text-sm p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-teal-100 text-teal-800 font-semibold dark:bg-teal-500/20 dark:text-teal-200' : 'text-slate-600 hover:bg-black/5 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-slate-100'} ${isCollapsed ? 'justify-center' : ''} ${!isCollapsed ? 'pr-8' : ''}`}
             >
                 <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
                     {isLoading ? (
@@ -119,35 +139,58 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
                     />
                 ) : (
                     <motion.span 
-                        className="whitespace-nowrap overflow-hidden flex-1"
+                        className="flex-1 min-w-0 truncate"
                         initial={false}
-                        animate={{ width: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1 }}
-                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+                        animate={{ width: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1, x: isCollapsed ? -5 : 0 }}
+                        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                     >
                          <Highlight text={text} highlight={searchQuery} />
                     </motion.span>
                 )}
             </button>
             {!isCollapsed && !isEditing && (
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center bg-gray-100/50 dark:bg-black/10 rounded-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center rounded-lg">
                     <button
-                        onClick={handleEditClick}
+                        ref={buttonRef}
+                        onClick={(e) => { e.stopPropagation(); setIsMenuOpen(prev => !prev); }}
                         className="p-1 rounded-md text-slate-500 hover:bg-slate-300/60 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-600/60 dark:hover:text-slate-100"
-                        aria-label={`Rename chat: ${text}`}
-                        title={`Rename chat: ${text}`}
+                        aria-label={`More options for chat: ${text}`}
+                        title={`More options for chat: ${text}`}
+                        aria-haspopup="true"
+                        aria-expanded={isMenuOpen}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M11.355 2.212a.75.75 0 0 1 1.06 0l1.373 1.373a.75.75 0 0 1 0 1.06L5.435 13H3.25A.75.75 0 0 1 2.5 12.25V10l8.293-8.293a.75.75 0 0 1 .562-.294Z" /></svg>
-                    </button>
-                    <button
-                        onClick={handleDelete}
-                        className="p-1 rounded-md text-slate-500 hover:bg-slate-300/60 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-600/60 dark:hover:text-slate-100"
-                        aria-label={`Delete chat: ${text}`}
-                        title={`Delete chat: ${text}`}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clipRule="evenodd" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8 3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM8 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM8 15a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z" /></svg>
                     </button>
                 </div>
             )}
+             <AnimatePresence>
+                {isMenuOpen && (
+                    <motion.div
+                        ref={menuRef}
+                        initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                        transition={{ duration: 0.1 }}
+                        className="absolute right-2 top-10 z-20 w-36 bg-white dark:bg-[#2D2D2D] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <ul className="text-sm">
+                            <li>
+                                <button onClick={handleEditClick} className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded hover:bg-black/5 dark:hover:bg-white/5 text-slate-700 dark:text-slate-200">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M11.355 2.212a.75.75 0 0 1 1.06 0l1.373 1.373a.75.75 0 0 1 0 1.06L5.435 13H3.25A.75.75 0 0 1 2.5 12.25V10l8.293-8.293a.75.75 0 0 1 .562-.294Z" /></svg>
+                                    <span>Rename</span>
+                                </button>
+                            </li>
+                            <li>
+                                <button onClick={handleDelete} className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clipRule="evenodd" /></svg>
+                                    <span>Delete</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </motion.div>
+                )}
+            </AnimatePresence>
              {isCollapsed && (
                 <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-white dark:bg-[#2D2D2D] text-slate-800 dark:text-slate-100 text-sm font-semibold rounded-md shadow-lg border border-gray-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                     <Highlight text={text} highlight={searchQuery} />

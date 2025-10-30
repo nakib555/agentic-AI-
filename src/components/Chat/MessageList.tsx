@@ -4,10 +4,15 @@
  */
 
 // FIX: Removed invalid 'aistudio' from react import.
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import type { Message } from '../../../types';
 import { MessageComponent } from './Message';
 import { WelcomeScreen } from './WelcomeScreen';
+import type { MessageFormHandle } from './MessageForm';
+
+export type MessageListHandle = {
+  scrollToBottom: () => void;
+};
 
 type MessageListProps = {
   messages: Message[];
@@ -18,15 +23,31 @@ type MessageListProps = {
   currentChatId: string | null;
   onTogglePin: (chatId: string, messageId: string) => void;
   onShowThinkingProcess: (messageId: string) => void;
+  onScrolledUpChange: (isScrolledUp: boolean) => void;
+  approveExecution: () => void;
+  denyExecution: () => void;
+  messageFormRef: React.RefObject<MessageFormHandle>;
 };
 
-export const MessageList = ({ messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled, currentChatId, onTogglePin, onShowThinkingProcess }: MessageListProps) => {
+export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
+    messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled, currentChatId, 
+    onTogglePin, onShowThinkingProcess, onScrolledUpChange, approveExecution, 
+    denyExecution, messageFormRef 
+}, ref) => {
   const messageListRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastMessageText = messages[messages.length - 1]?.text;
   
   // This state tracks if the user has manually scrolled away from the bottom.
   const [isAutoScrollPaused, setIsAutoScrollPaused] = useState(false);
+  
+  useImperativeHandle(ref, () => ({
+    scrollToBottom: () => {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      // If the user manually clicks the button, we should resume auto-scrolling for the next message.
+      setIsAutoScrollPaused(false);
+    },
+  }));
 
   // This effect handles the core auto-scrolling logic.
   useEffect(() => {
@@ -46,10 +67,17 @@ export const MessageList = ({ messages, sendMessage, isLoading, ttsVoice, isAuto
    */
   const handleScroll = () => {
     const element = messageListRef.current;
-    // We only care about user scrolling while the AI is generating a response.
-    if (!element || !isLoading) return;
-
+    if (!element) return;
+    
+    const SCROLL_THRESHOLD = 200; // Pixels from bottom to show the "scroll to latest" button
     const { scrollTop, scrollHeight, clientHeight } = element;
+    
+    const isCurrentlyScrolledUp = scrollHeight - scrollTop - clientHeight > SCROLL_THRESHOLD;
+    onScrolledUpChange(isCurrentlyScrolledUp);
+
+    // We only care about user scrolling while the AI is generating a response.
+    if (!isLoading) return;
+
     // A small threshold helps account for rendering variations.
     const isAtBottom = scrollHeight - scrollTop - clientHeight < 5;
 
@@ -70,12 +98,16 @@ export const MessageList = ({ messages, sendMessage, isLoading, ttsVoice, isAuto
               <MessageComponent 
                   key={msg.id} 
                   msg={msg} 
+                  isLoading={isLoading}
                   sendMessage={sendMessage} 
                   ttsVoice={ttsVoice} 
                   isAutoPlayEnabled={isAutoPlayEnabled}
                   currentChatId={currentChatId}
                   onTogglePin={onTogglePin}
                   onShowThinkingProcess={onShowThinkingProcess}
+                  approveExecution={approveExecution}
+                  denyExecution={denyExecution}
+                  messageFormRef={messageFormRef}
               />
             ))}
             {/* The invisible anchor element that we scroll to. */}
@@ -85,4 +117,4 @@ export const MessageList = ({ messages, sendMessage, isLoading, ttsVoice, isAuto
       </div>
     </div>
   );
-};
+});

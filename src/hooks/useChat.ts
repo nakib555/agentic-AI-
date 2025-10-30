@@ -5,13 +5,14 @@
 
 import { useMemo, useCallback, useEffect, useRef } from 'react';
 import type { FunctionCall, Part } from "@google/genai";
-import { generateChatTitle } from '../services/gemini';
+import { generateChatTitle, generateFollowUpSuggestions } from '../services/gemini';
 import { toolImplementations } from '../tools';
 import { runAgenticLoop } from '../services/agenticLoop';
 import { type Message, type ToolCallEvent, type MessageError, ToolError, ChatSession } from '../../types';
 import { fileToBase64 } from '../utils/fileUtils';
 import { useChatHistory } from './useChatHistory';
 import { parseMessageText } from '../utils/messageParser';
+import type { ParsedWorkflow } from '../services/workflowParser';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -45,8 +46,10 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     updateChatModel,
     updateChatSettings,
     toggleMessagePin,
+    importChat,
   } = useChatHistory();
   const abortControllerRef = useRef<AbortController | null>(null);
+  const executionApprovalRef = useRef<{ resolve: (approved: boolean) => void } | null>(null);
 
   // Effect to automatically generate a title for new chats
   useEffect(() => {
@@ -97,7 +100,27 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
   const cancelGeneration = useCallback(() => {
     abortControllerRef.current?.abort();
+    // If we're waiting for approval, canceling should deny it.
+    if (executionApprovalRef.current) {
+        denyExecution();
+    }
   }, []);
+
+  const approveExecution = useCallback(() => {
+    if (executionApprovalRef.current && currentChatId) {
+        updateLastMessage(currentChatId, () => ({ executionState: 'approved' }));
+        executionApprovalRef.current.resolve(true);
+        executionApprovalRef.current = null;
+    }
+  }, [currentChatId, updateLastMessage]);
+  
+  const denyExecution = useCallback(() => {
+    if (executionApprovalRef.current && currentChatId) {
+        updateLastMessage(currentChatId, () => ({ executionState: 'denied' }));
+        executionApprovalRef.current.resolve(false);
+        executionApprovalRef.current = null;
+    }
+  }, [currentChatId, updateLastMessage]);
 
   const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean, isThinkingModeEnabled?: boolean } = {}) => {
     // If a generation is already in progress, cancel it before starting a new one.
@@ -263,10 +286,28 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 };
             });
         },
-        onComplete: (finalText: string) => {
+        onPlanReady: (plan: ParsedWorkflow): Promise<boolean> => {
+            if (!isThinkingModeEnabled) {
+                return Promise.resolve(true); // Auto-approve if not in interactive mode
+            }
+            updateLastMessage(activeChatId!, () => ({ plan, executionState: 'pending_approval' }));
+            return new Promise((resolve) => {
+                executionApprovalRef.current = { resolve };
+            });
+        },
+        onComplete: async (finalText: string) => {
             updateLastMessage(activeChatId!, () => ({ text: finalText, isThinking: false, endTime: Date.now() }));
             completeChatLoading(activeChatId!);
             abortControllerRef.current = null;
+            
+            // After completion, generate follow-up suggestions
+            const finalChat = chatHistory.find(c => c.id === activeChatId);
+            if (finalChat) {
+                const suggestions = await generateFollowUpSuggestions(finalChat.messages);
+                if (suggestions.length > 0) {
+                    updateLastMessage(activeChatId!, () => ({ suggestedActions: suggestions }));
+                }
+            }
         },
         onCancel: () => {
             updateLastMessage(activeChatId!, (lastMsg) => ({
@@ -296,5 +337,5 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     });
   };
   
-  return { messages, sendMessage, isLoading, chatHistory, currentChatId, startNewChat, loadChat, deleteChat, clearAllChats, cancelGeneration, updateChatModel, updateChatSettings, updateChatTitle, toggleMessagePin };
+  return { messages, sendMessage, isLoading, chatHistory, currentChatId, startNewChat, loadChat, deleteChat, clearAllChats, cancelGeneration, updateChatModel, updateChatSettings, updateChatTitle, toggleMessagePin, approveExecution, denyExecution, importChat };
 };

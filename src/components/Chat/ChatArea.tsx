@@ -5,7 +5,7 @@
 
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageList } from './MessageList';
+import { MessageList, type MessageListHandle } from './MessageList';
 import { MessageForm, type MessageFormHandle } from './MessageForm';
 import type { Message } from '../../../types';
 import { PinnedMessagesBar } from './PinnedMessagesBar';
@@ -21,11 +21,19 @@ type ChatAreaProps = {
   currentChatId: string | null;
   onTogglePin: (chatId: string, messageId: string) => void;
   onShowThinkingProcess: (messageId: string) => void;
+  approveExecution: () => void;
+  denyExecution: () => void;
 };
 
-export const ChatArea = ({ messages, isLoading, sendMessage, modelsLoading, onCancel, ttsVoice, isAutoPlayEnabled, currentChatId, onTogglePin, onShowThinkingProcess }: ChatAreaProps) => {
+export const ChatArea = ({ 
+    messages, isLoading, sendMessage, modelsLoading, onCancel, 
+    ttsVoice, isAutoPlayEnabled, currentChatId, onTogglePin, 
+    onShowThinkingProcess, approveExecution, denyExecution 
+}: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
+  const messageListRef = useRef<MessageListHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isScrolledUp, setIsScrolledUp] = useState(false);
   // Use a counter to robustly handle drag enter/leave events on nested elements.
   const dragCounter = useRef(0);
 
@@ -96,7 +104,8 @@ export const ChatArea = ({ messages, isLoading, sendMessage, modelsLoading, onCa
               }
           }}
       />
-      <MessageList 
+      <MessageList
+          ref={messageListRef}
           messages={messages} 
           sendMessage={sendMessage} 
           isLoading={isLoading} 
@@ -105,7 +114,29 @@ export const ChatArea = ({ messages, isLoading, sendMessage, modelsLoading, onCa
           currentChatId={currentChatId}
           onTogglePin={onTogglePin}
           onShowThinkingProcess={onShowThinkingProcess}
+          onScrolledUpChange={setIsScrolledUp}
+          approveExecution={approveExecution}
+          denyExecution={denyExecution}
+          messageFormRef={messageFormRef}
       />
+      <AnimatePresence>
+        {isScrolledUp && (
+          <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              onClick={() => messageListRef.current?.scrollToBottom()}
+              className="absolute bottom-28 right-1/2 translate-x-1/2 z-10 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-white/10 px-4 py-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-200 hover:bg-gray-100/90 dark:hover:bg-black/80"
+              aria-label="Scroll to latest message"
+          >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                <path fillRule="evenodd" d="M8 12.25a.75.75 0 0 1-.53-.22l-4.25-4.25a.75.75 0 1 1 1.06-1.06L8 10.44l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-.53.22Z" clipRule="evenodd" />
+              </svg>
+              <span>Scroll to latest</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
       <div className="mt-auto pt-4 px-4 sm:px-6 md:px-8">
         <div className="relative w-full max-w-3xl mx-auto">
           <MessageForm 

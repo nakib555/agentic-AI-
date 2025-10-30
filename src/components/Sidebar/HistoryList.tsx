@@ -78,14 +78,11 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
 
                         return (
                             <div key={groupName}>
-                                <motion.h3 
+                                <h3 
                                     className="px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 overflow-hidden"
-                                    initial={false}
-                                    animate={{ height: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1 }}
-                                    transition={{ duration: 0.2, ease: 'easeInOut' }}
                                 >
                                     {groupName}
-                                </motion.h3>
+                                </h3>
                                 <div className="space-y-0.5">
                                     {chatsInGroup.map((item) => (
                                         <HistoryItem 

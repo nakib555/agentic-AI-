@@ -1,5 +1,3 @@
-
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -13,4 +11,7 @@ export type ChatSession = {
     model: string;
     isLoading?: boolean;
     createdAt: number;
+    systemPrompt?: string;
+    temperature?: number;
+    maxOutputTokens?: number;
 };

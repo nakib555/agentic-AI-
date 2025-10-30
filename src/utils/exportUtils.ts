@@ -10,78 +10,82 @@ const sanitizeFilename = (title: string): string => {
   return title.replace(/[^a-z0-9-_]/gi, '_').substring(0, 50) || 'chat';
 };
 
-export const exportChatToMarkdown = (chat: ChatSession) => {
-  let markdownContent = `# Chat: ${chat.title}\n\n`;
-  markdownContent += `**Model:** ${chat.model}\n`;
-  markdownContent += `**Exported on:** ${new Date().toLocaleString()}\n\n---\n\n`;
+const getChatAsMarkdown = (chat: ChatSession): string => {
+    let markdownContent = `# Chat: ${chat.title}\n\n`;
+    markdownContent += `**Model:** ${chat.model}\n`;
+    markdownContent += `**Exported on:** ${new Date().toLocaleString()}\n\n---\n\n`;
 
-  for (const message of chat.messages) {
-    if (message.isHidden) continue;
+    for (const message of chat.messages) {
+        if (message.isHidden) continue;
 
-    if (message.role === 'user') {
-      markdownContent += `**You:**\n`;
-      if (message.attachments && message.attachments.length > 0) {
-        markdownContent += `*Attached ${message.attachments.length} file(s): ${message.attachments.map(a => a.name).join(', ')}*\n\n`;
-      }
-      markdownContent += `${message.text}\n\n`;
-    } else if (message.role === 'model') {
-      markdownContent += `**AI:**\n`;
-      const { thinkingText, finalAnswerText } = parseMessageText(message.text, false, !!message.error);
+        if (message.role === 'user') {
+            markdownContent += `**You:**\n`;
+            if (message.attachments && message.attachments.length > 0) {
+                markdownContent += `*Attached ${message.attachments.length} file(s): ${message.attachments.map(a => a.name).join(', ')}*\n\n`;
+            }
+            markdownContent += `${message.text}\n\n`;
+        } else if (message.role === 'model') {
+            markdownContent += `**AI:**\n`;
+            const { thinkingText, finalAnswerText } = parseMessageText(message.text, false, !!message.error);
 
-      if (thinkingText) {
-        markdownContent += `<details>\n`;
-        markdownContent += `<summary>View thought process</summary>\n\n`;
-        markdownContent += `\`\`\`\n${thinkingText.trim()}\n\`\`\`\n`;
-        markdownContent += `</details>\n\n`;
-      }
+            if (thinkingText) {
+                markdownContent += `<details>\n`;
+                markdownContent += `<summary>View thought process</summary>\n\n`;
+                markdownContent += `\`\`\`\n${thinkingText.trim()}\n\`\`\`\n`;
+                markdownContent += `</details>\n\n`;
+            }
 
-      let answer = finalAnswerText;
-      // Replace component tags with placeholders
-      answer = answer.replace(/\[IMAGE_COMPONENT\](.*?)\[\/IMAGE_COMPONENT\]/gs, (match, jsonStr) => {
-          try {
-              const data = JSON.parse(jsonStr);
-              return `\n*[Image generated with caption: "${data.caption}"]*\n`;
-          } catch {
-              return '\n*[Image generated]*\n';
-          }
-      });
-      answer = answer.replace(/\[VIDEO_COMPONENT\](.*?)\[\/VIDEO_COMPONENT\]/gs, (match, jsonStr) => {
-          try {
-              const data = JSON.parse(jsonStr);
-              return `\n*[Video generated with prompt: "${data.prompt}"]*\n`;
-          } catch {
-              return '\n*[Video generated]*\n';
-          }
-      });
-      answer = answer.replace(/\[MAP_COMPONENT\](.*?)\[\/MAP_COMPONENT\]/gs, (match, jsonStr) => {
-          try {
-              const data = JSON.parse(jsonStr);
-              return `\n*[Map displayed for location: lat ${data.latitude}, lon ${data.longitude}]*\n`;
-          } catch {
-              return '\n*[Map displayed]*\n';
-          }
-      });
-      answer = answer.replace(/\[FILE_ATTACHMENT_COMPONENT\](.*?)\[\/FILE_ATTACHMENT_COMPONENT\]/gs, (match, jsonStr) => {
-          try {
-              const data = JSON.parse(jsonStr);
-              return `\n*[File attached: ${data.filename}]*\n`;
-          } catch {
-              return '\n*[File attached]*\n';
-          }
-      });
-       answer = answer.replace(/\[MCQ_COMPONENT\](.*?)\[\/MCQ_COMPONENT\]/gs, '\n*[Multiple choice question presented]*\n');
+            let answer = finalAnswerText;
+            // Replace component tags with placeholders
+            answer = answer.replace(/\[IMAGE_COMPONENT\](.*?)\[\/IMAGE_COMPONENT\]/gs, (match, jsonStr) => {
+                try {
+                    const data = JSON.parse(jsonStr);
+                    return `\n*[Image generated with caption: "${data.caption}"]*\n`;
+                } catch {
+                    return '\n*[Image generated]*\n';
+                }
+            });
+            answer = answer.replace(/\[VIDEO_COMPONENT\](.*?)\[\/VIDEO_COMPONENT\]/gs, (match, jsonStr) => {
+                try {
+                    const data = JSON.parse(jsonStr);
+                    return `\n*[Video generated with prompt: "${data.prompt}"]*\n`;
+                } catch {
+                    return '\n*[Video generated]*\n';
+                }
+            });
+            answer = answer.replace(/\[MAP_COMPONENT\](.*?)\[\/MAP_COMPONENT\]/gs, (match, jsonStr) => {
+                try {
+                    const data = JSON.parse(jsonStr);
+                    return `\n*[Map displayed for location: lat ${data.latitude}, lon ${data.longitude}]*\n`;
+                } catch {
+                    return '\n*[Map displayed]*\n';
+                }
+            });
+            answer = answer.replace(/\[FILE_ATTACHMENT_COMPONENT\](.*?)\[\/FILE_ATTACHMENT_COMPONENT\]/gs, (match, jsonStr) => {
+                try {
+                    const data = JSON.parse(jsonStr);
+                    return `\n*[File attached: ${data.filename}]*\n`;
+                } catch {
+                    return '\n*[File attached]*\n';
+                }
+            });
+            answer = answer.replace(/\[MCQ_COMPONENT\](.*?)\[\/MCQ_COMPONENT\]/gs, '\n*[Multiple choice question presented]*\n');
 
 
-      if (answer) {
-        markdownContent += `${answer}\n\n`;
-      }
-      
-      if (message.error) {
-        markdownContent += `**Error:** ${message.error.message}\n\n`;
-      }
+            if (answer) {
+                markdownContent += `${answer}\n\n`;
+            }
+            
+            if (message.error) {
+                markdownContent += `**Error:** ${message.error.message}\n\n`;
+            }
+        }
     }
-  }
+    return markdownContent;
+};
 
+export const exportChatToMarkdown = (chat: ChatSession) => {
+  const markdownContent = getChatAsMarkdown(chat);
   const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -91,6 +95,16 @@ export const exportChatToMarkdown = (chat: ChatSession) => {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+};
+
+export const exportChatToClipboard = (chat: ChatSession) => {
+    const markdownContent = getChatAsMarkdown(chat);
+    navigator.clipboard.writeText(markdownContent).then(() => {
+        alert('Chat content copied to clipboard as Markdown!');
+    }, (err) => {
+        console.error('Failed to copy chat to clipboard: ', err);
+        alert('Could not copy chat to clipboard. See console for details.');
+    });
 };
 
 export const exportChatToJson = (chat: ChatSession) => {

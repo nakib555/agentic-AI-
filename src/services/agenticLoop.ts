@@ -9,6 +9,8 @@ import { type ToolCallEvent, type MessageError, ToolError } from '../../types';
 import { systemInstruction } from '../prompts/system';
 import { toolDeclarations } from '../tools';
 import { getText } from '../utils/geminiUtils';
+import { parseAgenticWorkflow, type ParsedWorkflow } from './workflowParser';
+
 
 type ChatHistory = {
     role: 'user' | 'model';
@@ -27,6 +29,7 @@ type AgenticLoopCallbacks = {
     onTextChunk: (fullText: string) => void;
     onNewToolCalls: (toolCalls: FunctionCall[]) => Promise<ToolCallEvent[]>;
     onToolResult: (eventId: string, result: string) => void;
+    onPlanReady: (plan: ParsedWorkflow) => Promise<boolean>;
     onComplete: (finalText: string) => void;
     onCancel: () => void;
     onError: (error: MessageError) => void;
@@ -62,6 +65,7 @@ export const runAgenticLoop = async ({
     let currentHistory = [...history];
     let fullModelResponseText = '';
     let hasCompleted = false;
+    let planApproved = false;
 
     const executeTurn = async () => {
         if (signal.aborted || hasCompleted) {
@@ -149,6 +153,24 @@ ${settings.memoryContent}
                     currentTurnText += chunkText;
                     fullModelResponseText += chunkText;
                     callbacks.onTextChunk(fullModelResponseText);
+
+                    // --- Interactive Planning Check ---
+                    if (!planApproved && currentTurnText.includes('[STEP] Handoff: Planner -> Executor')) {
+                        const plan = parseAgenticWorkflow(currentTurnText, [], false);
+                        const userApproved = await callbacks.onPlanReady(plan);
+                        if (userApproved) {
+                            planApproved = true;
+                        } else {
+                            // User denied the plan, so we abort.
+                            callbacks.onError({
+                                code: 'USER_DENIED_EXECUTION',
+                                message: 'Execution was cancelled by the user.',
+                                details: 'User did not approve the generated plan.',
+                            });
+                            hasCompleted = true;
+                            return; // Exit the loop
+                        }
+                    }
                 }
                 
                 if (chunk.functionCalls) {

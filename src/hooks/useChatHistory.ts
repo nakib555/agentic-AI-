@@ -98,6 +98,25 @@ export const useChatHistory = () => {
     setCurrentChatId(null);
   }, []);
 
+  const importChat = useCallback((importedChat: ChatSession) => {
+    // Validate the imported chat object
+    if (!importedChat || typeof importedChat.title !== 'string' || !Array.isArray(importedChat.messages)) {
+        console.error("Invalid chat file format.");
+        alert("The selected file is not a valid chat export.");
+        return;
+    }
+
+    const newChat: ChatSession = {
+        ...importedChat,
+        id: generateId(), // Always generate a new ID
+        createdAt: Date.now(), // Always set a new creation date
+        isLoading: false, // Ensure it's not in a loading state
+    };
+
+    setChatHistory(prev => [newChat, ...prev]);
+    setCurrentChatId(newChat.id); // Automatically load the imported chat
+  }, []);
+
   const createNewChat = useCallback((initialModel: string, settings: ChatSettings): string => {
     const newChatId = generateId();
     const newChat: ChatSession = {
@@ -201,5 +220,6 @@ export const useChatHistory = () => {
     updateChatTitle,
     updateChatModel,
     updateChatSettings,
+    importChat,
   };
 };

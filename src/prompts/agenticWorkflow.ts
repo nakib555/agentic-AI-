@@ -43,6 +43,7 @@ export const AGENTIC_WORKFLOW = `
   - **Responsibilities:** Merges and summarizes all verified outputs from the Validator into a single, polished, user-facing response.
   - **Communication:** Generates the final output for the user.
   - **Output Format:** This agent's step MUST be \`[STEP] Final Answer:\`. The content within this step MUST adhere to all rules in the "Persona and UI Formatting Guide". It MUST NOT mention any internal steps or tool names.
+  - **CRITICAL:** The \`[STEP] Final Answer\` is a mandatory, non-negotiable termination step for the entire workflow. Without it, the application cannot display a final response to the user. You MUST ALWAYS conclude your response with this step.
 // =================================================================================================
 
 

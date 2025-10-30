@@ -10,9 +10,10 @@ import { WorkflowNode } from './WorkflowNode';
 import { parseAgenticWorkflow } from '../../services/workflowParser';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
-import { ActiveIcon, CompletedIcon, FailedIcon, GoalAnalysisIcon, TodoListIcon, ToolsIcon } from './icons';
+import { ActiveIcon, CompletedIcon, FailedIcon, GoalAnalysisIcon, PlannerIcon, TodoListIcon, ToolsIcon } from './icons';
 import { TypingWrapper } from './TypingWrapper';
 import { WorkflowConnector } from './WorkflowConnector';
+import { getAgentColor } from '../../utils/agentUtils';
 
 type ThinkingWorkflowProps = {
   text: string;
@@ -52,6 +53,7 @@ const PlanSection: React.FC<{ icon: React.ReactNode; title: string; content: str
 export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isLiveGeneration, error, sendMessage }: ThinkingWorkflowProps) => {
     const executionLogRef = useRef<HTMLDivElement>(null);
     const lastExecutionLogLength = useRef(0);
+    const plannerColor = getAgentColor('Planner');
 
     const { goalAnalysis, todoList, tools, executionLog } = useMemo(
         () => parseAgenticWorkflow(text, toolCallEvents, isThinkingComplete, error),
@@ -96,9 +98,12 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isL
                             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
                             className="p-4 bg-white dark:bg-black/20 rounded-lg border border-gray-200 dark:border-white/10 space-y-4"
                         >
-                            <div className="flex items-center gap-2">
-                                <TodoListIcon />
+                            <div className="flex items-center gap-3">
+                                <PlannerIcon />
                                 <h2 className="font-semibold text-gray-800 dark:text-slate-200">The Plan</h2>
+                                <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${plannerColor.bg} ${plannerColor.text}`}>
+                                    Planner
+                                </span>
                             </div>
                             <PlanSection icon={<GoalAnalysisIcon />} title="Goal Analysis" content={goalAnalysis} isLive={isLiveGeneration} />
                             <PlanSection icon={<TodoListIcon />} title="Todo-list" content={todoList} isLive={isLiveGeneration} />
@@ -138,8 +143,8 @@ export const ThinkingWorkflow = ({ text, toolCallEvents, isThinkingComplete, isL
                                         <motion.li
                                             key={node.id}
                                             layout
-                                            initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.25, 1, 0.5, 1], delay: index * 0.05 } }}
+                                            initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: 'easeOut', delay: index * 0.08 } }}
                                             exit={{ opacity: 0, transition: { duration: 0.2 } }}
                                             className="flex items-start gap-3 w-full"
                                         >

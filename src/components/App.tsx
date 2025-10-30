@@ -19,7 +19,7 @@ import { ChatArea } from './Chat/ChatArea';
 import { SettingsModal } from './Settings/SettingsModal';
 import { MemoryModal } from './Settings/MemoryModal';
 import { MemoryConfirmationModal } from './Settings/MemoryConfirmationModal';
-import { exportChatToMarkdown, exportChatToJson, exportChatToPdf } from '../utils/exportUtils';
+import { exportChatToMarkdown, exportChatToJson, exportChatToPdf, exportChatToClipboard } from '../utils/exportUtils';
 import { ThinkingSidebar } from './Sidebar/ThinkingSidebar';
 
 
@@ -88,6 +88,9 @@ export const App = () => {
     updateChatSettings,
     updateChatTitle,
     toggleMessagePin,
+    approveExecution,
+    denyExecution,
+    importChat,
   } = useChat(uiSelectedModel, { systemPrompt, temperature, maxOutputTokens: maxTokens }, memoryContent);
   
   const prevChatHistoryRef = useRef<ChatSession[]>([]);
@@ -193,26 +196,52 @@ export const App = () => {
   };
 
   const handleExportChat = (format: 'md' | 'json' | 'pdf') => {
-    if (!currentChatId) {
-        alert("Please select a chat to export.");
-        return;
-    }
+    if (!currentChatId) return;
     const currentChat = chatHistory.find(c => c.id === currentChatId);
     if (currentChat) {
         switch (format) {
-            case 'md':
-                exportChatToMarkdown(currentChat);
-                break;
-            case 'json':
-                exportChatToJson(currentChat);
-                break;
-            case 'pdf':
-                exportChatToPdf(currentChat);
-                break;
+            case 'md': exportChatToMarkdown(currentChat); break;
+            case 'json': exportChatToJson(currentChat); break;
+            case 'pdf': exportChatToPdf(currentChat); break;
         }
-    } else {
-        alert("Could not find the current chat session to export.");
     }
+  };
+
+  const handleShareChat = (chatId?: string) => {
+    const idToShare = chatId || currentChatId;
+    if (!idToShare) return;
+    const chatToShare = chatHistory.find(c => c.id === idToShare);
+    if (chatToShare) {
+        exportChatToClipboard(chatToShare);
+    }
+  };
+
+  const handleImportChat = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const json = event.target?.result as string;
+                const importedSession = JSON.parse(json) as ChatSession;
+                importChat(importedSession);
+            } catch (error) {
+                console.error("Failed to import and parse chat file:", error);
+                alert("Failed to read the chat file. It may be corrupted or in an invalid format.");
+            }
+        };
+        reader.onerror = () => {
+            console.error("Error reading file:", reader.error);
+            alert("An error occurred while reading the file.");
+        };
+        reader.readAsText(file);
+    };
+    input.click();
   };
 
   const handleShowThinkingProcess = (messageId: string) => {
@@ -233,6 +262,7 @@ export const App = () => {
 
   // The model displayed should be the current chat's model, or the selected one for a new chat.
   const activeModel = chatHistory.find(c => c.id === currentChatId)?.model || uiSelectedModel;
+  const isChatActive = !!currentChatId;
 
   return (
     <div className="flex h-full bg-transparent">
@@ -253,7 +283,6 @@ export const App = () => {
         theme={theme}
         setTheme={setTheme}
         onSettingsClick={() => setIsSettingsOpen(true)}
-        onExportChat={handleExportChat}
       />
 
       <main className="flex-1 flex flex-col overflow-hidden chat-background">
@@ -262,6 +291,10 @@ export const App = () => {
               setIsSidebarOpen={setIsSidebarOpen}
               isSidebarCollapsed={isSidebarCollapsed}
               setIsSidebarCollapsed={handleSetSidebarCollapsed}
+              onImportChat={handleImportChat}
+              onExportChat={handleExportChat}
+              onShareChat={() => handleShareChat()}
+              isChatActive={isChatActive}
            />
            <ChatArea 
               messages={messages}
@@ -274,6 +307,8 @@ export const App = () => {
               currentChatId={currentChatId}
               onTogglePin={toggleMessagePin}
               onShowThinkingProcess={handleShowThinkingProcess}
+              approveExecution={approveExecution}
+              denyExecution={denyExecution}
            />
         </div>
       </main>

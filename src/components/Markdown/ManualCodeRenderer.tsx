@@ -16,9 +16,11 @@ type ManualCodeRendererProps = {
   text: string;
   components: Components;
   isStreaming: boolean;
+  onRunCode?: (language: string, code: string) => void;
+  isRunDisabled?: boolean;
 };
 
-export const ManualCodeRenderer: React.FC<ManualCodeRendererProps> = ({ text, components, isStreaming }) => {
+export const ManualCodeRenderer: React.FC<ManualCodeRendererProps> = ({ text, components, isStreaming, onRunCode, isRunDisabled }) => {
   // Split the text by the code block delimiter to handle streaming correctly.
   const parts = text.split('```');
 
@@ -68,7 +70,13 @@ export const ManualCodeRenderer: React.FC<ManualCodeRendererProps> = ({ text, co
         }
         
         // Animate only the last code block when streaming
-        return <CodeBlock key={index} language={language} isStreaming={isStreaming && index === parts.length - 1}>{code}</CodeBlock>;
+        return <CodeBlock 
+            key={index} 
+            language={language} 
+            isStreaming={isStreaming && index === parts.length - 1}
+            onRunCode={onRunCode}
+            isDisabled={isRunDisabled}
+        >{code}</CodeBlock>;
       })}
     </>
   );

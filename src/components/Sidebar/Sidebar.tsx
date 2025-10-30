@@ -30,7 +30,6 @@ type SidebarProps = {
     theme: Theme;
     setTheme: (theme: Theme) => void;
     onSettingsClick: () => void;
-    onExportChat: (format: 'md' | 'json' | 'pdf') => void;
 };
 
 const mobileVariants = {
@@ -41,7 +40,7 @@ const mobileVariants = {
 export const Sidebar = ({ 
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
     history, currentChatId, onNewChat, onLoadChat, onDeleteChat, onClearAllChats, 
-    onUpdateChatTitle, theme, setTheme, onSettingsClick, onExportChat
+    onUpdateChatTitle, theme, setTheme, onSettingsClick
 }: SidebarProps) => {
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
     const [isResizing, setIsResizing] = useState(false);
@@ -123,15 +122,29 @@ export const Sidebar = ({
                     />
     
                     <div className="flex-1 flex flex-col min-h-0 mt-4">
-                        <HistoryList 
-                            history={history}
-                            currentChatId={currentChatId}
-                            searchQuery={searchQuery}
-                            isCollapsed={isCollapsed}
-                            onLoadChat={handleLoadChat}
-                            onDeleteChat={onDeleteChat}
-                            onUpdateChatTitle={onUpdateChatTitle}
-                        />
+                        <AnimatePresence initial={false}>
+                            {!isCollapsed && (
+                                <motion.div
+                                    key="history-list-wrapper"
+                                    className="flex-1 flex flex-col min-h-0"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                    style={{ overflow: 'hidden' }}
+                                >
+                                    <HistoryList 
+                                        history={history}
+                                        currentChatId={currentChatId}
+                                        searchQuery={searchQuery}
+                                        isCollapsed={isCollapsed}
+                                        onLoadChat={handleLoadChat}
+                                        onDeleteChat={onDeleteChat}
+                                        onUpdateChatTitle={onUpdateChatTitle}
+                                    />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                     
                     <SidebarFooter 
@@ -140,8 +153,6 @@ export const Sidebar = ({
                         isCollapsed={isCollapsed}
                         onClearAllChats={onClearAllChats}
                         onSettingsClick={onSettingsClick}
-                        onExportChat={onExportChat}
-                        isChatActive={!!currentChatId}
                     />
                 </div>
     
