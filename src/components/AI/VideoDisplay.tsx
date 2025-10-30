@@ -183,7 +183,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, pr
     }, []);
 
     const progressStyle = {
-        background: `linear-gradient(to right, #14b8a6 ${progress}%, #475569 ${progress}%)`,
+        background: `linear-gradient(to right, #3b82f6 ${progress}%, #475569 ${progress}%)`,
     };
 
     const volumeStyle = {
@@ -298,7 +298,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, pr
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button onClick={toggleLoop} className={`p-1.5 rounded-full hover:bg-white/20 transition-colors ${isLooping ? 'text-teal-400' : ''}`}>
+                                <button onClick={toggleLoop} className={`p-1.5 rounded-full hover:bg-white/20 transition-colors ${isLooping ? 'text-blue-400' : ''}`}>
                                     <LoopIcon />
                                 </button>
                                 <button onClick={toggleFullScreen} className="p-1.5 rounded-full hover:bg-white/20 transition-colors">

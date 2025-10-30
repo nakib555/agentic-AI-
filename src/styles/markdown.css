@@ -9,7 +9,7 @@
 /* Bubble style for AI-generated HTML */
 .bubble {
   display: inline-block;
-  background: #14b8a6; /* teal-500 */
+  background: #2563eb; /* blue-600 */
   color: #ffffff;
   border-radius: 18px;
   padding: 10px 16px;
@@ -20,7 +20,7 @@
   word-break: break-word;
 }
 .dark .bubble {
-  background: #0f766e; /* teal-700 */
+  background: #1d4ed8; /* blue-700 */
 }
 
 /* Custom Blockquote styles */

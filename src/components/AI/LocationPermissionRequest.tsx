@@ -85,7 +85,7 @@ export const LocationPermissionRequest: React.FC<{
       <div className="flex gap-2">
         <button 
             onClick={handleAllow} 
-            className="px-3 py-1 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-md transition-colors text-xs"
+            className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-md transition-colors text-xs"
         >
             Allow
         </button>

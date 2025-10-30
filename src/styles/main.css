@@ -76,8 +76,8 @@ body {
 .dark {
   --card-bg: #1e1e1e;
   --card-text: #e2e8f0;
-  --gradient-start: #14b8a6; /* teal-500 */
-  --gradient-end: #0f766e; /* teal-700 */
+  --gradient-start: #3b82f6; /* blue-500 */
+  --gradient-end: #1d4ed8; /* blue-700 */
   --border-color: #333;
   --svg-fill: currentColor;
 }

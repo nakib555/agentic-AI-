@@ -117,7 +117,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
             <button 
                 onClick={isEditing ? undefined : onClick} 
                 disabled={isEditing}
-                className={`w-full text-sm p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-teal-100 text-teal-800 font-semibold dark:bg-teal-500/20 dark:text-teal-200' : 'text-slate-600 hover:bg-black/5 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-slate-100'} ${isCollapsed ? 'justify-center' : ''} ${!isCollapsed ? 'pr-8' : ''}`}
+                className={`w-full text-sm p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-blue-100 text-blue-800 font-semibold dark:bg-blue-500/20 dark:text-blue-300' : 'text-slate-600 hover:bg-black/5 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-slate-100'} ${isCollapsed ? 'justify-center' : ''} ${!isCollapsed ? 'pr-8' : ''}`}
             >
                 <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
                     {isLoading ? (
@@ -135,7 +135,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
                         onKeyDown={handleKeyDown}
                         onBlur={handleSave}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex-1 w-full bg-gray-200/50 dark:bg-black/30 focus:outline-none text-sm font-semibold ring-1 ring-teal-500 rounded-sm px-1 -mx-1"
+                        className="flex-1 w-full bg-gray-200/50 dark:bg-black/30 focus:outline-none text-sm font-semibold ring-1 ring-blue-500 rounded-sm px-1 -mx-1"
                     />
                 ) : (
                     <motion.span 
