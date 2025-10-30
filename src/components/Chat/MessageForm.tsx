@@ -80,6 +80,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
   const [proactiveSuggestions, setProactiveSuggestions] = useState<string[]>([]);
   const inputRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const { isRecording, startRecording, stopRecording, isSupported } = useVoiceInput({
     onTranscriptUpdate: setInputValue,
@@ -220,6 +221,11 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
         const MAX_HEIGHT_PX = 192;
         element.style.height = 'auto';
         const scrollHeight = element.scrollHeight;
+
+        // A simple heuristic for a single line of text.
+        const SINGLE_LINE_THRESHOLD = 32; 
+        setIsExpanded(scrollHeight > SINGLE_LINE_THRESHOLD || processedFiles.length > 0);
+
         if (scrollHeight > MAX_HEIGHT_PX) {
             element.style.height = `${MAX_HEIGHT_PX}px`;
             element.style.overflowY = 'auto';
@@ -227,8 +233,10 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
             element.style.height = `${scrollHeight}px`;
             element.style.overflowY = 'hidden';
         }
+    } else {
+        setIsExpanded(processedFiles.length > 0);
     }
-  }, [inputValue]);
+  }, [inputValue, processedFiles.length]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -332,9 +340,11 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
     sendButtonStateClasses = 'bg-gray-600 dark:bg-[#202123] text-gray-400 dark:text-slate-500';
   }
 
+  const formShapeClass = isExpanded ? 'rounded-2xl' : 'rounded-full';
+
   return (
     <form 
-        className="bg-gray-200/50 dark:bg-[#202123] border border-gray-300 dark:border-white/10 rounded-full flex flex-col p-2" 
+        className={`bg-gray-200/50 dark:bg-[#202123] border border-gray-300 dark:border-white/10 flex flex-col p-2 transition-all duration-200 ease-in-out ${formShapeClass}`} 
         onSubmit={handleSubmit}
     >
         <AnimatePresence>
@@ -354,7 +364,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="p-2 grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-2 overflow-y-auto max-h-64"
+              className="mb-2 flex flex-col gap-2"
             >
               {processedFiles.map((pf) => (
                 <motion.div key={pf.id} layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
