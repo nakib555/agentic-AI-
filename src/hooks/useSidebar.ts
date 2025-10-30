@@ -15,7 +15,7 @@ export const useSidebar = () => {
   
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const savedWidth = localStorage.getItem('sidebarWidth');
-    return savedWidth ? Math.max(240, Math.min(500, Number(savedWidth))) : 288;
+    return savedWidth ? Math.max(220, Math.min(480, Number(savedWidth))) : 272;
   });
 
   const handleSetSidebarCollapsed = (collapsed: boolean) => {
@@ -24,7 +24,7 @@ export const useSidebar = () => {
   };
 
   const handleSetSidebarWidth = useCallback((width: number) => {
-    const newWidth = Math.max(240, Math.min(500, width));
+    const newWidth = Math.max(220, Math.min(480, width));
     setSidebarWidth(newWidth);
     localStorage.setItem('sidebarWidth', String(newWidth));
   }, []);

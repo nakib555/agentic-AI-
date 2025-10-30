@@ -18,13 +18,13 @@ type ChatHeaderProps = {
 };
 
 const ToggleIcon = () => (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
         <path d="M1,5 C1,4.44771525 1.44266033,4 1.99895656,4 L3.00104344,4 C3.55275191,4 4,4.44386482 4,5 C4,5.55228475 3.55733967,6 3.00104344,6 L1.99895656,6 C1.44724809,6 1,5.55613518 1,5 Z M12,5 C12,4.44771525 12.444837,4 12.9955775,4 L22.0044225,4 C22.5542648,4 23,4.44386482 23,5 C23,5.55228475 22.555163,6 22.0044225,6 L12.9955775,6 C12.4457352,6 12,5.55613518 12,5 Z M8,6 C7.44771525,6 7,5.55228475 7,5 C7,4.44771525 7.44771525,4 8,4 C8.55228475,4 9,4.44771525 9,5 C9,5.55228475 8.55228475,6 8,6 Z M8,8 C6.34314575,8 5,6.65685425 5,5 C5,3.34314575 6.34314575,2 8,2 C9.65685425,2 11,3.34314575 11,5 C11,6.65685425 9.65685425,8 8,8 Z M1,19 C1,18.4477153 1.44266033,18 1.99895656,18 L3.00104344,18 C3.55275191,18 4,18.4438648 4,19 C4,19.5522847 3.55733967,20 3.00104344,20 L1.99895656,20 C1.44724809,20 1,19.5561352 1,19 Z M12,19 C12,18.4477153 12.444837,18 12.9955775,18 L22.0044225,18 C22.5542648,18 23,18.4438648 23,19 C23,19.5522847 22.555163,20 22.0044225,20 L12.9955775,20 C12.4457352,20 12,19.5561352 12,19 Z M8,20 C7.44771525,20 7,19.5522847 7,19 C7,18.4477153 7.44771525,18 8,18 C8.55228475,18 9,18.4477153 9,19 C9,19.5522847 8.55228475,20 8,20 Z M8,22 C6.34314575,22 5,20.6568542 5,19 C5,17.3431458 6.34314575,16 8,16 C9.65685425,16 11,17.3431458 11,19 C11,20.6568542 9.65685425,22 8,22 Z M1,12 C1,11.4477153 1.4556644,11 1.99539757,11 L10.0046024,11 C10.5543453,11 11,11.4438648 11,12 C11,12.5522847 10.5443356,13 10.0046024,13 L1.99539757,13 C1.44565467,13 1,12.5561352 1,12 Z M19,12 C19,11.4477153 19.4433532,11 20.0093689,11 L21.9906311,11 C22.5480902,11 23,11.4438648 23,12 C23,12.5522847 22.5566468,13 21.9906311,13 L20.0093689,13 C19.4519098,13 19,12.5561352 19,12 Z M15,13 C14.4477153,13 14,12.5522847 14,12 C14,11.4477153 14.4477153,11 15,11 C15.5522847,11 16,11.4477153 16,12 C16,12.5522847 15.5522847,13 15,13 Z M15,15 C13.3431458,15 12,13.6568542 12,12 C12,10.3431458 13.3431458,9 15,9 C16.6568542,9 18,10.3431458 18,12 C18,13.6568542 16.6568542,15 15,15 Z" />
     </svg>
 );
 
 const MoreOptionsIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 682.667 682.667" xmlSpace="preserve" className="w-5 h-5">
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 682.667 682.667" xmlSpace="preserve" className="w-4 h-4">
         <g>
             <defs>
                 <clipPath id="b" clipPathUnits="userSpaceOnUse">
@@ -53,7 +53,7 @@ const MenuItem: React.FC<{ onClick: () => void; disabled: boolean; children: Rea
         <button 
             onClick={onClick}
             disabled={disabled}
-            className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full text-left flex items-center gap-2 px-3 py-1.5 text-sm rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
             {children}
         </button>
@@ -79,14 +79,14 @@ export const ChatHeader = ({ setIsSidebarOpen, isSidebarCollapsed, setIsSidebarC
     }, []);
 
     return (
-        <header className="py-4 px-4 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 z-10 bg-gray-50/80 dark:bg-[#121212]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10">
+        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 z-10 bg-gray-50/80 dark:bg-[#121212]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10">
         
         {/* --- UNIFIED SIDEBAR TOGGLE --- */}
         
         {/* Mobile Button: Opens the sidebar */}
         <button
             onClick={() => setIsSidebarOpen(true)}
-            className="md:hidden p-2 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+            className="md:hidden p-1.5 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
             aria-label="Open sidebar"
             title="Open sidebar"
         >
@@ -96,7 +96,7 @@ export const ChatHeader = ({ setIsSidebarOpen, isSidebarCollapsed, setIsSidebarC
         {/* Desktop Button: Collapses/expands the sidebar */}
         <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden md:block p-2 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+            className="hidden md:block p-1.5 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
             aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -110,7 +110,7 @@ export const ChatHeader = ({ setIsSidebarOpen, isSidebarCollapsed, setIsSidebarC
             <button
                 ref={buttonRef}
                 onClick={() => setIsMenuOpen(prev => !prev)}
-                className="p-2 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white rounded-full hover:bg-gray-200/50 dark:hover:bg-black/20"
+                className="p-1.5 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white rounded-full hover:bg-gray-200/50 dark:hover:bg-black/20"
                 aria-label="More chat options"
                 title="More chat options"
                 aria-haspopup="true"
@@ -126,7 +126,7 @@ export const ChatHeader = ({ setIsSidebarOpen, isSidebarCollapsed, setIsSidebarC
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -5, scale: 0.95 }}
                         transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="absolute right-0 top-full mt-2 w-56 bg-white/80 dark:bg-[#2D2D2D]/80 backdrop-blur-lg rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
+                        className="absolute right-0 top-full mt-2 w-52 bg-white/80 dark:bg-[#2D2D2D]/80 backdrop-blur-lg rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
                     >
                         <ul className="text-sm">
                             <MenuItem onClick={onImportChat} disabled={false}>

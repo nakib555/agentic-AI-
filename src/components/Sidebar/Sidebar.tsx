@@ -93,7 +93,7 @@ export const Sidebar = ({
 
     const desktopVariants = {
         open: { width, translateX: '0%' },
-        collapsed: { width: 80, translateX: '0%' },
+        collapsed: { width: 72, translateX: '0%' },
     };
     
     const variants = isDesktop ? desktopVariants : mobileVariants;
@@ -106,7 +106,7 @@ export const Sidebar = ({
                 animate={animateState}
                 variants={variants}
                 transition={{ type: 'tween', duration: 0.4, ease: 'easeInOut' }}
-                className="bg-gray-100/80 dark:bg-black/20 backdrop-blur-xl border-r border-gray-200 dark:border-white/10 p-4 flex-col flex fixed inset-y-0 left-0 z-20 w-80 max-w-[80vw] md:relative md:translate-x-0 md:shrink-0 group"
+                className="bg-gray-100/80 dark:bg-black/20 backdrop-blur-xl border-r border-gray-200 dark:border-white/10 p-3 flex-col flex fixed inset-y-0 left-0 z-20 w-80 max-w-[80vw] md:relative md:translate-x-0 md:shrink-0 group"
             >
                 <div id="sidebar-content" className="flex flex-col h-full overflow-hidden">
                     <SidebarHeader 

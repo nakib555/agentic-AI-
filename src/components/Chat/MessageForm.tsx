@@ -275,7 +275,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
   const hasInput = inputValue.trim().length > 0 || attachedFiles.length > 0;
   const hasText = inputValue.trim().length > 0;
 
-  const sendButtonClasses = "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 ease-in-out";
+  const sendButtonClasses = "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-200 ease-in-out";
   let sendButtonStateClasses = '';
 
   if (hasInput && !isLoading && !isEnhancing) {
@@ -338,7 +338,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
                 aria-label="Attach file"
                 title="Attach file"
                 disabled={isLoading || isEnhancing}
-                className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:bg-gray-300/50 dark:hover:bg-black/20 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:bg-gray-300/50 dark:hover:bg-black/20 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
                 <svg viewBox="0 0 50 50" fill="currentColor" className="w-5 h-5">
                     <circle cx="25" cy="25" r="23" fill="none" stroke="currentColor" strokeWidth="1.5" />
@@ -374,7 +374,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
                     disabled={isLoading || isEnhancing}
                     aria-label={isRecording ? 'Stop recording' : 'Start recording'}
                     title={isRecording ? 'Stop recording' : 'Start recording'}
-                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:bg-gray-300/50 dark:hover:bg-black/20 disabled:cursor-not-allowed disabled:opacity-50 transition-all ${isRecording ? 'bg-red-500/20 !text-red-500' : ''}`}
+                    className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:bg-gray-300/50 dark:hover:bg-black/20 disabled:cursor-not-allowed disabled:opacity-50 transition-all ${isRecording ? 'bg-red-500/20 !text-red-500' : ''}`}
                 >
                     {isRecording ? (
                         <motion.div initial={{ scale: 1 }} animate={{ scale: 1.1 }} transition={{ duration: 0.4, repeat: Infinity, repeatType: 'reverse' }}>
@@ -398,7 +398,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
                   disabled={isLoading || isEnhancing}
                   aria-label="Enhance prompt"
                   title="Enhance prompt"
-                  className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:bg-gray-300/50 dark:hover:bg-black/20 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
+                  className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:bg-gray-300/50 dark:hover:bg-black/20 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
                 >
                   {isEnhancing ? (
                     <motion.div
@@ -426,7 +426,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>(({ on
                 disabled={isLoading || isEnhancing || attachedFiles.length > 0}
                 aria-label={isThinkingModeEnabled ? 'Disable thinking mode' : 'Enable thinking mode (text only)'}
                 title={isThinkingModeEnabled ? 'Disable thinking mode for complex reasoning' : 'Enable thinking mode for complex reasoning (text only)'}
-                className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:cursor-not-allowed disabled:opacity-50 ${isThinkingModeEnabled ? 'bg-purple-400/20 !text-purple-400' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-300/50 dark:hover:bg-black/20'}`}
+                className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:cursor-not-allowed disabled:opacity-50 ${isThinkingModeEnabled ? 'bg-purple-400/20 !text-purple-400' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-300/50 dark:hover:bg-black/20'}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M7.75 2.75a.75.75 0 0 0-1.5 0v1.258a5.523 5.523 0 0 0-1.503 1.334c-.792.792-1.247 1.87-1.247 2.985v.253a.75.75 0 0 0 1.5 0v-.253c0-.8.316-1.55.879-2.113a4.023 4.023 0 0 1 2.113-.879H7.75V2.75Z" /><path d="M12.25 2.75a.75.75 0 0 1 1.5 0v1.258a5.523 5.523 0 0 1 1.503 1.334c.792.792-1.247 1.87-1.247 2.985v.253a.75.75 0 0 1-1.5 0v-.253c0-.8-.316-1.55-.879-2.113a4.023 4.023 0 0 0-2.113-.879H12.25V2.75Z" /><path fillRule="evenodd" d="M17 10c0-2.036-1.289-3.796-3.085-4.482A5.526 5.526 0 0 0 10 3.5a5.526 5.526 0 0 0-3.915 1.018C4.289 6.204 3 7.964 3 10c0 2.036 1.289 3.796 3.085 4.482A5.526 5.526 0 0 0 10 16.5a5.526 5.526 0 0 0 3.915-1.018C15.711 13.796 17 12.036 17 10ZM10 5a4.026 4.026 0 0 1 2.848.742A4.49 4.49 0 0 1 15.5 10a4.49 4.49 0 0 1-2.652 4.258A4.026 4.026 0 0 1 10 15a4.026 4.026 0 0 1-2.848-.742A4.49 4.49 0 0 1 4.5 10a4.49 4.49 0 0 1 2.652-4.258A4.026 4.026 0 0 1 10 5Z" clipRule="evenodd" /><path d="M7.75 12.25a.75.75 0 0 0-1.5 0v.253c0 1.114.455 2.193 1.247 2.985a5.523 5.523 0 0 0 1.503 1.334V18a.75.75 0 0 0 1.5 0v-1.178a4.023 4.023 0 0 1-2.113-.879.75.75 0 0 1-.879-2.113V12.25Z" /><path d="M12.25 12.25a.75.75 0 0 1 1.5 0v.253c0 1.114-.455 2.193-1.247 2.985a5.523 5.523 0 0 1-1.503 1.334V18a.75.75 0 0 1-1.5 0v-1.178a4.023 4.023 0 0 0 2.113-.879c.563-.564.879-1.314.879-2.113V12.25Z" /></svg>
             </button>

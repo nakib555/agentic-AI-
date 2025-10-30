@@ -1,5 +1,9 @@
 /* --- Modern, Theme-Aware Scrollbar --- */
 
+html {
+  font-size: 15px;
+}
+
 /* For Webkit-based browsers (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
   width: 8px;

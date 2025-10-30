@@ -130,9 +130,9 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
                   style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
                   customStyle={{
                     margin: 0,
-                    padding: '1rem',
+                    padding: '0.9rem',
                     backgroundColor: 'transparent',
-                    fontSize: '13px',
+                    fontSize: '0.85rem',
                     lineHeight: '1.5',
                     fontFamily: "'Fira Code', monospace",
                   }}
