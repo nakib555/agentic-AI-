@@ -193,24 +193,48 @@ ${settings.memoryContent}
                 currentHistory.push({ role: 'model', parts: modelTurnParts });
                 
                 const toolCallEvents = await callbacks.onNewToolCalls(functionCallsToProcess);
-                const functionResponses = await Promise.all(toolCallEvents.map(async (event) => {
+                
+                const functionResponseParts: Part[] = [];
+                const visualParts: Part[] = [];
+
+                await Promise.all(toolCallEvents.map(async (event) => {
                     if (signal.aborted) throw new Error('Aborted');
                     const { call } = event;
                     try {
                         const result = await toolExecutor(call.name, call.args);
                         callbacks.onToolResult(event.id, result);
-                        return { functionResponse: { name: call.name, response: { result } } };
+
+                        // SPECIAL HANDLING: If the tool is the screenshot tool, its result is a base64 image
+                        // that needs to be treated as a visual input part, not a standard functionResponse.
+                        if (call.name === 'captureCodeOutputScreenshot') {
+                            visualParts.push({
+                                inlineData: { mimeType: 'image/png', data: result }
+                            });
+                            // Also add a text part to confirm to the model that the action was successful.
+                            functionResponseParts.push({
+                                functionResponse: { name: call.name, response: { result: "Screenshot captured successfully and is now visible." } }
+                            });
+                        } else {
+                            functionResponseParts.push({
+                                functionResponse: { name: call.name, response: { result } }
+                            });
+                        }
+
                     } catch (error) {
                         const errorResult = error instanceof ToolError
                             ? `Tool execution failed. Code: ${error.code}. Reason: ${error.originalMessage}`
                             : `An unknown error occurred. Reason: ${error instanceof Error ? error.message : String(error)}`;
                         callbacks.onToolResult(event.id, errorResult);
-                        return { functionResponse: { name: call.name, response: { result: errorResult } } };
+                        functionResponseParts.push({
+                            functionResponse: { name: call.name, response: { result: errorResult } }
+                        });
                     }
                 }));
                 
                 if (signal.aborted) return;
-                currentHistory.push({ role: 'user', parts: functionResponses });
+
+                // Add all tool results (both standard and visual) to the history for the next turn.
+                currentHistory.push({ role: 'user', parts: [...functionResponseParts, ...visualParts] });
                 await executeTurn(); // Recursive call
 
             } else if (currentTurnText.trim().endsWith('[AUTO_CONTINUE]') || shouldAutoContinue) {

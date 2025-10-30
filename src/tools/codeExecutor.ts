@@ -7,6 +7,8 @@ import { FunctionDeclaration, Type } from "@google/genai";
 import { ToolError } from '../../types';
 import { fileStore } from '../services/fileStore';
 
+const generateId = () => Math.random().toString(36).substring(2, 9);
+
 export const codeExecutorDeclaration: FunctionDeclaration = {
   name: 'executeCode',
   description: 'Executes code in a secure sandboxed environment. Supports Python, JavaScript, and other languages. For Python, it can install packages from PyPI and perform network requests. For JavaScript, it can import libraries from CDNs and perform network requests. For other languages, it uses a more restricted environment without networking or package installation.',
@@ -74,24 +76,40 @@ const mimeTypeMap: Record<string, string> = {
 
 async function executePythonWithPyodide(code: string, packages: string[] = []): Promise<string> {
   const py = await getPyodide();
-  let capturedOutput = '';
-  py.setStdout({ batched: (str: string) => capturedOutput += str + '\n' });
-  py.setStderr({ batched: (str: string) => capturedOutput += `[STDERR] ${str}\n` });
+  let capturedStdout = '';
+  let finalResult: any;
+  py.setStdout({ batched: (str: string) => capturedStdout += str + '\n' });
+  py.setStderr({ batched: (str: string) => capturedStdout += `[STDERR] ${str}\n` });
 
   try {
     if (packages && packages.length > 0) {
       await py.loadPackage('micropip');
       const micropip = py.pyimport('micropip');
-      capturedOutput += `Installing packages: ${packages.join(', ')}...\n`;
+      capturedStdout += `Installing packages: ${packages.join(', ')}...\n`;
       await micropip.install(packages);
-      capturedOutput += `Packages installed successfully.\n---\n`;
+      capturedStdout += `Packages installed successfully.\n---\n`;
     }
 
     py.FS.mkdirTree('/main/output');
 
-    const result = await py.runPythonAsync(code);
-    if (result !== undefined && result !== null) {
-      capturedOutput += String(result);
+    finalResult = await py.runPythonAsync(code);
+    
+    // Check if the final result is HTML content to be rendered visually
+    const resultIsHtml = typeof finalResult === 'string' && finalResult.trim().match(/^(<!DOCTYPE html>|<html>)/i);
+    
+    if (resultIsHtml) {
+        const componentId = `code-output-${generateId()}`;
+        const componentData = {
+            outputId: componentId,
+            htmlOutput: finalResult,
+            textOutput: capturedStdout.trim(),
+        };
+        return `[CODE_OUTPUT_COMPONENT]${JSON.stringify(componentData)}[/CODE_OUTPUT_COMPONENT]`;
+    }
+
+    // If not HTML, append the string representation of the result to stdout
+    if (finalResult !== undefined && finalResult !== null) {
+      capturedStdout += String(finalResult);
     }
     
     const attachmentLinks: string[] = [];
@@ -117,12 +135,12 @@ async function executePythonWithPyodide(code: string, packages: string[] = []): 
           py.FS.unlink(filePath);
         } catch (fileError) {
           console.error(`Error processing file ${filename} from virtual FS:`, fileError);
-          capturedOutput += `\n[ERROR] Failed to process output file '${filename}'.`;
+          capturedStdout += `\n[ERROR] Failed to process output file '${filename}'.`;
         }
       }
     }
     
-    let finalOutput = capturedOutput.trim() || 'Code executed successfully with no output.';
+    let finalOutput = capturedStdout.trim() || 'Code executed successfully with no output.';
     if (attachmentLinks.length > 0) {
       finalOutput += `\n\n${attachmentLinks.join('\n')}`;
     }
@@ -202,7 +220,19 @@ async function executeJsInWorker(code: string, cdn_urls: string[] = []): Promise
     worker.onmessage = (event) => {
       const { success, output, error } = event.data;
       if (success) {
-        resolve(output.trim() || 'Code executed successfully with no output.');
+        const resultText = output.trim() || 'Code executed successfully with no output.';
+        const resultIsHtml = resultText.trim().match(/^(<!DOCTYPE html>|<html>)/i);
+        if (resultIsHtml) {
+            const componentId = `code-output-${Math.random().toString(36).substring(2, 9)}`;
+            const componentData = {
+                outputId: componentId,
+                htmlOutput: resultText,
+                textOutput: '', // JS worker logs are merged into the result, so this is empty.
+            };
+            resolve(`[CODE_OUTPUT_COMPONENT]${JSON.stringify(componentData)}[/CODE_OUTPUT_COMPONENT]`);
+        } else {
+            resolve(resultText);
+        }
       } else {
         resolve(`Execution failed:\n${error}`);
       }
@@ -211,8 +241,6 @@ async function executeJsInWorker(code: string, cdn_urls: string[] = []): Promise
     };
 
     worker.onerror = (error) => {
-      // FIX: The 'error' object from worker.onerror is an ErrorEvent, not an Error.
-      // Create a new Error from its message to pass as the 'cause' for ToolError.
       reject(new ToolError('executeCode', 'WORKER_ERROR', error.message, new Error(error.message)));
       worker.terminate();
       URL.revokeObjectURL(blob.toString());
@@ -268,7 +296,7 @@ export const executeCode = async (args: { language: string; code: string; packag
       return await executePythonWithPyodide(code, packages);
     }
 
-    if (lang === 'javascript' || lang === 'js') {
+    if (lang === 'javascript' || lang === 'js' || lang === 'html') {
       return await executeJsInWorker(code, cdn_urls);
     }
     

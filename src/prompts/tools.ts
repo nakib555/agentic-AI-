@@ -45,21 +45,25 @@ You have access to the following tools. You must select the most appropriate too
 
 *   \`executeCode(language: string, code: string, packages?: string[], cdn_urls?: string[])\`
     *   **Use Case:** A powerful tool to execute code in various languages. It has advanced features for Python and JavaScript, including package installation and network access. It should also be used to run code snippets provided directly by the user.
+    *   **Visual Output & Iteration Workflow:**
+        *   If the executed code produces HTML (e.g., a plot from a library, a table, or any other visual element), the tool's output will contain a special \`[CODE_OUTPUT_COMPONENT]\` with a unique \`outputId\`. This will be rendered visually in the chat.
+        *   To "see" and analyze this visual output, you MUST then call the \`captureCodeOutputScreenshot\` tool with that specific \`outputId\`.
+        *   The screenshot will be provided as an image in your next reasoning step. You can then analyze the image to verify results, check for errors, or answer follow-up questions about the visualization.
+        *   Based on your analysis, you can then call \`executeCode\` again with modified code to iterate and refine the output.
     *   **Python Capabilities (via Pyodide in-browser):**
-        *   **Package Installation:** You can install pure Python packages from PyPI by providing their names in the \`packages\` array. Example: \`packages: ["numpy", "pandas", "requests"]\`.
-        *   **Networking:** The environment can make web requests using libraries like \`requests\` (which you should install via \`packages\`) or built-in methods.
-        *   **File Generation:** To create a downloadable file for the user, write it to the \`/main/output/\` directory within your code (e.g., \`with open('/main/output/data.csv', 'w') as f: ...\`). The tool automatically handles the file, providing a download link or preview in the chat.
-        *   **Example Call:**
-            *   **[STEP] Think:** The user wants to fetch data from a JSON API and provide it as a downloadable CSV. I will use Python with the \`requests\` and \`pandas\` libraries. I will call \`executeCode\` and save the result to \`/main/output/users.csv\`.
-            *   **[STEP] Act:** Calling tool \`executeCode\`...
-            *   (Tool call is made with \`language: "python"\`, \`packages: ["requests", "pandas"]\`, \`code: "import requests\\nimport pandas as pd\\nresponse = requests.get('https://jsonplaceholder.typicode.com/users')\\ndf = pd.DataFrame(response.json())\\ndf.to_csv('/main/output/users.csv', index=False)"\`)
+        *   **Package Installation:** You can install pure Python packages from PyPI by providing their names in the \`packages\` array. Example: \`packages: ["numpy", "pandas", "requests", "matplotlib"]\`.
+        *   **Networking:** The environment can make web requests using libraries like \`requests\` (which you should install via \`packages\`).
+        *   **File Generation:** To create a downloadable file, write it to the \`/main/output/\` directory (e.g., \`with open('/main/output/data.csv', 'w') as f: ...\`). The tool automatically handles the file.
+        *   **Generating HTML Plots (MANDATORY):** For Python plots (e.g., with matplotlib), you MUST save the plot to an in-memory buffer, encode it as a Base64 string, and embed it in a full HTML document with an \`<img>\` tag. Print the complete HTML string as the final output of your code.
     *   **JavaScript Capabilities (via Web Worker in-browser):**
-        *   **External Libraries:** You can import external JavaScript libraries from CDN URLs by providing them in the \`cdn_urls\` array. Example: \`cdn_urls: ["https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"]\`.
-        *   **Networking:** The environment can make web requests using the \`fetch()\` API.
-        *   **File Generation:** Not supported.
-    *   **Other Languages (Fallback):**
-        *   For all other languages (e.g., C++, Rust, Java, etc.), the tool uses a more limited, server-based environment.
-        *   This environment does **NOT** support package installation, network access, or file generation. It is for self-contained code only.
+        *   **External Libraries:** You can import external JavaScript libraries from CDN URLs by providing them in the \`cdn_urls\` array.
+        *   **Networking:** Can make web requests using \`fetch()\`.
     *   **Forbidden Actions:**
-        *   You MUST NOT include package installation commands inside the code (e.g., \`pip install ...\`, \`npm install ...\`). Use the \`packages\` (for Python) or \`cdn_urls\` (for JS) parameters instead. These commands will fail.
+        *   You MUST NOT include package installation commands inside the code (e.g., \`pip install ...\`, \`npm install ...\`). Use the \`packages\` or \`cdn_urls\` parameters instead.
+
+*   \`captureCodeOutputScreenshot(outputId: string)\`
+    *   **Use Case:** Takes a screenshot of the visual output from a previous \`executeCode\` call. This allows you to "see" and analyze plots, tables, and other HTML-based results.
+    *   **Parameters:**
+        *   \`outputId\`: The unique ID of the code output component, which is provided in the result of an \`executeCode\` call that generated a visual.
+    *   **Output:** The tool returns a base64 encoded PNG image. This image will be provided to you as a visual input in your next step, allowing you to reason about it.
 `;

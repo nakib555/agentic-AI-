@@ -13,6 +13,7 @@ import { MapDisplay } from './MapDisplay';
 import { ImageDisplay } from './ImageDisplay';
 import { VideoDisplay } from './VideoDisplay';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
+import { CodeExecutionResult } from './CodeExecutionResult';
 
 const LoadingDots = () => (
     <div className="flex gap-1 items-center">
@@ -53,6 +54,16 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
         }
     }
     
+    const codeOutputMatch = result.match(/\[CODE_OUTPUT_COMPONENT\](\{.*?\})\[\/CODE_OUTPUT_COMPONENT\]/s);
+    if (codeOutputMatch && codeOutputMatch[1]) {
+        try {
+            const codeOutputData = JSON.parse(codeOutputMatch[1]);
+            return <CodeExecutionResult {...codeOutputData} />;
+        } catch (e) {
+            return <ErrorDisplay error={{ message: 'Failed to render code output component.', details: `Invalid JSON: ${e}` }} />;
+        }
+    }
+
     // Check for the special location permission request tag
     const permissionRequestMatch = result.match(/\[LOCATION_PERMISSION_REQUEST\](.*?)\[\/LOCATION_PERMISSION_REQUEST\]/s);
 
