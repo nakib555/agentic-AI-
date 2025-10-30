@@ -194,12 +194,16 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
                             {node.agentName}
                         </span>
                     )}
-                    <TypingWrapper
-                        fullText={node.details as string}
-                        isAnimating={node.status === 'active'}
-                    >
-                        {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : node.details as string} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
-                    </TypingWrapper>
+                    {node.status === 'failed' && typeof node.details === 'object' && node.details && 'message' in node.details ? (
+                        <p className="text-red-700 dark:text-red-300">{(node.details as MessageError).message}</p>
+                    ) : (
+                        <TypingWrapper
+                            fullText={node.details as string}
+                            isAnimating={node.status === 'active'}
+                        >
+                            {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : node.details as string} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
+                        </TypingWrapper>
+                    )}
                 </div>
             </div>
         );
@@ -213,12 +217,16 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
                     <ObservationIcon />
                 </div>
                 <div className="text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
-                    <TypingWrapper
-                        fullText={node.details as string}
-                        isAnimating={node.status === 'active'}
-                    >
-                        {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : node.details as string} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
-                    </TypingWrapper>
+                    {node.status === 'failed' && typeof node.details === 'object' && node.details && 'message' in node.details ? (
+                        <p className="text-red-700 dark:text-red-300">{(node.details as MessageError).message}</p>
+                    ) : (
+                        <TypingWrapper
+                            fullText={node.details as string}
+                            isAnimating={node.status === 'active'}
+                        >
+                            {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : node.details as string} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
+                        </TypingWrapper>
+                    )}
                 </div>
             </div>
         );

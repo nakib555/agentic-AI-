@@ -1,10 +1,7 @@
 import esbuild from 'esbuild';
 import cpx from 'cpx';
-import { rm, readFile, writeFile } from 'fs/promises';
+import { rm } from 'fs/promises';
 import 'dotenv/config';
-import postcss from 'postcss';
-import tailwindcss from 'tailwindcss';
-import autoprefixer from 'autoprefixer';
 
 console.log('Starting build process...');
 
@@ -55,19 +52,6 @@ try {
     logLevel: 'info',
   });
   console.log('esbuild bundling complete.');
-
-  // Process CSS with PostCSS and Tailwind CSS
-  console.log('Processing CSS with Tailwind...');
-  const css = await readFile('index.css', 'utf-8');
-  const result = await postcss([tailwindcss, autoprefixer]).process(css, {
-    from: 'index.css',
-    to: 'dist/index.css',
-  });
-  await writeFile('dist/index.css', result.css);
-  if (result.map) {
-    await writeFile('dist/index.css.map', result.map.toString());
-  }
-  console.log('CSS processing complete.');
 
   // Copy static files
   const copyFiles = (source, dest) => {
