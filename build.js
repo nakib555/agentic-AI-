@@ -1,7 +1,10 @@
 import esbuild from 'esbuild';
 import cpx from 'cpx';
-import { rm } from 'fs/promises';
+import { rm, readFile, writeFile, mkdir } from 'fs/promises';
 import 'dotenv/config';
+import postcss from 'postcss';
+import tailwindcss from 'tailwindcss';
+import autoprefixer from 'autoprefixer';
 
 console.log('Starting build process...');
 
@@ -36,7 +39,18 @@ if (!apiKey) {
 try {
   // Clean the dist directory
   await rm('dist', { recursive: true, force: true });
+  await mkdir('dist', { recursive: true });
   console.log('Cleaned dist directory.');
+
+  // Build CSS with Tailwind
+  console.log('Building Tailwind CSS...');
+  const css = await readFile('index.css', 'utf8');
+  const result = await postcss([tailwindcss, autoprefixer]).process(css, {
+    from: 'index.css',
+    to: 'dist/index.css',
+  });
+  await writeFile('dist/index.css', result.css);
+  console.log('Tailwind CSS build complete.');
 
   // Run esbuild
   await esbuild.build({
@@ -46,7 +60,6 @@ try {
     loader: { '.tsx': 'tsx' },
     define: {
       'process.env.NODE_ENV': '"production"',
-      // The check above ensures apiKey is defined, so we can use it directly.
       'process.env.API_KEY': JSON.stringify(apiKey),
     },
     logLevel: 'info',
