@@ -9,7 +9,7 @@ type TypingWrapperProps = {
   fullText: string;
   isAnimating: boolean;
   onComplete?: () => void;
-  typingSpeed?: number; // Milliseconds per word
+  typingSpeed?: number; // Milliseconds per character
   children: (displayedText: string) => React.ReactNode;
 };
 
@@ -17,7 +17,7 @@ export const TypingWrapper: React.FC<TypingWrapperProps> = ({
   fullText,
   isAnimating,
   onComplete,
-  typingSpeed = 80, // Milliseconds per word
+  typingSpeed = 20, // Milliseconds per character for a smoother, more animated feel.
   children,
 }) => {
   const [displayedText, setDisplayedText] = useState('');
@@ -51,24 +51,23 @@ export const TypingWrapper: React.FC<TypingWrapperProps> = ({
     const intervalId = setInterval(() => {
       setDisplayedText((currentDisplayedText) => {
         const currentTarget = targetTextRef.current;
-        // If we haven't displayed the full target text yet...
         if (currentDisplayedText.length < currentTarget.length) {
-          // Find the next chunk (word and/or space) to append.
-          const remainingText = currentTarget.substring(currentDisplayedText.length);
-          const match = remainingText.match(/^(\s*\S+)/); // Match leading spaces and the next word.
-          const nextChunk = match ? match[0] : remainingText; // Fallback to remaining text if no match.
-          return currentDisplayedText + nextChunk;
+          // Append one character at a time for a smoother effect
+          return currentTarget.substring(0, currentDisplayedText.length + 1);
         }
         
-        // If we've caught up, return the text as is. The interval will continue checking
-        // in case the targetTextRef is updated with more streaming content.
+        // When text is complete, clear interval and call onComplete
+        clearInterval(intervalId);
+        if (onCompleteRef.current) {
+          onCompleteRef.current();
+        }
         return currentDisplayedText;
       });
     }, typingSpeed);
 
     // Cleanup function to clear the interval when the effect stops.
     return () => clearInterval(intervalId);
-  }, [isAnimating, typingSpeed]); // This effect only re-runs when `isAnimating` state changes.
+  }, [isAnimating, typingSpeed]);
 
   return <>{children(displayedText)}</>;
 };
