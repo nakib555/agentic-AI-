@@ -265,7 +265,7 @@ export const App = () => {
   const isChatActive = !!currentChatId;
 
   return (
-    <div className="flex h-full bg-transparent">
+    <div className="flex h-full bg-transparent overflow-hidden">
       <Sidebar 
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen}
@@ -285,40 +285,42 @@ export const App = () => {
         onSettingsClick={() => setIsSettingsOpen(true)}
       />
 
-      <main className="flex-1 flex flex-col overflow-hidden chat-background">
-        <div className="flex-1 flex flex-col w-full max-w-6xl mx-auto min-h-0">
-           <ChatHeader 
-              setIsSidebarOpen={setIsSidebarOpen}
-              isSidebarCollapsed={isSidebarCollapsed}
-              setIsSidebarCollapsed={handleSetSidebarCollapsed}
-              onImportChat={handleImportChat}
-              onExportChat={handleExportChat}
-              onShareChat={() => handleShareChat()}
-              isChatActive={isChatActive}
-           />
-           <ChatArea 
-              messages={messages}
-              isLoading={isLoading}
-              sendMessage={sendMessage}
-              modelsLoading={modelsLoading}
-              onCancel={cancelGeneration}
-              ttsVoice={ttsVoice}
-              isAutoPlayEnabled={isAutoPlayEnabled}
-              currentChatId={currentChatId}
-              onTogglePin={toggleMessagePin}
-              onShowThinkingProcess={handleShowThinkingProcess}
-              approveExecution={approveExecution}
-              denyExecution={denyExecution}
-           />
-        </div>
-      </main>
+      <div className="flex flex-1 min-w-0">
+        <main className="flex-1 flex flex-col overflow-hidden chat-background min-w-0">
+          <div className="flex-1 flex flex-col w-full max-w-6xl mx-auto min-h-0">
+             <ChatHeader 
+                setIsSidebarOpen={setIsSidebarOpen}
+                isSidebarCollapsed={isSidebarCollapsed}
+                setIsSidebarCollapsed={handleSetSidebarCollapsed}
+                onImportChat={handleImportChat}
+                onExportChat={handleExportChat}
+                onShareChat={() => handleShareChat()}
+                isChatActive={isChatActive}
+             />
+             <ChatArea 
+                messages={messages}
+                isLoading={isLoading}
+                sendMessage={sendMessage}
+                modelsLoading={modelsLoading}
+                onCancel={cancelGeneration}
+                ttsVoice={ttsVoice}
+                isAutoPlayEnabled={isAutoPlayEnabled}
+                currentChatId={currentChatId}
+                onTogglePin={toggleMessagePin}
+                onShowThinkingProcess={handleShowThinkingProcess}
+                approveExecution={approveExecution}
+                denyExecution={denyExecution}
+             />
+          </div>
+        </main>
 
-      <ThinkingSidebar
-        isOpen={isThinkingSidebarOpen}
-        onClose={handleCloseThinkingSidebar}
-        message={thinkingMessageForSidebar}
-        sendMessage={sendMessage}
-      />
+        <ThinkingSidebar
+          isOpen={isThinkingSidebarOpen}
+          onClose={handleCloseThinkingSidebar}
+          message={thinkingMessageForSidebar}
+          sendMessage={sendMessage}
+        />
+      </div>
 
       <SettingsModal
         isOpen={isSettingsOpen}
