@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "A responsive chat application powered by the Gemini API, featuring an agentic AI persona.",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build": "rm -rf dist && mkdir dist && esbuild index.tsx --bundle --outfile=dist/index.js --loader:.tsx=tsx --define:process.env.NODE_ENV='\"production\"' && cpx index.html dist && cpx 'src/styles/**' 'dist/src/styles' && cpx '{manifest.json,sw.js,favicon.svg,_headers,_redirects}' dist"
+    "build": "node build.js"
   },
   "dependencies": {
     "@google/genai": "^0.12.0",
@@ -23,6 +24,7 @@
     "@types/react-dom": "^18.3.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "cpx": "^1.5.0",
+    "dotenv": "^16.4.5",
     "esbuild": "^0.20.2",
     "typescript": "^5.4.5"
   }
