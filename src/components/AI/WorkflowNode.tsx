@@ -10,18 +10,9 @@ import { ToolCallStep } from './ToolCallStep';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { TypingWrapper } from './TypingWrapper';
-import { ObservationIcon, SearchIcon, TodoListIcon, HandoffIcon, ValidationIcon, CorrectionIcon, ExecutorIcon } from './icons';
+import { ObservationIcon, SearchIcon, TodoListIcon, HandoffIcon, ValidationIcon, CorrectionIcon, ExecutorIcon, ThoughtIcon } from './icons';
 import { SearchToolResult } from './SearchToolResult';
 import { getAgentColor } from '../../utils/agentUtils';
-
-
-const LoadingDots = () => (
-    <div className="flex gap-1 items-center">
-        <motion.div className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0 }} />
-        <motion.div className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }} />
-        <motion.div className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }} />
-    </div>
-);
 
 
 export type WorkflowNodeStatus = 'pending' | 'active' | 'done' | 'failed';
@@ -53,12 +44,11 @@ const getNodeVisuals = (node: WorkflowNodeData) => {
             break;
         case 'duckduckgoSearch':
             icon = <SearchIcon />;
-            title = `Search: "${node.title}"`;
+            title = `Search`;
             break;
         case 'tool':
-            const toolEvent = node.details as ToolCallEvent;
             icon = <ExecutorIcon />;
-            title = `Tool: ${toolEvent.call.name}`;
+            title = `Tool: ${ (node.details as ToolCallEvent).call.name}`;
             break;
         case 'validation':
             icon = <ValidationIcon />;
@@ -67,7 +57,7 @@ const getNodeVisuals = (node: WorkflowNodeData) => {
             icon = <CorrectionIcon />;
             break;
         case 'thought':
-            icon = <ExecutorIcon />;
+            icon = <ThoughtIcon />;
             break;
         default:
             icon = <TodoListIcon />; // Fallback icon
@@ -121,7 +111,7 @@ const HandoffNode: React.FC<{ from: string; to: string; details?: string; isStre
             <div className="flex-1 min-w-0 text-sm">
                 <div className="flex items-center flex-wrap gap-2 mb-1">
                     <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${fromColor.bg} ${fromColor.text}`}>{from}</span>
-                    <span className="text-slate-400">→</span>
+                    <span className="text-slate-400 dark:text-slate-500 font-['Space_Grotesk']">→</span>
                     <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${toColor.bg} ${toColor.text}`}>{to}</span>
                 </div>
                 {details && (
@@ -149,11 +139,11 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
     }
 
     // --- Custom UI for DuckDuckGo Search Tool ---
-    // This retains its boxed appearance for clarity as requested.
     if (node.type === 'duckduckgoSearch') {
         const event = node.details as ToolCallEvent;
+        const agentColorInfo = getAgentColor(node.agentName || 'Executor');
+        const { icon, title } = getNodeVisuals(node);
         
-        const query = (event?.call?.args?.query as string) || node.title;
         let sources: { uri: string; title: string; }[] | undefined = undefined;
 
         if (event?.result) {
@@ -170,53 +160,44 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
                     sources = parsedSources;
                 } catch (e) {
                     console.error("Failed to parse search results markdown:", e);
-                    sources = [];
                 }
-            } else {
-                sources = [];
             }
         }
         
-        return <SearchToolResult query={query} sources={sources} />;
+        return (
+            <div className={`p-4 rounded-xl bg-white dark:bg-black/20 border ${agentColorInfo.border} shadow-sm`}>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex-shrink-0">{icon}</div>
+                        <div className="flex-1 min-w-0 flex items-center flex-wrap gap-x-2 gap-y-1">
+                            <span className={`flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full ${agentColorInfo.bg} ${agentColorInfo.text}`}>
+                                {node.agentName}
+                            </span>
+                            <p className="font-semibold font-['Space_Grotesk'] text-gray-800 dark:text-slate-200 text-sm truncate">{title}</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="pl-8">
+                    <SearchToolResult query={node.title} sources={sources} />
+                </div>
+            </div>
+        );
     }
     
-    // "Thought" nodes are rendered as simple text blocks without a container.
-    if (node.type === 'thought') {
+    // "Thought" and "Observation" nodes are rendered as simple text blocks without a container.
+    const isLogEntry = node.type === 'thought' || node.type === 'observation';
+    if (isLogEntry) {
         const agentColorInfo = node.agentName ? getAgentColor(node.agentName) : null;
+        const icon = node.type === 'thought' ? <ThoughtIcon /> : <ObservationIcon />;
         return (
             <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 pt-0.5">
-                    <ExecutorIcon />
-                </div>
-                <div className="flex-1 text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
+                <div className="flex-shrink-0 pt-0.5">{icon}</div>
+                <div className="flex-1 min-w-0 text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
                     {agentColorInfo && (
                         <span className={`px-2 py-0.5 text-xs font-semibold rounded-full mr-2 ${agentColorInfo.bg} ${agentColorInfo.text}`}>
                             {node.agentName}
                         </span>
                     )}
-                    {node.status === 'failed' && typeof node.details === 'object' && node.details && 'message' in node.details ? (
-                        <p className="text-red-700 dark:text-red-300">{(node.details as MessageError).message}</p>
-                    ) : (
-                        <TypingWrapper
-                            fullText={node.details as string}
-                            isAnimating={node.status === 'active'}
-                        >
-                            {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : node.details as string} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
-                        </TypingWrapper>
-                    )}
-                </div>
-            </div>
-        );
-    }
-
-    // "Observation" nodes are also rendered without a distinct container.
-    if (node.type === 'observation') {
-        return (
-            <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 pt-0.5">
-                    <ObservationIcon />
-                </div>
-                <div className="text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
                     {node.status === 'failed' && typeof node.details === 'object' && node.details && 'message' in node.details ? (
                         <p className="text-red-700 dark:text-red-300">{(node.details as MessageError).message}</p>
                     ) : (
@@ -238,7 +219,7 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
     const hasDetails = !!node.details;
 
     return (
-        <motion.div layout className="w-full">
+        <motion.div layout className={`w-full p-4 rounded-xl bg-white dark:bg-black/20 border shadow-sm ${agentColorInfo ? agentColorInfo.border : 'border-gray-200 dark:border-white/10'}`}>
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="flex-shrink-0">{icon}</div>
@@ -248,7 +229,7 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
                                 {node.agentName}
                             </span>
                         )}
-                        <p className="font-medium text-gray-800 dark:text-slate-200 text-sm truncate">{title}</p>
+                        <p className="font-semibold font-['Space_Grotesk'] text-gray-800 dark:text-slate-200 text-sm truncate">{title}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -259,7 +240,7 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
             </div>
 
             {hasDetails && (
-                <div className="pl-8 pt-2">
+                <div className="pl-8 pt-3">
                     {renderDetails(node, sendMessage)}
                 </div>
             )}

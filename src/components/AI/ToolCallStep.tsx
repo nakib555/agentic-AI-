@@ -14,6 +14,7 @@ import { ImageDisplay } from './ImageDisplay';
 import { VideoDisplay } from './VideoDisplay';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
 import { CodeExecutionResult } from './CodeExecutionResult';
+import { CodeBlock } from '../Markdown/CodeBlock';
 
 const LoadingDots = () => (
     <div className="flex gap-1 items-center">
@@ -76,9 +77,9 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
     const isError = result.startsWith('Tool execution failed');
     if (isError) {
         return (
-             <div>
-                <p className="text-xs font-semibold text-red-500 dark:text-red-400 mb-1">Error</p>
-                <p className="text-sm text-red-700 dark:text-red-300">{result}</p>
+             <div className="p-3 bg-red-500/10 dark:bg-red-900/20 border border-red-500/20 rounded-lg">
+                <p className="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">Error</p>
+                <p className="text-sm text-red-700 dark:text-red-300 font-mono text-xs whitespace-pre-wrap">{result}</p>
             </div>
         )
     }
@@ -89,10 +90,10 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
         : result;
 
     return (
-        <div>
-            <p className="text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">Result</p>
+        <div className="p-3 bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg">
+            <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">Result</p>
             <motion.div
-                className="overflow-hidden"
+                className="overflow-hidden text-sm workflow-markdown"
                 animate={{ height: 'auto' }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
             >
@@ -103,27 +104,6 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
                     onClick={() => setIsExpanded(!isExpanded)}
                     className="text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-teal-400 dark:hover:text-teal-300 mt-2"
                     aria-expanded={isExpanded}
-                >
-                    {isExpanded ? 'Show Less' : 'Show More'}
-                </button>
-            )}
-        </div>
-    );
-};
-
-// --- Component to display code parameter with expand/collapse functionality ---
-const CodeParameterDisplay: React.FC<{ code: string }> = ({ code }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const isLongCode = code.length > 200;
-    const displayedCode = isLongCode && !isExpanded ? `${code.substring(0, 200)}...` : code;
-
-    return (
-        <div className="min-w-0">
-            <pre className="text-gray-700 dark:text-slate-300 break-all whitespace-pre-wrap">{displayedCode}</pre>
-            {isLongCode && (
-                 <button
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-teal-400 dark:hover:text-teal-300 mt-1"
                 >
                     {isExpanded ? 'Show Less' : 'Show More'}
                 </button>
@@ -147,52 +127,54 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
         const { latitude, longitude, zoom, markerText } = args as { latitude: number, longitude: number, zoom?: number, markerText?: string };
         return <MapDisplay latitude={latitude} longitude={longitude} zoom={zoom ?? 13} markerText={markerText} />;
     }
-
+    
+    // Special full-width rendering for code execution
+    if (call.name === 'executeCode' && args.code) {
+        const packages = (args.packages as string[] | undefined) || [];
+        return (
+            <div className="space-y-3 text-sm">
+                <CodeBlock language={args.language as string || 'plaintext'}>{args.code as string}</CodeBlock>
+                {packages.length > 0 && (
+                     <div className="flex items-center gap-2 text-xs">
+                        <span className="font-semibold text-gray-500 dark:text-slate-400">Dependencies:</span>
+                        <div className="flex flex-wrap gap-1.5">
+                            {packages.map((pkg, i) => (
+                                <span key={i} className="px-2 py-0.5 bg-gray-200 dark:bg-slate-700 font-mono rounded">
+                                {String(pkg)}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                {result ? (
+                    <ToolResultDisplay result={result} sendMessage={sendMessage} />
+                ) : (
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span>Executing code...</span>
+                    </div>
+                )}
+            </div>
+        );
+    }
+    
     const argEntries = Object.entries(args);
   
     return (
       <div className="min-w-0 flex-1 text-sm space-y-3">
         {argEntries.length > 0 && (
-          <div className="text-xs font-['Fira_Code',_monospace] space-y-1.5 border border-gray-200 dark:border-slate-700 p-2 rounded-md">
+          <div className="font-['Fira_Code',_monospace] space-y-2 border border-gray-200 dark:border-slate-700/50 bg-gray-50 dark:bg-black/20 p-3 rounded-lg">
             <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-1">Parameters</p>
-            {argEntries.map(([key, value]) => {
-              // Special rendering for 'packages' to make dependencies clear
-              if (call.name === 'executeCode' && key === 'packages' && Array.isArray(value) && value.length > 0) {
-                return (
-                  <div key={key} className="grid grid-cols-[auto,1fr] gap-x-2 items-start">
-                    <span className="text-gray-500 dark:text-slate-500 font-medium capitalize">Dependencies:</span>
-                    <div className="flex flex-wrap gap-1 items-center">
-                      {value.map((pkg, i) => (
-                        <span key={i} className="px-1.5 py-0.5 bg-gray-200 dark:bg-slate-700 text-xs rounded font-medium">
-                          {String(pkg)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
-
-              // Special rendering for the 'code' parameter in 'executeCode'
-              if (call.name === 'executeCode' && key === 'code') {
-                  return (
-                    <div key={key} className="grid grid-cols-[auto,1fr] gap-x-2 items-start">
-                        <span className="text-gray-500 dark:text-slate-500 font-medium capitalize">{key}:</span>
-                        <CodeParameterDisplay code={String(value)} />
-                    </div>
-                  );
-              }
-
-              // Default rendering for all other parameters
-              return (
-                <div key={key} className="grid grid-cols-[auto,1fr] gap-x-2 items-start">
-                  <span className="text-gray-500 dark:text-slate-500 font-medium capitalize">{key}:</span>
-                  <span className="text-gray-700 dark:text-slate-300 break-all">{String(value)}</span>
+            {argEntries.map(([key, value]) => (
+                <div key={key} className="grid grid-cols-[auto,1fr] gap-x-3 items-start text-xs">
+                  <span className="text-gray-400 dark:text-slate-500 font-medium">{key}:</span>
+                  <span className="text-gray-700 dark:text-slate-300 break-all whitespace-pre-wrap">{String(value)}</span>
                 </div>
-              );
-            })}
+              )
+            )}
           </div>
         )}
-        <div className="pt-2">
+        <div className="pt-1">
             {result ? (
                 <ToolResultDisplay result={result} sendMessage={sendMessage} />
             ) : (

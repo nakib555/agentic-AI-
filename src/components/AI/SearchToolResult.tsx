@@ -5,7 +5,6 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { SearchIcon } from './icons';
 
 type Source = {
   uri: string;
@@ -17,13 +16,13 @@ type SearchToolResultProps = {
   sources?: Source[];
 };
 
-const LoadingDots = () => (
-    <div className="flex gap-1 items-center">
-        <motion.div className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0 }} />
-        <motion.div className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }} />
-        <motion.div className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }} />
-    </div>
+const LoadingSpinner = () => (
+    <svg className="animate-spin h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
 );
+
 
 const SourcePill: React.FC<{ source: Source }> = ({ source }) => {
   let domain: string | null = null;
@@ -31,38 +30,26 @@ const SourcePill: React.FC<{ source: Source }> = ({ source }) => {
     domain = new URL(source.uri).hostname.replace('www.', '');
   } catch (error) {
     console.warn(`Invalid source URI: "${source.uri}"`);
-    return null;
   }
 
   return (
-    <a
+    <motion.a
       href={source.uri}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-700/50 rounded-full text-xs font-medium text-gray-700 dark:text-slate-300 border border-gray-300 dark:border-slate-700 transition-colors"
+      className="flex items-center gap-2 px-2.5 py-1 bg-white dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-700/50 rounded-full text-xs font-medium text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700/80 transition-colors"
       title={source.title}
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
     >
-      <img
+      {domain && <img
         src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`}
         alt=""
-        className="w-4 h-4 flex-shrink-0"
-        onError={(e) => { 
-            // Hide the image and add a generic placeholder if the favicon fails to load.
-            e.currentTarget.style.display = 'none';
-            const placeholder = e.currentTarget.nextElementSibling?.nextElementSibling;
-            if (placeholder) {
-                (placeholder as HTMLElement).style.display = 'flex';
-            }
-        }}
-      />
-      <span className="truncate">{source.title}</span>
-      {/* Fallback icon, hidden by default */}
-      <div style={{ display: 'none' }} className="w-4 h-4 bg-slate-600 rounded-full flex items-center justify-center flex-shrink-0">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5 text-slate-300">
-            <path d="M8.016 3.016a4.375 4.375 0 0 0-4.33 3.706c-.03.23.12.454.35.454h.01c.875 0 1.47.305 1.47 1.1c0 .795-.594 1.1-1.47 1.1h-.01c-.23 0-.38.225-.35.453a4.375 4.375 0 0 0 8.659 0c.03-.23-.12-.453-.35-.453h-.01c-.875 0-1.47-.305-1.47-1.1c0-.795.594 1.1 1.47 1.1h.01c.23 0 .38-.225.35-.454a4.375 4.375 0 0 0-4.329-3.706Z" />
-        </svg>
-      </div>
-    </a>
+        className="w-3.5 h-3.5 flex-shrink-0"
+      />}
+      <span className="truncate max-w-48">{source.title}</span>
+    </motion.a>
   );
 };
 
@@ -70,23 +57,21 @@ export const SearchToolResult = ({ query, sources }: SearchToolResultProps) => {
   const [showAll, setShowAll] = useState(false);
   const isLoading = sources === undefined;
 
-  const visibleSources = showAll ? sources : sources?.slice(0, 4);
+  const visibleSources = showAll ? sources : sources?.slice(0, 3);
   const hiddenCount = sources ? sources.length - (visibleSources?.length ?? 0) : 0;
 
   return (
-    <div className="bg-gray-50 dark:bg-black/10 p-3 rounded-2xl border border-gray-200 dark:border-slate-700/50">
+    <div className="space-y-3">
       {query && (
-        <div className="flex items-center gap-3 text-sm text-gray-800 dark:text-slate-200 mb-3">
-          <SearchIcon />
-          <p className="font-medium">
-              {isLoading ? 'Searching for' : 'Results for'} "{query}"
-          </p>
-        </div>
+        <p className="text-sm font-medium text-gray-600 dark:text-slate-400 font-['Fira_Code',_monospace]">
+          "{query}"
+        </p>
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-start pl-2 h-10">
-            <LoadingDots />
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+            <LoadingSpinner />
+            <span>Searching...</span>
         </div>
       ) : (
         <>
@@ -98,14 +83,14 @@ export const SearchToolResult = ({ query, sources }: SearchToolResultProps) => {
                     {hiddenCount > 0 && !showAll && (
                     <button
                         onClick={() => setShowAll(true)}
-                        className="text-xs font-medium text-gray-600 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 px-3 py-1.5 transition-colors"
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-teal-400 dark:hover:text-teal-300 px-2 py-1 transition-colors"
                     >
-                        See All ({sources.length})
+                        + {hiddenCount} more
                     </button>
                     )}
                 </div>
             ) : (
-                <div className="text-sm text-slate-400">
+                <div className="text-xs text-slate-400">
                     No sources found.
                 </div>
             )}
