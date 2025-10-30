@@ -36,6 +36,10 @@ export const executeCaptureCodeOutputScreenshot = async (args: { outputId: strin
   }
 
   try {
+    // Yield to the event loop, allowing the UI to update with a loading state
+    // before we start the blocking html2canvas operation.
+    await new Promise(resolve => setTimeout(resolve, 50));
+
     const canvas = await html2canvas(elementToCapture, {
       allowTaint: true,
       useCORS: true,

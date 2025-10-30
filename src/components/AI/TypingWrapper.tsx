@@ -17,7 +17,7 @@ export const TypingWrapper: React.FC<TypingWrapperProps> = ({
   fullText,
   isAnimating,
   onComplete,
-  typingSpeed = 20, // Milliseconds per character for a smoother, more animated feel.
+  typingSpeed = 30, // Milliseconds per character for a smoother, more animated feel.
   children,
 }) => {
   const [displayedText, setDisplayedText] = useState('');
