@@ -22,6 +22,8 @@ type SidebarProps = {
     setIsCollapsed: (collapsed: boolean) => void;
     width: number;
     setWidth: (width: number) => void;
+    isResizing: boolean;
+    setIsResizing: (isResizing: boolean) => void;
     history: ChatSession[];
     currentChatId: string | null;
     onNewChat: () => void;
@@ -41,11 +43,10 @@ const mobileVariants = {
 
 export const Sidebar = ({ 
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
-    history, currentChatId, onNewChat, onLoadChat, onDeleteChat, onClearAllChats, 
-    onUpdateChatTitle, theme, setTheme, onSettingsClick
+    isResizing, setIsResizing, history, currentChatId, onNewChat, onLoadChat,
+    onDeleteChat, onClearAllChats, onUpdateChatTitle, theme, setTheme, onSettingsClick
 }: SidebarProps) => {
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
-    const [isResizing, setIsResizing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
@@ -54,29 +55,23 @@ export const Sidebar = ({
         return () => window.removeEventListener('resize', checkDesktop);
     }, []);
 
-    const startResizing = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
+    const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
+        mouseDownEvent.preventDefault();
         setIsResizing(true);
-    }, []);
 
-    const stopResizing = useCallback(() => {
-        setIsResizing(false);
-    }, []);
-
-    const resize = useCallback((e: MouseEvent) => {
-        if (isResizing) {
-            setWidth(e.clientX);
-        }
-    }, [isResizing, setWidth]);
-
-    useEffect(() => {
-        window.addEventListener('mousemove', resize);
-        window.addEventListener('mouseup', stopResizing);
-        return () => {
-            window.removeEventListener('mousemove', resize);
-            window.removeEventListener('mouseup', stopResizing);
+        const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
+            setWidth(mouseMoveEvent.clientX);
         };
-    }, [resize, stopResizing]);
+
+        const handleMouseUp = () => {
+            setIsResizing(false);
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+        
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+    }, [setWidth, setIsResizing]);
 
     const handleNewChat = () => {
         onNewChat();
@@ -92,15 +87,7 @@ export const Sidebar = ({
             setIsOpen(false);
         }
     };
-
-    const desktopVariants = {
-        open: { width, translateX: '0%' },
-        collapsed: { width: 72, translateX: '0%' },
-    };
     
-    const variants = isDesktop ? desktopVariants : mobileVariants;
-    const animateState = isDesktop ? (isCollapsed ? 'collapsed' : 'open') : (isOpen ? 'open' : 'closed');
-
     // This effect handles keyboard shortcuts for search.
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -142,18 +129,24 @@ export const Sidebar = ({
             </AnimatePresence>
             
             <motion.div
-                layout="position"
+                layout
                 initial={false}
-                animate={animateState}
-                variants={variants}
+                animate={
+                    isDesktop 
+                        ? { width: isCollapsed ? 72 : width } 
+                        : (isOpen ? 'open' : 'closed')
+                }
+                variants={isDesktop ? undefined : mobileVariants}
                 transition={{ type: 'spring', stiffness: 500, damping: 40 }}
                 style={{
                     height: '100%',
                     position: isDesktop ? 'relative' : 'fixed',
                     left: 0,
                     top: 0,
+                    zIndex: isDesktop ? 'auto' : 30,
                 }}
                 className="bg-gray-100 dark:bg-[#1e1e1e] border-r border-black/10 dark:border-white/10 flex flex-col"
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
                     className="p-3 flex flex-col h-full overflow-hidden"

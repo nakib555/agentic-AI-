@@ -13,12 +13,23 @@ type FloatingPromptsProps = {
   onPromptClick: (prompt: string) => void;
 };
 
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        delayChildren: 0.4,
+        staggerChildren: 0.08,
+      },
+    },
+};
+
 export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -20 }}
-    transition={{ duration: 0.3, ease: 'easeOut', delay: 0.4 }}
+    variants={containerVariants}
+    initial="hidden"
+    animate="visible"
+    exit="hidden"
     className="flex flex-wrap justify-center gap-3 mt-12 w-full max-w-xl"
   >
     <PromptButton icon="🧠" text="Reasoning" onClick={() => onPromptClick("What is the capital of France?")} />

@@ -21,6 +21,8 @@ import { MemoryModal } from './Settings/MemoryModal';
 import { MemoryConfirmationModal } from './Settings/MemoryConfirmationModal';
 import { exportChatToMarkdown, exportChatToJson, exportChatToPdf, exportChatToClipboard } from '../utils/exportUtils';
 import { ThinkingSidebar } from './Sidebar/ThinkingSidebar';
+import type { MessageListHandle } from './Chat/MessageList';
+import { PinnedMessagesModal } from './Chat/PinnedMessagesModal';
 
 
 // Configure the Monaco Editor loader to fetch assets from a CDN.
@@ -39,6 +41,7 @@ export const App = () => {
   const [uiSelectedModel, setUiSelectedModel] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
+  const [isPinnedModalOpen, setIsPinnedModalOpen] = useState(false);
   const [isThinkingSidebarOpen, setIsThinkingSidebarOpen] = useState(false);
   const [thinkingMessageIdForSidebar, setThinkingMessageIdForSidebar] = useState<string | null>(null);
   
@@ -71,6 +74,8 @@ export const App = () => {
     handleSetSidebarCollapsed,
     sidebarWidth,
     handleSetSidebarWidth,
+    isResizing,
+    setIsResizing,
   } = useSidebar();
 
   const { 
@@ -94,6 +99,7 @@ export const App = () => {
   } = useChat(uiSelectedModel, { systemPrompt, temperature, maxOutputTokens: maxTokens }, memoryContent);
   
   const prevChatHistoryRef = useRef<ChatSession[]>([]);
+  const messageListRef = useRef<MessageListHandle>(null);
 
   // Derive the message object for the sidebar. This will update whenever chatHistory changes.
   const thinkingMessageForSidebar = useMemo(() => {
@@ -224,15 +230,25 @@ export const App = () => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (!file) return;
 
+        // Add robust file type validation
+        if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
+            alert("Invalid file type. Please select a valid JSON (.json) file exported from this application.");
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const json = event.target?.result as string;
+                // Before parsing, check if it's plausible JSON to avoid syntax errors on file types like PDF
+                if (!json || !json.trim().startsWith('{')) {
+                    throw new Error("File content does not appear to be valid JSON.");
+                }
                 const importedSession = JSON.parse(json) as ChatSession;
                 importChat(importedSession);
             } catch (error) {
                 console.error("Failed to import and parse chat file:", error);
-                alert("Failed to read the chat file. It may be corrupted or in an invalid format.");
+                alert("Failed to import chat. The file may be corrupted or in an invalid format. Please ensure you are importing a .json file that was previously exported from this application.");
             }
         };
         reader.onerror = () => {
@@ -260,6 +276,14 @@ export const App = () => {
     setThinkingMessageIdForSidebar(null);
   };
 
+  const handleJumpToMessage = (messageId: string) => {
+    setIsPinnedModalOpen(false); // Close modal first
+    // Give modal time to close before scrolling to avoid jank
+    setTimeout(() => {
+      messageListRef.current?.scrollToMessage(messageId);
+    }, 150);
+  };
+
   // The model displayed should be the current chat's model, or the selected one for a new chat.
   const activeModel = chatHistory.find(c => c.id === currentChatId)?.model || uiSelectedModel;
   const isChatActive = !!currentChatId;
@@ -273,6 +297,8 @@ export const App = () => {
         setIsCollapsed={handleSetSidebarCollapsed}
         width={sidebarWidth}
         setWidth={handleSetSidebarWidth}
+        isResizing={isResizing}
+        setIsResizing={setIsResizing}
         history={chatHistory}
         currentChatId={currentChatId}
         onNewChat={startNewChat}
@@ -285,7 +311,7 @@ export const App = () => {
         onSettingsClick={() => setIsSettingsOpen(true)}
       />
 
-      <div className="flex flex-1 min-w-0">
+      <div className={`flex flex-1 min-w-0 ${isResizing ? 'pointer-events-none' : ''}`}>
         <main className="flex-1 flex flex-col overflow-hidden chat-background min-w-0">
           <div className="flex-1 flex flex-col w-full max-w-3xl mx-auto min-h-0">
              <ChatHeader 
@@ -296,8 +322,11 @@ export const App = () => {
                 onExportChat={handleExportChat}
                 onShareChat={() => handleShareChat()}
                 isChatActive={isChatActive}
+                messages={messages}
+                onOpenPinnedModal={() => setIsPinnedModalOpen(true)}
              />
              <ChatArea 
+                messageListRef={messageListRef}
                 messages={messages}
                 isLoading={isLoading}
                 sendMessage={sendMessage}
@@ -357,6 +386,17 @@ export const App = () => {
         suggestions={memorySuggestions}
         onConfirm={confirmMemoryUpdate}
         onCancel={cancelMemoryUpdate}
+      />
+      <PinnedMessagesModal
+        isOpen={isPinnedModalOpen}
+        onClose={() => setIsPinnedModalOpen(false)}
+        messages={messages}
+        onUnpin={(messageId) => {
+            if (currentChatId) {
+                toggleMessagePin(currentChatId, messageId);
+            }
+        }}
+        onJumpTo={handleJumpToMessage}
       />
     </div>
   );

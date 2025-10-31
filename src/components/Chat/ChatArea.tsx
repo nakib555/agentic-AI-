@@ -10,7 +10,6 @@ const motion = motionTyped as any;
 import { MessageList, type MessageListHandle } from './MessageList';
 import { MessageForm, type MessageFormHandle } from './MessageForm';
 import type { Message } from '../../types';
-import { PinnedMessagesBar } from './PinnedMessagesBar';
 
 type ChatAreaProps = {
   messages: Message[];
@@ -25,15 +24,16 @@ type ChatAreaProps = {
   onShowThinkingProcess: (messageId: string) => void;
   approveExecution: () => void;
   denyExecution: () => void;
+  messageListRef: React.RefObject<MessageListHandle>;
 };
 
 export const ChatArea = ({ 
     messages, isLoading, sendMessage, modelsLoading, onCancel, 
     ttsVoice, isAutoPlayEnabled, currentChatId, onTogglePin, 
-    onShowThinkingProcess, approveExecution, denyExecution 
+    onShowThinkingProcess, approveExecution, denyExecution,
+    messageListRef
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
-  const messageListRef = useRef<MessageListHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   // Use a counter to robustly handle drag enter/leave events on nested elements.
@@ -97,15 +97,6 @@ export const ChatArea = ({
           </motion.div>
         )}
       </AnimatePresence>
-      <PinnedMessagesBar 
-          messages={messages}
-          currentChatId={currentChatId}
-          onUnpin={(messageId) => {
-              if (currentChatId) {
-                  onTogglePin(currentChatId, messageId);
-              }
-          }}
-      />
       <MessageList
           ref={messageListRef}
           messages={messages} 

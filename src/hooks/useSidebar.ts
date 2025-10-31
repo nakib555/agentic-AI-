@@ -7,6 +7,7 @@ import { useState, useCallback } from 'react';
 
 export const useSidebar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     const savedState = localStorage.getItem('sidebarCollapsed');
@@ -36,5 +37,7 @@ export const useSidebar = () => {
     handleSetSidebarCollapsed,
     sidebarWidth,
     handleSetSidebarWidth,
+    isResizing,
+    setIsResizing,
   };
 };

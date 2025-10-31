@@ -12,6 +12,7 @@ import type { MessageFormHandle } from './MessageForm';
 
 export type MessageListHandle = {
   scrollToBottom: () => void;
+  scrollToMessage: (messageId: string) => void;
 };
 
 type MessageListProps = {
@@ -47,6 +48,17 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
       // If the user manually clicks the button, we should resume auto-scrolling for the next message.
       setIsAutoScrollPaused(false);
     },
+    scrollToMessage: (messageId: string) => {
+        const element = document.getElementById(`message-${messageId}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Add a temporary highlight effect to draw attention to the message.
+            element.classList.add('highlight-jump');
+            setTimeout(() => {
+                element.classList.remove('highlight-jump');
+            }, 2000);
+        }
+    }
   }));
 
   // This effect handles the core auto-scrolling logic.
