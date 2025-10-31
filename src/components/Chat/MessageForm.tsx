@@ -214,6 +214,26 @@ export const MessageForm = forwardRef<MessageFormHandle, {
     localStorage.removeItem('messageDraft_files');
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+
+    // Handle file pasting
+    const files = e.clipboardData.files;
+    if (files && files.length > 0) {
+      // Use the existing logic to process and attach files.
+      processAndSetFiles(Array.from(files));
+      return;
+    }
+
+    // Handle text pasting
+    const text = e.clipboardData.getData('text/plain');
+    if (text) {
+      // Insert plain text at the cursor position. This will trigger the `onInput`
+      // event, keeping React state in sync.
+      document.execCommand('insertText', false, text);
+    }
+  };
+
   const handleEnhancePrompt = async () => {
     const originalPrompt = inputValue;
     if (!originalPrompt.trim() || isEnhancing || isLoading) return;
@@ -362,6 +382,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                   contentEditable={!isLoading && !isEnhancing}
                   onInput={(e) => setInputValue(e.currentTarget.innerText)}
                   onKeyDown={handleKeyDown}
+                  onPaste={handlePaste}
                   aria-label="Chat input"
                   role="textbox"
                   data-placeholder={isRecording ? 'Listening...' : "Ask anything, or drop a file"}
