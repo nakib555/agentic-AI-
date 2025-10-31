@@ -4,10 +4,12 @@
  */
 
 import React, { useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+const motion = motionTyped as any;
 import { MessageList, type MessageListHandle } from './MessageList';
 import { MessageForm, type MessageFormHandle } from './MessageForm';
-import type { Message } from '../../../types';
+import type { Message } from '../../types';
 import { PinnedMessagesBar } from './PinnedMessagesBar';
 
 type ChatAreaProps = {

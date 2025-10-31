@@ -5,7 +5,7 @@
 
 import { GoogleGenAI, type FunctionCall, type GenerateContentResponse, type Part } from '@google/genai';
 import { parseApiError } from './gemini';
-import { type ToolCallEvent, type MessageError, ToolError } from '../../types';
+import { type ToolCallEvent, type MessageError, ToolError } from '../types';
 import { systemInstruction } from '../prompts/system';
 import { toolDeclarations } from '../tools';
 import { getText } from '../utils/geminiUtils';

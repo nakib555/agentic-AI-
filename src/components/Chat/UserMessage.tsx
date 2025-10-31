@@ -4,14 +4,16 @@
  */
 
 import React from 'react';
-import { motion, MotionProps } from 'framer-motion';
+// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
+import { motion as motionTyped } from 'framer-motion';
+const motion = motionTyped as any;
 import { MarkdownComponents } from '../Markdown/markdownComponents';
-import type { Message } from '../../../types';
+import type { Message } from '../../types';
 import { FileIcon } from '../UI/FileIcon';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { PinButton } from './PinButton';
 
-const animationProps: MotionProps = {
+const animationProps = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.4, ease: "easeOut" },

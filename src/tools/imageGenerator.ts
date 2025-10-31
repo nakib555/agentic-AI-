@@ -5,7 +5,7 @@
 
 import { FunctionDeclaration, Type, GoogleGenAI, Modality } from "@google/genai";
 import { imageStore } from '../services/imageStore';
-import { ToolError } from '../../types';
+import { ToolError } from '../types';
 import { getText } from '../utils/geminiUtils';
 
 // Helper function to convert base64 to Blob

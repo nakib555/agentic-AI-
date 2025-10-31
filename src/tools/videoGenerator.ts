@@ -5,7 +5,7 @@
 
 import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
 import { videoStore } from '../services/videoStore';
-import { ToolError } from '../../types';
+import { ToolError } from '../types';
 import { getText } from '../utils/geminiUtils';
 
 export const videoGeneratorDeclaration: FunctionDeclaration = {

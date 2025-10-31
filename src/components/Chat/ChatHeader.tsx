@@ -5,7 +5,9 @@
 
 // FIX: Removed invalid 'aistudio' from react import.
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+const motion = motionTyped as any;
 
 type ChatHeaderProps = {
   setIsSidebarOpen: (isOpen: boolean) => void;
@@ -38,7 +40,7 @@ const MoreOptionsIcon = () => (
                 <g clipPath="url(#b)" transform="matrix(1.33333 0 0 -1.33333 0 682.667)">
                     <path d="M0 0v-67.044h-359.948V0c0 6.629-5.374 12.003-12.003 12.003h-42.02c-6.629 0-12.003-5.374-12.003-12.003V-81.561c0-23.154 18.77-41.925 41.925-41.925h408.15c23.154 0 41.925 18.771 41.925 41.925V0c0 6.629-5.374 12.003-12.004 12.003H12.003C5.374 12.003 0 6.629 0 0Z" transform="translate(435.974 149.179)" fill="currentColor"></path>
                     <path d="m0 0-49.801 63.767c-6.598 8.449-19.381 8.449-25.979 0L-125.581 0c-8.451-10.821-.741-26.626 12.99-26.626h28.215v-127.26h43.171v127.26h28.215C.741-26.626 8.452-10.821 0 0Z" transform="translate(231.554 416.203)" fill="currentColor"></path>
-                    <path d="m0 0 49.801-63.767c6.598-8.449 19.381-8.449 25.979 0L125.581 0c8.451 10.821.741 26.626-12.99 26.626H84.376v127.26H41.205V26.626H12.99C-.741 26.626-8.452 10.821 0 0Z" transform="translate(280.446 332.42)" fill="currentColor"></path>
+                    <path d="m0 0 49.801-63.767c6.598 8.449 19.381 8.449 25.979 0L125.581 0c8.451 10.821.741 26.626-12.99 26.626H84.376v127.26H41.205V26.626H12.99C-.741 26.626-8.452 10.821 0 0Z" transform="translate(280.446 332.42)" fill="currentColor"></path>
                     <path d="M0 0h-235.702c-10.786 0-19.53 8.744-19.53 19.53 0 10.786 8.744 19.53 19.53 19.53H0c10.786 0 19.53-8.744 19.53-19.53C19.53 8.744 10.786 0 0 0Z" transform="translate(373.851 186.827)" fill="currentColor"></path>
                     <path d="M0 0h30.614c10.786 0 19.53-8.744 19.53-19.53 0-10.785-8.744-19.529-19.53-19.529h-235.702c-10.786 0-19.53 8.744-19.53 19.529 0 10.786 8.744 19.53 19.53 19.53H-80" transform="translate(343.237 153.327)" fill="currentColor"></path>
                     <path d="M0 0h.025" transform="translate(303.237 153.327)" fill="currentColor"></path>

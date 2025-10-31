@@ -4,10 +4,11 @@
  */
 
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-// FIX: Import `MotionProps` and use it as a type directly.
-import { motion, AnimatePresence, type MotionProps } from 'framer-motion';
+// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+const motion = motionTyped as any;
 import { GoogleGenAI } from '@google/genai';
-import type { Message, Source } from '../../../types';
+import type { Message, Source } from '../../types';
 import { MarkdownComponents } from '../Markdown/markdownComponents';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
 import { parseMessageText } from '../../utils/messageParser';
@@ -32,7 +33,7 @@ import { TtsButton } from './AiMessage/TtsButton';
 import { cleanTextForTts } from './AiMessage/utils';
 
 
-const animationProps: MotionProps = {
+const animationProps = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.4, ease: "easeOut" },

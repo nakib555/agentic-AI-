@@ -4,7 +4,7 @@
  */
 
 import { FunctionDeclaration, Type } from "@google/genai";
-import { ToolError } from '../../types';
+import { ToolError } from '../types';
 import { executePythonWithPyodide } from './codeExecutor/pythonExecutor';
 import { executeJsInWorker } from './codeExecutor/jsExecutor';
 import { executeWithPiston } from './codeExecutor/pistonExecutor';

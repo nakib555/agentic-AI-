@@ -8,7 +8,7 @@ import type { FunctionCall, Part } from "@google/genai";
 import { generateChatTitle, generateFollowUpSuggestions } from '../services/gemini';
 import { toolImplementations } from '../tools';
 import { runAgenticLoop } from '../services/agenticLoop';
-import { type Message, type ToolCallEvent, type MessageError, ToolError, ChatSession } from '../../types';
+import { type Message, type ToolCallEvent, type MessageError, ToolError, ChatSession } from '../types';
 import { fileToBase64 } from '../utils/fileUtils';
 import { useChatHistory } from './useChatHistory';
 import { parseMessageText } from '../utils/messageParser';

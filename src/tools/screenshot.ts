@@ -5,7 +5,7 @@
 
 import { FunctionDeclaration, Type } from "@google/genai";
 import html2canvas from 'html2canvas';
-import { ToolError } from '../../types';
+import { ToolError } from '../types';
 
 export const captureCodeOutputScreenshotDeclaration: FunctionDeclaration = {
   name: 'captureCodeOutputScreenshot',

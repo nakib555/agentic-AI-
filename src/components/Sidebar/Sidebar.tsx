@@ -4,9 +4,11 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+const motion = motionTyped as any;
 import { NavItem } from './NavItem';
-import type { ChatSession } from '../../../types';
+import type { ChatSession } from '../../types';
 import type { Theme } from '../../hooks/useTheme';
 import { SidebarHeader } from './SidebarHeader';
 import { SearchInput } from './SearchInput';
@@ -99,53 +101,94 @@ export const Sidebar = ({
     const variants = isDesktop ? desktopVariants : mobileVariants;
     const animateState = isDesktop ? (isCollapsed ? 'collapsed' : 'open') : (isOpen ? 'open' : 'closed');
 
+    // This effect handles keyboard shortcuts for search.
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+                event.preventDefault();
+                // If the sidebar is collapsed, we need to expand it to show the search bar.
+                if (isCollapsed) {
+                    setIsCollapsed(false);
+                }
+                // We'll also ensure the sidebar is open on mobile.
+                if (!isOpen && !isDesktop) {
+                    setIsOpen(true);
+                }
+                // The search input itself will be focused by its own logic,
+                // but we need to ensure it's visible first.
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isCollapsed, isDesktop, isOpen, setIsCollapsed, setIsOpen]);
+
+
     return (
-        <>
-            <motion.aside
-                initial={isDesktop ? false : 'closed'}
+        <aside className="h-full flex-shrink-0 z-20">
+            {/* Overlay for mobile */}
+            <AnimatePresence>
+                {!isDesktop && isOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setIsOpen(false)}
+                        className="fixed inset-0 bg-black/50 z-10" 
+                    />
+                )}
+            </AnimatePresence>
+            
+            <motion.div
+                layout="position"
+                initial={false}
                 animate={animateState}
                 variants={variants}
-                transition={{ type: 'tween', duration: 0.4, ease: 'easeInOut' }}
-                className="bg-gray-100/80 dark:bg-black/20 backdrop-blur-xl border-r border-gray-200 dark:border-white/10 p-3 flex-col flex fixed inset-y-0 left-0 z-20 w-80 max-w-[80vw] md:relative md:translate-x-0 md:shrink-0 group"
+                transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                style={{
+                    height: '100%',
+                    position: isDesktop ? 'relative' : 'fixed',
+                    left: 0,
+                    top: 0,
+                }}
+                className="bg-gray-100 dark:bg-[#1e1e1e] border-r border-black/10 dark:border-white/10 flex flex-col"
             >
-                <div id="sidebar-content" className="flex flex-col h-full overflow-hidden">
+                <div 
+                    className="p-3 flex flex-col h-full overflow-hidden"
+                    style={{
+                        userSelect: isResizing ? 'none' : 'auto',
+                    }}
+                >
                     <SidebarHeader 
                         isCollapsed={isCollapsed} 
                         setIsOpen={setIsOpen} 
                         onNewChat={handleNewChat}
                     />
-                    
+
                     <SearchInput 
-                        isCollapsed={isCollapsed} 
+                        isCollapsed={isCollapsed}
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}
                     />
-    
-                    <div className="flex-1 flex flex-col min-h-0 mt-4">
-                        <AnimatePresence initial={false}>
-                            {!isCollapsed && (
-                                <motion.div
-                                    key="history-list-wrapper"
-                                    className="flex-1 flex flex-col min-h-0"
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                                    style={{ overflow: 'hidden' }}
-                                >
-                                    <HistoryList 
-                                        history={history}
-                                        currentChatId={currentChatId}
-                                        searchQuery={searchQuery}
-                                        isCollapsed={isCollapsed}
-                                        onLoadChat={handleLoadChat}
-                                        onDeleteChat={onDeleteChat}
-                                        onUpdateChatTitle={onUpdateChatTitle}
-                                    />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                    
+                    <motion.div 
+                        className="my-4 border-t border-black/10 dark:border-white/10"
+                        initial={false}
+                        animate={{ opacity: isCollapsed ? 0 : 1, height: isCollapsed ? 0 : 'auto' }}
+                        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                    />
+
+                    <HistoryList 
+                        history={history}
+                        currentChatId={currentChatId}
+                        searchQuery={searchQuery}
+                        isCollapsed={isCollapsed}
+                        onLoadChat={handleLoadChat}
+                        onDeleteChat={onDeleteChat}
+                        onUpdateChatTitle={onUpdateChatTitle}
+                    />
                     
                     <SidebarFooter 
                         theme={theme}
@@ -155,42 +198,15 @@ export const Sidebar = ({
                         onSettingsClick={onSettingsClick}
                     />
                 </div>
-    
-                {/* Resizing Handle */}
-                <div
-                    onMouseDown={startResizing}
-                    className={`hidden ${isCollapsed ? '' : 'md:block'} absolute top-0 right-0 h-full w-2 cursor-col-resize`}
-                    role="separator"
-                    aria-label="Resize sidebar"
-                    aria-orientation="vertical"
-                    aria-controls="sidebar-content"
-                    aria-valuemin={240}
-                    aria-valuemax={500}
-                    aria-valuenow={width}
-                    tabIndex={0}
-                >
-                    <div 
-                        className={`h-full w-px bg-gray-300 dark:bg-white/10 mx-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${isResizing ? '!opacity-100 !bg-blue-500' : ''}`}
-                    ></div>
-                </div>
-    
-            </motion.aside>
 
-            {/* Overlay for mobile */}
-            <AnimatePresence>
-                {isOpen && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={() => setIsOpen(false)}
-                    className="fixed inset-0 bg-black/60 z-10 md:hidden"
-                    role="button"
-                    aria-label="Close sidebar"
-                    tabIndex={0}
-                  />
+                {isDesktop && !isCollapsed && (
+                    <div
+                        onMouseDown={startResizing}
+                        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-blue-500/30 transition-colors"
+                        title="Resize sidebar"
+                    />
                 )}
-            </AnimatePresence>
-        </>
+            </motion.div>
+        </aside>
     );
 };

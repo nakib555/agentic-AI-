@@ -4,7 +4,7 @@
  */
 
 import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
-import { ToolError } from '../../types';
+import { ToolError } from '../types';
 import { getText } from '../utils/geminiUtils';
 
 export const displayMapDeclaration: FunctionDeclaration = {

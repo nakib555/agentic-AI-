@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { MessageError } from '../../../types';
+import type { MessageError } from '../../types';
 
 export const getErrorMessageSuggestion = (code?: string): string | null => {
     switch (code) {

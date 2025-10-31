@@ -40,7 +40,7 @@ try {
 
   // Run esbuild
   await esbuild.build({
-    entryPoints: ['index.tsx'],
+    entryPoints: ['src/index.tsx'],
     bundle: true,
     outfile: 'dist/index.js',
     loader: { '.tsx': 'tsx' },

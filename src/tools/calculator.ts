@@ -4,7 +4,7 @@
  */
 
 import { FunctionDeclaration, Type } from "@google/genai";
-import { ToolError } from '../../types';
+import { ToolError } from '../types';
 
 export const calculatorDeclaration: FunctionDeclaration = {
   name: 'calculator',

@@ -4,8 +4,10 @@
  */
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import type { MessageError, ToolCallEvent } from '../../../types';
+// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
+import { motion as motionTyped } from 'framer-motion';
+const motion = motionTyped as any;
+import type { MessageError, ToolCallEvent } from '../../types';
 import { ToolCallStep } from './ToolCallStep';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';

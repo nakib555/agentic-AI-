@@ -5,7 +5,9 @@
 
 // FIX: Removed invalid 'aistudio' from react import.
 import React from 'react';
-import { motion } from 'framer-motion';
+// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
+import { motion as motionTyped } from 'framer-motion';
+const motion = motionTyped as any;
 import { FloatingPrompts } from './FloatingPrompts';
 
 type WelcomeScreenProps = {

@@ -4,7 +4,9 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+const motion = motionTyped as any;
 
 const Highlight = ({ text, highlight }: { text: string, highlight: string }) => {
     if (!highlight.trim()) {

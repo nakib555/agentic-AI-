@@ -4,16 +4,15 @@
  */
 
 import React, { useState, FormEvent, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
-import { motion as motionTyped, AnimatePresence } from 'framer-motion';
-const motion = motionTyped as any;
-import { useVoiceInput } from '../../hooks/useVoiceInput';
-import { fileToBase64WithProgress, base64ToFile } from '../../utils/fileUtils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useVoiceInput } from '../../../hooks/useVoiceInput';
+import { fileToBase64WithProgress, base64ToFile } from '../../../utils/fileUtils';
+import { enhanceUserPromptStream } from '../../../services/promptImprover';
 import { AttachedFilePreview } from './AttachedFilePreview';
-import { enhanceUserPromptStream } from '../../services/promptImprover';
 import { ProactiveAssistance } from './ProactiveAssistance';
-import { type MessageFormHandle, type SavedFile, type ProcessedFile, type FileWithEditKey } from './MessageForm/types';
-import { PROACTIVE_SUGGESTIONS, isComplexText } from './MessageForm/utils';
+import { type MessageFormHandle, type SavedFile, type ProcessedFile, type FileWithEditKey } from './types';
+import { PROACTIVE_SUGGESTIONS, isComplexText } from './utils';
+import { UploadMenu } from './UploadMenu';
 
 export type { MessageFormHandle };
 
@@ -64,8 +63,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
     });
   };
 
-  // Expose an `attachFiles` function to the parent component via the ref.
-  // This allows the parent (ChatArea) to add files from a drag-and-drop event or "Edit" button.
   useImperativeHandle(ref, () => ({
     attachFiles: (incomingFiles: File[]) => {
       if (!incomingFiles || incomingFiles.length === 0) return;
@@ -78,7 +75,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
         if (editableFile._editKey) {
           if (existingEditKeys.has(editableFile._editKey)) {
             alert('This image is already attached for editing.');
-            continue; // Skip duplicate
+            continue;
           }
         }
         newFilesToAdd.push(editableFile);
@@ -90,7 +87,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
     }
   }));
 
-  // Restore draft on component mount
   useEffect(() => {
     const savedText = localStorage.getItem('messageDraft_text');
     if (savedText) {
@@ -119,15 +115,14 @@ export const MessageForm = forwardRef<MessageFormHandle, {
         localStorage.removeItem('messageDraft_files');
       }
     }
-  }, []); // Run only once
+  }, []);
 
-  // Auto-save draft on change
   useEffect(() => {
     if (inputValue.trim() || processedFiles.length > 0) {
       localStorage.setItem('messageDraft_text', inputValue);
       
       const filesToSave: SavedFile[] = processedFiles
-        .filter(pf => pf.base64Data) // Only save fully processed files
+        .filter(pf => pf.base64Data)
         .map(pf => ({
           name: pf.file.name,
           mimeType: pf.file.type,
@@ -154,9 +149,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
     }
   }, [inputValue, processedFiles]);
 
-  // Effect for Proactive Assistance
   useEffect(() => {
-    // Only show suggestions if there are no files attached, to keep the UI clean.
     if (processedFiles.length === 0 && isComplexText(inputValue)) {
       setProactiveSuggestions(PROACTIVE_SUGGESTIONS);
     } else {
@@ -164,7 +157,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
     }
   }, [inputValue, processedFiles]);
 
-  // Effect to close upload menu on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -181,7 +173,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
     };
   }, [isUploadMenuOpen]);
 
-  // Effect to sync state from voice input and handle auto-resizing/scrolling of the input field.
   useEffect(() => {
     const element = inputRef.current;
     if (element) {
@@ -191,11 +182,8 @@ export const MessageForm = forwardRef<MessageFormHandle, {
         const MAX_HEIGHT_PX = 192;
         element.style.height = 'auto';
         const scrollHeight = element.scrollHeight;
-
-        // A simple heuristic for a single line of text.
         const SINGLE_LINE_THRESHOLD = 32; 
         setIsExpanded(scrollHeight > SINGLE_LINE_THRESHOLD || processedFiles.length > 0);
-
         if (scrollHeight > MAX_HEIGHT_PX) {
             element.style.height = `${MAX_HEIGHT_PX}px`;
             element.style.overflowY = 'auto';
@@ -239,20 +227,13 @@ export const MessageForm = forwardRef<MessageFormHandle, {
 
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
-
-    // Handle file pasting
     const files = e.clipboardData.files;
     if (files && files.length > 0) {
-      // Use the existing logic to process and attach files.
       processAndSetFiles(Array.from(files));
       return;
     }
-
-    // Handle text pasting
     const text = e.clipboardData.getData('text/plain');
     if (text) {
-      // Insert plain text at the cursor position. This will trigger the `onInput`
-      // event, keeping React state in sync.
       document.execCommand('insertText', false, text);
     }
   };
@@ -260,29 +241,20 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   const handleEnhancePrompt = async () => {
     const originalPrompt = inputValue;
     if (!originalPrompt.trim() || isEnhancing || isLoading) return;
-    
     setIsEnhancing(true);
     let enhancedText = '';
-    
     try {
         const stream = enhanceUserPromptStream(originalPrompt);
-        // Clear the input now that we are confident an enhancement is likely to succeed.
         setInputValue(''); 
-        
         for await (const chunk of stream) {
             enhancedText += chunk;
             setInputValue(enhancedText);
         }
-
-        // After the loop, if the final result is empty, it's a failure. Restore original.
         if (!enhancedText.trim()) {
-            console.warn("Prompt enhancement resulted in an empty string. Restoring original.");
             setInputValue(originalPrompt);
         }
-
     } catch (e) {
         console.error("Error during prompt enhancement:", e);
-        // On any error from the stream, restore the original prompt.
         setInputValue(originalPrompt);
     } finally {
         setIsEnhancing(false);
@@ -290,12 +262,10 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    // Wrap the input in a markdown code block for clarity and send with the suggestion as the prompt.
-    // Also, enable thinking mode for these complex requests.
     const formattedMessage = `${suggestion}:\n\`\`\`\n${inputValue}\n\`\`\``;
     onSubmit(formattedMessage, [], { isThinkingModeEnabled: true });
     setInputValue('');
-    setProcessedFiles([]); // Should already be empty, but good to be explicit
+    setProcessedFiles([]);
     localStorage.removeItem('messageDraft_text');
     localStorage.removeItem('messageDraft_files');
   };
@@ -311,33 +281,26 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    // If Ctrl+Enter is pressed, submit the form.
     if (e.key === 'Enter' && e.ctrlKey) {
-      e.preventDefault(); // Prevent a newline character from being inserted.
+      e.preventDefault();
       handleSubmit(e);
     }
-    // If only Enter is pressed, do nothing (allow default browser newline behavior).
-    // The contenteditable div will handle the new line by default.
   };
   
   const isProcessingFiles = processedFiles.some(f => f.progress < 100 && !f.error);
   const hasInput = inputValue.trim().length > 0 || processedFiles.length > 0;
-  const hasText = inputValue.trim().length > 0;
+  const hasText = inputValue.trim().length > 0 && processedFiles.length === 0;
 
   const sendButtonClasses = "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-200 ease-in-out";
-  let sendButtonStateClasses = '';
-
-  if (hasInput && !isLoading && !isEnhancing && !isProcessingFiles) {
-    sendButtonStateClasses = 'bg-gray-400 dark:bg-slate-200 text-gray-800 dark:text-black';
-  } else {
-    sendButtonStateClasses = 'bg-gray-600 dark:bg-[#202123] text-gray-400 dark:text-slate-500';
-  }
+  let sendButtonStateClasses = (hasInput && !isLoading && !isEnhancing && !isProcessingFiles)
+    ? 'bg-gray-400 dark:bg-slate-200 text-gray-800 dark:text-black'
+    : 'bg-gray-600 dark:bg-[#202123] text-gray-400 dark:text-slate-500';
 
   return (
     <motion.form 
         className={`bg-gray-200/50 dark:bg-[#202123] border border-gray-300 dark:border-white/10 flex flex-col p-2`} 
         onSubmit={handleSubmit}
-        animate={{ borderRadius: isExpanded ? '1rem' : '1.5rem' }} // 1rem = rounded-2xl, 1.5rem = rounded-3xl
+        animate={{ borderRadius: isExpanded ? '1rem' : '1.5rem' }}
         transition={{ duration: 0.2, ease: 'easeInOut' }}
     >
         <AnimatePresence>
@@ -348,7 +311,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 />
             )}
         </AnimatePresence>
-        {/* File Preview Area */}
         <AnimatePresence>
           {processedFiles.length > 0 && (
             <motion.div
@@ -373,26 +335,9 @@ export const MessageForm = forwardRef<MessageFormHandle, {
           )}
         </AnimatePresence>
         
-        {/* Input and Buttons Row */}
         <div className="flex items-end gap-2">
-            <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                aria-hidden="true"
-                multiple
-                accept="image/*,video/*,audio/*,application/pdf,.txt,.md,.csv,.json,.py,.js,.ts,.html,.css,.xml,.rtf,.log,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-            />
-            <input
-                type="file"
-                ref={folderInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                aria-hidden="true"
-                {...{ webkitdirectory: "", directory: "" }}
-                multiple
-            />
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" aria-hidden="true" multiple accept="image/*,video/*,audio/*,application/pdf,.txt,.md,.csv,.json,.py,.js,.ts,.html,.css,.xml,.rtf,.log,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
+            <input type="file" ref={folderInputRef} onChange={handleFileChange} className="hidden" aria-hidden="true" {...{ webkitdirectory: "", directory: "" }} multiple />
             
             <div className="relative">
                 <button 
@@ -412,41 +357,11 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 </button>
                 <AnimatePresence>
                     {isUploadMenuOpen && (
-                    <motion.div
-                        ref={uploadMenuRef}
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.1, ease: 'easeOut' }}
-                        className="absolute bottom-full mb-2 w-40 bg-white dark:bg-[#2D2D2D] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
-                    >
-                        <ul className="text-sm">
-                        <li>
-                            <button
-                                onClick={() => {
-                                    fileInputRef.current?.click();
-                                    setIsUploadMenuOpen(false);
-                                }}
-                                className="w-full text-left flex items-center gap-2 px-3 py-1.5 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M4.75 2A1.75 1.75 0 0 0 3 3.75v8.5A1.75 1.75 0 0 0 4.75 14h6.5A1.75 1.75 0 0 0 13 12.25v-6.5L9.25 2H4.75ZM8.5 2.75V6H12v6.25a.25.25 0 0 1-.25.25h-6.5a.25.25 0 0 1-.25-.25v-8.5a.25.25 0 0 1 .25-.25H8.5Z" /></svg>
-                                <span>Files</span>
-                            </button>
-                        </li>
-                        <li>
-                            <button
-                                onClick={() => {
-                                    folderInputRef.current?.click();
-                                    setIsUploadMenuOpen(false);
-                                }}
-                                className="w-full text-left flex items-center gap-2 px-3 py-1.5 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M2 3.75C2 3.06 2.56 2.5 3.25 2.5h3.57a.75.75 0 0 1 .62.35l.38 1.12H12a1.5 1.5 0 0 1 1.5 1.5V12A1.5 1.5 0 0 1 12 13.5H4A1.5 1.5 0 0 1 2.5 12V3.75Zm1.5 0v8.25c0 .14.11.25.25.25h8a.25.25 0 0 0 .25-.25V5.47a.25.25 0 0 0-.25-.25H7.72a.75.75 0 0 1-.62-.35L6.72 3.75H3.5Z" /></svg>
-                                <span>Folder</span>
-                            </button>
-                        </li>
-                        </ul>
-                    </motion.div>
+                        <UploadMenu
+                            menuRef={uploadMenuRef}
+                            onFileClick={() => { fileInputRef.current?.click(); setIsUploadMenuOpen(false); }}
+                            onFolderClick={() => { folderInputRef.current?.click(); setIsUploadMenuOpen(false); }}
+                        />
                     )}
                 </AnimatePresence>
             </div>
@@ -461,11 +376,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                   role="textbox"
                   data-placeholder={isRecording ? 'Listening...' : "Ask anything, or drop a file"}
                   className={`content-editable-input w-full bg-transparent text-gray-900 dark:text-slate-200 focus:outline-none ${isLoading || isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                   style={{
-                    minHeight: '28px', // Base height for a single line
-                    maxHeight: '192px',
-                    transition: 'height 0.2s ease-in-out',
-                  }}
+                   style={{ minHeight: '28px', maxHeight: '192px', transition: 'height 0.2s ease-in-out' }}
               />
             </div>
             <AnimatePresence>
@@ -493,7 +404,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
             </AnimatePresence>
 
             <AnimatePresence>
-              {hasText && processedFiles.length === 0 && (
+              {hasText && (
                 <motion.button
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -545,13 +456,9 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 className={`${sendButtonClasses} ${sendButtonStateClasses}`}
             >
                 {isLoading ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                        <path d="M4 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4Z" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M4 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4Z" /></svg>
                 ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 -mr-0.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 -mr-0.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" /></svg>
                 )}
             </button>
         </div>

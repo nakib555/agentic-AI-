@@ -4,8 +4,10 @@
  */
 
 import React, { useMemo, useEffect, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import type { MessageError, ToolCallEvent } from '../../../types';
+// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
+const motion = motionTyped as any;
+import type { MessageError, ToolCallEvent } from '../../types';
 import { WorkflowNode } from './WorkflowNode';
 import { parseAgenticWorkflow } from '../../services/workflowParser';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';

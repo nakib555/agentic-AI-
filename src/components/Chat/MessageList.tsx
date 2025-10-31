@@ -5,7 +5,7 @@
 
 // FIX: Removed invalid 'aistudio' from react import.
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
-import type { Message } from '../../../types';
+import type { Message } from '../../types';
 import { MessageComponent } from './Message';
 import { WelcomeScreen } from './WelcomeScreen';
 import type { MessageFormHandle } from './MessageForm';

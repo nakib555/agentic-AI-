@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Model } from '../services/modelService';
-import type { ChatSession, Message } from '../../types';
+import type { ChatSession, Message } from '../types';
 import { getAvailableModels } from '../services/modelService';
 import { useChat } from '../hooks/useChat';
 import { useTheme } from '../hooks/useTheme';

@@ -4,8 +4,10 @@
  */
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import type { ToolCallEvent } from '../../../types';
+// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
+import { motion as motionTyped } from 'framer-motion';
+const motion = motionTyped as any;
+import type { ToolCallEvent } from '../../types';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { LocationPermissionRequest } from './LocationPermissionRequest';
@@ -133,7 +135,8 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
         const packages = (args.packages as string[] | undefined) || [];
         return (
             <div className="space-y-3 text-sm">
-                <CodeBlock language={args.language as string || 'plaintext'}>{args.code as string}</CodeBlock>
+                {/* FIX: Added missing 'isStreaming' prop to CodeBlock */}
+                <CodeBlock language={args.language as string || 'plaintext'} isStreaming={false}>{args.code as string}</CodeBlock>
                 {packages.length > 0 && (
                      <div className="flex items-center gap-2 text-xs">
                         <span className="font-semibold text-gray-500 dark:text-slate-400">Dependencies:</span>
