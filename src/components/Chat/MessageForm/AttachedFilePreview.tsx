@@ -83,7 +83,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
     );
 
     return (
-        <div className="relative group w-full bg-gray-100 dark:bg-black/20 p-2 rounded-lg flex items-center gap-3">
+        <div className="relative group w-full bg-black/5 dark:bg-white/5 p-2 rounded-lg flex items-center gap-3">
             {previewUrl ? (
                  <div className="relative flex-shrink-0 w-10 h-10 rounded-md overflow-hidden bg-gray-300 dark:bg-black/30">
                      <img src={previewUrl} alt={file.name} className="w-full h-full object-cover" />

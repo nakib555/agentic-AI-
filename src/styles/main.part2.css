@@ -36,18 +36,34 @@ html, body, #root {
 }
 
 /* --- Chat Area Background Pattern --- */
+@keyframes bg-animate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .chat-background {
   position: relative;
-  background-color: #F9FAFB; /* gray-50 */
-  background-image: radial-gradient(#E5E7EB 1px, transparent 1px); /* gray-200 */
-  background-size: 20px 20px;
+  background-color: #f0f4f8; /* Light blue-gray */
+  background-image: 
+    radial-gradient(at 15% 25%, hsla(210, 90%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 85% 35%, hsla(180, 90%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 20% 80%, hsla(240, 90%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 80% 75%, hsla(300, 90%, 95%, 1) 0px, transparent 50%);
+  background-size: 200% 200%;
+  animation: bg-animate 60s ease infinite;
 }
 
 .dark .chat-background {
-  background-color: #121212;
-  background-image: radial-gradient(#2A2A2A 1px, transparent 1px);
-  background-size: 20px 20px;
+  background-color: #0a0e13; /* Very dark blue */
+  background-image: 
+    radial-gradient(at 15% 25%, hsla(220, 50%, 20%, 0.5) 0px, transparent 50%),
+    radial-gradient(at 85% 35%, hsla(260, 50%, 20%, 0.5) 0px, transparent 50%),
+    radial-gradient(at 20% 80%, hsla(190, 50%, 20%, 0.5) 0px, transparent 50%),
+    radial-gradient(at 80% 75%, hsla(320, 50%, 20%, 0.5) 0px, transparent 50%);
+  animation: bg-animate 80s ease infinite reverse;
 }
+
 
 /* --- Jump-to-Message Highlight --- */
 @keyframes highlight-animation {
