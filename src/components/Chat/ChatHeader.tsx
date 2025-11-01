@@ -119,7 +119,7 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         </div>
 
         {/* --- Centered Title --- */}
-        <div className="flex-1 min-w-0 text-left sm:text-center px-2 sm:px-4">
+        <div className="flex-1 min-w-0 text-left md:text-center px-2 sm:px-4">
             {chatTitle && (
                 <h1 className="text-sm font-semibold text-gray-800 dark:text-slate-200 truncate" title={chatTitle}>
                     {chatTitle}

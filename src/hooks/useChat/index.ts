@@ -51,7 +51,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
   const messages = useMemo(() => {
     if (chatHistoryHook.isHistoryLoading) {
-      return [{ id: 'initial-loading-placeholder', role: 'model' as const, text: '', isThinking: true }];
+      return [];
     }
     return chatHistory.find(c => c.id === currentChatId)?.messages || [];
   }, [chatHistoryHook.isHistoryLoading, chatHistory, currentChatId]);
