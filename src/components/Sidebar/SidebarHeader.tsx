@@ -23,7 +23,7 @@ export const SidebarHeader = ({ isCollapsed, setIsOpen, onNewChat }: SidebarHead
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-white"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </div>
             <motion.span 
-                className="font-semibold text-sm whitespace-nowrap overflow-hidden text-slate-800 dark:text-slate-100"
+                className="font-semibold text-sm overflow-hidden text-slate-800 dark:text-slate-100"
                 initial={false}
                 animate={{ width: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1, x: isCollapsed ? -5 : 0 }}
                 transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}

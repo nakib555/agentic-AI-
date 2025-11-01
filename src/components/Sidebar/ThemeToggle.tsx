@@ -27,7 +27,7 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed }: { theme: Theme, se
                     >
                         {btn.icon}
                         <motion.span
-                            className="overflow-hidden whitespace-nowrap"
+                            className="overflow-hidden"
                             initial={false}
                             animate={{ width: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1 }}
                             transition={{ duration: 0.2 }}

@@ -34,7 +34,7 @@ export const NavItem = ({ icon, text, active, isCollapsed, onClick, disabled }: 
         >
             <div className="flex-shrink-0 w-5 h-5">{icon}</div>
             <motion.span 
-                className="whitespace-nowrap overflow-hidden"
+                className="overflow-hidden"
                 initial={false}
                 animate={{ width: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1, x: isCollapsed ? -5 : 0 }}
                 transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}

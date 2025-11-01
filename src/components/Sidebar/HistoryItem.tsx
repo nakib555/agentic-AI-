@@ -141,7 +141,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
                     />
                 ) : (
                     <motion.span 
-                        className="flex-1 min-w-0 truncate"
+                        className="flex-1 min-w-0 overflow-hidden"
                         initial={false}
                         animate={{ width: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1, x: isCollapsed ? -5 : 0 }}
                         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}

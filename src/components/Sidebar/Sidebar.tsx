@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 // FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
@@ -49,6 +49,22 @@ export const Sidebar = ({
 }: SidebarProps) => {
     const { isDesktop } = useViewport();
     const [searchQuery, setSearchQuery] = useState('');
+    const prevIsDesktop = useRef(isDesktop);
+    const [animationDisabledForResize, setAnimationDisabledForResize] = useState(false);
+
+    // This effect detects when the viewport crosses the mobile/desktop breakpoint.
+    // When it does, we temporarily disable the spring animation to prevent a layout "jump"
+    // as the component's position property changes from fixed to relative.
+    useEffect(() => {
+        if (prevIsDesktop.current !== isDesktop) {
+            setAnimationDisabledForResize(true);
+            const timer = setTimeout(() => {
+                setAnimationDisabledForResize(false);
+            }, 50); // A short delay to ensure the animation is disabled for the layout change.
+            prevIsDesktop.current = isDesktop;
+            return () => clearTimeout(timer);
+        }
+    }, [isDesktop]);
 
     const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
         mouseDownEvent.preventDefault();
@@ -124,7 +140,6 @@ export const Sidebar = ({
             </AnimatePresence>
             
             <motion.div
-                layout
                 initial={false}
                 animate={
                     isDesktop 
@@ -133,8 +148,8 @@ export const Sidebar = ({
                 }
                 variants={isDesktop ? undefined : mobileVariants}
                 transition={{
-                    type: isResizing ? 'tween' : 'spring',
-                    duration: isResizing ? 0 : undefined,
+                    type: isResizing || animationDisabledForResize ? 'tween' : 'spring',
+                    duration: isResizing || animationDisabledForResize ? 0 : undefined,
                     stiffness: 500,
                     damping: 40,
                 }}
