@@ -47,6 +47,37 @@ export const useAppLogic = () => {
   const sidebar = useSidebar();
   const { isDesktop } = useViewport();
   const prevIsDesktop = useRef(isDesktop);
+  const appContainerRef = useRef<HTMLDivElement>(null);
+
+  // This effect handles resizing the app container on mobile when the virtual keyboard appears.
+  useEffect(() => {
+    const appElement = appContainerRef.current;
+    // window.visualViewport is not available in all browsers, so we check for it.
+    if (!appElement || typeof window.visualViewport === 'undefined') {
+      return;
+    }
+
+    const initialHeight = appElement.style.height;
+
+    const updateHeight = () => {
+      // On mobile, when the keyboard appears, the visual viewport shrinks.
+      // We set the app's height to this new smaller viewport height to prevent
+      // the input field from being hidden behind the keyboard.
+      appElement.style.height = `${window.visualViewport.height}px`;
+    };
+
+    window.visualViewport.addEventListener('resize', updateHeight);
+    updateHeight(); // Set the initial height correctly on first load
+
+    // Cleanup function to remove the listener and restore original style
+    return () => {
+      window.visualViewport.removeEventListener('resize', updateHeight);
+      if (appElement) {
+        appElement.style.height = initialHeight;
+      }
+    };
+  }, []); // Empty dependency array ensures this runs only once on mount.
+
 
   // Synchronize sidebar state between mobile and desktop views
   useEffect(() => {
@@ -229,5 +260,6 @@ export const useAppLogic = () => {
     handleShowThinkingProcess, handleCloseThinkingSidebar, handleJumpToMessage,
     activeModel, isChatActive, messageListRef, handleToggleSidebar,
     isDesktop,
+    appContainerRef,
   };
 };
