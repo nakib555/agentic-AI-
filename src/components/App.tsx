@@ -279,7 +279,7 @@ export const App = () => {
   const isChatActive = !!currentChatId;
 
   return (
-    <div className="flex h-full bg-transparent overflow-hidden">
+    <div className="flex h-screen bg-transparent overflow-hidden">
       <Sidebar 
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen}
