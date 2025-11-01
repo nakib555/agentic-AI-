@@ -132,7 +132,7 @@ export const ChatArea = ({
         )}
       </AnimatePresence>
       <div className="flex-shrink-0 pt-4 px-4 sm:px-6 md:px-8">
-        <div className="relative w-full max-w-3xl mx-auto">
+        <div className="relative w-full">
           <MessageForm 
             ref={messageFormRef}
             onSubmit={sendMessage} 

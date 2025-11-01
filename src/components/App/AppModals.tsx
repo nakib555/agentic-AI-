@@ -38,6 +38,7 @@ type AppModalsProps = {
   defaultMaxTokens: number;
   isMemoryEnabled: boolean;
   setIsMemoryEnabled: (enabled: boolean) => void;
+  onManageMemory: () => void;
   memoryContent: string;
   clearMemory: () => void;
   isConfirmationOpen: boolean;
@@ -64,7 +65,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     setIsMemoryEnabled, memoryContent, clearMemory, isConfirmationOpen,
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
     setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, messages,
-    currentChatId, toggleMessagePin, handleJumpToMessage,
+    currentChatId, toggleMessagePin, handleJumpToMessage, onManageMemory,
   } = props;
 
   return (
@@ -89,7 +90,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         defaultMaxTokens={defaultMaxTokens}
         isMemoryEnabled={isMemoryEnabled}
         setIsMemoryEnabled={setIsMemoryEnabled}
-        onManageMemory={() => setIsMemoryModalOpen(true)}
+        onManageMemory={onManageMemory}
         ttsVoice={ttsVoice}
         setTtsVoice={setTtsVoice}
         isAutoPlayEnabled={isAutoPlayEnabled}
