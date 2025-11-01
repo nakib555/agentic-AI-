@@ -81,9 +81,16 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                         return (
                             <div key={groupName}>
                                 <h3 
-                                    className="px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 overflow-hidden"
+                                    className="px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2"
                                 >
-                                    {groupName}
+                                    <motion.span
+                                        className="block overflow-hidden whitespace-nowrap"
+                                        initial={false}
+                                        animate={{ width: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1, x: isCollapsed ? -5 : 0 }}
+                                        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                    >
+                                        {groupName}
+                                    </motion.span>
                                 </h3>
                                 <div className="space-y-0.5">
                                     {chatsInGroup.map((item) => (

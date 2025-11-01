@@ -6,6 +6,8 @@
 // PART 1 of 4 from src/hooks/useChat.ts
 // Contains the callback definitions for the agentic loop.
 
+// FIX: Add missing import for 'React' to resolve namespace errors for React types like MutableRefObject.
+import type React from 'react';
 import type { FunctionCall } from "@google/genai";
 import { generateFollowUpSuggestions } from '../../services/gemini/index';
 import { type ToolCallEvent, type MessageError } from '../../types';

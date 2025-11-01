@@ -43,7 +43,7 @@ export const App = () => {
         onSettingsClick={() => logic.setIsSettingsOpen(true)}
       />
 
-      <div className={`flex flex-1 min-w-0 ${logic.isResizing || logic.isThinkingResizing ? 'pointer-events-none' : ''}`}>
+      <div className={`relative z-10 flex flex-1 min-w-0 ${logic.isResizing || logic.isThinkingResizing ? 'pointer-events-none' : ''}`}>
         <main className="flex-1 flex flex-col overflow-hidden chat-background min-w-0">
           <div className="flex-1 flex flex-col w-full max-w-3xl mx-auto min-h-0">
              <ChatHeader 
@@ -111,6 +111,7 @@ export const App = () => {
         defaultMaxTokens={DEFAULT_MAX_TOKENS}
         isMemoryEnabled={logic.isMemoryEnabled}
         setIsMemoryEnabled={logic.setIsMemoryEnabled}
+        onManageMemory={() => logic.setIsMemoryModalOpen(true)}
         memoryContent={logic.memoryContent}
         clearMemory={logic.clearMemory}
         isConfirmationOpen={logic.isConfirmationOpen}

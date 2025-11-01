@@ -156,11 +156,12 @@ export const Sidebar = ({
                 style={{
                     height: '100%',
                     position: isDesktop ? 'relative' : 'fixed',
+                    width: !isDesktop ? width : 'auto', // Explicitly set width for mobile view
                     left: 0,
                     top: 0,
                     zIndex: isDesktop ? 'auto' : 30,
                 }}
-                className="bg-gray-100 dark:bg-[#1e1e1e] border-r border-black/10 dark:border-white/10 flex flex-col"
+                className="bg-gray-100 dark:bg-[#1e1e1e] border-r border-black/10 dark:border-white/10 flex flex-col transform-gpu" // Added transform-gpu to promote to its own layer
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
@@ -210,7 +211,7 @@ export const Sidebar = ({
                 {isDesktop && !isCollapsed && (
                     <div
                         onMouseDown={startResizing}
-                        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-blue-500/30 transition-colors"
+                        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-blue-500/30 transition-colors z-10"
                         title="Resize sidebar"
                     />
                 )}

@@ -6,7 +6,8 @@
 // This file contains the logic extracted from MessageForm.tsx.
 // It uses a custom hook to manage state, side effects, and event handlers.
 
-import { useState, useRef, useEffect, useCallback, useImperativeHandle } from 'react';
+// FIX: Add 'React' to the import from 'react' to resolve namespace errors for React types like ForwardedRef, FormEvent, etc.
+import React, { useState, useRef, useEffect, useCallback, useImperativeHandle } from 'react';
 import { useVoiceInput } from '../../../hooks/useVoiceInput';
 import { fileToBase64WithProgress, base64ToFile } from '../../../utils/fileUtils';
 import { enhanceUserPromptStream } from '../../../services/promptImprover';
