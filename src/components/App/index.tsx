@@ -52,7 +52,7 @@ export const App = () => {
 
       <div className={`relative z-10 flex flex-1 min-w-0 ${logic.isResizing || logic.isThinkingResizing ? 'pointer-events-none' : ''}`}>
         <main className="flex-1 flex flex-col overflow-hidden chat-background min-w-0">
-          <div className="flex-1 flex flex-col w-full max-w-3xl mx-auto min-h-0">
+          <div className="flex-1 flex flex-col w-full max-w-4xl mx-auto min-h-0">
              <ChatHeader 
                 isDesktop={logic.isDesktop}
                 handleToggleSidebar={logic.handleToggleSidebar}
