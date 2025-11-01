@@ -8,7 +8,6 @@ import React, { useState, useRef, useEffect } from 'react';
 // FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import type { Message } from '../../types';
-import { useViewport } from '../../hooks/useViewport';
 const motion = motionTyped as any;
 
 type ChatHeaderProps = {
@@ -21,6 +20,7 @@ type ChatHeaderProps = {
   isChatActive: boolean;
   messages: Message[];
   onOpenPinnedModal: () => void;
+  isDesktop: boolean;
 };
 
 const ToggleIcon = () => (
@@ -66,12 +66,13 @@ const MenuItem: React.FC<{ onClick: () => void; disabled: boolean; children: Rea
     </li>
 );
 
-export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollapsed, onImportChat, onExportChat, onShareChat, isChatActive, messages, onOpenPinnedModal }: ChatHeaderProps) => {
+export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollapsed, onImportChat, onExportChat, onShareChat, isChatActive, messages, onOpenPinnedModal, isDesktop }: ChatHeaderProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const pinnedCount = messages.filter(m => m.isPinned).length;
-    const { isDesktop } = useViewport();
+
+    const isSidebarActive = isDesktop ? !isSidebarCollapsed : isSidebarOpen;
 
     const getAriaAndTitle = () => {
         if (isDesktop) {
@@ -99,7 +100,11 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         {/* --- UNIFIED SIDEBAR TOGGLE --- */}
         <button
             onClick={handleToggleSidebar}
-            className="p-1.5 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+            className={`p-1.5 rounded-md transition-colors ${
+                isSidebarActive
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300'
+                    : 'text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white'
+            }`}
             aria-label={getAriaAndTitle()}
             title={getAriaAndTitle()}
         >

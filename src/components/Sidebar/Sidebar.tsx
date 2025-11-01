@@ -14,7 +14,6 @@ import { SidebarHeader } from './SidebarHeader';
 import { SearchInput } from './SearchInput';
 import { HistoryList } from './HistoryList';
 import { SidebarFooter } from './SidebarFooter';
-import { useViewport } from '../../hooks/useViewport';
 
 type SidebarProps = {
     isOpen: boolean;
@@ -35,6 +34,7 @@ type SidebarProps = {
     theme: Theme;
     setTheme: (theme: Theme) => void;
     onSettingsClick: () => void;
+    isDesktop: boolean;
 };
 
 const mobileVariants = {
@@ -46,9 +46,9 @@ const mobileVariants = {
 export const Sidebar: React.FC<SidebarProps> = ({ 
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
     isResizing, setIsResizing, history, currentChatId, onNewChat, onLoadChat,
-    onDeleteChat, onClearAllChats, onUpdateChatTitle, theme, setTheme, onSettingsClick
+    onDeleteChat, onClearAllChats, onUpdateChatTitle, theme, setTheme, onSettingsClick,
+    isDesktop
 }) => {
-    const { isDesktop } = useViewport();
     const [searchQuery, setSearchQuery] = useState('');
     const prevIsDesktop = useRef(isDesktop);
     const [animationDisabledForResize, setAnimationDisabledForResize] = useState(false);
@@ -165,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 style={{
                     height: '100%',
                     position: isDesktop ? 'relative' : 'fixed',
-                    width: !isDesktop ? width : 'auto', // Explicitly set width for mobile view
+                    width: !isDesktop ? 288 : 'auto', // Explicitly set width for mobile view
                     left: 0,
                     top: 0,
                     zIndex: isDesktop ? 'auto' : 30,

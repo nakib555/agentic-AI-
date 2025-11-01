@@ -24,6 +24,7 @@ export const App = () => {
     <div className="flex h-screen bg-transparent overflow-hidden">
       <Sidebar
         key={logic.isDesktop ? 'desktop' : 'mobile'}
+        isDesktop={logic.isDesktop}
         isOpen={logic.isSidebarOpen} 
         setIsOpen={logic.setIsSidebarOpen}
         isCollapsed={logic.isSidebarCollapsed}
@@ -48,6 +49,7 @@ export const App = () => {
         <main className="flex-1 flex flex-col overflow-hidden chat-background min-w-0">
           <div className="flex-1 flex flex-col w-full max-w-3xl mx-auto min-h-0">
              <ChatHeader 
+                isDesktop={logic.isDesktop}
                 handleToggleSidebar={logic.handleToggleSidebar}
                 isSidebarOpen={logic.isSidebarOpen}
                 isSidebarCollapsed={logic.isSidebarCollapsed}

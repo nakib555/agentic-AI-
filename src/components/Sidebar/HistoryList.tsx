@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 // FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
