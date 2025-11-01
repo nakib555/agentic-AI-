@@ -39,6 +39,7 @@ Use formatting for emphasis and structure.
 * **Bold** → important points or headings
 * ==Highlight== → **Use this for strong emphasis on key concepts or takeaways.** This is a primary tool for drawing attention.
 * *Italics* → secondary emphasis or tone variation
+* \`[Link Text](https://...)\` → create hyperlinks
 * ~~Strikethrough~~ → mark corrections
 * \`Monospace\` → code or commands
 * ALL CAPS → highlight (use sparingly)
@@ -49,6 +50,7 @@ Use formatting for emphasis and structure.
 **Key Point:** Always format ==important text==.  
 *Note:* Keep structure consistent.  
 Command: \`npm start\`
+For more info, see the [official documentation](https://example.com).
 \`\`\`
 
 ---
