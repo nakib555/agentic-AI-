@@ -46,8 +46,6 @@ export const useAppLogic = () => {
   const memory = useMemory();
   const sidebar = useSidebar();
   const { isDesktop } = useViewport();
-  const prevIsDesktopRef = useRef(isDesktop);
-
 
   const handleToggleSidebar = () => {
     if (isDesktop) {
@@ -56,17 +54,6 @@ export const useAppLogic = () => {
         sidebar.setIsSidebarOpen(!sidebar.isSidebarOpen);
     }
   };
-
-  useEffect(() => {
-    // This effect synchronizes the sidebar state when the viewport crosses breakpoints.
-    if (prevIsDesktopRef.current !== isDesktop) {
-        // When switching between mobile and desktop, always ensure the mobile overlay is closed.
-        sidebar.setIsSidebarOpen(false);
-    }
-    // Update the ref for the next render.
-    prevIsDesktopRef.current = isDesktop;
-  }, [isDesktop, sidebar.setIsSidebarOpen]);
-
 
   const combinedSystemPrompt = useMemo(() => {
     if (!aboutUser.trim() && !aboutResponse.trim()) return '';

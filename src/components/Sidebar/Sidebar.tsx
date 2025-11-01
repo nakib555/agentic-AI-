@@ -55,18 +55,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // This effect detects when the viewport crosses the mobile/desktop breakpoint.
-    // When it does, we temporarily disable the spring animation to prevent a layout "jump"
-    // as the component's position property changes from fixed to relative.
+    // It disables animations to prevent layout jumps and resets the mobile overlay state.
     useEffect(() => {
         if (prevIsDesktop.current !== isDesktop) {
             setAnimationDisabledForResize(true);
             const timer = setTimeout(() => {
                 setAnimationDisabledForResize(false);
-            }, 50); // A short delay to ensure the animation is disabled for the layout change.
+            }, 50);
             prevIsDesktop.current = isDesktop;
+            
+            // When switching viewports, always close the mobile overlay to prevent it
+            // from getting stuck on the desktop view.
+            setIsOpen(false);
+
             return () => clearTimeout(timer);
         }
-    }, [isDesktop]);
+    }, [isDesktop, setIsOpen]);
 
     const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
         mouseDownEvent.preventDefault();
