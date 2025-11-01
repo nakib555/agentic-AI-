@@ -24,7 +24,8 @@ import { FileAttachment } from '../AI/FileAttachment';
 import { PinButton } from './PinButton';
 import { SuggestedActions } from './SuggestedActions';
 import { ExecutionApproval } from '../AI/ExecutionApproval';
-import type { MessageFormHandle } from './MessageForm';
+// FIX: Fix module import path for `MessageFormHandle` to point to the barrel file, resolving ambiguity with an empty `MessageForm.tsx` file.
+import type { MessageFormHandle } from './MessageForm/index';
 import { TtsButton } from './AiMessage/TtsButton';
 import { useTts } from '../../hooks/useTts';
 

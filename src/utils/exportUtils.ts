@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ChatSession } from '../../types';
+// FIX: Correct relative import path for types.
+import type { ChatSession } from '../types';
 import { parseMessageText } from './messageParser';
 
 const sanitizeFilename = (title: string): string => {

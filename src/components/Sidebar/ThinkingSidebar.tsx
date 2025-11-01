@@ -5,7 +5,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import type { Message } from '../../../types';
+// FIX: Correct the relative import path for types.
+import type { Message } from '../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { parseMessageText } from '../../utils/messageParser';
 import { useViewport } from '../../hooks/useViewport';

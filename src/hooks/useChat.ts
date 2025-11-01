@@ -5,7 +5,8 @@
 
 import { useMemo, useCallback, useEffect, useRef } from 'react';
 import type { FunctionCall, Part } from "@google/genai";
-import { generateChatTitle, generateFollowUpSuggestions } from '../services/gemini';
+// FIX: Fix module import path for gemini services to point to the barrel file, resolving ambiguity with an empty `gemini.ts` file.
+import { generateChatTitle, generateFollowUpSuggestions } from '../services/gemini/index';
 import { toolImplementations } from '../tools';
 import { runAgenticLoop } from '../services/agenticLoop';
 import { type Message, type ToolCallEvent, type MessageError, ToolError, ChatSession } from '../types';

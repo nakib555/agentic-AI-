@@ -7,7 +7,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
-import { GoalAnalysisIcon, PlannerIcon, TodoListIcon, ToolsIcon } from './icons';
+// FIX: Fix module import path for icons to point to the barrel file inside the 'icons' directory, resolving ambiguity with an empty 'icons.tsx' file.
+import { GoalAnalysisIcon, PlannerIcon, TodoListIcon, ToolsIcon } from './icons/index';
 import type { ParsedWorkflow } from '../../services/workflowParser';
 import { getAgentColor } from '../../utils/agentUtils';
 

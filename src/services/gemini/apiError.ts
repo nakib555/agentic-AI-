@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageError } from '../../../types';
+// FIX: Correct the relative import path for types.
+import type { MessageError } from '../../types';
 
 /**
  * Parses a generic Error from the Gemini API into a structured MessageError.

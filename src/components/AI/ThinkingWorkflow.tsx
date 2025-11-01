@@ -12,7 +12,8 @@ import { WorkflowNode } from './WorkflowNode';
 import { parseAgenticWorkflow } from '../../services/workflowParser';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
-import { PlannerIcon, TodoListIcon, ToolsIcon, GoalAnalysisIcon } from './icons';
+// FIX: Fix module import path for icons to point to the barrel file inside the 'icons' directory, resolving ambiguity with an empty 'icons.tsx' file.
+import { PlannerIcon, TodoListIcon, ToolsIcon, GoalAnalysisIcon } from './icons/index';
 import { TypingWrapper } from './TypingWrapper';
 import { WorkflowConnector } from './WorkflowConnector';
 import { getAgentColor } from '../../utils/agentUtils';
