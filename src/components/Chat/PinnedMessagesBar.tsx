@@ -4,8 +4,10 @@
  */
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { Message } from '../../../types';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
+const motion = motionTyped as any;
+import type { Message } from '../../types';
 
 const PinnedMessageItem: React.FC<{ 
     message: Message;

@@ -1,0 +1,50 @@
+/* PART 1 of 2 of markdown.css (Lines 1-68) */
+
+/* Vertical spacing for AI-generated custom DIVs */
+.markdown-content > div {
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.markdown-content > div:first-child { margin-top: 0; }
+.markdown-content > div:last-child { margin-bottom: 0; }
+
+/* Bubble style for AI-generated HTML */
+.bubble {
+  display: inline-block;
+  background: #2563eb; /* blue-600 */
+  color: #ffffff;
+  border-radius: 18px;
+  padding: 10px 16px;
+  margin: 6px 0;
+  max-width: 85%;
+  line-height: 1.4;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  word-break: break-word;
+}
+.dark .bubble {
+  background: #1d4ed8; /* blue-700 */
+}
+
+/* Custom Blockquote styles */
+.custom-blockquote {
+  position: relative;
+  padding-left: 1rem;
+  border-left: 3px solid #d1d5db; /* gray-300 */
+}
+.dark .custom-blockquote {
+  border-left-color: #4b5563; /* gray-600 */
+}
+
+/* Ensure paragraphs inside the blockquote don't add extra margins */
+.custom-blockquote p {
+  margin-bottom: 0 !important;
+}
+.custom-blockquote p:not(:last-child) {
+  margin-bottom: 1rem !important; /* Space between paragraphs inside a quote */
+}
+
+/* Compact version for workflow view */
+.custom-blockquote-workflow {
+  padding-left: 0.75rem;
+  border-left-width: 2px;
+}

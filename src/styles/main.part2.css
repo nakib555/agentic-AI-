@@ -1,0 +1,84 @@
+/* PART 2 of 2 of main.css (Lines 71-139) */
+
+/* Theme-aware CSS Variables for AI-generated HTML */
+:root {
+  --card-bg: #ffffff;
+  --card-text: #1e293b;
+  --gradient-start: #7c3aed;
+  --gradient-end: #3730a3;
+  --border-color: #e2e8f0;
+  --svg-fill: currentColor;
+}
+.dark {
+  --card-bg: #1e1e1e;
+  --card-text: #e2e8f0;
+  --gradient-start: #3b82f6; /* blue-500 */
+  --gradient-end: #1d4ed8; /* blue-700 */
+  --border-color: #333;
+  --svg-fill: currentColor;
+}
+
+/* Constrain the main application layout to the viewport height */
+html, body, #root {
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Placeholder styling for the contentEditable div chat input */
+.content-editable-input[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: #6B7280; /* text-gray-500 */
+  pointer-events: none;
+}
+
+.dark .content-editable-input[data-placeholder]:empty::before {
+  color: #94a3b8; /* text-slate-400 */
+}
+
+/* --- Chat Area Background Pattern --- */
+.chat-background {
+  position: relative;
+  background-color: #F9FAFB; /* gray-50 */
+  background-image: radial-gradient(#E5E7EB 1px, transparent 1px); /* gray-200 */
+  background-size: 20px 20px;
+}
+
+.dark .chat-background {
+  background-color: #121212;
+  background-image: radial-gradient(#2A2A2A 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* --- Jump-to-Message Highlight --- */
+@keyframes highlight-animation {
+  0% { background-color: transparent; }
+  25% { background-color: rgba(59, 130, 246, 0.15); } /* blue-500/15 */
+  100% { background-color: transparent; }
+}
+
+.dark @keyframes highlight-animation {
+  0% { background-color: transparent; }
+  25% { background-color: rgba(96, 165, 250, 0.15); } /* blue-400/15 */
+  100% { background-color: transparent; }
+}
+
+.highlight-jump {
+  animation: highlight-animation 2s ease-in-out;
+  border-radius: 1.5rem; /* rounded-3xl */
+}
+
+
+/* --- Monaco Editor Display-Only Enhancements --- */
+.monaco-editor .view-lines {
+  pointer-events: none;
+  cursor: default !important;
+}
+.monaco-editor .cursors-layer { display: none !important; }
+.monaco-editor .monaco-mouse-cursor-text { cursor: default !important; }
+.monaco-editor textarea:focus { outline: none !important; }
+
+/* --- Brand Gradient for Welcome Text --- */
+.brand-gradient {
+  background-image: linear-gradient(to right, #4338ca, #3b82f6, #14b8a6, #a3e635);
+  background-size: 300% auto;
+}

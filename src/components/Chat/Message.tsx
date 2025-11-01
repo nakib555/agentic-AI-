@@ -6,7 +6,7 @@
 import React from 'react';
 import type { Message } from '../../types';
 import { UserMessage } from './UserMessage';
-import { AiMessage } from './AiMessage';
+import { AiMessage } from './AiMessage/index';
 // FIX: Fix module import path for `MessageFormHandle` to point to the barrel file, resolving ambiguity with an empty `MessageForm.tsx` file.
 import type { MessageFormHandle } from './MessageForm/index';
 
