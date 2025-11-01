@@ -13,7 +13,7 @@ type WelcomeScreenProps = {
 };
 
 export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
-    <div className="flex flex-col items-center justify-start sm:justify-center min-h-full text-center pt-16 sm:pt-0 pb-12 px-4">
+    <div className="flex flex-col items-center justify-center w-full my-auto text-center pb-12 px-4">
         <motion.h1 
             className="text-4xl sm:text-4xl lg:text-5xl font-bold font-['Space_Grotesk']"
             initial={{ opacity: 0, y: 20 }}

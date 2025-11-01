@@ -103,11 +103,11 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
 
   return (
     <div className="flex-1 overflow-y-auto" ref={messageListRef} onScroll={handleScroll}>
-      <div className="h-full px-4 sm:px-6 md:px-8">
+      <div className="min-h-full flex px-4 sm:px-6 md:px-8">
         {visibleMessages.length === 0 ? (
           <WelcomeScreen sendMessage={sendMessage} />
         ) : (
-          <div className="space-y-8 md:space-y-10 py-4" role="log" aria-live="polite">
+          <div className="space-y-8 md:space-y-10 py-4 w-full" role="log" aria-live="polite">
             {visibleMessages.map((msg) => (
               <MessageComponent 
                   key={msg.id} 
