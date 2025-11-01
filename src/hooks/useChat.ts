@@ -145,7 +145,10 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
     // --- 1. Setup Chat Session & User Message Object ---
     if (!activeChatId) {
-        activeChatId = createNewChat(initialModel, settings);
+        activeChatId = createNewChat(initialModel, { 
+            temperature: settings.temperature, 
+            maxOutputTokens: settings.maxOutputTokens
+        });
     }
 
     let attachmentsData: Message['attachments'] | undefined = undefined;
@@ -187,23 +190,23 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     addMessagesToChat(activeChatId, [modelPlaceholder]);
 
     // --- 4. Construct Correct API History ---
+    const activeChat = chatHistory.find(c => c.id === activeChatId);
     const hasVideoAttachment = userMessageObj.attachments?.some(att => att.mimeType.startsWith('video/')) ?? false;
-    const modelFromChat = chatHistory.find(c => c.id === activeChatId)?.model || initialModel;
 
     const modelForApi = isThinkingModeEnabled || hasVideoAttachment
         ? 'gemini-2.5-pro'
-        : modelFromChat;
+        : (activeChat?.model || initialModel);
         
     const chatSettings = {
-        systemPrompt: chatHistory.find(c => c.id === activeChatId)?.systemPrompt,
-        temperature: chatHistory.find(c => c.id === activeChatId)?.temperature,
-        maxOutputTokens: chatHistory.find(c => c.id === activeChatId)?.maxOutputTokens,
+        systemPrompt: settings.systemPrompt,
+        temperature: activeChat?.temperature ?? settings.temperature,
+        maxOutputTokens: activeChat?.maxOutputTokens ?? settings.maxOutputTokens,
         thinkingBudget: isThinkingModeEnabled ? 32768 : undefined,
         memoryContent: memoryContent,
     };
     
     // Get messages from before this turn and add the final user message.
-    const historyBeforeThisTurn = chatHistory.find(c => c.id === activeChatId)?.messages || [];
+    const historyBeforeThisTurn = activeChat?.messages || [];
     const allMessagesForApi = [...historyBeforeThisTurn, userMessageObj];
     
     const historyForApi: ApiHistory = [];

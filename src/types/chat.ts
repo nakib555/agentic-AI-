@@ -11,7 +11,6 @@ export type ChatSession = {
     model: string;
     isLoading?: boolean;
     createdAt: number;
-    systemPrompt?: string;
     temperature?: number;
     maxOutputTokens?: number;
 };

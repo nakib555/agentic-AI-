@@ -5,8 +5,11 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Model } from '../../services/modelService';
-import { ModelSelector } from '../UI/ModelSelector';
-import { ToggleSwitch } from '../UI/ToggleSwitch';
+import { SettingsCategoryButton } from './SettingsCategoryButton';
+import { GeneralSettings } from './GeneralSettings';
+import { ModelSettings } from './ModelSettings';
+import { CustomInstructionsSettings } from './CustomInstructionsSettings';
+import { SpeechMemorySettings } from './SpeechMemorySettings';
 
 type SettingsModalProps = {
   isOpen: boolean;
@@ -14,15 +17,20 @@ type SettingsModalProps = {
   models: Model[];
   selectedModel: string;
   onModelChange: (modelId: string) => void;
-  systemPrompt: string;
-  setSystemPrompt: (prompt: string) => void;
+  onClearAllChats: () => void;
+  // Custom Instructions
+  aboutUser: string;
+  setAboutUser: (prompt: string) => void;
+  aboutResponse: string;
+  setAboutResponse: (prompt: string) => void;
+  // Model Settings
   temperature: number;
   setTemperature: (temp: number) => void;
   maxTokens: number;
   setMaxTokens: (tokens: number) => void;
-  defaultSystemPrompt: string;
   defaultTemperature: number;
   defaultMaxTokens: number;
+  // Speech & Memory
   isMemoryEnabled: boolean;
   setIsMemoryEnabled: (enabled: boolean) => void;
   onManageMemory: () => void;
@@ -33,68 +41,16 @@ type SettingsModalProps = {
   disabled: boolean;
 };
 
-const SettingField: React.FC<{ label: string; description: string; children: React.ReactNode }> = ({ label, description, children }) => (
-    <div className="space-y-3 py-6 border-b border-gray-200 dark:border-white/10 last:border-b-0">
-        <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
-            {label}
-        </label>
-        {children}
-        <p className="text-sm text-gray-500 dark:text-slate-400">
-            {description}
-        </p>
-    </div>
-);
-
-const TabButton: React.FC<{ label: string; isActive: boolean; onClick: () => void }> = ({ label, isActive, onClick }) => (
-    <button
-      onClick={onClick}
-      className={`relative px-1 py-3 text-sm font-semibold transition-colors focus:outline-none ${
-        isActive
-          ? 'text-blue-600 dark:text-blue-400'
-          : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'
-      }`}
-    >
-      {label}
-      {isActive && (
-          <motion.div
-            className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"
-            layoutId="settings-tab-underline"
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-          />
-      )}
-    </button>
-);
-
-const TTS_VOICES = [
-    { id: 'Kore', name: 'Kore' },
-    { id: 'Puck', name: 'Puck' },
-    { id: 'Charon', name: 'Charon' },
-    { id: 'Fenrir', name: 'Fenrir' },
-    { id: 'Zephyr', name: 'Zephyr' },
+const CATEGORIES = [
+  { id: 'general', label: 'General', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7.83 4.25A2.75 2.75 0 0 1 10.58 7v.06c.21-.03.42-.06.64-.06 1.12 0 2.16.3 3.08 1.03l-4.08 4.08a2.5 2.5 0 0 1-3.54 0L4.5 9.99A5.48 5.48 0 0 1 7.83 4.25ZM9 9.06a1 1 0 0 0-1.41 0L5.47 11.18a3.98 3.98 0 0 0 4.54 4.54l2.12-2.12a1 1 0 0 0 0-1.41L9 9.06Z" clipRule="evenodd" /></svg> },
+  { id: 'model', label: 'Model & Behavior', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M7.75 2.75a.75.75 0 0 0-1.5 0v1.258a5.523 5.523 0 0 0-1.503 1.334c-.792.792-1.247 1.87-1.247 2.985v.253a.75.75 0 0 0 1.5 0v-.253c0-.8.316-1.55.879-2.113a4.023 4.023 0 0 1 2.113-.879H7.75V2.75Z" /><path d="M12.25 2.75a.75.75 0 0 1 1.5 0v1.258a5.523 5.523 0 0 1 1.503 1.334c.792.792 1.247 1.87 1.247 2.985v.253a.75.75 0 0 1-1.5 0v-.253c0-.8-.316-1.55-.879-2.113a4.023 4.023 0 0 0-2.113-.879H12.25V2.75Z" /><path fillRule="evenodd" d="M17 10c0-2.036-1.289-3.796-3.085-4.482A5.526 5.526 0 0 0 10 3.5a5.526 5.526 0 0 0-3.915 1.018C4.289 6.204 3 7.964 3 10c0 2.036 1.289 3.796 3.085 4.482A5.526 5.526 0 0 0 10 16.5a5.526 5.526 0 0 0 3.915-1.018C15.711 13.796 17 12.036 17 10ZM10 5a4.026 4.026 0 0 1 2.848.742A4.49 4.49 0 0 1 15.5 10a4.49 4.49 0 0 1-2.652 4.258A4.026 4.026 0 0 1 10 15a4.026 4.026 0 0 1-2.848-.742A4.49 4.49 0 0 1 4.5 10a4.49 4.49 0 0 1 2.652-4.258A4.026 4.026 0 0 1 10 5Z" clipRule="evenodd" /><path d="M7.75 12.25a.75.75 0 0 0-1.5 0v.253c0 1.114.455 2.193 1.247 2.985a5.523 5.523 0 0 0 1.503 1.334V18a.75.75 0 0 0 1.5 0v-1.178a4.023 4.023 0 0 1-2.113-.879.75.75 0 0 1-.879-2.113V12.25Z" /><path d="M12.25 12.25a.75.75 0 0 1 1.5 0v.253c0 1.114-.455 2.193-1.247 2.985a5.523 5.523 0 0 1-1.503 1.334V18a.75.75 0 0 1-1.5 0v-1.178a4.023 4.023 0 0 0 2.113-.879c.563-.564.879-1.314.879-2.113V12.25Z" /></svg> },
+  { id: 'instructions', label: 'Custom Instructions', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M15.988 3.012A2.25 2.25 0 0 1 18 5.25v9.5A2.25 2.25 0 0 1 15.75 17h-11.5A2.25 2.25 0 0 1 2 14.75v-9.5A2.25 2.25 0 0 1 4.25 3h11.528a2.25 2.25 0 0 1-.04.012ZM13 6.25a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 6.25a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6 8.25a.75.75 0 0 0 0 1.5h8a.75.75 0 0 0 0-1.5H6Z" clipRule="evenodd" /></svg> },
+  { id: 'speech', label: 'Speech & Memory', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M7 4a1 1 0 0 1 2 0v1.906a2.5 2.5 0 0 1 2.375 2.45v.144a2.5 2.5 0 1 1-2.5 2.5V8.5h-1V12a1 1 0 1 1-2 0V5a1 1 0 0 1 1-1Z" /><path d="M12.5 6.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" /></svg> },
 ];
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ 
-    isOpen, onClose, models, selectedModel, onModelChange,
-    systemPrompt, setSystemPrompt, temperature, setTemperature, maxTokens, setMaxTokens,
-    defaultSystemPrompt, defaultTemperature, defaultMaxTokens, 
-    isMemoryEnabled, setIsMemoryEnabled, onManageMemory,
-    ttsVoice, setTtsVoice,
-    isAutoPlayEnabled, setIsAutoPlayEnabled,
-    disabled 
-}) => {
-    const [activeTab, setActiveTab] = useState<'model' | 'interface'>('model');
-    
-    const handleReset = () => {
-        setSystemPrompt(defaultSystemPrompt);
-        setTemperature(defaultTemperature);
-        setMaxTokens(defaultMaxTokens);
-    };
-    
-    const tabContentVariants = {
-        hidden: { opacity: 0, x: 20 },
-        visible: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: -20 },
-    };
+export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
+    const { isOpen, onClose } = props;
+    const [activeCategory, setActiveCategory] = useState('general');
 
   return (
     <AnimatePresence>
@@ -104,7 +60,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center p-4"
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="settings-title"
@@ -114,8 +70,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="bg-white dark:bg-[#202123] rounded-2xl shadow-xl w-full max-w-2xl border border-gray-200 dark:border-white/10 flex flex-col max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()} // Prevent closing modal when clicking inside
+            className="bg-white dark:bg-[#202123] rounded-2xl shadow-xl w-full max-w-4xl h-[80vh] border border-gray-200 dark:border-white/10 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
@@ -133,129 +89,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
             </div>
             
-            <div className="flex-1 flex flex-col min-h-0">
-                {/* Tab Navigation */}
-                <div className="flex-shrink-0 border-b border-gray-200 dark:border-white/10 px-6">
-                    <div className="flex items-center gap-6">
-                        <TabButton label="Model" isActive={activeTab === 'model'} onClick={() => setActiveTab('model')} />
-                        <TabButton label="Interface" isActive={activeTab === 'interface'} onClick={() => setActiveTab('interface')} />
-                    </div>
-                </div>
+            <div className="flex-1 flex min-h-0">
+                {/* Left Navigation */}
+                <nav className="w-56 flex-shrink-0 p-4 border-r border-gray-200 dark:border-white/10 overflow-y-auto">
+                    <ul className="space-y-1">
+                        {CATEGORIES.map(cat => (
+                            <li key={cat.id}>
+                                <SettingsCategoryButton
+                                    icon={cat.icon}
+                                    label={cat.label}
+                                    isActive={activeCategory === cat.id}
+                                    onClick={() => setActiveCategory(cat.id)}
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
 
-                {/* Tab Content */}
-                <div className="p-6 overflow-y-auto flex-1">
+                {/* Right Content */}
+                <div className="flex-1 p-6 overflow-y-auto">
                     <AnimatePresence mode="wait">
                         <motion.div
-                            key={activeTab}
-                            variants={tabContentVariants}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            transition={{ duration: 0.2, ease: 'easeInOut' }}
-                            className="space-y-6"
+                            key={activeCategory}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
                         >
-                            {activeTab === 'model' && (
-                                <>
-                                    <SettingField label="AI Model" description="Select the model for new chats. This can be changed for the current chat.">
-                                        <ModelSelector models={models} selectedModel={selectedModel} onModelChange={onModelChange} disabled={disabled} className="w-full" />
-                                    </SettingField>
-                                    <SettingField label="System Prompt" description="Add a custom instruction to guide the AI's behavior, persona, and responses for new chats.">
-                                        <textarea
-                                            value={systemPrompt}
-                                            onChange={e => setSystemPrompt(e.target.value)}
-                                            disabled={disabled}
-                                            placeholder="e.g., You are a helpful and friendly assistant that explains complex topics in simple terms."
-                                            className="w-full min-h-[96px] max-h-48 p-2 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 overflow-y-auto placeholder-gray-500 dark:placeholder-slate-400 resize-none"
-                                            aria-disabled={disabled}
-                                        />
-                                    </SettingField>
-                                    <SettingField label={`Temperature: ${temperature.toFixed(1)}`} description="Controls randomness. Lower values are more deterministic, higher values are more creative.">
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="1"
-                                            step="0.1"
-                                            value={temperature}
-                                            onChange={e => setTemperature(parseFloat(e.target.value))}
-                                            className="w-full"
-                                            disabled={disabled}
-                                        />
-                                    </SettingField>
-                                    <SettingField label="Max Output Tokens" description="Set a limit on the number of tokens per model response. Leave at 0 to use the model's default.">
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="100"
-                                            value={maxTokens}
-                                            onChange={e => setMaxTokens(parseInt(e.target.value, 10) || 0)}
-                                            className="w-full p-2 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                            disabled={disabled}
-                                        />
-                                    </SettingField>
-                                </>
-                            )}
-
-                            {activeTab === 'interface' && (
-                                <>
-                                    <SettingField label="Conversation Memory" description="Allow the AI to remember key details across chats for a more personalized experience.">
-                                        <div className="flex items-center justify-between py-2">
-                                            <span className="font-semibold text-sm text-gray-800 dark:text-slate-200">Enable Memory</span>
-                                            <ToggleSwitch checked={isMemoryEnabled} onChange={setIsMemoryEnabled} disabled={disabled} />
-                                        </div>
-                                        <button 
-                                            onClick={onManageMemory} 
-                                            disabled={!isMemoryEnabled || disabled}
-                                            className="w-full mt-2 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Manage Memory
-                                        </button>
-                                    </SettingField>
-                                    <SettingField label="Text-to-Speech Voice" description="Select the voice for the 'Listen' feature on AI messages.">
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-2">
-                                            {TTS_VOICES.map((voice) => (
-                                                <button
-                                                    key={voice.id}
-                                                    onClick={() => setTtsVoice(voice.id)}
-                                                    disabled={disabled}
-                                                    className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors border ${
-                                                        ttsVoice === voice.id
-                                                            ? 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/20 dark:text-blue-200 dark:border-blue-500/50'
-                                                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'
-                                                    } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                >
-                                                    {voice.name}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </SettingField>
-                                    <SettingField label="Auto-Play Audio" description="Automatically play the audio for new AI messages when they are complete.">
-                                        <div className="flex items-center justify-between py-2">
-                                            <span className="font-semibold text-sm text-gray-800 dark:text-slate-200">Enable Auto-Play</span>
-                                            <ToggleSwitch checked={isAutoPlayEnabled} onChange={setIsAutoPlayEnabled} disabled={disabled} />
-                                        </div>
-                                    </SettingField>
-                                </>
-                            )}
+                            {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} />}
+                            {activeCategory === 'model' && <ModelSettings {...props} />}
+                            {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
+                            {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}
                         </motion.div>
                     </AnimatePresence>
                 </div>
-            </div>
-            
-            {/* Footer */}
-            <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-white/10 flex-shrink-0">
-                <button
-                    onClick={handleReset}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
-                    disabled={disabled}
-                >
-                    Reset to Defaults
-                </button>
-                <button
-                    onClick={onClose}
-                    className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                >
-                    Done
-                </button>
             </div>
           </motion.div>
         </motion.div>

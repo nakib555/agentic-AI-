@@ -10,7 +10,6 @@ import { validModels } from '../services/modelService';
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
 type ChatSettings = { 
-    systemPrompt: string; 
     temperature: number; 
     maxOutputTokens: number; 
 };
@@ -35,6 +34,9 @@ export const useChatHistory = () => {
             ...chat,
             createdAt: chat.createdAt || Date.now()
           };
+          
+          // Remove legacy systemPrompt from saved chats during migration
+          delete migratedChat.systemPrompt;
 
           if (!migratedChat.model || !validModelIds.has(migratedChat.model)) {
               migratedChat.model = defaultModelId;
@@ -112,6 +114,9 @@ export const useChatHistory = () => {
         createdAt: Date.now(), // Always set a new creation date
         isLoading: false, // Ensure it's not in a loading state
     };
+    
+    // Remove legacy systemPrompt from imported chats
+    delete (newChat as any).systemPrompt;
 
     setChatHistory(prev => [newChat, ...prev]);
     setCurrentChatId(newChat.id); // Automatically load the imported chat
@@ -195,7 +200,7 @@ export const useChatHistory = () => {
     setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, model } : s));
   }, []);
 
-  const updateChatSettings = useCallback((chatId: string, newSettings: Partial<Pick<ChatSession, 'systemPrompt' | 'temperature' | 'maxOutputTokens'>>) => {
+  const updateChatSettings = useCallback((chatId: string, newSettings: Partial<Pick<ChatSession, 'temperature' | 'maxOutputTokens'>>) => {
     setChatHistory(prev => prev.map(s => {
       if (s.id !== chatId) return s;
       return { ...s, ...newSettings };

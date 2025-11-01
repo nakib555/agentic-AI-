@@ -25,11 +25,9 @@ import type { MessageListHandle } from './Chat/MessageList';
 import { PinnedMessagesModal } from './Chat/PinnedMessagesModal';
 
 
-// Configure the Monaco Editor loader to fetch assets from a CDN.
-// This is done once at the top level of the application.
-
-
-const DEFAULT_SYSTEM_PROMPT = '';
+// Default values for settings
+const DEFAULT_ABOUT_USER = '';
+const DEFAULT_ABOUT_RESPONSE = '';
 const DEFAULT_TEMPERATURE = 0.7;
 const DEFAULT_MAX_TOKENS = 0; // 0 or undefined means use model default
 const DEFAULT_TTS_VOICE = 'Kore';
@@ -45,8 +43,9 @@ export const App = () => {
   const [isThinkingSidebarOpen, setIsThinkingSidebarOpen] = useState(false);
   const [thinkingMessageIdForSidebar, setThinkingMessageIdForSidebar] = useState<string | null>(null);
   
-  // Settings State - these act as the UI state, which is kept in sync with the active chat.
-  const [systemPrompt, setSystemPrompt] = useState<string>(() => localStorage.getItem('agentic-systemPrompt') || DEFAULT_SYSTEM_PROMPT);
+  // Settings State
+  const [aboutUser, setAboutUser] = useState<string>(() => localStorage.getItem('agentic-aboutUser') || DEFAULT_ABOUT_USER);
+  const [aboutResponse, setAboutResponse] = useState<string>(() => localStorage.getItem('agentic-aboutResponse') || DEFAULT_ABOUT_RESPONSE);
   const [temperature, setTemperature] = useState<number>(() => parseFloat(localStorage.getItem('agentic-temperature') || `${DEFAULT_TEMPERATURE}`));
   const [maxTokens, setMaxTokens] = useState<number>(() => parseInt(localStorage.getItem('agentic-maxTokens') || `${DEFAULT_MAX_TOKENS}`, 10));
   const [ttsVoice, setTtsVoice] = useState<string>(() => localStorage.getItem('agentic-ttsVoice') || DEFAULT_TTS_VOICE);
@@ -78,6 +77,22 @@ export const App = () => {
     setIsResizing,
   } = useSidebar();
 
+  const combinedSystemPrompt = useMemo(() => {
+    if (!aboutUser.trim() && !aboutResponse.trim()) {
+      return ''; // No custom instructions
+    }
+    return `
+      <CONTEXT>
+      The user has provided the following information about themselves to personalize your responses.
+      ${aboutUser}
+      </CONTEXT>
+      <INSTRUCTIONS>
+      The user has provided the following instructions on how you should respond.
+      ${aboutResponse}
+      </INSTRUCTIONS>
+    `.trim();
+  }, [aboutUser, aboutResponse]);
+
   const { 
     messages, 
     sendMessage, 
@@ -96,12 +111,11 @@ export const App = () => {
     approveExecution,
     denyExecution,
     importChat,
-  } = useChat(uiSelectedModel, { systemPrompt, temperature, maxOutputTokens: maxTokens }, memoryContent);
+  } = useChat(uiSelectedModel, { systemPrompt: combinedSystemPrompt, temperature, maxOutputTokens: maxTokens }, memoryContent);
   
   const prevChatHistoryRef = useRef<ChatSession[]>([]);
   const messageListRef = useRef<MessageListHandle>(null);
 
-  // Derive the message object for the sidebar. This will update whenever chatHistory changes.
   const thinkingMessageForSidebar = useMemo(() => {
     if (!thinkingMessageIdForSidebar || !currentChatId) return null;
     const currentChat = chatHistory.find(c => c.id === currentChatId);
@@ -111,7 +125,6 @@ export const App = () => {
 
   // Effect to automatically update the AI's memory when a chat finishes.
   useEffect(() => {
-    // Find chats that were loading in the previous state but are not loading in the current state.
     const justCompletedChats = prevChatHistoryRef.current
         .filter(prevChat => prevChat.isLoading)
         .map(prevChat => {
@@ -120,12 +133,9 @@ export const App = () => {
         })
         .filter(Boolean) as ChatSession[];
 
-    // If we found any, update memory for them.
     for (const chat of justCompletedChats) {
         updateMemory(chat);
     }
-
-    // Update the ref to the current history for the next render cycle.
     prevChatHistoryRef.current = chatHistory;
   }, [chatHistory, updateMemory]);
 
@@ -134,66 +144,52 @@ export const App = () => {
     getAvailableModels().then(models => {
       setAvailableModels(models);
       if (models.length > 0) {
-        // Set the default model only after they are loaded
         setUiSelectedModel(models[0].id);
       }
     }).catch(err => {
       console.error("Failed to load models:", err);
-      // On error, set to an empty array to signify loading is complete
       setAvailableModels([]);
     }).finally(() => {
       setModelsLoading(false);
     });
   }, []);
 
-  // Effect to save UI settings changes TO the active chat and localStorage.
-  // This runs when the user changes a setting in the modal.
+  // Effect to save UI settings changes to localStorage and the active chat.
   useEffect(() => {
-    // 1. Persist the current UI settings as the new global default for any future chats.
-    localStorage.setItem('agentic-systemPrompt', systemPrompt);
+    localStorage.setItem('agentic-aboutUser', aboutUser);
+    localStorage.setItem('agentic-aboutResponse', aboutResponse);
     localStorage.setItem('agentic-temperature', String(temperature));
     localStorage.setItem('agentic-maxTokens', String(maxTokens));
     localStorage.setItem('agentic-ttsVoice', ttsVoice);
     localStorage.setItem('agentic-autoPlayAudio', JSON.stringify(isAutoPlayEnabled));
 
-    // 2. If there's an active chat, update its settings, but only if they have actually changed.
-    // This check is crucial to prevent an infinite update loop after the other effect loads settings.
     if (currentChatId) {
       const currentChat = chatHistory.find(c => c.id === currentChatId);
       if (currentChat && (
-        (currentChat.systemPrompt ?? DEFAULT_SYSTEM_PROMPT) !== systemPrompt ||
         (currentChat.temperature ?? DEFAULT_TEMPERATURE) !== temperature ||
         (currentChat.maxOutputTokens ?? DEFAULT_MAX_TOKENS) !== maxTokens
       )) {
         updateChatSettings(currentChatId, {
-          systemPrompt,
           temperature,
           maxOutputTokens: maxTokens,
         });
       }
     }
-  }, [systemPrompt, temperature, maxTokens, ttsVoice, isAutoPlayEnabled, currentChatId, chatHistory, updateChatSettings]);
+  }, [aboutUser, aboutResponse, temperature, maxTokens, ttsVoice, isAutoPlayEnabled, currentChatId, chatHistory, updateChatSettings]);
   
-  // Effect to sync the settings UI FROM the currently loaded chat session.
-  // This runs when the user switches to a different chat or the chat data is updated.
+  // Effect to sync per-chat settings (temp, tokens) FROM the currently loaded chat session.
   useEffect(() => {
     const sourceOfTruth = currentChatId 
       ? chatHistory.find(c => c.id === currentChatId) 
       : null;
 
-    const newSystemPrompt = sourceOfTruth?.systemPrompt ?? (localStorage.getItem('agentic-systemPrompt') || DEFAULT_SYSTEM_PROMPT);
     const newTemperature = sourceOfTruth?.temperature ?? parseFloat(localStorage.getItem('agentic-temperature') || `${DEFAULT_TEMPERATURE}`);
     const newMaxTokens = sourceOfTruth?.maxOutputTokens ?? parseInt(localStorage.getItem('agentic-maxTokens') || `${DEFAULT_MAX_TOKENS}`, 10);
     
-    // Only call state setters if the value has actually changed. This prevents
-    // unnecessary re-renders and is key to breaking the potential effect loop.
-    if (newSystemPrompt !== systemPrompt) setSystemPrompt(newSystemPrompt);
     if (newTemperature !== temperature) setTemperature(newTemperature);
     if (newMaxTokens !== maxTokens) setMaxTokens(newMaxTokens);
-
   }, [currentChatId, chatHistory]);
   
-  // Handler for model selector: updates the model for the current chat or the next new chat.
   const handleModelChange = (modelId: string) => {
     setUiSelectedModel(modelId);
     if (currentChatId) {
@@ -229,18 +225,14 @@ export const App = () => {
     input.onchange = (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (!file) return;
-
-        // Add robust file type validation
         if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
             alert("Invalid file type. Please select a valid JSON (.json) file exported from this application.");
             return;
         }
-
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const json = event.target?.result as string;
-                // Before parsing, check if it's plausible JSON to avoid syntax errors on file types like PDF
                 if (!json || !json.trim().startsWith('{')) {
                     throw new Error("File content does not appear to be valid JSON.");
                 }
@@ -277,14 +269,12 @@ export const App = () => {
   };
 
   const handleJumpToMessage = (messageId: string) => {
-    setIsPinnedModalOpen(false); // Close modal first
-    // Give modal time to close before scrolling to avoid jank
+    setIsPinnedModalOpen(false);
     setTimeout(() => {
       messageListRef.current?.scrollToMessage(messageId);
     }, 150);
   };
 
-  // The model displayed should be the current chat's model, or the selected one for a new chat.
   const activeModel = chatHistory.find(c => c.id === currentChatId)?.model || uiSelectedModel;
   const isChatActive = !!currentChatId;
 
@@ -358,15 +348,20 @@ export const App = () => {
         selectedModel={activeModel}
         onModelChange={handleModelChange}
         disabled={modelsLoading}
-        systemPrompt={systemPrompt}
-        setSystemPrompt={setSystemPrompt}
+        onClearAllChats={clearAllChats}
+        // Custom Instructions
+        aboutUser={aboutUser}
+        setAboutUser={setAboutUser}
+        aboutResponse={aboutResponse}
+        setAboutResponse={setAboutResponse}
+        // Model Settings
         temperature={temperature}
         setTemperature={setTemperature}
         maxTokens={maxTokens}
         setMaxTokens={setMaxTokens}
-        defaultSystemPrompt={DEFAULT_SYSTEM_PROMPT}
         defaultTemperature={DEFAULT_TEMPERATURE}
         defaultMaxTokens={DEFAULT_MAX_TOKENS}
+        // Memory & Speech
         isMemoryEnabled={isMemoryEnabled}
         setIsMemoryEnabled={setIsMemoryEnabled}
         onManageMemory={() => setIsMemoryModalOpen(true)}
