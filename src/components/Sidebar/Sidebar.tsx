@@ -42,11 +42,12 @@ const mobileVariants = {
     closed: { translateX: '-100%' },
 };
 
-export const Sidebar = ({ 
+// FIX: Update the Sidebar component to use React.FC to correctly type its props, resolving an issue where the 'key' prop was not recognized.
+export const Sidebar: React.FC<SidebarProps> = ({ 
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
     isResizing, setIsResizing, history, currentChatId, onNewChat, onLoadChat,
     onDeleteChat, onClearAllChats, onUpdateChatTitle, theme, setTheme, onSettingsClick
-}: SidebarProps) => {
+}) => {
     const { isDesktop } = useViewport();
     const [searchQuery, setSearchQuery] = useState('');
     const prevIsDesktop = useRef(isDesktop);

@@ -20,6 +20,7 @@ import {
   DEFAULT_ABOUT_USER, DEFAULT_ABOUT_RESPONSE, DEFAULT_TEMPERATURE,
   DEFAULT_MAX_TOKENS, DEFAULT_TTS_VOICE, DEFAULT_AUTO_PLAY_AUDIO
 } from './constants';
+import { useViewport } from '../../hooks/useViewport';
 
 export const useAppLogic = () => {
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
@@ -44,6 +45,28 @@ export const useAppLogic = () => {
   const { theme, setTheme } = useTheme();
   const memory = useMemory();
   const sidebar = useSidebar();
+  const { isDesktop } = useViewport();
+  const prevIsDesktopRef = useRef(isDesktop);
+
+
+  const handleToggleSidebar = () => {
+    if (isDesktop) {
+        sidebar.handleSetSidebarCollapsed(!sidebar.isSidebarCollapsed);
+    } else {
+        sidebar.setIsSidebarOpen(!sidebar.isSidebarOpen);
+    }
+  };
+
+  useEffect(() => {
+    // This effect synchronizes the sidebar state when the viewport crosses breakpoints.
+    if (prevIsDesktopRef.current !== isDesktop) {
+        // When switching between mobile and desktop, always ensure the mobile overlay is closed.
+        sidebar.setIsSidebarOpen(false);
+    }
+    // Update the ref for the next render.
+    prevIsDesktopRef.current = isDesktop;
+  }, [isDesktop, sidebar.setIsSidebarOpen]);
+
 
   const combinedSystemPrompt = useMemo(() => {
     if (!aboutUser.trim() && !aboutResponse.trim()) return '';
@@ -192,6 +215,7 @@ export const useAppLogic = () => {
     ttsVoice, setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled,
     handleModelChange, handleExportChat, handleShareChat, handleImportChat,
     handleShowThinkingProcess, handleCloseThinkingSidebar, handleJumpToMessage,
-    activeModel, isChatActive, messageListRef,
+    activeModel, isChatActive, messageListRef, handleToggleSidebar,
+    isDesktop,
   };
 };

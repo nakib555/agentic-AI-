@@ -8,12 +8,13 @@ import React, { useState, useRef, useEffect } from 'react';
 // FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import type { Message } from '../../types';
+import { useViewport } from '../../hooks/useViewport';
 const motion = motionTyped as any;
 
 type ChatHeaderProps = {
-  setIsSidebarOpen: (isOpen: boolean) => void;
+  handleToggleSidebar: () => void;
+  isSidebarOpen: boolean;
   isSidebarCollapsed: boolean;
-  setIsSidebarCollapsed: (collapsed: boolean) => void;
   onImportChat: () => void;
   onExportChat: (format: 'md' | 'json' | 'pdf') => void;
   onShareChat: () => void;
@@ -65,11 +66,19 @@ const MenuItem: React.FC<{ onClick: () => void; disabled: boolean; children: Rea
     </li>
 );
 
-export const ChatHeader = ({ setIsSidebarOpen, isSidebarCollapsed, setIsSidebarCollapsed, onImportChat, onExportChat, onShareChat, isChatActive, messages, onOpenPinnedModal }: ChatHeaderProps) => {
+export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollapsed, onImportChat, onExportChat, onShareChat, isChatActive, messages, onOpenPinnedModal }: ChatHeaderProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const pinnedCount = messages.filter(m => m.isPinned).length;
+    const { isDesktop } = useViewport();
+
+    const getAriaAndTitle = () => {
+        if (isDesktop) {
+            return isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar";
+        }
+        return isSidebarOpen ? "Close sidebar" : "Open sidebar";
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -88,23 +97,11 @@ export const ChatHeader = ({ setIsSidebarOpen, isSidebarCollapsed, setIsSidebarC
         <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 z-10 bg-gray-50/80 dark:bg-[#121212]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10">
         
         {/* --- UNIFIED SIDEBAR TOGGLE --- */}
-        
-        {/* Mobile Button: Opens the sidebar */}
         <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="md:hidden p-1.5 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
-            aria-label="Open sidebar"
-            title="Open sidebar"
-        >
-            <ToggleIcon />
-        </button>
-
-        {/* Desktop Button: Collapses/expands the sidebar */}
-        <button
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden md:block p-1.5 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
-            aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={handleToggleSidebar}
+            className="p-1.5 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+            aria-label={getAriaAndTitle()}
+            title={getAriaAndTitle()}
         >
             <ToggleIcon />
         </button>
