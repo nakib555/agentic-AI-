@@ -33,6 +33,7 @@ const Highlight = ({ text, highlight }: { text: string, highlight: string }) => 
 type HistoryItemProps = {
     text: string;
     isCollapsed: boolean;
+    isDesktop: boolean;
     searchQuery: string;
     active: boolean;
     isLoading: boolean;
@@ -41,13 +42,15 @@ type HistoryItemProps = {
     onUpdateTitle: (newTitle: string) => void;
 };
 
-export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, searchQuery, active, isLoading, onClick, onDelete, onUpdateTitle }) => {
+export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isDesktop, searchQuery, active, isLoading, onClick, onDelete, onUpdateTitle }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(text);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
+
+    const shouldCollapse = isDesktop && isCollapsed;
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
@@ -119,7 +122,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
             <button 
                 onClick={isEditing ? undefined : onClick} 
                 disabled={isEditing}
-                className={`w-full text-sm p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-blue-100 text-blue-800 font-semibold dark:bg-blue-500/20 dark:text-blue-300' : 'text-slate-600 hover:bg-black/5 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-slate-100'} ${isCollapsed ? 'justify-center' : ''} ${!isCollapsed ? 'pr-8' : ''}`}
+                className={`w-full text-sm p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-blue-100 text-blue-800 font-semibold dark:bg-blue-500/20 dark:text-blue-300' : 'text-slate-600 hover:bg-black/5 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-slate-100'} ${shouldCollapse ? 'justify-center' : ''} ${!shouldCollapse ? 'pr-8' : ''}`}
             >
                 <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
                     {isLoading ? (
@@ -143,14 +146,14 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
                     <motion.span 
                         className="flex-1 min-w-0 overflow-hidden"
                         initial={false}
-                        animate={{ width: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1, x: isCollapsed ? -5 : 0 }}
-                        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                        animate={{ width: shouldCollapse ? 0 : 'auto', opacity: shouldCollapse ? 0 : 1, x: shouldCollapse ? -5 : 0 }}
+                        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                     >
                          <Highlight text={text} highlight={searchQuery} />
                     </motion.span>
                 )}
             </button>
-            {!isCollapsed && !isEditing && (
+            {!shouldCollapse && !isEditing && (
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center rounded-lg">
                     <button
                         ref={buttonRef}
@@ -193,7 +196,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, sea
                     </motion.div>
                 )}
             </AnimatePresence>
-             {isCollapsed && (
+             {shouldCollapse && (
                 <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-white dark:bg-[#2D2D2D] text-slate-800 dark:text-slate-100 text-sm font-semibold rounded-md shadow-lg border border-gray-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                     <Highlight text={text} highlight={searchQuery} />
                 </div>

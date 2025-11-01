@@ -15,6 +15,7 @@ type HistoryListProps = {
   currentChatId: string | null;
   searchQuery: string;
   isCollapsed: boolean;
+  isDesktop: boolean;
   onLoadChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
   onUpdateChatTitle: (id: string, title: string) => void;
@@ -61,7 +62,7 @@ const NoResults = () => (
     </motion.div>
 );
 
-export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, onLoadChat, onDeleteChat, onUpdateChatTitle }: HistoryListProps) => {
+export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, isDesktop, onLoadChat, onDeleteChat, onUpdateChatTitle }: HistoryListProps) => {
     const filteredHistory = history.filter(item =>
         item.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -69,6 +70,8 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
     const groupedHistory = groupChatsByMonth(filteredHistory);
     // Establish a chronological sort order for the group titles.
     const groupOrder = ['Today', 'Yesterday', ...Object.keys(groupedHistory).filter(k => k !== 'Today' && k !== 'Yesterday').sort((a, b) => new Date(b).getTime() - new Date(a).getTime())];
+    
+    const shouldCollapse = isDesktop && isCollapsed;
 
     return (
         <div className="flex-1 overflow-y-auto min-h-0 text-sm">
@@ -86,8 +89,8 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                                     <motion.span
                                         className="block overflow-hidden whitespace-nowrap"
                                         initial={false}
-                                        animate={{ width: isCollapsed ? 0 : 'auto', opacity: isCollapsed ? 0 : 1, x: isCollapsed ? -5 : 0 }}
-                                        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                        animate={{ width: shouldCollapse ? 0 : 'auto', opacity: shouldCollapse ? 0 : 1, x: shouldCollapse ? -5 : 0 }}
+                                        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                                     >
                                         {groupName}
                                     </motion.span>
@@ -98,6 +101,7 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                                             key={item.id} 
                                             text={item.title} 
                                             isCollapsed={isCollapsed}
+                                            isDesktop={isDesktop}
                                             searchQuery={searchQuery}
                                             active={item.id === currentChatId}
                                             onClick={() => onLoadChat(item.id)}
@@ -112,7 +116,7 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                     })}
                 </div>
             ) : (
-                !isCollapsed && <NoResults />
+                !shouldCollapse && <NoResults />
             )}
         </div>
     );

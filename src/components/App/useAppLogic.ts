@@ -46,6 +46,31 @@ export const useAppLogic = () => {
   const memory = useMemory();
   const sidebar = useSidebar();
   const { isDesktop } = useViewport();
+  const prevIsDesktop = useRef(isDesktop);
+
+  // Synchronize sidebar state between mobile and desktop views
+  useEffect(() => {
+    // Only run on the boundary change between mobile and desktop
+    if (prevIsDesktop.current === isDesktop) return;
+
+    if (isDesktop) {
+      // Switched TO DESKTOP view. Source of truth is mobile state (`isSidebarOpen`).
+      // If mobile sidebar was open, desktop should be expanded (not collapsed).
+      const shouldBeCollapsed = !sidebar.isSidebarOpen;
+      if (sidebar.isSidebarCollapsed !== shouldBeCollapsed) {
+        sidebar.handleSetSidebarCollapsed(shouldBeCollapsed);
+      }
+    } else {
+      // Switched TO MOBILE view. Source of truth is desktop state (`isSidebarCollapsed`).
+      // If desktop sidebar was expanded (not collapsed), mobile should be open.
+      const shouldBeOpen = !sidebar.isSidebarCollapsed;
+      if (sidebar.isSidebarOpen !== shouldBeOpen) {
+        sidebar.setIsSidebarOpen(shouldBeOpen);
+      }
+    }
+
+    prevIsDesktop.current = isDesktop;
+  }, [isDesktop, sidebar.isSidebarOpen, sidebar.isSidebarCollapsed, sidebar.setIsSidebarOpen, sidebar.handleSetSidebarCollapsed]);
 
   const handleToggleSidebar = () => {
     if (isDesktop) {

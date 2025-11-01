@@ -55,7 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // This effect detects when the viewport crosses the mobile/desktop breakpoint.
-    // It disables animations to prevent layout jumps and resets the mobile overlay state.
+    // It disables animations to prevent layout jumps.
     useEffect(() => {
         if (prevIsDesktop.current !== isDesktop) {
             setAnimationDisabledForResize(true);
@@ -64,13 +64,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }, 50);
             prevIsDesktop.current = isDesktop;
             
-            // When switching viewports, always close the mobile overlay to prevent it
-            // from getting stuck on the desktop view.
-            setIsOpen(false);
-
             return () => clearTimeout(timer);
         }
-    }, [isDesktop, setIsOpen]);
+    }, [isDesktop]);
 
     const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
         mouseDownEvent.preventDefault();
@@ -134,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
 
     return (
-        <aside className="h-full flex-shrink-0 z-20">
+        <aside className={`h-full z-20 ${isDesktop ? 'flex-shrink-0' : 'w-0'}`}>
             {/* Overlay for mobile */}
             <AnimatePresence>
                 {!isDesktop && isOpen && (
@@ -159,8 +155,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 transition={{
                     type: isResizing || animationDisabledForResize ? 'tween' : 'spring',
                     duration: isResizing || animationDisabledForResize ? 0 : undefined,
-                    stiffness: 500,
-                    damping: 40,
+                    stiffness: 300,
+                    damping: 30,
+                    mass: 1.2,
                 }}
                 style={{
                     height: '100%',
@@ -180,7 +177,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }}
                 >
                     <SidebarHeader 
-                        isCollapsed={isCollapsed} 
+                        isCollapsed={isCollapsed}
+                        isDesktop={isDesktop}
                         setIsOpen={setIsOpen} 
                         onNewChat={handleNewChat}
                     />
@@ -188,6 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <SearchInput 
                         ref={searchInputRef}
                         isCollapsed={isCollapsed}
+                        isDesktop={isDesktop}
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}
                     />
@@ -196,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         className="my-4 border-t border-black/10 dark:border-white/10"
                         initial={false}
                         animate={{ opacity: isCollapsed ? 0 : 1, height: isCollapsed ? 0 : 'auto' }}
-                        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                     />
 
                     <HistoryList 
@@ -204,6 +203,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         currentChatId={currentChatId}
                         searchQuery={searchQuery}
                         isCollapsed={isCollapsed}
+                        isDesktop={isDesktop}
                         onLoadChat={handleLoadChat}
                         onDeleteChat={onDeleteChat}
                         onUpdateChatTitle={onUpdateChatTitle}
@@ -213,6 +213,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         theme={theme}
                         setTheme={setTheme}
                         isCollapsed={isCollapsed}
+                        isDesktop={isDesktop}
                         onClearAllChats={onClearAllChats}
                         onSettingsClick={onSettingsClick}
                     />

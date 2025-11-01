@@ -15,28 +15,29 @@ const searchContainerVariants: Variants = {
     open: {
         height: 'auto',
         opacity: 1,
-        transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+        transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
     },
     collapsed: {
         height: 0,
         opacity: 0,
-        transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+        transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
     }
 };
 
 type SearchInputProps = {
   isCollapsed: boolean;
+  isDesktop: boolean;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 };
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
-  ({ isCollapsed, searchQuery, setSearchQuery }, ref) => (
+  ({ isCollapsed, isDesktop, searchQuery, setSearchQuery }, ref) => (
   <motion.div 
       className="relative overflow-hidden"
       initial={false}
       variants={searchContainerVariants}
-      animate={isCollapsed ? 'collapsed' : 'open'}
+      animate={isDesktop && isCollapsed ? 'collapsed' : 'open'}
   >
       <div className="relative">
         <input 
