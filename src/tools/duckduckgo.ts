@@ -6,6 +6,7 @@
 import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
 import { ToolError } from '../types';
 import { getText } from '../utils/geminiUtils';
+import { parseApiError } from '../services/gemini';
 
 export const duckduckgoSearchDeclaration: FunctionDeclaration = {
   name: 'duckduckgoSearch',

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// This file is now a barrel that re-exports all icons from their individual files.
 export * from './ActiveIcon';
 export * from './CompletedIcon';
 export * from './CorrectionIcon';

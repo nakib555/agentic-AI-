@@ -105,7 +105,7 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
         {executionLog.length > 0 && (
             <div>
                 <div className="flex items-center gap-3 mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-500 dark:text-slate-400"><path d="M10.75 3.944v1.076a.75.75 0 0 0 1.5 0V3.34a5.526 5.526 0 0 0-3.32-1.018V3.5a.75.75 0 0 1-1.5 0v-.837a5.526 5.526 0 0 0-3.32 1.018v.598a.75.75 0 0 0 1.5 0V3.944c.541-.244 1.12-.403 1.72-.444a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75c-.6 0-1.179.199-1.72.444v-.598a.75.75 0 0 0-1.5 0v.837a5.526 5.526 0 0 0 3.32 1.018v-1.17a.75.75 0 0 1 1.5 0v.837a5.526 5.526 0 0 0 3.32-1.018v-.598a.75.75 0 0 0-1.5 0v.598c-.541.244-1.12.403-1.72.444a.75.75 0 0 1-.75-.75V4.25a.75.75 0 0 1 .75-.75c.6 0 1.179-.199 1.72-.444Z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-500 dark:text-slate-400"><path d="M10.75 3.944v1.076a.75.75 0 0 0 1.5 0V3.34a5.526 5.526 0 0 0-3.32-1.018V3.5a.75.75 0 0 1-1.5 0v-.837a5.526 5.526 0 0 0-3.32 1.018v.598a.75.75 0 0 0 1.5 0V3.944c.541-.244 1.12-.403 1.72-.444a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75-.75c-.6 0-1.179.199-1.72.444v-.598a.75.75 0 0 0-1.5 0v.837a5.526 5.526 0 0 0 3.32 1.018v-1.17a.75.75 0 0 1 1.5 0v.837a5.526 5.526 0 0 0 3.32-1.018v-.598a.75.75 0 0 0-1.5 0v.598c-.541.244-1.12.403-1.72.444a.75.75 0 0 1-.75-.75V4.25a.75.75 0 0 1 .75-.75c.6 0 1.179-.199 1.72-.444Z" /></svg>
                     <h3 className="text-base font-bold text-gray-800 dark:text-slate-200">Execution Log</h3>
                 </div>
                 <div ref={executionLogRef} className="pl-2.5">

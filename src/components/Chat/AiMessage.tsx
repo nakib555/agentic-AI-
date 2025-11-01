@@ -7,7 +7,6 @@ import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 // FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
-import { GoogleGenAI } from '@google/genai';
 import type { Message, Source } from '../../types';
 import { MarkdownComponents } from '../Markdown/markdownComponents';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
@@ -21,16 +20,13 @@ import { TypingIndicator } from './TypingIndicator';
 import { TypingWrapper } from '../AI/TypingWrapper';
 import { McqComponent } from '../AI/McqComponent';
 import { MapDisplay } from '../AI/MapDisplay';
-import { decode, decodeAudioData } from '../../utils/audioUtils';
-import { audioCache } from '../../services/audioCache';
-import { audioManager } from '../../services/audioService';
 import { FileAttachment } from '../AI/FileAttachment';
 import { PinButton } from './PinButton';
 import { SuggestedActions } from './SuggestedActions';
 import { ExecutionApproval } from '../AI/ExecutionApproval';
 import type { MessageFormHandle } from './MessageForm';
 import { TtsButton } from './AiMessage/TtsButton';
-import { cleanTextForTts } from './AiMessage/utils';
+import { useTts } from '../../hooks/useTts';
 
 
 const animationProps = {
@@ -57,13 +53,13 @@ export const AiMessage: React.FC<{
 }) => {
   const { id, text, isThinking, error, startTime, endTime, isPinned, suggestedActions, plan, executionState } = msg;
   const [elapsed, setElapsed] = useState(0);
-  const [audioState, setAudioState] = useState<'idle' | 'loading' | 'error' | 'playing'>('idle');
-  const isPlaying = audioState === 'playing';
-
+  
   const { thinkingText, finalAnswerText } = useMemo(
     () => parseMessageText(text, !!isThinking, !!error),
     [text, isThinking, error]
   );
+  
+  const { playOrStopAudio, audioState, isPlaying } = useTts(finalAnswerText, ttsVoice);
   
   const searchSources = useMemo((): Source[] => {
     if (!msg.toolCallEvents || msg.toolCallEvents.length === 0) {
@@ -117,81 +113,6 @@ export const AiMessage: React.FC<{
   }, [isThinking, startTime]);
 
   const displayDuration = thinkingIsComplete && duration !== null ? duration.toFixed(1) : elapsed.toFixed(1);
-
-  // A stable, memoized function to handle playing or stopping audio.
-  const playOrStopAudio = useCallback(async () => {
-    // This function reads the latest state via a functional update to decide its action.
-    // This makes the callback itself stable and avoids dependency-related issues.
-    let shouldStartPlayback = false;
-    setAudioState(currentState => {
-        if (currentState === 'playing') {
-            audioManager.stop();
-            return 'idle';
-        }
-        if (currentState === 'loading') {
-            return 'loading';
-        }
-        shouldStartPlayback = true;
-        return 'loading';
-    });
-
-    if (!shouldStartPlayback || !finalAnswerText) {
-        return;
-    }
-    
-    const textToSpeak = cleanTextForTts(finalAnswerText);
-    if (!textToSpeak) {
-        console.error("TTS failed: No text to speak after cleaning.");
-        setAudioState('error');
-        return;
-    }
-      
-    const cacheKey = audioCache.createKey(textToSpeak, ttsVoice);
-    const cachedBuffer = audioCache.get(cacheKey);
-
-    const doPlay = async (buffer: AudioBuffer) => {
-        setAudioState('playing');
-        await audioManager.play(buffer, () => setAudioState('idle'));
-    };
-
-    if (cachedBuffer) {
-        await doPlay(cachedBuffer);
-        return;
-    }
-    
-    try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: textToSpeak }] }],
-            config: {
-                responseModalities: ['AUDIO'],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: ttsVoice } } },
-            },
-        });
-
-        let base64Audio: string | undefined;
-        if (response.candidates && response.candidates.length > 0) {
-            for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData && part.inlineData.mimeType.startsWith('audio/')) {
-                    base64Audio = part.inlineData.data;
-                    break;
-                }
-            }
-        }
-        
-        if (base64Audio) {
-            const audioBuffer = await decodeAudioData(decode(base64Audio), audioManager.context, 24000, 1);
-            audioCache.set(cacheKey, audioBuffer);
-            await doPlay(audioBuffer);
-        } else {
-            throw new Error("No audio data returned.");
-        }
-    } catch (err) {
-        console.error("TTS failed:", err);
-        setAudioState('error');
-    }
-  }, [finalAnswerText, ttsVoice]);
 
   // Effect to handle auto-play functionality.
   useEffect(() => {
