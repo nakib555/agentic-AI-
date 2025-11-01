@@ -82,3 +82,19 @@ export const base64ToFile = (base64: string, filename: string, mimeType: string)
     const blob = new Blob([byteArray], { type: mimeType });
     return new File([blob], filename, { type: mimeType });
 };
+
+/**
+ * Converts a base64 string to a Blob object.
+ * @param base64 The base64 string (without the data URL prefix).
+ * @param mimeType The MIME type of the resulting blob.
+ * @returns A Blob object.
+ */
+export const base64ToBlob = (base64: string, mimeType: string): Blob => {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+};

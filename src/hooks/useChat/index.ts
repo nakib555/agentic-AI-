@@ -7,14 +7,16 @@
 // The new main hook file, composing the refactored parts.
 
 import { useMemo, useCallback, useEffect, useRef } from 'react';
+import { GoogleGenAI, Modality } from '@google/genai';
 import { runAgenticLoop } from '../../services/agenticLoop/index';
 import { type Message, type ChatSession } from '../../types';
-import { fileToBase64 } from '../../utils/fileUtils';
+import { fileToBase64, base64ToBlob } from '../../utils/fileUtils';
 import { useChatHistory } from '../useChatHistory';
 import { createAgentCallbacks } from './chat-callbacks';
 import { buildApiHistory } from './history-builder';
 import { createToolExecutor } from './tool-executor';
-import { generateChatTitle } from '../../services/gemini/index';
+import { generateChatTitle, parseApiError } from '../../services/gemini/index';
+import { imageStore } from '../../services/imageStore';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -104,10 +106,71 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     const userMessageObj: Message = { id: generateId(), role: 'user', text: userMessage, isHidden, attachments: attachmentsData };
     chatHistoryHook.addMessagesToChat(activeChatId, [userMessageObj]);
 
+    const isImageEditRequest = 
+        attachmentsData && 
+        attachmentsData.length === 1 && 
+        attachmentsData[0].mimeType.startsWith('image/') && 
+        userMessage.trim().length > 0;
+
+    // --- Start loading states ---
     chatHistoryHook.setChatLoadingState(activeChatId, true);
     const modelPlaceholder: Message = { id: generateId(), role: 'model', text: '', isThinking: true, toolCallEvents: [], startTime: Date.now() };
     chatHistoryHook.addMessagesToChat(activeChatId, [modelPlaceholder]);
 
+    // --- Handle Image Edit Request (Special Case) ---
+    if (isImageEditRequest) {
+      try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+        const imagePart = { inlineData: { mimeType: attachmentsData[0].mimeType, data: attachmentsData[0].data } };
+        const textPart = { text: userMessage };
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: { parts: [imagePart, textPart] },
+            config: { responseModalities: [Modality.IMAGE] },
+        });
+        
+        let editedImageBase64: string | undefined;
+        let editedImageMimeType = 'image/png';
+
+        if (response.candidates && response.candidates[0].content.parts) {
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
+                    editedImageBase64 = part.inlineData.data;
+                    editedImageMimeType = part.inlineData.mimeType;
+                    break;
+                }
+            }
+        }
+
+        if (!editedImageBase64) {
+            throw new Error("Image editing failed: The model did not return an image.");
+        }
+        
+        const imageBlob = base64ToBlob(editedImageBase64, editedImageMimeType);
+        const imageKey = await imageStore.saveImage(imageBlob);
+        
+        const imageData = { imageKey, prompt: userMessage, caption: "Edited image" };
+        const imageComponentText = `[IMAGE_COMPONENT]${JSON.stringify(imageData)}[/IMAGE_COMPONENT]`;
+        
+        chatHistoryHook.updateLastMessage(activeChatId, () => ({
+            text: imageComponentText,
+            isThinking: false,
+            endTime: Date.now(),
+        }));
+      } catch (err) {
+        const error = parseApiError(err);
+        chatHistoryHook.updateLastMessage(activeChatId, () => ({
+            error: error, isThinking: false, endTime: Date.now(),
+        }));
+      } finally {
+        chatHistoryHook.completeChatLoading(activeChatId);
+        abortControllerRef.current = null;
+      }
+      return;
+    }
+    
+    // --- Handle Standard Agentic Loop ---
     const activeChat = chatHistoryHook.chatHistory.find(c => c.id === activeChatId);
     const hasVideoAttachment = userMessageObj.attachments?.some(att => att.mimeType.startsWith('video/')) ?? false;
     const modelForApi = isThinkingModeEnabled || hasVideoAttachment ? 'gemini-2.5-pro' : (activeChat?.model || initialModel);

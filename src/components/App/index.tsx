@@ -43,7 +43,7 @@ export const App = () => {
         onSettingsClick={() => logic.setIsSettingsOpen(true)}
       />
 
-      <div className={`flex flex-1 min-w-0 ${logic.isResizing ? 'pointer-events-none' : ''}`}>
+      <div className={`flex flex-1 min-w-0 ${logic.isResizing || logic.isThinkingResizing ? 'pointer-events-none' : ''}`}>
         <main className="flex-1 flex flex-col overflow-hidden chat-background min-w-0">
           <div className="flex-1 flex flex-col w-full max-w-3xl mx-auto min-h-0">
              <ChatHeader 
@@ -80,6 +80,10 @@ export const App = () => {
           onClose={logic.handleCloseThinkingSidebar}
           message={logic.thinkingMessageForSidebar}
           sendMessage={logic.sendMessage}
+          width={logic.thinkingSidebarWidth}
+          setWidth={logic.handleSetThinkingSidebarWidth}
+          isResizing={logic.isThinkingResizing}
+          setIsResizing={logic.setIsThinkingResizing}
         />
       </div>
 

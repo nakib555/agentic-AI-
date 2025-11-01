@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
 // FIX: Correct the relative import path for types.
 import type { Message } from '../../types';
@@ -16,6 +16,10 @@ type ThinkingSidebarProps = {
     onClose: () => void;
     message: Message | null;
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
+    width: number;
+    setWidth: (width: number) => void;
+    isResizing: boolean;
+    setIsResizing: (isResizing: boolean) => void;
 };
 
 // Mobile variants for bottom-up animation
@@ -24,16 +28,34 @@ const mobileVariants = {
   closed: { height: 0, y: '100%' },
 };
 
-// Desktop variants for side-in animation
-const desktopVariants = {
-    open: { width: '24rem' }, // w-96
-    closed: { width: 0 },
-};
-
-export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClose, message, sendMessage }) => {
+export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClose, message, sendMessage, width, setWidth, isResizing, setIsResizing }) => {
     const { isDesktop } = useViewport();
 
-    // Select the appropriate variants based on screen size
+    const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
+        mouseDownEvent.preventDefault();
+        setIsResizing(true);
+
+        const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
+            const newWidth = window.innerWidth - mouseMoveEvent.clientX;
+            setWidth(newWidth);
+        };
+
+        const handleMouseUp = () => {
+            setIsResizing(false);
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+        
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+    }, [setWidth, setIsResizing]);
+
+    // Desktop variants for side-in animation
+    const desktopVariants = {
+        open: { width: width },
+        closed: { width: 0 },
+    };
+
     const variants = isDesktop ? desktopVariants : mobileVariants;
     const animateState = isOpen ? 'open' : 'closed';
 
@@ -76,18 +98,27 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             initial={false}
             animate={animateState}
             variants={variants}
-            transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+            transition={{
+                type: isResizing ? 'tween' : 'spring',
+                duration: isResizing ? 0 : undefined,
+                stiffness: 500,
+                damping: 40,
+            }}
             className={`
-                flex-shrink-0 overflow-hidden
+                flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-[#1e1e1e]
                 ${isDesktop 
                     ? 'relative border-l border-gray-200 dark:border-white/10' // Desktop styling
-                    : 'fixed inset-x-0 bottom-0 z-30 bg-gray-100 dark:bg-[#1e1e1e] border-t border-gray-200 dark:border-white/10' // Mobile styling
+                    : 'fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 dark:border-white/10' // Mobile styling
                 }
             `}
             role="complementary"
             aria-labelledby="thinking-sidebar-title"
+            style={{ userSelect: isResizing ? 'none' : 'auto' }}
         >
-            <div className={`flex flex-col h-full ${isDesktop ? 'w-96' : 'w-full'}`}>
+            <div 
+                className="flex flex-col h-full overflow-hidden" 
+                style={{ width: isDesktop ? `${width}px` : '100%' }}
+            >
                 {/* Drag handle for mobile (decorative) */}
                 {!isDesktop && isOpen && (
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-2.5 h-1.5 w-16 bg-gray-300 dark:bg-slate-600 rounded-full cursor-grab"
@@ -113,6 +144,14 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                     {thinkingContent()}
                 </div>
             </div>
+            
+            {isDesktop && isOpen && (
+                <div
+                    onMouseDown={startResizing}
+                    className="absolute top-0 left-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-blue-500/30 transition-colors z-10"
+                    title="Resize sidebar"
+                />
+            )}
         </motion.aside>
     );
 };

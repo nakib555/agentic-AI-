@@ -132,7 +132,12 @@ export const Sidebar = ({
                         : (isOpen ? 'open' : 'closed')
                 }
                 variants={isDesktop ? undefined : mobileVariants}
-                transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                transition={{
+                    type: isResizing ? 'tween' : 'spring',
+                    duration: isResizing ? 0 : undefined,
+                    stiffness: 500,
+                    damping: 40,
+                }}
                 style={{
                     height: '100%',
                     position: isDesktop ? 'relative' : 'fixed',

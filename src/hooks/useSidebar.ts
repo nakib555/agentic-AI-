@@ -30,6 +30,20 @@ export const useSidebar = () => {
     localStorage.setItem('sidebarWidth', String(newWidth));
   }, []);
 
+  // State for Thinking Sidebar
+  const [isThinkingResizing, setIsThinkingResizing] = useState(false);
+  const [thinkingSidebarWidth, setThinkingSidebarWidth] = useState(() => {
+    const savedWidth = localStorage.getItem('thinkingSidebarWidth');
+    return savedWidth ? Math.max(320, Math.min(800, Number(savedWidth))) : 384; 
+  });
+
+  const handleSetThinkingSidebarWidth = useCallback((width: number) => {
+    const newWidth = Math.max(320, Math.min(800, width));
+    setThinkingSidebarWidth(newWidth);
+    localStorage.setItem('thinkingSidebarWidth', String(newWidth));
+  }, []);
+
+
   return {
     isSidebarOpen,
     setIsSidebarOpen,
@@ -39,5 +53,9 @@ export const useSidebar = () => {
     handleSetSidebarWidth,
     isResizing,
     setIsResizing,
+    isThinkingResizing,
+    setIsThinkingResizing,
+    thinkingSidebarWidth,
+    handleSetThinkingSidebarWidth,
   };
 };
