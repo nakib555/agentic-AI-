@@ -51,6 +51,7 @@ export const Sidebar = ({
     const [searchQuery, setSearchQuery] = useState('');
     const prevIsDesktop = useRef(isDesktop);
     const [animationDisabledForResize, setAnimationDisabledForResize] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     // This effect detects when the viewport crosses the mobile/desktop breakpoint.
     // When it does, we temporarily disable the spring animation to prevent a layout "jump"
@@ -112,8 +113,11 @@ export const Sidebar = ({
                 if (!isOpen && !isDesktop) {
                     setIsOpen(true);
                 }
-                // The search input itself will be focused by its own logic,
-                // but we need to ensure it's visible first.
+                // The search input becomes visible after an animation. We need a small delay
+                // before we can focus it, otherwise the focus command might fail.
+                setTimeout(() => {
+                    searchInputRef.current?.focus();
+                }, 100);
             }
         };
 
@@ -177,6 +181,7 @@ export const Sidebar = ({
                     />
 
                     <SearchInput 
+                        ref={searchInputRef}
                         isCollapsed={isCollapsed}
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { forwardRef } from 'react';
 // FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
@@ -30,7 +30,8 @@ type SearchInputProps = {
   setSearchQuery: (query: string) => void;
 };
 
-export const SearchInput = ({ isCollapsed, searchQuery, setSearchQuery }: SearchInputProps) => (
+export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
+  ({ isCollapsed, searchQuery, setSearchQuery }, ref) => (
   <motion.div 
       className="relative overflow-hidden"
       initial={false}
@@ -39,6 +40,7 @@ export const SearchInput = ({ isCollapsed, searchQuery, setSearchQuery }: Search
   >
       <div className="relative">
         <input 
+          ref={ref}
           type="text" 
           placeholder="Search" 
           className="w-full pl-10 pr-16 py-2.5 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500"
@@ -55,4 +57,4 @@ export const SearchInput = ({ isCollapsed, searchQuery, setSearchQuery }: Search
         </div>
       </div>
   </motion.div>
-);
+));
