@@ -62,6 +62,24 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     return chatHistory.find(c => c.id === currentChatId)?.isLoading ?? false;
   }, [chatHistoryHook.isHistoryLoading, chatHistory, currentChatId]);
 
+  // Prevent accidental reloads while the AI is generating a response.
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = ''; // Required for cross-browser compatibility.
+    };
+
+    if (isLoading) {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    } else {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isLoading]);
+
   const cancelGeneration = useCallback(() => {
     abortControllerRef.current?.abort();
     if (executionApprovalRef.current) {
