@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import type { Message } from '../../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { parseMessageText } from '../../utils/messageParser';
+import { useViewport } from '../../hooks/useViewport';
 
 type ThinkingSidebarProps = {
     isOpen: boolean;
@@ -29,14 +30,7 @@ const desktopVariants = {
 };
 
 export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClose, message, sendMessage }) => {
-    // Determine if the current view is desktop based on window width
-    const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768); // Assuming 768px is breakpoint for md
-
-    useEffect(() => {
-        const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
-        window.addEventListener('resize', checkDesktop);
-        return () => window.removeEventListener('resize', checkDesktop);
-    }, []);
+    const { isDesktop } = useViewport();
 
     // Select the appropriate variants based on screen size
     const variants = isDesktop ? desktopVariants : mobileVariants;

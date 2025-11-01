@@ -14,6 +14,7 @@ import { SidebarHeader } from './SidebarHeader';
 import { SearchInput } from './SearchInput';
 import { HistoryList } from './HistoryList';
 import { SidebarFooter } from './SidebarFooter';
+import { useViewport } from '../../hooks/useViewport';
 
 type SidebarProps = {
     isOpen: boolean;
@@ -46,14 +47,8 @@ export const Sidebar = ({
     isResizing, setIsResizing, history, currentChatId, onNewChat, onLoadChat,
     onDeleteChat, onClearAllChats, onUpdateChatTitle, theme, setTheme, onSettingsClick
 }: SidebarProps) => {
-    const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+    const { isDesktop } = useViewport();
     const [searchQuery, setSearchQuery] = useState('');
-
-    useEffect(() => {
-        const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
-        window.addEventListener('resize', checkDesktop);
-        return () => window.removeEventListener('resize', checkDesktop);
-    }, []);
 
     const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
         mouseDownEvent.preventDefault();
