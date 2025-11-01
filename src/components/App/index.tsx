@@ -20,6 +20,11 @@ import {
 export const App = () => {
   const logic = useAppLogic();
 
+  const currentChat = logic.currentChatId
+    ? logic.chatHistory.find(c => c.id === logic.currentChatId)
+    : null;
+  const chatTitle = currentChat ? currentChat.title : null;
+
   return (
     <div className="flex h-screen bg-transparent overflow-hidden">
       <Sidebar
@@ -59,6 +64,7 @@ export const App = () => {
                 isChatActive={logic.isChatActive}
                 messages={logic.messages}
                 onOpenPinnedModal={() => logic.setIsPinnedModalOpen(true)}
+                chatTitle={chatTitle}
              />
              <ChatArea 
                 messageListRef={logic.messageListRef}

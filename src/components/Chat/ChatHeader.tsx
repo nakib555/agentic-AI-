@@ -21,6 +21,7 @@ type ChatHeaderProps = {
   messages: Message[];
   onOpenPinnedModal: () => void;
   isDesktop: boolean;
+  chatTitle: string | null;
 };
 
 const ToggleIcon = () => (
@@ -66,7 +67,7 @@ const MenuItem: React.FC<{ onClick: () => void; disabled: boolean; children: Rea
     </li>
 );
 
-export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollapsed, onImportChat, onExportChat, onShareChat, isChatActive, messages, onOpenPinnedModal, isDesktop }: ChatHeaderProps) => {
+export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollapsed, onImportChat, onExportChat, onShareChat, isChatActive, messages, onOpenPinnedModal, isDesktop, chatTitle }: ChatHeaderProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -94,79 +95,94 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // --- Unified Button Styling ---
+    const baseButtonClasses = "p-1.5 rounded-md transition-colors";
+    const activeClasses = "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 hover:bg-blue-200/60 dark:hover:bg-blue-500/30";
+    const inactiveClasses = "text-slate-700 hover:bg-blue-100/60 hover:text-blue-800 dark:text-slate-200 dark:hover:bg-blue-500/10 dark:hover:text-blue-300";
+    
+    const toggleButtonClasses = `${baseButtonClasses} ${isSidebarActive ? activeClasses : inactiveClasses}`;
+    const moreOptionsButtonClasses = `${baseButtonClasses} ${isMenuOpen ? activeClasses : inactiveClasses}`;
+
     return (
-        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 z-10 bg-gray-50/80 dark:bg-[#121212]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10">
+        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center sticky top-0 z-10 bg-gray-50/80 dark:bg-[#121212]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10">
         
-        {/* --- UNIFIED SIDEBAR TOGGLE --- */}
-        <button
-            onClick={handleToggleSidebar}
-            className={`p-1.5 rounded-md transition-colors ${
-                isSidebarActive
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300'
-                    : 'text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white'
-            }`}
-            aria-label={getAriaAndTitle()}
-            title={getAriaAndTitle()}
-        >
-            <ToggleIcon />
-        </button>
-
-        {/* This empty div keeps the toggle button aligned to the left */}
-        <div className="flex-1" />
-
-        <div className="relative">
+        {/* --- Left controls --- */}
+        <div className="flex-shrink-0">
             <button
-                ref={buttonRef}
-                onClick={() => setIsMenuOpen(prev => !prev)}
-                className="p-1.5 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white rounded-full hover:bg-gray-200/50 dark:hover:bg-black/20"
-                aria-label="More chat options"
-                title="More chat options"
-                aria-haspopup="true"
-                aria-expanded={isMenuOpen}
+                onClick={handleToggleSidebar}
+                className={toggleButtonClasses}
+                aria-label={getAriaAndTitle()}
+                title={getAriaAndTitle()}
             >
-                <MoreOptionsIcon />
+                <ToggleIcon />
             </button>
-            <AnimatePresence>
-                {isMenuOpen && (
-                    <motion.div
-                        ref={menuRef}
-                        initial={{ opacity: 0, y: -5, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                        transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="absolute right-0 top-full mt-2 w-56 bg-white/80 dark:bg-[#2D2D2D]/80 backdrop-blur-lg rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
-                    >
-                        <ul className="text-sm">
-                            <MenuItem onClick={onImportChat} disabled={false}>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 0 0 1.09 1.03L9.25 4.636v8.614Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
-                                <span>Import Chat...</span>
-                            </MenuItem>
-                             <MenuItem onClick={onOpenPinnedModal} disabled={!isChatActive || pinnedCount === 0}>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M6 1.75a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-1v2.122c1.32.263 2.5 1.01 2.5 2.128v5.25a.75.75 0 0 1-1.5 0V7.5a1.25 1.25 0 0 0-1-1.222V4.128A2.75 2.75 0 0 0 8 1.406V2.5H7A.75.75 0 0 1 6 1.75Z" /><path d="M3.75 6A.75.75 0 0 0 3 6.75v5.5a.75.75 0 0 0 1.5 0v-5.5A.75.75 0 0 0 3.75 6ZM12.25 6a.75.75 0 0 0-.75.75v5.5a.75.75 0 0 0 1.5 0v-5.5a.75.75 0 0 0-.75-.75Z" /></svg>
-                                <span>Pinned Messages ({pinnedCount})</span>
-                            </MenuItem>
-                            <div className="h-px bg-gray-200 dark:bg-white/10 my-1"></div>
-                            <MenuItem onClick={onShareChat} disabled={!isChatActive}>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M13 4.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM8.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5ZM12.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5Z" /><path d="M15.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /><path d="M4.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /></svg>
-                                <span>Share to Clipboard</span>
-                            </MenuItem>
-                            <div className="h-px bg-gray-200 dark:bg-white/10 my-1"></div>
-                            <MenuItem onClick={() => onExportChat('md')} disabled={!isChatActive}>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
-                                <span>Export as Markdown</span>
-                            </MenuItem>
-                            <MenuItem onClick={() => onExportChat('json')} disabled={!isChatActive}>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
-                                <span>Export as JSON</span>
-                            </MenuItem>
-                            <MenuItem onClick={() => onExportChat('pdf')} disabled={!isChatActive}>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
-                                <span>Export as PDF</span>
-                            </MenuItem>
-                        </ul>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+        </div>
+
+        {/* --- Centered Title --- */}
+        <div className="flex-1 min-w-0 text-center px-2 sm:px-4">
+            {chatTitle && (
+                <h1 className="text-sm font-semibold text-gray-800 dark:text-slate-200 truncate" title={chatTitle}>
+                    {chatTitle}
+                </h1>
+            )}
+        </div>
+
+        {/* --- Right controls --- */}
+        <div className="flex-shrink-0">
+            <div className="relative">
+                <button
+                    ref={buttonRef}
+                    onClick={() => setIsMenuOpen(prev => !prev)}
+                    className={moreOptionsButtonClasses}
+                    aria-label="More chat options"
+                    title="More chat options"
+                    aria-haspopup="true"
+                    aria-expanded={isMenuOpen}
+                >
+                    <MoreOptionsIcon />
+                </button>
+                <AnimatePresence>
+                    {isMenuOpen && (
+                        <motion.div
+                            ref={menuRef}
+                            initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                            transition={{ duration: 0.15, ease: 'easeOut' }}
+                            className="absolute right-0 top-full mt-2 w-56 bg-white/80 dark:bg-[#2D2D2D]/80 backdrop-blur-lg rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
+                        >
+                            <ul className="text-sm">
+                                <MenuItem onClick={onImportChat} disabled={false}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 0 0 1.09 1.03L9.25 4.636v8.614Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                                    <span>Import Chat...</span>
+                                </MenuItem>
+                                <MenuItem onClick={onOpenPinnedModal} disabled={!isChatActive || pinnedCount === 0}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M6 1.75a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-1v2.122c1.32.263 2.5 1.01 2.5 2.128v5.25a.75.75 0 0 1-1.5 0V7.5a1.25 1.25 0 0 0-1-1.222V4.128A2.75 2.75 0 0 0 8 1.406V2.5H7A.75.75 0 0 1 6 1.75Z" /><path d="M3.75 6A.75.75 0 0 0 3 6.75v5.5a.75.75 0 0 0 1.5 0v-5.5A.75.75 0 0 0 3.75 6ZM12.25 6a.75.75 0 0 0-.75.75v5.5a.75.75 0 0 0 1.5 0v-5.5a.75.75 0 0 0-.75-.75Z" /></svg>
+                                    <span>Pinned Messages ({pinnedCount})</span>
+                                </MenuItem>
+                                <div className="h-px bg-gray-200 dark:bg-white/10 my-1"></div>
+                                <MenuItem onClick={onShareChat} disabled={!isChatActive}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M13 4.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM8.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5ZM12.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5Z" /><path d="M15.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /><path d="M4.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /></svg>
+                                    <span>Share to Clipboard</span>
+                                </MenuItem>
+                                <div className="h-px bg-gray-200 dark:bg-white/10 my-1"></div>
+                                <MenuItem onClick={() => onExportChat('md')} disabled={!isChatActive}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                                    <span>Export as Markdown</span>
+                                </MenuItem>
+                                <MenuItem onClick={() => onExportChat('json')} disabled={!isChatActive}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                                    <span>Export as JSON</span>
+                                </MenuItem>
+                                <MenuItem onClick={() => onExportChat('pdf')} disabled={!isChatActive}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                                    <span>Export as PDF</span>
+                                </MenuItem>
+                            </ul>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
         </div>
   </header>
 )};
