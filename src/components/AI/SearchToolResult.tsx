@@ -17,7 +17,7 @@ type SearchToolResultProps = {
 };
 
 const LoadingSpinner = () => (
-    <svg className="animate-spin h-4 w-4 text-text-muted" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <svg className="animate-spin h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>
@@ -37,7 +37,7 @@ const SourcePill: React.FC<{ source: Source }> = ({ source }) => {
       href={source.uri}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-2 px-2.5 py-1 bg-ui-100 hover:bg-ui-200 rounded-full text-xs font-medium text-text-secondary border border-color transition-colors"
+      className="flex items-center gap-2 px-2.5 py-1 bg-white dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-700/50 rounded-full text-xs font-medium text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700/80 transition-colors"
       title={source.title}
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
@@ -64,13 +64,13 @@ export const SearchToolResult = ({ query, sources }: SearchToolResultProps) => {
   return (
     <div className="space-y-3">
       {query && (
-        <p className="text-sm font-medium text-text-secondary font-['Fira_Code',_monospace]">
+        <p className="text-sm font-medium text-gray-600 dark:text-slate-400 font-['Fira_Code',_monospace]">
           "{query}"
         </p>
       )}
 
       {isLoading ? (
-        <div className="flex items-center gap-2 text-xs text-text-muted">
+        <div className="flex items-center gap-2 text-xs text-slate-400">
             <LoadingSpinner />
             <span>Searching...</span>
         </div>
@@ -84,14 +84,14 @@ export const SearchToolResult = ({ query, sources }: SearchToolResultProps) => {
                     {hiddenCount > 0 && !showAll && (
                     <button
                         onClick={() => setShowAll(true)}
-                        className="text-xs font-semibold text-primary hover:text-primary-focus px-2 py-1 transition-colors"
+                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 px-2 py-1 transition-colors"
                     >
                         + {hiddenCount} more
                     </button>
                     )}
                 </div>
             ) : (
-                <div className="text-xs text-text-muted">
+                <div className="text-xs text-slate-400">
                     No sources found.
                 </div>
             )}

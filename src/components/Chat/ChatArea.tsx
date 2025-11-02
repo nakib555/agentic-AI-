@@ -91,9 +91,9 @@ export const ChatArea = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-2xl z-10 flex items-center justify-center m-4"
+            className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-400/10 border-2 border-dashed border-indigo-500 dark:border-indigo-400 rounded-2xl z-10 flex items-center justify-center m-4"
           >
-            <div className="text-center font-bold text-primary">
+            <div className="text-center font-bold text-indigo-600 dark:text-indigo-300">
               <p className="text-lg">Drop files to attach</p>
             </div>
           </motion.div>
@@ -124,7 +124,7 @@ export const ChatArea = ({
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
                 onClick={() => messageListRef.current?.scrollToBottom()}
-                className="pointer-events-auto bg-ui-100/80 backdrop-blur-md rounded-full shadow-lg border border-color px-4 py-2 flex items-center gap-2 text-sm font-semibold text-text-primary hover:bg-ui-200/90"
+                className="pointer-events-auto bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-white/10 px-4 py-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-200 hover:bg-gray-100/90 dark:hover:bg-black/80"
                 aria-label="Scroll to latest message"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
@@ -143,7 +143,7 @@ export const ChatArea = ({
             isLoading={isLoading || modelsLoading} 
             onCancel={onCancel}
           />
-          <p className="text-center text-xs text-text-muted mt-2 px-4">
+          <p className="text-center text-xs text-gray-500 dark:text-slate-400 mt-2 px-4">
               Gemini can make mistakes. Check important info.
           </p>
         </div>

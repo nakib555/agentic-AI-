@@ -21,13 +21,13 @@ const InstructionField: React.FC<{
     placeholder: string;
 }> = ({ label, value, onChange, disabled, placeholder }) => (
     <div>
-        <label className="text-sm font-semibold text-text-primary">{label}</label>
+        <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">{label}</label>
         <textarea
             value={value}
             onChange={e => onChange(e.target.value)}
             disabled={disabled}
             placeholder={placeholder}
-            className="mt-2 w-full min-h-[128px] max-h-64 p-3 border border-color rounded-lg shadow-sm bg-ui-100/60 text-sm focus:outline-none focus:ring-2 focus:ring-primary overflow-y-auto placeholder-text-muted resize-y"
+            className="mt-2 w-full min-h-[128px] max-h-64 p-3 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 overflow-y-auto placeholder-gray-500 dark:placeholder-slate-400 resize-y"
             aria-disabled={disabled}
         />
     </div>
@@ -43,9 +43,9 @@ export const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProp
 }) => {
     return (
         <div className="space-y-8">
-            <h3 className="text-xl font-bold text-text-primary">Custom Instructions</h3>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Custom Instructions</h3>
             
-            <p className="text-sm text-text-muted">
+            <p className="text-sm text-gray-500 dark:text-slate-400">
                 Provide details for the AI to use in its responses. This will apply to all new chats.
             </p>
 

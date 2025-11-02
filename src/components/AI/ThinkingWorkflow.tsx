@@ -30,10 +30,10 @@ type ThinkingWorkflowProps = {
 
 const StatusIcon = ({ status }: { status: 'pending' | 'active' | 'done' | 'failed' }) => {
     switch (status) {
-        case 'active': return <motion.div key="active" className="relative w-5 h-5 flex items-center justify-center"><motion.div className="w-2.5 h-2.5 bg-primary rounded-full" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} /><motion.div className="absolute inset-0 w-full h-full bg-primary/50 rounded-full" animate={{ scale: [0.8, 1.8], opacity: [0.8, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }} /></motion.div>;
+        case 'active': return <motion.div key="active" className="relative w-5 h-5 flex items-center justify-center"><motion.div className="w-2.5 h-2.5 bg-indigo-500 dark:bg-indigo-400 rounded-full" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} /><motion.div className="absolute inset-0 w-full h-full bg-indigo-400/50 dark:bg-indigo-500/30 rounded-full" animate={{ scale: [0.8, 1.8], opacity: [0.8, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }} /></motion.div>;
         case 'done': return <motion.div key="complete" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="text-green-500 dark:text-green-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0 -16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" /></svg></motion.div>;
         case 'failed': return <motion.div key="failed" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="text-red-500 dark:text-red-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0 -16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clipRule="evenodd" /></svg></motion.div>;
-        default: return <motion.div className="w-2.5 h-2.5 bg-ui-300 rounded-full border-2 border-ui-200"></motion.div>;
+        default: return <motion.div className="w-2.5 h-2.5 bg-slate-300 dark:bg-slate-600 rounded-full border-2 border-slate-200 dark:border-slate-500"></motion.div>;
     }
 };
 
@@ -41,10 +41,10 @@ const PlanSection: React.FC<{ icon: React.ReactNode; title: string; content: str
     if (!content) return null;
     return (
         <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 text-text-muted">{icon}</div>
+            <div className="flex-shrink-0 text-slate-500 dark:text-slate-400">{icon}</div>
             <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-text-primary mb-1">{title}</h3>
-                <div className="text-sm text-text-secondary workflow-markdown">
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200 mb-1">{title}</h3>
+                <div className="text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
                     <TypingWrapper fullText={content} isAnimating={isStreaming}>
                         {(text) => <ManualCodeRenderer text={isStreaming ? text : content} components={WorkflowMarkdownComponents} isStreaming={isStreaming} />}
                     </TypingWrapper>
@@ -90,10 +90,10 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
       <div className="flex flex-col gap-6">
         {/* Plan Section */}
         {hasPlan && (
-            <div className="p-4 bg-ui-100 rounded-xl border border-color space-y-4">
+            <div className="p-4 bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-200 dark:border-white/10 space-y-4">
                  <div className="flex items-center gap-3 mb-4">
                     <PlannerIcon />
-                    <h3 className="text-base font-bold text-text-primary">Mission Briefing</h3>
+                    <h3 className="text-base font-bold text-gray-800 dark:text-slate-200">Mission Briefing</h3>
                     <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${plannerColor.bg} ${plannerColor.text}`}>Planner</span>
                 </div>
                 <PlanSection icon={<GoalAnalysisIcon />} title="Goal Analysis" content={goalAnalysis} isStreaming={isLiveGeneration && !todoList} />
@@ -106,8 +106,8 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
         {executionLog.length > 0 && (
             <div>
                 <div className="flex items-center gap-3 mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-text-muted"><path d="M10.75 3.944v1.076a.75.75 0 0 0 1.5 0V3.34a5.526 5.526 0 0 0-3.32-1.018V3.5a.75.75 0 0 1-1.5 0v-.837a5.526 5.526 0 0 0-3.32 1.018v.598a.75.75 0 0 0 1.5 0V3.944c.541-.244 1.12-.403 1.72-.444a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75-.75c-.6 0-1.179.199-1.72.444v-.598a.75.75 0 0 0-1.5 0v.837a5.526 5.526 0 0 0 3.32 1.018v-1.17a.75.75 0 0 1 1.5 0v.837a5.526 5.526 0 0 0 3.32-1.018v-.598a.75.75 0 0 0-1.5 0v.598c-.541.244-1.12.403-1.72.444a.75.75 0 0 1-.75-.75V4.25a.75.75 0 0 1 .75-.75c.6 0 1.179-.199 1.72-.444Z" /></svg>
-                    <h3 className="text-base font-bold text-text-primary">Execution Log</h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-500 dark:text-slate-400"><path d="M10.75 3.944v1.076a.75.75 0 0 0 1.5 0V3.34a5.526 5.526 0 0 0-3.32-1.018V3.5a.75.75 0 0 1-1.5 0v-.837a5.526 5.526 0 0 0-3.32 1.018v.598a.75.75 0 0 0 1.5 0V3.944c.541-.244 1.12-.403 1.72-.444a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75-.75c-.6 0-1.179.199-1.72.444v-.598a.75.75 0 0 0-1.5 0v.837a5.526 5.526 0 0 0 3.32 1.018v-1.17a.75.75 0 0 1 1.5 0v.837a5.526 5.526 0 0 0 3.32-1.018v-.598a.75.75 0 0 0-1.5 0v.598c-.541.244-1.12.403-1.72.444a.75.75 0 0 1-.75-.75V4.25a.75.75 0 0 1 .75-.75c.6 0 1.179-.199 1.72-.444Z" /></svg>
+                    <h3 className="text-base font-bold text-gray-800 dark:text-slate-200">Execution Log</h3>
                 </div>
                 <div ref={executionLogRef} className="pl-2.5">
                     {executionLog.map((node, index) => (

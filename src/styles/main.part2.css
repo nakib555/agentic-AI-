@@ -27,9 +27,12 @@ html, body, #root {
 /* Placeholder styling for the contentEditable div chat input */
 .content-editable-input[data-placeholder]:empty::before {
   content: attr(data-placeholder);
-  color: rgb(var(--text-muted));
-  opacity: 0.7;
+  color: #6B7280; /* text-gray-500 */
   pointer-events: none;
+}
+
+.dark .content-editable-input[data-placeholder]:empty::before {
+  color: #94a3b8; /* text-slate-400 */
 }
 
 /* --- Chat Area Background Pattern --- */
@@ -41,61 +44,37 @@ html, body, #root {
 
 .chat-background {
   position: relative;
-  background-color: rgb(var(--background));
+  background-color: #f5f3ff; /* Light violet */
+  background-image: 
+    radial-gradient(at 15% 25%, hsla(250, 90%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 85% 35%, hsla(280, 90%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 20% 80%, hsla(260, 90%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 80% 75%, hsla(290, 90%, 95%, 1) 0px, transparent 50%);
+  background-size: 200% 200%;
+  animation: bg-animate 60s ease infinite;
 }
 
-/* --- Ethereal Aurora Background --- */
-.aurora-background {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 0;
+.dark .chat-background {
+  background-color: #110e19; /* Very dark violet */
+  background-image: 
+    radial-gradient(at 15% 25%, hsla(250, 50%, 20%, 0.5) 0px, transparent 50%),
+    radial-gradient(at 85% 35%, hsla(280, 50%, 20%, 0.5) 0px, transparent 50%),
+    radial-gradient(at 20% 80%, hsla(260, 50%, 20%, 0.5) 0px, transparent 50%),
+    radial-gradient(at 80% 75%, hsla(290, 50%, 20%, 0.5) 0px, transparent 50%);
+  animation: bg-animate 80s ease infinite reverse;
 }
-.aurora-shape-1, .aurora-shape-2, .aurora-shape-3 {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(100px);
-    opacity: 0.4;
-}
-.dark .aurora-shape-1, .dark .aurora-shape-2, .dark .aurora-shape-3 {
-    opacity: 0.25;
-}
-.aurora-shape-1 {
-    width: 500px;
-    height: 500px;
-    background: #c026d3; /* fuchsia-600 */
-    top: -150px;
-    left: -200px;
-    animation: aurora-one 25s infinite alternate;
-}
-.aurora-shape-2 {
-    width: 400px;
-    height: 400px;
-    background: #14b8a6; /* teal-500 */
-    bottom: -100px;
-    right: -150px;
-    animation: aurora-two 20s infinite alternate;
-}
-.aurora-shape-3 {
-    width: 300px;
-    height: 300px;
-    background: #6366f1; /* indigo-500 */
-    bottom: 50px;
-    left: 100px;
-    animation: aurora-three 15s infinite alternate;
-}
-@keyframes aurora-one { to { transform: translate(100px, 150px) scale(1.2); } }
-@keyframes aurora-two { to { transform: translate(-100px, -50px) scale(0.8); } }
-@keyframes aurora-three { to { transform: translate(50px, -100px) rotate(180deg); } }
 
 
 /* --- Jump-to-Message Highlight --- */
 @keyframes highlight-animation {
   0% { background-color: transparent; }
-  25% { background-color: rgba(var(--primary), 0.15); }
+  25% { background-color: rgba(99, 102, 241, 0.15); } /* indigo-500/15 */
+  100% { background-color: transparent; }
+}
+
+.dark @keyframes highlight-animation {
+  0% { background-color: transparent; }
+  25% { background-color: rgba(129, 140, 248, 0.15); } /* indigo-400/15 */
   100% { background-color: transparent; }
 }
 
@@ -116,6 +95,6 @@ html, body, #root {
 
 /* --- Brand Gradient for Welcome Text --- */
 .brand-gradient {
-  background-image: linear-gradient(to right, rgb(var(--secondary)), rgb(var(--primary)), rgb(var(--accent)));
+  background-image: linear-gradient(to right, #a78bfa, #8b5cf6, #7c3aed, #6d28d9);
   background-size: 300% auto;
 }

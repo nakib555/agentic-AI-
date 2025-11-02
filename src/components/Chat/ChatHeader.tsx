@@ -60,7 +60,7 @@ const MenuItem: React.FC<{ onClick: () => void; disabled: boolean; children: Rea
         <button 
             onClick={onClick}
             disabled={disabled}
-            className="w-full text-left flex items-center gap-2 px-3 py-1.5 text-sm rounded-md text-text-primary hover:bg-ui-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full text-left flex items-center gap-2 px-3 py-1.5 text-sm rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
             {children}
         </button>
@@ -96,14 +96,14 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
 
     // --- Unified Button Styling ---
     const baseButtonClasses = "p-1.5 rounded-md transition-colors";
-    const activeClasses = "bg-primary/10 text-primary-focus";
-    const inactiveClasses = "text-text-primary hover:bg-primary/10 hover:text-primary-focus";
+    const activeClasses = "bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300 hover:bg-indigo-200/60 dark:hover:bg-indigo-500/30";
+    const inactiveClasses = "text-slate-700 hover:bg-indigo-100/60 hover:text-indigo-800 dark:text-slate-200 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-300";
     
     const toggleButtonClasses = `${baseButtonClasses} ${isSidebarActive ? activeClasses : inactiveClasses}`;
     const moreOptionsButtonClasses = `${baseButtonClasses} ${isMenuOpen ? activeClasses : inactiveClasses}`;
 
     return (
-        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center sticky top-0 z-10 bg-ui-100/80 backdrop-blur-md border-b border-color">
+        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center sticky top-0 z-10 bg-violet-50/80 dark:bg-[#121212]/80 backdrop-blur-md border-b border-violet-200/50 dark:border-white/10">
         
         {/* --- Left controls --- */}
         <div className="flex-shrink-0">
@@ -120,7 +120,7 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         {/* --- Centered Title --- */}
         <div className="flex-1 min-w-0 text-left md:text-center px-2 sm:px-4">
             {chatTitle && (
-                <h1 className="text-sm font-semibold text-text-primary truncate" title={chatTitle}>
+                <h1 className="text-sm font-semibold text-gray-800 dark:text-slate-200 truncate" title={chatTitle}>
                     {chatTitle}
                 </h1>
             )}
@@ -148,19 +148,19 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -5, scale: 0.95 }}
                             transition={{ duration: 0.15, ease: 'easeOut' }}
-                            className="absolute right-0 top-full mt-2 w-56 bg-ui-100/80 backdrop-blur-lg rounded-lg shadow-xl border border-color p-1 z-20"
+                            className="absolute right-0 top-full mt-2 w-56 bg-white/80 dark:bg-[#2D2D2D]/80 backdrop-blur-lg rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
                         >
                             <ul className="text-sm">
                                 <MenuItem onClick={onImportChat} disabled={false}>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 0 0 1.09 1.03L9.25 4.636v8.614Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
                                     <span>Import Chat...</span>
                                 </MenuItem>
-                                <div className="h-px bg-border-color my-1"></div>
+                                <div className="h-px bg-gray-200 dark:bg-white/10 my-1"></div>
                                 <MenuItem onClick={onShareChat} disabled={!isChatActive}>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M13 4.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM8.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5ZM12.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5Z" /><path d="M15.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /><path d="M4.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /></svg>
                                     <span>Share to Clipboard</span>
                                 </MenuItem>
-                                <div className="h-px bg-border-color my-1"></div>
+                                <div className="h-px bg-gray-200 dark:bg-white/10 my-1"></div>
                                 <MenuItem onClick={() => onExportChat('md')} disabled={!isChatActive}>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
                                     <span>Export as Markdown</span>

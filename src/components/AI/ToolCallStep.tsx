@@ -20,9 +20,9 @@ import { CodeBlock } from '../Markdown/CodeBlock';
 
 const LoadingDots = () => (
     <div className="flex gap-1 items-center">
-        <motion.div className="w-1.5 h-1.5 bg-text-muted rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0 }} />
-        <motion.div className="w-1.5 h-1.5 bg-text-muted rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }} />
-        <motion.div className="w-1.5 h-1.5 bg-text-muted rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }} />
+        <motion.div className="w-1.5 h-1.5 bg-gray-500 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0 }} />
+        <motion.div className="w-1.5 h-1.5 bg-gray-500 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }} />
+        <motion.div className="w-1.5 h-1.5 bg-gray-500 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }} />
     </div>
 );
 
@@ -92,8 +92,8 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
         : result;
 
     return (
-        <div className="p-3 bg-ui-200 border border-color rounded-lg">
-            <p className="text-xs font-semibold text-text-muted mb-2">Result</p>
+        <div className="p-3 bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg">
+            <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">Result</p>
             <motion.div
                 className="overflow-hidden text-sm workflow-markdown"
                 animate={{ height: 'auto' }}
@@ -104,7 +104,7 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
             {isLongResult && (
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="text-xs font-semibold text-primary hover:text-primary-focus mt-2"
+                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 mt-2"
                     aria-expanded={isExpanded}
                 >
                     {isExpanded ? 'Show Less' : 'Show More'}
@@ -139,10 +139,10 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
                 <CodeBlock language={args.language as string || 'plaintext'} isStreaming={false}>{args.code as string}</CodeBlock>
                 {packages.length > 0 && (
                      <div className="flex items-center gap-2 text-xs">
-                        <span className="font-semibold text-text-muted">Dependencies:</span>
+                        <span className="font-semibold text-gray-500 dark:text-slate-400">Dependencies:</span>
                         <div className="flex flex-wrap gap-1.5">
                             {packages.map((pkg, i) => (
-                                <span key={i} className="px-2 py-0.5 bg-ui-200 font-mono rounded">
+                                <span key={i} className="px-2 py-0.5 bg-gray-200 dark:bg-slate-700 font-mono rounded">
                                 {String(pkg)}
                                 </span>
                             ))}
@@ -152,7 +152,7 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
                 {result ? (
                     <ToolResultDisplay result={result} sendMessage={sendMessage} />
                 ) : (
-                    <div className="flex items-center gap-2 text-xs text-text-muted">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
                         <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         <span>Executing code...</span>
                     </div>
@@ -166,12 +166,12 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
     return (
       <div className="min-w-0 flex-1 text-sm space-y-3">
         {argEntries.length > 0 && (
-          <div className="font-['Fira_Code',_monospace] space-y-2 border border-color bg-ui-100 p-3 rounded-lg">
-            <p className="text-xs font-semibold text-text-muted mb-1">Parameters</p>
+          <div className="font-['Fira_Code',_monospace] space-y-2 border border-gray-200 dark:border-slate-700/50 bg-gray-50 dark:bg-black/20 p-3 rounded-lg">
+            <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-1">Parameters</p>
             {argEntries.map(([key, value]) => (
                 <div key={key} className="grid grid-cols-[auto,1fr] gap-x-3 items-start text-xs">
-                  <span className="text-text-muted font-medium">{key}:</span>
-                  <span className="text-text-secondary break-all whitespace-pre-wrap">{String(value)}</span>
+                  <span className="text-gray-400 dark:text-slate-500 font-medium">{key}:</span>
+                  <span className="text-gray-700 dark:text-slate-300 break-all whitespace-pre-wrap">{String(value)}</span>
                 </div>
               )
             )}
@@ -181,7 +181,7 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
             {result ? (
                 <ToolResultDisplay result={result} sendMessage={sendMessage} />
             ) : (
-                <div className="flex items-center gap-2 text-xs text-text-muted">
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
                     <span>Executing</span>
                     <LoadingDots />
                 </div>

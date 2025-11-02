@@ -23,7 +23,7 @@ const ResultDisplay: React.FC<{ text: string, type: 'success' | 'error' }> = ({ 
         <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
-            className="flex items-center gap-3 p-3 bg-ui-300/50 rounded-lg text-sm text-text-secondary"
+            className="flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg text-sm text-slate-300"
         >
           {Icon}
           <p>{text}</p>
@@ -72,7 +72,7 @@ export const LocationPermissionRequest: React.FC<{
 
   if (status === 'pending') {
       return (
-        <div className="flex items-center gap-2 text-sm p-3 text-text-muted">
+        <div className="flex items-center gap-2 text-sm p-3 text-slate-400">
             <span>Waiting for permission...</span>
             <LoadingDots />
         </div>
@@ -80,18 +80,18 @@ export const LocationPermissionRequest: React.FC<{
   }
 
   return (
-    <div className="p-3 bg-ui-300/50 rounded-lg text-sm">
-      <p className="text-text-primary mb-3">{text}</p>
+    <div className="p-3 bg-slate-700/50 rounded-lg text-sm">
+      <p className="text-slate-200 mb-3">{text}</p>
       <div className="flex gap-2">
         <button 
             onClick={handleAllow} 
-            className="px-3 py-1 bg-primary hover:bg-primary-focus text-primary-content font-semibold rounded-md transition-colors text-xs"
+            className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-md transition-colors text-xs"
         >
             Allow
         </button>
         <button 
             onClick={handleDeny} 
-            className="px-3 py-1 bg-ui-300 hover:bg-ui-300/80 text-text-primary font-semibold rounded-md transition-colors text-xs"
+            className="px-3 py-1 bg-slate-600 hover:bg-slate-500 text-white font-semibold rounded-md transition-colors text-xs"
         >
             Deny
         </button>
