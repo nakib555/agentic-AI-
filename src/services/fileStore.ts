@@ -72,4 +72,15 @@ export const fileStore = {
         request.onerror = () => reject(new Error('Failed to list files from IndexedDB.'));
     });
   },
+  
+  async deleteFile(path: string): Promise<void> {
+    const db = await getDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.delete(path);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(new Error('Failed to delete file from IndexedDB.'));
+    });
+  },
 };

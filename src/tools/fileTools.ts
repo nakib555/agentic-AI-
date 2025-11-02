@@ -74,3 +74,27 @@ export const executeDisplayFile = async (args: { path: string }): Promise<string
         throw new ToolError('displayFile', 'DISPLAY_FAILED', originalError.message, originalError);
     }
 };
+
+// --- deleteFile Tool ---
+
+export const deleteFileDeclaration: FunctionDeclaration = {
+  name: 'deleteFile',
+  description: 'Deletes a file from the virtual filesystem. Use this to clean up intermediate or unsatisfactory files.',
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      path: { type: Type.STRING, description: 'The full path of the file to delete (e.g., "/main/output/old-image.png").' },
+    },
+    required: ['path'],
+  },
+};
+
+export const executeDeleteFile = async (args: { path: string }): Promise<string> => {
+    try {
+        await fileStore.deleteFile(args.path);
+        return `File successfully deleted: ${args.path}`;
+    } catch (err) {
+        const originalError = err instanceof Error ? err : new Error(String(err));
+        throw new ToolError('deleteFile', 'DELETION_FAILED', originalError.message, originalError);
+    }
+};
