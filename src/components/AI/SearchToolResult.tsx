@@ -37,7 +37,7 @@ const SourcePill: React.FC<{ source: Source }> = ({ source }) => {
       href={source.uri}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-2 px-2.5 py-1 bg-white dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-700/50 rounded-full text-sm font-medium text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700/80 transition-colors"
+      className="flex items-center gap-2 px-2.5 py-1 bg-white dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-700/50 rounded-full text-xs font-medium text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700/80 transition-colors"
       title={source.title}
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
@@ -84,7 +84,7 @@ export const SearchToolResult = ({ query, sources }: SearchToolResultProps) => {
                     {hiddenCount > 0 && !showAll && (
                     <button
                         onClick={() => setShowAll(true)}
-                        className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 px-2 py-1 transition-colors"
+                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 px-2 py-1 transition-colors"
                     >
                         + {hiddenCount} more
                     </button>

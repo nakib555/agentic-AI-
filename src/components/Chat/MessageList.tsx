@@ -48,10 +48,8 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   useImperativeHandle(ref, () => ({
     scrollToBottom: () => {
       if (messageListRef.current) {
-        messageListRef.current.scrollTo({
-          top: messageListRef.current.scrollHeight,
-          behavior: 'smooth',
-        });
+        // Use the two-argument version of scrollTo for maximum reliability.
+        messageListRef.current.scrollTo(0, messageListRef.current.scrollHeight);
       }
       // If the user manually clicks the button, we should resume auto-scrolling for the next message.
       setIsAutoScrollPaused(false);

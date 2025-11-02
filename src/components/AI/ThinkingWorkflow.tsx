@@ -94,7 +94,7 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
                  <div className="flex items-center gap-3 mb-4">
                     <PlannerIcon />
                     <h3 className="text-sm font-bold text-gray-800 dark:text-slate-200">Mission Briefing</h3>
-                    <span className={`px-2 py-0.5 text-sm font-semibold rounded-full ${plannerColor.bg} ${plannerColor.text}`}>Planner</span>
+                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${plannerColor.bg} ${plannerColor.text}`}>Planner</span>
                 </div>
                 <PlanSection icon={<GoalAnalysisIcon />} title="Goal Analysis" content={goalAnalysis} isStreaming={isLiveGeneration && !todoList} />
                 <PlanSection icon={<TodoListIcon />} title="Task List" content={todoList} isStreaming={isLiveGeneration && !tools} />

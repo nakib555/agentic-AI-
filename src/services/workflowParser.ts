@@ -159,6 +159,8 @@ export const parseAgenticWorkflow = (
 
     // 4. Apply final status updates to the entire interleaved log
     if (error) {
+        // Find the last non-failed node and mark it as failed. This is more reliable
+        // than just marking the last node, which might already be 'done'.
         let failureAssigned = false;
         for (let i = finalExecutionLog.length - 1; i >= 0; i--) {
             const node = finalExecutionLog[i];
@@ -169,7 +171,8 @@ export const parseAgenticWorkflow = (
                 break;
             }
         }
-        if (!failureAssigned) {
+        // If the error occurred before any nodes were even created (e.g., API key error)
+        if (!failureAssigned && finalExecutionLog.length === 0) {
             finalExecutionLog.push({ id: `error-${stepIndex++}`, type: 'task', title: 'Error Occurred', status: 'failed', details: error });
         }
         
@@ -185,13 +188,14 @@ export const parseAgenticWorkflow = (
         });
     } else {
         // Find the last node that isn't 'done' and mark it 'active'.
+        // All other pending nodes before it should be marked as 'done'.
         let lastActiveNodeFound = false;
         for (let i = finalExecutionLog.length - 1; i >= 0; i--) {
             const node = finalExecutionLog[i];
             if (!lastActiveNodeFound && node.status !== 'done') {
                 node.status = 'active';
                 lastActiveNodeFound = true;
-            } else if (node.status !== 'done') {
+            } else if (node.status === 'pending') {
                 // Any pending steps before the active one are considered done.
                 node.status = 'done';
             }
