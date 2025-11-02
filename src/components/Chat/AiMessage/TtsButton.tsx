@@ -73,7 +73,7 @@ export const TtsButton = ({
   return (
     <button
       onClick={onClick}
-      className="group flex items-center gap-2 self-start px-2 py-1 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors text-xs font-medium disabled:opacity-60 disabled:cursor-wait"
+      className="group flex items-center gap-2 self-start px-2 py-1 text-slate-800 dark:text-white hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 rounded-md transition-colors text-xs font-medium disabled:opacity-60 disabled:cursor-wait"
       title={getTitle()}
       disabled={isLoading}
     >

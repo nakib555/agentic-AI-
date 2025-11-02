@@ -36,7 +36,7 @@ const IconButton: React.FC<{
         className={`p-1.5 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             active
             ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300'
-            : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+            : 'text-slate-800 hover:bg-slate-100 hover:text-slate-900 dark:text-white dark:hover:bg-slate-800'
         }`}
     >
         {children}
