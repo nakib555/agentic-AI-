@@ -82,4 +82,4 @@ You have access to the following tools. You must select the most appropriate too
     *   **Parameters:**
         *   \`outputId\`: The unique ID of the code output component, which is provided in the result of an \`executeCode\` call that generated a visual output.
     *   **Output:** The tool returns a base64 encoded PNG image. This image will be provided to you as a visual input in your next step, allowing you to reason about it.
-`
+`;
