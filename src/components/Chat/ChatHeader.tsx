@@ -31,7 +31,7 @@ const ToggleIcon = () => (
 );
 
 const MoreOptionsIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 682.667 682.667" xmlSpace="preserve" className="w-5 h-5">
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 682.667 682.667" xmlSpace="preserve" className="w-6 h-6">
         <g>
             <defs>
                 <clipPath id="b" clipPathUnits="userSpaceOnUse">
@@ -60,7 +60,7 @@ const MenuItem: React.FC<{ onClick: () => void; disabled: boolean; children: Rea
         <button 
             onClick={onClick}
             disabled={disabled}
-            className="w-full text-left flex items-center gap-2 px-3 py-1.5 text-sm rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full text-left flex items-center gap-2 px-3 py-1.5 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
             {children}
         </button>
@@ -120,7 +120,7 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         {/* --- Centered Title --- */}
         <div className="flex-1 min-w-0 text-left md:text-center px-2 sm:px-4">
             {chatTitle && (
-                <h1 className="text-sm font-semibold text-gray-800 dark:text-slate-200 truncate" title={chatTitle}>
+                <h1 className="text-base font-semibold text-gray-800 dark:text-slate-200 truncate" title={chatTitle}>
                     {chatTitle}
                 </h1>
             )}
@@ -150,7 +150,7 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
                             transition={{ duration: 0.15, ease: 'easeOut' }}
                             className="absolute right-0 top-full mt-2 w-56 bg-white/80 dark:bg-[#2D2D2D]/80 backdrop-blur-lg rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
                         >
-                            <ul className="text-sm">
+                            <ul className="text-base">
                                 <MenuItem onClick={onImportChat} disabled={false}>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 0 0 1.09 1.03L9.25 4.636v8.614Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
                                     <span>Import Chat...</span>

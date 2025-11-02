@@ -32,6 +32,6 @@ export const PromptButton = ({ icon, text, onClick }: PromptButtonProps) => (
         transition={{ type: "spring", stiffness: 400, damping: 15 }}
     >
         <span className="text-lg">{icon}</span>
-        <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{text}</span>
+        <span className="text-base font-medium text-slate-800 dark:text-slate-200">{text}</span>
     </motion.button>
 );

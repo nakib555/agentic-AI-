@@ -43,8 +43,8 @@ const PlanSection: React.FC<{ icon: React.ReactNode; title: string; content: str
         <div className="flex items-start gap-4">
             <div className="flex-shrink-0 text-slate-500 dark:text-slate-400">{icon}</div>
             <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200 mb-1">{title}</h3>
-                <div className="text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
+                <h3 className="text-base font-semibold text-gray-800 dark:text-slate-200 mb-1">{title}</h3>
+                <div className="text-base text-gray-700 dark:text-slate-300 workflow-markdown">
                     <TypingWrapper fullText={content} isAnimating={isStreaming}>
                         {(text) => <ManualCodeRenderer text={isStreaming ? text : content} components={WorkflowMarkdownComponents} isStreaming={isStreaming} />}
                     </TypingWrapper>
@@ -94,7 +94,7 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
                  <div className="flex items-center gap-3 mb-4">
                     <PlannerIcon />
                     <h3 className="text-base font-bold text-gray-800 dark:text-slate-200">Mission Briefing</h3>
-                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${plannerColor.bg} ${plannerColor.text}`}>Planner</span>
+                    <span className={`px-2 py-0.5 text-sm font-semibold rounded-full ${plannerColor.bg} ${plannerColor.text}`}>Planner</span>
                 </div>
                 <PlanSection icon={<GoalAnalysisIcon />} title="Goal Analysis" content={goalAnalysis} isStreaming={isLiveGeneration && !todoList} />
                 <PlanSection icon={<TodoListIcon />} title="Task List" content={todoList} isStreaming={isLiveGeneration && !tools} />

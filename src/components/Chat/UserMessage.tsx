@@ -36,7 +36,7 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
                             {attachments.map((attachment, index) => (
                                 <div key={index} className="flex items-center gap-2">
                                     <FileIcon filename={attachment.name} className="flex-shrink-0 w-5 h-5 text-gray-500 dark:text-slate-400" />
-                                    <span className="truncate text-sm font-medium text-gray-700 dark:text-slate-300" title={attachment.name}>{attachment.name}</span>
+                                    <span className="truncate text-base font-medium text-gray-700 dark:text-slate-300" title={attachment.name}>{attachment.name}</span>
                                 </div>
                             ))}
                         </div>

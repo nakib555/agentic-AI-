@@ -25,6 +25,9 @@ html, body, #root {
 }
 
 /* Placeholder styling for the contentEditable div chat input */
+.content-editable-input {
+  font-size: 1rem; /* text-base */
+}
 .content-editable-input[data-placeholder]:empty::before {
   content: attr(data-placeholder);
   color: #6B7280; /* text-gray-500 */

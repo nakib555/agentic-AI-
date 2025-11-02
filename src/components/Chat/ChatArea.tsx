@@ -124,7 +124,7 @@ export const ChatArea = ({
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
                 onClick={() => messageListRef.current?.scrollToBottom()}
-                className="pointer-events-auto bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-white/10 px-4 py-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-200 hover:bg-gray-100/90 dark:hover:bg-black/80"
+                className="pointer-events-auto bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-white/10 px-4 py-2 flex items-center gap-2 text-base font-semibold text-gray-700 dark:text-slate-200 hover:bg-gray-100/90 dark:hover:bg-black/80"
                 aria-label="Scroll to latest message"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
@@ -143,7 +143,7 @@ export const ChatArea = ({
             isLoading={isLoading || modelsLoading} 
             onCancel={onCancel}
           />
-          <p className="text-center text-xs text-gray-500 dark:text-slate-400 mt-2 px-4">
+          <p className="text-center text-sm text-gray-500 dark:text-slate-400 mt-2 px-4">
               Gemini can make mistakes. Check important info.
           </p>
         </div>

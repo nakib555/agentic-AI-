@@ -52,7 +52,7 @@ const groupChatsByMonth = (chats: ChatSession[]): { [key: string]: ChatSession[]
 
 const NoResults = () => (
     <motion.div 
-        className="text-xs text-slate-500 dark:text-slate-400 text-center py-4"
+        className="text-sm text-slate-500 dark:text-slate-400 text-center py-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -84,7 +84,7 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                         return (
                             <div key={groupName}>
                                 <h3 
-                                    className="px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2"
+                                    className="px-2 text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2"
                                 >
                                     <motion.span
                                         className="block overflow-hidden whitespace-nowrap"

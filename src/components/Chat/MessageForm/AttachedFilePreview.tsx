@@ -97,8 +97,8 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
             )}
             
             <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate" title={file.name}>{file.name}</p>
-                <p className="text-xs text-gray-500 dark:text-slate-400">{fileTypeLabel}</p>
+                <p className="text-base font-medium text-gray-800 dark:text-slate-200 truncate" title={file.name}>{file.name}</p>
+                <p className="text-sm text-gray-500 dark:text-slate-400">{fileTypeLabel}</p>
             </div>
             <button
                 type="button"

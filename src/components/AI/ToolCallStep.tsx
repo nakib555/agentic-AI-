@@ -80,8 +80,8 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
     if (isError) {
         return (
              <div className="p-3 bg-red-500/10 dark:bg-red-900/20 border border-red-500/20 rounded-lg">
-                <p className="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">Error</p>
-                <p className="text-sm text-red-700 dark:text-red-300 font-mono text-xs whitespace-pre-wrap">{result}</p>
+                <p className="text-sm font-semibold text-red-600 dark:text-red-400 mb-1">Error</p>
+                <p className="text-base text-red-700 dark:text-red-300 font-mono text-sm whitespace-pre-wrap">{result}</p>
             </div>
         )
     }
@@ -93,9 +93,9 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
 
     return (
         <div className="p-3 bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg">
-            <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">Result</p>
+            <p className="text-sm font-semibold text-gray-500 dark:text-slate-400 mb-2">Result</p>
             <motion.div
-                className="overflow-hidden text-sm workflow-markdown"
+                className="overflow-hidden text-base workflow-markdown"
                 animate={{ height: 'auto' }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
             >
@@ -104,7 +104,7 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
             {isLongResult && (
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 mt-2"
+                    className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 mt-2"
                     aria-expanded={isExpanded}
                 >
                     {isExpanded ? 'Show Less' : 'Show More'}
@@ -134,11 +134,11 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
     if (call.name === 'executeCode' && args.code) {
         const packages = (args.packages as string[] | undefined) || [];
         return (
-            <div className="space-y-3 text-sm">
+            <div className="space-y-3 text-base">
                 {/* FIX: Added missing 'isStreaming' prop to CodeBlock */}
                 <CodeBlock language={args.language as string || 'plaintext'} isStreaming={false}>{args.code as string}</CodeBlock>
                 {packages.length > 0 && (
-                     <div className="flex items-center gap-2 text-xs">
+                     <div className="flex items-center gap-2 text-sm">
                         <span className="font-semibold text-gray-500 dark:text-slate-400">Dependencies:</span>
                         <div className="flex flex-wrap gap-1.5">
                             {packages.map((pkg, i) => (
@@ -152,7 +152,7 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
                 {result ? (
                     <ToolResultDisplay result={result} sendMessage={sendMessage} />
                 ) : (
-                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400">
                         <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         <span>Executing code...</span>
                     </div>
@@ -164,12 +164,12 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
     const argEntries = Object.entries(args);
   
     return (
-      <div className="min-w-0 flex-1 text-sm space-y-3">
+      <div className="min-w-0 flex-1 text-base space-y-3">
         {argEntries.length > 0 && (
           <div className="font-['Fira_Code',_monospace] space-y-2 border border-gray-200 dark:border-slate-700/50 bg-gray-50 dark:bg-black/20 p-3 rounded-lg">
-            <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-1">Parameters</p>
+            <p className="text-sm font-semibold text-gray-500 dark:text-slate-400 mb-1">Parameters</p>
             {argEntries.map(([key, value]) => (
-                <div key={key} className="grid grid-cols-[auto,1fr] gap-x-3 items-start text-xs">
+                <div key={key} className="grid grid-cols-[auto,1fr] gap-x-3 items-start text-sm">
                   <span className="text-gray-400 dark:text-slate-500 font-medium">{key}:</span>
                   <span className="text-gray-700 dark:text-slate-300 break-all whitespace-pre-wrap">{String(value)}</span>
                 </div>
@@ -181,7 +181,7 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
             {result ? (
                 <ToolResultDisplay result={result} sendMessage={sendMessage} />
             ) : (
-                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400">
                     <span>Executing</span>
                     <LoadingDots />
                 </div>

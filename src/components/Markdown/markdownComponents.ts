@@ -91,10 +91,10 @@ export const MarkdownComponents = {
 // A more compact set of components for rendering markdown within workflow nodes.
 export const WorkflowMarkdownComponents = {
     ...MarkdownComponents,
-    h1: (props: any) => React.createElement('h1', { className: "text-base font-semibold mb-2 text-slate-100", ...props }),
-    h2: (props: any) => React.createElement('h2', { className: "text-xl font-bold my-3 text-slate-100", ...props }),
-    h3: (props: any) => React.createElement('h3', { className: "text-sm font-semibold mb-1 text-slate-200", ...props }),
-    h4: (props: any) => React.createElement('h4', { className: "text-xs font-semibold my-1 text-slate-300", ...props }),
+    h1: (props: any) => React.createElement('h1', { className: "text-lg font-semibold mb-2 text-slate-100", ...props }),
+    h2: (props: any) => React.createElement('h2', { className: "text-base font-bold my-3 text-slate-100", ...props }),
+    h3: (props: any) => React.createElement('h3', { className: "text-base font-semibold mb-1 text-slate-200", ...props }),
+    h4: (props: any) => React.createElement('h4', { className: "text-sm font-semibold my-1 text-slate-300", ...props }),
     p: (props: any) => React.createElement('p', { className: "leading-relaxed text-slate-300 mb-2", ...props }),
     ul: (props: any) => React.createElement('ul', { className: "list-disc pl-5 mb-2 space-y-1.5 text-slate-300", ...props }),
     ol: (props: any) => React.createElement('ol', { className: "list-decimal pl-5 mb-2 space-y-1.5 text-slate-300", ...props }),

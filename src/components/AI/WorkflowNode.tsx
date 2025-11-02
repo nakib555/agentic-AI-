@@ -81,9 +81,9 @@ const renderDetails = (node: WorkflowNodeData, sendMessage: WorkflowNodeProps['s
     if (node.status === 'failed' && typeof node.details === 'object' && 'message' in node.details) {
         const error = node.details as MessageError;
         return (
-            <div className="text-sm space-y-1 text-red-700 dark:text-red-300">
+            <div className="text-base space-y-1 text-red-700 dark:text-red-300">
                 <p><span className="font-semibold">Step Failed:</span> {error.message}</p>
-                 <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-1">See the error summary above for more details.</p>
+                 <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1">See the error summary above for more details.</p>
             </div>
         );
     }
@@ -91,7 +91,7 @@ const renderDetails = (node: WorkflowNodeData, sendMessage: WorkflowNodeProps['s
     if (typeof node.details === 'string') {
         const detailsText = node.details;
         return (
-            <div className="text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
+            <div className="text-base text-gray-700 dark:text-slate-300 workflow-markdown">
                 <TypingWrapper
                     fullText={detailsText}
                     isAnimating={node.status === 'active'}
@@ -111,14 +111,14 @@ const HandoffNode: React.FC<{ from: string; to: string; details?: string; isStre
     return (
         <div className="flex items-center gap-3 py-2 pl-1">
             <div className="flex-shrink-0 pt-0.5"><HandoffIcon /></div>
-            <div className="flex-1 min-w-0 text-sm">
+            <div className="flex-1 min-w-0 text-base">
                 <div className="flex items-center flex-wrap gap-2 mb-1">
-                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${fromColor.bg} ${fromColor.text}`}>{from}</span>
+                    <span className={`px-2 py-0.5 text-sm font-semibold rounded-full ${fromColor.bg} ${fromColor.text}`}>{from}</span>
                     <span className="text-slate-400 dark:text-slate-500 font-['Space_Grotesk']">→</span>
-                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${toColor.bg} ${toColor.text}`}>{to}</span>
+                    <span className={`px-2 py-0.5 text-sm font-semibold rounded-full ${toColor.bg} ${toColor.text}`}>{to}</span>
                 </div>
                 {details && (
-                    <div className="text-slate-600 dark:text-slate-400 text-xs workflow-markdown">
+                    <div className="text-slate-600 dark:text-slate-400 text-sm workflow-markdown">
                         <TypingWrapper fullText={details} isAnimating={isStreaming}>
                             {(text) => <ManualCodeRenderer text={isStreaming ? text : details as string} components={WorkflowMarkdownComponents} isStreaming={isStreaming} />}
                         </TypingWrapper>
@@ -173,10 +173,10 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="flex-shrink-0">{icon}</div>
                         <div className="flex-1 min-w-0 flex items-center flex-wrap gap-x-2 gap-y-1">
-                            <span className={`flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full ${agentColorInfo.bg} ${agentColorInfo.text}`}>
+                            <span className={`flex-shrink-0 px-2 py-0.5 text-sm font-semibold rounded-full ${agentColorInfo.bg} ${agentColorInfo.text}`}>
                                 {node.agentName}
                             </span>
-                            <p className="font-semibold font-['Space_Grotesk'] text-gray-800 dark:text-slate-200 text-sm truncate">{title}</p>
+                            <p className="font-semibold font-['Space_Grotesk'] text-gray-800 dark:text-slate-200 text-base truncate">{title}</p>
                         </div>
                     </div>
                 </div>
@@ -195,9 +195,9 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
         return (
             <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 pt-0.5">{icon}</div>
-                <div className="flex-1 min-w-0 text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
+                <div className="flex-1 min-w-0 text-base text-gray-700 dark:text-slate-300 workflow-markdown">
                     {agentColorInfo && (
-                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-full mr-2 ${agentColorInfo.bg} ${agentColorInfo.text}`}>
+                        <span className={`px-2 py-0.5 text-sm font-semibold rounded-full mr-2 ${agentColorInfo.bg} ${agentColorInfo.text}`}>
                             {node.agentName}
                         </span>
                     )}
@@ -228,16 +228,16 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
                     <div className="flex-shrink-0">{icon}</div>
                     <div className="flex-1 min-w-0 flex items-center flex-wrap gap-x-2 gap-y-1">
                         {agentColorInfo && (
-                            <span className={`flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full ${agentColorInfo.bg} ${agentColorInfo.text}`}>
+                            <span className={`flex-shrink-0 px-2 py-0.5 text-sm font-semibold rounded-full ${agentColorInfo.bg} ${agentColorInfo.text}`}>
                                 {node.agentName}
                             </span>
                         )}
-                        <p className="font-semibold font-['Space_Grotesk'] text-gray-800 dark:text-slate-200 text-sm truncate">{title}</p>
+                        <p className="font-semibold font-['Space_Grotesk'] text-gray-800 dark:text-slate-200 text-base truncate">{title}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                     {node.duration !== null && node.duration !== undefined && (
-                        <span className="text-xs text-gray-500 dark:text-slate-400 font-mono">{node.duration.toFixed(1)}s</span>
+                        <span className="text-sm text-gray-500 dark:text-slate-400 font-mono">{node.duration.toFixed(1)}s</span>
                     )}
                 </div>
             </div>

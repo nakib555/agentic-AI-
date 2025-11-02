@@ -15,7 +15,7 @@ type SettingsCategoryButtonProps = {
 export const SettingsCategoryButton: React.FC<SettingsCategoryButtonProps> = ({ icon, label, isActive, onClick }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-left transition-colors ${
+    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-base font-medium text-left transition-colors ${
       isActive
         ? 'bg-gray-200/60 dark:bg-black/40 text-gray-900 dark:text-slate-50'
         : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-black/20'
