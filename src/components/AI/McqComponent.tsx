@@ -44,7 +44,7 @@ export const McqComponent: React.FC<McqComponentProps> = ({ question, options, a
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.2 }}
-      className="my-4 p-4 sm:p-6 bg-white dark:bg-[#202123] border border-gray-200 dark:border-transparent rounded-2xl text-gray-800 dark:text-slate-200 max-w-full w-full"
+      className="my-6 p-4 sm:p-6 bg-white dark:bg-[#202123] border border-gray-200 dark:border-transparent rounded-2xl text-gray-800 dark:text-slate-200 max-w-full w-full"
       role="region"
       aria-label="Multiple Choice Question"
     >

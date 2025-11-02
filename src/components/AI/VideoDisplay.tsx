@@ -198,7 +198,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, pr
 
     return (
         <div 
-            className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-200/10 shadow-lg bg-white dark:bg-white/5 relative"
+            className="my-6 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-200/10 shadow-lg bg-white dark:bg-white/5 relative"
             ref={containerRef}
             onMouseEnter={() => setIsControlsVisible(true)}
             onMouseLeave={() => {

@@ -81,7 +81,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filename, fileKey, mim
     <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 shadow-lg bg-white dark:bg-[#1e1e1e]"
+        className="my-6 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 shadow-lg bg-white dark:bg-[#1e1e1e]"
     >
         <div className="bg-gray-50 dark:bg-black/20 flex items-center justify-center p-2">
             {renderPreviewContent()}

@@ -48,7 +48,7 @@ export const DownloadLink: React.FC<DownloadLinkProps> = ({ filename, fileKey })
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="my-4"
+      className="my-6"
     >
       <a
         href={url ?? '#'}

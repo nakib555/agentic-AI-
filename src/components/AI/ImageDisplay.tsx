@@ -100,7 +100,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageKey, srcUrl, pr
   const displayCaption = caption || alt || prompt;
 
   return (
-    <div className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-200/10 shadow-lg bg-white dark:bg-white/5">
+    <div className="my-6 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-200/10 shadow-lg bg-white dark:bg-white/5">
       <div className="aspect-square w-full bg-slate-900/50 flex items-center justify-center">
         {imageUrl ? (
           <img
