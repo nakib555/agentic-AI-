@@ -26,6 +26,8 @@ type ChatSettings = {
     systemPrompt: string; 
     temperature: number; 
     maxOutputTokens: number; 
+    imageModel: string;
+    videoModel: string;
 };
 
 export const useChat = (initialModel: string, settings: ChatSettings, memoryContent: string) => {
@@ -115,7 +117,9 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     if (!activeChatId) {
         activeChatId = chatHistoryHook.createNewChat(initialModel, { 
             temperature: settings.temperature, 
-            maxOutputTokens: settings.maxOutputTokens
+            maxOutputTokens: settings.maxOutputTokens,
+            imageModel: settings.imageModel,
+            videoModel: settings.videoModel,
         });
     }
 
@@ -207,7 +211,12 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     
     const allMessagesForApi = [...(activeChat?.messages || []), userMessageObj];
     const historyForApi = buildApiHistory(allMessagesForApi);
-    const toolExecutor = createToolExecutor(chatHistory, activeChatId);
+    const toolExecutor = createToolExecutor(
+        chatHistory, 
+        activeChatId,
+        activeChat?.imageModel || settings.imageModel,
+        activeChat?.videoModel || settings.videoModel
+    );
     const callbacks = createAgentCallbacks(activeChatId, chatHistoryHook, { abortControllerRef }, isThinkingModeEnabled, executionApprovalRef);
 
     await runAgenticLoop({

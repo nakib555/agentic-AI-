@@ -3,13 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 // FIX: Correct the relative import path for types.
 import type { Message } from '../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { parseMessageText } from '../../utils/messageParser';
 import { useViewport } from '../../hooks/useViewport';
+import { parseAgenticWorkflow } from '../../services/workflowParser';
+import { ErrorDisplay } from '../UI/ErrorDisplay';
+import { FormattedBlock } from '../Markdown/FormattedBlock';
 
 type ThinkingSidebarProps = {
     isOpen: boolean;
@@ -50,6 +53,30 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
     }, [setWidth, setIsResizing]);
+    
+    const { status, statusColor, plan, executionLog } = useMemo(() => {
+        if (!message) {
+            return { status: 'Idle', statusColor: 'bg-gray-400', plan: '', executionLog: [] };
+        }
+        const { text, isThinking, error, toolCallEvents } = message;
+        const thinkingIsComplete = !isThinking || !!error;
+        
+        const { plan: parsedPlan, executionLog: parsedLog } = parseAgenticWorkflow(
+            parseMessageText(text, !!isThinking, !!error).thinkingText,
+            toolCallEvents,
+            thinkingIsComplete,
+            error
+        );
+
+        if (error) {
+            return { status: 'Failed', statusColor: 'bg-red-500 dark:bg-red-600', plan: parsedPlan, executionLog: parsedLog };
+        }
+        if (!isThinking) {
+            return { status: 'Completed', statusColor: 'bg-green-500 dark:bg-green-600', plan: parsedPlan, executionLog: parsedLog };
+        }
+        return { status: 'In Progress', statusColor: 'bg-indigo-500 animate-pulse', plan: parsedPlan, executionLog: parsedLog };
+    }, [message]);
+
 
     // Desktop variants for side-in animation
     const desktopVariants = {
@@ -69,29 +96,40 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             );
         }
 
-        const { thinkingText } = parseMessageText(message.text, !!message.isThinking, !!message.error);
-        const thinkingIsComplete = !message.isThinking || !!message.error;
-        const isLiveGeneration = !!message.isThinking && !message.error;
-
-        if (!thinkingText && !message.error) {
-             return (
-                <div className="flex items-center justify-center h-full text-sm text-gray-500 dark:text-slate-400 p-4 text-center">
-                    This message did not involve a complex thought process.
+        const hasContent = plan || executionLog.length > 0;
+        if (!hasContent) {
+            return (
+                <div className="flex flex-col items-center justify-center h-full text-sm text-gray-500 dark:text-slate-400 p-4 text-center">
+                    <p className="mb-4">This message did not involve a complex thought process.</p>
+                    {message.error && <ErrorDisplay error={message.error} />}
                 </div>
-            );
+           );
         }
 
         return (
-             <ThinkingWorkflow
-                text={thinkingText}
-                toolCallEvents={message.toolCallEvents}
-                isThinkingComplete={thinkingIsComplete}
-                isLiveGeneration={isLiveGeneration}
-                error={message.error}
-                sendMessage={sendMessage}
-                onRegenerate={onRegenerate}
-                messageId={message.id}
-            />
+            <div className="space-y-4 px-4">
+                {plan && (
+                    <div>
+                        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                            Mission Briefing
+                        </h3>
+                        <FormattedBlock content={plan} isStreaming={message.isThinking && executionLog.length === 0} />
+                    </div>
+                )}
+                {executionLog.length > 0 && (
+                     <div>
+                        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                            Execution Log
+                        </h3>
+                        <ThinkingWorkflow
+                            nodes={executionLog}
+                            sendMessage={sendMessage}
+                            onRegenerate={onRegenerate}
+                            messageId={message.id}
+                        />
+                    </div>
+                )}
+            </div>
         );
     }
 
@@ -130,7 +168,12 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                 )}
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
-                    <h2 id="thinking-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Thought Process</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 id="thinking-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Thought Process</h2>
+                        <span className={`px-2 py-1 text-xs font-semibold text-white rounded-full ${statusColor}`}>
+                            {status}
+                        </span>
+                    </div>
                     <button
                         onClick={onClose}
                         className="p-1 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-black/20"

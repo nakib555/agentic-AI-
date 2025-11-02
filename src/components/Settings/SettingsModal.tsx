@@ -28,6 +28,10 @@ type SettingsModalProps = {
   setTemperature: (temp: number) => void;
   maxTokens: number;
   setMaxTokens: (tokens: number) => void;
+  imageModel: string;
+  onImageModelChange: (modelId: string) => void;
+  videoModel: string;
+  onVideoModelChange: (modelId: string) => void;
   defaultTemperature: number;
   defaultMaxTokens: number;
   // Speech & Memory

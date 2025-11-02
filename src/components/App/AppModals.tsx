@@ -25,16 +25,23 @@ type AppModalsProps = {
   handleModelChange: (modelId: string) => void;
   modelsLoading: boolean;
   clearAllChats: () => void;
+  // Custom Instructions
   aboutUser: string;
   setAboutUser: (value: string) => void;
   aboutResponse: string;
   setAboutResponse: (value: string) => void;
+  // Model Settings
   temperature: number;
   setTemperature: (value: number) => void;
   maxTokens: number;
   setMaxTokens: (value: number) => void;
+  imageModel: string;
+  setImageModel: (modelId: string) => void;
+  videoModel: string;
+  setVideoModel: (modelId: string) => void;
   defaultTemperature: number;
   defaultMaxTokens: number;
+  // Speech & Memory
   isMemoryEnabled: boolean;
   setIsMemoryEnabled: (enabled: boolean) => void;
   onManageMemory: () => void;
@@ -60,7 +67,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     isPinnedModalOpen, setIsPinnedModalOpen, availableModels, activeModel,
     handleModelChange, modelsLoading, clearAllChats, aboutUser, setAboutUser,
     aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens,
-    setMaxTokens, defaultTemperature, defaultMaxTokens, isMemoryEnabled,
+    setMaxTokens, imageModel, setImageModel, videoModel, setVideoModel,
+    defaultTemperature, defaultMaxTokens, isMemoryEnabled,
     setIsMemoryEnabled, memoryContent, clearMemory, isConfirmationOpen,
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
     setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, messages,
@@ -85,6 +93,10 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         setTemperature={setTemperature}
         maxTokens={maxTokens}
         setMaxTokens={setMaxTokens}
+        imageModel={imageModel}
+        onImageModelChange={setImageModel}
+        videoModel={videoModel}
+        onVideoModelChange={setVideoModel}
         defaultTemperature={defaultTemperature}
         defaultMaxTokens={defaultMaxTokens}
         isMemoryEnabled={isMemoryEnabled}

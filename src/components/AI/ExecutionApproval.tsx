@@ -9,9 +9,11 @@ import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 // FIX: Fix module import path for icons to point to the barrel file inside the 'icons' directory, resolving ambiguity with an empty 'icons.tsx' file.
 import { GoalAnalysisIcon, PlannerIcon, TodoListIcon, ToolsIcon } from './icons/index';
+// FIX: Update the 'plan' prop type to ParsedWorkflow to fix a type mismatch.
 import type { ParsedWorkflow } from '../../services/workflowParser';
 import { getAgentColor } from '../../utils/agentUtils';
 
+// This component now receives the full plan as a raw text string.
 type ExecutionApprovalProps = {
     plan: ParsedWorkflow;
     onApprove: () => void;
@@ -36,6 +38,17 @@ const PlanSection: React.FC<{ icon: React.ReactNode; title: string; content: str
 export const ExecutionApproval: React.FC<ExecutionApprovalProps> = ({ plan, onApprove, onDeny }) => {
     const plannerColor = getAgentColor('Planner');
 
+    // Manually parse the plan sections from the raw text string.
+    const rawPlanText = plan.plan || '';
+    const goalAnalysisMatch = rawPlanText.match(/## Goal Analysis\s*([\s\S]*?)(?=## Todo-list|## Tools|$)/s);
+    const todoListMatch = rawPlanText.match(/## Todo-list\s*([\s\S]*?)(?=## Tools|$)/s);
+    const toolsMatch = rawPlanText.match(/## Tools\s*([\s\S]*?)$/s);
+
+    const goalAnalysis = goalAnalysisMatch ? goalAnalysisMatch[1].trim() : '';
+    const todoList = todoListMatch ? todoListMatch[1].trim() : '';
+    const tools = toolsMatch ? toolsMatch[1].trim() : '';
+
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -56,9 +69,9 @@ export const ExecutionApproval: React.FC<ExecutionApprovalProps> = ({ plan, onAp
             </p>
 
             <div className="space-y-4 p-4 bg-gray-50 dark:bg-black/20 rounded-lg border border-gray-200 dark:border-white/10">
-                <PlanSection icon={<GoalAnalysisIcon />} title="Goal Analysis" content={plan.goalAnalysis} />
-                <PlanSection icon={<TodoListIcon />} title="Todo-list" content={plan.todoList} />
-                <PlanSection icon={<ToolsIcon />} title="Tools" content={plan.tools} />
+                <PlanSection icon={<GoalAnalysisIcon />} title="Goal Analysis" content={goalAnalysis} />
+                <PlanSection icon={<TodoListIcon />} title="Todo-list" content={todoList} />
+                <PlanSection icon={<ToolsIcon />} title="Tools" content={tools} />
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2">

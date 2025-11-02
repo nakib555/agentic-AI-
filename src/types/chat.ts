@@ -13,4 +13,6 @@ export type ChatSession = {
     createdAt: number;
     temperature?: number;
     maxOutputTokens?: number;
+    imageModel?: string;
+    videoModel?: string;
 };

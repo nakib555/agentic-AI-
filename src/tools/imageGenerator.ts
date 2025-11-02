@@ -37,15 +37,15 @@ export const imageGeneratorDeclaration: FunctionDeclaration = {
   },
 };
 
-export const executeImageGenerator = async (args: { prompt: string, numberOfImages?: number }): Promise<string> => {
-    const { prompt, numberOfImages = 1 } = args;
+export const executeImageGenerator = async (args: { prompt: string, numberOfImages?: number, model: string }): Promise<string> => {
+    const { prompt, numberOfImages = 1, model } = args;
     const count = Math.max(1, Math.min(5, Math.floor(numberOfImages))); // Clamp between 1 and 5
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
     
     const response = await ai.models.generateImages({
-        model: 'imagen-4.0-generate-001',
+        model: model,
         prompt: prompt, // Use the user's prompt directly for Imagen
         config: {
           numberOfImages: count,

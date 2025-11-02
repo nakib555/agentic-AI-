@@ -22,6 +22,32 @@ export const validModels: Model[] = [
     },
 ];
 
+export const validImageModels: Model[] = [
+    { 
+        id: 'imagen-4.0-generate-001', 
+        name: 'Imagen 4', 
+        description: 'Highest quality image generation.' 
+    },
+    { 
+        id: 'gemini-2.5-flash-image', 
+        name: 'Gemini 2.5 Flash Image', 
+        description: 'Fast, general-purpose image generation and editing.'
+    }
+];
+
+export const validVideoModels: Model[] = [
+    { 
+        id: 'veo-3.1-fast-generate-preview', 
+        name: 'Veo 3.1 Fast', 
+        description: 'General video generation tasks.' 
+    },
+    { 
+        id: 'veo-3.1-generate-preview', 
+        name: 'Veo 3.1', 
+        description: 'High-quality video generation and editing.' 
+    }
+];
+
 /**
  * Simulates fetching the available AI models from a backend.
  */

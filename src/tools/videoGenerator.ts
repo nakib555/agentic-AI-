@@ -29,7 +29,7 @@ export const videoGeneratorDeclaration: FunctionDeclaration = {
 // A special UI component tag returned when API key selection is required for Veo.
 const VEO_API_KEY_COMPONENT_TAG = '[VEO_API_KEY_SELECTION_COMPONENT]To generate videos, please select an API key. This is a necessary step for using the Veo model. [Learn more about billing.](https://ai.google.dev/gemini-api/docs/billing)[/VEO_API_KEY_SELECTION_COMPONENT]';
 
-export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?: string; resolution?: string }): Promise<string> => {
+export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }): Promise<string> => {
   // Per Veo guidelines, check for API key selection first.
   // The 'window.aistudio' object is assumed to be available in the execution environment.
   if ((window as any).aistudio && typeof (window as any).aistudio.hasSelectedApiKey === 'function') {
@@ -39,7 +39,7 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
     }
   }
 
-  const { prompt, aspectRatio = '16:9', resolution = '720p' } = args;
+  const { prompt, aspectRatio = '16:9', resolution = '720p', model } = args;
 
   // Validate inputs
   const validAspectRatios = ['16:9', '9:16'];
@@ -86,7 +86,7 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
 
     // 2. Generate the video using the enhanced prompt
     let operation = await ai.models.generateVideos({
-      model: 'veo-3.1-fast-generate-preview',
+      model: model,
       prompt: enhancedPrompt,
       config: {
         numberOfVideos: 1,

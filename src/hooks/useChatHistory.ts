@@ -6,12 +6,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { ChatSession, Message } from '../types';
 import { validModels } from '../services/modelService';
+import { DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from '../components/App/constants';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
 type ChatSettings = { 
     temperature: number; 
     maxOutputTokens: number; 
+    imageModel: string;
+    videoModel: string;
 };
 
 export const useChatHistory = () => {
@@ -30,16 +33,24 @@ export const useChatHistory = () => {
 
       // Add a migration step to add createdAt timestamp and validate model
       const history = (savedHistoryJSON ? JSON.parse(savedHistoryJSON) : []).map((chat: any) => {
-          const migratedChat = {
+          const migratedChat: ChatSession = {
             ...chat,
             createdAt: chat.createdAt || Date.now()
           };
           
           // Remove legacy systemPrompt from saved chats during migration
-          delete migratedChat.systemPrompt;
+          delete (migratedChat as any).systemPrompt;
 
           if (!migratedChat.model || !validModelIds.has(migratedChat.model)) {
               migratedChat.model = defaultModelId;
+          }
+
+          if (!migratedChat.imageModel) {
+            migratedChat.imageModel = DEFAULT_IMAGE_MODEL;
+          }
+
+          if (!migratedChat.videoModel) {
+            migratedChat.videoModel = DEFAULT_VIDEO_MODEL;
           }
 
           return migratedChat;
@@ -113,6 +124,8 @@ export const useChatHistory = () => {
         id: generateId(), // Always generate a new ID
         createdAt: Date.now(), // Always set a new creation date
         isLoading: false, // Ensure it's not in a loading state
+        imageModel: importedChat.imageModel || DEFAULT_IMAGE_MODEL,
+        videoModel: importedChat.videoModel || DEFAULT_VIDEO_MODEL,
     };
     
     // Remove legacy systemPrompt from imported chats
@@ -200,7 +213,15 @@ export const useChatHistory = () => {
     setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, model } : s));
   }, []);
 
-  const updateChatSettings = useCallback((chatId: string, newSettings: Partial<Pick<ChatSession, 'temperature' | 'maxOutputTokens'>>) => {
+  const updateChatImageModel = useCallback((chatId: string, imageModel: string) => {
+    setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, imageModel } : s));
+  }, []);
+
+  const updateChatVideoModel = useCallback((chatId: string, videoModel: string) => {
+    setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, videoModel } : s));
+  }, []);
+
+  const updateChatSettings = useCallback((chatId: string, newSettings: Partial<Pick<ChatSession, 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>>) => {
     setChatHistory(prev => prev.map(s => {
       if (s.id !== chatId) return s;
       return { ...s, ...newSettings };
@@ -224,6 +245,8 @@ export const useChatHistory = () => {
     completeChatLoading,
     updateChatTitle,
     updateChatModel,
+    updateChatImageModel,
+    updateChatVideoModel,
     updateChatSettings,
     importChat,
   };

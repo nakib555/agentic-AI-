@@ -3,28 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 // FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
-import type { MessageError, ToolCallEvent } from '../../types';
-import { WorkflowNode } from './WorkflowNode';
-import { parseAgenticWorkflow } from '../../services/workflowParser';
-import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
-import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
-// FIX: Fix module import path for icons to point to the barrel file inside the 'icons' directory, resolving ambiguity with an empty 'icons.tsx' file.
-import { PlannerIcon, TodoListIcon, ToolsIcon, GoalAnalysisIcon } from './icons/index';
-import { TypingWrapper } from './TypingWrapper';
+import { WorkflowNode, type WorkflowNodeData } from './WorkflowNode';
 import { WorkflowConnector } from './WorkflowConnector';
-import { getAgentColor } from '../../utils/agentUtils';
-import { ErrorDisplay } from '../UI/ErrorDisplay';
 
 type ThinkingWorkflowProps = {
-  text: string;
-  toolCallEvents?: ToolCallEvent[];
-  isThinkingComplete: boolean;
-  isLiveGeneration: boolean;
-  error?: MessageError;
+  nodes: WorkflowNodeData[];
   sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
   onRegenerate?: (messageId: string) => void;
   messageId?: string;
@@ -39,106 +26,46 @@ const StatusIcon = ({ status }: { status: 'pending' | 'active' | 'done' | 'faile
     }
 };
 
-const PlanSection: React.FC<{ icon: React.ReactNode; title: string; content: string; isStreaming: boolean; }> = ({ icon, title, content, isStreaming }) => {
-    if (!content) return null;
-    return (
-        <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 text-slate-500 dark:text-slate-400">{icon}</div>
-            <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200 mb-1">{title}</h3>
-                <div className="text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
-                    <TypingWrapper fullText={content} isAnimating={isStreaming}>
-                        {(text) => <ManualCodeRenderer text={isStreaming ? text : content} components={WorkflowMarkdownComponents} isStreaming={isStreaming} />}
-                    </TypingWrapper>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-
 export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
-  text,
-  toolCallEvents = [],
-  isThinkingComplete,
-  isLiveGeneration,
-  error,
+  nodes,
   sendMessage,
   onRegenerate,
   messageId,
 }) => {
-  const { goalAnalysis, todoList, tools, executionLog } = useMemo(
-    () => parseAgenticWorkflow(text, toolCallEvents, isThinkingComplete, error),
-    [text, toolCallEvents, isThinkingComplete, error]
-  );
-  
-  const executionLogRef = useRef<HTMLDivElement>(null);
+  const logRef = useRef<HTMLDivElement>(null);
+  const isLiveGeneration = nodes.some(node => node.status === 'active');
 
   useEffect(() => {
-    if (isLiveGeneration && executionLogRef.current) {
-      executionLogRef.current.scrollTop = executionLogRef.current.scrollHeight;
+    if (isLiveGeneration && logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
     }
-  }, [executionLog, isLiveGeneration]);
+  }, [nodes, isLiveGeneration]);
   
-  const hasPlan = goalAnalysis || todoList || tools;
-  const plannerColor = getAgentColor('Planner');
-
   return (
-    <div className="px-4 pb-4 font-['Inter',_sans-serif]">
-      {error && (
-         <div className="mb-6">
-            <ErrorDisplay error={error} />
-         </div>
-      )}
-      
-      <div className="flex flex-col gap-6">
-        {/* Plan Section */}
-        {hasPlan && (
-            <div className="p-4 bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-200 dark:border-white/10 space-y-4">
-                 <div className="flex items-center gap-3 mb-4">
-                    <PlannerIcon />
-                    <h3 className="text-sm font-bold text-gray-800 dark:text-slate-200">Mission Briefing</h3>
-                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${plannerColor.bg} ${plannerColor.text}`}>Planner</span>
+    <div ref={logRef} className="font-['Inter',_sans-serif]">
+        <div className="pl-2.5">
+            {nodes.map((node, index) => (
+                <div key={node.id} className="flex">
+                    <div className="flex flex-col items-center mr-4">
+                        <StatusIcon status={node.status} />
+                        {index < nodes.length - 1 && (
+                            <WorkflowConnector isActive={(node.status === 'done' || node.status === 'failed') && nodes[index + 1]?.status !== 'pending'} />
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-0 pb-6">
+                        <AnimatePresence>
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, ease: "easeOut", delay: index * 0.1 }}
+                            >
+                                <WorkflowNode node={node} sendMessage={sendMessage} onRegenerate={onRegenerate} messageId={messageId} />
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
                 </div>
-                <PlanSection icon={<GoalAnalysisIcon />} title="Goal Analysis" content={goalAnalysis} isStreaming={isLiveGeneration && !todoList} />
-                <PlanSection icon={<TodoListIcon />} title="Task List" content={todoList} isStreaming={isLiveGeneration && !tools} />
-                <PlanSection icon={<ToolsIcon />} title="Required Tools" content={tools} isStreaming={isLiveGeneration && executionLog.length === 0} />
-            </div>
-        )}
-
-        {/* Execution Log Section */}
-        {executionLog.length > 0 && (
-            <div>
-                <div className="flex items-center gap-3 mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-500 dark:text-slate-400"><path d="M10.75 3.944v1.076a.75.75 0 0 0 1.5 0V3.34a5.526 5.526 0 0 0-3.32-1.018V3.5a.75.75 0 0 1-1.5 0v-.837a5.526 5.526 0 0 0-3.32 1.018v.598a.75.75 0 0 0 1.5 0V3.944c.541-.244 1.12-.403 1.72-.444a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75-.75c-.6 0-1.179.199-1.72.444v-.598a.75.75 0 0 0-1.5 0v.837a5.526 5.526 0 0 0 3.32 1.018v-1.17a.75.75 0 0 1 1.5 0v.837a5.526 5.526 0 0 0 3.32-1.018v-.598a.75.75 0 0 0-1.5 0v.598c-.541.244-1.12.403-1.72.444a.75.75 0 0 1-.75-.75V4.25a.75.75 0 0 1 .75-.75c.6 0 1.179-.199 1.72-.444Z" /></svg>
-                    <h3 className="text-sm font-bold text-gray-800 dark:text-slate-200">Execution Log</h3>
-                </div>
-                <div ref={executionLogRef} className="pl-2.5">
-                    {executionLog.map((node, index) => (
-                        <div key={node.id} className="flex">
-                            <div className="flex flex-col items-center mr-4">
-                                <StatusIcon status={node.status} />
-                                {index < executionLog.length - 1 && (
-                                    <WorkflowConnector isActive={(node.status === 'done' || node.status === 'failed') && executionLog[index + 1]?.status !== 'pending'} />
-                                )}
-                            </div>
-                            <div className="flex-1 min-w-0 pb-6">
-                                <AnimatePresence>
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.3, ease: "easeOut", delay: index * 0.1 }}
-                                    >
-                                        <WorkflowNode node={node} sendMessage={sendMessage} onRegenerate={onRegenerate} messageId={messageId} />
-                                    </motion.div>
-                                </AnimatePresence>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )}
-      </div>
+            ))}
+        </div>
     </div>
   );
 };

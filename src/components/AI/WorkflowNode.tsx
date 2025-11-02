@@ -64,6 +64,9 @@ const getNodeVisuals = (node: WorkflowNodeData) => {
         case 'thought':
             icon = <ThoughtIcon />;
             break;
+        case 'observation':
+            icon = <ObservationIcon />;
+            break;
         default:
             icon = <TodoListIcon />; // Fallback icon
             break;
@@ -189,35 +192,6 @@ export const WorkflowNode = ({ node, sendMessage, onRegenerate, messageId }: Wor
                 </div>
                 <div className="pl-8">
                     <SearchToolResult query={node.title} sources={sources} />
-                </div>
-            </div>
-        );
-    }
-    
-    // "Thought" and "Observation" nodes are rendered as simple text blocks without a container.
-    const isLogEntry = node.type === 'thought' || node.type === 'observation';
-    if (isLogEntry) {
-        const agentColorInfo = node.agentName ? getAgentColor(node.agentName) : null;
-        const icon = node.type === 'thought' ? <ThoughtIcon /> : <ObservationIcon />;
-        return (
-            <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 pt-0.5">{icon}</div>
-                <div className="flex-1 min-w-0 text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
-                    {agentColorInfo && (
-                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-full mr-2 ${agentColorInfo.bg} ${agentColorInfo.text}`}>
-                            {node.agentName}
-                        </span>
-                    )}
-                    {node.status === 'failed' && typeof node.details === 'object' && node.details && 'message' in node.details ? (
-                        <p className="text-red-700 dark:text-red-300">{(node.details as MessageError).message}</p>
-                    ) : (
-                        <TypingWrapper
-                            fullText={node.details as string}
-                            isAnimating={node.status === 'active'}
-                        >
-                            {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : node.details as string} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
-                        </TypingWrapper>
-                    )}
                 </div>
             </div>
         );

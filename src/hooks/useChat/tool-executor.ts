@@ -19,7 +19,7 @@ const base64ToUint8Array = (base64: string) => {
     return bytes;
 };
 
-export const createToolExecutor = (chatHistory: any[], activeChatId: string) => {
+export const createToolExecutor = (chatHistory: any[], activeChatId: string, imageModel: string, videoModel: string) => {
     return async (name: string, args: any): Promise<string> => {
         const toolImplementation = toolImplementations[name];
         if (!toolImplementation) {
@@ -27,6 +27,14 @@ export const createToolExecutor = (chatHistory: any[], activeChatId: string) => 
         }
 
         let finalArgs = { ...args };
+        
+        if (name === 'generateImage') {
+            finalArgs.model = imageModel;
+        }
+        if (name === 'generateVideo') {
+            finalArgs.model = videoModel;
+        }
+
         if (name === 'executeCode' && finalArgs.input_filenames && Array.isArray(finalArgs.input_filenames)) {
             const currentChat = chatHistory.find(c => c.id === activeChatId);
             const lastUserMessage = currentChat?.messages.filter((m: any) => m.role === 'user' && !m.isHidden).pop();

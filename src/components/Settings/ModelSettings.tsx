@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Model } from '../../services/modelService';
+import { Model, validImageModels, validVideoModels } from '../../services/modelService';
 import { ModelSelector } from '../UI/ModelSelector';
 
 type ModelSettingsProps = {
@@ -15,6 +15,10 @@ type ModelSettingsProps = {
   setTemperature: (temp: number) => void;
   maxTokens: number;
   setMaxTokens: (tokens: number) => void;
+  imageModel: string;
+  onImageModelChange: (modelId: string) => void;
+  videoModel: string;
+  onVideoModelChange: (modelId: string) => void;
   defaultTemperature: number;
   defaultMaxTokens: number;
   disabled: boolean;
@@ -31,13 +35,22 @@ const SettingField: React.FC<{ label: string; description: string; children: Rea
 export const ModelSettings: React.FC<ModelSettingsProps> = ({
     models, selectedModel, onModelChange,
     temperature, setTemperature, maxTokens, setMaxTokens,
+    imageModel, onImageModelChange, videoModel, onVideoModelChange,
     disabled
 }) => {
     return (
         <div className="space-y-8">
             <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Model & Behavior</h3>
-            <SettingField label="AI Model" description="Select the model for new chats. This can be changed for the current chat.">
+            <SettingField label="Chat Model" description="Select the model for new chats. This can be changed for the current chat.">
                 <ModelSelector models={models} selectedModel={selectedModel} onModelChange={onModelChange} disabled={disabled} className="max-w-xs" />
+            </SettingField>
+
+            <SettingField label="Image Generation Model" description="Select the model used by the `generateImage` tool.">
+                <ModelSelector models={validImageModels} selectedModel={imageModel} onModelChange={onImageModelChange} disabled={disabled} className="max-w-xs" />
+            </SettingField>
+
+            <SettingField label="Video Generation Model" description="Select the model used by the `generateVideo` tool.">
+                <ModelSelector models={validVideoModels} selectedModel={videoModel} onModelChange={onVideoModelChange} disabled={disabled} className="max-w-xs" />
             </SettingField>
             
             <SettingField label={`Temperature: ${temperature.toFixed(1)}`} description="Controls randomness. Lower values are more deterministic, higher values are more creative.">

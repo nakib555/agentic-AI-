@@ -19,7 +19,7 @@ import { exportChatToMarkdown, exportChatToJson, exportChatToPdf, exportChatToCl
 import type { MessageListHandle } from '../Chat/MessageList';
 import {
   DEFAULT_ABOUT_USER, DEFAULT_ABOUT_RESPONSE, DEFAULT_TEMPERATURE,
-  DEFAULT_MAX_TOKENS, DEFAULT_TTS_VOICE, DEFAULT_AUTO_PLAY_AUDIO
+  DEFAULT_MAX_TOKENS, DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL, DEFAULT_TTS_VOICE, DEFAULT_AUTO_PLAY_AUDIO
 } from './constants';
 import { useViewport } from '../../hooks/useViewport';
 
@@ -37,6 +37,8 @@ export const useAppLogic = () => {
   const [aboutResponse, setAboutResponse] = useState<string>(() => localStorage.getItem('agentic-aboutResponse') || DEFAULT_ABOUT_RESPONSE);
   const [temperature, setTemperature] = useState<number>(() => parseFloat(localStorage.getItem('agentic-temperature') || `${DEFAULT_TEMPERATURE}`));
   const [maxTokens, setMaxTokens] = useState<number>(() => parseInt(localStorage.getItem('agentic-maxTokens') || `${DEFAULT_MAX_TOKENS}`, 10));
+  const [imageModel, setImageModel] = useState<string>(() => localStorage.getItem('agentic-imageModel') || DEFAULT_IMAGE_MODEL);
+  const [videoModel, setVideoModel] = useState<string>(() => localStorage.getItem('agentic-videoModel') || DEFAULT_VIDEO_MODEL);
   const [ttsVoice, setTtsVoice] = useState<string>(() => localStorage.getItem('agentic-ttsVoice') || DEFAULT_TTS_VOICE);
   const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState<boolean>(() => {
     const saved = localStorage.getItem('agentic-autoPlayAudio');
@@ -117,7 +119,17 @@ export const useAppLogic = () => {
     return `<CONTEXT>\nThe user has provided the following information about themselves to personalize your responses.\n${aboutUser}\n</CONTEXT>\n<INSTRUCTIONS>\nThe user has provided the following instructions on how you should respond.\n${aboutResponse}\n</INSTRUCTIONS>`.trim();
   }, [aboutUser, aboutResponse]);
 
-  const chat = useChat(uiSelectedModel, { systemPrompt: combinedSystemPrompt, temperature, maxOutputTokens: maxTokens }, memory.memoryContent);
+  const chat = useChat(
+    uiSelectedModel,
+    { 
+        systemPrompt: combinedSystemPrompt, 
+        temperature, 
+        maxOutputTokens: maxTokens, 
+        imageModel, 
+        videoModel 
+    },
+    memory.memoryContent
+  );
   
   const prevChatHistoryRef = useRef<ChatSession[]>([]);
   const messageListRef = useRef<MessageListHandle>(null);
@@ -155,29 +167,48 @@ export const useAppLogic = () => {
     localStorage.setItem('agentic-aboutResponse', aboutResponse);
     localStorage.setItem('agentic-temperature', String(temperature));
     localStorage.setItem('agentic-maxTokens', String(maxTokens));
+    localStorage.setItem('agentic-imageModel', imageModel);
+    localStorage.setItem('agentic-videoModel', videoModel);
     localStorage.setItem('agentic-ttsVoice', ttsVoice);
     localStorage.setItem('agentic-autoPlayAudio', JSON.stringify(isAutoPlayEnabled));
 
     if (chat.currentChatId) {
       const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
-      if (currentChat && ((currentChat.temperature ?? DEFAULT_TEMPERATURE) !== temperature || (currentChat.maxOutputTokens ?? DEFAULT_MAX_TOKENS) !== maxTokens)) {
-        chat.updateChatSettings(chat.currentChatId, { temperature, maxOutputTokens: maxTokens });
+      if (currentChat) {
+        chat.updateChatSettings(chat.currentChatId, { temperature, maxOutputTokens: maxTokens, imageModel, videoModel });
       }
     }
-  }, [aboutUser, aboutResponse, temperature, maxTokens, ttsVoice, isAutoPlayEnabled, chat.currentChatId, chat.chatHistory, chat.updateChatSettings]);
+  }, [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel, ttsVoice, isAutoPlayEnabled, chat.currentChatId, chat.chatHistory, chat.updateChatSettings]);
   
   useEffect(() => {
     const sourceOfTruth = chat.currentChatId ? chat.chatHistory.find(c => c.id === chat.currentChatId) : null;
+    
     const newTemperature = sourceOfTruth?.temperature ?? parseFloat(localStorage.getItem('agentic-temperature') || `${DEFAULT_TEMPERATURE}`);
     const newMaxTokens = sourceOfTruth?.maxOutputTokens ?? parseInt(localStorage.getItem('agentic-maxTokens') || `${DEFAULT_MAX_TOKENS}`, 10);
+    // FIX: Add parentheses to clarify operator precedence between '??' and '||'.
+    const newImageModel = (sourceOfTruth?.imageModel ?? localStorage.getItem('agentic-imageModel')) || DEFAULT_IMAGE_MODEL;
+    // FIX: Add parentheses to clarify operator precedence between '??' and '||'.
+    const newVideoModel = (sourceOfTruth?.videoModel ?? localStorage.getItem('agentic-videoModel')) || DEFAULT_VIDEO_MODEL;
     
     if (newTemperature !== temperature) setTemperature(newTemperature);
     if (newMaxTokens !== maxTokens) setMaxTokens(newMaxTokens);
+    if (newImageModel !== imageModel) setImageModel(newImageModel);
+    if (newVideoModel !== videoModel) setVideoModel(newVideoModel);
   }, [chat.currentChatId, chat.chatHistory]);
   
   const handleModelChange = (modelId: string) => {
     setUiSelectedModel(modelId);
     if (chat.currentChatId) chat.updateChatModel(chat.currentChatId, modelId);
+  };
+
+  const handleImageModelChange = (modelId: string) => {
+    setImageModel(modelId);
+    if (chat.currentChatId) chat.updateChatImageModel(chat.currentChatId, modelId);
+  };
+
+  const handleVideoModelChange = (modelId: string) => {
+    setVideoModel(modelId);
+    if (chat.currentChatId) chat.updateChatVideoModel(chat.currentChatId, modelId);
   };
 
   const handleExportChat = (format: 'md' | 'json' | 'pdf') => {
@@ -256,6 +287,7 @@ export const useAppLogic = () => {
     isPinnedModalOpen, setIsPinnedModalOpen, isThinkingSidebarOpen,
     thinkingMessageForSidebar, aboutUser, setAboutUser, aboutResponse,
     setAboutResponse, temperature, setTemperature, maxTokens, setMaxTokens,
+    imageModel, setImageModel: handleImageModelChange, videoModel, setVideoModel: handleVideoModelChange,
     ttsVoice, setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled,
     handleModelChange, handleExportChat, handleShareChat, handleImportChat,
     handleShowThinkingProcess, handleCloseThinkingSidebar, handleJumpToMessage,
