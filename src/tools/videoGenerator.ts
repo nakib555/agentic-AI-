@@ -4,11 +4,13 @@
  */
 
 import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
-import { videoStore } from '../services/videoStore';
+import { fileStore } from '../services/fileStore';
 import { ToolError } from '../types';
 import { getText } from '../utils/geminiUtils';
 // FIX: Fix module import path for `parseApiError` to point to the barrel file, resolving ambiguity with an empty `gemini.ts` file.
 import { parseApiError } from '../services/gemini/index';
+
+const generateId = () => Math.random().toString(36).substring(2, 9);
 
 export const videoGeneratorDeclaration: FunctionDeclaration = {
   name: 'generateVideo',
@@ -17,13 +19,40 @@ export const videoGeneratorDeclaration: FunctionDeclaration = {
     type: Type.OBJECT,
     properties: {
       prompt: { type: Type.STRING, description: 'A detailed description of the video to generate.' },
+      aspectRatio: { type: Type.STRING, description: 'The aspect ratio of the video. Supported values are "16:9" (landscape) and "9:16" (portrait). Defaults to "16:9".' },
+      resolution: { type: Type.STRING, description: 'The resolution of the video. Supported values are "720p" and "1080p". Defaults to "720p".' }
     },
     required: ['prompt'],
   },
 };
 
-export const executeVideoGenerator = async (args: { prompt: string }): Promise<string> => {
+// A special UI component tag returned when API key selection is required for Veo.
+const VEO_API_KEY_COMPONENT_TAG = '[VEO_API_KEY_SELECTION_COMPONENT]To generate videos, please select an API key. This is a necessary step for using the Veo model. [Learn more about billing.](https://ai.google.dev/gemini-api/docs/billing)[/VEO_API_KEY_SELECTION_COMPONENT]';
+
+export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?: string; resolution?: string }): Promise<string> => {
+  // Per Veo guidelines, check for API key selection first.
+  // The 'window.aistudio' object is assumed to be available in the execution environment.
+  if ((window as any).aistudio && typeof (window as any).aistudio.hasSelectedApiKey === 'function') {
+    const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+    if (!hasKey) {
+      return VEO_API_KEY_COMPONENT_TAG;
+    }
+  }
+
+  const { prompt, aspectRatio = '16:9', resolution = '720p' } = args;
+
+  // Validate inputs
+  const validAspectRatios = ['16:9', '9:16'];
+  const validResolutions = ['720p', '1080p'];
+  if (!validAspectRatios.includes(aspectRatio)) {
+      throw new ToolError('generateVideo', 'INVALID_ARGUMENT', `Invalid aspectRatio "${aspectRatio}". Supported values are: ${validAspectRatios.join(', ')}.`);
+  }
+  if (!validResolutions.includes(resolution)) {
+      throw new ToolError('generateVideo', 'INVALID_ARGUMENT', `Invalid resolution "${resolution}". Supported values are: ${validResolutions.join(', ')}.`);
+  }
+
   try {
+    // Per guidelines, create a new GoogleGenAI instance right before the API call to ensure it uses the latest key.
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
     // 1. Enhance the user's prompt for better video quality
@@ -39,9 +68,10 @@ export const executeVideoGenerator = async (args: { prompt: string }): Promise<s
       - **Subject & Action 🏃**: Clearly describe the main subject and what they are doing with vivid action verbs.
       - **Setting & Details 🌍**: Paint a picture of the environment with specific, sensory details.
       - **Visual Style ✨**: Specify an overall aesthetic (e.g., hyperrealistic, cinematic 4K, retro VHS, anime style, claymation).
+      - **Video Length 🎥**: Aim for a duration of approximately 8 seconds.
 
       ---
-      Original User Prompt: "${args.prompt}"
+      Original User Prompt: "${prompt}"
       ---
 
       Enhanced Cinematic Prompt:
@@ -59,7 +89,9 @@ export const executeVideoGenerator = async (args: { prompt: string }): Promise<s
       model: 'veo-3.1-fast-generate-preview',
       prompt: enhancedPrompt,
       config: {
-        numberOfVideos: 1
+        numberOfVideos: 1,
+        aspectRatio,
+        resolution,
       }
     });
 
@@ -84,14 +116,35 @@ export const executeVideoGenerator = async (args: { prompt: string }): Promise<s
         throw new ToolError('generateVideo', 'DOWNLOAD_FAILED', `Failed to download video: ${response.statusText}`);
     }
     const videoBlob = await response.blob();
-    const videoKey = await videoStore.saveVideo(videoBlob);
+    const filename = `/main/output/video-${generateId()}.mp4`;
+    await fileStore.saveFile(filename, videoBlob);
     
-    const videoData = { videoKey: videoKey, prompt: enhancedPrompt };
-    return `[VIDEO_COMPONENT]${JSON.stringify(videoData)}[/VIDEO_COMPONENT]`;
+    return `Video successfully generated and saved to virtual filesystem at: ${filename}. You can now use 'displayFile' to show it to the user.`;
   } catch (err) {
     console.error("Video generation tool failed:", err);
+    
+    // The error object from the API might be nested. We need to find the message string.
+    let errorMessage = "An unknown error occurred during video generation.";
+    if (err instanceof Error) {
+        errorMessage = err.message;
+    } else if (typeof err === 'object' && err !== null) {
+        // Handle Google's structured API errors: { error: { message: "..." } }
+        if ('error' in err && typeof (err as any).error === 'object' && (err as any).error !== null && 'message' in (err as any).error) {
+            errorMessage = (err as any).error.message;
+        } else {
+             try { errorMessage = JSON.stringify(err); } catch { /* ignore */ }
+        }
+    } else {
+        errorMessage = String(err);
+    }
+    
+    // Per guidelines, if this specific error occurs, it indicates an issue with the API key.
+    // We should prompt the user to select one again.
+    if (errorMessage.includes('Requested entity was not found.')) {
+        return VEO_API_KEY_COMPONENT_TAG;
+    }
+
     if (err instanceof ToolError) throw err;
-    const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during video generation.";
     throw new ToolError('generateVideo', 'GENERATION_FAILED', errorMessage, err as Error);
   }
 };

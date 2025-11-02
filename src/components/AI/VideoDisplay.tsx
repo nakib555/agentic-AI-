@@ -5,10 +5,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { videoStore } from '../../services/videoStore';
+import { fileStore } from '../../services/fileStore';
 
 type VideoDisplayProps = {
-  videoKey?: string;
+  fileKey?: string;
   srcUrl?: string;
   prompt?: string;
 };
@@ -29,7 +29,7 @@ const formatTime = (timeInSeconds: number) => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
-export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, prompt }) => {
+export const VideoDisplay: React.FC<VideoDisplayProps> = ({ fileKey, srcUrl, prompt }) => {
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -58,14 +58,14 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, pr
     
         let objectUrl: string | null = null;
         const loadVideo = async () => {
-          // If srcUrl is not provided, we must have a videoKey.
-          if (!videoKey) {
+          // If srcUrl is not provided, we must have a fileKey.
+          if (!fileKey) {
             setError('No video source provided.');
             return;
           }
     
           try {
-            const blob = await videoStore.getVideo(videoKey);
+            const blob = await fileStore.getFile(fileKey);
             if (blob) {
               objectUrl = URL.createObjectURL(blob);
               setVideoUrl(objectUrl);
@@ -87,7 +87,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, pr
             URL.revokeObjectURL(objectUrl); 
           }
         };
-    }, [videoKey, srcUrl]);
+    }, [fileKey, srcUrl]);
 
     const handlePlayState = () => {
         if (videoRef.current) {

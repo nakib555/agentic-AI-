@@ -39,30 +39,37 @@ const getDb = (): Promise<IDBDatabase> => {
 };
 
 export const fileStore = {
-  async saveFile(blob: Blob): Promise<string> {
+  async saveFile(path: string, blob: Blob): Promise<void> {
     const db = await getDb();
-    const key = crypto.randomUUID();
-    
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readwrite');
       const store = transaction.objectStore(STORE_NAME);
-      const request = store.put(blob, key);
-
-      request.onsuccess = () => resolve(key);
+      const request = store.put(blob, path);
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(new Error('Failed to save file to IndexedDB.'));
     });
   },
 
-  async getFile(key: string): Promise<Blob | undefined> {
+  async getFile(path: string): Promise<Blob | undefined> {
     const db = await getDb();
-    
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readonly');
       const store = transaction.objectStore(STORE_NAME);
-      const request = store.get(key);
-
+      const request = store.get(path);
       request.onsuccess = () => resolve(request.result as Blob | undefined);
       request.onerror = () => reject(new Error('Failed to retrieve file from IndexedDB.'));
+    });
+  },
+
+  async listFiles(path: string): Promise<string[]> {
+    const db = await getDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const range = IDBKeyRange.bound(path, path + '\uffff');
+        const request = store.getAllKeys(range);
+        request.onsuccess = () => resolve(request.result as string[]);
+        request.onerror = () => reject(new Error('Failed to list files from IndexedDB.'));
     });
   },
 };

@@ -38,15 +38,19 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        let objectUrl: string | null = null;
-        if (file.type.startsWith('image/')) {
-            objectUrl = URL.createObjectURL(file);
-            setPreviewUrl(objectUrl);
+        // If it's not an image file, ensure we clear any existing preview URL.
+        if (!file.type.startsWith('image/')) {
+            setPreviewUrl(null);
+            return;
         }
+
+        const objectUrl = URL.createObjectURL(file);
+        setPreviewUrl(objectUrl);
+
+        // Return a cleanup function to revoke the object URL when the component
+        // unmounts or the file prop changes, preventing memory leaks.
         return () => {
-            if (objectUrl) {
-                URL.revokeObjectURL(objectUrl);
-            }
+            URL.revokeObjectURL(objectUrl);
         };
     }, [file]);
 

@@ -17,7 +17,8 @@ import { createAgentCallbacks } from './chat-callbacks';
 import { buildApiHistory } from './history-builder';
 import { createToolExecutor } from './tool-executor';
 import { generateChatTitle, parseApiError } from '../../services/gemini/index';
-import { imageStore } from '../../services/imageStore';
+// FIX: Replace incorrect `imageStore` import with `fileStore` to resolve module error.
+import { fileStore } from '../../services/fileStore';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -166,10 +167,12 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
             throw new Error("Image editing failed: The model did not return an image.");
         }
         
+        // FIX: Use fileStore to save the image and generate a path, then pass `fileKey` to the component.
         const imageBlob = base64ToBlob(editedImageBase64, editedImageMimeType);
-        const imageKey = await imageStore.saveImage(imageBlob);
+        const imagePath = `/main/output/edited-image-${generateId()}.png`;
+        await fileStore.saveFile(imagePath, imageBlob);
         
-        const imageData = { imageKey, prompt: userMessage, caption: "Edited image" };
+        const imageData = { fileKey: imagePath, prompt: userMessage, caption: "Edited image" };
         const imageComponentText = `[IMAGE_COMPONENT]${JSON.stringify(imageData)}[/IMAGE_COMPONENT]`;
         
         chatHistoryHook.updateLastMessage(activeChatId, () => ({

@@ -11,6 +11,7 @@ import { codeExecutorDeclaration, executeCode } from './codeExecutor';
 import { displayMapDeclaration, executeDisplayMap, analyzeMapVisuallyDeclaration, executeAnalyzeMapVisually } from './map';
 import { captureCodeOutputScreenshotDeclaration, executeCaptureCodeOutputScreenshot } from './screenshot';
 import { calculatorDeclaration, executeCalculator } from './calculator';
+import { listFilesDeclaration, executeListFiles, displayFileDeclaration, executeDisplayFile } from './fileTools';
 
 
 // Export all tool declarations for the model
@@ -25,6 +26,8 @@ export const toolDeclarations = [
   analyzeMapVisuallyDeclaration,
   captureCodeOutputScreenshotDeclaration,
   calculatorDeclaration,
+  listFilesDeclaration,
+  displayFileDeclaration,
 ];
 
 // Map of tool names to their implementation
@@ -39,4 +42,6 @@ export const toolImplementations: Record<string, (args: any) => string | Promise
   'analyzeMapVisually': executeAnalyzeMapVisually,
   'captureCodeOutputScreenshot': executeCaptureCodeOutputScreenshot,
   'calculator': executeCalculator,
+  'listFiles': executeListFiles,
+  'displayFile': executeDisplayFile,
 };

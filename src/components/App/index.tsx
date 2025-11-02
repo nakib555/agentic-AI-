@@ -94,6 +94,7 @@ export const App = () => {
           setWidth={logic.handleSetThinkingSidebarWidth}
           isResizing={logic.isThinkingResizing}
           setIsResizing={logic.setIsThinkingResizing}
+          onRegenerate={logic.regenerateResponse}
         />
       </div>
 

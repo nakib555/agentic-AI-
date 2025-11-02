@@ -20,6 +20,7 @@ type ThinkingSidebarProps = {
     setWidth: (width: number) => void;
     isResizing: boolean;
     setIsResizing: (isResizing: boolean) => void;
+    onRegenerate: (messageId: string) => void;
 };
 
 // Mobile variants for bottom-up animation
@@ -28,7 +29,7 @@ const mobileVariants = {
   closed: { height: 0, y: '100%' },
 };
 
-export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClose, message, sendMessage, width, setWidth, isResizing, setIsResizing }) => {
+export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClose, message, sendMessage, width, setWidth, isResizing, setIsResizing, onRegenerate }) => {
     const { isDesktop } = useViewport();
 
     const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
@@ -88,6 +89,8 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                 isLiveGeneration={isLiveGeneration}
                 error={message.error}
                 sendMessage={sendMessage}
+                onRegenerate={onRegenerate}
+                messageId={message.id}
             />
         );
     }

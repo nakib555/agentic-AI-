@@ -35,6 +35,8 @@ export type WorkflowNodeData = {
 type WorkflowNodeProps = {
   node: WorkflowNodeData;
   sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
+  onRegenerate?: (messageId: string) => void;
+  messageId?: string;
 };
 
 const getNodeVisuals = (node: WorkflowNodeData) => {
@@ -71,11 +73,16 @@ const getNodeVisuals = (node: WorkflowNodeData) => {
 };
 
 
-const renderDetails = (node: WorkflowNodeData, sendMessage: WorkflowNodeProps['sendMessage']) => {
+const renderDetails = (
+    node: WorkflowNodeData,
+    sendMessage: WorkflowNodeProps['sendMessage'],
+    onRegenerate?: (messageId: string) => void,
+    messageId?: string
+) => {
     if (!node.details) return null;
 
     if (typeof node.details === 'object' && 'call' in node.details && 'id' in node.details) {
-        return <ToolCallStep event={node.details as ToolCallEvent} sendMessage={sendMessage} />;
+        return <ToolCallStep event={node.details as ToolCallEvent} sendMessage={sendMessage} onRegenerate={onRegenerate} messageId={messageId} />;
     }
 
     if (node.status === 'failed' && typeof node.details === 'object' && 'message' in node.details) {
@@ -130,7 +137,7 @@ const HandoffNode: React.FC<{ from: string; to: string; details?: string; isStre
 };
 
 
-export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
+export const WorkflowNode = ({ node, sendMessage, onRegenerate, messageId }: WorkflowNodeProps) => {
     // This type is for internal processing and should not be rendered.
     if (node.type === 'act_marker') {
         return null;
@@ -244,7 +251,7 @@ export const WorkflowNode = ({ node, sendMessage }: WorkflowNodeProps) => {
 
             {hasDetails && (
                 <div className="pl-8 pt-3">
-                    {renderDetails(node, sendMessage)}
+                    {renderDetails(node, sendMessage, onRegenerate, messageId)}
                 </div>
             )}
         </motion.div>

@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { FunctionDeclaration, Type, GoogleGenAI, Modality } from "@google/genai";
-import { imageStore } from '../services/imageStore';
+import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
+import { fileStore } from '../services/fileStore';
 import { ToolError } from '../types';
 import { getText } from '../utils/geminiUtils';
 // FIX: Fix module import path for `parseApiError` to point to the barrel file, resolving ambiguity with an empty `gemini.ts` file.
 import { parseApiError } from '../services/gemini/index';
+
+const generateId = () => Math.random().toString(36).substring(2, 9);
 
 // Helper function to convert base64 to Blob
 const base64ToBlob = (base64: string, mimeType: string): Blob => {
@@ -24,104 +26,52 @@ const base64ToBlob = (base64: string, mimeType: string): Blob => {
 
 export const imageGeneratorDeclaration: FunctionDeclaration = {
   name: 'generateImage',
-  description: 'Generates an image based on a textual description. Use for creating static visual content like photos, illustrations, and graphics.',
+  description: 'Generates one or more images based on a textual description. Use for creating static visual content like photos, illustrations, and graphics.',
   parameters: {
     type: Type.OBJECT,
     properties: {
       prompt: { type: Type.STRING, description: 'A detailed description of the image to generate.' },
+      numberOfImages: { type: Type.NUMBER, description: 'The number of images to generate. Must be between 1 and 5. Defaults to 1.'}
     },
     required: ['prompt'],
   },
 };
 
-export const executeImageGenerator = async (args: { prompt: string }): Promise<string> => {
+export const executeImageGenerator = async (args: { prompt: string, numberOfImages?: number }): Promise<string> => {
+    const { prompt, numberOfImages = 1 } = args;
+    const count = Math.max(1, Math.min(5, Math.floor(numberOfImages))); // Clamp between 1 and 5
+
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
     
-    // 1. Enhance the user's prompt for better image quality
-    const enhancementPrompt = `
-      You are an expert prompt engineer for an advanced text-to-image model.
-      Your task is to take a user's simple prompt and transform it into a rich, detailed, and visually evocative masterpiece.
-      The enhanced prompt must be a single, fluent paragraph, suitable for direct input into an image generation model.
-
-      Incorporate the following artistic concepts into your enhancement:
-      - **Luminous ✨**: Emphasize light, radiance, and clarity.
-      - **Elegant 💎**: Focus on refined, stylish, and graceful compositions.
-      - **Polished 🪞**: Describe a flawless, carefully crafted, and high-fidelity scene.
-      - **Fluent 🌊**: Create a sense of smooth, natural, and flowing movement or form.
-      - **Refined 🕊️**: Ensure the details are sophisticated and precise.
-
-      ---
-      Original User Prompt: "${args.prompt}"
-      ---
-
-      Enhanced Prompt:
-    `;
-
-    const enhancementResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: enhancementPrompt,
-    });
-    
-    const enhancedPrompt = getText(enhancementResponse).trim();
-
-    // 2. Generate a short caption from the enhanced prompt
-    const captionPrompt = `Based on the following detailed image prompt, create a single, short, elegant, one-sentence caption.
-
-    Prompt: "${enhancedPrompt}"
-    
-    Caption:`;
-
-    const captionResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: captionPrompt,
-    });
-    // Clean up any quotes the model might add around the caption
-    const caption = getText(captionResponse).trim().replace(/^["']|["']$/g, '');
-
-    // 3. Generate the image using the enhanced prompt with gemini-2.5-flash-image
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: {
-        parts: [
-          { text: enhancedPrompt },
-        ],
-      },
-      config: {
-          responseModalities: [Modality.IMAGE, Modality.TEXT],
-      },
+    const response = await ai.models.generateImages({
+        model: 'imagen-4.0-generate-001',
+        prompt: prompt, // Use the user's prompt directly for Imagen
+        config: {
+          numberOfImages: count,
+          outputMimeType: 'image/png',
+        },
     });
 
-    // 4. Parse the response to find the image data
-    let base64ImageBytes: string | undefined;
-    let mimeType = 'image/png'; // Default mimeType
-
-    if (response.candidates && response.candidates.length > 0) {
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
-                base64ImageBytes = part.inlineData.data;
-                mimeType = part.inlineData.mimeType;
-                break; // Found the image, stop looking
-            }
-        }
+    if (!response.generatedImages || response.generatedImages.length === 0) {
+        throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any images.');
     }
 
-    if (!base64ImageBytes) {
-        throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return an image.');
+    const savedFilePaths: string[] = [];
+    for (const generatedImage of response.generatedImages) {
+        const base64ImageBytes = generatedImage.image.imageBytes;
+        const imageBlob = base64ToBlob(base64ImageBytes, 'image/png');
+        const filename = `/main/output/image-${generateId()}.png`;
+        await fileStore.saveFile(filename, imageBlob);
+        savedFilePaths.push(filename);
     }
     
-    // 5. Convert to blob and save to IndexedDB
-    const imageBlob = base64ToBlob(base64ImageBytes, mimeType);
-    const imageKey = await imageStore.saveImage(imageBlob);
+    if (savedFilePaths.length === 1) {
+        return `Image successfully generated and saved to virtual filesystem at: ${savedFilePaths[0]}. You can now use tools like 'displayFile' to show it to the user.`;
+    }
     
-    const imageData = {
-        imageKey: imageKey,
-        prompt: enhancedPrompt, // Return the enhanced prompt for the title tooltip
-        caption: caption, // Return the short caption for display
-    };
+    return `${savedFilePaths.length} images successfully generated and saved to virtual filesystem at:\n- ${savedFilePaths.join('\n- ')}\nYou should now use the 'displayFile' tool for each path to show them to the user.`;
 
-    // Return a component tag with a reference (key) instead of the full base64 data.
-    return `[IMAGE_COMPONENT]${JSON.stringify(imageData)}[/IMAGE_COMPONENT]`;
   } catch (err) {
     console.error("Image generation tool failed:", err);
     if (err instanceof ToolError) throw err;

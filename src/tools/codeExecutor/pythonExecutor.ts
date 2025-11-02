@@ -144,30 +144,25 @@ export async function executePythonWithPyodide(code: string, packages: string[] 
           capturedStdout += String(result);
         }
 
-        const attachmentLinks = [];
         if (files && files.length > 0) {
             const { fileStore } = await import('../../services/fileStore');
             for (const file of files) {
                 try {
                     const blob = new Blob([file.data], { type: file.mimeType });
-                    const fileKey = await fileStore.saveFile(blob);
-                    const attachmentData = { filename: file.filename, fileKey, mimeType: file.mimeType };
-                    attachmentLinks.push(`[FILE_ATTACHMENT_COMPONENT]${JSON.stringify(attachmentData)}[/FILE_ATTACHMENT_COMPONENT]`);
+                    const path = `/main/output/${file.filename}`;
+                    await fileStore.saveFile(path, blob);
+                    capturedStdout += `\nFile '${file.filename}' saved to /main/output.`;
                 } catch(e) {
-                    capturedStdout += `\\n[ERROR] Failed to save output file '${file.filename}' to storage.`;
+                    capturedStdout += `\n[ERROR] Failed to save output file '${file.filename}' to storage.`;
                 }
             }
         }
         
-        let finalOutput = capturedStdout.trim() || 'Code executed successfully with no output.';
-        if (attachmentLinks.length > 0) {
-          finalOutput += `\\n\\n${attachmentLinks.join('\\n')}`;
-        }
-        
+        const finalOutput = capturedStdout.trim() || 'Code executed successfully with no output.';
         resolve(finalOutput);
 
       } else {
-        resolve(`Execution failed:\\n${error}`);
+        resolve(`Execution failed:\n${error}`);
       }
     };
 

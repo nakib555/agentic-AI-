@@ -26,6 +26,8 @@ type ThinkingWorkflowProps = {
   isLiveGeneration: boolean;
   error?: MessageError;
   sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
+  onRegenerate?: (messageId: string) => void;
+  messageId?: string;
 };
 
 const StatusIcon = ({ status }: { status: 'pending' | 'active' | 'done' | 'failed' }) => {
@@ -62,6 +64,8 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
   isLiveGeneration,
   error,
   sendMessage,
+  onRegenerate,
+  messageId,
 }) => {
   const { goalAnalysis, todoList, tools, executionLog } = useMemo(
     () => parseAgenticWorkflow(text, toolCallEvents, isThinkingComplete, error),
@@ -125,7 +129,7 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.3, ease: "easeOut", delay: index * 0.1 }}
                                     >
-                                        <WorkflowNode node={node} sendMessage={sendMessage} />
+                                        <WorkflowNode node={node} sendMessage={sendMessage} onRegenerate={onRegenerate} messageId={messageId} />
                                     </motion.div>
                                 </AnimatePresence>
                             </div>

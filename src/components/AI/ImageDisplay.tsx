@@ -4,10 +4,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { imageStore } from '../../services/imageStore';
+import { fileStore } from '../../services/fileStore';
 
 type ImageDisplayProps = {
-  imageKey?: string;
+  fileKey?: string;
   srcUrl?: string;
   prompt?: string;
   caption?: string;
@@ -16,7 +16,7 @@ type ImageDisplayProps = {
 };
 
 // FIX: Changed component signature to use React.FC to resolve a TypeScript error with the 'key' prop.
-export const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageKey, srcUrl, prompt, caption, alt, onEdit }) => {
+export const ImageDisplay: React.FC<ImageDisplayProps> = ({ fileKey, srcUrl, prompt, caption, alt, onEdit }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,9 +42,9 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageKey, srcUrl, pr
           return;
       }
 
-      if (imageKey) {
+      if (fileKey) {
         try {
-          const blob = await imageStore.getImage(imageKey);
+          const blob = await fileStore.getFile(fileKey);
           if (blob) {
             setImageBlob(blob);
             objectUrl = URL.createObjectURL(blob);
@@ -68,7 +68,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageKey, srcUrl, pr
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [imageKey, srcUrl]);
+  }, [fileKey, srcUrl]);
 
   const handleDownload = () => {
     if (!imageBlob) return;
@@ -91,8 +91,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageKey, srcUrl, pr
   
   const handleEdit = () => {
     if (onEdit && imageBlob) {
-        // Use imageKey (from IndexedDB) or srcUrl as a unique identifier.
-        onEdit(imageBlob, imageKey || srcUrl!);
+        // Use fileKey (from IndexedDB) or srcUrl as a unique identifier.
+        onEdit(imageBlob, fileKey || srcUrl!);
     }
   };
 
