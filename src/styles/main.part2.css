@@ -28,10 +28,17 @@ html, body, #root {
 .content-editable-input {
   font-size: 0.875rem; /* text-sm */
 }
+
+/* Vertically center placeholder text */
+.content-editable-input[data-placeholder]:empty {
+  display: grid;
+  align-items: center;
+}
 .content-editable-input[data-placeholder]:empty::before {
   content: attr(data-placeholder);
   color: #6B7280; /* text-gray-500 */
   pointer-events: none;
+  grid-area: 1 / 1 / 2 / 2; /* Place it in the grid area */
 }
 
 .dark .content-editable-input[data-placeholder]:empty::before {

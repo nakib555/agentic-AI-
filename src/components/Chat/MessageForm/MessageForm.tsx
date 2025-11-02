@@ -69,7 +69,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 </AnimatePresence>
             </div>
             <div className="relative flex-grow">
-              <div ref={logic.inputRef} contentEditable={!isLoading && !logic.isEnhancing} onInput={(e) => logic.setInputValue(e.currentTarget.innerText)} onKeyDown={logic.handleKeyDown} onPaste={logic.handlePaste} aria-label="Chat input" role="textbox" data-placeholder={logic.isRecording ? 'Listening...' : "Ask anything, or drop a file"} className={`content-editable-input w-full bg-transparent text-gray-900 dark:text-slate-200 focus:outline-none ${isLoading || logic.isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ minHeight: '32px', maxHeight: '192px', transition: 'height 0.2s ease-in-out' }} />
+              <div ref={logic.inputRef} contentEditable={!isLoading && !logic.isEnhancing} onInput={(e) => logic.setInputValue(e.currentTarget.innerText)} onKeyDown={logic.handleKeyDown} onPaste={logic.handlePaste} aria-label="Chat input" role="textbox" data-placeholder={logic.isRecording ? 'Listening...' : "Ask anything, or drop a file"} className={`content-editable-input w-full px-2 py-1.5 bg-transparent text-gray-900 dark:text-slate-200 focus:outline-none ${isLoading || logic.isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ minHeight: '32px', maxHeight: '192px', transition: 'height 0.2s ease-in-out' }} />
             </div>
             <AnimatePresence>
             {logic.isSupported && (
