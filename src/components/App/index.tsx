@@ -16,6 +16,7 @@ import { AppModals } from './AppModals';
 import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 } from './constants';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export const App = () => {
   const logic = useAppLogic();
@@ -27,6 +28,20 @@ export const App = () => {
 
   return (
     <div ref={logic.appContainerRef} className="flex h-screen bg-transparent overflow-hidden">
+        <AnimatePresence>
+            {logic.colorTheme === 'ethereal-aurora' && (
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="aurora-background"
+                >
+                    <div className="aurora-shape-1"></div>
+                    <div className="aurora-shape-2"></div>
+                    <div className="aurora-shape-3"></div>
+                </motion.div>
+            )}
+        </AnimatePresence>
       <Sidebar
         key={logic.isDesktop ? 'desktop' : 'mobile'}
         isDesktop={logic.isDesktop}
@@ -45,8 +60,10 @@ export const App = () => {
         onDeleteChat={logic.deleteChat}
         onClearAllChats={logic.clearAllChats}
         onUpdateChatTitle={logic.updateChatTitle}
-        theme={logic.theme}
-        setTheme={logic.setTheme}
+        theme={logic.displayMode}
+        setTheme={logic.setDisplayMode}
+        colorTheme={logic.colorTheme}
+        setColorTheme={logic.setColorTheme}
         onSettingsClick={() => logic.setIsSettingsOpen(true)}
       />
 
@@ -136,6 +153,8 @@ export const App = () => {
         currentChatId={logic.currentChatId}
         toggleMessagePin={logic.toggleMessagePin}
         handleJumpToMessage={logic.handleJumpToMessage}
+        colorTheme={logic.colorTheme}
+        setColorTheme={logic.setColorTheme}
       />
     </div>
   );

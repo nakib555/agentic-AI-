@@ -183,11 +183,11 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, pr
     }, []);
 
     const progressStyle = {
-        background: `linear-gradient(to right, #6366f1 ${progress}%, #475569 ${progress}%)`,
+        background: `linear-gradient(to right, rgb(var(--primary)) ${progress}%, rgb(var(--ui-300)) ${progress}%)`,
     };
 
     const volumeStyle = {
-        background: `linear-gradient(to right, #a7f3d0 ${isMuted ? 0 : volume * 100}%, #475569 ${isMuted ? 0 : volume * 100}%)`,
+        background: `linear-gradient(to right, #a7f3d0 ${isMuted ? 0 : volume * 100}%, rgb(var(--ui-300)) ${isMuted ? 0 : volume * 100}%)`,
     };
 
     const VolumeIcon = () => {
@@ -198,7 +198,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, pr
 
     return (
         <div 
-            className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-200/10 shadow-lg bg-white dark:bg-white/5 relative"
+            className="my-4 rounded-xl overflow-hidden border border-color shadow-lg bg-ui-100 relative"
             ref={containerRef}
             onMouseEnter={() => setIsControlsVisible(true)}
             onMouseLeave={() => {
@@ -206,7 +206,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, pr
                 setIsVolumeSliderVisible(false);
             }}
         >
-            <div className="aspect-video w-full bg-slate-900/50 flex items-center justify-center">
+            <div className="aspect-video w-full bg-ui-300/50 flex items-center justify-center">
                 {videoUrl ? (
                     <video
                         ref={videoRef}
@@ -226,10 +226,10 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, pr
                         aria-label={prompt || "Generated video"}
                     />
                 ) : (
-                    <div className="text-sm text-slate-400 p-4 text-center">
+                    <div className="text-sm text-text-muted p-4 text-center">
                         {error ? ( <span>{error}</span> ) : (
                             <div className="flex items-center gap-2">
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-text-muted" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                 <span>Loading video...</span>
                             </div>
                         )}
@@ -255,7 +255,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, pr
                                 max="100"
                                 value={progress}
                                 onChange={handleSeek}
-                                className="w-full h-1.5 bg-slate-600 rounded-lg appearance-none cursor-pointer range-sm"
+                                className="w-full h-1.5 bg-ui-300 rounded-lg appearance-none cursor-pointer range-sm"
                                 style={progressStyle}
                             />
                         </div>
@@ -287,7 +287,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, pr
                                                 step="0.05"
                                                 value={isMuted ? 0 : volume}
                                                 onChange={handleVolumeChange}
-                                                className="w-20 h-1.5 bg-slate-600 rounded-lg appearance-none cursor-pointer range-sm"
+                                                className="w-20 h-1.5 bg-ui-300 rounded-lg appearance-none cursor-pointer range-sm"
                                                 style={volumeStyle}
                                             />
                                         )}
@@ -298,7 +298,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ videoKey, srcUrl, pr
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button onClick={toggleLoop} className={`p-1.5 rounded-full hover:bg-white/20 transition-colors ${isLooping ? 'text-indigo-400' : ''}`}>
+                                <button onClick={toggleLoop} className={`p-1.5 rounded-full hover:bg-white/20 transition-colors ${isLooping ? 'text-primary' : ''}`}>
                                     <LoopIcon />
                                 </button>
                                 <button onClick={toggleFullScreen} className="p-1.5 rounded-full hover:bg-white/20 transition-colors">

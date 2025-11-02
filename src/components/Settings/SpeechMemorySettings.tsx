@@ -19,8 +19,8 @@ type SpeechMemorySettingsProps = {
 
 const SettingField: React.FC<{ label: string; description: string; children: React.ReactNode }> = ({ label, description, children }) => (
     <div>
-        <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">{label}</label>
-        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 mb-3">{description}</p>
+        <label className="text-sm font-semibold text-text-primary">{label}</label>
+        <p className="text-sm text-text-muted mt-1 mb-3">{description}</p>
         {children}
     </div>
 );
@@ -41,17 +41,17 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
 }) => {
     return (
         <div className="space-y-8">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Speech & Memory</h3>
+            <h3 className="text-xl font-bold text-text-primary">Speech & Memory</h3>
 
             <SettingField label="Conversation Memory" description="Allow the AI to remember key details across chats for a more personalized experience.">
                 <div className="flex items-center justify-between py-2">
-                    <span className="font-semibold text-sm text-gray-800 dark:text-slate-200">Enable Memory</span>
+                    <span className="font-semibold text-sm text-text-primary">Enable Memory</span>
                     <ToggleSwitch checked={isMemoryEnabled} onChange={setIsMemoryEnabled} disabled={disabled} />
                 </div>
                 <button 
                     onClick={onManageMemory} 
                     disabled={!isMemoryEnabled || disabled}
-                    className="w-full mt-2 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full mt-2 px-4 py-2 text-sm font-semibold text-text-primary bg-ui-200 hover:bg-ui-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Manage Memory
                 </button>
@@ -66,8 +66,8 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                             disabled={disabled}
                             className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors border ${
                                 ttsVoice === voice.id
-                                    ? 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-500/50'
-                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'
+                                    ? 'bg-primary/10 text-primary-focus border-primary/30'
+                                    : 'bg-ui-100 text-text-primary border-color hover:bg-ui-200'
                             } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             {voice.name}
@@ -78,7 +78,7 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
 
             <SettingField label="Auto-Play Audio" description="Automatically play the audio for new AI messages when they are complete.">
                 <div className="flex items-center justify-between py-2">
-                    <span className="font-semibold text-sm text-gray-800 dark:text-slate-200">Enable Auto-Play</span>
+                    <span className="font-semibold text-sm text-text-primary">Enable Auto-Play</span>
                     <ToggleSwitch checked={isAutoPlayEnabled} onChange={setIsAutoPlayEnabled} disabled={disabled} />
                 </div>
             </SettingField>

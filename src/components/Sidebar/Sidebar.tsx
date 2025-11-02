@@ -14,6 +14,7 @@ import { SidebarHeader } from './SidebarHeader';
 import { SearchInput } from './SearchInput';
 import { HistoryList } from './HistoryList';
 import { SidebarFooter } from './SidebarFooter';
+import type { ColorTheme } from '../../hooks/useColorTheme';
 
 type SidebarProps = {
     isOpen: boolean;
@@ -33,6 +34,8 @@ type SidebarProps = {
     onUpdateChatTitle: (id: string, title: string) => void;
     theme: Theme;
     setTheme: (theme: Theme) => void;
+    colorTheme: ColorTheme;
+    setColorTheme: (theme: ColorTheme) => void;
     onSettingsClick: () => void;
     isDesktop: boolean;
 };
@@ -47,7 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
     isResizing, setIsResizing, history, currentChatId, onNewChat, onLoadChat,
     onDeleteChat, onClearAllChats, onUpdateChatTitle, theme, setTheme, onSettingsClick,
-    isDesktop
+    isDesktop, colorTheme, setColorTheme
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const prevIsDesktop = useRef(isDesktop);
@@ -167,7 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     top: 0,
                     zIndex: isDesktop ? 'auto' : 30,
                 }}
-                className="bg-violet-50 dark:bg-[#121212] border-r border-violet-200/50 dark:border-white/10 flex flex-col transform-gpu" // Added transform-gpu to promote to its own layer
+                className="bg-ui-100 border-r border-color flex flex-col transform-gpu" // Added transform-gpu to promote to its own layer
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
@@ -192,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     />
                     
                     <motion.div 
-                        className="my-4 border-t border-violet-200/50 dark:border-white/10"
+                        className="my-4 border-t border-color"
                         initial={false}
                         animate={{ opacity: isCollapsed ? 0 : 1, height: isCollapsed ? 0 : 'auto' }}
                         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
@@ -222,7 +225,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {isDesktop && !isCollapsed && (
                     <div
                         onMouseDown={startResizing}
-                        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-blue-500/30 transition-colors z-10"
+                        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-primary/30 transition-colors z-10"
                         title="Resize sidebar"
                     />
                 )}

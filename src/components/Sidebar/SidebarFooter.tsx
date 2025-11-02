@@ -25,7 +25,7 @@ export const SidebarFooter = ({ theme, setTheme, isCollapsed, isDesktop, onClear
   };
 
   return (
-    <div className="mt-auto pt-4 border-t border-violet-200/50 dark:border-white/10 space-y-2">
+    <div className="mt-auto pt-4 border-t border-color space-y-2">
         <NavItem 
             icon={
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5">

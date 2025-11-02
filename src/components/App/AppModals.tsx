@@ -12,6 +12,7 @@ import { MemoryModal } from '../Settings/MemoryModal';
 import { MemoryConfirmationModal } from '../Settings/MemoryConfirmationModal';
 import type { Model } from '../../services/modelService';
 import type { Message } from '../../types';
+import type { ColorTheme } from '../../hooks/useColorTheme';
 
 type AppModalsProps = {
   isSettingsOpen: boolean;
@@ -52,6 +53,8 @@ type AppModalsProps = {
   currentChatId: string | null;
   toggleMessagePin: (chatId: string, messageId: string) => void;
   handleJumpToMessage: (messageId: string) => void;
+  colorTheme: ColorTheme;
+  setColorTheme: (theme: ColorTheme) => void;
 };
 
 export const AppModals: React.FC<AppModalsProps> = (props) => {
@@ -65,6 +68,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
     setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, messages,
     currentChatId, toggleMessagePin, handleJumpToMessage, onManageMemory,
+    colorTheme, setColorTheme,
   } = props;
 
   return (
@@ -94,6 +98,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         setTtsVoice={setTtsVoice}
         isAutoPlayEnabled={isAutoPlayEnabled}
         setIsAutoPlayEnabled={setIsAutoPlayEnabled}
+        colorTheme={colorTheme}
+        setColorTheme={setColorTheme}
       />
       <MemoryModal
         isOpen={isMemoryModalOpen}

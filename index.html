@@ -6,14 +6,40 @@
     <title>Gemini - Agentic AI</title>
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-    <meta name="theme-color" content="#6d28d9" />
+    <meta name="theme-color" content="rgb(var(--primary-500))" />
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
-          extend: {}
+          extend: {
+            colors: {
+              primary: 'rgb(var(--primary) / <alpha-value>)',
+              'primary-focus': 'rgb(var(--primary-focus) / <alpha-value>)',
+              'primary-content': 'rgb(var(--primary-content) / <alpha-value>)',
+              secondary: 'rgb(var(--secondary) / <alpha-value>)',
+              'secondary-focus': 'rgb(var(--secondary-focus) / <alpha-value>)',
+              'secondary-content': 'rgb(var(--secondary-content) / <alpha-value>)',
+              accent: 'rgb(var(--accent) / <alpha-value>)',
+              'accent-focus': 'rgb(var(--accent-focus) / <alpha-value>)',
+              'accent-content': 'rgb(var(--accent-content) / <alpha-value>)',
+
+              background: 'rgb(var(--background) / <alpha-value>)',
+              'ui-100': 'rgb(var(--ui-100) / <alpha-value>)',
+              'ui-200': 'rgb(var(--ui-200) / <alpha-value>)',
+              'ui-300': 'rgb(var(--ui-300) / <alpha-value>)',
+              
+              'text-primary': 'rgb(var(--text-primary) / <alpha-value>)',
+              'text-secondary': 'rgb(var(--text-secondary) / <alpha-value>)',
+              'text-muted': 'rgb(var(--text-muted) / <alpha-value>)',
+
+              'border-color': 'rgb(var(--border-color) / <alpha-value>)',
+              'agent-bg': 'rgb(var(--agent-bg) / <alpha-value>)',
+              'agent-text': 'rgb(var(--agent-text) / <alpha-value>)',
+              'agent-border': 'rgb(var(--agent-border) / <alpha-value>)',
+            }
+          }
         }
       }
     </script>
@@ -33,6 +59,7 @@
 
     <!-- Custom App Styles -->
     <link rel="stylesheet" href="./src/styles/main.css">
+    <link rel="stylesheet" href="./src/styles/themes.css">
     <link rel="stylesheet" href="./src/styles/markdown.css">
 <script type="importmap">
 {
@@ -58,7 +85,7 @@
 }
 </script>
 </head>
-  <body class="bg-gray-50 text-gray-900 dark:bg-[#121212] dark:text-slate-200">
+  <body class="bg-background text-text-primary">
     <div id="root"></div>
     <script type="module" src="./index.js"></script>
     <script>

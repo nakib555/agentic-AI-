@@ -22,8 +22,8 @@ type ModelSettingsProps = {
 
 const SettingField: React.FC<{ label: string; description: string; children: React.ReactNode }> = ({ label, description, children }) => (
     <div>
-        <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">{label}</label>
-        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 mb-3">{description}</p>
+        <label className="text-sm font-semibold text-text-primary">{label}</label>
+        <p className="text-sm text-text-muted mt-1 mb-3">{description}</p>
         {children}
     </div>
 );
@@ -35,7 +35,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
 }) => {
     return (
         <div className="space-y-8">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Model & Behavior</h3>
+            <h3 className="text-xl font-bold text-text-primary">Model & Behavior</h3>
             <SettingField label="AI Model" description="Select the model for new chats. This can be changed for the current chat.">
                 <ModelSelector models={models} selectedModel={selectedModel} onModelChange={onModelChange} disabled={disabled} className="max-w-xs" />
             </SettingField>
@@ -60,7 +60,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     step="100"
                     value={maxTokens}
                     onChange={e => setMaxTokens(parseInt(e.target.value, 10) || 0)}
-                    className="w-full max-w-xs p-2 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    className="w-full max-w-xs p-2 border border-color rounded-lg shadow-sm bg-ui-100/60 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     disabled={disabled}
                 />
             </SettingField>
