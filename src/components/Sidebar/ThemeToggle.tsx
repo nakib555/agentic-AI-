@@ -17,7 +17,7 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
     const shouldCollapse = isDesktop && isCollapsed;
 
     return (
-        <div className={`p-1 rounded-lg bg-black/5 dark:bg-white/5 flex transition-all ${shouldCollapse ? 'flex-col gap-1' : 'justify-between'}`}>
+        <div className={`p-1 rounded-lg bg-violet-100/60 dark:bg-violet-900/30 flex transition-all ${shouldCollapse ? 'flex-col gap-1' : 'justify-between'}`}>
             {buttons.map(btn => (
                 <div key={btn.value} className="relative group">
                     <button

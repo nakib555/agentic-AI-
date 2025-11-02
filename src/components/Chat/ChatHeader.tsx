@@ -103,7 +103,7 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
     const moreOptionsButtonClasses = `${baseButtonClasses} ${isMenuOpen ? activeClasses : inactiveClasses}`;
 
     return (
-        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center sticky top-0 z-10 bg-gray-50/80 dark:bg-[#121212]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10">
+        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center sticky top-0 z-10 bg-violet-50/80 dark:bg-[#121212]/80 backdrop-blur-md border-b border-violet-200/50 dark:border-white/10">
         
         {/* --- Left controls --- */}
         <div className="flex-shrink-0">

@@ -27,8 +27,8 @@ export const NavItem = ({ icon, text, active, isCollapsed, isDesktop, onClick, d
                 disabled={disabled}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left ${
                     active 
-                        ? 'bg-black/10 text-slate-900 font-semibold dark:bg-white/10 dark:text-slate-50' 
-                        : 'text-slate-600 hover:bg-black/5 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-slate-100'
+                        ? 'bg-violet-100 text-slate-900 font-semibold dark:bg-violet-900/40 dark:text-slate-50' 
+                        : 'text-slate-600 hover:bg-violet-100/60 dark:text-slate-300 dark:hover:bg-violet-900/30 dark:hover:text-slate-100'
                 } ${
                     shouldCollapse ? 'justify-center' : ''
                 } ${
