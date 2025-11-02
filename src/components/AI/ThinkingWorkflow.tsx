@@ -115,11 +115,11 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
                 </div>
                 <div ref={executionLogRef} className="pl-2.5">
                     {executionLog.map((node, index) => (
-                        <div key={node.id} className="flex items-start">
+                        <div key={node.id} className="flex">
                             <div className="flex flex-col items-center mr-4">
                                 <StatusIcon status={node.status} />
                                 {index < executionLog.length - 1 && (
-                                    <WorkflowConnector isActive={node.status === 'done' && executionLog[index + 1]?.status !== 'pending'} />
+                                    <WorkflowConnector isActive={(node.status === 'done' || node.status === 'failed') && executionLog[index + 1]?.status !== 'pending'} />
                                 )}
                             </div>
                             <div className="flex-1 min-w-0 pb-6">

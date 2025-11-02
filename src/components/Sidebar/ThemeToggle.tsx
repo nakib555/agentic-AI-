@@ -17,19 +17,30 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
     const shouldCollapse = isDesktop && isCollapsed;
 
     return (
-        <div className={`p-1 rounded-lg bg-violet-100/60 dark:bg-violet-900/30 flex transition-all ${shouldCollapse ? 'flex-col gap-1' : 'justify-between'}`}>
+        <div className={`relative p-1 rounded-lg bg-violet-100/60 dark:bg-violet-900/30 flex transition-all ${shouldCollapse ? 'flex-col gap-1' : 'justify-between'}`}>
             {buttons.map(btn => (
-                <div key={btn.value} className="relative group">
+                <div key={btn.value} className="relative group flex-1">
                     <button
                         onClick={() => setTheme(btn.value as Theme)}
-                        className={`w-full flex-1 flex items-center gap-2 p-1.5 rounded-md text-sm transition-colors ${theme === btn.value ? 'bg-white text-slate-800 shadow-sm dark:bg-black/20 dark:text-slate-100' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'} ${shouldCollapse ? 'justify-center' : ''}`}
+                        className={`relative w-full flex items-center gap-2 p-1.5 rounded-md text-sm transition-colors z-10 ${
+                            theme === btn.value
+                                ? 'text-slate-800 dark:text-slate-100'
+                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'
+                        } ${shouldCollapse ? 'justify-center' : ''}`}
                         aria-label={`Set theme to ${btn.label}`}
                         title={btn.label}
                         aria-pressed={theme === btn.value}
                     >
-                        {btn.icon}
+                        {theme === btn.value && (
+                            <motion.div
+                                layoutId="theme-toggle-pill"
+                                className="absolute inset-0 bg-white dark:bg-black/20 rounded-md shadow-sm"
+                                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                            />
+                        )}
+                        <span className="relative z-20">{btn.icon}</span>
                         <motion.span
-                            className="overflow-hidden"
+                            className="relative z-20 overflow-hidden"
                             initial={false}
                             animate={{ width: shouldCollapse ? 0 : 'auto', opacity: shouldCollapse ? 0 : 1, x: shouldCollapse ? -5 : 0 }}
                             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
