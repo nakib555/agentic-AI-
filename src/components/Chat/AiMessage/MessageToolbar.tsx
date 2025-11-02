@@ -93,8 +93,8 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                 <TtsButton isPlaying={ttsState === 'playing'} isLoading={ttsState === 'loading'} onClick={onTtsClick} />
 
                 <IconButton title="Regenerate response" onClick={onRegenerate}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0 0 11.664 0l3.181-3.183m-4.991-2.691V5.25a3.375 3.375 0 0 0-3.375-3.375H8.25a3.375 3.375 0 0 0-3.375 3.375v2.25" />
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                        <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.32 2.366l-1.12 1.12A.75.75 0 0 1 3.75 14V11.25a.75.75 0 0 1 .75-.75h2.75a.75.75 0 0 1 .53 1.28l-1.12 1.12a4 4 0 0 0 6.788-1.72.75.75 0 0 1 1.392.574ZM4.688 8.576a5.5 5.5 0 0 1 9.32-2.366l1.12-1.12A.75.75 0 0 1 16.25 6H13.5a.75.75 0 0 1-.75-.75V2.5a.75.75 0 0 1 1.28-.53l1.12 1.12a4 4 0 0 0-6.788 1.72.75.75 0 0 1-1.392-.574Z" clipRule="evenodd" />
                     </svg>
                 </IconButton>
 
