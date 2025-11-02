@@ -105,6 +105,7 @@ const renderDetails = (
                 <TypingWrapper
                     fullText={detailsText}
                     isAnimating={node.status === 'active'}
+                    delay={250}
                 >
                     {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : detailsText} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
                 </TypingWrapper>
@@ -129,7 +130,7 @@ const HandoffNode: React.FC<{ from: string; to: string; details?: string; isStre
                 </div>
                 {details && (
                     <div className="text-slate-600 dark:text-slate-400 text-sm workflow-markdown">
-                        <TypingWrapper fullText={details} isAnimating={isStreaming}>
+                        <TypingWrapper fullText={details} isAnimating={isStreaming} delay={250}>
                             {(text) => <ManualCodeRenderer text={isStreaming ? text : details as string} components={WorkflowMarkdownComponents} isStreaming={isStreaming} />}
                         </TypingWrapper>
                     </div>

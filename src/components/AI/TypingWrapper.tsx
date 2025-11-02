@@ -10,6 +10,7 @@ type TypingWrapperProps = {
   isAnimating: boolean;
   onComplete?: () => void;
   typingSpeed?: number; // Milliseconds per character
+  delay?: number; // Milliseconds to wait before starting
   children: (displayedText: string) => React.ReactNode;
 };
 
@@ -17,7 +18,8 @@ export const TypingWrapper: React.FC<TypingWrapperProps> = ({
   fullText,
   isAnimating,
   onComplete,
-  typingSpeed = 30, // Milliseconds per character for a smoother, more animated feel.
+  typingSpeed = 20, // Increased speed for a more responsive feel
+  delay = 0,
   children,
 }) => {
   const [displayedText, setDisplayedText] = useState('');
@@ -48,26 +50,36 @@ export const TypingWrapper: React.FC<TypingWrapperProps> = ({
     // Start with a clean slate whenever a new animation sequence begins.
     setDisplayedText('');
 
-    const intervalId = setInterval(() => {
-      setDisplayedText((currentDisplayedText) => {
-        const currentTarget = targetTextRef.current;
-        if (currentDisplayedText.length < currentTarget.length) {
-          // Append one character at a time for a smoother effect
-          return currentTarget.substring(0, currentDisplayedText.length + 1);
-        }
-        
-        // When text is complete, clear interval and call onComplete
-        clearInterval(intervalId);
-        if (onCompleteRef.current) {
-          onCompleteRef.current();
-        }
-        return currentDisplayedText;
-      });
-    }, typingSpeed);
+    let intervalId: number | undefined;
+
+    const timeoutId = setTimeout(() => {
+      intervalId = window.setInterval(() => {
+        setDisplayedText((currentDisplayedText) => {
+          const currentTarget = targetTextRef.current;
+          if (currentDisplayedText.length < currentTarget.length) {
+            // Append one character at a time for a smoother effect
+            return currentTarget.substring(0, currentDisplayedText.length + 1);
+          }
+          
+          // When text is complete, clear interval and call onComplete
+          clearInterval(intervalId);
+          if (onCompleteRef.current) {
+            onCompleteRef.current();
+          }
+          return currentDisplayedText;
+        });
+      }, typingSpeed);
+    }, delay);
+
 
     // Cleanup function to clear the interval when the effect stops.
-    return () => clearInterval(intervalId);
-  }, [isAnimating, typingSpeed]);
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isAnimating, typingSpeed, delay]);
 
   return <>{children(displayedText)}</>;
 };
