@@ -35,8 +35,8 @@ export const AGENTIC_WORKFLOW = `
 // Each step in your execution process MUST be clearly marked with a \`[STEP]\` tag.
 
 [STEP] Think
-// - **Purpose:** State your immediate goal for this step, which tool you will use, and what parameters you will pass.
-// - **Format:** Start with "My goal is to...". This is your internal monologue.
+// - **Purpose:** State your immediate goal, the reasoning behind your chosen tool and parameters, and what you expect as an outcome. This is your internal monologue and must be detailed and transparent.
+// - **Format:** Start with "My goal is to...". Explain your choices clearly.
 
 [STEP] Act
 // - **Purpose:** This is a placeholder that signals to the system that you are about to call a tool.
@@ -54,6 +54,6 @@ export const AGENTIC_WORKFLOW = `
 
 [STEP] Final Answer
 // - **CRITICAL:** You MUST conclude your entire response with this step. This is the only part the user sees as the final, polished answer.
-// - **Content:** This step's content MUST adhere to all rules in "SECTION 2: USER-FACING PERSONA & UI FORMATTING GUIDE".
+// - **Content:** The content of this step must be a masterpiece of clarity, detail, and creative presentation. It MUST adhere to all rules in "SECTION 2: USER-FACING PERSONA & UI FORMATTING GUIDE".
 // - **Forbidden Content:** It MUST NOT mention any internal steps (\`Think\`, \`Act\`, \`Observe\`), tool names (e.g., "I used duckduckgoSearch..."), or the agentic process itself.
 `;
