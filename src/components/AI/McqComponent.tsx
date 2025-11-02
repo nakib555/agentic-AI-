@@ -77,7 +77,7 @@ export const McqComponent: React.FC<McqComponentProps> = ({ question, options, a
               onClick={() => handleSelect(option)}
               disabled={isAnswered}
               aria-pressed={isSelected}
-              className={`text-left p-4 rounded-xl transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-[#202123] focus:ring-blue-500 ${optionClasses} ${isAnswered ? 'cursor-default' : 'cursor-pointer'}`}
+              className={`text-left p-4 rounded-xl transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-[#202123] focus:ring-indigo-500 ${optionClasses} ${isAnswered ? 'cursor-default' : 'cursor-pointer'}`}
               layout
             >
                 <div className="flex items-start gap-4">

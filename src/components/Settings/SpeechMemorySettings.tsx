@@ -66,7 +66,7 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                             disabled={disabled}
                             className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors border ${
                                 ttsVoice === voice.id
-                                    ? 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/20 dark:text-blue-200 dark:border-blue-500/50'
+                                    ? 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-500/50'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'
                             } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >

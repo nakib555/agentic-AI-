@@ -27,7 +27,7 @@ const InstructionField: React.FC<{
             onChange={e => onChange(e.target.value)}
             disabled={disabled}
             placeholder={placeholder}
-            className="mt-2 w-full min-h-[128px] max-h-64 p-3 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 overflow-y-auto placeholder-gray-500 dark:placeholder-slate-400 resize-y"
+            className="mt-2 w-full min-h-[128px] max-h-64 p-3 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 overflow-y-auto placeholder-gray-500 dark:placeholder-slate-400 resize-y"
             aria-disabled={disabled}
         />
     </div>

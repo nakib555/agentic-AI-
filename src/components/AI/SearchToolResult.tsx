@@ -47,6 +47,7 @@ const SourcePill: React.FC<{ source: Source }> = ({ source }) => {
         src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`}
         alt=""
         className="w-3.5 h-3.5 flex-shrink-0"
+        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
       />}
       <span className="truncate max-w-48">{source.title}</span>
     </motion.a>
@@ -83,7 +84,7 @@ export const SearchToolResult = ({ query, sources }: SearchToolResultProps) => {
                     {hiddenCount > 0 && !showAll && (
                     <button
                         onClick={() => setShowAll(true)}
-                        className="text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-teal-400 dark:hover:text-teal-300 px-2 py-1 transition-colors"
+                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 px-2 py-1 transition-colors"
                     >
                         + {hiddenCount} more
                     </button>

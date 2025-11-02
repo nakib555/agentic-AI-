@@ -60,7 +60,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     step="100"
                     value={maxTokens}
                     onChange={e => setMaxTokens(parseInt(e.target.value, 10) || 0)}
-                    className="w-full max-w-xs p-2 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full max-w-xs p-2 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     disabled={disabled}
                 />
             </SettingField>

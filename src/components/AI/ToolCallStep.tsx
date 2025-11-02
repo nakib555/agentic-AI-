@@ -104,7 +104,7 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
             {isLongResult && (
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-teal-400 dark:hover:text-teal-300 mt-2"
+                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 mt-2"
                     aria-expanded={isExpanded}
                 >
                     {isExpanded ? 'Show Less' : 'Show More'}

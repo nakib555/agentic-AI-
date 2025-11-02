@@ -96,8 +96,8 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
 
     // --- Unified Button Styling ---
     const baseButtonClasses = "p-1.5 rounded-md transition-colors";
-    const activeClasses = "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 hover:bg-blue-200/60 dark:hover:bg-blue-500/30";
-    const inactiveClasses = "text-slate-700 hover:bg-blue-100/60 hover:text-blue-800 dark:text-slate-200 dark:hover:bg-blue-500/10 dark:hover:text-blue-300";
+    const activeClasses = "bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300 hover:bg-indigo-200/60 dark:hover:bg-indigo-500/30";
+    const inactiveClasses = "text-slate-700 hover:bg-indigo-100/60 hover:text-indigo-800 dark:text-slate-200 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-300";
     
     const toggleButtonClasses = `${baseButtonClasses} ${isSidebarActive ? activeClasses : inactiveClasses}`;
     const moreOptionsButtonClasses = `${baseButtonClasses} ${isMenuOpen ? activeClasses : inactiveClasses}`;

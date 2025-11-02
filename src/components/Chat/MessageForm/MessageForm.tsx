@@ -27,7 +27,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
 
   const sendButtonClasses = "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-200 ease-in-out";
   const sendButtonStateClasses = (hasInput && !isLoading && !logic.isEnhancing && !isProcessingFiles)
-    ? 'bg-blue-600 text-white shadow-md hover:bg-blue-500 active:scale-90'
+    ? 'bg-indigo-600 text-white shadow-md hover:bg-indigo-500 active:scale-90'
     : 'bg-gray-200 dark:bg-black/20 text-gray-400 dark:text-slate-500';
 
   return (
