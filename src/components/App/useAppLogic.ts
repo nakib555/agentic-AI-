@@ -55,31 +55,33 @@ export const useAppLogic = () => {
   // This effect handles resizing the app container on mobile when the virtual keyboard appears.
   useEffect(() => {
     const appElement = appContainerRef.current;
-    // window.visualViewport is not available in all browsers, so we check for it.
     if (!appElement || typeof window.visualViewport === 'undefined') {
       return;
     }
-
-    const initialHeight = appElement.style.height;
-
+  
     const updateHeight = () => {
-      // On mobile, when the keyboard appears, the visual viewport shrinks.
-      // We set the app's height to this new smaller viewport height to prevent
-      // the input field from being hidden behind the keyboard.
+      // On mobile, set the height to the visual viewport height.
       appElement.style.height = `${window.visualViewport.height}px`;
     };
-
-    window.visualViewport.addEventListener('resize', updateHeight);
-    updateHeight(); // Set the initial height correctly on first load
-
-    // Cleanup function to remove the listener and restore original style
+  
+    // If it's not a desktop, it's mobile/tablet, so apply the keyboard fix.
+    if (!isDesktop) {
+      window.visualViewport.addEventListener('resize', updateHeight);
+      updateHeight(); // Set initial height
+    }
+  
+    // Cleanup function
     return () => {
-      window.visualViewport.removeEventListener('resize', updateHeight);
+      if (!isDesktop) {
+        window.visualViewport.removeEventListener('resize', updateHeight);
+      }
+      // Always reset the inline style when the effect cleans up (e.g., on isDesktop change).
+      // This allows the CSS `h-screen` to take over again.
       if (appElement) {
-        appElement.style.height = initialHeight;
+        appElement.style.height = '';
       }
     };
-  }, []); // Empty dependency array ensures this runs only once on mount.
+  }, [isDesktop]); // Re-run effect when switching between desktop/mobile
 
 
   // Synchronize sidebar state between mobile and desktop views
