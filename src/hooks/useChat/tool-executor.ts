@@ -50,8 +50,22 @@ export const createToolExecutor = (chatHistory: any[], activeChatId: string) => 
             return await Promise.resolve(toolImplementation(finalArgs));
         } catch (err) {
             if (err instanceof ToolError) throw err;
-            const originalError = err instanceof Error ? err : new Error(String(err));
-            throw new ToolError(name, 'TOOL_EXECUTION_FAILED', originalError.message, originalError);
+    
+            let errorMessage: string;
+            if (err instanceof Error) {
+                errorMessage = err.message;
+            } else {
+                try {
+                    // Use JSON.stringify for better object representation
+                    errorMessage = JSON.stringify(err);
+                } catch {
+                    // Fallback for circular references or other stringify errors
+                    errorMessage = String(err);
+                }
+            }
+
+            const originalError = err instanceof Error ? err : new Error(errorMessage);
+            throw new ToolError(name, 'TOOL_EXECUTION_FAILED', errorMessage, originalError);
         }
     };
 };

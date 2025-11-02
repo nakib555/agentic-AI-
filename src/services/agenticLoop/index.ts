@@ -12,6 +12,7 @@ import { systemInstruction } from '../../prompts/system';
 import { toolDeclarations } from '../../tools';
 import { processStream } from './stream-processor';
 import type { RunAgenticLoopParams } from './types';
+import { ToolError } from '../../types';
 
 const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 1000;
@@ -95,7 +96,21 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                         }
                         return [{ functionResponse: { name: event.call.name, response: { result: toolResult } } }];
                     } catch (error: any) {
-                        const errorResult = `Tool execution failed. Reason: ${error.originalMessage || error.message}`;
+                        let errorMessage: string;
+                        // This provides more robust error message extraction.
+                        if (error instanceof ToolError) {
+                            errorMessage = error.originalMessage;
+                        } else if (error instanceof Error) {
+                            errorMessage = error.message;
+                        } else {
+                            try {
+                                errorMessage = JSON.stringify(error, null, 2);
+                            } catch {
+                                errorMessage = String(error);
+                            }
+                        }
+            
+                        const errorResult = `Tool execution failed. Reason: ${errorMessage}`;
                         callbacks.onToolResult(event.id, errorResult);
                         return [{ functionResponse: { name: event.call.name, response: { result: errorResult } } }];
                     }
@@ -117,6 +132,17 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         }
     };
 
-    await executeTurn();
-    if (signal.aborted && !hasCompleted) callbacks.onCancel();
+    try {
+        await executeTurn();
+        if (signal.aborted && !hasCompleted) {
+            callbacks.onCancel();
+        }
+    } catch (err) {
+        if (!signal.aborted) {
+            // This is a safety net for any unhandled exceptions from the loop.
+            console.error('Unhandled exception in agentic loop:', err);
+            callbacks.onError(parseApiError(err));
+        }
+        hasCompleted = true; // Ensure onCancel isn't called after an error
+    }
 };
