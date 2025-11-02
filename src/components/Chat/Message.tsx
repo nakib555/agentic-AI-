@@ -22,13 +22,15 @@ export const MessageComponent: React.FC<{
     approveExecution: () => void;
     denyExecution: () => void;
     messageFormRef: React.RefObject<MessageFormHandle>;
+    onRegenerate: (messageId: string) => void;
 }> = ({ 
     msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
-    onTogglePin, onShowThinkingProcess, approveExecution, denyExecution, messageFormRef 
+    onTogglePin, onShowThinkingProcess, approveExecution, denyExecution, messageFormRef,
+    onRegenerate
 }) => {
   const messageContent = () => {
     if (msg.role === 'user') {
-        return <UserMessage msg={msg} currentChatId={currentChatId} onTogglePin={onTogglePin} />;
+        return <UserMessage msg={msg} />;
     }
     
     if (msg.role === 'model') {
@@ -45,6 +47,7 @@ export const MessageComponent: React.FC<{
                 approveExecution={approveExecution}
                 denyExecution={denyExecution}
                 messageFormRef={messageFormRef}
+                onRegenerate={onRegenerate}
             />
         );
     }

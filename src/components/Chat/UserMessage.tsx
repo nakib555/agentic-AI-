@@ -11,7 +11,6 @@ import { MarkdownComponents } from '../Markdown/markdownComponents';
 import type { Message } from '../../types';
 import { FileIcon } from '../UI/FileIcon';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
-import { PinButton } from './PinButton';
 
 const animationProps = {
   initial: { opacity: 0, y: 20 },
@@ -20,12 +19,12 @@ const animationProps = {
 };
 
 
-export const UserMessage = ({ msg, currentChatId, onTogglePin }: { msg: Message, currentChatId: string | null, onTogglePin: (chatId: string, messageId: string) => void }) => {
+export const UserMessage = ({ msg }: { msg: Message }) => {
   const { id, text, attachments, isPinned } = msg;
   
   return (
     <div className="w-full flex justify-end">
-        <div className="w-fit max-w-2xl flex flex-col items-end">
+        <div className="w-fit max-w-[75%] flex flex-col items-end">
             <motion.div 
                 {...animationProps} 
                 className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-2xl shadow-md border border-gray-200 dark:border-slate-700/50"
@@ -49,15 +48,6 @@ export const UserMessage = ({ msg, currentChatId, onTogglePin }: { msg: Message,
                     )}
                 </div>
             </motion.div>
-            
-            <PinButton
-                isPinned={!!isPinned}
-                onClick={() => {
-                    if (currentChatId) {
-                        onTogglePin(currentChatId, id);
-                    }
-                }}
-            />
         </div>
     </div>
   );

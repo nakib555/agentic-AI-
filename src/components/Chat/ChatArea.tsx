@@ -26,13 +26,14 @@ type ChatAreaProps = {
   approveExecution: () => void;
   denyExecution: () => void;
   messageListRef: React.RefObject<MessageListHandle>;
+  onRegenerate: (messageId: string) => void;
 };
 
 export const ChatArea = ({ 
     messages, isLoading, sendMessage, modelsLoading, onCancel, 
     ttsVoice, isAutoPlayEnabled, currentChatId, onTogglePin, 
     onShowThinkingProcess, approveExecution, denyExecution,
-    messageListRef
+    messageListRef, onRegenerate
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -112,23 +113,26 @@ export const ChatArea = ({
           approveExecution={approveExecution}
           denyExecution={denyExecution}
           messageFormRef={messageFormRef}
+          onRegenerate={onRegenerate}
       />
       <AnimatePresence>
         {isScrolledUp && (
-          <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              onClick={() => messageListRef.current?.scrollToBottom()}
-              className="absolute bottom-28 right-1/2 translate-x-1/2 z-10 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-white/10 px-4 py-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-200 hover:bg-gray-100/90 dark:hover:bg-black/80"
-              aria-label="Scroll to latest message"
-          >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                <path fillRule="evenodd" d="M8 12.25a.75.75 0 0 1-.53-.22l-4.25-4.25a.75.75 0 1 1 1.06-1.06L8 10.44l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-.53.22Z" clipRule="evenodd" />
-              </svg>
-              <span>Scroll to latest</span>
-          </motion.button>
+          <div className="absolute bottom-28 inset-x-0 flex justify-center z-10 pointer-events-none">
+            <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                onClick={() => messageListRef.current?.scrollToBottom()}
+                className="pointer-events-auto bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-white/10 px-4 py-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-200 hover:bg-gray-100/90 dark:hover:bg-black/80"
+                aria-label="Scroll to latest message"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                  <path fillRule="evenodd" d="M8 12.25a.75.75 0 0 1-.53-.22l-4.25-4.25a.75.75 0 1 1 1.06-1.06L8 10.44l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-.53.22Z" clipRule="evenodd" />
+                </svg>
+                <span>Scroll to latest</span>
+            </motion.button>
+          </div>
         )}
       </AnimatePresence>
       <div className="flex-shrink-0 pt-4 px-4 sm:px-6 md:px-8">

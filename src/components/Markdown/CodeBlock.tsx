@@ -134,7 +134,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
                     margin: 0,
                     padding: '0.9rem',
                     backgroundColor: 'transparent',
-                    fontSize: '0.85rem',
+                    fontSize: '1rem',
                     lineHeight: '1.5',
                     fontFamily: "'Fira Code', monospace",
                   }}

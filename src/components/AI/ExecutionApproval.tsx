@@ -41,7 +41,7 @@ export const ExecutionApproval: React.FC<ExecutionApprovalProps> = ({ plan, onAp
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="w-full max-w-[90%] flex flex-col gap-4 p-4 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10"
+            className="w-full flex flex-col gap-4 p-4 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10"
         >
             <div className="flex items-center gap-3">
                 <PlannerIcon />

@@ -49,7 +49,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error }) => {
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[90%] bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 p-4 rounded-2xl"
+        className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 p-4 rounded-2xl"
       >
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 text-red-500 dark:text-red-400 pt-0.5">

@@ -10,7 +10,6 @@ import React from 'react';
 import { SettingsModal } from '../Settings/SettingsModal';
 import { MemoryModal } from '../Settings/MemoryModal';
 import { MemoryConfirmationModal } from '../Settings/MemoryConfirmationModal';
-import { PinnedMessagesModal } from '../Chat/PinnedMessagesModal';
 import type { Model } from '../../services/modelService';
 import type { Message } from '../../types';
 
@@ -107,17 +106,6 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         suggestions={memorySuggestions}
         onConfirm={confirmMemoryUpdate}
         onCancel={cancelMemoryUpdate}
-      />
-      <PinnedMessagesModal
-        isOpen={isPinnedModalOpen}
-        onClose={() => setIsPinnedModalOpen(false)}
-        messages={messages}
-        onUnpin={(messageId) => {
-            if (currentChatId) {
-                toggleMessagePin(currentChatId, messageId);
-            }
-        }}
-        onJumpTo={handleJumpToMessage}
       />
     </>
   );

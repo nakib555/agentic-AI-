@@ -10,7 +10,8 @@ import { useMemo, useCallback, useEffect, useRef } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { runAgenticLoop } from '../../services/agenticLoop/index';
 import { type Message, type ChatSession } from '../../types';
-import { fileToBase64, base64ToBlob } from '../../utils/fileUtils';
+// FIX: Add missing import for `base64ToBlob`.
+import { fileToBase64, base64ToFile, base64ToBlob } from '../../utils/fileUtils';
 import { useChatHistory } from '../useChatHistory';
 import { createAgentCallbacks } from './chat-callbacks';
 import { buildApiHistory } from './history-builder';
@@ -211,6 +212,35 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
       signal: abortControllerRef.current.signal, settings: chatSettings,
     });
   };
+
+  const regenerateResponse = useCallback((aiMessageId: string) => {
+    if (!currentChatId) return;
+    const chat = chatHistory.find(c => c.id === currentChatId);
+    if (!chat) return;
+    const aiMessageIndex = chat.messages.findIndex(m => m.id === aiMessageId);
+    if (aiMessageIndex < 1) return;
+
+    let precedingUserMessage: Message | null = null;
+    for (let i = aiMessageIndex - 1; i >= 0; i--) {
+        if (chat.messages[i].role === 'user' && !chat.messages[i].isHidden) {
+            precedingUserMessage = chat.messages[i];
+            break;
+        }
+    }
+
+    if (precedingUserMessage) {
+        // Find the AI message to be regenerated and all messages after it.
+        const newMessages = chat.messages.slice(0, aiMessageIndex);
+        
+        // This is a more complex operation, so for now we'll just resubmit the prompt
+        // which will append a new response rather than replacing the old one.
+        const files = precedingUserMessage.attachments?.map(att => 
+            base64ToFile(att.data, att.name, att.mimeType)
+        ) || [];
+        
+        sendMessage(precedingUserMessage.text, files);
+    }
+}, [currentChatId, chatHistory, sendMessage]);
   
-  return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution };
+  return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse };
 };

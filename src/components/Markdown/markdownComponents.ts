@@ -67,16 +67,16 @@ export const MarkdownComponents = {
     h2: (props: any) => React.createElement('h2', { className: "text-xl font-bold my-4 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
     h3: (props: any) => React.createElement('h3', { className: "text-lg font-bold my-3 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
     h4: (props: any) => React.createElement('h4', { className: "text-base font-bold my-2 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
-    p: (props: any) => React.createElement('p', { className: "text-sm mb-4 leading-relaxed text-slate-700 dark:text-slate-300 break-words", ...props }),
-    ul: (props: any) => React.createElement('ul', { className: "text-sm list-disc list-inside mb-4 space-y-2 text-slate-700 dark:text-slate-300", ...props }),
-    ol: (props: any) => React.createElement('ol', { className: "text-sm list-decimal list-inside mb-4 space-y-2 text-slate-700 dark:text-slate-300", ...props }),
+    p: (props: any) => React.createElement('p', { className: "text-base mb-4 leading-relaxed text-slate-700 dark:text-slate-300 break-words", ...props }),
+    ul: (props: any) => React.createElement('ul', { className: "text-base list-disc list-inside mb-4 space-y-2 text-slate-700 dark:text-slate-300", ...props }),
+    ol: (props: any) => React.createElement('ol', { className: "text-base list-decimal list-inside mb-4 space-y-2 text-slate-700 dark:text-slate-300", ...props }),
     li: (props: any) => {
         if (isLiEmpty(props)) return null;
         return React.createElement('li', { className: "pl-2 break-words", ...props });
     },
     blockquote: BlockquoteRouter,
     a: StyledLink,
-    table: (props: any) => React.createElement('div', { className: "my-4 overflow-x-auto" }, React.createElement('div', { className: "inline-block min-w-full" }, React.createElement('div', { className: "rounded-lg border border-slate-200 dark:border-slate-200/10" }, React.createElement('table', { className: "text-sm", ...props })))),
+    table: (props: any) => React.createElement('div', { className: "my-4 overflow-x-auto" }, React.createElement('div', { className: "inline-block min-w-full" }, React.createElement('div', { className: "rounded-lg border border-slate-200 dark:border-slate-200/10" }, React.createElement('table', { className: "text-base", ...props })))),
     thead: (props: any) => React.createElement('thead', { className: "bg-slate-100 dark:bg-black/20", ...props }),
     tr: (props: any) => React.createElement('tr', { className: "border-b border-slate-200 dark:border-slate-200/10 last:border-b-0", ...props }),
     th: (props: any) => React.createElement('th', { className: "px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200", ...props }),

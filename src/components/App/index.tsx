@@ -80,6 +80,7 @@ export const App = () => {
                 onShowThinkingProcess={logic.handleShowThinkingProcess}
                 approveExecution={logic.approveExecution}
                 denyExecution={logic.denyExecution}
+                onRegenerate={logic.regenerateResponse}
              />
           </div>
         </main>

@@ -71,7 +71,6 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
-    const pinnedCount = messages.filter(m => m.isPinned).length;
 
     const isSidebarActive = isDesktop ? !isSidebarCollapsed : isSidebarOpen;
 
@@ -155,10 +154,6 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
                                 <MenuItem onClick={onImportChat} disabled={false}>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 0 0 1.09 1.03L9.25 4.636v8.614Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
                                     <span>Import Chat...</span>
-                                </MenuItem>
-                                <MenuItem onClick={onOpenPinnedModal} disabled={!isChatActive || pinnedCount === 0}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M6 1.75a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-1v2.122c1.32.263 2.5 1.01 2.5 2.128v5.25a.75.75 0 0 1-1.5 0V7.5a1.25 1.25 0 0 0-1-1.222V4.128A2.75 2.75 0 0 0 8 1.406V2.5H7A.75.75 0 0 1 6 1.75Z" /><path d="M3.75 6A.75.75 0 0 0 3 6.75v5.5a.75.75 0 0 0 1.5 0v-5.5A.75.75 0 0 0 3.75 6ZM12.25 6a.75.75 0 0 0-.75.75v5.5a.75.75 0 0 0 1.5 0v-5.5a.75.75 0 0 0-.75-.75Z" /></svg>
-                                    <span>Pinned Messages ({pinnedCount})</span>
                                 </MenuItem>
                                 <div className="h-px bg-gray-200 dark:bg-white/10 my-1"></div>
                                 <MenuItem onClick={onShareChat} disabled={!isChatActive}>

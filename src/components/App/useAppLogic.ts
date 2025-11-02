@@ -10,7 +10,8 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import type { Model } from '../../services/modelService';
 import type { ChatSession } from '../../types';
 import { getAvailableModels } from '../../services/modelService';
-import { useChat } from '../../hooks/useChat';
+// FIX: Update import path for the useChat hook to point to the correct barrel file, as the original hook file was refactored and is now empty.
+import { useChat } from '../../hooks/useChat/index';
 import { useTheme } from '../../hooks/useTheme';
 import { useSidebar } from '../../hooks/useSidebar';
 import { useMemory } from '../../hooks/useMemory';

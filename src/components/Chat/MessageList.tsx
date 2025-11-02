@@ -30,12 +30,13 @@ type MessageListProps = {
   approveExecution: () => void;
   denyExecution: () => void;
   messageFormRef: React.RefObject<MessageFormHandle>;
+  onRegenerate: (messageId: string) => void;
 };
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
     messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled, currentChatId, 
     onTogglePin, onShowThinkingProcess, onScrolledUpChange, approveExecution, 
-    denyExecution, messageFormRef 
+    denyExecution, messageFormRef, onRegenerate
 }, ref) => {
   const messageListRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -122,6 +123,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                   approveExecution={approveExecution}
                   denyExecution={denyExecution}
                   messageFormRef={messageFormRef}
+                  onRegenerate={onRegenerate}
               />
             ))}
             {/* The invisible anchor element that we scroll to. */}

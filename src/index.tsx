@@ -5,7 +5,8 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { App } from './components/App';
+// FIX: Update import path for the App component to point to the correct barrel file, as the original component file was refactored and is now empty.
+import { App } from './components/App/index';
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 root.render(<App />);
