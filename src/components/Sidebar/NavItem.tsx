@@ -25,7 +25,7 @@ export const NavItem = ({ icon, text, active, isCollapsed, isDesktop, onClick, d
             <button 
                 onClick={onClick} 
                 disabled={disabled}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left text-base ${
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left text-sm ${
                     active 
                         ? 'bg-violet-100 text-slate-900 font-semibold dark:bg-violet-900/40 dark:text-slate-50' 
                         : 'text-slate-600 hover:bg-violet-100/60 dark:text-slate-300 dark:hover:bg-violet-900/30 dark:hover:text-slate-100'
@@ -46,7 +46,7 @@ export const NavItem = ({ icon, text, active, isCollapsed, isDesktop, onClick, d
                 </motion.span>
             </button>
             {shouldCollapse && !disabled && (
-                <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-white dark:bg-[#2D2D2D] text-slate-800 dark:text-slate-100 text-base font-semibold rounded-md shadow-lg border border-gray-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-white dark:bg-[#2D2D2D] text-slate-800 dark:text-slate-100 text-sm font-semibold rounded-md shadow-lg border border-gray-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                     {text}
                 </div>
             )}

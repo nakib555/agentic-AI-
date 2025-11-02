@@ -21,7 +21,7 @@ export const UploadMenu: React.FC<UploadMenuProps> = ({ menuRef, onFileClick, on
     transition={{ duration: 0.1, ease: 'easeOut' }}
     className="absolute bottom-full mb-2 w-40 bg-white dark:bg-[#2D2D2D] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
   >
-    <ul className="text-base">
+    <ul className="text-sm">
       <li>
         <button
           onClick={onFileClick}

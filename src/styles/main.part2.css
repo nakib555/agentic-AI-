@@ -26,7 +26,7 @@ html, body, #root {
 
 /* Placeholder styling for the contentEditable div chat input */
 .content-editable-input {
-  font-size: 1rem; /* text-base */
+  font-size: 0.875rem; /* text-sm */
 }
 .content-editable-input[data-placeholder]:empty::before {
   content: attr(data-placeholder);

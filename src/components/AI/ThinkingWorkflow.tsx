@@ -43,8 +43,8 @@ const PlanSection: React.FC<{ icon: React.ReactNode; title: string; content: str
         <div className="flex items-start gap-4">
             <div className="flex-shrink-0 text-slate-500 dark:text-slate-400">{icon}</div>
             <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-gray-800 dark:text-slate-200 mb-1">{title}</h3>
-                <div className="text-base text-gray-700 dark:text-slate-300 workflow-markdown">
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200 mb-1">{title}</h3>
+                <div className="text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
                     <TypingWrapper fullText={content} isAnimating={isStreaming}>
                         {(text) => <ManualCodeRenderer text={isStreaming ? text : content} components={WorkflowMarkdownComponents} isStreaming={isStreaming} />}
                     </TypingWrapper>
@@ -93,7 +93,7 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
             <div className="p-4 bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-200 dark:border-white/10 space-y-4">
                  <div className="flex items-center gap-3 mb-4">
                     <PlannerIcon />
-                    <h3 className="text-base font-bold text-gray-800 dark:text-slate-200">Mission Briefing</h3>
+                    <h3 className="text-sm font-bold text-gray-800 dark:text-slate-200">Mission Briefing</h3>
                     <span className={`px-2 py-0.5 text-sm font-semibold rounded-full ${plannerColor.bg} ${plannerColor.text}`}>Planner</span>
                 </div>
                 <PlanSection icon={<GoalAnalysisIcon />} title="Goal Analysis" content={goalAnalysis} isStreaming={isLiveGeneration && !todoList} />
@@ -107,7 +107,7 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
             <div>
                 <div className="flex items-center gap-3 mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-500 dark:text-slate-400"><path d="M10.75 3.944v1.076a.75.75 0 0 0 1.5 0V3.34a5.526 5.526 0 0 0-3.32-1.018V3.5a.75.75 0 0 1-1.5 0v-.837a5.526 5.526 0 0 0-3.32 1.018v.598a.75.75 0 0 0 1.5 0V3.944c.541-.244 1.12-.403 1.72-.444a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75-.75c-.6 0-1.179.199-1.72.444v-.598a.75.75 0 0 0-1.5 0v.837a5.526 5.526 0 0 0 3.32 1.018v-1.17a.75.75 0 0 1 1.5 0v.837a5.526 5.526 0 0 0 3.32-1.018v-.598a.75.75 0 0 0-1.5 0v.598c-.541.244-1.12.403-1.72.444a.75.75 0 0 1-.75-.75V4.25a.75.75 0 0 1 .75-.75c.6 0 1.179-.199 1.72-.444Z" /></svg>
-                    <h3 className="text-base font-bold text-gray-800 dark:text-slate-200">Execution Log</h3>
+                    <h3 className="text-sm font-bold text-gray-800 dark:text-slate-200">Execution Log</h3>
                 </div>
                 <div ref={executionLogRef} className="pl-2.5">
                     {executionLog.map((node, index) => (

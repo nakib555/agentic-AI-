@@ -122,7 +122,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
             <button 
                 onClick={isEditing ? undefined : onClick} 
                 disabled={isEditing}
-                className={`w-full text-base p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-indigo-100 text-indigo-800 font-semibold dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 hover:bg-violet-100/60 dark:text-slate-300 dark:hover:bg-violet-900/30 dark:hover:text-slate-100'} ${shouldCollapse ? 'justify-center' : ''} ${!shouldCollapse ? 'pr-8' : ''}`}
+                className={`w-full text-sm p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-indigo-100 text-indigo-800 font-semibold dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 hover:bg-violet-100/60 dark:text-slate-300 dark:hover:bg-violet-900/30 dark:hover:text-slate-100'} ${shouldCollapse ? 'justify-center' : ''} ${!shouldCollapse ? 'pr-8' : ''}`}
             >
                 <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
                     {isLoading ? (
@@ -140,7 +140,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
                         onKeyDown={handleKeyDown}
                         onBlur={handleSave}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex-1 w-full bg-gray-200/50 dark:bg-black/30 focus:outline-none text-base font-semibold ring-1 ring-indigo-500 rounded-sm px-1 -mx-1"
+                        className="flex-1 w-full bg-gray-200/50 dark:bg-black/30 focus:outline-none text-sm font-semibold ring-1 ring-indigo-500 rounded-sm px-1 -mx-1"
                     />
                 ) : (
                     <motion.span 
@@ -179,7 +179,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
                         className="absolute right-2 top-10 z-20 w-36 bg-white dark:bg-[#2D2D2D] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <ul className="text-base">
+                        <ul className="text-sm">
                             <li>
                                 <button onClick={handleEditClick} className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded hover:bg-black/5 dark:hover:bg-white/5 text-slate-700 dark:text-slate-200">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M11.355 2.212a.75.75 0 0 1 1.06 0l1.373 1.373a.75.75 0 0 1 0 1.06L5.435 13H3.25A.75.75 0 0 1 2.5 12.25V10l8.293-8.293a.75.75 0 0 1 .562-.294Z" /></svg>
@@ -197,7 +197,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
                 )}
             </AnimatePresence>
              {shouldCollapse && (
-                <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-white dark:bg-[#2D2D2D] text-slate-800 dark:text-slate-100 text-base font-semibold rounded-md shadow-lg border border-gray-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-white dark:bg-[#2D2D2D] text-slate-800 dark:text-slate-100 text-sm font-semibold rounded-md shadow-lg border border-gray-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                     <Highlight text={text} highlight={searchQuery} />
                 </div>
             )}

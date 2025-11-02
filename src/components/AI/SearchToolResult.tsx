@@ -64,7 +64,7 @@ export const SearchToolResult = ({ query, sources }: SearchToolResultProps) => {
   return (
     <div className="space-y-3">
       {query && (
-        <p className="text-base font-medium text-gray-600 dark:text-slate-400 font-['Fira_Code',_monospace]">
+        <p className="text-sm font-medium text-gray-600 dark:text-slate-400 font-['Fira_Code',_monospace]">
           "{query}"
         </p>
       )}

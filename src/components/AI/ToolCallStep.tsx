@@ -81,7 +81,7 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
         return (
              <div className="p-3 bg-red-500/10 dark:bg-red-900/20 border border-red-500/20 rounded-lg">
                 <p className="text-sm font-semibold text-red-600 dark:text-red-400 mb-1">Error</p>
-                <p className="text-base text-red-700 dark:text-red-300 font-mono text-sm whitespace-pre-wrap">{result}</p>
+                <p className="text-sm text-red-700 dark:text-red-300 font-mono text-sm whitespace-pre-wrap">{result}</p>
             </div>
         )
     }
@@ -95,7 +95,7 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
         <div className="p-3 bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg">
             <p className="text-sm font-semibold text-gray-500 dark:text-slate-400 mb-2">Result</p>
             <motion.div
-                className="overflow-hidden text-base workflow-markdown"
+                className="overflow-hidden text-sm workflow-markdown"
                 animate={{ height: 'auto' }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
             >
@@ -134,7 +134,7 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
     if (call.name === 'executeCode' && args.code) {
         const packages = (args.packages as string[] | undefined) || [];
         return (
-            <div className="space-y-3 text-base">
+            <div className="space-y-3 text-sm">
                 {/* FIX: Added missing 'isStreaming' prop to CodeBlock */}
                 <CodeBlock language={args.language as string || 'plaintext'} isStreaming={false}>{args.code as string}</CodeBlock>
                 {packages.length > 0 && (
@@ -164,7 +164,7 @@ export const ToolCallStep = ({ event, sendMessage }: ToolCallStepProps) => {
     const argEntries = Object.entries(args);
   
     return (
-      <div className="min-w-0 flex-1 text-base space-y-3">
+      <div className="min-w-0 flex-1 text-sm space-y-3">
         {argEntries.length > 0 && (
           <div className="font-['Fira_Code',_monospace] space-y-2 border border-gray-200 dark:border-slate-700/50 bg-gray-50 dark:bg-black/20 p-3 rounded-lg">
             <p className="text-sm font-semibold text-gray-500 dark:text-slate-400 mb-1">Parameters</p>
