@@ -5,7 +5,6 @@
 
 import React from 'react';
 import { motion, Variants } from 'framer-motion';
-// FIX: Correct the relative import path for types from `../../../types` to `../../types`.
 import type { Source } from '../../types';
 
 type SourcesPillsProps = {

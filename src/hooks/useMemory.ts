@@ -4,9 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-// FIX: Fix module import path for gemini services to point to the barrel file, resolving ambiguity with an empty `gemini.ts` file.
 import { consolidateMemory, extractMemorySuggestions } from '../services/gemini/index';
-// FIX: Correct relative import path for types.
 import type { ChatSession } from '../types';
 
 const MEMORY_ENABLED_KEY = 'agentic-memoryEnabled';

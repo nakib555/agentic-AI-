@@ -4,7 +4,6 @@
  */
 
 import React from 'react';
-// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
 import { MarkdownComponents } from '../Markdown/markdownComponents';

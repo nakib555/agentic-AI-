@@ -4,7 +4,6 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
 import { WorkflowNode, type WorkflowNodeData } from './WorkflowNode';

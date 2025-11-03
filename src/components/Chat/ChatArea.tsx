@@ -4,11 +4,9 @@
  */
 
 import React, { useRef, useState } from 'react';
-// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import { MessageList, type MessageListHandle } from './MessageList';
-// FIX: Fix module import path for `MessageForm` to point to the barrel file, resolving ambiguity with an empty `MessageForm.tsx` file.
 import { MessageForm, type MessageFormHandle } from './MessageForm/index';
 import type { Message } from '../../types';
 
@@ -22,7 +20,8 @@ type ChatAreaProps = {
   isAutoPlayEnabled: boolean;
   currentChatId: string | null;
   onShowThinkingProcess: (messageId: string) => void;
-  approveExecution: () => void;
+  // FIX: Update prop type to accept the edited plan string.
+  approveExecution: (editedPlan: string) => void;
   denyExecution: () => void;
   messageListRef: React.RefObject<MessageListHandle>;
   onRegenerate: (messageId: string) => void;

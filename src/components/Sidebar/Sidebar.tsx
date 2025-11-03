@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import { NavItem } from './NavItem';
@@ -42,7 +41,6 @@ const mobileVariants = {
     closed: { translateX: '-100%' },
 };
 
-// FIX: Update the Sidebar component to use React.FC to correctly type its props, resolving an issue where the 'key' prop was not recognized.
 export const Sidebar: React.FC<SidebarProps> = ({ 
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
     isResizing, setIsResizing, history, currentChatId, onNewChat, onLoadChat,

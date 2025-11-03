@@ -7,9 +7,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
-// FIX: Fix module import path for icons to point to the barrel file inside the 'icons' directory, resolving ambiguity with an empty 'icons.tsx' file.
 import { GoalAnalysisIcon, PlannerIcon, TodoListIcon, ToolsIcon } from './icons/index';
-// FIX: Update the 'plan' prop type to ParsedWorkflow to fix a type mismatch.
 import type { ParsedWorkflow } from '../../services/workflowParser';
 import { getAgentColor } from '../../utils/agentUtils';
 
@@ -65,7 +63,6 @@ export const ExecutionApproval: React.FC<ExecutionApprovalProps> = ({ plan, onAp
     const [editedTools, setEditedTools] = useState(originalTools);
 
     const handleApprove = () => {
-        // FIX: Add a consistent handoff message so the model knows the plan is finalized for execution.
         const handoffMessage = "\n\n[STEP] Handoff: Planner -> Executor:\n[AGENT: Planner] The user-approved plan is ready for execution.";
         const fullEditedPlan = `## Goal Analysis\n${editedGoal}\n\n## Todo-list\n${editedTodo}\n\n## Tools\n${editedTools}${handoffMessage}`;
         onApprove(fullEditedPlan);

@@ -41,7 +41,8 @@ type AiMessageProps = {
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
     onShowThinkingProcess: (messageId: string) => void;
-    approveExecution: () => void;
+    // FIX: Update prop type to accept the edited plan string.
+    approveExecution: (editedPlan: string) => void;
     denyExecution: () => void;
     messageFormRef: React.RefObject<MessageFormHandle>;
     onRegenerate: (messageId: string) => void;

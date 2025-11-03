@@ -15,7 +15,6 @@ type ImageDisplayProps = {
   onEdit?: (blob: Blob, key: string) => void;
 };
 
-// FIX: Changed component signature to use React.FC to resolve a TypeScript error with the 'key' prop.
 export const ImageDisplay: React.FC<ImageDisplayProps> = ({ fileKey, srcUrl, prompt, caption, alt, onEdit }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);

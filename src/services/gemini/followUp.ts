@@ -4,7 +4,6 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-// FIX: Correct the relative import path for types.
 import type { Message } from '../../types';
 import { getText } from '../../utils/geminiUtils';
 import { parseApiError } from './apiError';

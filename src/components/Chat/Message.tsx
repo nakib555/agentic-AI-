@@ -7,7 +7,6 @@ import React from 'react';
 import type { Message } from '../../types';
 import { UserMessage } from './UserMessage';
 import { AiMessage } from './AiMessage/index';
-// FIX: Fix module import path for `MessageFormHandle` to point to the barrel file, resolving ambiguity with an empty `MessageForm.tsx` file.
 import type { MessageFormHandle } from './MessageForm/index';
 
 export const MessageComponent: React.FC<{ 
@@ -18,7 +17,8 @@ export const MessageComponent: React.FC<{
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
     onShowThinkingProcess: (messageId: string) => void;
-    approveExecution: () => void;
+    // FIX: Update prop type to accept the edited plan string.
+    approveExecution: (editedPlan: string) => void;
     denyExecution: () => void;
     messageFormRef: React.RefObject<MessageFormHandle>;
     onRegenerate: (messageId: string) => void;

@@ -3,13 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Removed invalid 'aistudio' from react import.
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import type { Message } from '../../types';
 import { MessageComponent } from './Message';
-// FIX: Fix module import path to point to the barrel file, resolving ambiguity with an empty `WelcomeScreen.tsx` file.
 import { WelcomeScreen } from './WelcomeScreen/index';
-// FIX: Fix module import path for `MessageFormHandle` to point to the barrel file, resolving ambiguity with an empty `MessageForm.tsx` file.
 import type { MessageFormHandle } from './MessageForm/index';
 
 export type MessageListHandle = {
@@ -26,7 +23,8 @@ type MessageListProps = {
   currentChatId: string | null;
   onShowThinkingProcess: (messageId: string) => void;
   onScrolledUpChange: (isScrolledUp: boolean) => void;
-  approveExecution: () => void;
+  // FIX: Update prop type to accept the edited plan string.
+  approveExecution: (editedPlan: string) => void;
   denyExecution: () => void;
   messageFormRef: React.RefObject<MessageFormHandle>;
   onRegenerate: (messageId: string) => void;

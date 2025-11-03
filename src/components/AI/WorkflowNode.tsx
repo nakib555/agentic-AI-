@@ -4,7 +4,6 @@
  */
 
 import React from 'react';
-// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
 import type { MessageError, ToolCallEvent } from '../../types';
@@ -12,7 +11,6 @@ import { ToolCallStep } from './ToolCallStep';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { TypingWrapper } from './TypingWrapper';
-// FIX: Fix module import path for icons to point to the barrel file inside the 'icons' directory, resolving ambiguity with an empty 'icons.tsx' file.
 import { ObservationIcon, SearchIcon, TodoListIcon, HandoffIcon, ValidationIcon, CorrectionIcon, ExecutorIcon, ThoughtIcon } from './icons/index';
 import { SearchToolResult } from './SearchToolResult';
 import { getAgentColor } from '../../utils/agentUtils';

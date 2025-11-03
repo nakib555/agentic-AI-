@@ -4,7 +4,6 @@
  */
 
 import React, { useState } from 'react';
-// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
 import type { ToolCallEvent } from '../../types';
@@ -152,7 +151,6 @@ export const ToolCallStep = ({ event, sendMessage, onRegenerate, messageId }: To
         const packages = (args.packages as string[] | undefined) || [];
         return (
             <div className="space-y-3 text-sm">
-                {/* FIX: Added missing 'isStreaming' prop to CodeBlock */}
                 <CodeBlock language={args.language as string || 'plaintext'} isStreaming={false}>{args.code as string}</CodeBlock>
                 {packages.length > 0 && (
                      <div className="flex items-center gap-2 text-sm">

@@ -35,7 +35,7 @@ export const PERSONA_AND_UI_FORMATTING = `
 |---------------|---------------------------------|-------------------------------------------------------------------------|
 | **Headings**  | \`## Section Title\`            | Structure your report with markdown headings (\`##\`, \`###\`).           |
 | **Bold**      | \`**Important Text**\`            | For key terms, labels, and strong emphasis.                             |
-| **Highlight** | \`==Key Takeaway==\`              | **Use this for the most critical findings** to draw maximum attention. |
+| **Highlight** | \`==[color]Key Takeaway==\`       | **Use this for critical findings.** Colors can be: \`red\`, \`green\`, \`blue\`, \`yellow\`, \`purple\`, \`orange\`. If no color is specified, a default yellow is used. |
 | *Italics*     | \`*Subtle emphasis*\`             | For secondary emphasis, notes, or shifts in tone.                       |
 | Lists         | \`- Bullet point\` or \`1. ...\`  | Use bullets for unordered info and numbers for sequential steps.        |
 | Links         | \`[Link Text](https://...)\`      | To provide external references.                                         |

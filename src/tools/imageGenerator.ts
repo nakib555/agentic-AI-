@@ -7,7 +7,6 @@ import { FunctionDeclaration, Type, GoogleGenAI, Modality } from "@google/genai"
 import { fileStore } from '../services/fileStore';
 import { ToolError } from '../types';
 import { getText } from '../utils/geminiUtils';
-// FIX: Fix module import path for `parseApiError` to point to the barrel file, resolving ambiguity with an empty `gemini.ts` file.
 import { parseApiError } from '../services/gemini/index';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);

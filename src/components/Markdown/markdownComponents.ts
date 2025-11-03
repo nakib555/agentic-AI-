@@ -6,6 +6,7 @@
 import React from 'react';
 import { Bubble } from './Bubble';
 import { StyledLink } from './StyledLink';
+import { StyledMark } from './StyledMark';
 
 // Custom Blockquote component that acts as a router for Callouts and Bubbles
 const BlockquoteRouter = (props: any) => {
@@ -76,6 +77,7 @@ export const MarkdownComponents = {
     },
     blockquote: BlockquoteRouter,
     a: StyledLink,
+    mark: StyledMark,
     table: (props: any) => React.createElement('div', { className: "my-4 overflow-x-auto" }, React.createElement('div', { className: "inline-block min-w-full" }, React.createElement('div', { className: "rounded-lg border border-slate-200 dark:border-slate-200/10" }, React.createElement('table', { className: "text-sm", ...props })))),
     thead: (props: any) => React.createElement('thead', { className: "bg-slate-100 dark:bg-black/20", ...props }),
     tr: (props: any) => React.createElement('tr', { className: "border-b border-slate-200 dark:border-slate-200/10 last:border-b-0", ...props }),

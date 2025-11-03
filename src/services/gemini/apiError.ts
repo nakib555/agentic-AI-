@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Correct the relative import path for types.
 import type { MessageError } from '../../types';
 
 /**

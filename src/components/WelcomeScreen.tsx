@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Removed invalid 'aistudio' from react import.
 import React from 'react';
 import { motion } from 'framer-motion';
 

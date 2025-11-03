@@ -9,7 +9,7 @@ type TypingWrapperProps = {
   fullText: string;
   isAnimating: boolean;
   onComplete?: () => void;
-  typingSpeed?: number; // Milliseconds per character
+  typingSpeed?: number; // Milliseconds per word/part
   delay?: number; // Milliseconds to wait before starting
   children: (displayedText: string) => React.ReactNode;
 };
@@ -18,13 +18,14 @@ export const TypingWrapper: React.FC<TypingWrapperProps> = ({
   fullText,
   isAnimating,
   onComplete,
-  typingSpeed = 20, // Increased speed for a more responsive feel
+  typingSpeed = 80, // Default to 80ms per word/part
   delay = 0,
   children,
 }) => {
   const [displayedText, setDisplayedText] = useState('');
   const targetTextRef = useRef(fullText);
   const onCompleteRef = useRef(onComplete);
+  const partIndexRef = useRef(0);
 
   // Keep the onComplete callback ref updated without causing re-renders
   useEffect(() => {
@@ -49,25 +50,26 @@ export const TypingWrapper: React.FC<TypingWrapperProps> = ({
     
     // Start with a clean slate whenever a new animation sequence begins.
     setDisplayedText('');
+    partIndexRef.current = 0;
+
+    // Split text into words, punctuation, and whitespace to preserve formatting.
+    const parts = targetTextRef.current.match(/[\w']+|[.,!?;:"']+|\s+/g) || [];
 
     let intervalId: number | undefined;
 
     const timeoutId = setTimeout(() => {
       intervalId = window.setInterval(() => {
-        setDisplayedText((currentDisplayedText) => {
-          const currentTarget = targetTextRef.current;
-          if (currentDisplayedText.length < currentTarget.length) {
-            // Append one character at a time for a smoother effect
-            return currentTarget.substring(0, currentDisplayedText.length + 1);
-          }
-          
-          // When text is complete, clear interval and call onComplete
-          clearInterval(intervalId);
+        if (partIndexRef.current < parts.length) {
+          // Use functional update to avoid stale state in closure
+          setDisplayedText(prev => prev + parts[partIndexRef.current]);
+          partIndexRef.current++;
+        } else {
+          // When all parts are displayed, clear interval and call onComplete
+          clearInterval(intervalId!);
           if (onCompleteRef.current) {
             onCompleteRef.current();
           }
-          return currentDisplayedText;
-        });
+        }
       }, typingSpeed);
     }, delay);
 

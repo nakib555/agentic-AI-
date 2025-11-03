@@ -3,9 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Removed invalid 'aistudio' from react import.
 import React, { useState, useRef, useEffect } from 'react';
-// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import type { Message } from '../../types';
 const motion = motionTyped as any;

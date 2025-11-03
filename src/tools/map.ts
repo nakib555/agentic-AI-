@@ -6,7 +6,6 @@
 import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
 import { ToolError } from '../types';
 import { getText } from '../utils/geminiUtils';
-// FIX: Fix module import path for `parseApiError` to point to the barrel file, resolving ambiguity with an empty `gemini.ts` file.
 import { parseApiError } from '../services/gemini/index';
 import { fileStore } from '../services/fileStore';
 import { fileToBase64 } from '../utils/fileUtils';
