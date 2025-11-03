@@ -102,3 +102,35 @@ export const executeDeleteFile = async (args: { path: string }): Promise<string>
         throw new ToolError('deleteFile', 'DELETION_FAILED', originalError.message, originalError);
     }
 };
+
+// --- writeFile Tool ---
+
+export const writeFileDeclaration: FunctionDeclaration = {
+  name: 'writeFile',
+  description: 'Saves text content to a new file in the virtual filesystem. Useful for creating notes, saving generated code, or storing intermediate results from research.',
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      path: { type: Type.STRING, description: 'The full path where the file will be saved (e.g., "/main/output/my_note.md"). Must be in a writable directory.' },
+      content: { type: Type.STRING, description: 'The text content to write into the file.' },
+    },
+    required: ['path', 'content'],
+  },
+};
+
+export const executeWriteFile = async (args: { path: string, content: string }): Promise<string> => {
+    const { path, content } = args;
+
+    if (!path.startsWith('/main/output/')) {
+        throw new ToolError('writeFile', 'INVALID_PATH', 'File path is not valid. Files can only be saved within the "/main/output/" directory.');
+    }
+
+    try {
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        await fileStore.saveFile(path, blob);
+        return `File saved successfully: ${path}`;
+    } catch (err) {
+        const originalError = err instanceof Error ? err : new Error(String(err));
+        throw new ToolError('writeFile', 'WRITE_FAILED', originalError.message, originalError);
+    }
+};

@@ -11,7 +11,7 @@ import { codeExecutorDeclaration, executeCode } from './codeExecutor';
 import { displayMapDeclaration, executeDisplayMap, analyzeMapVisuallyDeclaration, executeAnalyzeMapVisually, analyzeImageVisuallyDeclaration, executeAnalyzeImageVisually } from './map';
 import { captureCodeOutputScreenshotDeclaration, executeCaptureCodeOutputScreenshot } from './screenshot';
 import { calculatorDeclaration, executeCalculator } from './calculator';
-import { listFilesDeclaration, executeListFiles, displayFileDeclaration, executeDisplayFile, deleteFileDeclaration, executeDeleteFile } from './fileTools';
+import { listFilesDeclaration, executeListFiles, displayFileDeclaration, executeDisplayFile, deleteFileDeclaration, executeDeleteFile, writeFileDeclaration, executeWriteFile } from './fileTools';
 
 
 // Export all tool declarations for the model
@@ -27,6 +27,7 @@ export const toolDeclarations = [
   analyzeImageVisuallyDeclaration,
   captureCodeOutputScreenshotDeclaration,
   calculatorDeclaration,
+  writeFileDeclaration,
   listFilesDeclaration,
   displayFileDeclaration,
   deleteFileDeclaration,
@@ -45,6 +46,7 @@ export const toolImplementations: Record<string, (args: any) => string | Promise
   'analyzeImageVisually': executeAnalyzeImageVisually,
   'captureCodeOutputScreenshot': executeCaptureCodeOutputScreenshot,
   'calculator': executeCalculator,
+  'writeFile': executeWriteFile,
   'listFiles': executeListFiles,
   'displayFile': executeDisplayFile,
   'deleteFile': executeDeleteFile,
