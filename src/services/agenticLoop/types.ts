@@ -16,7 +16,7 @@ export type AgenticLoopCallbacks = {
     onTextChunk: (fullText: string) => void;
     onNewToolCalls: (toolCalls: FunctionCall[]) => Promise<any[]>;
     onToolResult: (eventId: string, result: string) => void;
-    onPlanReady: (plan: ParsedWorkflow) => Promise<boolean>;
+    onPlanReady: (plan: ParsedWorkflow) => Promise<boolean | string>;
     onComplete: (finalText: string) => void;
     onCancel: () => void;
     onError: (error: MessageError) => void;
@@ -49,4 +49,5 @@ export type StreamProcessorResult =
     | ({ status: 'error'; error: MessageError })
     | (StreamResultBase & { status: 'complete' })
     | (StreamResultBase & { status: 'running'; nextAction: 'continue_generation'; currentTurnText: string; })
-    | (StreamResultBase & { status: 'running'; nextAction: 'continue_with_tools'; functionCalls: FunctionCall[]; modelTurnParts: Part[]; });
+    | (StreamResultBase & { status: 'running'; nextAction: 'continue_with_tools'; functionCalls: FunctionCall[]; modelTurnParts: Part[]; })
+    | (StreamResultBase & { status: 'running'; nextAction: 'continue_with_edited_plan'; editedPlan: string; modelTurnParts: Part[]; });

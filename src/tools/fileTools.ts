@@ -79,11 +79,11 @@ export const executeDisplayFile = async (args: { path: string }): Promise<string
 
 export const deleteFileDeclaration: FunctionDeclaration = {
   name: 'deleteFile',
-  description: 'Deletes a file from the virtual filesystem. Use this to clean up intermediate or unsatisfactory files.',
+  description: 'Deletes a file from the virtual filesystem. Use this to remove temporary, flawed, or unwanted files.',
   parameters: {
     type: Type.OBJECT,
     properties: {
-      path: { type: Type.STRING, description: 'The full path of the file to delete (e.g., "/main/output/old-image.png").' },
+      path: { type: Type.STRING, description: 'The full path of the file to delete (e.g., "/main/output/flawed-image.png").' },
     },
     required: ['path'],
   },
@@ -91,8 +91,12 @@ export const deleteFileDeclaration: FunctionDeclaration = {
 
 export const executeDeleteFile = async (args: { path: string }): Promise<string> => {
     try {
+        const fileExists = await fileStore.getFile(args.path);
+        if (!fileExists) {
+            throw new Error(`File not found at path: ${args.path}`);
+        }
         await fileStore.deleteFile(args.path);
-        return `File successfully deleted: ${args.path}`;
+        return `File deleted successfully: ${args.path}`;
     } catch (err) {
         const originalError = err instanceof Error ? err : new Error(String(err));
         throw new ToolError('deleteFile', 'DELETION_FAILED', originalError.message, originalError);

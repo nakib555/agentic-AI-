@@ -75,53 +75,69 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         } else if (result.status === 'aborted') {
             hasCompleted = true; // onCancel will be handled by the final check
         } else if (result.status === 'running') {
-            fullModelResponseText = result.fullText;
-            planApproved = result.planApproved;
-
-            if (result.nextAction === 'continue_with_tools') {
-                currentHistory.push({ role: 'model', parts: result.modelTurnParts });
-                const toolEvents = await callbacks.onNewToolCalls(result.functionCalls);
+            // FIX: Refactor logic to cleanly handle edited plans by replacing the model's turn and prompting it to continue.
+            if (result.nextAction === 'continue_with_edited_plan') {
+                fullModelResponseText = result.editedPlan; // Update the full text to reflect the user's edits.
+                planApproved = true; // Mark plan as approved for subsequent turns.
+                callbacks.onTextChunk(fullModelResponseText); // Update the UI immediately with the new plan.
+    
+                // "Replace" the model's original plan with the user's edited version in the history.
+                currentHistory.push({ role: 'model', parts: [{ text: result.editedPlan }] });
                 
-                const responseParts = await Promise.all(toolEvents.map(async (event) => {
-                    if (signal.aborted) throw new Error('Aborted');
-                    try {
-                        const toolResult = await toolExecutor(event.call.name, event.call.args);
-                        callbacks.onToolResult(event.id, toolResult);
-                        if (event.call.name === 'captureCodeOutputScreenshot') {
-                            return [
-                                { inlineData: { mimeType: 'image/png', data: toolResult } },
-                                { functionResponse: { name: event.call.name, response: { result: "Screenshot captured." } } }
-                            ];
-                        }
-                        return [{ functionResponse: { name: event.call.name, response: { result: toolResult } } }];
-                    } catch (error: any) {
-                        let errorMessage: string;
-                        // This provides more robust error message extraction.
-                        if (error instanceof ToolError) {
-                            errorMessage = error.originalMessage;
-                        } else if (error instanceof Error) {
-                            errorMessage = error.message;
-                        } else {
-                            try {
-                                errorMessage = JSON.stringify(error, null, 2);
-                            } catch {
-                                errorMessage = String(error);
+                // Add a simple user prompt to tell the model to start executing the plan it just "provided".
+                currentHistory.push({ role: 'user', parts: [{ text: "The plan is approved. Proceed with execution." }] });
+                
+                await executeTurn();
+            } else {
+                fullModelResponseText = result.fullText;
+                planApproved = result.planApproved;
+                if (result.nextAction === 'continue_with_tools') {
+                    currentHistory.push({ role: 'model', parts: result.modelTurnParts });
+                    const toolEvents = await callbacks.onNewToolCalls(result.functionCalls);
+                    
+                    const responseParts = await Promise.all(toolEvents.map(async (event) => {
+                        if (signal.aborted) throw new Error('Aborted');
+                        try {
+                            const toolResult = await toolExecutor(event.call.name, event.call.args);
+                            callbacks.onToolResult(event.id, toolResult);
+                            if (event.call.name === 'captureCodeOutputScreenshot') {
+                                return [
+                                    { inlineData: { mimeType: 'image/png', data: toolResult } },
+                                    { functionResponse: { name: event.call.name, response: { result: "Screenshot captured." } } }
+                                ];
                             }
+                            return [{ functionResponse: { name: event.call.name, response: { result: toolResult } } }];
+                        } catch (error: any) {
+                            let errorMessage: string;
+                            // This provides more robust error message extraction.
+                            if (error instanceof ToolError) {
+                                errorMessage = error.originalMessage;
+                            } else if (error instanceof Error) {
+                                errorMessage = error.message;
+                            } else {
+                                try {
+                                    // Use JSON.stringify for better object representation
+                                    errorMessage = JSON.stringify(error, null, 2);
+                                } catch {
+                                    // Fallback for circular references or other stringify errors
+                                    errorMessage = String(error);
+                                }
+                            }
+                
+                            const errorResult = `Tool execution failed. Reason: ${errorMessage}`;
+                            callbacks.onToolResult(event.id, errorResult);
+                            return [{ functionResponse: { name: event.call.name, response: { result: errorResult } } }];
                         }
-            
-                        const errorResult = `Tool execution failed. Reason: ${errorMessage}`;
-                        callbacks.onToolResult(event.id, errorResult);
-                        return [{ functionResponse: { name: event.call.name, response: { result: errorResult } } }];
-                    }
-                }));
-
-                if (signal.aborted) return;
-                currentHistory.push({ role: 'user', parts: responseParts.flat() });
-                await executeTurn();
-            } else if (result.nextAction === 'continue_generation') {
-                currentHistory.push({ role: 'model', parts: [{ text: result.currentTurnText }] });
-                currentHistory.push({ role: 'user', parts: [{ text: "Continue" }] });
-                await executeTurn();
+                    }));
+    
+                    if (signal.aborted) return;
+                    currentHistory.push({ role: 'user', parts: responseParts.flat() });
+                    await executeTurn();
+                } else if (result.nextAction === 'continue_generation') {
+                    currentHistory.push({ role: 'model', parts: [{ text: result.currentTurnText }] });
+                    currentHistory.push({ role: 'user', parts: [{ text: "Continue" }] });
+                    await executeTurn();
+                }
             }
         } else { // 'complete'
             fullModelResponseText = result.fullText;

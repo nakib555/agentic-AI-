@@ -178,4 +178,4 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
             </div>
         </div>
   </header>
-)};
+);

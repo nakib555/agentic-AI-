@@ -34,12 +34,27 @@ export const processStream = async (params: StreamProcessorParams): Promise<Stre
 
                 if (!isPlanApproved && currentTurnText.includes('[STEP] Handoff: Planner -> Executor')) {
                     const plan = parseAgenticWorkflow(currentTurnText, [], false);
-                    const userApproved = await callbacks.onPlanReady(plan);
-                    if (userApproved) isPlanApproved = true;
-                    else return {
-                        status: 'error',
-                        error: { code: 'USER_DENIED_EXECUTION', message: 'Execution cancelled by user.' }
-                    };
+                    const approvalResult = await callbacks.onPlanReady(plan);
+                    
+                    if (approvalResult === false) { // Denied
+                        return {
+                            status: 'error',
+                            error: { code: 'USER_DENIED_EXECUTION', message: 'Execution cancelled by user.' }
+                        };
+                    }
+                    
+                    isPlanApproved = true;
+                    
+                    if (typeof approvalResult === 'string') {
+                        return {
+                            status: 'running',
+                            nextAction: 'continue_with_edited_plan',
+                            editedPlan: approvalResult,
+                            fullText: currentFullText,
+                            planApproved: true,
+                            modelTurnParts: [{ text: currentTurnText }]
+                        };
+                    }
                 }
             }
             if (chunk.functionCalls) functionCallsToProcess.push(...chunk.functionCalls);
@@ -50,6 +65,19 @@ export const processStream = async (params: StreamProcessorParams): Promise<Stre
         const modelTurnParts: Part[] = [];
         if (currentTurnText) modelTurnParts.push({ text: currentTurnText });
 
+        // FIX: If the plan was just approved in this turn (isPlanApproved is now true, but the initial planApproved was false)
+        // and the model didn't immediately follow up with tool calls, we must prompt it to continue to the execution phase.
+        if (isPlanApproved && !planApproved && functionCallsToProcess.length === 0) {
+            return {
+                status: 'running',
+                nextAction: 'continue_with_edited_plan', // Re-use this pathway to continue the loop.
+                editedPlan: currentTurnText, // The "plan" is the full text received this turn.
+                fullText: currentFullText,
+                planApproved: true,
+                modelTurnParts: [{ text: currentTurnText }]
+            };
+        }
+        
         if (functionCallsToProcess.length > 0) {
             functionCallsToProcess.forEach(fc => modelTurnParts.push({ functionCall: fc }));
             return {

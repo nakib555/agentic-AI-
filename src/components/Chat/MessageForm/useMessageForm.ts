@@ -6,7 +6,6 @@
 // This file contains the logic extracted from MessageForm.tsx.
 // It uses a custom hook to manage state, side effects, and event handlers.
 
-// FIX: Add 'React' to the import from 'react' to resolve namespace errors for React types like ForwardedRef, FormEvent, etc.
 import React, { useState, useRef, useEffect, useCallback, useImperativeHandle } from 'react';
 import { useVoiceInput } from '../../../hooks/useVoiceInput';
 import { fileToBase64WithProgress, base64ToFile } from '../../../utils/fileUtils';
@@ -22,7 +21,6 @@ export const useMessageForm = (
   const [inputValue, setInputValue] = useState('');
   const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>([]);
   const [isEnhancing, setIsEnhancing] = useState(false);
-  const [isThinkingModeEnabled, setIsThinkingModeEnabled] = useState(false);
   const [proactiveSuggestions, setProactiveSuggestions] = useState<string[]>([]);
   const [isUploadMenuOpen, setIsUploadMenuOpen] = useState(false);
   const inputRef = useRef<HTMLDivElement>(null);
@@ -189,7 +187,7 @@ export const useMessageForm = (
 
     const filesToSend: File[] = processedFiles.filter(f => f.base64Data && !f.error).map(f => base64ToFile(f.base64Data!, f.file.name, f.file.type));
 
-    onSubmit(inputValue, filesToSend, { isThinkingModeEnabled });
+    onSubmit(inputValue, filesToSend);
     setInputValue('');
     setProcessedFiles([]);
     localStorage.removeItem('messageDraft_text');
@@ -249,8 +247,7 @@ export const useMessageForm = (
   };
 
   return {
-    inputValue, setInputValue, processedFiles, isEnhancing, isThinkingModeEnabled,
-    setIsThinkingModeEnabled, proactiveSuggestions, isUploadMenuOpen, setIsUploadMenuOpen,
+    inputValue, setInputValue, processedFiles, isEnhancing, proactiveSuggestions, isUploadMenuOpen, setIsUploadMenuOpen,
     inputRef, fileInputRef, folderInputRef, attachButtonRef, uploadMenuRef, isExpanded,
     isRecording, stopRecording, startRecording, isSupported, processAndSetFiles,
     handleFileChange, handleRemoveFile, handleSubmit, handlePaste, handleEnhancePrompt,

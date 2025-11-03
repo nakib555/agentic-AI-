@@ -10,14 +10,12 @@ import { useMemo, useCallback, useEffect, useRef } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { runAgenticLoop } from '../../services/agenticLoop/index';
 import { type Message, type ChatSession } from '../../types';
-// FIX: Add missing import for `base64ToBlob`.
 import { fileToBase64, base64ToFile, base64ToBlob } from '../../utils/fileUtils';
 import { useChatHistory } from '../useChatHistory';
 import { createAgentCallbacks } from './chat-callbacks';
 import { buildApiHistory } from './history-builder';
 import { createToolExecutor } from './tool-executor';
 import { generateChatTitle, parseApiError } from '../../services/gemini/index';
-// FIX: Replace incorrect `imageStore` import with `fileStore` to resolve module error.
 import { fileStore } from '../../services/fileStore';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -35,7 +33,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
   const { chatHistory, currentChatId, updateChatTitle } = chatHistoryHook;
   
   const abortControllerRef = useRef<AbortController | null>(null);
-  const executionApprovalRef = useRef<{ resolve: (approved: boolean) => void } | null>(null);
+  const executionApprovalRef = useRef<{ resolve: (approved: boolean | string) => void } | null>(null);
 
   useEffect(() => {
     const currentChat = chatHistory.find(c => c.id === currentChatId);
@@ -91,10 +89,10 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     }
   }, []);
 
-  const approveExecution = useCallback(() => {
+  const approveExecution = useCallback((editedPlan: string) => {
     if (executionApprovalRef.current && currentChatId) {
         chatHistoryHook.updateLastMessage(currentChatId, () => ({ executionState: 'approved' }));
-        executionApprovalRef.current.resolve(true);
+        executionApprovalRef.current.resolve(editedPlan);
         executionApprovalRef.current = null;
     }
   }, [currentChatId, chatHistoryHook]);
@@ -111,7 +109,9 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     if (isLoading) cancelGeneration();
     abortControllerRef.current = new AbortController();
 
-    const { isHidden = false, isThinkingModeEnabled = false } = options;
+    const { isHidden = false, isThinkingModeEnabled: optionIsThinkingModeEnabled = false } = options;
+    const hasFiles = files && files.length > 0;
+    const isThinkingModeEnabled = !hasFiles || optionIsThinkingModeEnabled;
     
     let activeChatId = currentChatId;
     if (!activeChatId) {
@@ -171,7 +171,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
             throw new Error("Image editing failed: The model did not return an image.");
         }
         
-        // FIX: Use fileStore to save the image and generate a path, then pass `fileKey` to the component.
         const imageBlob = base64ToBlob(editedImageBase64, editedImageMimeType);
         const imagePath = `/main/output/edited-image-${generateId()}.png`;
         await fileStore.saveFile(imagePath, imageBlob);

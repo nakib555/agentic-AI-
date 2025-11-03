@@ -30,7 +30,7 @@ export const createAgentCallbacks = (
     historyState: ChatHistoryState,
     abortState: AbortState,
     isThinkingModeEnabled: boolean,
-    executionApprovalRef: React.MutableRefObject<{ resolve: (approved: boolean) => void } | null>
+    executionApprovalRef: React.MutableRefObject<{ resolve: (approved: boolean | string) => void } | null>
 ) => {
     const { chatHistory, updateLastMessage, completeChatLoading } = historyState;
     const { abortControllerRef } = abortState;
@@ -60,7 +60,7 @@ export const createAgentCallbacks = (
                 };
             });
         },
-        onPlanReady: (plan: ParsedWorkflow): Promise<boolean> => {
+        onPlanReady: (plan: ParsedWorkflow): Promise<boolean | string> => {
             if (!isThinkingModeEnabled) {
                 return Promise.resolve(true);
             }

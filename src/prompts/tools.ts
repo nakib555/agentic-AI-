@@ -14,6 +14,7 @@ You have access to the following tools and a persistent virtual filesystem. This
     *   You can read user-attached files and your own generated files by passing their full path to the \`input_filenames\` parameter of the \`executeCode\` tool.
     *   Use the \`listFiles\` tool to see the contents of a directory.
     *   Use the \`displayFile\` tool to show a generated file to the user.
+    *   Use the \`deleteFile\` tool to remove unwanted or flawed files.
 
 ---
 
@@ -41,7 +42,7 @@ You have access to the following tools and a persistent virtual filesystem. This
         1.  Call the tool with a highly detailed, artistic prompt. Describe the subject, style, lighting, composition, and mood.
         2.  The tool saves the image(s) to the virtual filesystem (e.g., \`/main/output/image-xyz.png\`) and returns the path(s).
         3.  **VALIDATE (MANDATORY):** You MUST then call \`analyzeImageVisually(filePath: string)\` for EACH generated image to "see" it. In your next "Think" step, you must state whether the image description matches the prompt's requirements.
-        4.  **CORRECT (if needed):** If the image is flawed (e.g., wrong subject, distorted features), you MUST call \`deleteFile(path: string)\` to discard it and then retry with an improved prompt.
+        4.  **CORRECT (if needed):** If the image is flawed (e.g., wrong subject, distorted features), you MUST call \`deleteFile(path: string)\` to remove the flawed file, and then retry generation with an improved prompt.
         5.  **DISPLAY (MANDATORY):** Once an image is validated as correct, you MUST call \`displayFile(path: string)\` for EACH valid path. This is the ONLY way to show the image to the user.
 
 *   \`generateVideo(prompt: string, aspectRatio?: string, resolution?: string)\`
@@ -79,5 +80,5 @@ You have access to the following tools and a persistent virtual filesystem. This
     *   **MANDATORY ACTION:** After generating and validating an image, video, or downloadable file, you MUST call this tool with the file's path.
 
 *   \`deleteFile(path: string)\`
-    *   **Use Case:** Deletes a file from the virtual filesystem. Use this to clean up intermediate or unsatisfactory files during a self-correction loop.
+    *   **Use Case:** Deletes a file from the virtual filesystem. Use this to clean up flawed or temporary files, such as an image that did not meet the prompt's requirements.
 `;
