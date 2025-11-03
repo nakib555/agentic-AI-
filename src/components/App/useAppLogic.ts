@@ -10,7 +10,6 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import type { Model } from '../../services/modelService';
 import type { ChatSession } from '../../types';
 import { getAvailableModels } from '../../services/modelService';
-// FIX: Update import path for the useChat hook to point to the correct barrel file, as the original hook file was refactored and is now empty.
 import { useChat } from '../../hooks/useChat/index';
 import { useTheme } from '../../hooks/useTheme';
 import { useSidebar } from '../../hooks/useSidebar';
@@ -186,9 +185,7 @@ export const useAppLogic = () => {
     
     const newTemperature = sourceOfTruth?.temperature ?? parseFloat(localStorage.getItem('agentic-temperature') || `${DEFAULT_TEMPERATURE}`);
     const newMaxTokens = sourceOfTruth?.maxOutputTokens ?? parseInt(localStorage.getItem('agentic-maxTokens') || `${DEFAULT_MAX_TOKENS}`, 10);
-    // FIX: Add parentheses to clarify operator precedence between '??' and '||'.
     const newImageModel = (sourceOfTruth?.imageModel ?? localStorage.getItem('agentic-imageModel')) || DEFAULT_IMAGE_MODEL;
-    // FIX: Add parentheses to clarify operator precedence between '??' and '||'.
     const newVideoModel = (sourceOfTruth?.videoModel ?? localStorage.getItem('agentic-videoModel')) || DEFAULT_VIDEO_MODEL;
     
     if (newTemperature !== temperature) setTemperature(newTemperature);

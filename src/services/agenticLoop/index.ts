@@ -75,7 +75,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         } else if (result.status === 'aborted') {
             hasCompleted = true; // onCancel will be handled by the final check
         } else if (result.status === 'running') {
-            // FIX: Refactor logic to cleanly handle edited plans by replacing the model's turn and prompting it to continue.
             if (result.nextAction === 'continue_with_edited_plan') {
                 fullModelResponseText = result.editedPlan; // Update the full text to reflect the user's edits.
                 planApproved = true; // Mark plan as approved for subsequent turns.

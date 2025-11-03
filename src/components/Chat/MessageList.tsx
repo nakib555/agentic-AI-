@@ -23,7 +23,6 @@ type MessageListProps = {
   currentChatId: string | null;
   onShowThinkingProcess: (messageId: string) => void;
   onScrolledUpChange: (isScrolledUp: boolean) => void;
-  // FIX: Update prop type to accept the edited plan string.
   approveExecution: (editedPlan: string) => void;
   denyExecution: () => void;
   messageFormRef: React.RefObject<MessageFormHandle>;

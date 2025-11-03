@@ -6,7 +6,6 @@
 import React from 'react';
 import { Bubble } from './Bubble';
 import { StyledLink } from './StyledLink';
-import { StyledMark } from './StyledMark';
 
 // Custom Blockquote component that acts as a router for Callouts and Bubbles
 const BlockquoteRouter = (props: any) => {
@@ -77,7 +76,6 @@ export const MarkdownComponents = {
     },
     blockquote: BlockquoteRouter,
     a: StyledLink,
-    mark: StyledMark,
     table: (props: any) => React.createElement('div', { className: "my-4 overflow-x-auto" }, React.createElement('div', { className: "inline-block min-w-full" }, React.createElement('div', { className: "rounded-lg border border-slate-200 dark:border-slate-200/10" }, React.createElement('table', { className: "text-sm", ...props })))),
     thead: (props: any) => React.createElement('thead', { className: "bg-slate-100 dark:bg-black/20", ...props }),
     tr: (props: any) => React.createElement('tr', { className: "border-b border-slate-200 dark:border-slate-200/10 last:border-b-0", ...props }),
@@ -93,19 +91,19 @@ export const MarkdownComponents = {
 // A more compact set of components for rendering markdown within workflow nodes.
 export const WorkflowMarkdownComponents = {
     ...MarkdownComponents,
-    h1: (props: any) => React.createElement('h1', { className: "text-lg font-semibold mb-2 text-slate-100", ...props }),
-    h2: (props: any) => React.createElement('h2', { className: "text-sm font-bold my-3 text-slate-100", ...props }),
-    h3: (props: any) => React.createElement('h3', { className: "text-sm font-semibold mb-1 text-slate-200", ...props }),
-    h4: (props: any) => React.createElement('h4', { className: "text-sm font-semibold my-1 text-slate-300", ...props }),
-    p: (props: any) => React.createElement('p', { className: "text-sm leading-relaxed text-slate-300 mb-2", ...props }),
-    ul: (props: any) => React.createElement('ul', { className: "text-sm list-disc pl-5 mb-2 space-y-1.5 text-slate-300", ...props }),
-    ol: (props: any) => React.createElement('ol', { className: "text-sm list-decimal pl-5 mb-2 space-y-1.5 text-slate-300", ...props }),
+    h1: (props: any) => React.createElement('h1', { className: "text-lg font-semibold mb-2 text-slate-800 dark:text-slate-100", ...props }),
+    h2: (props: any) => React.createElement('h2', { className: "text-sm font-bold my-3 text-slate-800 dark:text-slate-100", ...props }),
+    h3: (props: any) => React.createElement('h3', { className: "text-sm font-semibold mb-1 text-slate-700 dark:text-slate-200", ...props }),
+    h4: (props: any) => React.createElement('h4', { className: "text-sm font-semibold my-1 text-slate-600 dark:text-slate-300", ...props }),
+    p: (props: any) => React.createElement('p', { className: "text-sm leading-relaxed text-slate-700 dark:text-slate-300 mb-2", ...props }),
+    ul: (props: any) => React.createElement('ul', { className: "text-sm list-disc pl-5 mb-2 space-y-1.5 text-slate-700 dark:text-slate-300", ...props }),
+    ol: (props: any) => React.createElement('ol', { className: "text-sm list-decimal pl-5 mb-2 space-y-1.5 text-slate-700 dark:text-slate-300", ...props }),
     li: (props: any) => {
         if (isLiEmpty(props)) return null;
         return React.createElement('li', { className: "pl-1", ...props });
     },
-    blockquote: (props: any) => React.createElement('blockquote', { className: "custom-blockquote custom-blockquote-workflow my-2 text-slate-300", ...props }),
-    table: (props: any) => React.createElement('div', { className: "overflow-x-auto" }, React.createElement('table', { className: "table-auto w-full my-2 border-collapse border border-slate-600", ...props })),
-    th: (props: any) => React.createElement('th', { className: "border border-slate-600 px-2 py-1 text-slate-200", ...props }),
-    td: (props: any) => React.createElement('td', { className: "border border-slate-600 px-2 py-1 text-slate-300", ...props }),
+    blockquote: (props: any) => React.createElement('blockquote', { className: "custom-blockquote custom-blockquote-workflow my-2 text-slate-700 dark:text-slate-300", ...props }),
+    table: (props: any) => React.createElement('div', { className: "overflow-x-auto" }, React.createElement('table', { className: "table-auto w-full my-2 border-collapse border border-slate-300 dark:border-slate-600", ...props })),
+    th: (props: any) => React.createElement('th', { className: "border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-700 dark:text-slate-200", ...props }),
+    td: (props: any) => React.createElement('td', { className: "border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-600 dark:text-slate-300", ...props }),
 };

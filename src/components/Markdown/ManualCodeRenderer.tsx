@@ -20,6 +20,8 @@ type ManualCodeRendererProps = {
   isRunDisabled?: boolean;
 };
 
+const supportedColors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+
 export const ManualCodeRenderer: React.FC<ManualCodeRendererProps> = ({ text, components, isStreaming, onRunCode, isRunDisabled }) => {
   // Split the text by the code block delimiter to handle streaming correctly.
   const parts = text.split('```');
@@ -30,6 +32,21 @@ export const ManualCodeRenderer: React.FC<ManualCodeRendererProps> = ({ text, co
         // Even-indexed parts (0, 2, 4...) are regular markdown text.
         if (index % 2 === 0) {
           if (part === '') return null; // Avoid rendering empty markdown sections.
+          
+          const processedPart = part.replace(/==(.*?)==/gs, (match, content) => {
+            const colorMatch = content.match(/^\[([a-zA-Z]+)\]/);
+            
+            if (colorMatch && colorMatch[1]) {
+                const colorName = colorMatch[1].toLowerCase();
+                if (supportedColors.includes(colorName)) {
+                    const textContent = content.substring(colorMatch[0].length);
+                    return `<mark class="mark-highlight mark-highlight-${colorName}">${textContent}</mark>`;
+                }
+            }
+            // Default behavior for standard ==highlight== or unsupported colors
+            return `<mark class="mark-highlight mark-highlight-default">${content}</mark>`;
+          });
+
           return (
             <ReactMarkdown
               key={index}
@@ -41,7 +58,7 @@ export const ManualCodeRenderer: React.FC<ManualCodeRendererProps> = ({ text, co
                 code: ({ children }) => <InlineCode children={children ?? ''} />,
               }}
             >
-              {part}
+              {processedPart}
             </ReactMarkdown>
           );
         }

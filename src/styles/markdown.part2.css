@@ -32,7 +32,7 @@
   padding: 1em;
   margin: 1em 0;
   border-radius: 0.5rem;
-  background-color: #F9FAFB; /* gray-50 */
+  background-color: #F9FAFB; /* gray-5 */
   border: 1px solid #E5E7EB; /* gray-200 */
 }
 .dark .katex-display {
@@ -59,41 +59,39 @@
 /* Highlight / Mark Tag Styling */
 /* This now supports colored highlights via ==[color]text== syntax */
 .mark-highlight {
-  padding: 0.1em 0.3em;
-  margin: 0 0.1em;
-  border-radius: 0.25rem;
-  font-weight: bold; /* User requested bold */
+  /* background is removed, only text color and font weight are applied */
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  font-weight: bold;
 }
 
 .mark-highlight-default {
-  background-color: #fef9c3; /* yellow-100 */
-  color: #854d0e; /* yellow-800 */
+  color: #9333ea; /* purple-600 */
 }
 
 .dark .mark-highlight-default {
-  background-color: #422006; /* yellow-950 */
-  color: #fef08a; /* yellow-200 */
+  color: #c084fc; /* purple-400 */
 }
 
 /* Color variations */
-.mark-highlight-red { background-color: #fee2e2; color: #991b1b; } /* red-100, red-800 */
-.dark .mark-highlight-red { background-color: #450a0a; color: #fecaca; } /* red-950, red-200 */
+.mark-highlight-red { color: #dc2626; } /* red-600 */
+.dark .mark-highlight-red { color: #f87171; } /* red-400 */
 
-.mark-highlight-blue { background-color: #dbeafe; color: #1e40af; } /* blue-100, blue-800 */
-.dark .mark-highlight-blue { background-color: #1e3a8a; color: #bfdbfe; } /* blue-900, blue-200 */
+.mark-highlight-blue { color: #2563eb; } /* blue-600 */
+.dark .mark-highlight-blue { color: #60a5fa; } /* blue-400 */
 
-.mark-highlight-green { background-color: #dcfce7; color: #166534; } /* green-100, green-800 */
-.dark .mark-highlight-green { background-color: #14532d; color: #bbf7d0; } /* green-900, green-200 */
+.mark-highlight-green { color: #16a34a; } /* green-600 */
+.dark .mark-highlight-green { color: #4ade80; } /* green-400 */
 
-/* Yellow is now the same as default but let's keep it explicit */
-.mark-highlight-yellow { background-color: #fef9c3; color: #854d0e; }
-.dark .mark-highlight-yellow { background-color: #422006; color: #fef08a; }
+.mark-highlight-yellow { color: #ca8a04; } /* yellow-600 */
+.dark .mark-highlight-yellow { color: #facc15; } /* yellow-400 */
 
-.mark-highlight-purple { background-color: #f3e8ff; color: #6b21a8; } /* purple-100, purple-800 */
-.dark .mark-highlight-purple { background-color: #581c87; color: #e9d5ff; } /* purple-900, purple-200 */
+.mark-highlight-purple { color: #9333ea; } /* purple-600 */
+.dark .mark-highlight-purple { color: #c084fc; } /* purple-400 */
 
-.mark-highlight-orange { background-color: #ffedd5; color: #9a3412; } /* orange-100, orange-800 */
-.dark .mark-highlight-orange { background-color: #7c2d12; color: #fed7aa; } /* orange-900, orange-200 */
+.mark-highlight-orange { color: #ea580c; } /* orange-600 */
+.dark .mark-highlight-orange { color: #fb923c; } /* orange-400 */
 
 .markdown-content-user mark {
   background-color: rgba(255, 255, 255, 0.3);

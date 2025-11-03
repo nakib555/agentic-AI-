@@ -65,8 +65,6 @@ export const processStream = async (params: StreamProcessorParams): Promise<Stre
         const modelTurnParts: Part[] = [];
         if (currentTurnText) modelTurnParts.push({ text: currentTurnText });
 
-        // FIX: If the plan was just approved in this turn (isPlanApproved is now true, but the initial planApproved was false)
-        // and the model didn't immediately follow up with tool calls, we must prompt it to continue to the execution phase.
         if (isPlanApproved && !planApproved && functionCallsToProcess.length === 0) {
             return {
                 status: 'running',

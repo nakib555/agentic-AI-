@@ -239,9 +239,10 @@ export const useChatHistory = () => {
     createNewChat,
     addMessagesToChat,
     updateLastMessage,
-    setChatLoadingState,
     updateMessage,
     toggleMessagePin,
+    // FIX: Expose setChatLoadingState to be used by the main chat hook.
+    setChatLoadingState,
     completeChatLoading,
     updateChatTitle,
     updateChatModel,

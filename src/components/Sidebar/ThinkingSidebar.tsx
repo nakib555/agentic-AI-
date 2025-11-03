@@ -5,7 +5,6 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-// FIX: Correct the relative import path for types.
 import type { Message } from '../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { parseMessageText } from '../../utils/messageParser';

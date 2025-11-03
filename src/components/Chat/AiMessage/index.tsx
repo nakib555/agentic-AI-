@@ -7,7 +7,6 @@
 // This is the new view component for AiMessage.
 
 import React, { useCallback } from 'react';
-// FIX: Cast `motion` to `any` to bypass framer-motion typing issues.
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import type { Message } from '../../../types';
@@ -41,7 +40,6 @@ type AiMessageProps = {
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
     onShowThinkingProcess: (messageId: string) => void;
-    // FIX: Update prop type to accept the edited plan string.
     approveExecution: (editedPlan: string) => void;
     denyExecution: () => void;
     messageFormRef: React.RefObject<MessageFormHandle>;

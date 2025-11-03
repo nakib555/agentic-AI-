@@ -17,7 +17,6 @@ export const MessageComponent: React.FC<{
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
     onShowThinkingProcess: (messageId: string) => void;
-    // FIX: Update prop type to accept the edited plan string.
     approveExecution: (editedPlan: string) => void;
     denyExecution: () => void;
     messageFormRef: React.RefObject<MessageFormHandle>;

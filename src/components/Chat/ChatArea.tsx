@@ -20,7 +20,6 @@ type ChatAreaProps = {
   isAutoPlayEnabled: boolean;
   currentChatId: string | null;
   onShowThinkingProcess: (messageId: string) => void;
-  // FIX: Update prop type to accept the edited plan string.
   approveExecution: (editedPlan: string) => void;
   denyExecution: () => void;
   messageListRef: React.RefObject<MessageListHandle>;
