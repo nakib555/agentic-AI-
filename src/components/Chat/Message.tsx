@@ -17,7 +17,6 @@ export const MessageComponent: React.FC<{
     ttsVoice: string; 
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
-    onTogglePin: (chatId: string, messageId: string) => void;
     onShowThinkingProcess: (messageId: string) => void;
     approveExecution: () => void;
     denyExecution: () => void;
@@ -25,7 +24,7 @@ export const MessageComponent: React.FC<{
     onRegenerate: (messageId: string) => void;
 }> = ({ 
     msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
-    onTogglePin, onShowThinkingProcess, approveExecution, denyExecution, messageFormRef,
+    onShowThinkingProcess, approveExecution, denyExecution, messageFormRef,
     onRegenerate
 }) => {
   const messageContent = () => {
@@ -42,7 +41,6 @@ export const MessageComponent: React.FC<{
                 ttsVoice={ttsVoice} 
                 isAutoPlayEnabled={isAutoPlayEnabled} 
                 currentChatId={currentChatId} 
-                onTogglePin={onTogglePin} 
                 onShowThinkingProcess={onShowThinkingProcess}
                 approveExecution={approveExecution}
                 denyExecution={denyExecution}

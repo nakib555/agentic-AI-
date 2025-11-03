@@ -29,7 +29,6 @@ export const useAppLogic = () => {
   const [uiSelectedModel, setUiSelectedModel] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
-  const [isPinnedModalOpen, setIsPinnedModalOpen] = useState(false);
   const [isThinkingSidebarOpen, setIsThinkingSidebarOpen] = useState(false);
   const [thinkingMessageIdForSidebar, setThinkingMessageIdForSidebar] = useState<string | null>(null);
   
@@ -274,11 +273,6 @@ export const useAppLogic = () => {
     setThinkingMessageIdForSidebar(null);
   };
 
-  const handleJumpToMessage = (messageId: string) => {
-    setIsPinnedModalOpen(false);
-    setTimeout(() => messageListRef.current?.scrollToMessage(messageId), 150);
-  };
-
   const activeModel = chat.chatHistory.find(c => c.id === chat.currentChatId)?.model || uiSelectedModel;
   const isChatActive = !!chat.currentChatId;
 
@@ -286,13 +280,13 @@ export const useAppLogic = () => {
     ...chat, ...memory, ...sidebar, theme, setTheme,
     availableModels, modelsLoading, uiSelectedModel, isSettingsOpen,
     setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
-    isPinnedModalOpen, setIsPinnedModalOpen, isThinkingSidebarOpen,
+    isThinkingSidebarOpen,
     thinkingMessageForSidebar, aboutUser, setAboutUser, aboutResponse,
     setAboutResponse, temperature, setTemperature, maxTokens, setMaxTokens,
     imageModel, setImageModel: handleImageModelChange, videoModel, setVideoModel: handleVideoModelChange,
     ttsVoice, setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled,
     handleModelChange, handleExportChat, handleShareChat, handleImportChat,
-    handleShowThinkingProcess, handleCloseThinkingSidebar, handleJumpToMessage,
+    handleShowThinkingProcess, handleCloseThinkingSidebar,
     activeModel, isChatActive, messageListRef, handleToggleSidebar,
     isDesktop,
     appContainerRef,

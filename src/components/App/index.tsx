@@ -62,8 +62,6 @@ export const App = () => {
                 onExportChat={logic.handleExportChat}
                 onShareChat={() => logic.handleShareChat()}
                 isChatActive={logic.isChatActive}
-                messages={logic.messages}
-                onOpenPinnedModal={() => logic.setIsPinnedModalOpen(true)}
                 chatTitle={chatTitle}
              />
              <ChatArea 
@@ -76,7 +74,6 @@ export const App = () => {
                 ttsVoice={logic.ttsVoice}
                 isAutoPlayEnabled={logic.isAutoPlayEnabled}
                 currentChatId={logic.currentChatId}
-                onTogglePin={logic.toggleMessagePin}
                 onShowThinkingProcess={logic.handleShowThinkingProcess}
                 approveExecution={logic.approveExecution}
                 denyExecution={logic.denyExecution}
@@ -103,8 +100,6 @@ export const App = () => {
         setIsSettingsOpen={logic.setIsSettingsOpen}
         isMemoryModalOpen={logic.isMemoryModalOpen}
         setIsMemoryModalOpen={logic.setIsMemoryModalOpen}
-        isPinnedModalOpen={logic.isPinnedModalOpen}
-        setIsPinnedModalOpen={logic.setIsPinnedModalOpen}
         availableModels={logic.availableModels}
         activeModel={logic.activeModel}
         handleModelChange={logic.handleModelChange}
@@ -137,10 +132,6 @@ export const App = () => {
         setTtsVoice={logic.setTtsVoice}
         isAutoPlayEnabled={logic.isAutoPlayEnabled}
         setIsAutoPlayEnabled={logic.setIsAutoPlayEnabled}
-        messages={logic.messages}
-        currentChatId={logic.currentChatId}
-        toggleMessagePin={logic.toggleMessagePin}
-        handleJumpToMessage={logic.handleJumpToMessage}
       />
     </div>
   );

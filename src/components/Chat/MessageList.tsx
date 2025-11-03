@@ -24,7 +24,6 @@ type MessageListProps = {
   ttsVoice: string;
   isAutoPlayEnabled: boolean;
   currentChatId: string | null;
-  onTogglePin: (chatId: string, messageId: string) => void;
   onShowThinkingProcess: (messageId: string) => void;
   onScrolledUpChange: (isScrolledUp: boolean) => void;
   approveExecution: () => void;
@@ -35,7 +34,7 @@ type MessageListProps = {
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
     messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled, currentChatId, 
-    onTogglePin, onShowThinkingProcess, onScrolledUpChange, approveExecution, 
+    onShowThinkingProcess, onScrolledUpChange, approveExecution, 
     denyExecution, messageFormRef, onRegenerate
 }, ref) => {
   const messageListRef = useRef<HTMLDivElement>(null);
@@ -121,7 +120,6 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                   ttsVoice={ttsVoice} 
                   isAutoPlayEnabled={isAutoPlayEnabled}
                   currentChatId={currentChatId}
-                  onTogglePin={onTogglePin}
                   onShowThinkingProcess={onShowThinkingProcess}
                   approveExecution={approveExecution}
                   denyExecution={denyExecution}

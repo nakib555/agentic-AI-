@@ -40,7 +40,6 @@ type AiMessageProps = {
     ttsVoice: string; 
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
-    onTogglePin: (chatId: string, messageId: string) => void;
     onShowThinkingProcess: (messageId: string) => void;
     approveExecution: () => void;
     denyExecution: () => void;
@@ -50,7 +49,7 @@ type AiMessageProps = {
 
 export const AiMessage: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
-          onTogglePin, onShowThinkingProcess, approveExecution, denyExecution, messageFormRef, onRegenerate } = props;
+          onShowThinkingProcess, approveExecution, denyExecution, messageFormRef, onRegenerate } = props;
   const { id, text, error, isPinned, suggestedActions, plan } = msg;
 
   const logic = useAiMessageLogic(msg, isAutoPlayEnabled, ttsVoice, sendMessage, isLoading);

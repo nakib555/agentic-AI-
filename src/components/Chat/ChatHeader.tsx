@@ -18,8 +18,6 @@ type ChatHeaderProps = {
   onExportChat: (format: 'md' | 'json' | 'pdf') => void;
   onShareChat: () => void;
   isChatActive: boolean;
-  messages: Message[];
-  onOpenPinnedModal: () => void;
   isDesktop: boolean;
   chatTitle: string | null;
 };
@@ -67,7 +65,7 @@ const MenuItem: React.FC<{ onClick: () => void; disabled: boolean; children: Rea
     </li>
 );
 
-export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollapsed, onImportChat, onExportChat, onShareChat, isChatActive, messages, onOpenPinnedModal, isDesktop, chatTitle }: ChatHeaderProps) => {
+export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollapsed, onImportChat, onExportChat, onShareChat, isChatActive, isDesktop, chatTitle }: ChatHeaderProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);

@@ -21,7 +21,6 @@ type ChatAreaProps = {
   ttsVoice: string;
   isAutoPlayEnabled: boolean;
   currentChatId: string | null;
-  onTogglePin: (chatId: string, messageId: string) => void;
   onShowThinkingProcess: (messageId: string) => void;
   approveExecution: () => void;
   denyExecution: () => void;
@@ -31,7 +30,7 @@ type ChatAreaProps = {
 
 export const ChatArea = ({ 
     messages, isLoading, sendMessage, modelsLoading, onCancel, 
-    ttsVoice, isAutoPlayEnabled, currentChatId, onTogglePin, 
+    ttsVoice, isAutoPlayEnabled, currentChatId,
     onShowThinkingProcess, approveExecution, denyExecution,
     messageListRef, onRegenerate
 }: ChatAreaProps) => {
@@ -107,7 +106,6 @@ export const ChatArea = ({
           ttsVoice={ttsVoice} 
           isAutoPlayEnabled={isAutoPlayEnabled}
           currentChatId={currentChatId}
-          onTogglePin={onTogglePin}
           onShowThinkingProcess={onShowThinkingProcess}
           onScrolledUpChange={setIsScrolledUp}
           approveExecution={approveExecution}

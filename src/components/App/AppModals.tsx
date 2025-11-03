@@ -18,8 +18,6 @@ type AppModalsProps = {
   setIsSettingsOpen: (isOpen: boolean) => void;
   isMemoryModalOpen: boolean;
   setIsMemoryModalOpen: (isOpen: boolean) => void;
-  isPinnedModalOpen: boolean;
-  setIsPinnedModalOpen: (isOpen: boolean) => void;
   availableModels: Model[];
   activeModel: string;
   handleModelChange: (modelId: string) => void;
@@ -55,24 +53,19 @@ type AppModalsProps = {
   setTtsVoice: (value: string) => void;
   isAutoPlayEnabled: boolean;
   setIsAutoPlayEnabled: (enabled: boolean) => void;
-  messages: Message[];
-  currentChatId: string | null;
-  toggleMessagePin: (chatId: string, messageId: string) => void;
-  handleJumpToMessage: (messageId: string) => void;
 };
 
 export const AppModals: React.FC<AppModalsProps> = (props) => {
   const {
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
-    isPinnedModalOpen, setIsPinnedModalOpen, availableModels, activeModel,
+    availableModels, activeModel,
     handleModelChange, modelsLoading, clearAllChats, aboutUser, setAboutUser,
     aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens,
     setMaxTokens, imageModel, setImageModel, videoModel, setVideoModel,
     defaultTemperature, defaultMaxTokens, isMemoryEnabled,
     setIsMemoryEnabled, memoryContent, clearMemory, isConfirmationOpen,
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
-    setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, messages,
-    currentChatId, toggleMessagePin, handleJumpToMessage, onManageMemory,
+    setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, onManageMemory,
   } = props;
 
   return (
