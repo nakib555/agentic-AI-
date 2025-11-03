@@ -69,7 +69,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
         const result = await processStream({ stream, signal, callbacks, fullModelResponseText, planApproved });
 
-        // FIX: Use a type-safe if/else if chain to correctly discriminate the result union type.
         if (result.status === 'error') {
             if (!signal.aborted) callbacks.onError(result.error);
             hasCompleted = true;

@@ -64,8 +64,6 @@ export const executeDuckDuckGoSearch = async (args: { query: string }): Promise<
     
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
     
-    // FIX: Add robust type guards to safely access nested properties on the 'unknown' chunk object.
-    // This prevents runtime errors and satisfies TypeScript's type checking for the reported errors.
     const sources: { uri: string; title: string }[] = [];
     for (const chunk of groundingChunks) {
       // Safely check if 'chunk' is an object and has a 'web' property.
