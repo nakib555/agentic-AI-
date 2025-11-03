@@ -86,4 +86,4 @@ You have access to the following tools and a persistent virtual filesystem. This
 
 *   \`deleteFile(path: string)\`
     *   **Use Case:** Deletes a file from the virtual filesystem. Use this to clean up flawed or temporary files, such as an image that did not meet the prompt's requirements.
-`)
+`;
