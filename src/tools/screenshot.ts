@@ -25,14 +25,14 @@ export const captureCodeOutputScreenshotDeclaration: FunctionDeclaration = {
 export const executeCaptureCodeOutputScreenshot = async (args: { outputId: string }): Promise<string> => {
   const { outputId } = args;
   if (!outputId) {
-    throw new ToolError('captureCodeOutputScreenshot', 'MISSING_ARGUMENT', 'The outputId parameter is required.');
+    throw new ToolError('captureCodeOutputScreenshot', 'MISSING_ARGUMENT', 'The outputId parameter is required.', undefined, "The AI failed to specify which code output to screenshot. This is an internal issue.");
   }
 
   // The element to capture is the container of the iframe, not the iframe itself.
   const elementToCapture = document.getElementById(outputId);
 
   if (!elementToCapture) {
-    throw new ToolError('captureCodeOutputScreenshot', 'ELEMENT_NOT_FOUND', `Could not find an element with the ID "${outputId}" to capture.`);
+    throw new ToolError('captureCodeOutputScreenshot', 'ELEMENT_NOT_FOUND', `Could not find an element with the ID "${outputId}" to capture.`, undefined, "The AI tried to screenshot a visual output that doesn't exist. This can happen if the code failed to produce a visual. Check the code execution logs.");
   }
 
   try {
@@ -58,6 +58,6 @@ export const executeCaptureCodeOutputScreenshot = async (args: { outputId: strin
   } catch (error) {
     const originalError = error instanceof Error ? error : new Error(String(error));
     console.error(`Screenshot tool failed for ID "${outputId}":`, originalError);
-    throw new ToolError('captureCodeOutputScreenshot', 'CAPTURE_FAILED', originalError.message, originalError);
+    throw new ToolError('captureCodeOutputScreenshot', 'CAPTURE_FAILED', originalError.message, originalError, "The screenshot capture failed. This may be a temporary issue with the rendering engine. Please try again.");
   }
 };

@@ -30,7 +30,7 @@ export const executeListFiles = async (args: { path: string }): Promise<string> 
         return `Files in ${args.path}:\n- ${files.join('\n- ')}`;
     } catch (err) {
         const originalError = err instanceof Error ? err : new Error(String(err));
-        throw new ToolError('listFiles', 'LISTING_FAILED', originalError.message, originalError);
+        throw new ToolError('listFiles', 'LISTING_FAILED', originalError.message, originalError, "Could not list files. The specified path might be incorrect or the virtual file system is unavailable.");
     }
 };
 
@@ -71,7 +71,7 @@ export const executeDisplayFile = async (args: { path: string }): Promise<string
 
     } catch (err) {
         const originalError = err instanceof Error ? err : new Error(String(err));
-        throw new ToolError('displayFile', 'DISPLAY_FAILED', originalError.message, originalError);
+        throw new ToolError('displayFile', 'DISPLAY_FAILED', originalError.message, originalError, "The file could not be displayed. It might have been deleted or the path is incorrect. Try using `listFiles` to see available files.");
     }
 };
 
@@ -99,7 +99,7 @@ export const executeDeleteFile = async (args: { path: string }): Promise<string>
         return `File deleted successfully: ${args.path}`;
     } catch (err) {
         const originalError = err instanceof Error ? err : new Error(String(err));
-        throw new ToolError('deleteFile', 'DELETION_FAILED', originalError.message, originalError);
+        throw new ToolError('deleteFile', 'DELETION_FAILED', originalError.message, originalError, "Could not delete the file. The path may be incorrect or you may not have permission.");
     }
 };
 
@@ -122,7 +122,7 @@ export const executeWriteFile = async (args: { path: string, content: string }):
     const { path, content } = args;
 
     if (!path.startsWith('/main/output/')) {
-        throw new ToolError('writeFile', 'INVALID_PATH', 'File path is not valid. Files can only be saved within the "/main/output/" directory.');
+        throw new ToolError('writeFile', 'INVALID_PATH', 'File path is not valid. Files can only be saved within the "/main/output/" directory.', undefined, 'Files can only be written to the "/main/output/" directory. Please correct the path.');
     }
 
     try {
@@ -131,6 +131,6 @@ export const executeWriteFile = async (args: { path: string, content: string }):
         return `File saved successfully: ${path}`;
     } catch (err) {
         const originalError = err instanceof Error ? err : new Error(String(err));
-        throw new ToolError('writeFile', 'WRITE_FAILED', originalError.message, originalError);
+        throw new ToolError('writeFile', 'WRITE_FAILED', originalError.message, originalError, "Could not write to the file. The path may be invalid or the storage might be full.");
     }
 };

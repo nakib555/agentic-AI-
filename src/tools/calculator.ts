@@ -42,6 +42,6 @@ export const executeCalculator = (args: { expression: string }): string => {
      // The error here could be from the regex or the Function execution.
      // We wrap it in a ToolError to provide structured feedback to the agentic loop.
     const originalError = error instanceof Error ? error : new Error(String(error));
-    throw new ToolError('calculator', 'CALCULATION_FAILED', originalError.message, originalError);
+    throw new ToolError('calculator', 'CALCULATION_FAILED', originalError.message, originalError, "The calculation failed. Please ensure the expression is mathematically correct and only contains numbers, parentheses, and basic operators (+, -, *, /).");
   }
 };

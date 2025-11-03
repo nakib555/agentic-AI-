@@ -21,11 +21,11 @@ export const getErrorMessageSuggestion = (code?: string): string | null => {
             return 'A tool required by the AI failed to execute correctly. See details for more information.';
         case 'TOOL_NOT_FOUND':
             return 'The AI tried to use a tool that does not exist. This may be a model hallucination issue.';
-        case 'GEOLOCATION_PERMISSION_DENIED':
+        case 'TOOL_GEOLOCATION_PERMISSION_DENIED':
             return 'To fix this, please allow location access in your browser settings and try your request again.';
-        case 'GEOLOCATION_UNAVAILABLE':
+        case 'TOOL_GEOLOCATION_UNAVAILABLE':
             return 'Your location could not be determined. Please ensure you have a stable network connection and that location services are enabled on your device.';
-        case 'GEOLOCATION_TIMEOUT':
+        case 'TOOL_GEOLOCATION_TIMEOUT':
             return 'The request for your location took too long. Please check your network connection and try again.';
         case 'NETWORK_ERROR':
             return 'A network problem occurred. Please check your internet connection and try again.';
@@ -43,7 +43,7 @@ type ErrorDisplayProps = {
 
 export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error }) => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-    const suggestion = getErrorMessageSuggestion(error.code);
+    const suggestion = error.suggestion || getErrorMessageSuggestion(error.code);
 
     return (
       <motion.div 

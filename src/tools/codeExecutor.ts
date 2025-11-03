@@ -66,7 +66,7 @@ export const executeCode = async (args: { language: string; code: string; packag
             }
         }
         if (notFoundFiles.length > 0) {
-            throw new ToolError('executeCode', 'FILE_NOT_FOUND', `The following input files were not found in the virtual filesystem: ${notFoundFiles.join(', ')}`);
+            throw new ToolError('executeCode', 'FILE_NOT_FOUND', `The following input files were not found in the virtual filesystem: ${notFoundFiles.join(', ')}`, undefined, "One or more files needed for this code could not be found. Try using the `listFiles` tool to see available files.");
         }
         return await executePythonWithPyodide(code, packages, input_files_data);
     }
@@ -79,6 +79,6 @@ export const executeCode = async (args: { language: string; code: string; packag
   } catch (error) {
     const originalError = error instanceof Error ? error : new Error(String(error));
     if (error instanceof ToolError) throw error; // Re-throw tool errors
-    throw new ToolError('executeCode', 'EXECUTION_FAILED', originalError.message, originalError);
+    throw new ToolError('executeCode', 'EXECUTION_FAILED', originalError.message, originalError, "An error occurred while executing the code. Check the 'Details' for technical information and try correcting the code.");
   }
 };

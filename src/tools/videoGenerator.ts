@@ -103,7 +103,7 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
 
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
     if (!downloadLink) {
-        throw new ToolError('generateVideo', 'NO_DOWNLOAD_LINK', 'Video generation succeeded but no download link was provided.');
+        throw new ToolError('generateVideo', 'NO_DOWNLOAD_LINK', 'Video generation succeeded but no download link was provided.', undefined, "The video was generated, but the download link is missing. This might be a temporary API issue.");
     }
     
     // The link requires the API key to be appended for access.
@@ -112,7 +112,7 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
     // Fetch the video data and store it as a blob
     const response = await fetch(fetchUrl);
     if (!response.ok) {
-        throw new ToolError('generateVideo', 'DOWNLOAD_FAILED', `Failed to download video: ${response.statusText}`);
+        throw new ToolError('generateVideo', 'DOWNLOAD_FAILED', `Failed to download video: ${response.statusText}`, undefined, "The generated video could not be downloaded. Please check your network connection and try again.");
     }
     const videoBlob = await response.blob();
     const filename = `/main/output/video-${generateId()}.mp4`;
@@ -144,6 +144,6 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
     }
 
     if (err instanceof ToolError) throw err;
-    throw new ToolError('generateVideo', 'GENERATION_FAILED', errorMessage, err as Error);
+    throw new ToolError('generateVideo', 'GENERATION_FAILED', errorMessage, err as Error, "The video generation service failed. This can happen with complex prompts or during high traffic. Please try again in a moment.");
   }
 };

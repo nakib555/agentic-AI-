@@ -29,7 +29,7 @@ export const executeDisplayMap = (args: { latitude: number; longitude: number; z
   const { latitude, longitude, zoom = 13, markerText } = args;
 
   if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-      throw new ToolError('displayMap', 'INVALID_COORDINATES', 'Latitude and longitude must be numbers.');
+      throw new ToolError('displayMap', 'INVALID_COORDINATES', 'Latitude and longitude must be numbers.', undefined, "The AI provided invalid coordinates (latitude/longitude). This can happen if it fails to find a location. Try rephrasing your request to be more specific.");
   }
 
   const mapData = {
@@ -58,7 +58,7 @@ export const analyzeMapVisuallyDeclaration: FunctionDeclaration = {
 export const executeAnalyzeMapVisually = async (args: { latitude: number, longitude: number }): Promise<string> => {
   const { latitude, longitude } = args;
   if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-    throw new ToolError('analyzeMapVisually', 'INVALID_COORDINATES', 'Latitude and longitude must be numbers.');
+    throw new ToolError('analyzeMapVisually', 'INVALID_COORDINATES', 'Latitude and longitude must be numbers.', undefined, "The AI provided invalid coordinates (latitude/longitude). This can happen if it fails to find a location. Try rephrasing your request to be more specific.");
   }
 
   try {
@@ -81,7 +81,7 @@ export const executeAnalyzeMapVisually = async (args: { latitude: number, longit
   } catch (err) {
     console.error("Visual map analysis tool failed:", err);
     const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during map analysis.";
-    throw new ToolError('analyzeMapVisually', 'ANALYSIS_FAILED', errorMessage, err as Error);
+    throw new ToolError('analyzeMapVisually', 'ANALYSIS_FAILED', errorMessage, err as Error, "The visual analysis of the map failed. This might be a temporary network issue. Please try again.");
   }
 };
 
@@ -101,7 +101,7 @@ export const executeAnalyzeImageVisually = async (args: { filePath?: string, ima
   const { filePath, imageBase64 } = args;
 
   if (!filePath && !imageBase64) {
-    throw new ToolError('analyzeImageVisually', 'MISSING_ARGUMENT', 'Either filePath or imageBase64 must be provided.');
+    throw new ToolError('analyzeImageVisually', 'MISSING_ARGUMENT', 'Either filePath or imageBase64 must be provided.', undefined, "The AI made an error and did not provide an image to analyze. This is an internal issue.");
   }
 
   let base64Data: string;
@@ -133,6 +133,6 @@ export const executeAnalyzeImageVisually = async (args: { filePath?: string, ima
   } catch (err) {
     const originalError = err instanceof Error ? err : new Error(String(err));
     console.error("Image analysis tool failed:", originalError);
-    throw new ToolError('analyzeImageVisually', 'ANALYSIS_FAILED', originalError.message, originalError);
+    throw new ToolError('analyzeImageVisually', 'ANALYSIS_FAILED', originalError.message, originalError, "The visual analysis of the image failed. The file may be corrupt or there could be a temporary network issue.");
   }
 };

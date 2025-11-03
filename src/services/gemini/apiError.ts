@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageError } from '../../types';
+import { MessageError, ToolError } from '../../types';
 
 /**
  * Parses a generic Error from the Gemini API into a structured MessageError.
@@ -11,6 +11,15 @@ import type { MessageError } from '../../types';
  * @returns A structured MessageError with user-friendly content.
  */
 export const parseApiError = (error: any): MessageError => {
+    if (error instanceof ToolError) {
+        return {
+            code: error.code,
+            message: `Tool Execution Failed: ${error.toolName}`,
+            details: error.cause ? `${error.originalMessage}\n\nCause:\n${error.cause.stack}` : error.originalMessage,
+            suggestion: error.suggestion,
+        };
+    }
+    
     // Extract message, details, and status for robust classification
     let message = 'An unexpected API error occurred';
     let details = '';

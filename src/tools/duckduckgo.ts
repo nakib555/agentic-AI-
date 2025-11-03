@@ -109,6 +109,6 @@ export const executeDuckDuckGoSearch = async (args: { query: string }): Promise<
   } catch (err) {
     console.error("DuckDuckGo Search tool failed:", err);
     const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during the search.";
-    throw new ToolError('duckduckgoSearch', 'SEARCH_FAILED', errorMessage, err as Error);
+    throw new ToolError('duckduckgoSearch', 'SEARCH_FAILED', errorMessage, err as Error, "The web search failed, which may be due to a network issue. Please check your internet connection and try again.");
   }
 };

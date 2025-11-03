@@ -56,7 +56,7 @@ export const executeImageGenerator = async (args: { prompt: string, numberOfImag
         });
         
         if (!response.candidates || response.candidates.length === 0 || !response.candidates[0].content?.parts) {
-             throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any images.');
+             throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any images.', undefined, "The model didn't return an image. This could be due to a safety policy violation or a problem with the prompt. Try rephrasing your prompt to be more descriptive.");
         }
 
         for (const part of response.candidates[0].content.parts) {
@@ -76,14 +76,14 @@ export const executeImageGenerator = async (args: { prompt: string, numberOfImag
         });
 
         if (!response.generatedImages || response.generatedImages.length === 0) {
-            throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any images.');
+            throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any images.', undefined, "The model didn't return an image. This could be due to a safety policy violation or a problem with the prompt. Try rephrasing your prompt to be more descriptive.");
         }
 
         base64ImageBytesArray = response.generatedImages.map(img => img.image.imageBytes);
     }
 
     if (base64ImageBytesArray.length === 0) {
-        throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any image data.');
+        throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any image data.', undefined, "The model didn't return an image. This could be due to a safety policy violation or a problem with the prompt. Try rephrasing your prompt to be more descriptive.");
     }
 
 
@@ -105,6 +105,6 @@ export const executeImageGenerator = async (args: { prompt: string, numberOfImag
     console.error("Image generation tool failed:", err);
     if (err instanceof ToolError) throw err;
     const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during image generation.";
-    throw new ToolError('generateImage', 'GENERATION_FAILED', errorMessage, err as Error);
+    throw new ToolError('generateImage', 'GENERATION_FAILED', errorMessage, err as Error, "The image generation service failed. This might be a temporary issue. Please try again in a moment.");
   }
 };
