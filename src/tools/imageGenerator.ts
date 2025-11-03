@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
+import { FunctionDeclaration, Type, GoogleGenAI, Modality } from "@google/genai";
 import { fileStore } from '../services/fileStore';
 import { ToolError } from '../types';
 import { getText } from '../utils/geminiUtils';
@@ -31,7 +31,7 @@ export const imageGeneratorDeclaration: FunctionDeclaration = {
     type: Type.OBJECT,
     properties: {
       prompt: { type: Type.STRING, description: 'A detailed description of the image to generate.' },
-      numberOfImages: { type: Type.NUMBER, description: 'The number of images to generate. Must be between 1 and 5. Defaults to 1.'}
+      numberOfImages: { type: Type.NUMBER, description: 'The number of images to generate. Must be between 1 and 5. Defaults to 1. This is only supported by Imagen models.'}
     },
     required: ['prompt'],
   },
@@ -39,27 +39,57 @@ export const imageGeneratorDeclaration: FunctionDeclaration = {
 
 export const executeImageGenerator = async (args: { prompt: string, numberOfImages?: number, model: string }): Promise<string> => {
     const { prompt, numberOfImages = 1, model } = args;
-    const count = Math.max(1, Math.min(5, Math.floor(numberOfImages))); // Clamp between 1 and 5
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
     
-    const response = await ai.models.generateImages({
-        model: model,
-        prompt: prompt, // Use the user's prompt directly for Imagen
-        config: {
-          numberOfImages: count,
-          outputMimeType: 'image/png',
-        },
-    });
+    let base64ImageBytesArray: string[] = [];
 
-    if (!response.generatedImages || response.generatedImages.length === 0) {
-        throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any images.');
+    if (model === 'gemini-2.5-flash-image') {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+                parts: [{ text: prompt }],
+            },
+            config: {
+                responseModalities: [Modality.IMAGE],
+            },
+        });
+        
+        if (!response.candidates || response.candidates.length === 0 || !response.candidates[0].content?.parts) {
+             throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any images.');
+        }
+
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                base64ImageBytesArray.push(part.inlineData.data);
+            }
+        }
+    } else { // Assume Imagen model
+        const count = Math.max(1, Math.min(5, Math.floor(numberOfImages))); // Clamp between 1 and 5
+        const response = await ai.models.generateImages({
+            model: model,
+            prompt: prompt,
+            config: {
+              numberOfImages: count,
+              outputMimeType: 'image/png',
+            },
+        });
+
+        if (!response.generatedImages || response.generatedImages.length === 0) {
+            throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any images.');
+        }
+
+        base64ImageBytesArray = response.generatedImages.map(img => img.image.imageBytes);
     }
 
+    if (base64ImageBytesArray.length === 0) {
+        throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any image data.');
+    }
+
+
     const savedFilePaths: string[] = [];
-    for (const generatedImage of response.generatedImages) {
-        const base64ImageBytes = generatedImage.image.imageBytes;
+    for (const base64ImageBytes of base64ImageBytesArray) {
         const imageBlob = base64ToBlob(base64ImageBytes, 'image/png');
         const filename = `/main/output/image-${generateId()}.png`;
         await fileStore.saveFile(filename, imageBlob);
