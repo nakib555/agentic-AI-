@@ -16,7 +16,16 @@ export const generateChatTitle = async (messages: Message[]): Promise<string> =>
     
     // Sanitize message content to prevent prompt injection issues, focusing on the text part.
     const conversationHistory = messages
-        .map(msg => `${msg.role}: ${msg.text.substring(0, 500)}`) // Truncate long messages
+        .map(msg => {
+            let content = '';
+            if (msg.role === 'user') {
+                content = msg.text;
+            } else if (msg.role === 'model' && msg.responses && msg.responses.length > 0) {
+                // Use the text from the currently active response
+                content = msg.responses[msg.activeResponseIndex]?.text || '';
+            }
+            return `${msg.role}: ${content.substring(0, 500)}`;
+        })
         .join('\n');
 
     const prompt = `Based on the following conversation, suggest a short and concise title (5 words maximum). Do not use quotes in the title.
@@ -39,7 +48,7 @@ export const generateChatTitle = async (messages: Message[]): Promise<string> =>
 
             // If the AI returns a generic or empty title, fall back to the first user message.
             if (isGeneric) {
-                return messages.find(m => m.role === 'user')?.text || 'Untitled Chat';
+                return messages.find(m => m.role === 'user')?.text.substring(0, 45) || 'Untitled Chat';
             }
 
             return generatedTitle;
@@ -63,6 +72,6 @@ export const generateChatTitle = async (messages: Message[]): Promise<string> =>
     
     // Fallback if all retries fail or a non-retryable error occurs
     console.warn("Title generation failed, falling back to first user message.");
-    const firstUserMessage = messages.find(m => m.role === 'user')?.text || 'Untitled Chat';
+    const firstUserMessage = messages.find(m => m.role === 'user')?.text.substring(0, 45) || 'Untitled Chat';
     return firstUserMessage;
 };

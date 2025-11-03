@@ -25,19 +25,31 @@ export type Source = {
   title: string;
 };
 
+export type ModelResponse = {
+  text: string;
+  toolCallEvents?: ToolCallEvent[];
+  error?: MessageError;
+  startTime: number;
+  endTime?: number;
+  suggestedActions?: string[];
+  plan?: ParsedWorkflow;
+};
+
 export type Message = {
   id: string;
   role: 'user' | 'model';
-  text: string;
-  isThinking?: boolean;
-  toolCallEvents?: ToolCallEvent[];
-  error?: MessageError;
-  isHidden?: boolean;
+
+  // --- User Message Properties ---
+  text: string; // For user role, this is the primary content.
   attachments?: Attachment[];
-  startTime?: number;
-  endTime?: number;
+  
+  // --- Model Message Properties ---
+  responses?: ModelResponse[]; // An array of all generated responses.
+  activeResponseIndex: number; // The index of the currently visible response.
+
+  // --- Common State Properties ---
+  isThinking?: boolean; // True when a new response is being generated.
+  isHidden?: boolean;
   isPinned?: boolean;
-  suggestedActions?: string[];
-  plan?: ParsedWorkflow;
   executionState?: 'pending_approval' | 'approved' | 'denied';
 };

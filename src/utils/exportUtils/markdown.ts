@@ -3,9 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// PART 2 of 3 from src/utils/exportUtils.ts
-// Contains logic for Markdown export and clipboard.
-
 import type { ChatSession } from '../../types';
 import { parseMessageText } from '../messageParser';
 
@@ -28,8 +25,12 @@ const getChatAsMarkdown = (chat: ChatSession): string => {
             }
             markdownContent += `${message.text}\n\n`;
         } else if (message.role === 'model') {
-            markdownContent += `**AI:**\n`;
-            const { thinkingText, finalAnswerText } = parseMessageText(message.text, false, !!message.error);
+            markdownContent += `**AI (Response ${message.activeResponseIndex + 1} of ${message.responses?.length || 1}):**\n`;
+            
+            const activeResponse = message.responses?.[message.activeResponseIndex];
+            if (!activeResponse) continue;
+
+            const { thinkingText, finalAnswerText } = parseMessageText(activeResponse.text, false, !!activeResponse.error);
 
             if (thinkingText) {
                 markdownContent += `<details>\n<summary>View thought process</summary>\n\n\`\`\`\n${thinkingText.trim()}\n\`\`\`\n</details>\n\n`;
@@ -41,7 +42,7 @@ const getChatAsMarkdown = (chat: ChatSession): string => {
             });
 
             if (answer) markdownContent += `${answer}\n\n`;
-            if (message.error) markdownContent += `**Error:** ${message.error.message}\n\n`;
+            if (activeResponse.error) markdownContent += `**Error:** ${activeResponse.error.message}\n\n`;
         }
     }
     return markdownContent;

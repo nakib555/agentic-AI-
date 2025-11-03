@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import type { ChatSession, Message } from '../types';
+import type { ChatSession, Message, ModelResponse } from '../types';
 import { validModels } from '../services/modelService';
 import { DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from '../components/App/constants';
 
@@ -38,7 +38,6 @@ export const useChatHistory = () => {
             createdAt: chat.createdAt || Date.now()
           };
           
-          // Remove legacy systemPrompt from saved chats during migration
           delete (migratedChat as any).systemPrompt;
 
           if (!migratedChat.model || !validModelIds.has(migratedChat.model)) {
@@ -52,6 +51,34 @@ export const useChatHistory = () => {
           if (!migratedChat.videoModel) {
             migratedChat.videoModel = DEFAULT_VIDEO_MODEL;
           }
+          
+          // Migration for regeneration feature
+          migratedChat.messages = (migratedChat.messages || []).map((msg: any) => {
+            if (msg.role === 'user') {
+              return { ...msg, activeResponseIndex: 0 };
+            }
+            if (msg.role === 'model' && !msg.responses) {
+               return {
+                  id: msg.id,
+                  role: 'model',
+                  responses: [{
+                    text: msg.text,
+                    toolCallEvents: msg.toolCallEvents,
+                    error: msg.error,
+                    startTime: msg.startTime || 0,
+                    endTime: msg.endTime,
+                    suggestedActions: msg.suggestedActions,
+                    plan: msg.plan,
+                  }],
+                  activeResponseIndex: msg.activeResponseIndex ?? 0,
+                  isThinking: msg.isThinking,
+                  isHidden: msg.isHidden,
+                  isPinned: msg.isPinned,
+                  executionState: msg.executionState,
+               };
+            }
+            return msg;
+          });
 
           return migratedChat;
       });
@@ -128,7 +155,6 @@ export const useChatHistory = () => {
         videoModel: importedChat.videoModel || DEFAULT_VIDEO_MODEL,
     };
     
-    // Remove legacy systemPrompt from imported chats
     delete (newChat as any).systemPrompt;
 
     setChatHistory(prev => [newChat, ...prev]);
@@ -157,17 +183,70 @@ export const useChatHistory = () => {
       return { ...s, messages: [...s.messages, ...messages] };
     }));
   }, []);
+
+  const addModelResponse = useCallback((chatId: string, messageId: string, newResponse: ModelResponse) => {
+    setChatHistory(prev => prev.map(chat => {
+      if (chat.id !== chatId) return chat;
+      const messageIndex = chat.messages.findIndex(m => m.id === messageId);
+      if (messageIndex === -1) return chat;
+
+      const updatedMessages = [...chat.messages];
+      const targetMessage = { ...updatedMessages[messageIndex] };
+
+      targetMessage.responses = [...(targetMessage.responses || []), newResponse];
+      targetMessage.activeResponseIndex = targetMessage.responses.length - 1;
+      
+      updatedMessages[messageIndex] = targetMessage;
+      return { ...chat, messages: updatedMessages };
+    }));
+  }, []);
   
-  const updateLastMessage = useCallback((chatId: string, updateFn: (msg: Message) => Partial<Message>) => {
-      setChatHistory(prev => prev.map(s => {
-          if (s.id !== chatId) return s;
-          const lastMsgIndex = s.messages.length - 1;
-          if (lastMsgIndex < 0) return s;
-          const updatedMessages = [...s.messages];
-          const update = updateFn(updatedMessages[lastMsgIndex]);
-          updatedMessages[lastMsgIndex] = { ...updatedMessages[lastMsgIndex], ...update };
-          return { ...s, messages: updatedMessages };
-      }));
+  const updateActiveResponseOnMessage = useCallback((chatId: string, messageId: string, updateFn: (response: ModelResponse) => Partial<ModelResponse>) => {
+    setChatHistory(prev => {
+      return prev.map(chat => {
+        if (chat.id !== chatId) return chat;
+
+        const messageIndex = chat.messages.findIndex(m => m.id === messageId);
+        if (messageIndex === -1 || chat.messages[messageIndex].role !== 'model') {
+          console.warn(`Attempted to update a response on a message that doesn't exist or isn't a model message. ChatID: ${chatId}, MessageID: ${messageId}`);
+          return chat;
+        }
+
+        const updatedMessages = [...chat.messages];
+        const messageToUpdate = { ...updatedMessages[messageIndex] };
+        
+        if (!messageToUpdate.responses) return chat;
+
+        const activeIdx = messageToUpdate.activeResponseIndex;
+        if (activeIdx < 0 || activeIdx >= messageToUpdate.responses.length) return chat;
+
+        const updatedResponses = [...messageToUpdate.responses];
+        const currentResponse = updatedResponses[activeIdx];
+        const update = updateFn(currentResponse);
+        updatedResponses[activeIdx] = { ...currentResponse, ...update };
+        
+        messageToUpdate.responses = updatedResponses;
+        updatedMessages[messageIndex] = messageToUpdate;
+
+        return { ...chat, messages: updatedMessages };
+      });
+    });
+  }, []);
+
+  const setActiveResponseIndex = useCallback((chatId: string, messageId: string, index: number) => {
+    setChatHistory(prev => prev.map(chat => {
+      if (chat.id !== chatId) return chat;
+      const messageIndex = chat.messages.findIndex(m => m.id === messageId);
+      if (messageIndex === -1) return chat;
+      
+      const updatedMessages = [...chat.messages];
+      const currentMessage = updatedMessages[messageIndex];
+      if (index >= 0 && index < (currentMessage.responses?.length || 0)) {
+        updatedMessages[messageIndex] = { ...currentMessage, activeResponseIndex: index };
+      }
+      
+      return { ...chat, messages: updatedMessages };
+    }));
   }, []);
 
   const setChatLoadingState = useCallback((chatId: string, isLoading: boolean) => {
@@ -238,10 +317,11 @@ export const useChatHistory = () => {
     clearAllChats,
     createNewChat,
     addMessagesToChat,
-    updateLastMessage,
+    addModelResponse,
+    updateActiveResponseOnMessage,
+    setActiveResponseIndex,
     updateMessage,
     toggleMessagePin,
-    // FIX: Expose setChatLoadingState to be used by the main chat hook.
     setChatLoadingState,
     completeChatLoading,
     updateChatTitle,

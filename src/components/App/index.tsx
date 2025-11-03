@@ -78,6 +78,7 @@ export const App = () => {
                 approveExecution={logic.approveExecution}
                 denyExecution={logic.denyExecution}
                 onRegenerate={logic.regenerateResponse}
+                onSetActiveResponseIndex={logic.setActiveResponseIndex}
              />
           </div>
         </main>
@@ -90,7 +91,7 @@ export const App = () => {
           width={logic.thinkingSidebarWidth}
           setWidth={logic.handleSetThinkingSidebarWidth}
           isResizing={logic.isThinkingResizing}
-          setIsResizing={logic.setIsThinkingResizing}
+          setIsResizing={logic.setIsResizing}
           onRegenerate={logic.regenerateResponse}
         />
       </div>

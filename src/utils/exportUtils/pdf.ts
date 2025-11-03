@@ -3,9 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// PART 3 of 3 from src/utils/exportUtils.ts
-// Contains logic for PDF export.
-
 import type { ChatSession } from '../../types';
 import { parseMessageText } from '../messageParser';
 
@@ -22,10 +19,19 @@ export const exportChatToPdf = (chat: ChatSession) => {
     for (const message of chat.messages) {
         if (message.isHidden) continue;
         const role = message.role;
-        const { finalAnswerText } = parseMessageText(message.text, false, !!message.error);
-        const textToRender = role === 'user' ? message.text : finalAnswerText;
         
-        messagesHtml += `<div class="message ${role}"><div class="bubble"><div class="author">${role === 'user' ? 'You' : 'AI'}</div>${markdownToHtml(textToRender)}</div></div>`;
+        let textToRender = '';
+        if (role === 'user') {
+            textToRender = message.text;
+        } else {
+            const activeResponse = message.responses?.[message.activeResponseIndex];
+            if (activeResponse) {
+                const { finalAnswerText } = parseMessageText(activeResponse.text, false, !!activeResponse.error);
+                textToRender = finalAnswerText;
+            }
+        }
+        
+        messagesHtml += `<div class="message ${role}"><div class="bubble"><div class="author">${role === 'user' ? 'You' : `AI (V${message.activeResponseIndex + 1})`}</div>${markdownToHtml(textToRender)}</div></div>`;
     }
 
     const htmlContent = `

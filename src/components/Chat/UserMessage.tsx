@@ -19,7 +19,7 @@ const animationProps = {
 
 
 export const UserMessage = ({ msg }: { msg: Message }) => {
-  const { id, text, attachments } = msg;
+  const { text, attachments } = msg;
   
   return (
     <div className="w-full flex justify-end">

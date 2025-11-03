@@ -3,9 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// PART 2 of 4 from src/hooks/useChat.ts
-// Contains logic for building the API-compatible message history.
-
 import type { Part } from "@google/genai";
 import { type Message } from '../../types';
 import { parseMessageText } from '../../utils/messageParser';
@@ -32,7 +29,10 @@ export const buildApiHistory = (messages: Message[]): ApiHistory => {
                 historyForApi.push({ role: 'user', parts });
             }
         } else if (msg.role === 'model') {
-            const { finalAnswerText } = parseMessageText(msg.text, false, !!msg.error);
+            const activeResponse = msg.responses?.[msg.activeResponseIndex];
+            if (!activeResponse) return;
+
+            const { finalAnswerText } = parseMessageText(activeResponse.text, false, !!activeResponse.error);
             const modelParts: Part[] = [];
             const functionResponseParts: Part[] = [];
 
@@ -40,9 +40,12 @@ export const buildApiHistory = (messages: Message[]): ApiHistory => {
                 modelParts.push({ text: finalAnswerText });
             }
 
-            if (msg.toolCallEvents) {
-                msg.toolCallEvents.forEach(event => {
-                    modelParts.push({ functionCall: event.call });
+            if (activeResponse.toolCallEvents) {
+                activeResponse.toolCallEvents.forEach(event => {
+                    // Only push the function call if it hasn't been responded to yet.
+                    if (event.result === undefined) {
+                        modelParts.push({ functionCall: event.call });
+                    }
                     if (event.result !== undefined) {
                         functionResponseParts.push({
                             functionResponse: {

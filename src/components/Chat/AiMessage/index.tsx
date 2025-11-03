@@ -3,9 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// PART 2 of 2 from src/components/Chat/AiMessage.tsx
-// This is the new view component for AiMessage.
-
 import React, { useCallback } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
@@ -44,14 +41,17 @@ type AiMessageProps = {
     denyExecution: () => void;
     messageFormRef: React.RefObject<MessageFormHandle>;
     onRegenerate: (messageId: string) => void;
+    onSetActiveResponseIndex: (messageId: string, index: number) => void;
 };
 
 export const AiMessage: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
-          onShowThinkingProcess, approveExecution, denyExecution, messageFormRef, onRegenerate } = props;
-  const { id, text, error, isPinned, suggestedActions, plan } = msg;
+          onShowThinkingProcess, approveExecution, denyExecution, messageFormRef, onRegenerate,
+          onSetActiveResponseIndex } = props;
+  const { id } = msg;
 
   const logic = useAiMessageLogic(msg, isAutoPlayEnabled, ttsVoice, sendMessage, isLoading);
+  const { activeResponse } = logic;
 
   const renderProgressiveAnswer = useCallback((txt: string, isStreaming: boolean) => {
     const componentRegex = /(\[(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT)\].*?\[\/(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT)\])/s;
@@ -107,8 +107,8 @@ export const AiMessage: React.FC<AiMessageProps> = (props) => {
 
   if (logic.isInitialWait) return <TypingIndicator />;
 
-  if (logic.showApprovalUI && plan) {
-    return <ExecutionApproval plan={plan} onApprove={approveExecution} onDeny={denyExecution} />;
+  if (logic.showApprovalUI && activeResponse?.plan) {
+    return <ExecutionApproval plan={activeResponse.plan} onApprove={approveExecution} onDeny={denyExecution} />;
   }
 
   return (
@@ -128,11 +128,11 @@ export const AiMessage: React.FC<AiMessageProps> = (props) => {
         </button>
       )}
       
-      {(logic.hasFinalAnswer || error || logic.isWaitingForFinalAnswer) && (
+      {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer) && (
         <div className="w-full flex flex-col gap-4">
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
-          {error && <ErrorDisplay error={error} />}
-          {logic.hasFinalAnswer && !error && (
+          {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
+          {logic.hasFinalAnswer && !activeResponse?.error && (
               <div className="markdown-content max-w-none w-full">
                   <TypingWrapper fullText={logic.finalAnswerText} isAnimating={logic.isStreamingFinalAnswer}>
                     {(displayedText) => renderProgressiveAnswer(logic.isStreamingFinalAnswer ? displayedText : logic.finalAnswerText, logic.isStreamingFinalAnswer)}
@@ -142,20 +142,23 @@ export const AiMessage: React.FC<AiMessageProps> = (props) => {
         </div>
       )}
       
-      {logic.thinkingIsComplete && text && !error && (
+      {logic.thinkingIsComplete && logic.hasFinalAnswer && !activeResponse?.error && (
           <MessageToolbar
             messageId={id}
             messageText={logic.finalAnswerText}
-            rawText={text}
+            rawText={activeResponse?.text || ''}
             sources={logic.searchSources}
             ttsState={logic.audioState}
             onTtsClick={logic.playOrStopAudio}
             onRegenerate={() => onRegenerate(id)}
+            responseCount={msg.responses?.length || 0}
+            activeResponseIndex={msg.activeResponseIndex}
+            onResponseChange={(index) => onSetActiveResponseIndex(id, index)}
           />
       )}
 
-      {logic.thinkingIsComplete && suggestedActions && suggestedActions.length > 0 && !error && (
-         <div className="w-full"><SuggestedActions actions={suggestedActions} onActionClick={sendMessage} /></div>
+      {logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
+         <div className="w-full"><SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} /></div>
       )}
     </motion.div>
   );

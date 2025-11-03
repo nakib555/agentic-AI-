@@ -16,7 +16,16 @@ export const generateFollowUpSuggestions = async (conversation: Message[]): Prom
     const conversationTranscript = conversation
         .filter(msg => !msg.isHidden)
         .slice(-6) // Only use the last few turns for relevance
-        .map(msg => `${msg.role}: ${msg.text.substring(0, 300)}`)
+        .map(msg => {
+            let content = '';
+            if (msg.role === 'user') {
+                content = msg.text;
+            } else if (msg.role === 'model' && msg.responses && msg.responses.length > 0) {
+                // Use the text from the currently active response
+                content = msg.responses[msg.activeResponseIndex]?.text || '';
+            }
+            return `${msg.role}: ${content.substring(0, 300)}`;
+        })
         .join('\n');
 
     const prompt = `

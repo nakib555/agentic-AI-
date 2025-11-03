@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TtsButton } from './TtsButton';
 import type { Source } from '../../../types';
 import { SourcesPills } from '../../AI/SourcesPills';
+import { ResponsePaginator } from './ResponsePaginator';
 
 type MessageToolbarProps = {
     messageId: string;
@@ -17,6 +18,9 @@ type MessageToolbarProps = {
     ttsState: 'idle' | 'loading' | 'error' | 'playing';
     onTtsClick: () => void;
     onRegenerate: () => void;
+    responseCount: number;
+    activeResponseIndex: number;
+    onResponseChange: (index: number) => void;
 };
 
 type FeedbackState = 'up' | 'down' | null;
@@ -45,7 +49,8 @@ const IconButton: React.FC<{
 
 
 export const MessageToolbar: React.FC<MessageToolbarProps> = ({
-    messageId, messageText, rawText, sources, ttsState, onTtsClick, onRegenerate
+    messageText, sources, ttsState, onTtsClick, onRegenerate,
+    responseCount, activeResponseIndex, onResponseChange,
 }) => {
     const [isCopied, setIsCopied] = useState(false);
     const [feedback, setFeedback] = useState<FeedbackState>(null);
@@ -91,20 +96,26 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                 <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
 
                 <TtsButton isPlaying={ttsState === 'playing'} isLoading={ttsState === 'loading'} onClick={onTtsClick} />
-
-                <IconButton title="Regenerate response" onClick={onRegenerate}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" fill="currentColor" className="w-5 h-5">
-                        <path d="M 15 3 C 12.031398 3 9.3028202 4.0834384 7.2070312 5.875 A 1.0001 1.0001 0 1 0 8.5058594 7.3945312 C 10.25407 5.9000929 12.516602 5 15 5 C 20.19656 5 24.450989 8.9379267 24.951172 14 L 22 14 L 26 20 L 30 14 L 26.949219 14 C 26.437925 7.8516588 21.277839 3 15 3 z M 4 10 L 0 16 L 3.0507812 16 C 3.562075 22.148341 8.7221607 27 15 27 C 17.968602 27 20.69718 25.916562 22.792969 24.125 A 1.0001 1.0001 0 1 0 21.494141 22.605469 C 19.74593 24.099907 17.483398 25 15 25 C 9.80344 25 5.5490109 21.062074 5.0488281 16 L 8 16 L 4 10 z"></path>
-                    </svg>
-                </IconButton>
-
+                
                 <IconButton title="Share" onClick={handleShare}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M13 4.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM8.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5ZM12.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5Z" /><path d="M15.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /><path d="M4.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /></svg>
                 </IconButton>
             </div>
 
-            <div className="flex-shrink-0">
-                <SourcesPills sources={sources} />
+            <div className="flex items-center gap-4">
+                <ResponsePaginator
+                    count={responseCount}
+                    activeIndex={activeResponseIndex}
+                    onChange={onResponseChange}
+                />
+                <IconButton title="Regenerate response" onClick={onRegenerate}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" fill="currentColor" className="w-5 h-5">
+                        <path d="M 15 3 C 12.031398 3 9.3028202 4.0834384 7.2070312 5.875 A 1.0001 1.0001 0 1 0 8.5058594 7.3945312 C 10.25407 5.9000929 12.516602 5 15 5 C 20.19656 5 24.450989 8.9379267 24.951172 14 L 22 14 L 26 20 L 30 14 L 26.949219 14 C 26.437925 7.8516588 21.277839 3 15 3 z M 4 10 L 0 16 L 3.0507812 16 C 3.562075 22.148341 8.7221607 27 15 27 C 17.968602 27 20.69718 25.916562 22.792969 24.125 A 1.0001 1.0001 0 1 0 21.494141 22.605469 C 19.74593 24.099907 17.483398 25 15 25 C 9.80344 25 5.5490109 21.062074 5.0488281 16 L 8 16 L 4 10 z"></path>
+                    </svg>
+                </IconButton>
+                <div className="flex-shrink-0">
+                    <SourcesPills sources={sources} />
+                </div>
             </div>
         </div>
     );

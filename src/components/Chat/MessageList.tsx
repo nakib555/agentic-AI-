@@ -27,16 +27,22 @@ type MessageListProps = {
   denyExecution: () => void;
   messageFormRef: React.RefObject<MessageFormHandle>;
   onRegenerate: (messageId: string) => void;
+  onSetActiveResponseIndex: (messageId: string, index: number) => void;
 };
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
     messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled, currentChatId, 
     onShowThinkingProcess, onScrolledUpChange, approveExecution, 
-    denyExecution, messageFormRef, onRegenerate
+    denyExecution, messageFormRef, onRegenerate, onSetActiveResponseIndex
 }, ref) => {
   const messageListRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const lastMessageText = messages[messages.length - 1]?.text;
+  
+  // A more robust way to track the last message, accounting for the new data structure.
+  const lastMessage = messages[messages.length - 1];
+  const lastMessageContent = lastMessage?.role === 'model' 
+    ? lastMessage.responses?.[lastMessage.activeResponseIndex]?.text 
+    : lastMessage?.text;
   
   // This state tracks if the user has manually scrolled away from the bottom.
   const [isAutoScrollPaused, setIsAutoScrollPaused] = useState(false);
@@ -73,7 +79,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
     if (!isLoading) {
       setIsAutoScrollPaused(false);
     }
-  }, [messages.length, lastMessageText, isLoading, isAutoScrollPaused]);
+  }, [messages.length, lastMessageContent, isLoading, isAutoScrollPaused]);
 
   /**
    * This handler is attached to the scrollable message list. It determines whether
@@ -122,6 +128,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                   denyExecution={denyExecution}
                   messageFormRef={messageFormRef}
                   onRegenerate={onRegenerate}
+                  onSetActiveResponseIndex={onSetActiveResponseIndex}
               />
             ))}
             {/* The invisible anchor element that we scroll to. */}

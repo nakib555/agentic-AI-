@@ -7,7 +7,7 @@
 // This hook contains the logic for the AiMessage component.
 
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import type { Message, Source } from '../../../types';
+import type { Message, ModelResponse, Source } from '../../../types';
 import { parseMessageText } from '../../../utils/messageParser';
 import { useTts } from '../../../hooks/useTts';
 
@@ -18,20 +18,25 @@ export const useAiMessageLogic = (
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void,
     isLoading: boolean
 ) => {
-    const { text, isThinking, error, startTime, endTime, executionState, plan } = msg;
+    const { isThinking, executionState } = msg;
     const [elapsed, setElapsed] = useState(0);
 
+    const activeResponse = useMemo((): ModelResponse | null => {
+        if (!msg.responses || msg.responses.length === 0) return null;
+        return msg.responses[msg.activeResponseIndex] ?? null;
+    }, [msg.responses, msg.activeResponseIndex]);
+
     const { thinkingText, finalAnswerText } = useMemo(
-        () => parseMessageText(text, !!isThinking, !!error),
-        [text, isThinking, error]
+        () => parseMessageText(activeResponse?.text || '', !!isThinking, !!activeResponse?.error),
+        [activeResponse, isThinking]
     );
 
     const { playOrStopAudio, audioState, isPlaying } = useTts(finalAnswerText, ttsVoice);
 
     const searchSources = useMemo((): Source[] => {
-        if (!msg.toolCallEvents || msg.toolCallEvents.length === 0) return [];
+        if (!activeResponse?.toolCallEvents || activeResponse.toolCallEvents.length === 0) return [];
         const allSources: Source[] = [];
-        const searchEvents = msg.toolCallEvents.filter(e => e.call.name === 'duckduckgoSearch' && e.result);
+        const searchEvents = activeResponse.toolCallEvents.filter(e => e.call.name === 'duckduckgoSearch' && e.result);
 
         for (const event of searchEvents) {
             const sourcesMatch = event.result!.match(/\[SOURCES_PILLS\]([\s\S]*?)\[\/SOURCES_PILLS\]/s);
@@ -45,20 +50,20 @@ export const useAiMessageLogic = (
             }
         }
         return Array.from(new Map(allSources.map(s => [s.uri, s])).values());
-    }, [msg.toolCallEvents]);
+    }, [activeResponse?.toolCallEvents]);
 
-    const thinkingIsComplete = !isThinking || !!error;
+    const thinkingIsComplete = !isThinking || !!activeResponse?.error;
     const hasThinkingProcess = thinkingText && thinkingText.trim() !== '';
     const hasFinalAnswer = finalAnswerText && finalAnswerText.trim() !== '';
-    const duration = startTime && endTime ? (endTime - startTime) / 1000 : null;
+    const duration = activeResponse?.startTime && activeResponse?.endTime ? (activeResponse.endTime - activeResponse.startTime) / 1000 : null;
     const autoPlayTriggered = useRef(false);
 
     useEffect(() => {
-        if (isThinking && startTime) {
-            const intervalId = setInterval(() => setElapsed((Date.now() - startTime) / 1000), 100);
+        if (isThinking && activeResponse?.startTime) {
+            const intervalId = setInterval(() => setElapsed((Date.now() - activeResponse.startTime!) / 1000), 100);
             return () => clearInterval(intervalId);
         }
-    }, [isThinking, startTime]);
+    }, [isThinking, activeResponse?.startTime]);
 
     const displayDuration = thinkingIsComplete && duration !== null ? duration.toFixed(1) : elapsed.toFixed(1);
 
@@ -69,10 +74,10 @@ export const useAiMessageLogic = (
         }
     }, [isAutoPlayEnabled, thinkingIsComplete, hasFinalAnswer, playOrStopAudio]);
 
-    const isInitialWait = !!isThinking && !hasThinkingProcess && !hasFinalAnswer && !error && executionState !== 'pending_approval';
-    const isStreamingFinalAnswer = !!isThinking && hasFinalAnswer && !error;
-    const isWaitingForFinalAnswer = !!isThinking && hasThinkingProcess && !hasFinalAnswer && !error && executionState !== 'pending_approval';
-    const showApprovalUI = executionState === 'pending_approval' && plan;
+    const isInitialWait = !!isThinking && !hasThinkingProcess && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
+    const isStreamingFinalAnswer = !!isThinking && hasFinalAnswer && !activeResponse?.error;
+    const isWaitingForFinalAnswer = !!isThinking && hasThinkingProcess && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
+    const showApprovalUI = executionState === 'pending_approval' && activeResponse?.plan;
 
     const handleRunCode = useCallback((language: string, code: string) => {
         const userPrompt = `Please execute the following ${language} code block:\n\n\`\`\`${language}\n${code}\n\`\`\``;
@@ -80,7 +85,7 @@ export const useAiMessageLogic = (
     }, [sendMessage]);
 
     return {
-        thinkingText, finalAnswerText, playOrStopAudio, audioState, isPlaying, searchSources,
+        activeResponse, thinkingText, finalAnswerText, playOrStopAudio, audioState, isPlaying, searchSources,
         thinkingIsComplete, hasThinkingProcess, hasFinalAnswer, displayDuration, isInitialWait,
         isStreamingFinalAnswer, isWaitingForFinalAnswer, showApprovalUI, handleRunCode,
     };

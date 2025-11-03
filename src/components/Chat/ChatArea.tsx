@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import { MessageList, type MessageListHandle } from './MessageList';
@@ -24,13 +24,14 @@ type ChatAreaProps = {
   denyExecution: () => void;
   messageListRef: React.RefObject<MessageListHandle>;
   onRegenerate: (messageId: string) => void;
+  onSetActiveResponseIndex: (chatId: string, messageId: string, index: number) => void;
 };
 
 export const ChatArea = ({ 
     messages, isLoading, sendMessage, modelsLoading, onCancel, 
     ttsVoice, isAutoPlayEnabled, currentChatId,
     onShowThinkingProcess, approveExecution, denyExecution,
-    messageListRef, onRegenerate
+    messageListRef, onRegenerate, onSetActiveResponseIndex,
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -74,6 +75,12 @@ export const ChatArea = ({
     }
   };
 
+  const handleSetActiveResponseIndex = useCallback((messageId: string, index: number) => {
+    if (currentChatId) {
+      onSetActiveResponseIndex(currentChatId, messageId, index);
+    }
+  }, [currentChatId, onSetActiveResponseIndex]);
+
   return (
     <div 
       className="flex-1 flex flex-col pb-4 min-h-0 relative"
@@ -110,6 +117,7 @@ export const ChatArea = ({
           denyExecution={denyExecution}
           messageFormRef={messageFormRef}
           onRegenerate={onRegenerate}
+          onSetActiveResponseIndex={handleSetActiveResponseIndex}
       />
       <AnimatePresence>
         {isScrolledUp && (

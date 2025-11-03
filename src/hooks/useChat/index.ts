@@ -3,13 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// PART 4 of 4 from src/hooks/useChat.ts
-// The new main hook file, composing the refactored parts.
-
 import { useMemo, useCallback, useEffect, useRef } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { runAgenticLoop } from '../../services/agenticLoop/index';
-import { type Message, type ChatSession } from '../../types';
+import { type Message, type ChatSession, ModelResponse } from '../../types';
 import { fileToBase64, base64ToFile, base64ToBlob } from '../../utils/fileUtils';
 import { useChatHistory } from '../useChatHistory';
 import { createAgentCallbacks } from './chat-callbacks';
@@ -91,19 +88,21 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
   const approveExecution = useCallback((editedPlan: string) => {
     if (executionApprovalRef.current && currentChatId) {
-        chatHistoryHook.updateLastMessage(currentChatId, () => ({ executionState: 'approved' }));
+        const lastMessage = chatHistory.find(c=>c.id === currentChatId)!.messages.slice(-1)[0];
+        chatHistoryHook.updateMessage(currentChatId, lastMessage.id, { executionState: 'approved' });
         executionApprovalRef.current.resolve(editedPlan);
         executionApprovalRef.current = null;
     }
-  }, [currentChatId, chatHistoryHook]);
+  }, [currentChatId, chatHistory, chatHistoryHook]);
   
   const denyExecution = useCallback(() => {
     if (executionApprovalRef.current && currentChatId) {
-        chatHistoryHook.updateLastMessage(currentChatId, () => ({ executionState: 'denied' }));
+        const lastMessage = chatHistory.find(c=>c.id === currentChatId)!.messages.slice(-1)[0];
+        chatHistoryHook.updateMessage(currentChatId, lastMessage.id, { executionState: 'denied' });
         executionApprovalRef.current.resolve(false);
         executionApprovalRef.current = null;
     }
-  }, [currentChatId, chatHistoryHook]);
+  }, [currentChatId, chatHistory, chatHistoryHook]);
 
   const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean, isThinkingModeEnabled?: boolean } = {}) => {
     if (isLoading) cancelGeneration();
@@ -127,7 +126,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         name: file.name, mimeType: file.type, data: await fileToBase64(file),
     }))) : undefined;
     
-    const userMessageObj: Message = { id: generateId(), role: 'user', text: userMessage, isHidden, attachments: attachmentsData };
+    const userMessageObj: Message = { id: generateId(), role: 'user', text: userMessage, isHidden, attachments: attachmentsData, activeResponseIndex: 0 };
     chatHistoryHook.addMessagesToChat(activeChatId, [userMessageObj]);
 
     const isImageEditRequest = 
@@ -138,7 +137,18 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
     // --- Start loading states ---
     chatHistoryHook.setChatLoadingState(activeChatId, true);
-    const modelPlaceholder: Message = { id: generateId(), role: 'model', text: '', isThinking: true, toolCallEvents: [], startTime: Date.now() };
+    const modelPlaceholder: Message = {
+        id: generateId(),
+        role: 'model',
+        text: '', // Kept for potential compatibility, but response text is source of truth.
+        responses: [{
+            text: '',
+            toolCallEvents: [],
+            startTime: Date.now(),
+        }],
+        activeResponseIndex: 0,
+        isThinking: true,
+    };
     chatHistoryHook.addMessagesToChat(activeChatId, [modelPlaceholder]);
 
     // --- Handle Image Edit Request (Special Case) ---
@@ -178,16 +188,19 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         const imageData = { fileKey: imagePath, prompt: userMessage, caption: "Edited image" };
         const imageComponentText = `[IMAGE_COMPONENT]${JSON.stringify(imageData)}[/IMAGE_COMPONENT]`;
         
-        chatHistoryHook.updateLastMessage(activeChatId, () => ({
+        chatHistoryHook.updateActiveResponseOnMessage(activeChatId, modelPlaceholder.id, () => ({
             text: imageComponentText,
-            isThinking: false,
             endTime: Date.now(),
         }));
+        chatHistoryHook.updateMessage(activeChatId, modelPlaceholder.id, { isThinking: false });
+
       } catch (err) {
         const error = parseApiError(err);
-        chatHistoryHook.updateLastMessage(activeChatId, () => ({
-            error: error, isThinking: false, endTime: Date.now(),
+        chatHistoryHook.updateActiveResponseOnMessage(activeChatId, modelPlaceholder.id, () => ({
+            error: error,
+            endTime: Date.now(),
         }));
+        chatHistoryHook.updateMessage(activeChatId, modelPlaceholder.id, { isThinking: false });
       } finally {
         chatHistoryHook.completeChatLoading(activeChatId);
         abortControllerRef.current = null;
@@ -216,7 +229,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         activeChat?.imageModel || settings.imageModel,
         activeChat?.videoModel || settings.videoModel
     );
-    const callbacks = createAgentCallbacks(activeChatId, chatHistoryHook, { abortControllerRef }, isThinkingModeEnabled, executionApprovalRef);
+    const callbacks = createAgentCallbacks(activeChatId, modelPlaceholder.id, chatHistoryHook, { abortControllerRef }, isThinkingModeEnabled, executionApprovalRef);
 
     await runAgenticLoop({
       model: modelForApi, history: historyForApi, toolExecutor, callbacks,
@@ -224,34 +237,55 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     });
   };
 
-  const regenerateResponse = useCallback((aiMessageId: string) => {
+  const regenerateResponse = useCallback(async (aiMessageId: string) => {
     if (!currentChatId) return;
     const chat = chatHistory.find(c => c.id === currentChatId);
     if (!chat) return;
+
     const aiMessageIndex = chat.messages.findIndex(m => m.id === aiMessageId);
     if (aiMessageIndex < 1) return;
 
-    let precedingUserMessage: Message | null = null;
-    for (let i = aiMessageIndex - 1; i >= 0; i--) {
-        if (chat.messages[i].role === 'user' && !chat.messages[i].isHidden) {
-            precedingUserMessage = chat.messages[i];
-            break;
-        }
-    }
+    if (isLoading) cancelGeneration();
+    abortControllerRef.current = new AbortController();
 
-    if (precedingUserMessage) {
-        // Find the AI message to be regenerated and all messages after it.
-        const newMessages = chat.messages.slice(0, aiMessageIndex);
+    // The history for the regeneration call is everything BEFORE the AI message we're regenerating.
+    const historyForApi = buildApiHistory(chat.messages.slice(0, aiMessageIndex));
+    
+    // Start loading states
+    chatHistoryHook.setChatLoadingState(currentChatId, true);
+    chatHistoryHook.updateMessage(currentChatId, aiMessageId, { isThinking: true });
+    
+    // Add a new placeholder response to the existing AI message. This also sets it as the active response.
+    const newResponsePlaceholder: ModelResponse = { text: '', toolCallEvents: [], startTime: Date.now() };
+    chatHistoryHook.addModelResponse(currentChatId, aiMessageId, newResponsePlaceholder);
+
+    const isThinkingModeEnabled = !historyForApi.some(m => m.parts.some(p => 'inlineData' in p));
+
+    const modelForApi = isThinkingModeEnabled ? 'gemini-2.5-pro' : (chat?.model || initialModel);
         
-        // This is a more complex operation, so for now we'll just resubmit the prompt
-        // which will append a new response rather than replacing the old one.
-        const files = precedingUserMessage.attachments?.map(att => 
-            base64ToFile(att.data, att.name, att.mimeType)
-        ) || [];
-        
-        sendMessage(precedingUserMessage.text, files);
-    }
-}, [currentChatId, chatHistory, sendMessage]);
+    const chatSettings = {
+        systemPrompt: settings.systemPrompt,
+        temperature: chat?.temperature ?? settings.temperature,
+        maxOutputTokens: chat?.maxOutputTokens ?? settings.maxOutputTokens,
+        thinkingBudget: isThinkingModeEnabled ? 32768 : undefined,
+        memoryContent: memoryContent,
+    };
+    
+    const toolExecutor = createToolExecutor(
+        chatHistory, 
+        currentChatId,
+        chat?.imageModel || settings.imageModel,
+        chat?.videoModel || settings.videoModel
+    );
+    
+    const callbacks = createAgentCallbacks(currentChatId, aiMessageId, chatHistoryHook, { abortControllerRef }, isThinkingModeEnabled, executionApprovalRef);
+
+    await runAgenticLoop({
+      model: modelForApi, history: historyForApi, toolExecutor, callbacks,
+      signal: abortControllerRef.current.signal, settings: chatSettings,
+    });
+
+  }, [currentChatId, chatHistory, isLoading, cancelGeneration, chatHistoryHook, initialModel, settings, memoryContent]);
   
   return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse };
 };

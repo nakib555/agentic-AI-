@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { Model } from '../../services/modelService';
-import type { ChatSession } from '../../types';
+import type { ChatSession, Message } from '../../types';
 import { getAvailableModels } from '../../services/modelService';
 import { useChat } from '../../hooks/useChat/index';
 import { useTheme } from '../../hooks/useTheme';

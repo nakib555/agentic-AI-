@@ -21,10 +21,11 @@ export const MessageComponent: React.FC<{
     denyExecution: () => void;
     messageFormRef: React.RefObject<MessageFormHandle>;
     onRegenerate: (messageId: string) => void;
+    onSetActiveResponseIndex: (messageId: string, index: number) => void;
 }> = ({ 
     msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
     onShowThinkingProcess, approveExecution, denyExecution, messageFormRef,
-    onRegenerate
+    onRegenerate, onSetActiveResponseIndex
 }) => {
   const messageContent = () => {
     if (msg.role === 'user') {
@@ -45,6 +46,7 @@ export const MessageComponent: React.FC<{
                 denyExecution={denyExecution}
                 messageFormRef={messageFormRef}
                 onRegenerate={onRegenerate}
+                onSetActiveResponseIndex={onSetActiveResponseIndex}
             />
         );
     }

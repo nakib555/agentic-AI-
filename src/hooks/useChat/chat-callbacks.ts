@@ -3,20 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// PART 1 of 4 from src/hooks/useChat.ts
-// Contains the callback definitions for the agentic loop.
-
 import React from 'react';
 import type { FunctionCall } from "@google/genai";
 import { generateFollowUpSuggestions } from '../../services/gemini/index';
-import { type ToolCallEvent, type MessageError } from '../../types';
+import { type ToolCallEvent, type MessageError, ChatSession, ModelResponse, Message } from '../../types';
 import type { ParsedWorkflow } from '../../services/workflowParser';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
 type ChatHistoryState = {
-    chatHistory: any[];
-    updateLastMessage: (chatId: string, updateFn: (msg: any) => Partial<any>) => void;
+    chatHistory: ChatSession[];
+    updateActiveResponseOnMessage: (chatId: string, messageId: string, updateFn: (response: ModelResponse) => Partial<ModelResponse>) => void;
+    updateMessage: (chatId: string, messageId: string, update: Partial<Message>) => void;
     completeChatLoading: (chatId: string) => void;
 };
 
@@ -26,17 +24,18 @@ type AbortState = {
 
 export const createAgentCallbacks = (
     activeChatId: string,
+    messageId: string,
     historyState: ChatHistoryState,
     abortState: AbortState,
     isThinkingModeEnabled: boolean,
     executionApprovalRef: React.MutableRefObject<{ resolve: (approved: boolean | string) => void } | null>
 ) => {
-    const { chatHistory, updateLastMessage, completeChatLoading } = historyState;
+    const { chatHistory, updateActiveResponseOnMessage, updateMessage, completeChatLoading } = historyState;
     const { abortControllerRef } = abortState;
 
     return {
         onTextChunk: (fullText: string) => {
-            updateLastMessage(activeChatId, () => ({ text: fullText }));
+            updateActiveResponseOnMessage(activeChatId, messageId, () => ({ text: fullText }));
         },
         onNewToolCalls: (toolCalls: FunctionCall[]): Promise<ToolCallEvent[]> => {
             const newToolCallEvents: ToolCallEvent[] = toolCalls.map(fc => ({ 
@@ -44,16 +43,16 @@ export const createAgentCallbacks = (
                 call: fc,
                 startTime: Date.now(),
             }));
-            updateLastMessage(activeChatId, (lastMsg) => ({
-                toolCallEvents: [...(lastMsg.toolCallEvents || []), ...newToolCallEvents]
+            updateActiveResponseOnMessage(activeChatId, messageId, (response) => ({
+                toolCallEvents: [...(response.toolCallEvents || []), ...newToolCallEvents]
             }));
             return Promise.resolve(newToolCallEvents);
         },
         onToolResult: (eventId: string, result: string) => {
-            updateLastMessage(activeChatId, (lastMsg) => {
-                if (!lastMsg.toolCallEvents) return {};
+            updateActiveResponseOnMessage(activeChatId, messageId, (response) => {
+                if (!response.toolCallEvents) return {};
                 return {
-                    toolCallEvents: lastMsg.toolCallEvents.map(event => 
+                    toolCallEvents: response.toolCallEvents.map(event => 
                         event.id === eventId ? { ...event, result, endTime: Date.now() } : event
                     )
                 };
@@ -63,13 +62,15 @@ export const createAgentCallbacks = (
             if (!isThinkingModeEnabled) {
                 return Promise.resolve(true);
             }
-            updateLastMessage(activeChatId, () => ({ plan, executionState: 'pending_approval' }));
+            updateActiveResponseOnMessage(activeChatId, messageId, () => ({ plan }));
+            updateMessage(activeChatId, messageId, { executionState: 'pending_approval' });
             return new Promise((resolve) => {
                 executionApprovalRef.current = { resolve };
             });
         },
         onComplete: async (finalText: string) => {
-            updateLastMessage(activeChatId, () => ({ text: finalText, isThinking: false, endTime: Date.now() }));
+            updateActiveResponseOnMessage(activeChatId, messageId, () => ({ text: finalText, endTime: Date.now() }));
+            updateMessage(activeChatId, messageId, { isThinking: false });
             completeChatLoading(activeChatId);
             abortControllerRef.current = null;
             
@@ -77,22 +78,23 @@ export const createAgentCallbacks = (
             if (finalChat) {
                 const suggestions = await generateFollowUpSuggestions(finalChat.messages);
                 if (suggestions.length > 0) {
-                    updateLastMessage(activeChatId, () => ({ suggestedActions: suggestions }));
+                    updateActiveResponseOnMessage(activeChatId, messageId, () => ({ suggestedActions: suggestions }));
                 }
             }
         },
         onCancel: () => {
-            updateLastMessage(activeChatId, (lastMsg) => ({
-                text: `${lastMsg.text.trim()}\n\n**(Generation stopped by user)**`,
-                isThinking: false,
+            updateActiveResponseOnMessage(activeChatId, messageId, (response) => ({
+                text: `${response.text.trim()}\n\n**(Generation stopped by user)**`,
                 endTime: Date.now(),
             }));
+            updateMessage(activeChatId, messageId, { isThinking: false });
             completeChatLoading(activeChatId);
             abortControllerRef.current = null;
         },
         onError: (error: MessageError) => {
             console.error("Error in agentic loop:", error);
-            updateLastMessage(activeChatId, () => ({ error: error, isThinking: false, endTime: Date.now() }));
+            updateActiveResponseOnMessage(activeChatId, messageId, () => ({ error, endTime: Date.now() }));
+            updateMessage(activeChatId, messageId, { isThinking: false });
             completeChatLoading(activeChatId);
             abortControllerRef.current = null;
         },
