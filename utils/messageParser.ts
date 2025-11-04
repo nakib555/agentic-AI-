@@ -17,7 +17,7 @@ type ParseResult = {
  * @returns An object containing `thinkingText` and `finalAnswerText`.
  */
 export const parseMessageText = (text: string, isThinking: boolean, hasError: boolean): ParseResult => {
-  const finalAnswerMarker = '[STEP] Final Answer';
+  const finalAnswerMarker = '[STEP] Final Answer:';
   const finalAnswerIndex = text.lastIndexOf(finalAnswerMarker);
 
   // Rule 1: Highest priority. If the final answer marker exists, we can definitively split the text.
