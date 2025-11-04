@@ -13,6 +13,7 @@ export * from './GoalAnalysisIcon';
 export * from './HandoffIcon';
 export * from './ObservationIcon';
 export * from './PendingIcon';
+// Fix: The CommanderIcon component is exported from PlannerIcon.tsx.
 export * from './PlannerIcon';
 export * from './SearchIcon';
 export * from './ThoughtIcon';

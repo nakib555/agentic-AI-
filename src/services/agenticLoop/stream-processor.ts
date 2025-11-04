@@ -32,7 +32,7 @@ export const processStream = async (params: StreamProcessorParams): Promise<Stre
                 currentFullText += chunkText;
                 callbacks.onTextChunk(currentFullText);
 
-                if (!isPlanApproved && currentTurnText.includes('[STEP] Handoff: Planner -> Executor')) {
+                if (!isPlanApproved && currentTurnText.includes('[USER_APPROVAL_REQUIRED]')) {
                     const plan = parseAgenticWorkflow(currentTurnText, [], false);
                     const approvalResult = await callbacks.onPlanReady(plan);
                     

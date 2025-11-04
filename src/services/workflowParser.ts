@@ -30,10 +30,41 @@ export const parseAgenticWorkflow = (
   isThinkingComplete: boolean,
   error?: MessageError
 ): ParsedWorkflow => {
-  // Isolate the "Plan" section (from the beginning until the first [STEP])
-  const firstStepIndex = rawText.indexOf('[STEP]');
-  const planText = (firstStepIndex !== -1 ? rawText.substring(0, firstStepIndex) : rawText).trim();
-  const executionText = (firstStepIndex !== -1 ? rawText.substring(firstStepIndex) : '').trim();
+  const planMarker = '[STEP] Strategic Plan:';
+  const planMarkerIndex = rawText.indexOf(planMarker);
+
+  let planText = '';
+  let executionText = rawText;
+
+  // A plan exists if the Strategic Plan marker is present.
+  if (planMarkerIndex !== -1) {
+    const planContentStartIndex = planMarkerIndex + planMarker.length;
+    // The plan ends at the next [STEP] or the end of the string.
+    const nextStepIndex = rawText.indexOf('[STEP]', planContentStartIndex);
+
+    if (nextStepIndex !== -1) {
+      planText = rawText.substring(planContentStartIndex, nextStepIndex);
+      executionText = rawText.substring(nextStepIndex);
+    } else {
+      // The plan is the only thing in the text.
+      planText = rawText.substring(planContentStartIndex);
+      executionText = '';
+    }
+  } else {
+    // No plan marker, so everything before the first [STEP] is a simple plan/thought.
+    const firstStepIndex = rawText.indexOf('[STEP]');
+    if (firstStepIndex !== -1) {
+      planText = rawText.substring(0, firstStepIndex);
+      executionText = rawText.substring(firstStepIndex);
+    } else {
+      // No steps at all, so everything is part of the "plan" (or just a simple thought).
+      planText = rawText;
+      executionText = '';
+    }
+  }
+
+  planText = planText.replace(/\[AGENT:.*?\]\s*/, '').replace(/\[USER_APPROVAL_REQUIRED\]/, '').trim();
+  executionText = executionText.trim();
 
   // --- Interleaving Logic for Chronological Workflow ---
   
