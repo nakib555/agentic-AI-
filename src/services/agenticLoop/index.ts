@@ -8,8 +8,6 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { parseApiError } from '../gemini/index';
-import { systemInstruction } from '../../prompts/system';
-import { toolDeclarations } from '../../tools';
 import { processStream } from './stream-processor';
 import type { RunAgenticLoopParams } from './types';
 import { ToolError } from '../../types';
@@ -28,14 +26,16 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
     const executeTurn = async () => {
         if (signal.aborted || hasCompleted) return;
 
-        let finalSystemInstruction = systemInstruction;
+        let finalSystemInstruction = settings.systemInstruction;
         if (settings?.memoryContent) {
-            finalSystemInstruction = `// SECTION 0: CONVERSATION MEMORY\n// Here is a summary of key information from past conversations.\n${settings.memoryContent}\n\n${systemInstruction}`;
+            finalSystemInstruction = `// SECTION 0: CONVERSATION MEMORY\n// Here is a summary of key information from past conversations.\n${settings.memoryContent}\n\n${settings.systemInstruction}`;
         }
         const config: any = {
             systemInstruction: settings?.systemPrompt ? `${settings.systemPrompt}\n\n${finalSystemInstruction}` : finalSystemInstruction,
-            tools: [{ functionDeclarations: toolDeclarations }],
         };
+        if (settings.tools) {
+            config.tools = [{ functionDeclarations: settings.tools }];
+        }
         if (settings?.temperature !== undefined) config.temperature = settings.temperature;
         if (settings?.thinkingBudget) config.thinkingConfig = { thinkingBudget: settings.thinkingBudget };
         else if (settings?.maxOutputTokens && settings.maxOutputTokens > 0) config.maxOutputTokens = settings.maxOutputTokens;

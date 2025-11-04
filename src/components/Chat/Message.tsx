@@ -22,10 +22,11 @@ export const MessageComponent: React.FC<{
     messageFormRef: React.RefObject<MessageFormHandle>;
     onRegenerate: (messageId: string) => void;
     onSetActiveResponseIndex: (messageId: string, index: number) => void;
+    isAgentMode: boolean;
 }> = ({ 
     msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
     onShowThinkingProcess, approveExecution, denyExecution, messageFormRef,
-    onRegenerate, onSetActiveResponseIndex
+    onRegenerate, onSetActiveResponseIndex, isAgentMode
 }) => {
   const messageContent = () => {
     if (msg.role === 'user') {
@@ -47,6 +48,7 @@ export const MessageComponent: React.FC<{
                 messageFormRef={messageFormRef}
                 onRegenerate={onRegenerate}
                 onSetActiveResponseIndex={onSetActiveResponseIndex}
+                isAgentMode={isAgentMode}
             />
         );
     }

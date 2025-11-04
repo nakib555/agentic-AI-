@@ -5,12 +5,20 @@
 
 // Defines types for the refactored agenticLoop service.
 
-import type { FunctionCall, GenerateContentResponse, Part } from '@google/genai';
+import type { FunctionCall, GenerateContentResponse, Part, FunctionDeclaration } from '@google/genai';
 import type { MessageError } from '../../types';
 import type { ParsedWorkflow } from '../workflowParser';
 
 type ChatHistory = { role: 'user' | 'model'; parts: Part[] }[];
-type ChatSettings = { systemPrompt?: string; temperature?: number; maxOutputTokens?: number; thinkingBudget?: number; memoryContent?: string };
+type ChatSettings = { 
+    systemInstruction: string;
+    tools?: FunctionDeclaration[];
+    systemPrompt?: string; 
+    temperature?: number; 
+    maxOutputTokens?: number; 
+    thinkingBudget?: number; 
+    memoryContent?: string 
+};
 
 export type AgenticLoopCallbacks = {
     onTextChunk: (fullText: string) => void;

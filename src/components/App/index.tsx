@@ -79,6 +79,8 @@ export const App = () => {
                 denyExecution={logic.denyExecution}
                 onRegenerate={logic.regenerateResponse}
                 onSetActiveResponseIndex={logic.setActiveResponseIndex}
+                isAgentMode={logic.isAgentMode}
+                setIsAgentMode={logic.setIsAgentMode}
              />
           </div>
         </main>

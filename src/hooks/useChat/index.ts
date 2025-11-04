@@ -14,6 +14,10 @@ import { buildApiHistory } from './history-builder';
 import { createToolExecutor } from './tool-executor';
 import { generateChatTitle, parseApiError } from '../../services/gemini/index';
 import { fileStore } from '../../services/fileStore';
+import { systemInstruction } from '../../prompts/system';
+import { toolDeclarations } from '../../tools';
+import { PREAMBLE } from '../../prompts/preamble';
+import { PERSONA_AND_UI_FORMATTING } from '../../prompts/persona';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -25,7 +29,7 @@ type ChatSettings = {
     videoModel: string;
 };
 
-export const useChat = (initialModel: string, settings: ChatSettings, memoryContent: string) => {
+export const useChat = (initialModel: string, settings: ChatSettings, memoryContent: string, isAgentMode: boolean) => {
   const chatHistoryHook = useChatHistory();
   const { chatHistory, currentChatId, updateChatTitle } = chatHistoryHook;
   
@@ -110,7 +114,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
     const { isHidden = false, isThinkingModeEnabled: optionIsThinkingModeEnabled = false } = options;
     const hasFiles = files && files.length > 0;
-    const isThinkingModeEnabled = !hasFiles || optionIsThinkingModeEnabled;
+    const isThinkingModeEnabled = isAgentMode && (!hasFiles || optionIsThinkingModeEnabled);
     
     let activeChatId = currentChatId;
     if (!activeChatId) {
@@ -212,12 +216,29 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     const activeChat = chatHistoryHook.chatHistory.find(c => c.id === activeChatId);
     const hasVideoAttachment = userMessageObj.attachments?.some(att => att.mimeType.startsWith('video/')) ?? false;
     const modelForApi = isThinkingModeEnabled || hasVideoAttachment ? 'gemini-2.5-pro' : (activeChat?.model || initialModel);
-        
-    const chatSettings = {
+    
+    const chatModeSystemInstruction = [
+        PREAMBLE,
+        `
+# 💬 Conversational Mode Directives
+
+- Your primary goal is to provide a direct, helpful, and conversational response.
+- You MUST NOT use any tools.
+- You MUST NOT follow the agentic workflow (e.g., \`[STEP]\`, \`[AGENT:]\`). Do not think in steps.
+- You MUST adhere to all persona and formatting guidelines defined in the Communications Officer Guide.
+- You MUST NOT mention or allude to the agentic workflow, tools, agents, "HATF", or a "task force."
+- Your response should be a single, direct answer, formatted for the user as per the persona guide.
+        `,
+        PERSONA_AND_UI_FORMATTING,
+    ].join('\n\n');
+
+    const agenticLoopSettings = {
+        systemInstruction: isAgentMode ? systemInstruction : chatModeSystemInstruction,
+        tools: isAgentMode ? toolDeclarations : undefined,
         systemPrompt: settings.systemPrompt,
         temperature: activeChat?.temperature ?? settings.temperature,
         maxOutputTokens: activeChat?.maxOutputTokens ?? settings.maxOutputTokens,
-        thinkingBudget: isThinkingModeEnabled ? 32768 : undefined,
+        thinkingBudget: isAgentMode && isThinkingModeEnabled ? 32768 : undefined,
         memoryContent: memoryContent,
     };
     
@@ -233,7 +254,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
     await runAgenticLoop({
       model: modelForApi, history: historyForApi, toolExecutor, callbacks,
-      signal: abortControllerRef.current.signal, settings: chatSettings,
+      signal: abortControllerRef.current.signal, settings: agenticLoopSettings,
     });
   };
 
@@ -259,15 +280,31 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     const newResponsePlaceholder: ModelResponse = { text: '', toolCallEvents: [], startTime: Date.now() };
     chatHistoryHook.addModelResponse(currentChatId, aiMessageId, newResponsePlaceholder);
 
-    const isThinkingModeEnabled = !historyForApi.some(m => m.parts.some(p => 'inlineData' in p));
-
+    const isThinkingModeEnabled = isAgentMode && !historyForApi.some(m => m.parts.some(p => 'inlineData' in p));
     const modelForApi = isThinkingModeEnabled ? 'gemini-2.5-pro' : (chat?.model || initialModel);
+    
+    const chatModeSystemInstruction = [
+        PREAMBLE,
+        `
+# 💬 Conversational Mode Directives
+
+- Your primary goal is to provide a direct, helpful, and conversational response.
+- You MUST NOT use any tools.
+- You MUST NOT follow the agentic workflow (e.g., \`[STEP]\`, \`[AGENT:]\`). Do not think in steps.
+- You MUST adhere to all persona and formatting guidelines defined in the Communications Officer Guide.
+- You MUST NOT mention or allude to the agentic workflow, tools, agents, "HATF", or a "task force."
+- Your response should be a single, direct answer, formatted for the user as per the persona guide.
+        `,
+        PERSONA_AND_UI_FORMATTING,
+    ].join('\n\n');
         
-    const chatSettings = {
+    const agenticLoopSettings = {
+        systemInstruction: isAgentMode ? systemInstruction : chatModeSystemInstruction,
+        tools: isAgentMode ? toolDeclarations : undefined,
         systemPrompt: settings.systemPrompt,
         temperature: chat?.temperature ?? settings.temperature,
         maxOutputTokens: chat?.maxOutputTokens ?? settings.maxOutputTokens,
-        thinkingBudget: isThinkingModeEnabled ? 32768 : undefined,
+        thinkingBudget: isAgentMode && isThinkingModeEnabled ? 32768 : undefined,
         memoryContent: memoryContent,
     };
     
@@ -282,10 +319,10 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
     await runAgenticLoop({
       model: modelForApi, history: historyForApi, toolExecutor, callbacks,
-      signal: abortControllerRef.current.signal, settings: chatSettings,
+      signal: abortControllerRef.current.signal, settings: agenticLoopSettings,
     });
 
-  }, [currentChatId, chatHistory, isLoading, cancelGeneration, chatHistoryHook, initialModel, settings, memoryContent]);
+  }, [currentChatId, chatHistory, isLoading, cancelGeneration, chatHistoryHook, initialModel, settings, memoryContent, isAgentMode]);
   
   return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse };
 };

@@ -42,12 +42,13 @@ type AiMessageProps = {
     messageFormRef: React.RefObject<MessageFormHandle>;
     onRegenerate: (messageId: string) => void;
     onSetActiveResponseIndex: (messageId: string, index: number) => void;
+    isAgentMode: boolean;
 };
 
 export const AiMessage: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
           onShowThinkingProcess, approveExecution, denyExecution, messageFormRef, onRegenerate,
-          onSetActiveResponseIndex } = props;
+          onSetActiveResponseIndex, isAgentMode } = props;
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, isAutoPlayEnabled, ttsVoice, sendMessage, isLoading);
@@ -99,11 +100,11 @@ export const AiMessage: React.FC<AiMessageProps> = (props) => {
         const cleanedPart = part.replace(incompleteTagRegex, '');
 
         if (cleanedPart) {
-            return <ManualCodeRenderer key={key} text={cleanedPart} components={MarkdownComponents} isStreaming={isStreaming} onRunCode={logic.handleRunCode} isRunDisabled={isLoading} />;
+            return <ManualCodeRenderer key={key} text={cleanedPart} components={MarkdownComponents} isStreaming={isStreaming} onRunCode={isAgentMode ? logic.handleRunCode : undefined} isRunDisabled={isLoading} />;
         }
         return null;
     });
-  }, [id, logic.handleRunCode, isLoading, messageFormRef]);
+  }, [id, logic.handleRunCode, isLoading, messageFormRef, isAgentMode]);
 
   if (logic.isInitialWait) return <TypingIndicator />;
 

@@ -9,6 +9,7 @@ const motion = motionTyped as any;
 import { MessageList, type MessageListHandle } from './MessageList';
 import { MessageForm, type MessageFormHandle } from './MessageForm/index';
 import type { Message } from '../../types';
+import { ModeToggle } from '../UI/ModeToggle';
 
 type ChatAreaProps = {
   messages: Message[];
@@ -25,6 +26,8 @@ type ChatAreaProps = {
   messageListRef: React.RefObject<MessageListHandle>;
   onRegenerate: (messageId: string) => void;
   onSetActiveResponseIndex: (chatId: string, messageId: string, index: number) => void;
+  isAgentMode: boolean;
+  setIsAgentMode: (isAgent: boolean) => void;
 };
 
 export const ChatArea = ({ 
@@ -32,6 +35,7 @@ export const ChatArea = ({
     ttsVoice, isAutoPlayEnabled, currentChatId,
     onShowThinkingProcess, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
+    isAgentMode, setIsAgentMode
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -118,6 +122,7 @@ export const ChatArea = ({
           messageFormRef={messageFormRef}
           onRegenerate={onRegenerate}
           onSetActiveResponseIndex={handleSetActiveResponseIndex}
+          isAgentMode={isAgentMode}
       />
       <AnimatePresence>
         {isScrolledUp && (
@@ -140,6 +145,13 @@ export const ChatArea = ({
         )}
       </AnimatePresence>
       <div className="flex-shrink-0 pt-4 px-4 sm:px-6 md:px-8">
+        <div className="flex justify-center mb-3">
+            <ModeToggle 
+                isAgentMode={isAgentMode} 
+                onToggle={setIsAgentMode}
+                disabled={isLoading}
+            />
+        </div>
         <div className="relative w-full">
           <MessageForm 
             ref={messageFormRef}

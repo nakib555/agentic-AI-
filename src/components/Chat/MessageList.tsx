@@ -28,12 +28,14 @@ type MessageListProps = {
   messageFormRef: React.RefObject<MessageFormHandle>;
   onRegenerate: (messageId: string) => void;
   onSetActiveResponseIndex: (messageId: string, index: number) => void;
+  isAgentMode: boolean;
 };
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
     messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled, currentChatId, 
     onShowThinkingProcess, onScrolledUpChange, approveExecution, 
-    denyExecution, messageFormRef, onRegenerate, onSetActiveResponseIndex
+    denyExecution, messageFormRef, onRegenerate, onSetActiveResponseIndex,
+    isAgentMode
 }, ref) => {
   const messageListRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -129,6 +131,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                   messageFormRef={messageFormRef}
                   onRegenerate={onRegenerate}
                   onSetActiveResponseIndex={onSetActiveResponseIndex}
+                  isAgentMode={isAgentMode}
               />
             ))}
             {/* The invisible anchor element that we scroll to. */}
