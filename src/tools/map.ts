@@ -79,9 +79,9 @@ export const executeAnalyzeMapVisually = async (args: { latitude: number, longit
     return `Visual analysis of the map at lat ${latitude.toFixed(4)}, lon ${longitude.toFixed(4)}:\n${description}`;
 
   } catch (err) {
-    console.error("Visual map analysis tool failed:", err);
-    const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during map analysis.";
-    throw new ToolError('analyzeMapVisually', 'ANALYSIS_FAILED', errorMessage, err as Error, "The visual analysis of the map failed. This might be a temporary network issue. Please try again.");
+    console.error("Visual map analysis tool failed:", err instanceof Error ? err : JSON.stringify(err));
+    const originalError = err instanceof Error ? err : new Error("An unknown error occurred during map analysis.");
+    throw new ToolError('analyzeMapVisually', 'ANALYSIS_FAILED', originalError.message, originalError, "The visual analysis of the map failed. This might be a temporary network issue. Please try again.");
   }
 };
 

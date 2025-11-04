@@ -102,9 +102,9 @@ export const executeImageGenerator = async (args: { prompt: string, numberOfImag
     return `${savedFilePaths.length} images successfully generated and saved to virtual filesystem at:\n- ${savedFilePaths.join('\n- ')}\nYou should now use the 'displayFile' tool for each path to show them to the user.`;
 
   } catch (err) {
-    console.error("Image generation tool failed:", err);
+    console.error("Image generation tool failed:", err instanceof Error ? err : JSON.stringify(err));
     if (err instanceof ToolError) throw err;
-    const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during image generation.";
-    throw new ToolError('generateImage', 'GENERATION_FAILED', errorMessage, err as Error, "The image generation service failed. This might be a temporary issue. Please try again in a moment.");
+    const originalError = err instanceof Error ? err : new Error("An unknown error occurred during image generation.");
+    throw new ToolError('generateImage', 'GENERATION_FAILED', originalError.message, originalError, "The image generation service failed. This might be a temporary issue. Please try again in a moment.");
   }
 };

@@ -120,7 +120,7 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
     
     return `Video successfully generated and saved to virtual filesystem at: ${filename}. You can now use 'displayFile' to show it to the user.`;
   } catch (err) {
-    console.error("Video generation tool failed:", err);
+    console.error("Video generation tool failed:", err instanceof Error ? err : JSON.stringify(err));
     
     // The error object from the API might be nested. We need to find the message string.
     let errorMessage = "An unknown error occurred during video generation.";
@@ -138,12 +138,12 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
     }
     
     // Per guidelines, if this specific error occurs, it indicates an issue with the API key.
-    // We should prompt the user to select one again.
     if (errorMessage.includes('Requested entity was not found.')) {
         return VEO_API_KEY_COMPONENT_TAG;
     }
 
     if (err instanceof ToolError) throw err;
-    throw new ToolError('generateVideo', 'GENERATION_FAILED', errorMessage, err as Error, "The video generation service failed. This can happen with complex prompts or during high traffic. Please try again in a moment.");
+    const originalError = err instanceof Error ? err : new Error(String(err));
+    throw new ToolError('generateVideo', 'GENERATION_FAILED', errorMessage, originalError, "The video generation service failed. This can happen with complex prompts or during high traffic. Please try again in a moment.");
   }
 };

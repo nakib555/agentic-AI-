@@ -154,7 +154,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
     } catch (err) {
         if (!signal.aborted) {
             // This is a safety net for any unhandled exceptions from the loop.
-            console.error('Unhandled exception in agentic loop:', err);
+            console.error('Unhandled exception in agentic loop:', err instanceof Error ? err : JSON.stringify(err));
             callbacks.onError(parseApiError(err));
         }
         hasCompleted = true; // Ensure onCancel isn't called after an error

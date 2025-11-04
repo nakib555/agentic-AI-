@@ -103,7 +103,7 @@ export const processStream = async (params: StreamProcessorParams): Promise<Stre
 
     } catch (error) {
         if (signal.aborted) return { status: 'aborted' };
-        console.error("Agentic loop stream processing failed:", error);
+        console.error("Agentic loop stream processing failed:", error instanceof Error ? error : JSON.stringify(error));
         return { status: 'error', error: parseApiError(error) };
     }
 };

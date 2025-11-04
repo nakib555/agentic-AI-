@@ -107,8 +107,8 @@ export const executeDuckDuckGoSearch = async (args: { query: string }): Promise<
     
     return `Search successful. Here is a summary of the findings:\n\n${summary}\n\n[SOURCES_PILLS]\n${sourcesMarkdown}\n[/SOURCES_PILLS]`;
   } catch (err) {
-    console.error("DuckDuckGo Search tool failed:", err);
-    const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during the search.";
-    throw new ToolError('duckduckgoSearch', 'SEARCH_FAILED', errorMessage, err as Error, "The web search failed, which may be due to a network issue. Please check your internet connection and try again.");
+    console.error("DuckDuckGo Search tool failed:", err instanceof Error ? err : JSON.stringify(err));
+    const originalError = err instanceof Error ? err : new Error("An unknown error occurred during the search.");
+    throw new ToolError('duckduckgoSearch', 'SEARCH_FAILED', originalError.message, originalError, "The web search failed, which may be due to a network issue. Please check your internet connection and try again.");
   }
 };
