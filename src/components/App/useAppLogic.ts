@@ -74,7 +74,7 @@ export const useAppLogic = () => {
         window.visualViewport.removeEventListener('resize', updateHeight);
       }
       // Always reset the inline style when the effect cleans up (e.g., on isDesktop change).
-      // This allows the CSS `h-screen` to take over again.
+      // This allows the CSS classes (like `h-full`) to take over again.
       if (appElement) {
         appElement.style.height = '';
       }

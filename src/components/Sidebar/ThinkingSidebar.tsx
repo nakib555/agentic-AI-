@@ -57,7 +57,14 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
         if (!message) {
             return { status: 'Idle', statusColor: 'bg-gray-400', plan: '', executionLog: [] };
         }
-        const { text, isThinking, error, toolCallEvents } = message;
+
+        const { isThinking } = message;
+        const activeResponse = (message.responses && message.responses[message.activeResponseIndex]) || null;
+
+        const text = activeResponse?.text ?? '';
+        const error = activeResponse?.error;
+        const toolCallEvents = activeResponse?.toolCallEvents;
+
         const thinkingIsComplete = !isThinking || !!error;
         
         const { plan: parsedPlan, executionLog: parsedLog } = parseAgenticWorkflow(
@@ -97,10 +104,11 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
 
         const hasContent = plan || executionLog.length > 0;
         if (!hasContent) {
+            const activeResponse = (message.responses && message.responses[message.activeResponseIndex]) || null;
             return (
                 <div className="flex flex-col items-center justify-center h-full text-sm text-gray-500 dark:text-slate-400 p-4 text-center">
                     <p className="mb-4">This message did not involve a complex thought process.</p>
-                    {message.error && <ErrorDisplay error={message.error} />}
+                    {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
                 </div>
            );
         }

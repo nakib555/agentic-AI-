@@ -26,7 +26,7 @@ export const App = () => {
   const chatTitle = currentChat ? currentChat.title : null;
 
   return (
-    <div ref={logic.appContainerRef} className="flex h-screen bg-transparent overflow-hidden">
+    <div ref={logic.appContainerRef} className="flex h-full bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out">
       <Sidebar
         key={logic.isDesktop ? 'desktop' : 'mobile'}
         isDesktop={logic.isDesktop}

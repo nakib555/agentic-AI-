@@ -206,7 +206,7 @@ export const useMessageForm = (
 
   const handleEnhancePrompt = async () => {
     const originalPrompt = inputValue;
-    if (!originalPrompt.trim() || isEnhancing || isLoading) return;
+    if (!originalPrompt.trim() || isEnhancing) return;
     setIsEnhancing(true);
     let enhancedText = '';
     try {
