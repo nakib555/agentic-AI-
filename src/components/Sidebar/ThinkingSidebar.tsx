@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import type { Message } from '../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
@@ -33,6 +33,7 @@ const mobileVariants = {
 
 export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClose, message, sendMessage, width, setWidth, isResizing, setIsResizing, onRegenerate }) => {
     const { isDesktop } = useViewport();
+    const contentRef = useRef<HTMLDivElement>(null);
 
     const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
         mouseDownEvent.preventDefault();
@@ -82,6 +83,17 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
         }
         return { status: 'In Progress', statusColor: 'bg-indigo-500 animate-pulse', plan: parsedPlan, executionLog: parsedLog };
     }, [message]);
+
+    const isLiveGeneration = useMemo(() => executionLog.some(node => node.status === 'active'), [executionLog]);
+
+    useEffect(() => {
+        if (isLiveGeneration && contentRef.current) {
+            contentRef.current.scrollTo({
+                top: contentRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    }, [executionLog, isLiveGeneration]);
 
 
     // Desktop variants for side-in animation
@@ -193,7 +205,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto py-4 min-h-0">
+                <div ref={contentRef} className="flex-1 overflow-y-auto py-4 min-h-0">
                     {thinkingContent()}
                 </div>
             </div>

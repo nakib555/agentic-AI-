@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
 import { WorkflowNode, type WorkflowNodeData } from './WorkflowNode';
@@ -31,17 +31,8 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
   onRegenerate,
   messageId,
 }) => {
-  const logRef = useRef<HTMLDivElement>(null);
-  const isLiveGeneration = nodes.some(node => node.status === 'active');
-
-  useEffect(() => {
-    if (isLiveGeneration && logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight;
-    }
-  }, [nodes, isLiveGeneration]);
-  
   return (
-    <div ref={logRef} className="font-['Inter',_sans-serif]">
+    <div className="font-['Inter',_sans-serif]">
         <div className="pl-2.5">
             {nodes.map((node, index) => (
                 <div key={node.id} className="flex">
