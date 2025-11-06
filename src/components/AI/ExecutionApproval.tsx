@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
-import { GoalAnalysisIcon, CommanderIcon, TodoListIcon, ToolsIcon } from './icons/index';
+import { GoalAnalysisIcon, PlannerIcon, TodoListIcon, ToolsIcon } from './icons/index';
 import type { ParsedWorkflow } from '../../services/workflowParser';
 import { getAgentColor } from '../../utils/agentUtils';
 
@@ -93,7 +93,7 @@ ${editedPlan}
             className="w-full flex flex-col gap-4 p-4 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10"
         >
             <div className="flex items-center gap-3">
-                <CommanderIcon />
+                <PlannerIcon />
                 <h2 className="font-semibold text-gray-800 dark:text-slate-200">Execution Plan</h2>
                 <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${commanderColor.bg} ${commanderColor.text}`}>
                     Commander

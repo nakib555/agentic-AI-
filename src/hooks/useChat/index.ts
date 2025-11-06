@@ -17,7 +17,7 @@ import { fileStore } from '../../services/fileStore';
 import { systemInstruction } from '../../prompts/system';
 import { toolDeclarations } from '../../tools';
 import { PREAMBLE } from '../../prompts/preamble';
-import { PERSONA_AND_UI_FORMATTING } from '../../prompts/persona';
+import { CHAT_PERSONA_AND_UI_FORMATTING } from '../../prompts/chatPersona';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -28,6 +28,22 @@ type ChatSettings = {
     imageModel: string;
     videoModel: string;
 };
+
+const chatModeSystemInstruction = [
+    PREAMBLE,
+    `
+# 💬 Conversational Mode Directives
+
+- Your primary goal is to provide a direct, helpful, and conversational response.
+- You are in "Chat Mode". This means you MUST NOT use any tools or follow the complex agentic workflow. Your capabilities are limited to conversation and knowledge recall.
+- You MUST NOT use agentic workflow formatting (e.g., \`[STEP]\`, \`[AGENT:]\`). Do not think in steps.
+- You MUST adhere to all persona and formatting guidelines defined below for conversational responses.
+- You MUST NOT mention or allude to the agentic workflow, tools, agents, "HATF", or a "task force." Your identity is that of a helpful AI assistant.
+- Your response should be a single, direct answer, formatted for the user as per the persona guide.
+    `,
+    CHAT_PERSONA_AND_UI_FORMATTING,
+].join('\n\n');
+
 
 export const useChat = (initialModel: string, settings: ChatSettings, memoryContent: string, isAgentMode: boolean) => {
   const chatHistoryHook = useChatHistory();
@@ -217,21 +233,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     const hasVideoAttachment = userMessageObj.attachments?.some(att => att.mimeType.startsWith('video/')) ?? false;
     const modelForApi = isThinkingModeEnabled || hasVideoAttachment ? 'gemini-2.5-pro' : (activeChat?.model || initialModel);
     
-    const chatModeSystemInstruction = [
-        PREAMBLE,
-        `
-# 💬 Conversational Mode Directives
-
-- Your primary goal is to provide a direct, helpful, and conversational response.
-- You MUST NOT use any tools.
-- You MUST NOT follow the agentic workflow (e.g., \`[STEP]\`, \`[AGENT:]\`). Do not think in steps.
-- You MUST adhere to all persona and formatting guidelines defined in the Communications Officer Guide.
-- You MUST NOT mention or allude to the agentic workflow, tools, agents, "HATF", or a "task force."
-- Your response should be a single, direct answer, formatted for the user as per the persona guide.
-        `,
-        PERSONA_AND_UI_FORMATTING,
-    ].join('\n\n');
-
     const agenticLoopSettings = {
         systemInstruction: isAgentMode ? systemInstruction : chatModeSystemInstruction,
         tools: isAgentMode ? toolDeclarations : undefined,
@@ -282,21 +283,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
     const isThinkingModeEnabled = isAgentMode && !historyForApi.some(m => m.parts.some(p => 'inlineData' in p));
     const modelForApi = isThinkingModeEnabled ? 'gemini-2.5-pro' : (chat?.model || initialModel);
-    
-    const chatModeSystemInstruction = [
-        PREAMBLE,
-        `
-# 💬 Conversational Mode Directives
-
-- Your primary goal is to provide a direct, helpful, and conversational response.
-- You MUST NOT use any tools.
-- You MUST NOT follow the agentic workflow (e.g., \`[STEP]\`, \`[AGENT:]\`). Do not think in steps.
-- You MUST adhere to all persona and formatting guidelines defined in the Communications Officer Guide.
-- You MUST NOT mention or allude to the agentic workflow, tools, agents, "HATF", or a "task force."
-- Your response should be a single, direct answer, formatted for the user as per the persona guide.
-        `,
-        PERSONA_AND_UI_FORMATTING,
-    ].join('\n\n');
         
     const agenticLoopSettings = {
         systemInstruction: isAgentMode ? systemInstruction : chatModeSystemInstruction,
