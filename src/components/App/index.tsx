@@ -26,7 +26,7 @@ export const App = () => {
   const chatTitle = currentChat ? currentChat.title : null;
 
   return (
-    <div ref={logic.appContainerRef} className="flex h-full bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out">
+    <div ref={logic.appContainerRef} className={`flex h-full bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isResizing || logic.isThinkingResizing ? 'pointer-events-none' : ''}`}>
       <Sidebar
         key={logic.isDesktop ? 'desktop' : 'mobile'}
         isDesktop={logic.isDesktop}
@@ -50,53 +50,51 @@ export const App = () => {
         onSettingsClick={() => logic.setIsSettingsOpen(true)}
       />
 
-      <div className={`relative z-10 flex flex-1 min-w-0 ${logic.isResizing || logic.isThinkingResizing ? 'pointer-events-none' : ''}`}>
-        <main className="flex-1 flex flex-col overflow-hidden chat-background min-w-0">
-          <div className="flex-1 flex flex-col w-full max-w-4xl mx-auto min-h-0">
-             <ChatHeader 
-                isDesktop={logic.isDesktop}
-                handleToggleSidebar={logic.handleToggleSidebar}
-                isSidebarOpen={logic.isSidebarOpen}
-                isSidebarCollapsed={logic.isSidebarCollapsed}
-                onImportChat={logic.handleImportChat}
-                onExportChat={logic.handleExportChat}
-                onShareChat={() => logic.handleShareChat()}
-                isChatActive={logic.isChatActive}
-                chatTitle={chatTitle}
-             />
-             <ChatArea 
-                messageListRef={logic.messageListRef}
-                messages={logic.messages}
-                isLoading={logic.isLoading}
-                sendMessage={logic.sendMessage}
-                modelsLoading={logic.modelsLoading}
-                onCancel={logic.cancelGeneration}
-                ttsVoice={logic.ttsVoice}
-                isAutoPlayEnabled={logic.isAutoPlayEnabled}
-                currentChatId={logic.currentChatId}
-                onShowThinkingProcess={logic.handleShowThinkingProcess}
-                approveExecution={logic.approveExecution}
-                denyExecution={logic.denyExecution}
-                onRegenerate={logic.regenerateResponse}
-                onSetActiveResponseIndex={logic.setActiveResponseIndex}
-                isAgentMode={logic.isAgentMode}
-                setIsAgentMode={logic.setIsAgentMode}
-             />
-          </div>
-        </main>
+      <main className="relative z-10 flex-1 flex flex-col overflow-hidden chat-background min-w-0">
+        <div className="flex-1 flex flex-col w-full max-w-4xl mx-auto min-h-0">
+           <ChatHeader 
+              isDesktop={logic.isDesktop}
+              handleToggleSidebar={logic.handleToggleSidebar}
+              isSidebarOpen={logic.isSidebarOpen}
+              isSidebarCollapsed={logic.isSidebarCollapsed}
+              onImportChat={logic.handleImportChat}
+              onExportChat={logic.handleExportChat}
+              onShareChat={() => logic.handleShareChat()}
+              isChatActive={logic.isChatActive}
+              chatTitle={chatTitle}
+           />
+           <ChatArea 
+              messageListRef={logic.messageListRef}
+              messages={logic.messages}
+              isLoading={logic.isLoading}
+              sendMessage={logic.sendMessage}
+              modelsLoading={logic.modelsLoading}
+              onCancel={logic.cancelGeneration}
+              ttsVoice={logic.ttsVoice}
+              isAutoPlayEnabled={logic.isAutoPlayEnabled}
+              currentChatId={logic.currentChatId}
+              onShowThinkingProcess={logic.handleShowThinkingProcess}
+              approveExecution={logic.approveExecution}
+              denyExecution={logic.denyExecution}
+              onRegenerate={logic.regenerateResponse}
+              onSetActiveResponseIndex={logic.setActiveResponseIndex}
+              isAgentMode={logic.isAgentMode}
+              setIsAgentMode={logic.setIsAgentMode}
+           />
+        </div>
+      </main>
 
-        <ThinkingSidebar
-          isOpen={logic.isThinkingSidebarOpen}
-          onClose={logic.handleCloseThinkingSidebar}
-          message={logic.thinkingMessageForSidebar}
-          sendMessage={logic.sendMessage}
-          width={logic.thinkingSidebarWidth}
-          setWidth={logic.handleSetThinkingSidebarWidth}
-          isResizing={logic.isThinkingResizing}
-          setIsResizing={logic.setIsResizing}
-          onRegenerate={logic.regenerateResponse}
-        />
-      </div>
+      <ThinkingSidebar
+        isOpen={logic.isThinkingSidebarOpen}
+        onClose={logic.handleCloseThinkingSidebar}
+        message={logic.thinkingMessageForSidebar}
+        sendMessage={logic.sendMessage}
+        width={logic.thinkingSidebarWidth}
+        setWidth={logic.handleSetThinkingSidebarWidth}
+        isResizing={logic.isThinkingResizing}
+        setIsResizing={logic.setIsResizing}
+        onRegenerate={logic.regenerateResponse}
+      />
 
       <AppModals
         isSettingsOpen={logic.isSettingsOpen}
