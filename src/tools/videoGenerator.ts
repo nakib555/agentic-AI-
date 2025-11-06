@@ -19,7 +19,6 @@ export const videoGeneratorDeclaration: FunctionDeclaration = {
     properties: {
       prompt: { type: Type.STRING, description: 'A detailed description of the video to generate.' },
       aspectRatio: { type: Type.STRING, description: 'The aspect ratio of the video. Supported values are "16:9" (landscape) and "9:16" (portrait). Defaults to "16:9".' },
-      resolution: { type: Type.STRING, description: 'The resolution of the video. Supported values are "720p" and "1080p". Defaults to "720p".' }
     },
     required: ['prompt'],
   },
@@ -28,7 +27,7 @@ export const videoGeneratorDeclaration: FunctionDeclaration = {
 // A special UI component tag returned when API key selection is required for Veo.
 const VEO_API_KEY_COMPONENT_TAG = '[VEO_API_KEY_SELECTION_COMPONENT]To generate videos, please select an API key. This is a necessary step for using the Veo model. [Learn more about billing.](https://ai.google.dev/gemini-api/docs/billing)[/VEO_API_KEY_SELECTION_COMPONENT]';
 
-export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }): Promise<string> => {
+export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?: string; model: string }): Promise<string> => {
   // Per Veo guidelines, check for API key selection first.
   // The 'window.aistudio' object is assumed to be available in the execution environment.
   if ((window as any).aistudio && typeof (window as any).aistudio.hasSelectedApiKey === 'function') {
@@ -38,16 +37,12 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
     }
   }
 
-  const { prompt, aspectRatio = '16:9', resolution = '720p', model } = args;
+  const { prompt, aspectRatio = '16:9', model } = args;
 
   // Validate inputs
   const validAspectRatios = ['16:9', '9:16'];
-  const validResolutions = ['720p', '1080p'];
   if (!validAspectRatios.includes(aspectRatio)) {
       throw new ToolError('generateVideo', 'INVALID_ARGUMENT', `Invalid aspectRatio "${aspectRatio}". Supported values are: ${validAspectRatios.join(', ')}.`);
-  }
-  if (!validResolutions.includes(resolution)) {
-      throw new ToolError('generateVideo', 'INVALID_ARGUMENT', `Invalid resolution "${resolution}". Supported values are: ${validResolutions.join(', ')}.`);
   }
 
   try {
@@ -90,7 +85,6 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
       config: {
         numberOfVideos: 1,
         aspectRatio,
-        resolution,
       }
     });
 
