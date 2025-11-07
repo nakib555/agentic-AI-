@@ -24,7 +24,7 @@ const BlockquoteRouter = (props: any) => {
         const calloutMatch = textValue.match(/^\[!(NOTE|TIP|INFO|WARNING|DANGER)\]\s*(.*)/i);
         if (calloutMatch) {
             const type = calloutMatch[1].toLowerCase() as CalloutType;
-            const title = calloutMatch[2].trim() || calloutMatch[1].charAt(0).toUpperCase() + calloutMatch[1].slice(1).toLowerCase();
+            const title = calloutMatch[2].trim() || undefined;
             
             // To avoid mutating the original AST, we'll work with the rendered React children.
             const childrenArray = React.Children.toArray(children);
