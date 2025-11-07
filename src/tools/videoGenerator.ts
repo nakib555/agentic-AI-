@@ -49,39 +49,10 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
     // Per guidelines, create a new GoogleGenAI instance right before the API call to ensure it uses the latest key.
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
-    // 1. Enhance the user's prompt for better video quality
-    const enhancementPrompt = `
-      You are a master cinematographer and creative director for a cutting-edge video generation AI.
-      Your task is to take a user's simple idea and expand it into a rich, detailed, and cinematic shot description.
-      The enhanced prompt must be a single, fluent paragraph, suitable for direct input into a video generation model.
-
-      Incorporate the following cinematic concepts into your enhancement:
-      - **Cinematography 🎬**: Describe the camera shot (e.g., wide shot, close-up, dolly zoom, aerial shot), camera movement, and angle.
-      - **Lighting 💡**: Detail the lighting style (e.g., golden hour, neon noir, dramatic backlighting, soft ambient light).
-      - **Mood & Atmosphere 🎭**: Evoke a specific mood (e.g., mysterious, joyful, epic, serene, chaotic).
-      - **Subject & Action 🏃**: Clearly describe the main subject and what they are doing with vivid action verbs.
-      - **Setting & Details 🌍**: Paint a picture of the environment with specific, sensory details.
-      - **Visual Style ✨**: Specify an overall aesthetic (e.g., hyperrealistic, cinematic 4K, retro VHS, anime style, claymation).
-      - **Video Length 🎥**: Aim for a duration of approximately 8 seconds.
-
-      ---
-      Original User Prompt: "${prompt}"
-      ---
-
-      Enhanced Cinematic Prompt:
-    `;
-
-    const enhancementResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: enhancementPrompt,
-    });
-    
-    const enhancedPrompt = getText(enhancementResponse).trim();
-
-    // 2. Generate the video using the enhanced prompt
+    // Generate the video using the prompt directly from the model
     let operation = await ai.models.generateVideos({
       model: model,
-      prompt: enhancedPrompt,
+      prompt: prompt,
       config: {
         numberOfVideos: 1,
         aspectRatio,

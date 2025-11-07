@@ -41,7 +41,7 @@ export const executeImageGenerator = async (args: { prompt: string, numberOfImag
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-    
+
     let base64ImageBytesArray: string[] = [];
 
     if (model === 'gemini-2.5-flash-image') {
