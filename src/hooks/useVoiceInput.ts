@@ -53,7 +53,14 @@ export const useVoiceInput = ({ onTranscriptUpdate }: UseVoiceInputProps) => {
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-             // Provide user feedback for common errors.
+
+            // Silently handle non-critical errors. The `onend` event will fire regardless,
+            // which will handle turning off the recording state.
+            if (event.error === 'no-speech' || event.error === 'aborted') {
+                return;
+            }
+
+             // Provide user feedback for critical errors that require user action.
             if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
                 alert("Microphone access was denied. Please allow it in your browser settings to use voice input.");
             } else if (event.error === 'audio-capture') {
@@ -61,7 +68,6 @@ export const useVoiceInput = ({ onTranscriptUpdate }: UseVoiceInputProps) => {
             } else {
                 alert(`An unexpected voice input error occurred: ${event.error}`);
             }
-            setIsRecording(false);
         };
         
         recognitionRef.current = recognition;

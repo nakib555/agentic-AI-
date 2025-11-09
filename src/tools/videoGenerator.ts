@@ -19,6 +19,7 @@ export const videoGeneratorDeclaration: FunctionDeclaration = {
     properties: {
       prompt: { type: Type.STRING, description: 'A detailed description of the video to generate.' },
       aspectRatio: { type: Type.STRING, description: 'The aspect ratio of the video. Supported values are "16:9" (landscape) and "9:16" (portrait). Defaults to "16:9".' },
+      resolution: { type: Type.STRING, description: 'The resolution of the video. Supported values are "720p" and "1080p". Defaults to "720p".' }
     },
     required: ['prompt'],
   },
@@ -27,7 +28,7 @@ export const videoGeneratorDeclaration: FunctionDeclaration = {
 // A special UI component tag returned when API key selection is required for Veo.
 const VEO_API_KEY_COMPONENT_TAG = '[VEO_API_KEY_SELECTION_COMPONENT]To generate videos, please select an API key. This is a necessary step for using the Veo model. [Learn more about billing.](https://ai.google.dev/gemini-api/docs/billing)[/VEO_API_KEY_SELECTION_COMPONENT]';
 
-export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?: string; model: string }): Promise<string> => {
+export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }): Promise<string> => {
   // Per Veo guidelines, check for API key selection first.
   // The 'window.aistudio' object is assumed to be available in the execution environment.
   if ((window as any).aistudio && typeof (window as any).aistudio.hasSelectedApiKey === 'function') {
@@ -37,25 +38,59 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
     }
   }
 
-  const { prompt, aspectRatio = '16:9', model } = args;
+  const { prompt, aspectRatio = '16:9', resolution = '720p', model } = args;
 
   // Validate inputs
   const validAspectRatios = ['16:9', '9:16'];
+  const validResolutions = ['720p', '1080p'];
   if (!validAspectRatios.includes(aspectRatio)) {
       throw new ToolError('generateVideo', 'INVALID_ARGUMENT', `Invalid aspectRatio "${aspectRatio}". Supported values are: ${validAspectRatios.join(', ')}.`);
+  }
+  if (!validResolutions.includes(resolution)) {
+      throw new ToolError('generateVideo', 'INVALID_ARGUMENT', `Invalid resolution "${resolution}". Supported values are: ${validResolutions.join(', ')}.`);
   }
 
   try {
     // Per guidelines, create a new GoogleGenAI instance right before the API call to ensure it uses the latest key.
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
-    // Generate the video using the prompt directly from the model
+    // 1. Enhance the user's prompt for better video quality
+    const enhancementPrompt = `
+      You are a master cinematographer and creative director for a cutting-edge video generation AI.
+      Your task is to take a user's simple idea and expand it into a rich, detailed, and cinematic shot description.
+      The enhanced prompt must be a single, fluent paragraph, suitable for direct input into a video generation model.
+
+      Incorporate the following cinematic concepts into your enhancement:
+      - **Cinematography 🎬**: Describe the camera shot (e.g., wide shot, close-up, dolly zoom, aerial shot), camera movement, and angle.
+      - **Lighting 💡**: Detail the lighting style (e.g., golden hour, neon noir, dramatic backlighting, soft ambient light).
+      - **Mood & Atmosphere 🎭**: Evoke a specific mood (e.g., mysterious, joyful, epic, serene, chaotic).
+      - **Subject & Action 🏃**: Clearly describe the main subject and what they are doing with vivid action verbs.
+      - **Setting & Details 🌍**: Paint a picture of the environment with specific, sensory details.
+      - **Visual Style ✨**: Specify an overall aesthetic (e.g., hyperrealistic, cinematic 4K, retro VHS, anime style, claymation).
+      - **Video Length 🎥**: Aim for a duration of approximately 8 seconds.
+
+      ---
+      Original User Prompt: "${prompt}"
+      ---
+
+      Enhanced Cinematic Prompt:
+    `;
+
+    const enhancementResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: enhancementPrompt,
+    });
+    
+    const enhancedPrompt = getText(enhancementResponse).trim();
+
+    // 2. Generate the video using the enhanced prompt
     let operation = await ai.models.generateVideos({
       model: model,
-      prompt: prompt,
+      prompt: enhancedPrompt,
       config: {
         numberOfVideos: 1,
         aspectRatio,
+        resolution,
       }
     });
 

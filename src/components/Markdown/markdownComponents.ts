@@ -6,48 +6,33 @@
 import React from 'react';
 import { Bubble } from './Bubble';
 import { StyledLink } from './StyledLink';
-import { Callout, type CalloutType } from './Callout';
 
 // Custom Blockquote component that acts as a router for Callouts and Bubbles
 const BlockquoteRouter = (props: any) => {
-    const { node, children, className, ...rest } = props;
+    const childrenArray = React.Children.toArray(props.children);
 
-    // Check if we are in a workflow context by checking for a specific class
-    const isWorkflow = className?.includes('custom-blockquote-workflow');
-
-    const firstChild = node?.children?.[0]; // This is a unist node for <p>
-    if (firstChild?.tagName === 'p' && firstChild.children?.[0]?.type === 'text') {
-        const firstTextNode = firstChild.children[0];
-        const textValue = firstTextNode.value.trim();
-
-        // Check for Callout syntax: > [!NOTE] Optional Title
-        const calloutMatch = textValue.match(/^\[!(NOTE|TIP|INFO|WARNING|DANGER)\]\s*(.*)/i);
-        if (calloutMatch) {
-            const type = calloutMatch[1].toLowerCase() as CalloutType;
-            const title = calloutMatch[2].trim() || undefined;
-            
-            // To avoid mutating the original AST, we'll work with the rendered React children.
-            const childrenArray = React.Children.toArray(children);
-            const firstP = childrenArray[0] as React.ReactElement;
-            const firstPChildren = React.Children.toArray(firstP.props.children);
-
-            // Find the text node that contains the callout syntax and remove it.
-            if (firstPChildren.length > 0 && typeof firstPChildren[0] === 'string') {
-                const newText = (firstPChildren[0] as string).trim().replace(/^\[!(NOTE|TIP|INFO|WARNING|DANGER)\]\s*(.*)\r?\n?/i, '');
-                
-                // If the first paragraph is now empty, exclude it.
-                if(newText.trim() === '' && firstPChildren.length === 1) {
-                    return React.createElement(Callout, { type, title, compact: isWorkflow }, childrenArray.slice(1));
-                }
-                
-                // Otherwise, rebuild the first paragraph with the modified text.
-                const newFirstP = React.cloneElement(firstP, firstP.props, [newText, ...firstPChildren.slice(1)]);
-                return React.createElement(Callout, { type, title, compact: isWorkflow }, [newFirstP, ...childrenArray.slice(1)]);
+    // Helper to recursively extract plain text content from React nodes.
+    const getNodeText = (node: React.ReactNode): string => {
+        if (typeof node === 'string') {
+            return node;
+        }
+        if (Array.isArray(node)) {
+            return node.map(getNodeText).join('');
+        }
+        if (React.isValidElement(node)) {
+            const props = node.props as { children?: React.ReactNode };
+            if (props.children) {
+                return React.Children.toArray(props.children).map(getNodeText).join('');
             }
         }
+        return '';
+    };
+
+    if (childrenArray.length > 0 && React.isValidElement(childrenArray[0])) {
+        const firstLineText = getNodeText(childrenArray[0]).trim();
         
         // Check for Bubble syntax: > (bubble) Text
-        const bubbleMatch = textValue.match(/^\(bubble\)\s*(.*)/is);
+        const bubbleMatch = firstLineText.match(/^\(bubble\)\s*(.*)/is);
         if (bubbleMatch) {
             const content = bubbleMatch[1];
             return React.createElement(Bubble, null, content);
@@ -55,7 +40,7 @@ const BlockquoteRouter = (props: any) => {
     }
     
     // If no special syntax is matched, render a standard blockquote
-    return React.createElement('blockquote', { className, ...rest }, children);
+    return React.createElement('blockquote', { className: "custom-blockquote my-4 text-slate-700 dark:text-slate-300 break-words", ...props });
 };
 
 // Helper function to determine if a list item's children are effectively empty
@@ -89,7 +74,7 @@ export const MarkdownComponents = {
         if (isLiEmpty(props)) return null;
         return React.createElement('li', { className: "pl-2 break-words", ...props });
     },
-    blockquote: (props:any) => React.createElement(BlockquoteRouter, {...props, className: "custom-blockquote my-4 text-slate-700 dark:text-slate-300 break-words"}),
+    blockquote: BlockquoteRouter,
     a: StyledLink,
     table: (props: any) => React.createElement('div', { className: "my-4 overflow-x-auto" }, React.createElement('div', { className: "inline-block min-w-full" }, React.createElement('div', { className: "rounded-lg border border-slate-200 dark:border-slate-200/10" }, React.createElement('table', { className: "text-sm", ...props })))),
     thead: (props: any) => React.createElement('thead', { className: "bg-slate-100 dark:bg-black/20", ...props }),
@@ -117,7 +102,7 @@ export const WorkflowMarkdownComponents = {
         if (isLiEmpty(props)) return null;
         return React.createElement('li', { className: "pl-1", ...props });
     },
-    blockquote: (props: any) => React.createElement(BlockquoteRouter, { ...props, className: "custom-blockquote custom-blockquote-workflow my-2 text-slate-700 dark:text-slate-300" }),
+    blockquote: (props: any) => React.createElement('blockquote', { className: "custom-blockquote custom-blockquote-workflow my-2 text-slate-700 dark:text-slate-300", ...props }),
     table: (props: any) => React.createElement('div', { className: "overflow-x-auto" }, React.createElement('table', { className: "table-auto w-full my-2 border-collapse border border-slate-300 dark:border-slate-600", ...props })),
     th: (props: any) => React.createElement('th', { className: "border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-700 dark:text-slate-200", ...props }),
     td: (props: any) => React.createElement('td', { className: "border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-600 dark:text-slate-300", ...props }),

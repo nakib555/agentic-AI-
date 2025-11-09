@@ -100,14 +100,3 @@
   margin: 0 0.1em;
   border-radius: 0.25rem;
 }
-
-/* Styles for Callout component content */
-.callout-content > :first-child {
-  margin-top: 0;
-}
-.callout-content > :last-child {
-  margin-bottom: 0;
-}
-.callout-content p {
-  margin-bottom: 0.5rem;
-}
