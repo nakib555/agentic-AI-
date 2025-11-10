@@ -37,14 +37,14 @@ export const validImageModels: Model[] = [
 
 export const validVideoModels: Model[] = [
     { 
-        id: 'veo-3.1-fast-generate-preview', 
-        name: 'Veo 3.1 Fast', 
-        description: 'General video generation tasks.' 
-    },
-    { 
         id: 'veo-3.1-generate-preview', 
         name: 'Veo 3.1', 
-        description: 'High-quality video generation and editing.' 
+        description: 'High-quality video generation.' 
+    },
+    { 
+        id: 'veo-3.1-fast-generate-preview', 
+        name: 'Veo 2.0', 
+        description: 'General video generation tasks.' 
     }
 ];
 

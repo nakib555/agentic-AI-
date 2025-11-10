@@ -18,7 +18,7 @@ export const videoGeneratorDeclaration: FunctionDeclaration = {
     type: Type.OBJECT,
     properties: {
       prompt: { type: Type.STRING, description: 'A detailed description of the video to generate.' },
-      aspectRatio: { type: Type.STRING, description: 'The aspect ratio of the video. Supported values are "16:9" (landscape) and "9:16" (portrait). Defaults to "16:9".' },
+      aspectRatio: { type: Type.STRING, description: 'The aspect ratio of the video. Supported values are "16:9" (landscape) and "9:16" (portrait). Defaults to a responsive ratio (9:16 on mobile, 16:9 on desktop).' },
       resolution: { type: Type.STRING, description: 'The resolution of the video. Supported values are "720p" and "1080p". Defaults to "720p".' }
     },
     required: ['prompt'],
@@ -38,7 +38,9 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
     }
   }
 
-  const { prompt, aspectRatio = '16:9', resolution = '720p', model } = args;
+  const isDesktop = window.innerWidth >= 768;
+  const defaultAspectRatio = isDesktop ? '16:9' : '9:16';
+  const { prompt, aspectRatio = defaultAspectRatio, resolution = '720p', model } = args;
 
   // Validate inputs
   const validAspectRatios = ['16:9', '9:16'];

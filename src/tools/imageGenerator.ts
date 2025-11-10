@@ -30,14 +30,17 @@ export const imageGeneratorDeclaration: FunctionDeclaration = {
     type: Type.OBJECT,
     properties: {
       prompt: { type: Type.STRING, description: 'A detailed description of the image to generate.' },
-      numberOfImages: { type: Type.NUMBER, description: 'The number of images to generate. Must be between 1 and 5. Defaults to 1. This is only supported by Imagen models.'}
+      numberOfImages: { type: Type.NUMBER, description: 'The number of images to generate. Must be between 1 and 5. Defaults to 1. This is only supported by Imagen models.'},
+      aspectRatio: { type: Type.STRING, description: 'The aspect ratio for the image. Supported for Imagen models: "1:1", "3:4", "4:3", "9:16", "16:9". Defaults to a responsive ratio (9:16 on mobile, 16:9 on desktop).' },
     },
     required: ['prompt'],
   },
 };
 
-export const executeImageGenerator = async (args: { prompt: string, numberOfImages?: number, model: string }): Promise<string> => {
-    const { prompt, numberOfImages = 1, model } = args;
+export const executeImageGenerator = async (args: { prompt: string, numberOfImages?: number, model: string, aspectRatio?: string }): Promise<string> => {
+    const isDesktop = window.innerWidth >= 768;
+    const defaultAspectRatio = isDesktop ? '16:9' : '9:16';
+    const { prompt, numberOfImages = 1, model, aspectRatio = defaultAspectRatio } = args;
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
@@ -66,12 +69,14 @@ export const executeImageGenerator = async (args: { prompt: string, numberOfImag
         }
     } else { // Assume Imagen model
         const count = Math.max(1, Math.min(5, Math.floor(numberOfImages))); // Clamp between 1 and 5
+        const validAspectRatios = ["1:1", "3:4", "4:3", "9:16", "16:9"];
         const response = await ai.models.generateImages({
             model: model,
             prompt: prompt,
             config: {
               numberOfImages: count,
               outputMimeType: 'image/png',
+              aspectRatio: validAspectRatios.includes(aspectRatio) ? aspectRatio : defaultAspectRatio,
             },
         });
 
