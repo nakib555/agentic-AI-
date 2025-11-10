@@ -33,6 +33,7 @@ export type ModelResponse = {
   endTime?: number;
   suggestedActions?: string[];
   plan?: ParsedWorkflow;
+  groundingMetadata?: any;
 };
 
 export type Message = {

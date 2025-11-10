@@ -99,7 +99,12 @@ export const processStream = async (params: StreamProcessorParams): Promise<Stre
             };
         }
         
-        return { status: 'complete', fullText: currentFullText, planApproved: isPlanApproved };
+        return { 
+            status: 'complete', 
+            fullText: currentFullText, 
+            planApproved: isPlanApproved,
+            groundingMetadata: lastChunk?.candidates?.[0]?.groundingMetadata,
+        };
 
     } catch (error) {
         if (signal.aborted) return { status: 'aborted' };

@@ -68,15 +68,37 @@ export const createAgentCallbacks = (
                 executionApprovalRef.current = { resolve };
             });
         },
-        onComplete: async (finalText: string) => {
-            updateActiveResponseOnMessage(activeChatId, messageId, () => ({ text: finalText, endTime: Date.now() }));
+        onComplete: async (finalText: string, groundingMetadata?: any) => {
+            updateActiveResponseOnMessage(activeChatId, messageId, () => ({
+                text: finalText,
+                endTime: Date.now(),
+                groundingMetadata,
+            }));
             updateMessage(activeChatId, messageId, { isThinking: false });
             completeChatLoading(activeChatId);
             abortControllerRef.current = null;
             
-            const finalChat = chatHistory.find(c => c.id === activeChatId);
-            if (finalChat) {
-                const suggestions = await generateFollowUpSuggestions(finalChat.messages);
+            const originalChat = chatHistory.find(c => c.id === activeChatId);
+            if (originalChat) {
+                // Construct the most up-to-date message list for suggestion generation
+                const updatedMessages = originalChat.messages.map(msg => {
+                    if (msg.id === messageId) {
+                        const updatedMsg = { ...msg, isThinking: false };
+                        if (updatedMsg.responses) {
+                            const activeIndex = updatedMsg.activeResponseIndex;
+                            updatedMsg.responses[activeIndex] = {
+                                ...updatedMsg.responses[activeIndex],
+                                text: finalText,
+                                endTime: Date.now(),
+                                groundingMetadata,
+                            };
+                        }
+                        return updatedMsg;
+                    }
+                    return msg;
+                });
+
+                const suggestions = await generateFollowUpSuggestions(updatedMessages);
                 if (suggestions.length > 0) {
                     updateActiveResponseOnMessage(activeChatId, messageId, () => ({ suggestedActions: suggestions }));
                 }

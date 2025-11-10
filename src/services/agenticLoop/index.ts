@@ -34,7 +34,13 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             systemInstruction: settings?.systemPrompt ? `${settings.systemPrompt}\n\n${finalSystemInstruction}` : finalSystemInstruction,
         };
         if (settings.tools) {
-            config.tools = [{ functionDeclarations: settings.tools }];
+            // Check if it's an array of FunctionDeclarations for function calling
+            if (Array.isArray(settings.tools) && settings.tools.length > 0 && 'name' in settings.tools[0] && 'parameters' in settings.tools[0]) {
+                config.tools = [{ functionDeclarations: settings.tools }];
+            } else {
+                // Otherwise, assume it's another tool config like [{ googleSearch: {} }]
+                config.tools = settings.tools;
+            }
         }
         if (settings?.temperature !== undefined) config.temperature = settings.temperature;
         if (settings?.thinkingBudget) config.thinkingConfig = { thinkingBudget: settings.thinkingBudget };
@@ -141,7 +147,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         } else { // 'complete'
             fullModelResponseText = result.fullText;
             const finalCleanedText = fullModelResponseText.replace(/\[AUTO_CONTINUE\]/g, '').trim();
-            callbacks.onComplete(finalCleanedText);
+            callbacks.onComplete(finalCleanedText, result.groundingMetadata);
             hasCompleted = true;
         }
     };

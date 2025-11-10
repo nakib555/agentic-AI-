@@ -145,23 +145,15 @@ export const ChatArea = ({
         )}
       </AnimatePresence>
       <div className="flex-shrink-0 pt-4 px-4 sm:px-6 md:px-8">
-        <div className="flex justify-center mb-3">
-            <ModeToggle 
-                isAgentMode={isAgentMode} 
-                onToggle={setIsAgentMode}
-                disabled={isLoading}
-            />
-        </div>
         <div className="relative w-full">
           <MessageForm 
             ref={messageFormRef}
             onSubmit={sendMessage} 
             isLoading={isLoading || modelsLoading} 
             onCancel={onCancel}
+            isAgentMode={isAgentMode}
+            setIsAgentMode={setIsAgentMode}
           />
-          <p className="text-center text-sm text-gray-500 dark:text-slate-400 mt-2 px-4">
-              Gemini can make mistakes. Check important info.
-          </p>
         </div>
       </div>
     </div>

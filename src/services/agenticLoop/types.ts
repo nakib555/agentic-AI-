@@ -12,7 +12,7 @@ import type { ParsedWorkflow } from '../workflowParser';
 type ChatHistory = { role: 'user' | 'model'; parts: Part[] }[];
 type ChatSettings = { 
     systemInstruction: string;
-    tools?: FunctionDeclaration[];
+    tools?: any;
     systemPrompt?: string; 
     temperature?: number; 
     maxOutputTokens?: number; 
@@ -25,7 +25,7 @@ export type AgenticLoopCallbacks = {
     onNewToolCalls: (toolCalls: FunctionCall[]) => Promise<any[]>;
     onToolResult: (eventId: string, result: string) => void;
     onPlanReady: (plan: ParsedWorkflow) => Promise<boolean | string>;
-    onComplete: (finalText: string) => void;
+    onComplete: (finalText: string, groundingMetadata?: any) => void;
     onCancel: () => void;
     onError: (error: MessageError) => void;
 };
@@ -55,7 +55,7 @@ type StreamResultBase = {
 export type StreamProcessorResult =
     | ({ status: 'aborted' })
     | ({ status: 'error'; error: MessageError })
-    | (StreamResultBase & { status: 'complete' })
+    | (StreamResultBase & { status: 'complete'; groundingMetadata?: any; })
     | (StreamResultBase & { status: 'running'; nextAction: 'continue_generation'; currentTurnText: string; })
     | (StreamResultBase & { status: 'running'; nextAction: 'continue_with_tools'; functionCalls: FunctionCall[]; modelTurnParts: Part[]; })
     | (StreamResultBase & { status: 'running'; nextAction: 'continue_with_edited_plan'; editedPlan: string; modelTurnParts: Part[]; });

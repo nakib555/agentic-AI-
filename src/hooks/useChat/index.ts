@@ -35,11 +35,12 @@ const chatModeSystemInstruction = [
 # 💬 Conversational Mode Directives
 
 - Your primary goal is to provide a direct, helpful, and conversational response.
-- You are in "Chat Mode". This means you MUST NOT use any tools or follow the complex agentic workflow. Your capabilities are limited to conversation and knowledge recall.
+- You are in "Chat Mode". For queries that relate to recent events or up-to-date information, you can use the Google Search tool.
 - You MUST NOT use agentic workflow formatting (e.g., \`[STEP]\`, \`[AGENT:]\`). Do not think in steps.
 - You MUST adhere to all persona and formatting guidelines defined below for conversational responses.
-- You MUST NOT mention or allude to the agentic workflow, tools, agents, "HATF", or a "task force." Your identity is that of a helpful AI assistant.
+- You MUST NOT mention or allude to the agentic workflow, other tools, agents, "HATF", or a "task force." Your identity is that of a helpful AI assistant.
 - Your response should be a single, direct answer, formatted for the user as per the persona guide.
+- If you use the search tool, the UI will automatically display the source links. You do not need to list them, but you should synthesize the information from the search into your answer.
     `,
     CHAT_PERSONA_AND_UI_FORMATTING,
 ].join('\n\n');
@@ -235,7 +236,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     
     const agenticLoopSettings = {
         systemInstruction: isAgentMode ? systemInstruction : chatModeSystemInstruction,
-        tools: isAgentMode ? toolDeclarations : undefined,
+        tools: isAgentMode ? toolDeclarations : [{ googleSearch: {} }],
         systemPrompt: settings.systemPrompt,
         temperature: activeChat?.temperature ?? settings.temperature,
         maxOutputTokens: activeChat?.maxOutputTokens ?? settings.maxOutputTokens,
@@ -286,7 +287,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         
     const agenticLoopSettings = {
         systemInstruction: isAgentMode ? systemInstruction : chatModeSystemInstruction,
-        tools: isAgentMode ? toolDeclarations : undefined,
+        tools: isAgentMode ? toolDeclarations : [{ googleSearch: {} }],
         systemPrompt: settings.systemPrompt,
         temperature: chat?.temperature ?? settings.temperature,
         maxOutputTokens: chat?.maxOutputTokens ?? settings.maxOutputTokens,

@@ -34,23 +34,39 @@ export const useAiMessageLogic = (
     const { playOrStopAudio, audioState, isPlaying } = useTts(finalAnswerText, ttsVoice);
 
     const searchSources = useMemo((): Source[] => {
-        if (!activeResponse?.toolCallEvents || activeResponse.toolCallEvents.length === 0) return [];
         const allSources: Source[] = [];
-        const searchEvents = activeResponse.toolCallEvents.filter(e => e.call.name === 'duckduckgoSearch' && e.result);
+        
+        // From tool calls (Agent mode)
+        if (activeResponse?.toolCallEvents && activeResponse.toolCallEvents.length > 0) {
+            const searchEvents = activeResponse.toolCallEvents.filter(e => e.call.name === 'duckduckgoSearch' && e.result);
 
-        for (const event of searchEvents) {
-            const sourcesMatch = event.result!.match(/\[SOURCES_PILLS\]([\s\S]*?)\[\/SOURCES_PILLS\]/s);
-            if (sourcesMatch && sourcesMatch[1]) {
-                const markdown = sourcesMatch[1].trim();
-                const regex = /-\s*\[([^\]]+)\]\(([^)]+)\)/g;
-                let match;
-                while ((match = regex.exec(markdown)) !== null) {
-                    allSources.push({ title: match[1].trim(), uri: match[2].trim() });
+            for (const event of searchEvents) {
+                const sourcesMatch = event.result!.match(/\[SOURCES_PILLS\]([\s\S]*?)\[\/SOURCES_PILLS\]/s);
+                if (sourcesMatch && sourcesMatch[1]) {
+                    const markdown = sourcesMatch[1].trim();
+                    const regex = /-\s*\[([^\]]+)\]\(([^)]+)\)/g;
+                    let match;
+                    while ((match = regex.exec(markdown)) !== null) {
+                        allSources.push({ title: match[1].trim(), uri: match[2].trim() });
+                    }
                 }
             }
         }
+        
+        // From groundingMetadata (Chat mode search)
+        if (activeResponse?.groundingMetadata?.groundingChunks) {
+            for (const chunk of activeResponse.groundingMetadata.groundingChunks) {
+                if (chunk.web?.uri) {
+                    allSources.push({
+                        uri: chunk.web.uri,
+                        title: chunk.web.title || chunk.web.uri,
+                    });
+                }
+            }
+        }
+
         return Array.from(new Map(allSources.map(s => [s.uri, s])).values());
-    }, [activeResponse?.toolCallEvents]);
+    }, [activeResponse?.toolCallEvents, activeResponse?.groundingMetadata]);
 
     const thinkingIsComplete = !isThinking || !!activeResponse?.error;
     const hasThinkingProcess = thinkingText && thinkingText.trim() !== '';
