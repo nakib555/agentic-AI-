@@ -2,9 +2,9 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
+// FIX: Import `process` to correct the type definition for `process.cwd()`.
+import process from 'process';
 import { apiHandler } from './handler.js';
-// FIX: Explicitly import `process` to resolve TypeScript type error for `process.cwd()`.
-import { process } from 'process';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,7 +20,6 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.post('/api/handler', apiHandler);
 
 // Serve static assets for the frontend
-// FIX: The error here was likely caused by other type mismatches in the file. No change needed here.
 app.use(express.static(staticPath));
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
