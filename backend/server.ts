@@ -1,3 +1,6 @@
+// Fix: Add Node.js type reference to resolve errors with 'Buffer' and 'process'.
+/// <reference types="node" />
+
 import http from 'http';
 import path from 'path';
 import fs from 'fs';

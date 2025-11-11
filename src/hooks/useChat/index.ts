@@ -28,6 +28,12 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     const { chatHistory, currentChatId, updateChatTitle } = chatHistoryHook;
     const abortControllerRef = useRef<AbortController | null>(null);
 
+    // Refs to hold the latest state for callbacks
+    const chatHistoryRef = useRef(chatHistory);
+    useEffect(() => { chatHistoryRef.current = chatHistory; }, [chatHistory]);
+    const currentChatIdRef = useRef(currentChatId);
+    useEffect(() => { currentChatIdRef.current = currentChatId; }, [currentChatId]);
+
     const messages = useMemo(() => {
         return chatHistory.find(c => c.id === currentChatId)?.messages || [];
     }, [chatHistory, currentChatId]);
@@ -36,35 +42,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         if (!currentChatId) return false;
         return chatHistory.find(c => c.id === currentChatId)?.isLoading ?? false;
     }, [chatHistory, currentChatId]);
-
-    const cancelGeneration = useCallback(() => {
-        abortControllerRef.current?.abort();
-        // Also send a tool response for the plan if it's pending, to unblock the backend
-        if (frontendToolImplementations['plan-approval']) {
-            handleFrontendToolExecution('plan-approval', { approved: false }, 'denyExecution');
-        }
-    }, []);
-    
-    const approveExecution = useCallback((editedPlan: string) => {
-        if (currentChatId) {
-            const currentChat = chatHistory.find(c => c.id === currentChatId);
-            if (!currentChat || currentChat.messages.length === 0) return;
-            const lastMessage = currentChat.messages.slice(-1)[0];
-            chatHistoryHook.updateMessage(currentChatId, lastMessage.id, { executionState: 'approved' });
-            handleFrontendToolExecution('plan-approval', editedPlan, 'approveExecution');
-        }
-    }, [currentChatId, chatHistory, chatHistoryHook]);
-  
-    const denyExecution = useCallback(() => {
-        if (currentChatId) {
-            const currentChat = chatHistory.find(c => c.id === currentChatId);
-            if (!currentChat || currentChat.messages.length === 0) return;
-            const lastMessage = currentChat.messages.slice(-1)[0];
-            chatHistoryHook.updateMessage(currentChatId, lastMessage.id, { executionState: 'denied' });
-            handleFrontendToolExecution('plan-approval', false, 'denyExecution');
-        }
-    }, [currentChatId, chatHistory, chatHistoryHook]);
-
 
     const handleFrontendToolExecution = async (callId: string, toolArgs: any, toolName: string) => {
         try {
@@ -92,6 +69,43 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
             });
         }
     };
+
+    const cancelGeneration = useCallback(() => {
+        abortControllerRef.current?.abort();
+        // Also send a tool response for the plan if it's pending, to unblock the backend
+        if (frontendToolImplementations['plan-approval']) {
+            handleFrontendToolExecution('plan-approval', { approved: false }, 'denyExecution');
+        }
+    }, []);
+    
+    const approveExecution = useCallback((editedPlan: string) => {
+        const chatId = currentChatIdRef.current;
+        if (chatId) {
+            const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+            if (!currentChat || currentChat.messages.length === 0) {
+                console.error("approveExecution could not find current chat or messages were empty.");
+                return;
+            };
+            const lastMessage = currentChat.messages.slice(-1)[0];
+            chatHistoryHook.updateMessage(chatId, lastMessage.id, { executionState: 'approved' });
+            handleFrontendToolExecution('plan-approval', editedPlan, 'approveExecution');
+        }
+    }, [chatHistoryHook]);
+  
+    const denyExecution = useCallback(() => {
+        const chatId = currentChatIdRef.current;
+        if (chatId) {
+            const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+            if (!currentChat || currentChat.messages.length === 0) {
+                console.error("denyExecution could not find current chat or messages were empty.");
+                return;
+            };
+            const lastMessage = currentChat.messages.slice(-1)[0];
+            chatHistoryHook.updateMessage(chatId, lastMessage.id, { executionState: 'denied' });
+            handleFrontendToolExecution('plan-approval', false, 'denyExecution');
+        }
+    }, [chatHistoryHook]);
+
 
     const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean, isThinkingModeEnabled?: boolean } = {}) => {
         if (isLoading) cancelGeneration();
