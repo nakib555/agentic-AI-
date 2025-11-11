@@ -3,6 +3,8 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import { apiHandler } from './handler.js';
+// FIX: Explicitly import `process` to resolve TypeScript type error for `process.cwd()`.
+import { process } from 'process';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
