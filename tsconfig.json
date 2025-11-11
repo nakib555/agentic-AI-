@@ -15,7 +15,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["node", "@cloudflare/workers-types"]
+    "types": ["node"]
   },
   "include": ["src", "backend", "dev.js"]
 }

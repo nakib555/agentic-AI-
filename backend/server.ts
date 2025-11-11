@@ -1,57 +1,32 @@
-import handler from './handler';
+// FIX: Import Request and Response types from express to fix handler type errors.
+import express, { Request, Response } from 'express';
+import cors from 'cors';
+import path from 'path';
+import { apiHandler } from './handler.js';
 
-export interface Env {
-  API_KEY: string;
-}
+const app = express();
+const PORT = process.env.PORT || 3001;
 
-export default {
-  async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
-    // Set CORS headers for all responses
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    };
+// Middlewares
+app.use(cors());
+app.use(express.json({ limit: '50mb' })); // Increase limit for file uploads
 
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders });
-    }
+const staticPath = path.join(process.cwd(), 'dist');
 
-    const url = new URL(request.url);
+// API routes
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+app.post('/api/handler', apiHandler);
 
-    // Health check endpoint
-    if (url.pathname === '/api/health') {
-      const response = new Response(JSON.stringify({ status: 'ok' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-      return response;
-    }
+// Serve static assets for the frontend
+// FIX: The error here was likely caused by other type mismatches in the file. No change needed here.
+app.use(express.static(staticPath));
 
-    // API handler endpoint
-    if (url.pathname.startsWith('/api/handler')) {
-      try {
-        const response = await handler.fetch(request, env, ctx);
-        // Ensure the handler's response also gets CORS headers
-        const newHeaders = new Headers(response.headers);
-        Object.entries(corsHeaders).forEach(([key, value]) => {
-          newHeaders.set(key, value);
-        });
-        return new Response(response.body, {
-          status: response.status,
-          statusText: response.statusText,
-          headers: newHeaders,
-        });
-      } catch (e) {
-        console.error('Handler error:', e);
-        return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    }
+// Catch-all route to serve index.html for Single Page Application (SPA) routing
+// FIX: Add explicit types for req and res to resolve 'No overload matches' error.
+app.get('*', (req: Request, res: Response) => {
+  res.sendFile(path.join(staticPath, 'index.html'));
+});
 
-    // For other paths, return a 404. In a real Cloudflare Pages setup,
-    // Pages would serve static assets before the worker is invoked.
-    return new Response('Not Found', { status: 404, headers: corsHeaders });
-  },
-};
+app.listen(PORT, () => {
+  console.log(`Backend server listening on http://localhost:${PORT}`);
+});

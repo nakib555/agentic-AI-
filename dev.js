@@ -15,7 +15,7 @@ const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
 if (!apiKey) {
   console.error(`
     \x1b[31m[DEV-SERVER ERROR]\x1b[0m API key is missing.
-    The backend worker requires the Gemini API key to be set.
+    The backend server requires the Gemini API key to be set.
     Please create a '.env' file in the project root and add: API_KEY="YOUR_GEMINI_API_KEY_HERE"
   `);
   process.exit(1);
@@ -25,29 +25,29 @@ if (!apiKey) {
 await rm('dist', { recursive: true, force: true }).catch(() => {});
 console.log('Cleaned dist directory.');
 
-// --- Run Backend Worker with Wrangler ---
+// --- Run Backend Server with Nodemon + ts-node ---
 try {
-  console.log('Starting Cloudflare Worker in development mode...');
-  const wranglerProcess = spawn('npx', [
-    'wrangler',
-    'dev',
-    'backend/server.ts',
-    '--port',
-    BACKEND_PORT.toString(),
-    '--local'
+  console.log('Starting backend server in development mode...');
+  const nodemonProcess = spawn('npx', [
+    'nodemon',
+    '--watch', 'backend',
+    '--ext', 'ts',
+    '--exec', 'ts-node backend/server.ts'
   ], {
     stdio: 'inherit',
     shell: true, // Use shell to correctly resolve `npx` on different systems
+    env: { ...process.env, PORT: BACKEND_PORT.toString() }
   });
 
-  wranglerProcess.on('error', (err) => {
-    console.error('\x1b[31m[Wrangler Error]\x1b[0m Failed to start wrangler:', err);
+  nodemonProcess.on('error', (err) => {
+    console.error('\x1b[31m[Nodemon Error]\x1b[0m Failed to start nodemon:', err);
     process.exit(1);
   });
 } catch (e) {
-  console.error('Failed to initialize backend worker:', e);
+  console.error('Failed to initialize backend server:', e);
   process.exit(1);
 }
+
 
 // --- Copy & Watch Static Assets ---
 const copyAndWatch = (source, dest) => {

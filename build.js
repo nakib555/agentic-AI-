@@ -25,17 +25,19 @@ try {
   });
   console.log('Frontend bundling complete.');
   
-  // 3. Build Backend Worker
+  // 3. Build Backend Server
   await esbuild.build({
     entryPoints: ['backend/server.ts'],
     bundle: true,
-    format: 'esm', // Use ES module format for workers
-    outfile: 'dist/_worker.js', // Cloudflare Pages convention for the worker file
+    platform: 'node',
+    format: 'esm',
+    outfile: 'dist/server.js',
     minify: true,
     sourcemap: true,
     logLevel: 'info',
+    external: ['express', 'cors'], // Mark node_modules as external
   });
-  console.log('Backend worker bundling complete.');
+  console.log('Backend server bundling complete.');
 
   // 4. Copy static files
   const copyFiles = (source, dest) => {

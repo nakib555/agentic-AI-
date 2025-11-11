@@ -43,7 +43,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         return chatHistory.find(c => c.id === currentChatId)?.isLoading ?? false;
     }, [chatHistory, currentChatId]);
 
-    const handleFrontendToolExecution = async (callId: string, toolArgs: any, toolName: string) => {
+    const handleFrontendToolExecution = useCallback(async (callId: string, toolArgs: any, toolName: string) => {
         try {
             let result: any;
             if (toolName === 'approveExecution') {
@@ -68,7 +68,8 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 body: JSON.stringify({ callId, error: parseApiError(error).message }),
             });
         }
-    };
+    }, []);
+
 
     const cancelGeneration = useCallback(() => {
         abortControllerRef.current?.abort();
@@ -76,53 +77,43 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         if (frontendToolImplementations['plan-approval']) {
             handleFrontendToolExecution('plan-approval', { approved: false }, 'denyExecution');
         }
-    }, []);
+    }, [handleFrontendToolExecution]);
+    
+    const { updateMessage } = chatHistoryHook;
     
     const approveExecution = useCallback((editedPlan: string) => {
         const chatId = currentChatIdRef.current;
-        if (!chatId) {
-            console.error("approveExecution called with no active chat ID.");
-            return;
+        if (chatId) {
+            const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+            // Defensive, nested check to prevent race conditions.
+            if (currentChat && Array.isArray(currentChat.messages) && currentChat.messages.length > 0) {
+                const lastMessage = currentChat.messages[currentChat.messages.length - 1];
+                updateMessage(chatId, lastMessage.id, { executionState: 'approved' });
+                handleFrontendToolExecution('plan-approval', editedPlan, 'approveExecution');
+            } else {
+                console.error(`approveExecution: Invalid chat state for ID ${chatId}. Chat found:`, currentChat);
+            }
+        } else {
+            console.error("approveExecution: No active chat ID.");
         }
-
-        const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-        if (!currentChat) {
-            console.error(`approveExecution could not find chat with ID: ${chatId}`);
-            return;
-        }
-
-        if (currentChat.messages.length === 0) {
-            console.error(`approveExecution found chat ${chatId} but it has no messages.`);
-            return;
-        }
-
-        const lastMessage = currentChat.messages.slice(-1)[0];
-        chatHistoryHook.updateMessage(chatId, lastMessage.id, { executionState: 'approved' });
-        handleFrontendToolExecution('plan-approval', editedPlan, 'approveExecution');
-    }, [chatHistoryHook]);
+    }, [updateMessage, handleFrontendToolExecution]);
   
     const denyExecution = useCallback(() => {
         const chatId = currentChatIdRef.current;
-        if (!chatId) {
-            console.error("denyExecution called with no active chat ID.");
-            return;
+        if (chatId) {
+            const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+            // Defensive, nested check to prevent race conditions.
+            if (currentChat && Array.isArray(currentChat.messages) && currentChat.messages.length > 0) {
+                const lastMessage = currentChat.messages[currentChat.messages.length - 1];
+                updateMessage(chatId, lastMessage.id, { executionState: 'denied' });
+                handleFrontendToolExecution('plan-approval', false, 'denyExecution');
+            } else {
+                console.error(`denyExecution: Invalid chat state for ID ${chatId}. Chat found:`, currentChat);
+            }
+        } else {
+            console.error("denyExecution: No active chat ID.");
         }
-
-        const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-        if (!currentChat) {
-            console.error(`denyExecution could not find chat with ID: ${chatId}`);
-            return;
-        }
-
-        if (currentChat.messages.length === 0) {
-            console.error(`denyExecution found chat ${chatId} but it has no messages.`);
-            return;
-        }
-
-        const lastMessage = currentChat.messages.slice(-1)[0];
-        chatHistoryHook.updateMessage(chatId, lastMessage.id, { executionState: 'denied' });
-        handleFrontendToolExecution('plan-approval', false, 'denyExecution');
-    }, [chatHistoryHook]);
+    }, [updateMessage, handleFrontendToolExecution]);
 
 
     const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean, isThinkingModeEnabled?: boolean } = {}) => {
