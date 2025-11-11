@@ -4,7 +4,7 @@
  */
 
 import { ToolError } from '../types';
-import { API_BASE_URL } from '../../utils/api';
+import { API_BASE_URL } from '../utils/api';
 
 // The FunctionDeclaration is now in `declarations.ts`.
 

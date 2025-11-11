@@ -4,7 +4,7 @@
  */
 
 import { parseApiError } from './gemini/index';
-import { API_BASE_URL } from '../../utils/api';
+import { API_BASE_URL } from '../utils/api';
 
 /**
  * Enhances a user's prompt by streaming a rewritten version from the backend.

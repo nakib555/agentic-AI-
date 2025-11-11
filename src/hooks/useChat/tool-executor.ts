@@ -8,7 +8,7 @@
 
 import { toolImplementations } from '../../tools';
 import { ToolError } from '../../types';
-import { API_BASE_URL } from '../../../utils/api';
+import { API_BASE_URL } from '../../utils/api';
 
 const BACKEND_TOOLS = new Set([
     'generateImage',

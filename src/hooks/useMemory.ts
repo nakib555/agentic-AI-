@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { ChatSession } from '../types';
-import { API_BASE_URL } from '../../utils/api';
+import { API_BASE_URL } from '../utils/api';
 
 const MEMORY_ENABLED_KEY = 'agentic-memoryEnabled';
 const MEMORY_CONTENT_KEY = 'agentic-memoryContent';

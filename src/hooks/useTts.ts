@@ -8,7 +8,7 @@ import { audioCache } from '../services/audioCache';
 import { audioManager } from '../services/audioService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
 import { cleanTextForTts } from '../components/Chat/AiMessage/utils';
-import { API_BASE_URL } from '../../utils/api';
+import { API_BASE_URL } from '../utils/api';
 
 type AudioState = 'idle' | 'loading' | 'error' | 'playing';
 
