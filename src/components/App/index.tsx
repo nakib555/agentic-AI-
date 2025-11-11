@@ -66,7 +66,7 @@ export const App = () => {
            <ChatArea 
               messageListRef={logic.messageListRef}
               messages={logic.messages}
-              isLoading={logic.isLoading}
+              isLoading={logic.isLoading || logic.modelsLoading || logic.backendStatus !== 'online'}
               sendMessage={logic.sendMessage}
               modelsLoading={logic.modelsLoading}
               onCancel={logic.cancelGeneration}
@@ -80,6 +80,8 @@ export const App = () => {
               onSetActiveResponseIndex={logic.setActiveResponseIndex}
               isAgentMode={logic.isAgentMode}
               setIsAgentMode={logic.setIsAgentMode}
+              backendStatus={logic.backendStatus}
+              backendError={logic.backendError}
            />
         </div>
       </main>

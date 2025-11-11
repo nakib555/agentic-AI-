@@ -32,6 +32,7 @@ import {
   DEFAULT_TTS_VOICE,
   DEFAULT_AUTO_PLAY_AUDIO
 } from './constants';
+import { API_BASE_URL } from '../../utils/api';
 
 
 export const useAppLogic = () => {
@@ -50,6 +51,8 @@ export const useAppLogic = () => {
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
   const [isThinkingSidebarOpen, setIsThinkingSidebarOpen] = useState(false);
   const [thinkingMessageId, setThinkingMessageId] = useState<string | null>(null);
+  const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+  const [backendError, setBackendError] = useState<string | null>(null);
 
   // --- Model Management ---
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
@@ -86,6 +89,43 @@ export const useAppLogic = () => {
       setModelsLoading(false);
     });
   }, []);
+
+  // --- Health check effect ---
+  useEffect(() => {
+    let intervalId: number | null = null;
+
+    const checkBackendStatus = async () => {
+        try {
+            setBackendStatus('checking');
+            const response = await fetch(`${API_BASE_URL}/api/health`);
+            if (!response.ok) throw new Error(`Status: ${response.status}`);
+            const data = await response.json();
+            if (data.status !== 'ok') throw new Error('Invalid health response');
+
+            setBackendStatus('online');
+            setBackendError(null);
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+        } catch (error) {
+            setBackendStatus('offline');
+            setBackendError("Could not connect to the backend server. Please ensure it is running.");
+            if (!intervalId) {
+                intervalId = window.setInterval(checkBackendStatus, 5000);
+            }
+        }
+    };
+
+    checkBackendStatus();
+
+    return () => {
+        if (intervalId) {
+            clearInterval(intervalId);
+        }
+    };
+  }, []);
+
 
   // --- Chat Core ---
   const chatSettings = useMemo(() => ({
@@ -194,6 +234,7 @@ export const useAppLogic = () => {
     appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, setIsAgentMode, ...memory,
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
     isThinkingSidebarOpen, setIsThinkingSidebarOpen, thinkingMessageId, setThinkingMessageId,
+    backendStatus, backendError,
     availableModels, modelsLoading, activeModel, handleModelChange,
     aboutUser, setAboutUser, aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens, setMaxTokens,
     imageModel, setImageModel, videoModel, setVideoModel, ttsVoice, setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled,

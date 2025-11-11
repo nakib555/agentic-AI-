@@ -28,6 +28,8 @@ type ChatAreaProps = {
   onSetActiveResponseIndex: (chatId: string, messageId: string, index: number) => void;
   isAgentMode: boolean;
   setIsAgentMode: (isAgent: boolean) => void;
+  backendStatus: 'online' | 'offline' | 'checking';
+  backendError: string | null;
 };
 
 export const ChatArea = ({ 
@@ -35,7 +37,7 @@ export const ChatArea = ({
     ttsVoice, isAutoPlayEnabled, currentChatId,
     onShowThinkingProcess, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
-    isAgentMode, setIsAgentMode
+    isAgentMode, setIsAgentMode, backendStatus, backendError
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -144,6 +146,28 @@ export const ChatArea = ({
           </div>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {backendStatus === 'offline' && (
+          <motion.div
+            className="px-4 sm:px-6 md:px-8 py-2"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+          >
+            <div className="bg-red-500/10 dark:bg-red-900/20 border border-red-500/20 text-red-700 dark:text-red-300 text-sm rounded-lg p-3 flex items-start gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500 dark:text-red-400">
+                <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <p className="font-semibold text-red-800 dark:text-red-200">Connection Error</p>
+                <p>{backendError} Retrying automatically...</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
       <div className="flex-shrink-0 pt-4 px-4 sm:px-6 md:px-8">
         <div className="relative w-full">
           <MessageForm 

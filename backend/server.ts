@@ -40,6 +40,13 @@ const server = http.createServer(async (req, res) => {
     
     const parsedUrl = parse(req.url || '/', true);
 
+    // Health check endpoint
+    if (parsedUrl.pathname === '/api/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok' }));
+        return;
+    }
+
     if (parsedUrl.pathname && parsedUrl.pathname.startsWith('/api/handler')) {
         const fullUrl = `http://${req.headers.host}${req.url}`;
         

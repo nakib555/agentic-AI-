@@ -80,30 +80,48 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     
     const approveExecution = useCallback((editedPlan: string) => {
         const chatId = currentChatIdRef.current;
-        if (chatId) {
-            const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-            if (!currentChat || currentChat.messages.length === 0) {
-                console.error("approveExecution could not find current chat or messages were empty.");
-                return;
-            };
-            const lastMessage = currentChat.messages.slice(-1)[0];
-            chatHistoryHook.updateMessage(chatId, lastMessage.id, { executionState: 'approved' });
-            handleFrontendToolExecution('plan-approval', editedPlan, 'approveExecution');
+        if (!chatId) {
+            console.error("approveExecution called with no active chat ID.");
+            return;
         }
+
+        const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+        if (!currentChat) {
+            console.error(`approveExecution could not find chat with ID: ${chatId}`);
+            return;
+        }
+
+        if (currentChat.messages.length === 0) {
+            console.error(`approveExecution found chat ${chatId} but it has no messages.`);
+            return;
+        }
+
+        const lastMessage = currentChat.messages.slice(-1)[0];
+        chatHistoryHook.updateMessage(chatId, lastMessage.id, { executionState: 'approved' });
+        handleFrontendToolExecution('plan-approval', editedPlan, 'approveExecution');
     }, [chatHistoryHook]);
   
     const denyExecution = useCallback(() => {
         const chatId = currentChatIdRef.current;
-        if (chatId) {
-            const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-            if (!currentChat || currentChat.messages.length === 0) {
-                console.error("denyExecution could not find current chat or messages were empty.");
-                return;
-            };
-            const lastMessage = currentChat.messages.slice(-1)[0];
-            chatHistoryHook.updateMessage(chatId, lastMessage.id, { executionState: 'denied' });
-            handleFrontendToolExecution('plan-approval', false, 'denyExecution');
+        if (!chatId) {
+            console.error("denyExecution called with no active chat ID.");
+            return;
         }
+
+        const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+        if (!currentChat) {
+            console.error(`denyExecution could not find chat with ID: ${chatId}`);
+            return;
+        }
+
+        if (currentChat.messages.length === 0) {
+            console.error(`denyExecution found chat ${chatId} but it has no messages.`);
+            return;
+        }
+
+        const lastMessage = currentChat.messages.slice(-1)[0];
+        chatHistoryHook.updateMessage(chatId, lastMessage.id, { executionState: 'denied' });
+        handleFrontendToolExecution('plan-approval', false, 'denyExecution');
     }, [chatHistoryHook]);
 
 
