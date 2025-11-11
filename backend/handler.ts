@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+// Fix: Import `FunctionCall` type to correctly type the `onNewToolCalls` callback argument.
+import { GoogleGenAI, GenerateContentResponse, FunctionCall } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system";
 import { PREAMBLE } from './prompts/preamble';
 import { CHAT_PERSONA_AND_UI_FORMATTING } from './prompts/chatPersona';
@@ -11,12 +12,13 @@ import { parseApiError } from './utils/apiError';
 import { executeImageGenerator } from './tools/imageGenerator';
 import { executeWebSearch } from './tools/webSearch';
 import { executeAnalyzeMapVisually, executeAnalyzeImageVisually } from './tools/visualAnalysis';
-import { executeWithPiston } from './tools/piston';
+import { executeCode } from "./tools/codeExecutor";
 import { executeVideoGenerator } from "./tools/videoGenerator";
 import { executeTextToSpeech } from "./tools/tts";
 import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory";
-// Fix: Import the getText utility to safely extract text content from API responses.
+import { runAgenticLoop } from './services/agenticLoop';
 import { getText } from "./utils/geminiUtils";
+import { createToolExecutor } from "./tools";
 
 const chatModeSystemInstruction = [
     PREAMBLE,
@@ -33,41 +35,69 @@ const chatModeSystemInstruction = [
     CHAT_PERSONA_AND_UI_FORMATTING,
 ].join('\n\n');
 
-async function handleChat(ai: GoogleGenAI, payload: any): Promise<Response> {
+// State for handling pending frontend tool calls
+const pendingFrontendTools = new Map<string, (result: string | { error: string }) => void>();
+
+async function handleChat(ai: GoogleGenAI, payload: any, signal: AbortSignal): Promise<Response> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
 
-    let finalSystemInstruction = isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
-    if (memoryContent) {
-        finalSystemInstruction = `// SECTION 0: CONVERSATION MEMORY\n// Here is a summary of key information from past conversations.\n${memoryContent}\n\n${finalSystemInstruction}`;
-    }
-
-    const config: any = {
-        systemInstruction: systemPrompt ? `${systemPrompt}\n\n${finalSystemInstruction}` : finalSystemInstruction,
-    };
-    if (settings.tools) config.tools = settings.tools;
-    if (settings.temperature !== undefined) config.temperature = settings.temperature;
-    if (settings.thinkingBudget) config.thinkingConfig = { thinkingBudget: settings.thinkingBudget };
-    
-    if (settings.maxOutputTokens && settings.maxOutputTokens > 0) {
-        config.maxOutputTokens = settings.maxOutputTokens;
-        if (model.includes('gemini-2.5')) {
-            config.thinkingConfig = { thinkingBudget: Math.floor(settings.maxOutputTokens * 0.25) };
-        }
-    }
-
-    const geminiStream = await ai.models.generateContentStream({ model, contents: history, config });
-
     const responseStream = new ReadableStream({
         async start(controller) {
+            const enqueue = (data: any) => controller.enqueue(new TextEncoder().encode(JSON.stringify(data) + '\n'));
+            
+            const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, (callId, toolName, toolArgs) => {
+                return new Promise((resolve) => {
+                    pendingFrontendTools.set(callId, resolve);
+                    enqueue({ type: 'frontend-tool-request', payload: { callId, toolName, toolArgs } });
+                });
+            });
+
+            const callbacks = {
+                onTextChunk: (text: string) => enqueue({ type: 'text-chunk', payload: text }),
+                // Fix: `onNewToolCalls` must return a Promise to match the `AgenticLoopCallbacks` type.
+                onNewToolCalls: (calls: FunctionCall[]) => {
+                    enqueue({ type: 'tool-call-start', payload: calls });
+                    return Promise.resolve(calls);
+                },
+                onToolResult: (id: string, result: string) => enqueue({ type: 'tool-call-end', payload: { id, result } }),
+                onPlanReady: (plan: any) => {
+                    return new Promise<boolean | string>((resolve) => {
+                        pendingFrontendTools.set('plan-approval', (approved) => resolve(approved as boolean | string));
+                        enqueue({ type: 'plan-ready', payload: plan });
+                    });
+                },
+                onComplete: (finalText: string, groundingMetadata: any) => {
+                    enqueue({ type: 'complete', payload: { finalText, groundingMetadata } });
+                },
+                onCancel: () => enqueue({ type: 'cancel' }),
+                onError: (error: any) => enqueue({ type: 'error', payload: error }),
+            };
+
+            signal.addEventListener('abort', () => {
+                if (!controller.desiredSize) return;
+                callbacks.onCancel();
+                controller.close();
+            });
+            
+            let finalSystemInstruction = isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
+            if (memoryContent) {
+                finalSystemInstruction = `// SECTION 0: CONVERSATION MEMORY\n// Here is a summary of key information from past conversations.\n${memoryContent}\n\n${finalSystemInstruction}`;
+            }
+
             try {
-                for await (const chunk of geminiStream) {
-                    controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
-                }
+                await runAgenticLoop({
+                    model, history, toolExecutor, callbacks,
+                    settings: {
+                        ...settings,
+                        systemInstruction: systemPrompt ? `${systemPrompt}\n\n${finalSystemInstruction}` : finalSystemInstruction,
+                    },
+                    signal,
+                });
             } catch (error) {
-                console.error("Stream error:", error);
-                const errPayload = { error: parseApiError(error) };
-                controller.enqueue(new TextEncoder().encode(JSON.stringify(errPayload) + '\n'));
+                if ((error as Error).name !== 'AbortError') {
+                    callbacks.onError(parseApiError(error));
+                }
             } finally {
                 controller.close();
             }
@@ -77,35 +107,17 @@ async function handleChat(ai: GoogleGenAI, payload: any): Promise<Response> {
     return new Response(responseStream, { headers: { 'Content-Type': 'application/x-ndjson' } });
 }
 
-async function handleToolExecution(ai: GoogleGenAI, payload: any): Promise<Response> {
-    const { toolName, toolArgs } = payload;
-    let result: string;
-
-    switch (toolName) {
-        case 'generateImage':
-            result = await executeImageGenerator(ai, toolArgs);
-            break;
-        case 'generateVideo':
-            result = await executeVideoGenerator(ai, toolArgs);
-            break;
-        case 'duckduckgoSearch':
-            result = await executeWebSearch(ai, toolArgs);
-            break;
-        case 'analyzeMapVisually':
-            result = await executeAnalyzeMapVisually(ai, toolArgs);
-            break;
-        case 'analyzeImageVisually':
-            result = await executeAnalyzeImageVisually(ai, toolArgs);
-            break;
-        case 'executeCode': // Assumes piston-compatible languages
-            result = await executeWithPiston(toolArgs.language, toolArgs.code);
-            break;
-        default:
-            throw new Error(`Unknown or unsupported tool for backend execution: ${toolName}`);
+async function handleToolResponse(payload: any): Promise<Response> {
+    const { callId, result, error } = payload;
+    if (pendingFrontendTools.has(callId)) {
+        const resolve = pendingFrontendTools.get(callId)!;
+        resolve(error ? { error } : result);
+        pendingFrontendTools.delete(callId);
+        return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
     }
-
-    return new Response(JSON.stringify({ result }), { headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ success: false, error: 'Unknown callId' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
 }
+
 
 async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<Response> {
     let result: GenerateContentResponse;
@@ -115,7 +127,6 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
             const conversationHistory = payload.messages.map((msg: any) => `${msg.role}: ${(msg.text || '').substring(0, 500)}`).join('\n');
             const prompt = `Based on the following conversation, suggest a short and concise title (5 words maximum). Do not use quotes in the title.\n\nCONVERSATION:\n${conversationHistory}\n\nTITLE:`;
             result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-            // Fix: Use the getText utility to safely extract the text content from the response.
             const title = getText(result).trim().replace(/["']/g, '');
             return new Response(JSON.stringify({ title: title || 'Untitled Chat' }), { headers: { 'Content-Type': 'application/json' } });
         }
@@ -124,7 +135,6 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
             const conversationTranscript = payload.conversation.filter((msg: any) => !msg.isHidden).slice(-6).map((msg: any) => `${msg.role}: ${(msg.responses?.[msg.activeResponseIndex]?.text || msg.text || '').substring(0, 300)}`).join('\n');
             const prompt = `Based on the recent conversation, suggest 3 concise and relevant follow-up questions or actions a user might take next. The suggestions should be phrased from the user's perspective (e.g., "Explain this in simpler terms"). Output MUST be a valid JSON array of strings. If no good suggestions can be made, return an empty array [].\n\nCONVERSATION:\n${conversationTranscript}\n\nJSON OUTPUT:`;
             result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
-            // Fix: Use the getText utility to safely extract the text content from the response.
             return new Response(JSON.stringify({ suggestions: JSON.parse(getText(result) || '[]') }), { headers: { 'Content-Type': 'application/json' } });
         }
 
@@ -163,8 +173,8 @@ export default {
         try {
             const payload = await request.json();
             
-            if (task === 'chat') return await handleChat(ai, payload);
-            if (task === 'tool_exec') return await handleToolExecution(ai, payload);
+            if (task === 'chat') return await handleChat(ai, payload, request.signal);
+            if (task === 'tool_response') return await handleToolResponse(payload);
             
             if (task === 'enhance') {
                 const stream = await ai.models.generateContentStream({

@@ -4,7 +4,7 @@
  */
 
 import { GoogleGenAI, Modality } from "@google/genai";
-import { ToolError } from "../../src/types";
+import { ToolError } from "../utils/apiError";
 
 const generateId = () => `img_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 

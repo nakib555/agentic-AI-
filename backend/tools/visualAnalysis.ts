@@ -4,7 +4,7 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { ToolError } from "../../src/types";
+import { ToolError } from "../utils/apiError";
 
 export const executeAnalyzeMapVisually = async (ai: GoogleGenAI, args: { latitude: number, longitude: number }): Promise<string> => {
     const { latitude, longitude } = args;

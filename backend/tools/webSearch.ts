@@ -4,7 +4,7 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { ToolError } from '../../src/types';
+import { ToolError } from '../utils/apiError';
 
 function hasProperty<K extends PropertyKey>(obj: unknown, prop: K): obj is Record<K, unknown> {
   return typeof obj === 'object' && obj !== null && prop in obj;

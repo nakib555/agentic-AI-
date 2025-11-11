@@ -36,13 +36,12 @@ const server = http.createServer(async (req, res) => {
         res.end();
         return;
     }
+    
+    const parsedUrl = parse(req.url || '/', true);
 
-    if (req.url && req.url.startsWith('/api/handler')) {
+    if (parsedUrl.pathname && parsedUrl.pathname.startsWith('/api/handler')) {
         const fullUrl = `http://${req.headers.host}${req.url}`;
         
-        // The `body` of a fetch `Request` must be a valid `BodyInit` type.
-        // An `http.IncomingMessage` (req) is a Node.js stream, not a web stream.
-        // We read the body into a Buffer, which is a valid `BodyInit`.
         const getBody = () => new Promise<Buffer>((resolve, reject) => {
             const bodyParts: Uint8Array[] = [];
             req.on('data', (chunk) => bodyParts.push(chunk));
@@ -75,7 +74,6 @@ const server = http.createServer(async (req, res) => {
         }
     } else {
         // --- Static File Serving (for production 'start' script) ---
-        const parsedUrl = parse(req.url || '/', true);
         let pathname = parsedUrl.pathname === '/' ? '/index.html' : parsedUrl.pathname || '/index.html';
         
         // Sanitize pathname to prevent directory traversal

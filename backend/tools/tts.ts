@@ -4,7 +4,7 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { ToolError } from "../../src/types";
+import { ToolError } from "../utils/apiError";
 
 export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: string): Promise<string> => {
     try {
