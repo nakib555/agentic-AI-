@@ -3,67 +3,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleGenAI } from "@google/genai";
 import type { Message } from '../../types';
-import { getText } from '../../utils/geminiUtils';
-import { parseApiError } from './apiError';
+import { API_BASE_URL } from '../../utils/api';
 
 export const generateFollowUpSuggestions = async (conversation: Message[]): Promise<string[]> => {
     if (conversation.length < 2) return [];
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-
-    const conversationTranscript = conversation
-        .filter(msg => !msg.isHidden)
-        .slice(-6) // Only use the last few turns for relevance
-        .map(msg => {
-            let content = '';
-            if (msg.role === 'user') {
-                content = msg.text;
-            } else if (msg.role === 'model' && msg.responses && msg.responses.length > 0) {
-                // Use the text from the currently active response
-                content = msg.responses[msg.activeResponseIndex]?.text || '';
-            }
-            return `${msg.role}: ${content.substring(0, 300)}`;
-        })
-        .join('\n');
-
-    const prompt = `
-        Based on the recent conversation, suggest 3 concise and relevant follow-up questions the user might ask next.
-        - The questions should be short and directly related to the last topic.
-        - The output MUST be a valid JSON array of strings.
-        - If no good suggestions can be made, return an empty array [].
-
-        EXAMPLE:
-        [
-            "Can you explain that in simpler terms?",
-            "Show me a code example.",
-            "What are the alternatives?"
-        ]
-
-        ---
-        CONVERSATION:
-        ${conversationTranscript}
-        ---
-        JSON OUTPUT:
-    `;
-
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: { responseMimeType: 'application/json' },
+        const response = await fetch(`${API_BASE_URL}/api/handler?task=suggestions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ conversation }),
         });
+        
+        if (!response.ok) {
+            throw new Error(`Suggestion generation failed with status ${response.status}`);
+        }
 
-        const jsonText = getText(response).trim() || '[]';
-        const suggestions = JSON.parse(jsonText);
+        const { suggestions } = await response.json();
 
         if (Array.isArray(suggestions) && suggestions.every(s => typeof s === 'string')) {
-            return suggestions.slice(0, 3); // Ensure max 3 suggestions
+            return suggestions.slice(0, 3);
         }
         return [];
     } catch (error) {
-        console.error("Follow-up suggestion generation failed:", parseApiError(error));
+        console.error("Follow-up suggestion generation failed:", error);
         return [];
     }
 };

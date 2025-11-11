@@ -3,12 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleGenAI } from "@google/genai";
 import { parseApiError } from './gemini/index';
-import { getText } from '../utils/geminiUtils';
+import { API_BASE_URL } from '../../utils/api';
 
 /**
- * Enhances a user's prompt by streaming a rewritten version from the Gemini API.
+ * Enhances a user's prompt by streaming a rewritten version from the backend.
  * @param userInput The original text from the user.
  * @returns An async generator that yields chunks of the enhanced prompt string.
  * @throws An error if the API call fails or the model returns an empty response.
@@ -20,44 +19,33 @@ export async function* enhanceUserPromptStream(userInput: string): AsyncGenerato
     return;
   }
   
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-  const metaPrompt = `
-    You are a world-class prompt engineer AI. Your sole purpose is to take a user's raw idea and transform it into a highly detailed, specific, and effective prompt for a sophisticated agentic AI.
-
-    Rules:
-    - Expand on the original concept, adding rich detail, context, and clarity.
-    - Anticipate implicit needs and make them explicit.
-    - If the prompt is for an image or video, describe cinematic details like lighting, composition, and style.
-    - If the prompt is for code, specify language, libraries, and expected output format.
-    - If the prompt is a question, rephrase it to elicit a more comprehensive and well-structured answer.
-    - CRITICAL: You must only return the enhanced prompt text itself. Do not include any preamble, explanation, or markdown formatting like "Enhanced Prompt:".
-
-    ---
-    Original User Prompt: "${userInput}"
-    ---
-  `;
-
   try {
-    const responseStream = await ai.models.generateContentStream({
-        model: 'gemini-2.5-flash',
-        contents: metaPrompt,
-        config: {
-            temperature: 0.5, // Lower temperature for more focused enhancements
-        }
+    const response = await fetch(`${API_BASE_URL}/api/handler?task=enhance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userInput }),
     });
 
+    if (!response.ok || !response.body) {
+        throw new Error(`Prompt enhancement failed with status ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
     let hasYielded = false;
-    for await (const chunk of responseStream) {
-      const chunkText = getText(chunk);
-      if (chunkText) {
-        hasYielded = true;
-        yield chunkText;
-      }
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        if (chunk) {
+            hasYielded = true;
+            yield chunk;
+        }
     }
     
-    // If the stream completed but we never yielded any text, it's a failure.
     if (!hasYielded) {
-      throw new Error("Model returned an empty enhancement stream.");
+      throw new Error("Backend returned an empty enhancement stream.");
     }
 
   } catch (error) {

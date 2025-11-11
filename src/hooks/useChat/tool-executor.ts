@@ -8,72 +8,68 @@
 
 import { toolImplementations } from '../../tools';
 import { ToolError } from '../../types';
+import { API_BASE_URL } from '../../../utils/api';
 
-const base64ToUint8Array = (base64: string) => {
-    const binary_string = atob(base64);
-    const len = binary_string.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binary_string.charCodeAt(i);
-    }
-    return bytes;
-};
+const BACKEND_TOOLS = new Set([
+    'generateImage',
+    'analyzeMapVisually',
+    'analyzeImageVisually',
+    'duckduckgoSearch',
+]);
 
-export const createToolExecutor = (chatHistory: any[], activeChatId: string, imageModel: string, videoModel: string) => {
+const PISTON_LANGUAGES = new Set(['c', 'cpp', 'c++', 'csharp', 'c#', 'java', 'ruby', 'rb', 'go', 'rust', 'rs', 'php', 'swift']);
+
+export const createToolExecutor = (imageModel: string, videoModel: string) => {
     return async (name: string, args: any): Promise<string> => {
+        const lang = args.language?.toLowerCase();
+        const isBackendTool = BACKEND_TOOLS.has(name) || (name === 'executeCode' && PISTON_LANGUAGES.has(lang));
+        
+        // --- Backend Tool Execution ---
+        if (isBackendTool) {
+            try {
+                // Inject model selections for relevant tools before sending to backend
+                let finalArgs = { ...args };
+                if (name === 'generateImage') finalArgs.model = imageModel;
+                if (name === 'generateVideo') finalArgs.model = videoModel;
+
+                const response = await fetch(`${API_BASE_URL}/api/handler?task=tool_exec`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ toolName: name, toolArgs: finalArgs }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: { message: `Backend tool execution failed with status ${response.status}` } }));
+                    const message = errorData.error?.message || 'Unknown backend error';
+                    const code = errorData.error?.code || 'BACKEND_EXECUTION_FAILED';
+                    const details = errorData.error?.details;
+                    throw new ToolError(name, code, message, new Error(details));
+                }
+                const { result } = await response.json();
+                return result;
+            } catch (error) {
+                if (error instanceof ToolError) throw error;
+                const originalError = error instanceof Error ? error : new Error(String(error));
+                throw new ToolError(name, 'BACKEND_FETCH_FAILED', originalError.message, originalError);
+            }
+        }
+
+        // --- Frontend Tool Execution ---
         const toolImplementation = toolImplementations[name];
         if (!toolImplementation) {
             throw new ToolError(name, 'TOOL_NOT_FOUND', `Tool "${name}" not found.`);
         }
-
-        let finalArgs = { ...args };
         
-        if (name === 'generateImage') {
-            finalArgs.model = imageModel;
-        }
-        if (name === 'generateVideo') {
-            finalArgs.model = videoModel;
-        }
-
-        if (name === 'executeCode' && finalArgs.input_filenames && Array.isArray(finalArgs.input_filenames)) {
-            const currentChat = chatHistory.find(c => c.id === activeChatId);
-            const lastUserMessage = currentChat?.messages.filter((m: any) => m.role === 'user' && !m.isHidden).pop();
-
-            if (lastUserMessage?.attachments) {
-                const attachmentsToLoad = lastUserMessage.attachments.filter(
-                    (att: any) => finalArgs.input_filenames.includes(att.name)
-                );
-                
-                if (attachmentsToLoad.length > 0) {
-                    finalArgs.input_files = attachmentsToLoad.map((att: any) => ({
-                        filename: att.name,
-                        data: base64ToUint8Array(att.data)
-                    }));
-                }
-            }
-            delete finalArgs.input_filenames;
-        }
+        // Inject model selections for relevant tools that have frontend wrappers
+        let finalArgs = { ...args };
+        if (name === 'generateVideo') finalArgs.model = videoModel;
 
         try {
             return await Promise.resolve(toolImplementation(finalArgs));
         } catch (err) {
             if (err instanceof ToolError) throw err;
-    
-            let errorMessage: string;
-            if (err instanceof Error) {
-                errorMessage = err.message;
-            } else {
-                try {
-                    // Use JSON.stringify for better object representation
-                    errorMessage = JSON.stringify(err);
-                } catch {
-                    // Fallback for circular references or other stringify errors
-                    errorMessage = String(err);
-                }
-            }
-
-            const originalError = err instanceof Error ? err : new Error(errorMessage);
-            throw new ToolError(name, 'TOOL_EXECUTION_FAILED', errorMessage, originalError);
+            const originalError = err instanceof Error ? err : new Error(String(err));
+            throw new ToolError(name, 'TOOL_EXECUTION_FAILED', originalError.message, originalError);
         }
     };
 };

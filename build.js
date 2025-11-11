@@ -3,42 +3,21 @@ import cpx from 'cpx';
 import { rm } from 'fs/promises';
 import 'dotenv/config';
 
-console.log('Starting build process...');
+console.log('Starting production build process...');
 
-// Look for API_KEY or GEMINI_API_KEY
 const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
 
-// Robustly check for the API key and provide a clear error message if it's missing.
 if (!apiKey) {
-  console.error(`
-    \x1b[31m[BUILD ERROR]\x1b[0m API key is missing.
-    
-    To fix this, you need to provide your Gemini API key as an environment variable.
-    
-    \x1b[33mFor Local Development:\x1b[0m
-    1. Create a file named '.env' in the root of your project.
-    2. Add one of the following lines to it:
-       API_KEY="YOUR_GEMINI_API_KEY_HERE"
-       or
-       GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
-    
-    \x1b[33mFor Deployment (e.g., Cloudflare Pages):\x1b[0m
-    1. Go to your project's settings in your deployment provider.
-    2. Find the 'Environment Variables' section.
-    3. Add a new variable named either 'API_KEY' or 'GEMINI_API_KEY' with your key as the value.
-    
-    The build will not proceed without the API key.
-  `);
+  console.error('\x1b[31m[BUILD ERROR]\x1b[0m API key is missing for the backend.');
   process.exit(1);
 }
 
-
 try {
-  // Clean the dist directory
+  // 1. Clean the dist directory
   await rm('dist', { recursive: true, force: true });
   console.log('Cleaned dist directory.');
 
-  // Run esbuild
+  // 2. Build Frontend
   await esbuild.build({
     entryPoints: ['src/index.tsx'],
     bundle: true,
@@ -46,20 +25,32 @@ try {
     loader: { '.tsx': 'tsx' },
     define: {
       'process.env.NODE_ENV': '"production"',
-      // The check above ensures apiKey is defined, so we can use it directly.
-      'process.env.API_KEY': JSON.stringify(apiKey),
     },
+    minify: true,
+    sourcemap: true,
     logLevel: 'info',
   });
-  console.log('esbuild bundling complete.');
+  console.log('Frontend bundling complete.');
+  
+  // 3. Build Backend
+  await esbuild.build({
+    entryPoints: ['backend/server.ts'],
+    bundle: true,
+    platform: 'node',
+    target: 'node18',
+    outfile: 'dist/server.js',
+    minify: true,
+    sourcemap: true,
+    logLevel: 'info',
+  });
+  console.log('Backend bundling complete.');
 
-  // Copy static files
+  // 4. Copy static files
   const copyFiles = (source, dest) => {
     return new Promise((resolve, reject) => {
       cpx.copy(source, dest, (err) => {
-        if (err) {
-          reject(err);
-        } else {
+        if (err) reject(err);
+        else {
           console.log(`Copied ${source} to ${dest}`);
           resolve();
         }
@@ -71,7 +62,7 @@ try {
   await copyFiles('src/styles/**', 'dist/src/styles');
   await copyFiles('{manifest.json,sw.js,favicon.svg,_headers,_redirects}', 'dist');
   
-  console.log('Build process completed successfully!');
+  console.log('\nProduction build completed successfully!');
 
 } catch (e) {
   console.error('Build process failed:', e);

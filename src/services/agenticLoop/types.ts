@@ -11,7 +11,7 @@ import type { ParsedWorkflow } from '../workflowParser';
 
 type ChatHistory = { role: 'user' | 'model'; parts: Part[] }[];
 type ChatSettings = { 
-    systemInstruction: string;
+    isAgentMode?: boolean;
     tools?: any;
     systemPrompt?: string; 
     temperature?: number; 

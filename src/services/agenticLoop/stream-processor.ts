@@ -7,7 +7,6 @@
 // Handles processing the stream from the Gemini API.
 
 import type { GenerateContentResponse, FunctionCall, Part } from '@google/genai';
-import { getText } from '../../utils/geminiUtils';
 import { parseAgenticWorkflow } from '../workflowParser';
 import { parseApiError } from '../gemini/index';
 import type { StreamProcessorParams, StreamProcessorResult } from './types';
@@ -26,7 +25,7 @@ export const processStream = async (params: StreamProcessorParams): Promise<Stre
             if (signal.aborted) return { status: 'aborted' };
             lastChunk = chunk;
             
-            const chunkText = getText(chunk);
+            const chunkText = chunk.text;
             if (chunkText) {
                 currentTurnText += chunkText;
                 currentFullText += chunkText;

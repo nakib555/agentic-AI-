@@ -3,149 +3,58 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { FunctionDeclaration, Type, GoogleGenAI } from "@google/genai";
-import { fileStore } from '../services/fileStore';
 import { ToolError } from '../types';
-import { getText } from '../utils/geminiUtils';
-import { parseApiError } from '../services/gemini/index';
+import { API_BASE_URL } from '../../utils/api';
 
-const generateId = () => Math.random().toString(36).substring(2, 9);
+// The FunctionDeclaration is now in `declarations.ts`.
 
-export const videoGeneratorDeclaration: FunctionDeclaration = {
-  name: 'generateVideo',
-  description: 'Generates a short video based on a textual description. Use for creating dynamic, animated content. Note: Video generation can take several minutes. You MUST inform the user of this potential delay in your thinking process before calling the tool.',
-  parameters: {
-    type: Type.OBJECT,
-    properties: {
-      prompt: { type: Type.STRING, description: 'A detailed description of the video to generate.' },
-      aspectRatio: { type: Type.STRING, description: 'The aspect ratio of the video. Supported values are "16:9" (landscape) and "9:16" (portrait). Defaults to a responsive ratio (9:16 on mobile, 16:9 on desktop).' },
-      resolution: { type: Type.STRING, description: 'The resolution of the video. Supported values are "720p" and "1080p". Defaults to "720p".' }
-    },
-    required: ['prompt'],
-  },
-};
-
-// A special UI component tag returned when API key selection is required for Veo.
 const VEO_API_KEY_COMPONENT_TAG = '[VEO_API_KEY_SELECTION_COMPONENT]To generate videos, please select an API key. This is a necessary step for using the Veo model. [Learn more about billing.](https://ai.google.dev/gemini-api/docs/billing)[/VEO_API_KEY_SELECTION_COMPONENT]';
 
+/**
+ * This is a frontend wrapper for the video generation tool.
+ * It handles the browser-specific requirement of checking for a user-selected API key
+ * before dispatching the actual heavy lifting to the backend.
+ */
 export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }): Promise<string> => {
-  // Per Veo guidelines, check for API key selection first.
-  // The 'window.aistudio' object is assumed to be available in the execution environment.
+  // 1. Perform client-side prerequisite check
   if ((window as any).aistudio && typeof (window as any).aistudio.hasSelectedApiKey === 'function') {
     const hasKey = await (window as any).aistudio.hasSelectedApiKey();
     if (!hasKey) {
+      // If the prerequisite is not met, return a special UI component tag.
+      // The agentic loop will continue, and the UI will render a prompt for the user.
       return VEO_API_KEY_COMPONENT_TAG;
     }
   }
 
-  const isDesktop = window.innerWidth >= 768;
-  const defaultAspectRatio = isDesktop ? '16:9' : '9:16';
-  const { prompt, aspectRatio = defaultAspectRatio, resolution = '720p', model } = args;
-
-  // Validate inputs
-  const validAspectRatios = ['16:9', '9:16'];
-  const validResolutions = ['720p', '1080p'];
-  if (!validAspectRatios.includes(aspectRatio)) {
-      throw new ToolError('generateVideo', 'INVALID_ARGUMENT', `Invalid aspectRatio "${aspectRatio}". Supported values are: ${validAspectRatios.join(', ')}.`);
-  }
-  if (!validResolutions.includes(resolution)) {
-      throw new ToolError('generateVideo', 'INVALID_ARGUMENT', `Invalid resolution "${resolution}". Supported values are: ${validResolutions.join(', ')}.`);
-  }
-
+  // 2. If prerequisite is met, call the secure backend endpoint to do the work.
   try {
-    // Per guidelines, create a new GoogleGenAI instance right before the API call to ensure it uses the latest key.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-
-    // 1. Enhance the user's prompt for better video quality
-    const enhancementPrompt = `
-      You are a master cinematographer and creative director for a cutting-edge video generation AI.
-      Your task is to take a user's simple idea and expand it into a rich, detailed, and cinematic shot description.
-      The enhanced prompt must be a single, fluent paragraph, suitable for direct input into a video generation model.
-
-      Incorporate the following cinematic concepts into your enhancement:
-      - **Cinematography 🎬**: Describe the camera shot (e.g., wide shot, close-up, dolly zoom, aerial shot), camera movement, and angle.
-      - **Lighting 💡**: Detail the lighting style (e.g., golden hour, neon noir, dramatic backlighting, soft ambient light).
-      - **Mood & Atmosphere 🎭**: Evoke a specific mood (e.g., mysterious, joyful, epic, serene, chaotic).
-      - **Subject & Action 🏃**: Clearly describe the main subject and what they are doing with vivid action verbs.
-      - **Setting & Details 🌍**: Paint a picture of the environment with specific, sensory details.
-      - **Visual Style ✨**: Specify an overall aesthetic (e.g., hyperrealistic, cinematic 4K, retro VHS, anime style, claymation).
-      - **Video Length 🎥**: Aim for a duration of approximately 8 seconds.
-
-      ---
-      Original User Prompt: "${prompt}"
-      ---
-
-      Enhanced Cinematic Prompt:
-    `;
-
-    const enhancementResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: enhancementPrompt,
-    });
-    
-    const enhancedPrompt = getText(enhancementResponse).trim();
-
-    // 2. Generate the video using the enhanced prompt
-    let operation = await ai.models.generateVideos({
-      model: model,
-      prompt: enhancedPrompt,
-      config: {
-        numberOfVideos: 1,
-        aspectRatio,
-        resolution,
-      }
+    const response = await fetch(`${API_BASE_URL}/api/handler?task=tool_exec`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toolName: 'generateVideo', toolArgs: args }),
     });
 
-    // Poll for the result
-    while (!operation.done) {
-      // Wait for 10 seconds before polling again, as per guidance
-      await new Promise(resolve => setTimeout(resolve, 10000));
-      operation = await ai.operations.getVideosOperation({ operation: operation });
-    }
-
-    const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-    if (!downloadLink) {
-        throw new ToolError('generateVideo', 'NO_DOWNLOAD_LINK', 'Video generation succeeded but no download link was provided.', undefined, "The video was generated, but the download link is missing. This might be a temporary API issue.");
-    }
-    
-    // The link requires the API key to be appended for access.
-    const fetchUrl = `${downloadLink}&key=${process.env.API_KEY}`;
-
-    // Fetch the video data and store it as a blob
-    const response = await fetch(fetchUrl);
     if (!response.ok) {
-        throw new ToolError('generateVideo', 'DOWNLOAD_FAILED', `Failed to download video: ${response.statusText}`, undefined, "The generated video could not be downloaded. Please check your network connection and try again.");
-    }
-    const videoBlob = await response.blob();
-    const filename = `/main/output/video-${generateId()}.mp4`;
-    await fileStore.saveFile(filename, videoBlob);
-    
-    return `Video successfully generated and saved to virtual filesystem at: ${filename}. You can now use 'displayFile' to show it to the user.`;
-  } catch (err) {
-    console.error("Video generation tool failed:", err instanceof Error ? err : JSON.stringify(err));
-    
-    // The error object from the API might be nested. We need to find the message string.
-    let errorMessage = "An unknown error occurred during video generation.";
-    if (err instanceof Error) {
-        errorMessage = err.message;
-    } else if (typeof err === 'object' && err !== null) {
-        // Handle Google's structured API errors: { error: { message: "..." } }
-        if ('error' in err && typeof (err as any).error === 'object' && (err as any).error !== null && 'message' in (err as any).error) {
-            errorMessage = (err as any).error.message;
-        } else {
-             try { errorMessage = JSON.stringify(err); } catch { /* ignore */ }
+        const errorData = await response.json().catch(() => ({ error: { message: `Backend tool execution failed with status ${response.status}` } }));
+        const message = errorData.error?.message || 'Unknown backend error';
+        
+        // Handle the specific case where the backend reports a missing key,
+        // which can happen in a race condition.
+        if (message.includes('Requested entity was not found.')) {
+            return VEO_API_KEY_COMPONENT_TAG;
         }
-    } else {
-        errorMessage = String(err);
-    }
-    
-    // Per guidelines, if this specific error occurs, it indicates an issue with the API key.
-    if (errorMessage.includes('Requested entity was not found.')) {
-        return VEO_API_KEY_COMPONENT_TAG;
+
+        const code = errorData.error?.code || 'BACKEND_EXECUTION_FAILED';
+        const details = errorData.error?.details;
+        throw new ToolError('generateVideo', code, message, new Error(details));
     }
 
-    if (err instanceof ToolError) throw err;
-    const originalError = err instanceof Error ? err : new Error(String(err));
-    throw new ToolError('generateVideo', 'GENERATION_FAILED', errorMessage, originalError, "The video generation service failed. This can happen with complex prompts or during high traffic. Please try again in a moment.");
+    const { result } = await response.json();
+    return result;
+
+  } catch (error) {
+    if (error instanceof ToolError) throw error;
+    const originalError = error instanceof Error ? error : new Error(String(error));
+    throw new ToolError('generateVideo', 'BACKEND_FETCH_FAILED', originalError.message, originalError);
   }
 };

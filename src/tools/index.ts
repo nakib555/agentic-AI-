@@ -3,47 +3,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { duckduckgoSearchDeclaration, executeDuckDuckGoSearch } from './duckduckgo';
-import { getCurrentLocationDeclaration, executeGetCurrentLocation, requestLocationPermissionDeclaration, executeRequestLocationPermission } from './location';
-import { imageGeneratorDeclaration, executeImageGenerator } from './imageGenerator';
-import { videoGeneratorDeclaration, executeVideoGenerator } from './videoGenerator';
-import { codeExecutorDeclaration, executeCode } from './codeExecutor';
-import { displayMapDeclaration, executeDisplayMap, analyzeMapVisuallyDeclaration, executeAnalyzeMapVisually, analyzeImageVisuallyDeclaration, executeAnalyzeImageVisually } from './map';
-import { captureCodeOutputScreenshotDeclaration, executeCaptureCodeOutputScreenshot } from './screenshot';
-import { calculatorDeclaration, executeCalculator } from './calculator';
-import { listFilesDeclaration, executeListFiles, displayFileDeclaration, executeDisplayFile, deleteFileDeclaration, executeDeleteFile, writeFileDeclaration, executeWriteFile } from './fileTools';
+import { executeGetCurrentLocation, executeRequestLocationPermission } from './location';
+import { executeVideoGenerator } from './videoGenerator';
+import { executeCode } from './codeExecutor';
+import { executeDisplayMap } from './map';
+import { executeCaptureCodeOutputScreenshot } from './screenshot';
+import { executeCalculator } from './calculator';
+import { executeListFiles, executeDisplayFile, executeDeleteFile, executeWriteFile } from './fileTools';
+import { toolDeclarations } from './declarations';
 
+// Re-export declarations for the model
+export { toolDeclarations };
 
-// Export all tool declarations for the model
-export const toolDeclarations = [
-  duckduckgoSearchDeclaration,
-  getCurrentLocationDeclaration,
-  imageGeneratorDeclaration,
-  videoGeneratorDeclaration,
-  codeExecutorDeclaration,
-  displayMapDeclaration,
-  requestLocationPermissionDeclaration,
-  analyzeMapVisuallyDeclaration,
-  analyzeImageVisuallyDeclaration,
-  captureCodeOutputScreenshotDeclaration,
-  calculatorDeclaration,
-  writeFileDeclaration,
-  listFilesDeclaration,
-  displayFileDeclaration,
-  deleteFileDeclaration,
-];
-
-// Map of tool names to their implementation
+// Map of tool names to their FRONTEND implementation
+// Tools that run on the backend are handled by the tool-executor dispatcher
 export const toolImplementations: Record<string, (args: any) => string | Promise<string>> = {
-  'duckduckgoSearch': executeDuckDuckGoSearch,
   'getCurrentLocation': executeGetCurrentLocation,
-  'generateImage': executeImageGenerator,
-  'generateVideo': executeVideoGenerator,
-  'executeCode': executeCode,
-  'displayMap': executeDisplayMap,
   'requestLocationPermission': executeRequestLocationPermission,
-  'analyzeMapVisually': executeAnalyzeMapVisually,
-  'analyzeImageVisually': executeAnalyzeImageVisually,
+  'videoGenerator': executeVideoGenerator, // Special case: frontend wrapper for backend call
+  'executeCode': executeCode, // Handles Pyodide/JS locally
+  'displayMap': executeDisplayMap,
   'captureCodeOutputScreenshot': executeCaptureCodeOutputScreenshot,
   'calculator': executeCalculator,
   'writeFile': executeWriteFile,

@@ -6,18 +6,45 @@
 // PART 1 of 2 from src/services/agenticLoop.ts
 // Main orchestrator for the agentic loop.
 
-import { GoogleGenAI } from '@google/genai';
 import { parseApiError } from '../gemini/index';
 import { processStream } from './stream-processor';
 import type { RunAgenticLoopParams } from './types';
 import { ToolError } from '../../types';
+import { API_BASE_URL } from '../../utils/api';
 
-const MAX_RETRIES = 3;
-const INITIAL_BACKOFF_MS = 1000;
+async function* ndJsonStreamGenerator(readableStream: ReadableStream<Uint8Array>): AsyncGenerator<any> {
+    const reader = readableStream.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+            if (buffer.trim()) {
+                try {
+                    yield JSON.parse(buffer);
+                } catch (e) {
+                    console.error("Failed to parse final JSON chunk:", buffer, e);
+                }
+            }
+            break;
+        }
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep the last, possibly incomplete, line
+        for (const line of lines) {
+            if (line.trim()) {
+                try {
+                    yield JSON.parse(line);
+                } catch(e) {
+                    console.error("Failed to parse JSON chunk:", line, e);
+                }
+            }
+        }
+    }
+}
 
 export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void> => {
     const { model, history, toolExecutor, callbacks, settings, signal } = params;
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
     let currentHistory = [...history];
     let fullModelResponseText = '';
     let hasCompleted = false;
@@ -26,44 +53,44 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
     const executeTurn = async () => {
         if (signal.aborted || hasCompleted) return;
 
-        let finalSystemInstruction = settings.systemInstruction;
-        if (settings?.memoryContent) {
-            finalSystemInstruction = `// SECTION 0: CONVERSATION MEMORY\n// Here is a summary of key information from past conversations.\n${settings.memoryContent}\n\n${settings.systemInstruction}`;
-        }
-        const config: any = {
-            systemInstruction: settings?.systemPrompt ? `${settings.systemPrompt}\n\n${finalSystemInstruction}` : finalSystemInstruction,
-        };
-        if (settings.tools) {
-            // Check if it's an array of FunctionDeclarations for function calling
-            if (Array.isArray(settings.tools) && settings.tools.length > 0 && 'name' in settings.tools[0] && 'parameters' in settings.tools[0]) {
-                config.tools = [{ functionDeclarations: settings.tools }];
-            } else {
-                // Otherwise, assume it's another tool config like [{ googleSearch: {} }]
-                config.tools = settings.tools;
-            }
-        }
-        if (settings?.temperature !== undefined) config.temperature = settings.temperature;
-        if (settings?.thinkingBudget) config.thinkingConfig = { thinkingBudget: settings.thinkingBudget };
-        else if (settings?.maxOutputTokens && settings.maxOutputTokens > 0) config.maxOutputTokens = settings.maxOutputTokens;
-
         let stream: AsyncGenerator<any> | undefined;
         let apiError: unknown = null;
         
-        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-            if (signal.aborted) return;
-            try {
-                stream = await ai.models.generateContentStream({ model, contents: currentHistory, config });
-                apiError = null;
-                break;
-            } catch (error) {
-                if ((error as Error).name === 'AbortError') { apiError = error; break; }
-                apiError = error;
-                const structuredError = parseApiError(error);
-                const isRetryable = structuredError.code === 'RATE_LIMIT_EXCEEDED' || structuredError.code === 'API_ERROR';
-                if (isRetryable && attempt < MAX_RETRIES - 1) {
-                    await new Promise(resolve => setTimeout(resolve, INITIAL_BACKOFF_MS * (2 ** attempt)));
-                } else break;
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/handler?task=chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model,
+                    history: currentHistory,
+                    settings,
+                }),
+                signal,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorJson = {};
+                try {
+                    errorJson = JSON.parse(errorText);
+                } catch(e) {
+                    // ignore if not json
+                }
+                 if (errorJson && (errorJson as any).error) {
+                    throw (errorJson as any).error;
+                 }
+                throw new Error(`API request failed with status ${response.status}: ${errorText}`);
             }
+            
+            if (!response.body) {
+                throw new Error('Response body is null.');
+            }
+
+            stream = ndJsonStreamGenerator(response.body);
+
+        } catch (error) {
+            if ((error as Error).name === 'AbortError') { apiError = error; }
+            else { apiError = error; }
         }
 
         if (signal.aborted) return;

@@ -4,11 +4,11 @@
  */
 
 import { useState, useCallback } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import { audioCache } from '../services/audioCache';
 import { audioManager } from '../services/audioService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
 import { cleanTextForTts } from '../components/Chat/AiMessage/utils';
+import { API_BASE_URL } from '../../utils/api';
 
 type AudioState = 'idle' | 'loading' | 'error' | 'playing';
 
@@ -17,22 +17,14 @@ export const useTts = (text: string, voice: string) => {
   const isPlaying = audioState === 'playing';
 
   const playOrStopAudio = useCallback(async () => {
-    let shouldStartPlayback = false;
-    setAudioState(currentState => {
-        if (currentState === 'playing') {
-            audioManager.stop();
-            return 'idle';
-        }
-        if (currentState === 'loading') {
-            return 'loading';
-        }
-        shouldStartPlayback = true;
-        return 'loading';
-    });
-
-    if (!shouldStartPlayback || !text) {
-        return;
+    if (audioState === 'playing') {
+      audioManager.stop();
+      setAudioState('idle');
+      return;
     }
+    if (audioState === 'loading' || !text) return;
+    
+    setAudioState('loading');
     
     const textToSpeak = cleanTextForTts(text);
     if (!textToSpeak) {
@@ -55,38 +47,28 @@ export const useTts = (text: string, voice: string) => {
     }
     
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: textToSpeak }] }],
-            config: {
-                responseModalities: ['AUDIO'],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } },
-            },
+        const response = await fetch(`${API_BASE_URL}/api/handler?task=tts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: textToSpeak, voice }),
         });
 
-        let base64Audio: string | undefined;
-        if (response.candidates && response.candidates.length > 0) {
-            for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData && part.inlineData.mimeType.startsWith('audio/')) {
-                    base64Audio = part.inlineData.data;
-                    break;
-                }
-            }
-        }
+        if (!response.ok) throw new Error(`TTS request failed with status ${response.status}`);
+        
+        const { audio: base64Audio } = await response.json();
         
         if (base64Audio) {
             const audioBuffer = await decodeAudioData(decode(base64Audio), audioManager.context, 24000, 1);
             audioCache.set(cacheKey, audioBuffer);
             await doPlay(audioBuffer);
         } else {
-            throw new Error("No audio data returned.");
+            throw new Error("No audio data returned from backend.");
         }
     } catch (err) {
         console.error("TTS failed:", err);
         setAudioState('error');
     }
-  }, [text, voice]);
+  }, [text, voice, audioState]);
 
   return { playOrStopAudio, audioState, isPlaying };
 };
