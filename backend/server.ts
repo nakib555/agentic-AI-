@@ -24,12 +24,10 @@ const getContentType = (filePath: string) => {
 };
 
 const server = http.createServer(async (req, res) => {
-    // Set CORS headers for local development
-    if (process.env.NODE_ENV === 'development') {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    }
+    // Set CORS headers to allow cross-origin requests from any domain.
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);

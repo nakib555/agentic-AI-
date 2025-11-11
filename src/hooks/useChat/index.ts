@@ -47,7 +47,9 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     
     const approveExecution = useCallback((editedPlan: string) => {
         if (currentChatId) {
-            const lastMessage = chatHistory.find(c=>c.id === currentChatId)!.messages.slice(-1)[0];
+            const currentChat = chatHistory.find(c => c.id === currentChatId);
+            if (!currentChat || currentChat.messages.length === 0) return;
+            const lastMessage = currentChat.messages.slice(-1)[0];
             chatHistoryHook.updateMessage(currentChatId, lastMessage.id, { executionState: 'approved' });
             handleFrontendToolExecution('plan-approval', editedPlan, 'approveExecution');
         }
@@ -55,7 +57,9 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
   
     const denyExecution = useCallback(() => {
         if (currentChatId) {
-            const lastMessage = chatHistory.find(c=>c.id === currentChatId)!.messages.slice(-1)[0];
+            const currentChat = chatHistory.find(c => c.id === currentChatId);
+            if (!currentChat || currentChat.messages.length === 0) return;
+            const lastMessage = currentChat.messages.slice(-1)[0];
             chatHistoryHook.updateMessage(currentChatId, lastMessage.id, { executionState: 'denied' });
             handleFrontendToolExecution('plan-approval', false, 'denyExecution');
         }
