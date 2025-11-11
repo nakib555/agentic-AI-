@@ -708,18 +708,18 @@ Mathematics deserves the same care as prose. Sloppy math notation is professiona
 \`\`\`markdown
 The legendary equation $E=mc^2$ unified mass and energy into a single framework.
 
-The quadratic formula $x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$ solves any polynomial of degree 2.
+The quadratic formula $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$ solves any polynomial of degree 2.
 
-Einstein's field equations show that $G_{\mu\nu} = 8\pi T_{\mu\nu}$, linking geometry to energy.
+Einstein's field equations show that $G_{\\mu\\nu} = 8\\pi T_{\\mu\\nu}$, linking geometry to energy.
 \`\`\`
 
 **Rendered:**
 
 The legendary equation $E=mc^2$ unified mass and energy into a single framework.
 
-The quadratic formula $x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$ solves any polynomial of degree 2.
+The quadratic formula $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$ solves any polynomial of degree 2.
 
-Einstein's field equations show that $G_{\mu\nu} = 8\pi T_{\mu\nu}$, linking geometry to energy.
+Einstein's field equations show that $G_{\\mu\\nu} = 8\\pi T_{\\mu\\nu}$, linking geometry to energy.
 
 ---
 
@@ -741,13 +741,13 @@ $$
 The fundamental theorem of calculus states:
 
 $$
-\int_a^b f(x)\,dx = F(b) - F(a)
+\\int_a^b f(x)\\,dx = F(b) - F(a)
 $$
 
 The Schrödinger equation governs quantum mechanics:
 
 $$
-i\hbar\frac{\partial}{\partial t}\Psi(\mathbf{r},t) = \hat{H}\Psi(\mathbf{r},t)
+i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\Psi(\\mathbf{r},t)
 $$
 \`\`\`
 
@@ -756,13 +756,13 @@ $$
 The fundamental theorem of calculus states:
 
 $$
-\int_a^b f(x)\,dx = F(b) - F(a)
+\\int_a^b f(x)\\,dx = F(b) - F(a)
 $$
 
 The Schrödinger equation governs quantum mechanics:
 
 $$
-i\hbar\frac{\partial}{\partial t}\Psi(\mathbf{r},t) = \hat{H}\Psi(\mathbf{r},t)
+i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\Psi(\\mathbf{r},t)
 $$
 
 ---
@@ -795,36 +795,36 @@ $$
 **Complex Fractions:**
 \`\`\`markdown
 $$
-\frac{1}{1+\frac{1}{1+\frac{1}{1+x}}}
+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+x}}}
 $$
 \`\`\`
 
 **Matrices:**
 \`\`\`markdown
 $$
-\begin{pmatrix}
+\\begin{pmatrix}
 a & b \\
 c & d
-\end{pmatrix}
+\\end{pmatrix}
 $$
 \`\`\`
 
 **Multi-line Equations:**
 \`\`\`markdown
 $$
-\begin{align}
-f(x) &= x^2 + 2x + 1 \\
-     &= (x+1)^2 \\
+\\begin{align}
+f(x) &= x^2 + 2x + 1 \\\\
+     &= (x+1)^2 \\\\
      &= (x+1)(x+1)
-\end{align}
+\\end{align}
 $$
 \`\`\`
 
 **Greek Letters and Symbols:**
 \`\`\`markdown
-Common symbols: $\alpha, \beta, \gamma, \Delta, \Sigma, \int, \sum, \prod$
+Common symbols: $\\alpha, \\beta, \\gamma, \\Delta, \\Sigma, \\int, \\sum, \\prod$
 
-Special operators: $\nabla, \partial, \infty, \propto, \approx, \equiv$
+Special operators: $\\nabla, \\partial, \\infty, \\propto, \\approx, \\equiv$
 \`\`\`
 
 ---
@@ -1080,31 +1080,31 @@ Common belief → Reality → Why the difference matters
 
 **Common Operators:**
 \`\`\`
-$+$ $-$ $\times$ $\div$ $=$ $\neq$ $\approx$ $\equiv$
-$<$ $>$ $\leq$ $\geq$ $\ll$ $\gg$
+$+$ $-$ $\\times$ $\\div$ $=$ $\\neq$ $\\approx$ $\\equiv$
+$<$ $>$ $\\leq$ $\\geq$ $\\ll$ $\\gg$
 \`\`\`
 
 **Greek Alphabet:**
 \`\`\`
-$\alpha$ $\beta$ $\gamma$ $\delta$ $\epsilon$ $\zeta$ $\eta$ $\theta$
-$\iota$ $\kappa$ $\lambda$ $\mu$ $\nu$ $\xi$ $\pi$ $\rho$
-$\sigma$ $\tau$ $\phi$ $\chi$ $\psi$ $\omega$
+$\\alpha$ $\\beta$ $\\gamma$ $\\delta$ $\\epsilon$ $\\zeta$ $\\eta$ $\\theta$
+$\\iota$ $\\kappa$ $\\lambda$ $\\mu$ $\\nu$ $\\xi$ $\\pi$ $\\rho$
+$\\sigma$ $\\tau$ $\\phi$ $\\chi$ $\\psi$ $\\omega$
 \`\`\`
 
 **Functions & Calculus:**
 \`\`\`
-$\sin$ $\cos$ $\tan$ $\log$ $\ln$ $\exp$
-$\frac{d}{dx}$ $\int$ $\sum$ $\prod$ $\lim$ $\partial$
+$\\sin$ $\\cos$ $\\tan$ $\\log$ $\\ln$ $\\exp$
+$\\frac{d}{dx}$ $\\int$ $\\sum$ $\\prod$ $\\lim$ $\\partial$
 \`\`\`
 
 **Set Theory:**
 \`\`\`
-$\in$ $\notin$ $\subset$ $\subseteq$ $\cup$ $\cap$ $\emptyset$
+$\\in$ $\\notin$ $\\subset$ $\\subseteq$ $\\cup$ $\\cap$ $\\emptyset$
 \`\`\`
 
 **Logic:**
 \`\`\`
-$\land$ $\lor$ $\neg$ $\implies$ $\iff$ $\forall$ $\exists$
+$\\land$ $\\lor$ $\\neg$ $\\implies$ $\\iff$ $\\forall$ $\\exists$
 \`\`\`
 
 ---

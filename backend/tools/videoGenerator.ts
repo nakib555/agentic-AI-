@@ -6,6 +6,10 @@
 import { GoogleGenAI } from "@google/genai";
 import { ToolError } from "../../src/types";
 
+// Fix: Add declarations for Node.js globals `process` and `Buffer` to resolve TypeScript type errors.
+declare var process: any;
+declare var Buffer: any;
+
 export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }): Promise<string> => {
     const defaultAspectRatio = '16:9';
     const { prompt, aspectRatio = defaultAspectRatio, resolution = '720p', model } = args;

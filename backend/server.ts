@@ -3,6 +3,10 @@ import path from 'path';
 import fs from 'fs';
 import handler from './handler';
 
+// Fix: Add declarations for Node.js globals `process` and `Buffer` to resolve TypeScript type errors.
+declare var process: any;
+declare var Buffer: any;
+
 const PORT = process.env.PORT || 3001;
 
 const getContentType = (filePath: string) => {
