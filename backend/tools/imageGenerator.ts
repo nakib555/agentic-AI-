@@ -5,7 +5,6 @@
 
 import { GoogleGenAI, Modality } from "@google/genai";
 import { ToolError } from "../../src/types";
-import { fileStore } from "../../src/services/fileStore";
 
 const generateId = () => `img_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
@@ -55,11 +54,8 @@ export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: str
     }
 
     const results = base64ImageBytesArray.map((base64, i) => {
-        const fileKey = `/main/output/img_${generateId()}.png`;
-        
-        // This is a server-side execution, but we still need to inform the frontend
-        // where to find the file. We can't directly use fileStore here as it's a client-side
-        // IndexedDB implementation. We will return a component with a data URL.
+        // Since this is executed on the backend, we will return a data URL directly
+        // for the frontend to render, bypassing the need for client-side IndexedDB for generated images.
         const imageData = {
             srcUrl: `data:image/png;base64,${base64}`,
             prompt: i > 0 ? `${prompt} (variation ${i + 1})` : prompt,

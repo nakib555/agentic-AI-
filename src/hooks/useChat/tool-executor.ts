@@ -62,7 +62,7 @@ export const createToolExecutor = (imageModel: string, videoModel: string) => {
         
         // Inject model selections for relevant tools that have frontend wrappers
         let finalArgs = { ...args };
-        if (name === 'generateVideo') finalArgs.model = videoModel;
+        if (name === 'videoGenerator') finalArgs.model = videoModel;
 
         try {
             return await Promise.resolve(toolImplementation(finalArgs));

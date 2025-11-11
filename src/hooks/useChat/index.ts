@@ -11,7 +11,7 @@ import { useChatHistory } from '../useChatHistory';
 import { createAgentCallbacks } from './chat-callbacks';
 import { buildApiHistory } from './history-builder';
 import { createToolExecutor } from './tool-executor';
-import { generateChatTitle, parseApiError } from '../../services/gemini/index';
+import { generateChatTitle } from '../../services/gemini/index';
 import { toolDeclarations } from '../../tools/declarations';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
