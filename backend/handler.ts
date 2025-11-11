@@ -15,6 +15,8 @@ import { executeWithPiston } from './tools/piston';
 import { executeVideoGenerator } from "./tools/videoGenerator";
 import { executeTextToSpeech } from "./tools/tts";
 import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory";
+// Fix: Import the getText utility to safely extract text content from API responses.
+import { getText } from "./utils/geminiUtils";
 
 const chatModeSystemInstruction = [
     PREAMBLE,
@@ -113,7 +115,8 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
             const conversationHistory = payload.messages.map((msg: any) => `${msg.role}: ${(msg.text || '').substring(0, 500)}`).join('\n');
             const prompt = `Based on the following conversation, suggest a short and concise title (5 words maximum). Do not use quotes in the title.\n\nCONVERSATION:\n${conversationHistory}\n\nTITLE:`;
             result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-            const title = result.text.trim().replace(/["']/g, '');
+            // Fix: Use the getText utility to safely extract the text content from the response.
+            const title = getText(result).trim().replace(/["']/g, '');
             return new Response(JSON.stringify({ title: title || 'Untitled Chat' }), { headers: { 'Content-Type': 'application/json' } });
         }
         
@@ -121,7 +124,8 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
             const conversationTranscript = payload.conversation.filter((msg: any) => !msg.isHidden).slice(-6).map((msg: any) => `${msg.role}: ${(msg.responses?.[msg.activeResponseIndex]?.text || msg.text || '').substring(0, 300)}`).join('\n');
             const prompt = `Based on the recent conversation, suggest 3 concise and relevant follow-up questions or actions a user might take next. The suggestions should be phrased from the user's perspective (e.g., "Explain this in simpler terms"). Output MUST be a valid JSON array of strings. If no good suggestions can be made, return an empty array [].\n\nCONVERSATION:\n${conversationTranscript}\n\nJSON OUTPUT:`;
             result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
-            return new Response(JSON.stringify({ suggestions: JSON.parse(result.text || '[]') }), { headers: { 'Content-Type': 'application/json' } });
+            // Fix: Use the getText utility to safely extract the text content from the response.
+            return new Response(JSON.stringify({ suggestions: JSON.parse(getText(result) || '[]') }), { headers: { 'Content-Type': 'application/json' } });
         }
 
         case 'tts': {

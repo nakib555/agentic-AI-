@@ -1,11 +1,8 @@
 import http from 'http';
 import path from 'path';
 import fs from 'fs';
+import { parse } from 'url';
 import handler from './handler';
-
-// Fix: Add declarations for Node.js globals `process` and `Buffer` to resolve TypeScript type errors.
-declare var process: any;
-declare var Buffer: any;
 
 const PORT = process.env.PORT || 3001;
 
@@ -43,7 +40,7 @@ const server = http.createServer(async (req, res) => {
     if (req.url && req.url.startsWith('/api/handler')) {
         const fullUrl = `http://${req.headers.host}${req.url}`;
         
-        // FIX: The `body` of a fetch `Request` must be a valid `BodyInit` type.
+        // The `body` of a fetch `Request` must be a valid `BodyInit` type.
         // An `http.IncomingMessage` (req) is a Node.js stream, not a web stream.
         // We read the body into a Buffer, which is a valid `BodyInit`.
         const getBody = () => new Promise<Buffer>((resolve, reject) => {
@@ -78,8 +75,13 @@ const server = http.createServer(async (req, res) => {
         }
     } else {
         // --- Static File Serving (for production 'start' script) ---
-        const url = req.url === '/' ? '/index.html' : req.url || '/index.html';
-        const filePath = path.join(process.cwd(), 'dist', url);
+        const parsedUrl = parse(req.url || '/', true);
+        let pathname = parsedUrl.pathname === '/' ? '/index.html' : parsedUrl.pathname || '/index.html';
+        
+        // Sanitize pathname to prevent directory traversal
+        pathname = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+
+        const filePath = path.join(process.cwd(), 'dist', pathname);
 
         fs.readFile(filePath, (err, content) => {
             if (err) {

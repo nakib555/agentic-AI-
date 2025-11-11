@@ -3,62 +3,58 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleGenAI } from "@google/genai";
-import { ToolError } from "../../src/types";
+import { ToolError } from '../types';
+import { API_BASE_URL } from '../utils/api';
 
-// Fix: Add declarations for Node.js globals `process` and `Buffer` to resolve TypeScript type errors.
-declare var process: any;
-declare var Buffer: any;
+// The FunctionDeclaration is now in `declarations.ts`.
 
-export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }): Promise<string> => {
-    const defaultAspectRatio = '16:9';
-    const { prompt, aspectRatio = defaultAspectRatio, resolution = '720p', model } = args;
+const VEO_API_KEY_COMPONENT_TAG = '[VEO_API_KEY_SELECTION_COMPONENT]To generate videos, please select an API key. This is a necessary step for using the Veo model. [Learn more about billing.](https://ai.google.dev/gemini-api/docs/billing)[/VEO_API_KEY_SELECTION_COMPONENT]';
 
-    const validAspectRatios = ['16:9', '9:16'];
-    const validResolutions = ['720p', '1080p'];
-    if (!validAspectRatios.includes(aspectRatio)) throw new ToolError('generateVideo', 'INVALID_ARGUMENT', `Invalid aspectRatio "${aspectRatio}".`);
-    if (!validResolutions.includes(resolution)) throw new ToolError('generateVideo', 'INVALID_ARGUMENT', `Invalid resolution "${resolution}".`);
-  
-    try {
-      const enhancementPrompt = `You are a creative director specializing in video prompts. Rewrite and expand the following user prompt to be more cinematic, detailed, and visually rich for a video generation model. Focus on setting, mood, action, camera movement, and visual style.
-  
-      User Prompt: "${prompt}"
-      
-      Enhanced Cinematic Prompt:`;
-      const enhancementResponse = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: enhancementPrompt });
-      const enhancedPrompt = enhancementResponse.text.trim();
-  
-      let operation = await ai.models.generateVideos({
-        model: model,
-        prompt: enhancedPrompt,
-        config: { numberOfVideos: 1, aspectRatio, resolution }
-      });
-  
-      while (!operation.done) {
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        operation = await ai.operations.getVideosOperation({ operation: operation });
-      }
-  
-      const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-      if (!downloadLink) throw new ToolError('generateVideo', 'NO_DOWNLOAD_LINK', 'Video generation succeeded but no download link was provided.');
-      
-      const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
-      const response = await fetch(`${downloadLink}&key=${apiKey}`);
-      if (!response.ok) throw new ToolError('generateVideo', 'DOWNLOAD_FAILED', `Failed to download video: ${response.statusText}`);
-      
-      const videoArrayBuffer = await response.arrayBuffer();
-      const videoBase64 = Buffer.from(videoArrayBuffer).toString('base64');
-      
-      const videoData = {
-          srcUrl: `data:video/mp4;base64,${videoBase64}`,
-          prompt: `Video generation result for: ${prompt}`
-      };
-      
-      return `[VIDEO_COMPONENT]${JSON.stringify(videoData)}[/VIDEO_COMPONENT]`;
-    } catch (err) {
-      console.error("Video generation tool failed:", err);
-      if (err instanceof ToolError) throw err;
-      const originalError = err instanceof Error ? err : new Error(String(err));
-      throw new ToolError('generateVideo', 'GENERATION_FAILED', originalError.message, originalError);
+/**
+ * This is a frontend wrapper for the video generation tool.
+ * It handles the browser-specific requirement of checking for a user-selected API key
+ * before dispatching the actual heavy lifting to the backend.
+ */
+export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }): Promise<string> => {
+  // 1. Perform client-side prerequisite check
+  if ((window as any).aistudio && typeof (window as any).aistudio.hasSelectedApiKey === 'function') {
+    const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+    if (!hasKey) {
+      // If the prerequisite is not met, return a special UI component tag.
+      // The agentic loop will continue, and the UI will render a prompt for the user.
+      return VEO_API_KEY_COMPONENT_TAG;
     }
-  };
+  }
+
+  // 2. If prerequisite is met, call the secure backend endpoint to do the work.
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/handler?task=tool_exec`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toolName: 'generateVideo', toolArgs: args }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: { message: `Backend tool execution failed with status ${response.status}` } }));
+        const message = errorData.error?.message || 'Unknown backend error';
+        
+        // Handle the specific case where the backend reports a missing key,
+        // which can happen in a race condition.
+        if (message.includes('Requested entity was not found.')) {
+            return VEO_API_KEY_COMPONENT_TAG;
+        }
+
+        const code = errorData.error?.code || 'BACKEND_EXECUTION_FAILED';
+        const details = errorData.error?.details;
+        throw new ToolError('generateVideo', code, message, new Error(details));
+    }
+
+    const { result } = await response.json();
+    return result;
+
+  } catch (error) {
+    if (error instanceof ToolError) throw error;
+    const originalError = error instanceof Error ? error : new Error(String(error));
+    throw new ToolError('generateVideo', 'BACKEND_FETCH_FAILED', originalError.message, originalError);
+  }
+};
