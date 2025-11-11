@@ -2,7 +2,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
-// FIX: Import `process` to correct the type definition for `process.cwd()`.
+// FIX: Import process to resolve 'Property 'cwd' does not exist on type 'Process'' error.
 import process from 'process';
 import { apiHandler } from './handler.js';
 
