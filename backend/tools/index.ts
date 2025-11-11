@@ -14,13 +14,13 @@ import { executeListFiles, executeDisplayFile, executeDeleteFile, executeWriteFi
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-const BACKEND_TOOL_IMPLEMENTATIONS: Record<string, (ai: GoogleGenAI, args: any) => Promise<string>> = {
-    'generateImage': executeImageGenerator,
-    'duckduckgoSearch': executeWebSearch,
-    'analyzeMapVisually': executeAnalyzeMapVisually,
-    'analyzeImageVisually': executeAnalyzeImageVisually,
-    'executeCode': (ai, args) => executeCode(args), // executeCode doesn't need the 'ai' instance
-    'generateVideo': executeVideoGenerator,
+const BACKEND_TOOL_IMPLEMENTATIONS: Record<string, (ai: GoogleGenAI, args: any, apiKey?: string) => Promise<string>> = {
+    'generateImage': (ai, args) => executeImageGenerator(ai, args),
+    'duckduckgoSearch': (ai, args) => executeWebSearch(ai, args),
+    'analyzeMapVisually': (ai, args) => executeAnalyzeMapVisually(ai, args),
+    'analyzeImageVisually': (ai, args) => executeAnalyzeImageVisually(ai, args),
+    'executeCode': (ai, args) => executeCode(args),
+    'generateVideo': (ai, args, apiKey) => executeVideoGenerator(ai, args, apiKey!),
     'calculator': (ai, args) => Promise.resolve(executeCalculator(args)),
     'writeFile': (ai, args) => executeWriteFile(args),
     'listFiles': (ai, args) => executeListFiles(args),
@@ -40,6 +40,7 @@ export const createToolExecutor = (
     ai: GoogleGenAI,
     imageModel: string,
     videoModel: string,
+    apiKey: string,
     requestFrontendExecution: (callId: string, toolName: string, toolArgs: any) => Promise<string | { error: string }>
 ) => {
     return async (name: string, args: any): Promise<string> => {
@@ -66,7 +67,7 @@ export const createToolExecutor = (
             if (name === 'generateImage') finalArgs.model = imageModel;
             if (name === 'generateVideo') finalArgs.model = videoModel;
 
-            return await toolImplementation(ai, finalArgs);
+            return await toolImplementation(ai, finalArgs, apiKey);
         } catch (err) {
             if (err instanceof ToolError) throw err;
             const originalError = err instanceof Error ? err : new Error(String(err));

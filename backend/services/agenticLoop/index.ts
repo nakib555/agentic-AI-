@@ -3,21 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleGenAI } from '@google/genai';
 import { parseApiError } from '../../utils/apiError';
 import { processStream } from './stream-processor';
 import type { RunAgenticLoopParams } from './types';
 
 export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void> => {
-    const { model, history, toolExecutor, callbacks, settings, signal } = params;
+    const { ai, model, history, toolExecutor, callbacks, settings, signal } = params;
     
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) {
-        callbacks.onError({ code: 'MISSING_API_KEY', message: 'API key is not configured on the backend.' });
-        return;
-    }
-    const ai = new GoogleGenAI({ apiKey });
-
     let currentHistory = [...history];
     let fullModelResponseText = '';
     let hasCompleted = false;

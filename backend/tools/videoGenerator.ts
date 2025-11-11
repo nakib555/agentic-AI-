@@ -7,7 +7,7 @@ import { GoogleGenAI } from "@google/genai";
 import { ToolError } from "../utils/apiError";
 import { fileStore } from "../services/fileStore";
 
-export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }): Promise<string> => {
+export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }, apiKey: string): Promise<string> => {
     const { prompt, aspectRatio = '16:9', resolution = '720p', model } = args;
 
     try {
@@ -36,7 +36,6 @@ export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: str
             throw new Error('Video generation succeeded but no download link was provided.');
         }
 
-        const apiKey = process.env.API_KEY;
         const response = await fetch(`${downloadLink}&key=${apiKey}`);
         if (!response.ok || !response.body) {
             throw new Error(`Failed to download video file. Status: ${response.status}`);
@@ -53,6 +52,7 @@ export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: str
 
     } catch (error) {
         if (error instanceof ToolError) throw error;
+        // Fix: Changed 'err' to 'error' to match the catch block variable.
         const originalError = error instanceof Error ? error : new Error(String(error));
         throw new ToolError('generateVideo', 'BACKEND_EXECUTION_FAILED', originalError.message, originalError);
     }

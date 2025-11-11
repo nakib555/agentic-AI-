@@ -3,22 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Fix: Import `FunctionCall` type to correctly type the `onNewToolCalls` callback argument.
 import { GoogleGenAI, GenerateContentResponse, FunctionCall } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system";
 import { PREAMBLE } from './prompts/preamble';
 import { CHAT_PERSONA_AND_UI_FORMATTING } from './prompts/chatPersona';
 import { parseApiError } from './utils/apiError';
-import { executeImageGenerator } from './tools/imageGenerator';
-import { executeWebSearch } from './tools/webSearch';
-import { executeAnalyzeMapVisually, executeAnalyzeImageVisually } from './tools/visualAnalysis';
-import { executeCode } from "./tools/codeExecutor";
-import { executeVideoGenerator } from "./tools/videoGenerator";
 import { executeTextToSpeech } from "./tools/tts";
 import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory";
 import { runAgenticLoop } from './services/agenticLoop';
 import { getText } from "./utils/geminiUtils";
 import { createToolExecutor } from "./tools";
+
+export interface Env {
+  API_KEY: string;
+}
 
 const chatModeSystemInstruction = [
     PREAMBLE,
@@ -38,7 +36,7 @@ const chatModeSystemInstruction = [
 // State for handling pending frontend tool calls
 const pendingFrontendTools = new Map<string, (result: string | { error: string }) => void>();
 
-async function handleChat(ai: GoogleGenAI, payload: any, signal: AbortSignal): Promise<Response> {
+async function handleChat(ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<Response> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
 
@@ -46,7 +44,7 @@ async function handleChat(ai: GoogleGenAI, payload: any, signal: AbortSignal): P
         async start(controller) {
             const enqueue = (data: any) => controller.enqueue(new TextEncoder().encode(JSON.stringify(data) + '\n'));
             
-            const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, (callId, toolName, toolArgs) => {
+            const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, apiKey, (callId, toolName, toolArgs) => {
                 return new Promise((resolve) => {
                     pendingFrontendTools.set(callId, resolve);
                     enqueue({ type: 'frontend-tool-request', payload: { callId, toolName, toolArgs } });
@@ -55,7 +53,6 @@ async function handleChat(ai: GoogleGenAI, payload: any, signal: AbortSignal): P
 
             const callbacks = {
                 onTextChunk: (text: string) => enqueue({ type: 'text-chunk', payload: text }),
-                // Fix: `onNewToolCalls` must return a Promise to match the `AgenticLoopCallbacks` type.
                 onNewToolCalls: (calls: FunctionCall[]) => {
                     enqueue({ type: 'tool-call-start', payload: calls });
                     return Promise.resolve(calls);
@@ -87,7 +84,7 @@ async function handleChat(ai: GoogleGenAI, payload: any, signal: AbortSignal): P
 
             try {
                 await runAgenticLoop({
-                    model, history, toolExecutor, callbacks,
+                    ai, model, history, toolExecutor, callbacks,
                     settings: {
                         ...settings,
                         systemInstruction: systemPrompt ? `${systemPrompt}\n\n${finalSystemInstruction}` : finalSystemInstruction,
@@ -161,19 +158,20 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
 }
 
 export default {
-    async fetch(request: Request, env?: any): Promise<Response> {
-        if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
-        const apiKey = (env && env.API_KEY) ? env.API_KEY : process.env.API_KEY;
-        if (!apiKey) return new Response(JSON.stringify({ error: { message: "API key is not configured on the backend." } }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
+        const apiKey = env.API_KEY;
+        if (!apiKey) {
+            return new Response(JSON.stringify({ error: { message: "API key is not configured on the backend." } }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+        }
         
         const ai = new GoogleGenAI({ apiKey });
         const url = new URL(request.url);
         const task = url.searchParams.get('task');
         
         try {
-            const payload = await request.json();
+            const payload = request.method === 'POST' ? await request.json() : {};
             
-            if (task === 'chat') return await handleChat(ai, payload, request.signal);
+            if (task === 'chat') return await handleChat(ai, apiKey, payload, request.signal);
             if (task === 'tool_response') return await handleToolResponse(payload);
             
             if (task === 'enhance') {

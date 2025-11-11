@@ -5,13 +5,6 @@ import 'dotenv/config';
 
 console.log('Starting production build process...');
 
-const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
-
-if (!apiKey) {
-  console.error('\x1b[31m[BUILD ERROR]\x1b[0m API key is missing for the backend.');
-  process.exit(1);
-}
-
 try {
   // 1. Clean the dist directory
   await rm('dist', { recursive: true, force: true });
@@ -32,18 +25,17 @@ try {
   });
   console.log('Frontend bundling complete.');
   
-  // 3. Build Backend
+  // 3. Build Backend Worker
   await esbuild.build({
     entryPoints: ['backend/server.ts'],
     bundle: true,
-    platform: 'node',
-    target: 'node18',
-    outfile: 'dist/server.js',
+    format: 'esm', // Use ES module format for workers
+    outfile: 'dist/_worker.js', // Cloudflare Pages convention for the worker file
     minify: true,
     sourcemap: true,
     logLevel: 'info',
   });
-  console.log('Backend bundling complete.');
+  console.log('Backend worker bundling complete.');
 
   // 4. Copy static files
   const copyFiles = (source, dest) => {

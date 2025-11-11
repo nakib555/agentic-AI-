@@ -1,114 +1,57 @@
-// Fix: Add Node.js type reference to resolve errors with 'Buffer' and 'process'.
-/// <reference types="node" />
-
-import http from 'http';
-import path from 'path';
-import fs from 'fs';
-import { parse } from 'url';
 import handler from './handler';
 
-const PORT = process.env.PORT || 3001;
+export interface Env {
+  API_KEY: string;
+}
 
-const getContentType = (filePath: string) => {
-    const ext = path.extname(filePath).toLowerCase();
-    switch (ext) {
-        case '.html': return 'text/html';
-        case '.css': return 'text/css';
-        case '.js': return 'application/javascript';
-        case '.json': return 'application/json';
-        case '.png': return 'image/png';
-        case '.jpg': return 'image/jpeg';
-        case '.jpeg': return 'image/jpeg';
-        case '.svg': return 'image/svg+xml';
-        case '.ico': return 'image/x-icon';
-        case '.webmanifest': return 'application/manifest+json';
-        default: return 'application/octet-stream';
+export default {
+  async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
+    // Set CORS headers for all responses
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    };
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
     }
-};
 
-const server = http.createServer(async (req, res) => {
-    // Set CORS headers to allow cross-origin requests from any domain.
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') {
-        res.writeHead(204);
-        res.end();
-        return;
-    }
-    
-    const parsedUrl = parse(req.url || '/', true);
+    const url = new URL(request.url);
 
     // Health check endpoint
-    if (parsedUrl.pathname === '/api/health') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok' }));
-        return;
+    if (url.pathname === '/api/health') {
+      const response = new Response(JSON.stringify({ status: 'ok' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+      return response;
     }
 
-    if (parsedUrl.pathname && parsedUrl.pathname.startsWith('/api/handler')) {
-        const fullUrl = `http://${req.headers.host}${req.url}`;
-        
-        const getBody = () => new Promise<Buffer>((resolve, reject) => {
-            const bodyParts: Uint8Array[] = [];
-            req.on('data', (chunk) => bodyParts.push(chunk));
-            req.on('error', (err) => reject(err));
-            req.on('end', () => resolve(Buffer.concat(bodyParts)));
+    // API handler endpoint
+    if (url.pathname.startsWith('/api/handler')) {
+      try {
+        const response = await handler.fetch(request, env, ctx);
+        // Ensure the handler's response also gets CORS headers
+        const newHeaders = new Headers(response.headers);
+        Object.entries(corsHeaders).forEach(([key, value]) => {
+          newHeaders.set(key, value);
         });
-
-        const hasBody = req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH';
-        const body = hasBody ? await getBody() : null;
-
-        const mockRequest = new Request(fullUrl, {
-            method: req.method,
-            headers: req.headers as HeadersInit,
-            body: body,
+        return new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: newHeaders,
         });
-
-        try {
-            const response = await handler.fetch(mockRequest);
-            res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
-            if (response.body) {
-                for await (const chunk of response.body as any) {
-                    res.write(chunk);
-                }
-            }
-            res.end();
-        } catch (e) {
-            console.error('Handler error:', e);
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Internal Server Error' }));
-        }
-    } else {
-        // --- Static File Serving (for production 'start' script) ---
-        let pathname = parsedUrl.pathname === '/' ? '/index.html' : parsedUrl.pathname || '/index.html';
-        
-        // Sanitize pathname to prevent directory traversal
-        pathname = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
-
-        const filePath = path.join(process.cwd(), 'dist', pathname);
-
-        fs.readFile(filePath, (err, content) => {
-            if (err) {
-                 // For SPA routing, serve index.html on 404
-                fs.readFile(path.join(process.cwd(), 'dist', 'index.html'), (err2, content2) => {
-                    if (err2) {
-                        res.writeHead(404, { 'Content-Type': 'text/plain' });
-                        res.end('Not Found');
-                    } else {
-                        res.writeHead(200, { 'Content-Type': 'text/html' });
-                        res.end(content2);
-                    }
-                });
-            } else {
-                res.writeHead(200, { 'Content-Type': getContentType(filePath) });
-                res.end(content);
-            }
+      } catch (e) {
+        console.error('Handler error:', e);
+        return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
     }
-});
 
-server.listen(PORT, () => {
-    console.log(`Backend server listening on http://localhost:${PORT}`);
-});
+    // For other paths, return a 404. In a real Cloudflare Pages setup,
+    // Pages would serve static assets before the worker is invoked.
+    return new Response('Not Found', { status: 404, headers: corsHeaders });
+  },
+};

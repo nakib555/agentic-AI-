@@ -15,7 +15,7 @@ const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
 if (!apiKey) {
   console.error(`
     \x1b[31m[DEV-SERVER ERROR]\x1b[0m API key is missing.
-    The backend server requires the Gemini API key to be set as an environment variable.
+    The backend worker requires the Gemini API key to be set.
     Please create a '.env' file in the project root and add: API_KEY="YOUR_GEMINI_API_KEY_HERE"
   `);
   process.exit(1);
@@ -25,40 +25,27 @@ if (!apiKey) {
 await rm('dist', { recursive: true, force: true }).catch(() => {});
 console.log('Cleaned dist directory.');
 
-let nodeProcess = null;
-
-// --- Backend Server Management ---
-const startNodeServer = () => {
-  if (nodeProcess) {
-    console.log('Restarting backend server...');
-    nodeProcess.kill('SIGTERM');
-  }
-  nodeProcess = spawn('node', ['--enable-source-maps', 'dist/server.js'], {
-    stdio: 'inherit',
-    env: { ...process.env, PORT: BACKEND_PORT.toString() },
-  });
-};
-
-// --- Build & Watch Backend ---
+// --- Run Backend Worker with Wrangler ---
 try {
-  const backendBuilder = await esbuild.context({
-    entryPoints: ['backend/server.ts'],
-    bundle: true,
-    platform: 'node',
-    target: 'node18',
-    outfile: 'dist/server.js',
-    sourcemap: true,
+  console.log('Starting Cloudflare Worker in development mode...');
+  const wranglerProcess = spawn('npx', [
+    'wrangler',
+    'dev',
+    'backend/server.ts',
+    '--port',
+    BACKEND_PORT.toString(),
+    '--local'
+  ], {
+    stdio: 'inherit',
+    shell: true, // Use shell to correctly resolve `npx` on different systems
   });
-  await backendBuilder.watch({
-      onRebuild(error) {
-        if (error) console.error('Backend rebuild failed:', error);
-        else startNodeServer();
-      },
+
+  wranglerProcess.on('error', (err) => {
+    console.error('\x1b[31m[Wrangler Error]\x1b[0m Failed to start wrangler:', err);
+    process.exit(1);
   });
-  console.log('Backend watcher active.');
-  startNodeServer(); // Initial start
 } catch (e) {
-  console.error('Initial backend build failed:', e);
+  console.error('Failed to initialize backend worker:', e);
   process.exit(1);
 }
 
@@ -95,7 +82,7 @@ try {
     port: FRONTEND_DEV_PORT,
   });
   console.log(`\n🚀 Frontend server running at http://${host}:${port}`);
-  console.log('Watching for file changes...');
+  console.log('Watching for frontend file changes...');
 } catch (e) {
   console.error('Frontend dev server failed to start:', e);
   process.exit(1);

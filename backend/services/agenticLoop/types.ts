@@ -5,7 +5,7 @@
 
 // Defines types for the refactored agenticLoop service.
 
-import type { FunctionCall, GenerateContentResponse, Part } from '@google/genai';
+import type { GoogleGenAI, FunctionCall, GenerateContentResponse, Part } from '@google/genai';
 import type { MessageError } from '../../utils/apiError';
 import type { ParsedWorkflow } from '../../../src/services/workflowParser';
 
@@ -31,6 +31,7 @@ export type AgenticLoopCallbacks = {
 };
 
 export type RunAgenticLoopParams = {
+    ai: GoogleGenAI;
     model: string;
     history: ChatHistory;
     toolExecutor: (name: string, args: any) => Promise<string>;
