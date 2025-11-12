@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';
@@ -8,23 +8,27 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middlewares
-app.use(cors());
+// Enable Cross-Origin Resource Sharing for all origins to allow frontend-backend communication.
+app.use(cors({
+  origin: '*', // Allow any origin
+  methods: ['GET', 'POST', 'OPTIONS'], // Allow common methods, including pre-flight
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow common headers
+}));
 app.use(express.json({ limit: '50mb' }));
 
 const staticPath = path.join(process.cwd(), 'dist');
 
 // API routes
-// FIX: Removed explicit Request/Response types to allow for better type inference by Express. This resolves errors on res.json().
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-// FIX: Removed incorrect type assertion. Express handles async handlers, and the handler itself is correctly typed in its definition.
+// Fix: Explicitly type request and response to resolve overload issues due to global type conflicts.
+app.get('/api/health', (req: ExpressRequest, res: ExpressResponse) => res.json({ status: 'ok' }));
 app.post('/api/handler', apiHandler);
 
 // Serve static assets for the frontend
 app.use(express.static(staticPath));
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
-// FIX: Removed explicit Request/Response types to allow for better type inference by Express. This resolves errors on res.sendFile().
-app.get('*', (req, res) => {
+// Fix: Explicitly type request and response to resolve overload issues due to global type conflicts.
+app.get('*', (req: ExpressRequest, res: ExpressResponse) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Fix: Use direct imports for Request and Response from express to resolve type errors.
-import { Request, Response } from 'express';
+// Fix: Use aliased imports for Request and Response from express to resolve type errors.
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { GoogleGenAI, GenerateContentResponse, FunctionCall } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { PREAMBLE } from './prompts/preamble.js';
@@ -19,8 +19,8 @@ import { createToolExecutor } from "./tools/index.js";
 // State for handling pending frontend tool calls
 const pendingFrontendTools = new Map<string, (result: string | { error: string }) => void>();
 
-// Fix: Use the imported Response type directly.
-async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
+// Fix: Use the aliased ExpressResponse type to avoid global type conflicts.
+async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
 
@@ -145,8 +145,8 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
 }
 
 
-// Fix: Use the imported Request and Response types directly.
-export const apiHandler = async (req: Request, res: Response) => {
+// Fix: Use the aliased ExpressRequest and ExpressResponse types to avoid global type conflicts.
+export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
         return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
