@@ -44,6 +44,7 @@ export const createToolExecutor = (
     requestFrontendExecution: (callId: string, toolName: string, toolArgs: any) => Promise<string | { error: string }>
 ) => {
     return async (name: string, args: any): Promise<string> => {
+        console.log(`[TOOL_EXECUTOR] Received request to execute tool: "${name}"`, { args });
         
         // --- Frontend Tool Execution ---
         if (FRONTEND_TOOLS.has(name)) {
@@ -58,6 +59,7 @@ export const createToolExecutor = (
         // --- Backend Tool Execution ---
         const toolImplementation = BACKEND_TOOL_IMPLEMENTATIONS[name];
         if (!toolImplementation) {
+            console.error(`[TOOL_EXECUTOR] Tool not found: "${name}"`);
             throw new ToolError(name, 'TOOL_NOT_FOUND', `Tool "${name}" is not implemented on the backend.`);
         }
 
@@ -67,8 +69,12 @@ export const createToolExecutor = (
             if (name === 'generateImage') finalArgs.model = imageModel;
             if (name === 'generateVideo') finalArgs.model = videoModel;
 
-            return await toolImplementation(ai, finalArgs, apiKey);
+            console.log(`[TOOL_EXECUTOR] Executing backend tool "${name}"...`);
+            const result = await toolImplementation(ai, finalArgs, apiKey);
+            console.log(`[TOOL_EXECUTOR] Backend tool "${name}" finished successfully.`);
+            return result;
         } catch (err) {
+            console.error(`[TOOL_EXECUTOR] Backend tool "${name}" failed.`, { err });
             if (err instanceof ToolError) throw err;
             const originalError = err instanceof Error ? err : new Error(String(err));
             throw new ToolError(name, 'BACKEND_EXECUTION_FAILED', originalError.message, originalError);

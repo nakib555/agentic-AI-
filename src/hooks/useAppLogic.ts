@@ -33,7 +33,7 @@ import {
   DEFAULT_TTS_VOICE,
   DEFAULT_AUTO_PLAY_AUDIO
 } from './constants';
-import { API_BASE_URL } from '../../utils/api';
+import { API_BASE_URL } from '../utils/api';
 
 
 export const useAppLogic = () => {

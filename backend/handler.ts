@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Alias express Request and Response to avoid name collision with global DOM types.
-import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+// FIX: Use explicit Request and Response types from express to avoid global DOM type collisions.
+import type { Request, Response } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -19,20 +19,23 @@ import { ToolCallEvent } from './services/agenticLoop/types.js';
 // State for handling pending frontend tool calls
 const pendingFrontendTools = new Map<string, (result: string | { error: string }) => void>();
 
-// FIX: Use the correctly typed `ExpressResponse`.
-async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
+// FIX: Use the correctly typed `Response`.
+async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
+    console.log('[BACKEND] handleChat started.', { model, isAgentMode });
 
     res.setHeader('Content-Type', 'application/x-ndjson');
     
     const enqueue = (data: any) => {
+      console.log('[BACKEND] Streaming event to frontend:', data);
       if (!res.writableEnded) {
         res.write(JSON.stringify(data) + '\n');
       }
     };
     
     const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, apiKey, (callId, toolName, toolArgs) => {
+        console.log(`[BACKEND] Requesting frontend to execute tool: ${toolName}`, { callId, toolArgs });
         return new Promise((resolve) => {
             pendingFrontendTools.set(callId, resolve);
             enqueue({ type: 'frontend-tool-request', payload: { callId, toolName, toolArgs } });
@@ -40,25 +43,41 @@ async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string,
     });
 
     const callbacks = {
-        onTextChunk: (text: string) => enqueue({ type: 'text-chunk', payload: text }),
+        onTextChunk: (text: string) => {
+            console.log('[BACKEND_CALLBACK] onTextChunk fired.');
+            enqueue({ type: 'text-chunk', payload: text });
+        },
         onNewToolCalls: (toolCallEvents: ToolCallEvent[]) => {
+            console.log('[BACKEND_CALLBACK] onNewToolCalls fired.', { toolCallEvents });
             enqueue({ type: 'tool-call-start', payload: toolCallEvents });
         },
-        onToolResult: (id: string, result: string) => enqueue({ type: 'tool-call-end', payload: { id, result } }),
+        onToolResult: (id: string, result: string) => {
+            console.log('[BACKEND_CALLBACK] onToolResult fired.', { id });
+            enqueue({ type: 'tool-call-end', payload: { id, result } });
+        },
         onPlanReady: (plan: any) => {
+            console.log('[BACKEND_CALLBACK] onPlanReady fired.');
             return new Promise<boolean | string>((resolve) => {
                 pendingFrontendTools.set('plan-approval', (approved) => resolve(approved as boolean | string));
                 enqueue({ type: 'plan-ready', payload: plan });
             });
         },
         onComplete: (finalText: string, groundingMetadata: any) => {
+            console.log('[BACKEND_CALLBACK] onComplete fired.');
             enqueue({ type: 'complete', payload: { finalText, groundingMetadata } });
         },
-        onCancel: () => enqueue({ type: 'cancel' }),
-        onError: (error: any) => enqueue({ type: 'error', payload: error }),
+        onCancel: () => {
+            console.log('[BACKEND_CALLBACK] onCancel fired.');
+            enqueue({ type: 'cancel' });
+        },
+        onError: (error: any) => {
+            console.error('[BACKEND_CALLBACK] onError fired.', { error });
+            enqueue({ type: 'error', payload: error });
+        },
     };
 
     signal.addEventListener('abort', () => {
+        console.log('[BACKEND] Request aborted by client.');
         callbacks.onCancel();
         if (!res.writableEnded) {
           res.end();
@@ -71,6 +90,7 @@ async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string,
     }
 
     try {
+        console.log('[BACKEND] Starting agentic loop.');
         await runAgenticLoop({
             ai, model, history, toolExecutor, callbacks,
             settings: {
@@ -79,11 +99,13 @@ async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string,
             },
             signal,
         });
+        console.log('[BACKEND] Agentic loop finished.');
     } catch (error) {
         if ((error as Error).name !== 'AbortError') {
             callbacks.onError(parseApiError(error));
         }
     } finally {
+        console.log('[BACKEND] Closing chat stream.');
         if (!res.writableEnded) {
           res.end();
         }
@@ -92,6 +114,7 @@ async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string,
 
 async function handleToolResponse(payload: any): Promise<{ status: number, body: any }> {
     const { callId, result, error } = payload;
+    console.log(`[BACKEND] Received tool response from frontend for callId: ${callId}`, { result, error });
     if (pendingFrontendTools.has(callId)) {
         const resolve = pendingFrontendTools.get(callId)!;
         resolve(error ? { error } : result);
@@ -115,7 +138,7 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
         }
         
         case 'suggestions': {
-            const conversationTranscript = payload.conversation.filter((msg: any) => !msg.isHidden).slice(-6).map((msg: any) => `${msg.role}: ${(msg.responses?.[msg.activeResponseIndex]?.text || msg.text || '').substring(0, 300)}`).join('\n');
+            const conversationTranscript = payload.conversation.filter((msg: any) => !msg.isHidden).slice(-6).map((msg: any) => `${msg.responses?.[msg.activeResponseIndex]?.text || msg.text || '').substring(0, 300)}`).join('\n');
             const prompt = `Based on the recent conversation, suggest 3 concise and relevant follow-up questions or actions a user might take next. The suggestions should be phrased from the user's perspective (e.g., "Explain this in simpler terms"). Output MUST be a valid JSON array of strings. If no good suggestions can be made, return an empty array [].\n\nCONVERSATION:\n${conversationTranscript}\n\nJSON OUTPUT:`;
             result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
             return { status: 200, body: { suggestions: JSON.parse(getText(result) || '[]') } };
@@ -144,8 +167,8 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
 }
 
 
-// FIX: Use the correctly typed `ExpressRequest` and `ExpressResponse`.
-export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
+// FIX: Use the correctly typed `Request` and `Response`.
+export const apiHandler = async (req: Request, res: Response) => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
         return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
@@ -153,6 +176,7 @@ export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
     
     const ai = new GoogleGenAI({ apiKey });
     const task = req.query.task as string;
+    console.log(`[BACKEND] apiHandler received request for task: "${task}"`);
     
     try {
         const payload = req.method === 'POST' ? req.body : {};

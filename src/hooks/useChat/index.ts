@@ -44,6 +44,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     }, [chatHistory, currentChatId]);
 
     const handleFrontendToolExecution = useCallback(async (callId: string, toolName: string, toolArgs: any) => {
+        console.log(`[FRONTEND] Received request to execute tool: ${toolName}`, { callId, toolArgs });
         try {
             let result: any;
             if (toolName === 'approveExecution') {
@@ -55,17 +56,19 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                  if (!toolImplementation) throw new Error(`Frontend tool not found: ${toolName}`);
                  result = await toolImplementation(toolArgs);
             }
-
+            console.log(`[FRONTEND] Tool '${toolName}' executed successfully. Sending result to backend.`, { callId, result });
             await fetch(`${API_BASE_URL}/api/handler?task=tool_response`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ callId, result }),
             });
         } catch (error) {
+            const parsedError = parseApiError(error);
+            console.error(`[FRONTEND] Tool '${toolName}' execution failed. Sending error to backend.`, { callId, error: parsedError });
             await fetch(`${API_BASE_URL}/api/handler?task=tool_response`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ callId, error: parseApiError(error).message }),
+                body: JSON.stringify({ callId, error: parsedError.message }),
             });
         }
     }, []);
@@ -121,6 +124,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 if (!line.trim()) continue;
                 try {
                     const event = JSON.parse(line);
+                    console.log('[FRONTEND] Received stream event:', event);
                     switch (event.type) {
                         case 'text-chunk':
                             chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text: event.payload }));
@@ -153,13 +157,14 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                             break;
                     }
                 } catch(e) {
-                    console.error("Failed to parse stream event:", line, e);
+                    console.error("[FRONTEND] Failed to parse stream event:", line, e);
                 }
             }
         }
     };
     
     const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean, isThinkingModeEnabled?: boolean } = {}) => {
+        console.log('[FRONTEND] sendMessage called.', { userMessage, files: files?.map(f => f.name), options });
         if (isLoading) cancelGeneration();
     
         let activeChatId = currentChatId;
@@ -193,6 +198,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     };
 
     const regenerateResponse = useCallback(async (aiMessageId: string) => {
+        console.log(`[FRONTEND] regenerateResponse called for messageId: ${aiMessageId}`);
         if (isLoading) cancelGeneration();
         if (!currentChatId) return;
 
@@ -229,6 +235,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         runtimeSettings: { isAgentMode: boolean } & ChatSettings
     ) => {
         abortControllerRef.current = new AbortController();
+        console.log('[FRONTEND] Starting backend chat stream...', { chatId, messageId, history, chatConfig, runtimeSettings });
 
         try {
             const response = await fetch(`${API_BASE_URL}/api/handler?task=chat`, {
@@ -253,14 +260,20 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
             if (!response.ok || !response.body) throw new Error(await response.text() || `Request failed with status ${response.status}`);
             
+            console.log('[FRONTEND] Backend stream connected.');
             await processBackendStream(chatId, messageId, response);
+            console.log('[FRONTEND] Backend stream finished processing.');
 
         } catch (error) {
             if ((error as Error).name !== 'AbortError') {
+                console.error('[FRONTEND] Backend stream failed.', { error });
                 chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
+            } else {
+                console.log('[FRONTEND] Backend stream aborted by user.');
             }
         } finally {
             if (!abortControllerRef.current?.signal.aborted) {
+                console.log('[FRONTEND] Finalizing chat turn.');
                 chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
                 chatHistoryHook.completeChatLoading(chatId);
                 abortControllerRef.current = null;

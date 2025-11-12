@@ -1,6 +1,6 @@
 import 'dotenv/config';
-// FIX: Alias express Request and Response to avoid name collision with global DOM types.
-import express, { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+// FIX: Use explicit Request and Response types from express to avoid global DOM type collisions.
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';
@@ -21,8 +21,8 @@ app.use(express.json({ limit: '50mb' }));
 const staticPath = path.join(process.cwd(), 'dist');
 
 // API routes
-// FIX: Use correctly typed `ExpressRequest` and `ExpressResponse`.
-app.get('/api/health', (req: ExpressRequest, res: ExpressResponse) => res.json({ status: 'ok' }));
+// FIX: Use correctly typed `Request` and `Response`.
+app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
 app.post('/api/handler', apiHandler);
 app.get('/api/handler', apiHandler);
 
@@ -31,8 +31,8 @@ app.get('/api/handler', apiHandler);
 app.use(express.static(staticPath));
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
-// FIX: Use correctly typed `ExpressRequest` and `ExpressResponse`.
-app.get('*', (req: ExpressRequest, res: ExpressResponse) => {
+// FIX: Use correctly typed `Request` and `Response`.
+app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
