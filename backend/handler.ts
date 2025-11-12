@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Use explicit Request and Response types from express to avoid global DOM type collisions.
-// FIX: Alias express Request and Response types to prevent collision with global DOM types.
-import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+// FIX: Import express as a namespace to avoid type conflicts with global DOM types.
+import type express from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -20,9 +19,7 @@ import { ToolCallEvent } from './services/agenticLoop/types.js';
 // State for handling pending frontend tool calls
 const pendingFrontendTools = new Map<string, (result: string | { error: string }) => void>();
 
-// FIX: Use the correctly typed `Response`.
-// FIX: Use the aliased ExpressResponse type.
-async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
+async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
     console.log('[BACKEND] handleChat started.', { model, isAgentMode });
@@ -140,8 +137,20 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
         }
         
         case 'suggestions': {
-            // FIX: Corrected syntax error in conversationTranscript mapping by wrapping expression in parentheses.
-            const conversationTranscript = payload.conversation.filter((msg: any) => !msg.isHidden).slice(-6).map((msg: any) => (msg.responses?.[msg.activeResponseIndex]?.text || msg.text || '').substring(0, 300)).join('\n');
+            const conversationTranscript = payload.conversation
+                .filter((msg: any) => !msg.isHidden)
+                .slice(-6)
+                .map((msg: any) => {
+                    let text = '';
+                    if (msg.role === 'model' && msg.responses && msg.responses[msg.activeResponseIndex]) {
+                        text = msg.responses[msg.activeResponseIndex].text || '';
+                    } else if (msg.role === 'user') {
+                        text = msg.text || '';
+                    }
+                    return text.substring(0, 300);
+                })
+                .join('\n');
+
             const prompt = `Based on the recent conversation, suggest 3 concise and relevant follow-up questions or actions a user might take next. The suggestions should be phrased from the user's perspective (e.g., "Explain this in simpler terms"). Output MUST be a valid JSON array of strings. If no good suggestions can be made, return an empty array [].\n\nCONVERSATION:\n${conversationTranscript}\n\nJSON OUTPUT:`;
             result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
             return { status: 200, body: { suggestions: JSON.parse(getText(result) || '[]') } };
@@ -169,10 +178,7 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
     }
 }
 
-
-// FIX: Use the correctly typed `Request` and `Response`.
-// FIX: Use aliased Express types to resolve type conflicts.
-export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
+export const apiHandler = async (req: express.Request, res: express.Response) => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
         return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
@@ -187,7 +193,6 @@ export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
         
         if (task === 'chat') {
             const controller = new AbortController();
-            // When the request closes (e.g., client disconnects), abort the controller.
             req.on('close', () => {
                 if (!res.writableEnded) {
                     controller.abort();

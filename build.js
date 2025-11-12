@@ -53,7 +53,7 @@ try {
   };
 
   await copyFiles('index.html', 'dist');
-  await copyFiles('src/styles/**', 'dist/src/styles');
+  await copyFiles('src/styles/**', 'dist/styles');
   await copyFiles('{manifest.json,sw.js,favicon.svg,_headers,_redirects}', 'dist');
   
   console.log('\nProduction build completed successfully!');

@@ -3,8 +3,8 @@ const CACHE_NAME = 'agentic-ai-cache-v1';
 const PRECACHE_ASSETS = [
     '/',
     '/index.html',
-    '/src/styles/main.css',
-    '/src/styles/markdown.css',
+    '/styles/main.css',
+    '/styles/markdown.css',
 ];
 
 self.addEventListener('install', event => {
