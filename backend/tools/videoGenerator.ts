@@ -52,7 +52,6 @@ export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: str
 
     } catch (error) {
         if (error instanceof ToolError) throw error;
-        // Fix: Changed 'err' to 'error' to match the catch block variable.
         const originalError = error instanceof Error ? error : new Error(String(error));
         throw new ToolError('generateVideo', 'BACKEND_EXECUTION_FAILED', originalError.message, originalError);
     }
