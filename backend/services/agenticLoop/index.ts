@@ -6,7 +6,7 @@
 import { parseApiError } from '../../utils/apiError';
 import { processStream } from './stream-processor';
 import type { RunAgenticLoopParams, ToolCallEvent } from './types';
-import { toolDeclarations } from '../../tools/declarations';
+import { toolDeclarations } from '../../tools/declarations.js';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -27,7 +27,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         try {
             const config: any = {
                 systemInstruction: settings.systemInstruction,
-                tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : settings.tools,
+                tools: settings.tools,
                 temperature: settings.temperature,
             };
             // Only set maxOutputTokens if it's a positive number

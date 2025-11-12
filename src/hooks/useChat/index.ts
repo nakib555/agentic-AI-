@@ -13,7 +13,6 @@ import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '.
 import { API_BASE_URL } from '../../utils/api';
 import { toolImplementations as frontendToolImplementations } from '../../tools';
 import { buildApiHistory } from './history-builder';
-import { toolDeclarations } from '../../tools/declarations';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -290,7 +289,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                         imageModel: chatConfig.imageModel,
                         videoModel: chatConfig.videoModel,
                         memoryContent,
-                        tools: runtimeSettings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }]
                     }
                 }),
             });

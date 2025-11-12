@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Use aliased imports for express types to avoid global DOM type collisions.
-import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+// FIX: Use the 'express' namespace for types to avoid global DOM type collisions.
+import type { Request, Response } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -15,6 +15,7 @@ import { runAgenticLoop } from './services/agenticLoop/index.js';
 import { getText } from "./utils/geminiUtils.js";
 import { createToolExecutor } from "./tools/index.js";
 import { ToolCallEvent } from './services/agenticLoop/types.js';
+import { toolDeclarations } from './tools/declarations.js';
 
 // --- State for handling asynchronous frontend interactions ---
 
@@ -25,8 +26,8 @@ const pendingFrontendTools = new Map<string, (result: string | { error: string }
 
 const generateRequestId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-// FIX: Use aliased ExpressResponse type.
-async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
+// FIX: Use namespaced express.Response type.
+async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
     console.log('[BACKEND] handleChat started.', { model, isAgentMode, requestId });
@@ -84,10 +85,12 @@ async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string,
         finalSystemInstruction = `// SECTION 0: CONVERSATION MEMORY\n// Here is a summary of key information from past conversations.\n${memoryContent}\n\n${finalSystemInstruction}`;
     }
 
+    const finalTools = isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }];
+
     try {
         await runAgenticLoop({
             ai, model, history, toolExecutor, callbacks,
-            settings: { ...settings, systemInstruction: systemPrompt ? `${systemPrompt}\n\n${finalSystemInstruction}` : finalSystemInstruction },
+            settings: { ...settings, systemInstruction: systemPrompt ? `${systemPrompt}\n\n${finalSystemInstruction}` : finalSystemInstruction, tools: finalTools },
             signal,
         });
     } catch (error) {
@@ -147,8 +150,8 @@ async function handleSimpleTask(ai: GoogleGenAI, task: string, payload: any): Pr
     }
 }
 
-// FIX: Use aliased express types for request and response.
-export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
+// FIX: Use namespaced express.Request and express.Response types.
+export const apiHandler = async (req: Request, res: Response) => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
     

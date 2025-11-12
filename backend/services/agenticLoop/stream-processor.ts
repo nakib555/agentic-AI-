@@ -10,6 +10,7 @@ import type { GenerateContentResponse, FunctionCall, Part } from '@google/genai'
 import { parseAgenticWorkflow } from '../../../src/services/workflowParser';
 import { parseApiError } from '../../utils/apiError';
 import type { StreamProcessorParams, StreamProcessorResult } from './types';
+import { getText } from '../../utils/geminiUtils.js';
 
 export const processStream = async (params: StreamProcessorParams): Promise<StreamProcessorResult> => {
     const { stream, signal, callbacks, fullModelResponseText, planApproved } = params;
@@ -25,7 +26,7 @@ export const processStream = async (params: StreamProcessorParams): Promise<Stre
             if (signal.aborted) return { status: 'aborted' };
             lastChunk = chunk;
             
-            const chunkText = chunk.text;
+            const chunkText = getText(chunk);
             if (chunkText) {
                 currentTurnText += chunkText;
                 currentFullText += chunkText;
