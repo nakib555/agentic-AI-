@@ -124,8 +124,13 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 if (!line.trim()) continue;
                 try {
                     const event = JSON.parse(line);
-                    console.log('[FRONTEND] Received stream event:', event);
+                    if (event.type !== 'ping') { // Don't log pings to avoid clutter
+                        console.log('[FRONTEND] Received stream event:', event);
+                    }
                     switch (event.type) {
+                        case 'ping':
+                            // This is a heartbeat to keep the connection alive. Do nothing.
+                            break;
                         case 'text-chunk':
                             chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text: event.payload }));
                             break;
@@ -154,6 +159,11 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                             break;
                         case 'error':
                              chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error: event.payload, endTime: Date.now() }));
+                            break;
+                        case 'cancel':
+                            if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+                                abortControllerRef.current.abort();
+                            }
                             break;
                     }
                 } catch(e) {
@@ -269,7 +279,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 console.error('[FRONTEND] Backend stream failed.', { error });
                 chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
             } else {
-                console.log('[FRONTEND] Backend stream aborted by user.');
+                console.log('[FRONTEND] Backend stream aborted.');
             }
         } finally {
             if (!abortControllerRef.current?.signal.aborted) {
@@ -285,6 +295,11 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                         chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
                     }
                 }
+            } else {
+                // If aborted, ensure loading state is false
+                chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
+                chatHistoryHook.completeChatLoading(chatId);
+                abortControllerRef.current = null;
             }
         }
     };

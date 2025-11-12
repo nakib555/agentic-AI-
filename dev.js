@@ -1,3 +1,4 @@
+
 import esbuild from 'esbuild';
 import { spawn } from 'child_process';
 import cpx from 'cpx';
@@ -60,7 +61,7 @@ const copyAndWatch = (source, dest) => {
 };
 
 copyAndWatch('index.html', 'dist');
-copyAndWatch('src/styles/**', 'dist/src/styles');
+copyAndWatch('src/styles/**', 'dist/styles');
 copyAndWatch('{manifest.json,sw.js,favicon.svg}', 'dist');
 console.log('Static assets are being watched.');
 

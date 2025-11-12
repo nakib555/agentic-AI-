@@ -27,11 +27,18 @@ async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string
     res.setHeader('Content-Type', 'application/x-ndjson');
     
     const enqueue = (data: any) => {
-      console.log('[BACKEND] Streaming event to frontend:', data);
+      if (data.type !== 'ping') {
+        console.log('[BACKEND] Streaming event to frontend:', data);
+      }
       if (!res.writableEnded) {
         res.write(JSON.stringify(data) + '\n');
       }
     };
+    
+    // Heartbeat to keep the connection alive on some hosting platforms
+    const heartbeat = setInterval(() => {
+        enqueue({ type: 'ping' });
+    }, 15000); // Every 15 seconds
     
     const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, apiKey, (callId, toolName, toolArgs) => {
         console.log(`[BACKEND] Requesting frontend to execute tool: ${toolName}`, { callId, toolArgs });
@@ -104,6 +111,7 @@ async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string
             callbacks.onError(parseApiError(error));
         }
     } finally {
+        clearInterval(heartbeat); // Important: stop the heartbeat
         console.log('[BACKEND] Closing chat stream.');
         if (!res.writableEnded) {
           res.end();
