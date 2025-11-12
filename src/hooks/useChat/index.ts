@@ -3,13 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// This file contains the primary logic for the chat interaction, extracted from the main App component.
-// It integrates chat history management, message sending, and the agentic loop.
-
+// Fix: Import `useEffect` from React.
 import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { type Message, type ChatSession, ModelResponse } from '../../types';
 import { fileToBase64 } from '../../utils/fileUtils';
 import { useChatHistory } from '../useChatHistory';
+// Fix: Correct the import path to the barrel file in the `gemini` directory.
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
 import { API_BASE_URL } from '../../utils/api';
 import { toolImplementations as frontendToolImplementations } from '../../tools';

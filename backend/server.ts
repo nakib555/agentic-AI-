@@ -1,6 +1,8 @@
+// FIX: Import Request and Response types from express to fix handler type errors.
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
+// FIX: Import process to resolve 'Property 'cwd' does not exist on type 'Process'' error.
 import process from 'process';
 import { apiHandler } from './handler.js';
 
@@ -21,6 +23,7 @@ app.post('/api/handler', apiHandler);
 app.use(express.static(staticPath));
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
+// FIX: Add explicit types for req and res to resolve 'No overload matches' error.
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
