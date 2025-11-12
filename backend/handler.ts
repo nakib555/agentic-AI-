@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -35,10 +36,13 @@ async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string
       }
     };
     
+    // Immediately send a start event to establish the connection and prevent instant timeouts
+    enqueue({ type: 'start' });
+
     // Heartbeat to keep the connection alive on some hosting platforms
     const heartbeat = setInterval(() => {
         enqueue({ type: 'ping' });
-    }, 15000); // Every 15 seconds
+    }, 4000); // Every 4 seconds
     
     const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, apiKey, (callId, toolName, toolArgs) => {
         console.log(`[BACKEND] Requesting frontend to execute tool: ${toolName}`, { callId, toolArgs });

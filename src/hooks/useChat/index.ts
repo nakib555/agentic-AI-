@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -128,6 +129,9 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                         console.log('[FRONTEND] Received stream event:', event);
                     }
                     switch (event.type) {
+                        case 'start':
+                            // This confirms the stream has started. Do nothing.
+                            break;
                         case 'ping':
                             // This is a heartbeat to keep the connection alive. Do nothing.
                             break;
