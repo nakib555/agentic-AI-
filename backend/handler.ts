@@ -147,7 +147,7 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
 
 // Fix: Use the correctly typed `Request` and `Response` from Express.
 export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
         return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
     }
