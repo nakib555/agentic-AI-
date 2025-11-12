@@ -25,7 +25,9 @@ export const generateChatTitle = async (messages: Message[]): Promise<string> =>
             return title;
         }
     } catch (error) {
-        console.error("Title generation API call failed:", error);
+        // A non-critical background task failed (e.g., API overload).
+        // We warn instead of erroring to avoid red console noise for the user.
+        console.warn("Title generation API call failed:", error);
     }
     
     // Fallback if API call fails or returns an empty title

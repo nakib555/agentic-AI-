@@ -1,12 +1,10 @@
-
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Use a namespace import for express types to avoid global DOM type collisions.
-import type * as express from 'express';
+// FIX: Use aliased imports for express types to avoid global DOM type collisions.
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -27,8 +25,8 @@ const pendingFrontendTools = new Map<string, (result: string | { error: string }
 
 const generateRequestId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-// FIX: Use namespaced express types.
-async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
+// FIX: Use aliased ExpressResponse type.
+async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
     console.log('[BACKEND] handleChat started.', { model, isAgentMode, requestId });
@@ -149,8 +147,8 @@ async function handleSimpleTask(ai: GoogleGenAI, task: string, payload: any): Pr
     }
 }
 
-// FIX: Use namespaced express types.
-export const apiHandler = async (req: express.Request, res: express.Response) => {
+// FIX: Use aliased express types for request and response.
+export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
     

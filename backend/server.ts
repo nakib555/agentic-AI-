@@ -1,6 +1,6 @@
 import 'dotenv/config';
-// FIX: Use default express import and namespace-qualified types to avoid global DOM type collisions.
-import express from 'express';
+// FIX: Use default express import and aliased types to avoid global DOM type collisions.
+import express, { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';
@@ -21,8 +21,8 @@ app.use(express.json({ limit: '50mb' }));
 const staticPath = path.join(process.cwd(), 'dist');
 
 // API routes
-// FIX: Use namespaced express types to resolve type conflicts.
-app.get('/api/health', (req: express.Request, res: express.Response) => res.json({ status: 'ok' }));
+// FIX: Use aliased express types to resolve type conflicts.
+app.get('/api/health', (req: ExpressRequest, res: ExpressResponse) => res.json({ status: 'ok' }));
 app.post('/api/handler', apiHandler);
 app.get('/api/handler', apiHandler);
 
@@ -31,8 +31,8 @@ app.get('/api/handler', apiHandler);
 app.use(express.static(staticPath));
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
-// FIX: Use namespaced express types to resolve type conflicts.
-app.get('*', (req: express.Request, res: express.Response) => {
+// FIX: Use aliased express types to resolve type conflicts.
+app.get('*', (req: ExpressRequest, res: ExpressResponse) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
