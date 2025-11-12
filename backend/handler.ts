@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Import aliased Request and Response types from express to avoid global DOM type collisions.
-import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+// FIX: Use a namespace import for express types to avoid global DOM type collisions.
+import type * as express from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -27,8 +27,8 @@ const pendingFrontendTools = new Map<string, (result: string | { error: string }
 
 const generateRequestId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-// Fix: Use aliased ExpressResponse type
-async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
+// FIX: Use namespaced express types.
+async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
     console.log('[BACKEND] handleChat started.', { model, isAgentMode, requestId });
@@ -96,6 +96,7 @@ async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string,
         if ((error as Error).name !== 'AbortError') callbacks.onError(parseApiError(error));
     } finally {
         clearInterval(heartbeat);
+        activeRequests.delete(requestId); // Clean up the request map
         console.log('[BACKEND] Closing chat stream.', { requestId });
         if (!res.writableEnded) res.end();
     }
@@ -148,8 +149,8 @@ async function handleSimpleTask(ai: GoogleGenAI, task: string, payload: any): Pr
     }
 }
 
-// Fix: Use aliased ExpressRequest and ExpressResponse types
-export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
+// FIX: Use namespaced express types.
+export const apiHandler = async (req: express.Request, res: express.Response) => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
     
@@ -165,10 +166,12 @@ export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
             const controller = new AbortController();
             activeRequests.set(requestId, controller);
 
-            req.on('close', () => {
-                console.log(`[BACKEND] Request ${requestId} closed.`);
+            // Removed the req.on('close') handler to make the connection more resilient
+            // to brief network drops. Explicit cancellation is still handled by the 'cancel' task.
+            
+            req.on('aborted', () => {
+                console.log(`[BACKEND] Request ${requestId} was aborted by the client.`);
                 if (activeRequests.has(requestId)) {
-                    console.log(`[BACKEND] Aborting ${requestId} due to connection close.`);
                     activeRequests.get(requestId)!.abort();
                     activeRequests.delete(requestId);
                 }
