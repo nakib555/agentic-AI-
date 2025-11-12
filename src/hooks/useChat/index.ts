@@ -1,4 +1,5 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -179,7 +180,10 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     
     const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean, isThinkingModeEnabled?: boolean } = {}) => {
         console.log('[FRONTEND] sendMessage called.', { userMessage, files: files?.map(f => f.name), options });
-        if (isLoading) cancelGeneration();
+        if (isLoading) {
+            console.log('[FRONTEND] sendMessage ignored, a request is already in progress.');
+            return;
+        }
     
         let activeChatId = currentChatId;
         const currentChat = currentChatId ? chatHistory.find(c => c.id === currentChatId) : undefined;
