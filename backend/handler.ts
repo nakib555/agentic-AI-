@@ -184,7 +184,12 @@ export const apiHandler = async (req: Request, res: Response) => {
         if (task === 'enhance') {
             const stream = await ai.models.generateContentStream({
                 model: 'gemini-2.5-flash',
-                contents: `You are a prompt engineer... Enhanced Prompt:`, // Abridged for brevity
+                contents: `You are a prompt engineer. Your task is to rewrite a user's prompt to be more detailed, specific, and effective for a powerful AI model. Retain the user's core intent. If the prompt is already good, you can make minimal changes or return it as-is. Do not add conversational filler.
+
+Original Prompt:
+${payload.userInput}
+
+Enhanced Prompt:`,
                 config: { temperature: 0.5 }
             });
             

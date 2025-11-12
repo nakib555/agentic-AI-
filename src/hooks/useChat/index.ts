@@ -9,7 +9,7 @@ import { type Message, type ChatSession, ModelResponse } from '../../types';
 import { fileToBase64 } from '../../utils/fileUtils';
 import { useChatHistory } from '../useChatHistory';
 // Fix: Correct the import path to the barrel file in the `gemini` directory.
-import { generateChatTitle, parseApiError } from '../../services/gemini/index';
+import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
 import { API_BASE_URL } from '../../utils/api';
 import { toolImplementations as frontendToolImplementations } from '../../tools';
 
@@ -225,8 +225,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 
                 const finalChatState = chatHistoryHook.chatHistory.find(c => c.id === activeChatId);
                 if (finalChatState) {
-                    // Fix: Correct the import path to the barrel file in the `gemini` directory.
-                    const suggestions = await (await import('../../services/gemini/index')).generateFollowUpSuggestions(finalChatState.messages);
+                    const suggestions = await generateFollowUpSuggestions(finalChatState.messages);
                      if (suggestions.length > 0) {
                         chatHistoryHook.updateActiveResponseOnMessage(activeChatId, modelPlaceholder.id, () => ({ suggestedActions: suggestions }));
                     }
