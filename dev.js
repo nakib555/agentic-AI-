@@ -48,6 +48,26 @@ try {
   process.exit(1);
 }
 
+// --- Run Tailwind CSS Watcher ---
+try {
+  console.log('Starting Tailwind CSS watcher...');
+  const tailwindProcess = spawn('npx', [
+    'tailwindcss',
+    '-i', './index.css',
+    '-o', './dist/index.css',
+    '--watch'
+  ], {
+    stdio: 'inherit',
+    shell: true,
+  });
+
+  tailwindProcess.on('error', (err) => {
+    console.error('\x1b[31m[Tailwind Error]\x1b[0m Failed to start watcher:', err);
+  });
+} catch (e) {
+  console.error('Failed to initialize Tailwind watcher:', e);
+}
+
 
 // --- Copy & Watch Static Assets ---
 const copyAndWatch = (source, dest) => {
@@ -60,7 +80,6 @@ const copyAndWatch = (source, dest) => {
 };
 
 copyAndWatch('index.html', 'dist');
-copyAndWatch('src/styles/**', 'dist/src/styles');
 copyAndWatch('{manifest.json,sw.js,favicon.svg}', 'dist');
 console.log('Static assets are being watched.');
 
