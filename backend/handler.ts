@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Fix: Use express namespace to get Request and Response types, avoiding global DOM type conflicts.
-// Fix: Import Request and Response types directly to avoid conflict with global DOM types.
-import type { Request, Response } from 'express';
+// Fix: Import express as a namespace to use express.Request/Response and avoid type conflicts with global DOM types.
+import type * as express from 'express';
 import { GoogleGenAI, GenerateContentResponse, FunctionCall } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { PREAMBLE } from './prompts/preamble.js';
@@ -21,8 +20,7 @@ import { createToolExecutor } from "./tools/index.js";
 const pendingFrontendTools = new Map<string, (result: string | { error: string }) => void>();
 
 // Fix: Use the correctly typed `express.Response`.
-// Fix: Use Response type from express.
-async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
+async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
 
@@ -148,8 +146,7 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
 
 
 // Fix: Use the correctly typed `express.Request` and `express.Response`.
-// Fix: Use Request and Response types from express.
-export const apiHandler = async (req: Request, res: Response) => {
+export const apiHandler = async (req: express.Request, res: express.Response) => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
         return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
