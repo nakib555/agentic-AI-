@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Fix: Alias imports to avoid type conflicts with global DOM types.
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+// Fix: Use express namespace to get Request and Response types, avoiding global DOM type conflicts.
+// Fix: Import Request and Response types directly to avoid conflict with global DOM types.
+import type { Request, Response } from 'express';
 import { GoogleGenAI, GenerateContentResponse, FunctionCall } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { PREAMBLE } from './prompts/preamble.js';
@@ -19,8 +20,9 @@ import { createToolExecutor } from "./tools/index.js";
 // State for handling pending frontend tool calls
 const pendingFrontendTools = new Map<string, (result: string | { error: string }) => void>();
 
-// Fix: Use the correctly typed `Response` from Express.
-async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
+// Fix: Use the correctly typed `express.Response`.
+// Fix: Use Response type from express.
+async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
 
@@ -145,8 +147,9 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
 }
 
 
-// Fix: Use the correctly typed `Request` and `Response` from Express.
-export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
+// Fix: Use the correctly typed `express.Request` and `express.Response`.
+// Fix: Use Request and Response types from express.
+export const apiHandler = async (req: Request, res: Response) => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
         return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
@@ -159,9 +162,17 @@ export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
         const payload = req.method === 'POST' ? req.body : {};
         
         if (task === 'chat') {
-            await handleChat(res, ai, apiKey, payload, req.signal);
-            return; // handleChat manages the response stream
+            const controller = new AbortController();
+            // When the request closes (e.g., client disconnects), abort the controller.
+            req.on('close', () => {
+                if (!res.writableEnded) {
+                    controller.abort();
+                }
+            });
+            await handleChat(res, ai, apiKey, payload, controller.signal);
+            return;
         }
+
         if (task === 'tool_response') {
             const { status, body } = await handleToolResponse(payload);
             return res.status(status).json(body);
