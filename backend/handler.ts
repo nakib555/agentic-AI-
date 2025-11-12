@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Use the 'express' namespace for types to avoid global DOM type collisions.
+// Fix: Import Request and Response types directly from express to resolve type errors.
 import type { Request, Response } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
@@ -26,7 +26,7 @@ const pendingFrontendTools = new Map<string, (result: string | { error: string }
 
 const generateRequestId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-// FIX: Use namespaced express.Response type.
+// Fix: Use the Response type from express.
 async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
@@ -150,7 +150,7 @@ async function handleSimpleTask(ai: GoogleGenAI, task: string, payload: any): Pr
     }
 }
 
-// FIX: Use namespaced express.Request and express.Response types.
+// Fix: Use Request and Response types from express.
 export const apiHandler = async (req: Request, res: Response) => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
@@ -166,9 +166,6 @@ export const apiHandler = async (req: Request, res: Response) => {
             const requestId = generateRequestId();
             const controller = new AbortController();
             activeRequests.set(requestId, controller);
-
-            // Removed the req.on('close') handler to make the connection more resilient
-            // to brief network drops. Explicit cancellation is still handled by the 'cancel' task.
             
             req.on('aborted', () => {
                 console.log(`[BACKEND] Request ${requestId} was aborted by the client.`);
