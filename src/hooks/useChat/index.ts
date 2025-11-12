@@ -3,12 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Fix: Import `useEffect` from React.
 import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { type Message, type ChatSession, ModelResponse } from '../../types';
 import { fileToBase64 } from '../../utils/fileUtils';
 import { useChatHistory } from '../useChatHistory';
-// Fix: Correct the import path to the barrel file in the `gemini` directory.
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
 import { API_BASE_URL } from '../../utils/api';
 import { toolImplementations as frontendToolImplementations } from '../../tools';
@@ -74,9 +72,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     const cancelGeneration = useCallback(() => {
         abortControllerRef.current?.abort();
         // Also send a tool response for the plan if it's pending, to unblock the backend
-        if (frontendToolImplementations['plan-approval']) {
-            handleFrontendToolExecution('plan-approval', { approved: false }, 'denyExecution');
-        }
+        handleFrontendToolExecution('plan-approval', false, 'denyExecution');
     }, [handleFrontendToolExecution]);
     
     const { updateMessage } = chatHistoryHook;
@@ -242,7 +238,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 chatHistoryHook.completeChatLoading(activeChatId);
                 abortControllerRef.current = null;
                 
-                const finalChatState = chatHistoryHook.chatHistory.find(c => c.id === activeChatId);
+                const finalChatState = chatHistoryRef.current.find(c => c.id === activeChatId);
                 if (finalChatState) {
                     const suggestions = await generateFollowUpSuggestions(finalChatState.messages);
                      if (suggestions.length > 0) {

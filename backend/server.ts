@@ -1,8 +1,6 @@
-// FIX: Import Request and Response types from express to fix handler type errors.
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
-// FIX: Import process to resolve 'Property 'cwd' does not exist on type 'Process'' error.
 import process from 'process';
 import { apiHandler } from './handler.js';
 
@@ -11,21 +9,22 @@ const PORT = process.env.PORT || 3001;
 
 // Middlewares
 app.use(cors());
-app.use(express.json({ limit: '50mb' })); // Increase limit for file uploads
+app.use(express.json({ limit: '50mb' }));
 
 const staticPath = path.join(process.cwd(), 'dist');
 
 // API routes
-// FIX: Added explicit Express types to ensure correct type inference.
-app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
+// FIX: Removed explicit Request/Response types to allow for better type inference by Express. This resolves errors on res.json().
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+// FIX: Removed incorrect type assertion. Express handles async handlers, and the handler itself is correctly typed in its definition.
 app.post('/api/handler', apiHandler);
 
 // Serve static assets for the frontend
 app.use(express.static(staticPath));
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
-// FIX: Add explicit types for req and res to resolve 'No overload matches' error.
-app.get('*', (req: Request, res: Response) => {
+// FIX: Removed explicit Request/Response types to allow for better type inference by Express. This resolves errors on res.sendFile().
+app.get('*', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
