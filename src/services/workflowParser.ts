@@ -3,13 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageError, ToolCallEvent } from '../types';
-import type { WorkflowNodeData, WorkflowNodeType } from '../components/AI/WorkflowNode';
-
-export type ParsedWorkflow = {
-  plan: string;
-  executionLog: WorkflowNodeData[];
-};
+import type { MessageError, ToolCallEvent, WorkflowNodeData, WorkflowNodeType, ParsedWorkflow } from '../types';
 
 // Generic workflow keywords that should be treated as procedural rather than titles.
 const GENERIC_STEP_KEYWORDS = new Set(['observe', 'adapt', 'system']);

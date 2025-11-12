@@ -4,7 +4,7 @@
  */
 import type { FunctionCall } from '@google/genai';
 import type { MessageError } from './error';
-import type { ParsedWorkflow } from '../services/workflowParser';
+import type { ParsedWorkflow } from './workflow';
 
 export type ToolCallEvent = {
     id: string;

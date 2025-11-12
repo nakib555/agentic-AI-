@@ -1,6 +1,6 @@
 import 'dotenv/config';
-// Fix: Use direct imports for express value and types.
-import express, { Request, Response } from 'express';
+// Fix: Use aliased imports for express types to avoid global conflicts with DOM types.
+import express, { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';
@@ -21,16 +21,16 @@ app.use(express.json({ limit: '50mb' }));
 const staticPath = path.join(process.cwd(), 'dist');
 
 // API routes
-// Fix: Used correctly imported Request and Response types.
-app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
+// Fix: Used correctly imported and aliased Request and Response types.
+app.get('/api/health', (req: ExpressRequest, res: ExpressResponse) => res.json({ status: 'ok' }));
 app.post('/api/handler', apiHandler);
 
 // Serve static assets for the frontend
 app.use(express.static(staticPath));
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
-// Fix: Used correctly imported Request and Response types.
-app.get('*', (req: Request, res: Response) => {
+// Fix: Used correctly imported and aliased Request and Response types.
+app.get('*', (req: ExpressRequest, res: ExpressResponse) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 

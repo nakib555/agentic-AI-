@@ -6,7 +6,7 @@
 import React from 'react';
 import { motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
-import type { MessageError, ToolCallEvent } from '../../types';
+import type { MessageError, ToolCallEvent, WorkflowNodeData } from '../../types';
 import { ToolCallStep } from './ToolCallStep';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
@@ -15,20 +15,6 @@ import { ObservationIcon, SearchIcon, TodoListIcon, HandoffIcon, ValidationIcon,
 import { SearchToolResult } from './SearchToolResult';
 import { getAgentColor } from '../../utils/agentUtils';
 
-
-export type WorkflowNodeStatus = 'pending' | 'active' | 'done' | 'failed';
-export type WorkflowNodeType = 'plan' | 'task' | 'tool' | 'duckduckgoSearch' | 'thought' | 'act_marker' | 'observation' | 'handoff' | 'validation' | 'approval' | 'correction' | 'archival' | 'audit';
-
-export type WorkflowNodeData = {
-  id: string;
-  type: WorkflowNodeType;
-  title: string;
-  status: WorkflowNodeStatus;
-  details?: string | ToolCallEvent | MessageError;
-  duration?: number | null;
-  agentName?: string;
-  handoff?: { from: string; to: string };
-};
 
 type WorkflowNodeProps = {
   node: WorkflowNodeData;

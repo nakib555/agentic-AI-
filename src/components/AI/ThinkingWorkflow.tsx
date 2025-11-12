@@ -6,7 +6,9 @@
 import React from 'react';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
-import { WorkflowNode, type WorkflowNodeData } from './WorkflowNode';
+// Fix: Import WorkflowNodeData from the correct path.
+import { WorkflowNode } from './WorkflowNode';
+import type { WorkflowNodeData } from '../../types';
 import { WorkflowConnector } from './WorkflowConnector';
 
 type ThinkingWorkflowProps = {

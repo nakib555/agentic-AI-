@@ -7,7 +7,8 @@ import React from 'react';
 import type { FunctionCall } from "@google/genai";
 import { generateFollowUpSuggestions } from '../../services/gemini/index';
 import { type ToolCallEvent, type MessageError, ChatSession, ModelResponse, Message } from '../../types';
-import type { ParsedWorkflow } from '../../services/workflowParser';
+// Fix: Import ParsedWorkflow from the correct path.
+import type { ParsedWorkflow } from '../../types';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
