@@ -3,14 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { GoogleGenAI } from "@google/genai";
-import { ToolError } from "../utils/apiError";
-import { executeImageGenerator } from './imageGenerator';
-import { executeWebSearch } from './webSearch';
-import { executeAnalyzeMapVisually, executeAnalyzeImageVisually } from './visualAnalysis';
-import { executeCode } from "./codeExecutor";
-import { executeVideoGenerator } from "./videoGenerator";
-import { executeCalculator } from "./calculator";
-import { executeListFiles, executeDisplayFile, executeDeleteFile, executeWriteFile } from "./fileTools";
+import { ToolError } from "../utils/apiError.js";
+import { executeImageGenerator } from './imageGenerator.js';
+import { executeWebSearch } from './webSearch.js';
+import { executeAnalyzeMapVisually, executeAnalyzeImageVisually } from './visualAnalysis.js';
+import { executeCode } from "./codeExecutor.js";
+import { executeVideoGenerator } from "./videoGenerator.js";
+import { executeCalculator } from "./calculator.js";
+import { executeListFiles, executeDisplayFile, executeDeleteFile, executeWriteFile } from "./fileTools.js";
+import { executeDisplayMap } from "./map.js";
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -26,12 +27,12 @@ const BACKEND_TOOL_IMPLEMENTATIONS: Record<string, (ai: GoogleGenAI, args: any, 
     'listFiles': (ai, args) => executeListFiles(args),
     'displayFile': (ai, args) => executeDisplayFile(args),
     'deleteFile': (ai, args) => executeDeleteFile(args),
+    'displayMap': (ai, args) => Promise.resolve(executeDisplayMap(args)),
 };
 
 const FRONTEND_TOOLS = new Set([
     'getCurrentLocation',
     'requestLocationPermission',
-    'displayMap',
     'captureCodeOutputScreenshot',
     'videoGenerator', // The frontend wrapper for API key check
 ]);
