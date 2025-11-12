@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Import Request and Response from express directly to resolve type conflicts.
-import { Request, Response } from 'express';
+// FIX: Import Request and Response from express directly and alias to resolve type conflicts.
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { GoogleGenAI, GenerateContentResponse, FunctionCall } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { PREAMBLE } from './prompts/preamble.js';
@@ -20,8 +20,8 @@ import { createToolExecutor } from "./tools/index.js";
 // State for handling pending frontend tool calls
 const pendingFrontendTools = new Map<string, (result: string | { error: string }) => void>();
 
-// FIX: Update type annotation from ExpressResponse to Response.
-async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
+// FIX: Update type annotation from Response to ExpressResponse.
+async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
 
@@ -154,8 +154,8 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
 }
 
 
-// FIX: Update type annotations from ExpressRequest/ExpressResponse to Request/Response.
-export const apiHandler = async (req: Request, res: Response) => {
+// FIX: Update type annotations from Request/Response to ExpressRequest/ExpressResponse.
+export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
         // FIX: Property 'status' does not exist on type 'Response<any, Record<string, any>>'. Fixed by using correct Response type.

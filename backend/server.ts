@@ -16,7 +16,8 @@ app.use(express.json({ limit: '50mb' })); // Increase limit for file uploads
 const staticPath = path.join(process.cwd(), 'dist');
 
 // API routes
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+// FIX: Added explicit Express types to ensure correct type inference.
+app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
 app.post('/api/handler', apiHandler);
 
 // Serve static assets for the frontend

@@ -120,12 +120,20 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         if (isLoading) cancelGeneration();
         abortControllerRef.current = new AbortController();
     
-        let activeChatId = currentChatId || chatHistoryHook.createNewChat(initialModel, {
-            temperature: settings.temperature,
-            maxOutputTokens: settings.maxOutputTokens,
-            imageModel: settings.imageModel,
-            videoModel: settings.videoModel,
-        });
+        let activeChatId = currentChatId;
+        const currentChat = currentChatId ? chatHistory.find(c => c.id === currentChatId) : undefined;
+        // This holds the messages of the chat *before* the new user message is added.
+        let messagesForHistory = currentChat ? currentChat.messages : [];
+
+        if (!activeChatId || !currentChat) {
+            // Create a new chat if one doesn't exist
+            activeChatId = chatHistoryHook.createNewChat(initialModel, {
+                temperature: settings.temperature,
+                maxOutputTokens: settings.maxOutputTokens,
+                imageModel: settings.imageModel,
+                videoModel: settings.videoModel,
+            });
+        }
     
         const attachmentsData = files && files.length > 0
             ? await Promise.all(files.map(async (file) => ({
@@ -140,24 +148,35 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         chatHistoryHook.addMessagesToChat(activeChatId, [modelPlaceholder]);
         chatHistoryHook.setChatLoadingState(activeChatId, true);
     
-        const activeChat = chatHistoryHook.chatHistory.find(c => c.id === activeChatId)!;
-        const historyForApi = (await import('./history-builder')).buildApiHistory([...activeChat.messages.slice(0, -1)]);
+        // Construct the history for the API call from local variables to avoid stale state.
+        // It should include all messages from the current chat session plus the new user message.
+        const finalMessagesForApi = [...messagesForHistory, userMessageObj];
+        const historyForApi = (await import('./history-builder')).buildApiHistory(finalMessagesForApi);
         
+        // Use settings from the current chat, or fallback to initial settings for a new chat.
+        const chatForSettings = currentChat || {
+            model: initialModel,
+            temperature: settings.temperature,
+            maxOutputTokens: settings.maxOutputTokens,
+            imageModel: settings.imageModel,
+            videoModel: settings.videoModel,
+        };
+
         try {
             const response = await fetch(`${API_BASE_URL}/api/handler?task=chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 signal: abortControllerRef.current.signal,
                 body: JSON.stringify({
-                    model: isAgentMode ? 'gemini-2.5-pro' : activeChat.model,
+                    model: isAgentMode ? 'gemini-2.5-pro' : chatForSettings.model,
                     history: historyForApi,
                     settings: {
                         isAgentMode,
                         systemPrompt: settings.systemPrompt,
-                        temperature: activeChat.temperature,
-                        maxOutputTokens: activeChat.maxOutputTokens,
-                        imageModel: activeChat.imageModel,
-                        videoModel: activeChat.videoModel,
+                        temperature: chatForSettings.temperature,
+                        maxOutputTokens: chatForSettings.maxOutputTokens,
+                        imageModel: chatForSettings.imageModel,
+                        videoModel: chatForSettings.videoModel,
                         memoryContent,
                     }
                 }),
