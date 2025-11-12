@@ -1,4 +1,7 @@
-import express, { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import 'dotenv/config';
+// Fix: Separated value and type imports for express to resolve type conflicts.
+import express from 'express';
+import type { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';
@@ -19,16 +22,16 @@ app.use(express.json({ limit: '50mb' }));
 const staticPath = path.join(process.cwd(), 'dist');
 
 // API routes
-// Fix: Explicitly type request and response to resolve overload issues due to global type conflicts.
-app.get('/api/health', (req: ExpressRequest, res: ExpressResponse) => res.json({ status: 'ok' }));
+// Fix: Used correctly imported Request and Response types.
+app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
 app.post('/api/handler', apiHandler);
 
 // Serve static assets for the frontend
 app.use(express.static(staticPath));
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
-// Fix: Explicitly type request and response to resolve overload issues due to global type conflicts.
-app.get('*', (req: ExpressRequest, res: ExpressResponse) => {
+// Fix: Used correctly imported Request and Response types.
+app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
