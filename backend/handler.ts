@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Fix: Replaced aliased imports with a direct type import to resolve type conflicts.
+// Fix: Use direct type imports from 'express' to avoid global type conflicts.
 import type { Request, Response } from 'express';
 import { GoogleGenAI, GenerateContentResponse, FunctionCall } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";

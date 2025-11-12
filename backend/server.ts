@@ -1,7 +1,6 @@
 import 'dotenv/config';
-// Fix: Separated value and type imports for express to resolve type conflicts.
-import express from 'express';
-import type { Request, Response } from 'express';
+// Fix: Use direct imports for express value and types.
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';
