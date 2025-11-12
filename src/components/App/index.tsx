@@ -11,7 +11,7 @@ import { Sidebar } from '../Sidebar/Sidebar';
 import { ChatHeader } from '../Chat/ChatHeader';
 import { ChatArea } from '../Chat/ChatArea';
 import { ThinkingSidebar } from '../Sidebar/ThinkingSidebar';
-import { useAppLogic } from './useAppLogic';
+import { useAppLogic } from '../../hooks/useAppLogic';
 import { AppModals } from './AppModals';
 import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS

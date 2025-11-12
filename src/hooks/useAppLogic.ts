@@ -7,22 +7,21 @@
 // It uses a custom hook to manage state, side effects, and event handlers.
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useChat } from '../../hooks/useChat/index';
-import { useTheme } from '../../hooks/useTheme';
-import { useSidebar } from '../../hooks/useSidebar';
-import { useViewport } from '../../hooks/useViewport';
-import { useMemory } from '../../hooks/useMemory';
-import { useModeToggle } from '../../hooks/useModeToggle';
-import { getAvailableModels, type Model, validModels } from '../../services/modelService';
-// Fix: Correct import path for types to point to src/types.
+import { useChat } from './useChat/index';
+import { useTheme } from './useTheme';
+import { useSidebar } from './useSidebar';
+import { useViewport } from './useViewport';
+import { useMemory } from './useMemory';
+import { useModeToggle } from './useModeToggle';
+import { getAvailableModels, type Model, validModels } from '../services/modelService';
 import type { Message, ChatSession } from '../types';
 import {
   exportChatToJson,
   exportChatToMarkdown,
   exportChatToPdf,
   exportChatToClipboard,
-} from '../../utils/exportUtils';
-import type { MessageListHandle } from '../Chat/MessageList';
+} from '../utils/exportUtils';
+import type { MessageListHandle } from '../components/Chat/MessageList';
 import {
   DEFAULT_ABOUT_USER,
   DEFAULT_ABOUT_RESPONSE,
@@ -32,7 +31,7 @@ import {
   DEFAULT_VIDEO_MODEL,
   DEFAULT_TTS_VOICE,
   DEFAULT_AUTO_PLAY_AUDIO
-} from './constants';
+} from '../components/App/constants';
 import { API_BASE_URL } from '../utils/api';
 
 
