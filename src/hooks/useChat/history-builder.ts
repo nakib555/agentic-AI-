@@ -32,20 +32,19 @@ export const buildApiHistory = (messages: Message[]): ApiHistory => {
             const activeResponse = msg.responses?.[msg.activeResponseIndex];
             if (!activeResponse) return;
 
-            const { finalAnswerText } = parseMessageText(activeResponse.text, false, !!activeResponse.error);
+            const { thinkingText, finalAnswerText } = parseMessageText(activeResponse.text, false, !!activeResponse.error);
+            const fullText = activeResponse.text; // Send the full text including thinking steps
             const modelParts: Part[] = [];
             const functionResponseParts: Part[] = [];
 
-            if (finalAnswerText) {
-                modelParts.push({ text: finalAnswerText });
+            if (fullText) {
+                modelParts.push({ text: fullText });
             }
 
             if (activeResponse.toolCallEvents) {
                 activeResponse.toolCallEvents.forEach(event => {
-                    // Only push the function call if it hasn't been responded to yet.
-                    if (event.result === undefined) {
-                        modelParts.push({ functionCall: event.call });
-                    }
+                    // This logic is simplified as the backend now manages the turn-based tool calls.
+                    // We only need to provide the history of what has already happened.
                     if (event.result !== undefined) {
                         functionResponseParts.push({
                             functionResponse: {
@@ -53,6 +52,9 @@ export const buildApiHistory = (messages: Message[]): ApiHistory => {
                                 response: { result: event.result }
                             }
                         });
+                    } else {
+                        // Include the tool call in the model's turn if it hasn't been responded to.
+                        modelParts.push({ functionCall: event.call });
                     }
                 });
             }

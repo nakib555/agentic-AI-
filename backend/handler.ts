@@ -3,11 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Fix: Import express as a namespace to use express.Request/Response and avoid type conflicts with global DOM types.
-import type * as express from 'express';
-import { GoogleGenAI, GenerateContentResponse, FunctionCall } from "@google/genai";
+// FIX: Alias express Request and Response to avoid name collision with global DOM types.
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
-import { PREAMBLE } from './prompts/preamble.js';
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
 import { parseApiError } from './utils/apiError.js';
 import { executeTextToSpeech } from "./tools/tts.js";
@@ -15,12 +14,13 @@ import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./too
 import { runAgenticLoop } from './services/agenticLoop/index.js';
 import { getText } from "./utils/geminiUtils.js";
 import { createToolExecutor } from "./tools/index.js";
+import { ToolCallEvent } from './services/agenticLoop/types.js';
 
 // State for handling pending frontend tool calls
 const pendingFrontendTools = new Map<string, (result: string | { error: string }) => void>();
 
-// Fix: Use the correctly typed `express.Response`.
-async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
+// FIX: Use the correctly typed `ExpressResponse`.
+async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
 
@@ -41,9 +41,8 @@ async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string
 
     const callbacks = {
         onTextChunk: (text: string) => enqueue({ type: 'text-chunk', payload: text }),
-        onNewToolCalls: (calls: FunctionCall[]) => {
-            enqueue({ type: 'tool-call-start', payload: calls });
-            return Promise.resolve(calls);
+        onNewToolCalls: (toolCallEvents: ToolCallEvent[]) => {
+            enqueue({ type: 'tool-call-start', payload: toolCallEvents });
         },
         onToolResult: (id: string, result: string) => enqueue({ type: 'tool-call-end', payload: { id, result } }),
         onPlanReady: (plan: any) => {
@@ -145,8 +144,8 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
 }
 
 
-// Fix: Use the correctly typed `express.Request` and `express.Response`.
-export const apiHandler = async (req: express.Request, res: express.Response) => {
+// FIX: Use the correctly typed `ExpressRequest` and `ExpressResponse`.
+export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
         return res.status(500).json({ error: { message: "API key is not configured on the backend." } });

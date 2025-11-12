@@ -5,7 +5,10 @@
 
 import { parseApiError } from '../../utils/apiError';
 import { processStream } from './stream-processor';
-import type { RunAgenticLoopParams } from './types';
+import type { RunAgenticLoopParams, ToolCallEvent } from './types';
+import { toolDeclarations } from '../../tools/declarations';
+
+const generateId = () => Math.random().toString(36).substring(2, 9);
 
 export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void> => {
     const { ai, model, history, toolExecutor, callbacks, settings, signal } = params;
@@ -22,14 +25,17 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         try {
             const config: any = {
                 systemInstruction: settings.systemInstruction,
-                tools: settings.tools,
+                tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : settings.tools,
                 temperature: settings.temperature,
-                maxOutputTokens: settings.maxOutputTokens || undefined,
             };
+            // Only set maxOutputTokens if it's a positive number
+            if (settings.maxOutputTokens && settings.maxOutputTokens > 0) {
+                config.maxOutputTokens = settings.maxOutputTokens;
+            }
             if (settings.thinkingBudget) {
                 config.thinkingConfig = { thinkingBudget: settings.thinkingBudget };
             }
-
+            
             stream = await ai.models.generateContentStream({
                 model,
                 contents: currentHistory,
@@ -62,16 +68,25 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             } else if (result.nextAction === 'continue_with_tools') {
                 currentHistory.push({ role: 'model', parts: result.modelTurnParts });
                 
-                const responseParts = await Promise.all(result.functionCalls.map(async (fc) => {
+                // Create events with unique IDs from the raw function calls
+                const toolCallEvents: ToolCallEvent[] = result.functionCalls.map(fc => ({
+                    id: `${fc.name}-${generateId()}`,
+                    call: fc
+                }));
+
+                // Notify the UI about the new tool calls, now with IDs
+                callbacks.onNewToolCalls(toolCallEvents);
+
+                const responseParts = await Promise.all(toolCallEvents.map(async (event) => {
                     if (signal.aborted) throw new Error('Aborted');
                     try {
-                        const toolResult = await toolExecutor(fc.name, fc.args);
-                        callbacks.onToolResult(fc.name, toolResult); // Note: This assumes one call per name for simple UI update
-                        return { functionResponse: { name: fc.name, response: { result: toolResult } } };
+                        const toolResult = await toolExecutor(event.call.name, event.call.args);
+                        callbacks.onToolResult(event.id, toolResult);
+                        return { functionResponse: { name: event.call.name, response: { result: toolResult } } };
                     } catch (error: any) {
                         const errorResult = `Tool execution failed. Reason: ${error.message}`;
-                        callbacks.onToolResult(fc.name, errorResult);
-                        return { functionResponse: { name: fc.name, response: { result: errorResult } } };
+                        callbacks.onToolResult(event.id, errorResult);
+                        return { functionResponse: { name: event.call.name, response: { result: errorResult } } };
                     }
                 }));
 

@@ -21,10 +21,15 @@ type ChatSettings = {
     memoryContent?: string 
 };
 
+export type ToolCallEvent = {
+    id: string;
+    call: FunctionCall;
+};
+
 export type AgenticLoopCallbacks = {
     onTextChunk: (fullText: string) => void;
-    onNewToolCalls: (toolCalls: FunctionCall[]) => Promise<any[]>;
-    onToolResult: (toolName: string, result: string) => void;
+    onNewToolCalls: (toolCallEvents: ToolCallEvent[]) => void;
+    onToolResult: (eventId: string, result: string) => void;
     onPlanReady: (plan: ParsedWorkflow) => Promise<boolean | string>;
     onComplete: (finalText: string, groundingMetadata?: any) => void;
     onCancel: () => void;
