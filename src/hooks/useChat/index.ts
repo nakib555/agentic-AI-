@@ -29,6 +29,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     const chatHistoryHook = useChatHistory();
     const { chatHistory, currentChatId, updateChatTitle } = chatHistoryHook;
     const abortControllerRef = useRef<AbortController | null>(null);
+    const requestIdRef = useRef<string | null>(null); // For explicit cancellation
 
     // Refs to hold the latest state for callbacks
     const chatHistoryRef = useRef(chatHistory);
@@ -77,8 +78,21 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
 
     const cancelGeneration = useCallback(() => {
+        // Abort the frontend fetch immediately for responsiveness
         abortControllerRef.current?.abort();
-        // Also send a tool response for the plan if it's pending, to unblock the backend
+        
+        // Send the explicit cancel request to the backend fire-and-forget style
+        if (requestIdRef.current) {
+            console.log('[FRONTEND] Sending explicit cancel request to backend for requestId:', requestIdRef.current);
+            fetch(`${API_BASE_URL}/api/handler?task=cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requestId: requestIdRef.current }),
+            }).catch(error => console.error('[FRONTEND] Failed to send cancel request:', error));
+            requestIdRef.current = null;
+        }
+        
+        // Fallback for plan approval state
         handleFrontendToolExecution('plan-approval', 'denyExecution', false);
     }, [handleFrontendToolExecution]);
     
@@ -131,7 +145,10 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                     }
                     switch (event.type) {
                         case 'start':
-                            // This confirms the stream has started. Do nothing.
+                            if (event.payload?.requestId) {
+                                requestIdRef.current = event.payload.requestId;
+                                console.log('[FRONTEND] Received requestId from backend:', requestIdRef.current);
+                            }
                             break;
                         case 'ping':
                             // This is a heartbeat to keep the connection alive. Do nothing.
@@ -184,6 +201,8 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
             console.log('[FRONTEND] sendMessage ignored, a request is already in progress.');
             return;
         }
+        
+        requestIdRef.current = null; // Reset before new message
     
         let activeChatId = currentChatId;
         const currentChat = currentChatId ? chatHistory.find(c => c.id === currentChatId) : undefined;
@@ -220,6 +239,8 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         if (isLoading) cancelGeneration();
         if (!currentChatId) return;
 
+        requestIdRef.current = null; // Reset before new message
+
         const currentChat = chatHistory.find(c => c.id === currentChatId);
         if (!currentChat) return;
 
@@ -239,8 +260,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
         const historyForApi = buildApiHistory([...historyUntilUserMessage, userMessageToResend]);
 
-        // We use the last user message as the final part of the history, not as a new prompt.
-        // The backend `runAgenticLoop` is designed to continue a conversation from a history.
         await startBackendChat(currentChatId, aiMessageId, historyForApi, currentChat, { ...settings, isAgentMode: isAgentMode });
 
     }, [isLoading, currentChatId, chatHistory, cancelGeneration, chatHistoryHook, initialModel, settings, memoryContent, isAgentMode]);
@@ -295,6 +314,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
                 chatHistoryHook.completeChatLoading(chatId);
                 abortControllerRef.current = null;
+                requestIdRef.current = null;
                 
                 const finalChatState = chatHistoryRef.current.find(c => c.id === chatId);
                 if (finalChatState) {
@@ -308,6 +328,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
                 chatHistoryHook.completeChatLoading(chatId);
                 abortControllerRef.current = null;
+                requestIdRef.current = null;
             }
         }
     };

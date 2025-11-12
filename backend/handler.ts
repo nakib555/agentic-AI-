@@ -1,11 +1,12 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Import express as a namespace to avoid type conflicts with global DOM types.
-import type express from 'express';
+// FIX: Import aliased Request and Response types from express to avoid global DOM type collisions.
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -17,13 +18,20 @@ import { getText } from "./utils/geminiUtils.js";
 import { createToolExecutor } from "./tools/index.js";
 import { ToolCallEvent } from './services/agenticLoop/types.js';
 
-// State for handling pending frontend tool calls
+// --- State for handling asynchronous frontend interactions ---
+
+// Stores AbortControllers for ongoing 'chat' requests, allowing for explicit cancellation.
+const activeRequests = new Map<string, AbortController>();
+// Stores resolver functions for pending tool calls that require frontend execution.
 const pendingFrontendTools = new Map<string, (result: string | { error: string }) => void>();
 
-async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string, payload: any, signal: AbortSignal): Promise<void> {
+const generateRequestId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+// Fix: Use aliased ExpressResponse type
+async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
     const { model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
-    console.log('[BACKEND] handleChat started.', { model, isAgentMode });
+    console.log('[BACKEND] handleChat started.', { model, isAgentMode, requestId });
 
     res.setHeader('Content-Type', 'application/x-ndjson');
     
@@ -36,8 +44,8 @@ async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string
       }
     };
     
-    // Immediately send a start event to establish the connection and prevent instant timeouts
-    enqueue({ type: 'start' });
+    // Immediately send a start event with the unique ID to establish the connection
+    enqueue({ type: 'start', payload: { requestId } });
 
     // Heartbeat to keep the connection alive on some hosting platforms
     const heartbeat = setInterval(() => {
@@ -53,45 +61,24 @@ async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string
     });
 
     const callbacks = {
-        onTextChunk: (text: string) => {
-            console.log('[BACKEND_CALLBACK] onTextChunk fired.');
-            enqueue({ type: 'text-chunk', payload: text });
-        },
-        onNewToolCalls: (toolCallEvents: ToolCallEvent[]) => {
-            console.log('[BACKEND_CALLBACK] onNewToolCalls fired.', { toolCallEvents });
-            enqueue({ type: 'tool-call-start', payload: toolCallEvents });
-        },
-        onToolResult: (id: string, result: string) => {
-            console.log('[BACKEND_CALLBACK] onToolResult fired.', { id });
-            enqueue({ type: 'tool-call-end', payload: { id, result } });
-        },
+        onTextChunk: (text: string) => enqueue({ type: 'text-chunk', payload: text }),
+        onNewToolCalls: (toolCallEvents: ToolCallEvent[]) => enqueue({ type: 'tool-call-start', payload: toolCallEvents }),
+        onToolResult: (id: string, result: string) => enqueue({ type: 'tool-call-end', payload: { id, result } }),
         onPlanReady: (plan: any) => {
-            console.log('[BACKEND_CALLBACK] onPlanReady fired.');
             return new Promise<boolean | string>((resolve) => {
                 pendingFrontendTools.set('plan-approval', (approved) => resolve(approved as boolean | string));
                 enqueue({ type: 'plan-ready', payload: plan });
             });
         },
-        onComplete: (finalText: string, groundingMetadata: any) => {
-            console.log('[BACKEND_CALLBACK] onComplete fired.');
-            enqueue({ type: 'complete', payload: { finalText, groundingMetadata } });
-        },
-        onCancel: () => {
-            console.log('[BACKEND_CALLBACK] onCancel fired.');
-            enqueue({ type: 'cancel' });
-        },
-        onError: (error: any) => {
-            console.error('[BACKEND_CALLBACK] onError fired.', { error });
-            enqueue({ type: 'error', payload: error });
-        },
+        onComplete: (finalText: string, groundingMetadata: any) => enqueue({ type: 'complete', payload: { finalText, groundingMetadata } }),
+        onCancel: () => enqueue({ type: 'cancel' }),
+        onError: (error: any) => enqueue({ type: 'error', payload: error }),
     };
 
     signal.addEventListener('abort', () => {
-        console.log('[BACKEND] Request aborted by client.');
+        console.log('[BACKEND] Request aborted by client.', { requestId });
         callbacks.onCancel();
-        if (!res.writableEnded) {
-          res.end();
-        }
+        if (!res.writableEnded) res.end();
     });
     
     let finalSystemInstruction = isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
@@ -100,26 +87,17 @@ async function handleChat(res: express.Response, ai: GoogleGenAI, apiKey: string
     }
 
     try {
-        console.log('[BACKEND] Starting agentic loop.');
         await runAgenticLoop({
             ai, model, history, toolExecutor, callbacks,
-            settings: {
-                ...settings,
-                systemInstruction: systemPrompt ? `${systemPrompt}\n\n${finalSystemInstruction}` : finalSystemInstruction,
-            },
+            settings: { ...settings, systemInstruction: systemPrompt ? `${systemPrompt}\n\n${finalSystemInstruction}` : finalSystemInstruction },
             signal,
         });
-        console.log('[BACKEND] Agentic loop finished.');
     } catch (error) {
-        if ((error as Error).name !== 'AbortError') {
-            callbacks.onError(parseApiError(error));
-        }
+        if ((error as Error).name !== 'AbortError') callbacks.onError(parseApiError(error));
     } finally {
-        clearInterval(heartbeat); // Important: stop the heartbeat
-        console.log('[BACKEND] Closing chat stream.');
-        if (!res.writableEnded) {
-          res.end();
-        }
+        clearInterval(heartbeat);
+        console.log('[BACKEND] Closing chat stream.', { requestId });
+        if (!res.writableEnded) res.end();
     }
 }
 
@@ -135,10 +113,8 @@ async function handleToolResponse(payload: any): Promise<{ status: number, body:
     return { status: 404, body: { success: false, error: 'Unknown callId' } };
 }
 
-
-async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<{ status: number, body: any }> {
+async function handleSimpleTask(ai: GoogleGenAI, task: string, payload: any): Promise<{ status: number, body: any }> {
     let result: GenerateContentResponse;
-    
     switch (task) {
         case 'title': {
             const conversationHistory = payload.messages.map((msg: any) => `${msg.role}: ${(msg.text || '').substring(0, 500)}`).join('\n');
@@ -147,54 +123,35 @@ async function handleTask(ai: GoogleGenAI, task: string, payload: any): Promise<
             const title = getText(result).trim().replace(/["']/g, '');
             return { status: 200, body: { title: title || 'Untitled Chat' } };
         }
-        
         case 'suggestions': {
-            const conversationTranscript = payload.conversation
-                .filter((msg: any) => !msg.isHidden)
-                .slice(-6)
-                .map((msg: any) => {
-                    let text = '';
-                    if (msg.role === 'model' && msg.responses && msg.responses[msg.activeResponseIndex]) {
-                        text = msg.responses[msg.activeResponseIndex].text || '';
-                    } else if (msg.role === 'user') {
-                        text = msg.text || '';
-                    }
-                    return text.substring(0, 300);
-                })
-                .join('\n');
-
+            const conversationTranscript = payload.conversation.filter((msg: any) => !msg.isHidden).slice(-6).map((msg: any) => (msg.responses?.[msg.activeResponseIndex]?.text || msg.text || '').substring(0, 300)).join('\n');
             const prompt = `Based on the recent conversation, suggest 3 concise and relevant follow-up questions or actions a user might take next. The suggestions should be phrased from the user's perspective (e.g., "Explain this in simpler terms"). Output MUST be a valid JSON array of strings. If no good suggestions can be made, return an empty array [].\n\nCONVERSATION:\n${conversationTranscript}\n\nJSON OUTPUT:`;
             result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
             return { status: 200, body: { suggestions: JSON.parse(getText(result) || '[]') } };
         }
-
         case 'tts': {
             const { text, voice } = payload;
             const base64Audio = await executeTextToSpeech(ai, text, voice);
             return { status: 200, body: { audio: base64Audio } };
         }
-
         case 'memory_suggest': {
             const suggestions = await executeExtractMemorySuggestions(ai, payload.conversation);
             return { status: 200, body: { suggestions } };
         }
-
         case 'memory_consolidate': {
             const { currentMemory, suggestions } = payload;
             const newMemory = await executeConsolidateMemory(ai, currentMemory, suggestions);
             return { status: 200, body: { memory: newMemory } };
         }
-        
         default:
             return { status: 400, body: { error: 'Unknown task' } };
     }
 }
 
-export const apiHandler = async (req: express.Request, res: express.Response) => {
+// Fix: Use aliased ExpressRequest and ExpressResponse types
+export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
-    if (!apiKey) {
-        return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
-    }
+    if (!apiKey) return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
     
     const ai = new GoogleGenAI({ apiKey });
     const task = req.query.task as string;
@@ -204,14 +161,32 @@ export const apiHandler = async (req: express.Request, res: express.Response) =>
         const payload = req.method === 'POST' ? req.body : {};
         
         if (task === 'chat') {
+            const requestId = generateRequestId();
             const controller = new AbortController();
+            activeRequests.set(requestId, controller);
+
             req.on('close', () => {
-                if (!res.writableEnded) {
-                    controller.abort();
+                console.log(`[BACKEND] Request ${requestId} closed.`);
+                if (activeRequests.has(requestId)) {
+                    console.log(`[BACKEND] Aborting ${requestId} due to connection close.`);
+                    activeRequests.get(requestId)!.abort();
+                    activeRequests.delete(requestId);
                 }
             });
-            await handleChat(res, ai, apiKey, payload, controller.signal);
-            return;
+
+            await handleChat(res, ai, apiKey, payload, requestId, controller.signal);
+            return; // Streaming response is handled, so we return.
+        }
+
+        if (task === 'cancel') {
+            const { requestId } = payload;
+            if (requestId && activeRequests.has(requestId)) {
+                console.log(`[BACKEND] Received explicit cancel for ${requestId}.`);
+                activeRequests.get(requestId)!.abort();
+                activeRequests.delete(requestId);
+                return res.status(200).json({ success: true, message: 'Request cancelled.' });
+            }
+            return res.status(404).json({ success: false, error: 'Request ID not found or already cancelled.' });
         }
 
         if (task === 'tool_response') {
@@ -222,25 +197,17 @@ export const apiHandler = async (req: express.Request, res: express.Response) =>
         if (task === 'enhance') {
             const stream = await ai.models.generateContentStream({
                 model: 'gemini-2.5-flash',
-                contents: `You are a prompt engineer. Your task is to rewrite a user's prompt to be more detailed, specific, and effective for a powerful AI model. Retain the user's core intent. If the prompt is already good, you can make minimal changes or return it as-is. Do not add conversational filler.
-
-Original Prompt:
-${payload.userInput}
-
-Enhanced Prompt:`,
+                contents: `You are a prompt engineer. Your task is to rewrite a user's prompt to be more detailed, specific, and effective for a powerful AI model. Retain the user's core intent. If the prompt is already good, you can make minimal changes or return it as-is. Do not add conversational filler.\n\nOriginal Prompt:\n${payload.userInput}\n\nEnhanced Prompt:`,
                 config: { temperature: 0.5 }
             });
-            
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            for await (const chunk of stream) {
-                res.write(chunk.text);
-            }
+            for await (const chunk of stream) res.write(chunk.text);
             res.end();
             return;
         }
 
         if (task) {
-            const { status, body } = await handleTask(ai, task, payload);
+            const { status, body } = await handleSimpleTask(ai, task, payload);
             return res.status(status).json(body);
         }
         
@@ -248,7 +215,6 @@ Enhanced Prompt:`,
 
     } catch (error) {
         console.error(`Backend error for task "${task}":`, error);
-        const apiError = parseApiError(error);
-        return res.status(500).json({ error: apiError });
+        return res.status(500).json({ error: parseApiError(error) });
     }
 };
