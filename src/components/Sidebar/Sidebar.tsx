@@ -165,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     top: 0,
                     zIndex: isDesktop ? 'auto' : 30,
                 }}
-                className="bg-white/30 dark:bg-black/20 backdrop-blur-xl border-r border-white/40 dark:border-white/10 flex flex-col transform-gpu"
+                className="bg-violet-50 dark:bg-[#121212] border-r border-violet-200/50 dark:border-white/10 flex flex-col transform-gpu" // Added transform-gpu to promote to its own layer
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
@@ -190,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     />
                     
                     <motion.div 
-                        className="my-4 border-t border-white/20 dark:border-white/10"
+                        className="my-4 border-t border-violet-200/50 dark:border-white/10"
                         initial={false}
                         animate={{ opacity: isCollapsed ? 0 : 1, height: isCollapsed ? 0 : 'auto' }}
                         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
