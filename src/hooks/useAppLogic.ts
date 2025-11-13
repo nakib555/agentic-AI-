@@ -6,7 +6,7 @@
 // This file contains the logic extracted from App.tsx.
 // It uses a custom hook to manage state, side effects, and event handlers.
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useChat } from './useChat/index';
 import { useTheme } from './useTheme';
 import { useSidebar } from './useSidebar';
@@ -34,7 +34,6 @@ import {
 } from '../components/App/constants';
 import { API_BASE_URL } from '../utils/api';
 
-const modelsPromise = getAvailableModels();
 
 export const useAppLogic = () => {
   const appContainerRef = useRef<HTMLDivElement>(null);
@@ -56,8 +55,8 @@ export const useAppLogic = () => {
   const [backendError, setBackendError] = useState<string | null>(null);
 
   // --- Model Management ---
-  const availableModels = React.use(modelsPromise);
-  const modelsLoading = false; // Suspense handles loading state
+  const [availableModels, setAvailableModels] = useState<Model[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(true);
   const [activeModel, setActiveModel] = useState(validModels[1]?.id || validModels[0]?.id);
 
   // --- Settings State ---
@@ -82,6 +81,14 @@ export const useAppLogic = () => {
   useEffect(() => { localStorage.setItem('agentic-videoModel', videoModel); }, [videoModel]);
   useEffect(() => { localStorage.setItem('agentic-ttsVoice', ttsVoice); }, [ttsVoice]);
   useEffect(() => { localStorage.setItem('agentic-autoPlayAudio', JSON.stringify(isAutoPlayEnabled)); }, [isAutoPlayEnabled]);
+
+  // --- Fetch available models on mount ---
+  useEffect(() => {
+    getAvailableModels().then(models => {
+      setAvailableModels(models);
+      setModelsLoading(false);
+    });
+  }, []);
 
   // --- Health check effect ---
   useEffect(() => {

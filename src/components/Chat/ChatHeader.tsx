@@ -92,14 +92,14 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
 
     // --- Unified Button Styling ---
     const baseButtonClasses = "p-1.5 rounded-md transition-colors";
-    const activeClasses = "bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-300 hover:bg-cyan-200/60 dark:hover:bg-cyan-500/30";
-    const inactiveClasses = "text-slate-700 hover:bg-cyan-100/60 hover:text-cyan-800 dark:text-slate-200 dark:hover:bg-cyan-500/10 dark:hover:text-cyan-300";
+    const activeClasses = "bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300 hover:bg-indigo-200/60 dark:hover:bg-indigo-500/30";
+    const inactiveClasses = "text-slate-700 hover:bg-indigo-100/60 hover:text-indigo-800 dark:text-slate-200 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-300";
     
     const toggleButtonClasses = `${baseButtonClasses} ${isSidebarActive ? activeClasses : inactiveClasses}`;
     const moreOptionsButtonClasses = `${baseButtonClasses} ${isMenuOpen ? activeClasses : inactiveClasses}`;
 
     return (
-        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center sticky top-0 z-10 bg-white/30 dark:bg-black/20 backdrop-blur-xl border-b border-white/40 dark:border-white/10">
+        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center sticky top-0 z-10 bg-violet-50/80 dark:bg-[#121212]/80 backdrop-blur-md border-b border-violet-200/50 dark:border-white/10">
         
         {/* --- Left controls --- */}
         <div className="flex-shrink-0">
