@@ -6,7 +6,7 @@
 // This file contains the logic extracted from App.tsx.
 // It uses a custom hook to manage state, side effects, and event handlers.
 
-import React, { use, useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useChat } from './useChat/index';
 import { useTheme } from './useTheme';
 import { useSidebar } from './useSidebar';
@@ -56,7 +56,7 @@ export const useAppLogic = () => {
   const [backendError, setBackendError] = useState<string | null>(null);
 
   // --- Model Management ---
-  const availableModels = use(modelsPromise);
+  const availableModels = React.use(modelsPromise);
   const modelsLoading = false; // Suspense handles loading state
   const [activeModel, setActiveModel] = useState(validModels[1]?.id || validModels[0]?.id);
 
