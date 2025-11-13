@@ -4,16 +4,16 @@
 :root {
   --card-bg: #ffffff;
   --card-text: #1e293b;
-  --gradient-start: #a78bfa;
-  --gradient-end: #7c3aed;
+  --gradient-start: #2dd4bf; /* teal-400 */
+  --gradient-end: #38bdf8; /* sky-400 */
   --border-color: #e2e8f0;
   --svg-fill: currentColor;
 }
 .dark {
   --card-bg: #1e1e1e;
   --card-text: #e2e8f0;
-  --gradient-start: #818cf8; /* indigo-300 */
-  --gradient-end: #4f46e5; /* indigo-600 */
+  --gradient-start: #5eead4; /* teal-300 */
+  --gradient-end: #7dd3fc; /* sky-300 */
   --border-color: #333;
   --svg-fill: currentColor;
 }
@@ -54,23 +54,23 @@ html, body, #root {
 
 .chat-background {
   position: relative;
-  background-color: #f5f3ff; /* Light violet */
+  background-color: #f0fdfa; /* teal-50 */
   background-image: 
-    radial-gradient(at 15% 25%, hsla(250, 90%, 95%, 1) 0px, transparent 50%),
-    radial-gradient(at 85% 35%, hsla(280, 90%, 95%, 1) 0px, transparent 50%),
-    radial-gradient(at 20% 80%, hsla(260, 90%, 95%, 1) 0px, transparent 50%),
-    radial-gradient(at 80% 75%, hsla(290, 90%, 95%, 1) 0px, transparent 50%);
+    radial-gradient(at 15% 25%, hsla(166, 80%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 85% 35%, hsla(190, 80%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 20% 80%, hsla(175, 80%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 80% 75%, hsla(200, 80%, 95%, 1) 0px, transparent 50%);
   background-size: 200% 200%;
   animation: bg-animate 60s ease infinite;
 }
 
 .dark .chat-background {
-  background-color: #110e19; /* Very dark violet */
+  background-color: #0c1a1e; /* Very dark teal/cyan */
   background-image: 
-    radial-gradient(at 15% 25%, hsla(250, 50%, 20%, 0.5) 0px, transparent 50%),
-    radial-gradient(at 85% 35%, hsla(280, 50%, 20%, 0.5) 0px, transparent 50%),
-    radial-gradient(at 20% 80%, hsla(260, 50%, 20%, 0.5) 0px, transparent 50%),
-    radial-gradient(at 80% 75%, hsla(290, 50%, 20%, 0.5) 0px, transparent 50%);
+    radial-gradient(at 15% 25%, hsla(166, 50%, 15%, 0.5) 0px, transparent 50%),
+    radial-gradient(at 85% 35%, hsla(190, 50%, 15%, 0.5) 0px, transparent 50%),
+    radial-gradient(at 20% 80%, hsla(175, 50%, 15%, 0.5) 0px, transparent 50%),
+    radial-gradient(at 80% 75%, hsla(200, 50%, 15%, 0.5) 0px, transparent 50%);
   animation: bg-animate 80s ease infinite reverse;
 }
 
@@ -78,13 +78,13 @@ html, body, #root {
 /* --- Jump-to-Message Highlight --- */
 @keyframes highlight-animation {
   0% { background-color: transparent; }
-  25% { background-color: rgba(99, 102, 241, 0.15); } /* indigo-500/15 */
+  25% { background-color: rgba(20, 184, 166, 0.15); } /* teal-500/15 */
   100% { background-color: transparent; }
 }
 
 .dark @keyframes highlight-animation {
   0% { background-color: transparent; }
-  25% { background-color: rgba(129, 140, 248, 0.15); } /* indigo-400/15 */
+  25% { background-color: rgba(45, 212, 191, 0.15); } /* teal-400/15 */
   100% { background-color: transparent; }
 }
 
@@ -103,8 +103,8 @@ html, body, #root {
 .monaco-editor .monaco-mouse-cursor-text { cursor: default !important; }
 .monaco-editor textarea:focus { outline: none !important; }
 
-/* --- Brand Gradient for Welcome Text --- */
+/* --- Brand Gradient --- */
 .brand-gradient {
-  background-image: linear-gradient(to right, #a78bfa, #8b5cf6, #7c3aed, #6d28d9);
+  background-image: linear-gradient(to right, #2dd4bf, #38bdf8, #3b82f6);
   background-size: 300% auto;
 }
