@@ -81,7 +81,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
         if (!isThinking) {
             return { status: 'Completed', statusColor: 'bg-green-500 dark:bg-green-600', plan: parsedPlan, executionLog: parsedLog };
         }
-        return { status: 'In Progress', statusColor: 'bg-indigo-500 animate-pulse', plan: parsedPlan, executionLog: parsedLog };
+        return { status: 'In Progress', statusColor: 'bg-teal-500 animate-pulse', plan: parsedPlan, executionLog: parsedLog };
     }, [message]);
 
     const isLiveGeneration = useMemo(() => executionLog.some(node => node.status === 'active'), [executionLog]);
@@ -165,10 +165,10 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                 damping: 40,
             }}
             className={`
-                flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-[#1e1e1e]
+                flex-shrink-0 overflow-hidden bg-white/30 dark:bg-black/20 backdrop-blur-xl
                 ${isDesktop 
-                    ? 'relative border-l border-gray-200 dark:border-white/10' // Desktop styling
-                    : 'fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 dark:border-white/10' // Mobile styling
+                    ? 'relative border-l border-white/40 dark:border-white/10' // Desktop styling
+                    : 'fixed inset-x-0 bottom-0 z-30 border-t border-white/40 dark:border-white/10' // Mobile styling
                 }
             `}
             role="complementary"
@@ -186,7 +186,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                     ></div>
                 )}
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
+                <div className="flex items-center justify-between p-4 border-b border-white/20 dark:border-white/10 flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <h2 id="thinking-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Thought Process</h2>
                         <span className={`px-2 py-1 text-xs font-semibold text-white rounded-full ${statusColor}`}>

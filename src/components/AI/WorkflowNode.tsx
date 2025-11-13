@@ -136,11 +136,13 @@ export const WorkflowNode = ({ node, sendMessage, onRegenerate, messageId }: Wor
         return <HandoffNode from={node.handoff.from} to={node.handoff.to} details={node.details as string} isStreaming={node.status === 'active'} />;
     }
 
+    const { icon, title } = getNodeVisuals(node);
+    const agentColorInfo = node.agentName ? getAgentColor(node.agentName) : null;
+    const hasDetails = !!node.details;
+    
     // --- Custom UI for DuckDuckGo Search Tool ---
     if (node.type === 'duckduckgoSearch') {
         const event = node.details as ToolCallEvent;
-        const agentColorInfo = getAgentColor(node.agentName || 'Executor');
-        const { icon, title } = getNodeVisuals(node);
         
         let sources: { uri: string; title: string; }[] | undefined = undefined;
 
@@ -163,14 +165,16 @@ export const WorkflowNode = ({ node, sendMessage, onRegenerate, messageId }: Wor
         }
         
         return (
-            <div className={`p-4 rounded-xl bg-white dark:bg-black/20 border ${agentColorInfo.border} shadow-sm`}>
+            <div className="bg-white/40 dark:bg-black/20 backdrop-blur-md border border-white/50 dark:border-white/10 p-4 rounded-xl shadow-lg">
                 <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="flex-shrink-0">{icon}</div>
                         <div className="flex-1 min-w-0 flex items-center flex-wrap gap-x-2 gap-y-1">
-                            <span className={`flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full ${agentColorInfo.bg} ${agentColorInfo.text}`}>
-                                {node.agentName}
-                            </span>
+                            {agentColorInfo && (
+                                <span className={`flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full ${agentColorInfo.bg} ${agentColorInfo.text}`}>
+                                    {node.agentName}
+                                </span>
+                            )}
                             <p className="font-semibold font-['Space_Grotesk'] text-gray-800 dark:text-slate-200 text-sm truncate">{title}</p>
                         </div>
                     </div>
@@ -183,12 +187,8 @@ export const WorkflowNode = ({ node, sendMessage, onRegenerate, messageId }: Wor
     }
     
     // --- Default rendering for all other tool calls and tasks ---
-    const { icon, title } = getNodeVisuals(node);
-    const agentColorInfo = node.agentName ? getAgentColor(node.agentName) : null;
-    const hasDetails = !!node.details;
-
     return (
-        <motion.div layout className={`w-full p-4 rounded-xl bg-white dark:bg-black/20 border shadow-sm ${agentColorInfo ? agentColorInfo.border : 'border-gray-200 dark:border-white/10'}`}>
+        <motion.div layout className="w-full bg-white/40 dark:bg-black/20 backdrop-blur-md border border-white/50 dark:border-white/10 p-4 rounded-xl shadow-lg">
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="flex-shrink-0">{icon}</div>

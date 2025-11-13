@@ -26,22 +26,22 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
         <div className="w-fit max-w-[75%] flex flex-col items-end">
             <motion.div 
                 {...animationProps} 
-                className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-2xl shadow-md border border-gray-200 dark:border-slate-700/50"
+                className="brand-gradient text-white rounded-2xl rounded-br-lg"
             >
                 {/* Content Section */}
                 <div className="p-4 flex flex-col gap-4">
                     {attachments && attachments.length > 0 && (
-                        <div className="flex flex-col gap-2 p-3 bg-gray-50 dark:bg-black/20 rounded-lg border border-gray-200 dark:border-slate-700/50">
+                        <div className="flex flex-col gap-2 p-3 bg-black/10 rounded-lg border border-white/20">
                             {attachments.map((attachment, index) => (
                                 <div key={index} className="flex items-center gap-2">
-                                    <FileIcon filename={attachment.name} className="flex-shrink-0 w-5 h-5 text-gray-500 dark:text-slate-400" />
-                                    <span className="truncate text-sm font-medium text-gray-700 dark:text-slate-300" title={attachment.name}>{attachment.name}</span>
+                                    <FileIcon filename={attachment.name} className="flex-shrink-0 w-5 h-5 text-white/80" />
+                                    <span className="truncate text-sm font-medium text-white" title={attachment.name}>{attachment.name}</span>
                                 </div>
                             ))}
                         </div>
                     )}
                     {text && (
-                        <div className="markdown-content">
+                        <div className="markdown-content-user">
                             <ManualCodeRenderer text={text} components={MarkdownComponents} isStreaming={false} />
                         </div>
                     )}
