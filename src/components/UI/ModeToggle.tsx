@@ -22,7 +22,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
   ];
 
   return (
-    <div className={`flex items-center gap-1 p-1 rounded-full bg-slate-200/70 dark:bg-zinc-800/50 ${disabled ? 'opacity-50' : ''}`}>
+    <div className={`flex items-center gap-1 p-1 rounded-full bg-gray-200/70 dark:bg-black/20 ${disabled ? 'opacity-50' : ''}`}>
       {modes.map(mode => {
         const isActive = isAgentMode === mode.isAgent;
         return (
@@ -37,14 +37,14 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
             {isActive && (
               <motion.div
                 layoutId="mode-pill"
-                className="absolute inset-0 bg-white dark:bg-zinc-700 shadow-sm rounded-full"
+                className="absolute inset-0 bg-white dark:bg-slate-700 shadow-sm rounded-full"
                 transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               />
             )}
 
             {/* A hidden background for the hover effect on the inactive button */}
             {!isActive && (
-                <div className="absolute inset-0 bg-white dark:bg-zinc-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                <div className="absolute inset-0 bg-white dark:bg-slate-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
             )}
 
             <span className={`relative z-10 flex items-center gap-2 ${isActive ? 'text-gray-900 dark:text-slate-50' : 'text-gray-500 dark:text-slate-400 group-hover:text-gray-900 dark:group-hover:text-slate-50 transition-colors duration-200'}`}>

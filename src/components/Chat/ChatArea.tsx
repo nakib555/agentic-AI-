@@ -89,7 +89,7 @@ export const ChatArea = ({
 
   return (
     <div 
-      className="flex-1 flex flex-col min-h-0 relative"
+      className="flex-1 flex flex-col pb-4 min-h-0 relative"
       onDragEnter={handleDragIn}
       onDragLeave={handleDragOut}
       onDragOver={handleDrag}
@@ -168,7 +168,7 @@ export const ChatArea = ({
         )}
       </AnimatePresence>
       
-      <div className="flex-shrink-0 w-full max-w-4xl mx-auto px-4 sm:px-6 md:px-8 pb-4">
+      <div className="flex-shrink-0 pt-4 px-4 sm:px-6 md:px-8">
         <div className="relative w-full">
           <MessageForm 
             ref={messageFormRef}

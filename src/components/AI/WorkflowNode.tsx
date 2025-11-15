@@ -163,7 +163,7 @@ export const WorkflowNode = ({ node, sendMessage, onRegenerate, messageId }: Wor
         }
         
         return (
-            <div className={`p-4 rounded-xl bg-white dark:bg-zinc-800/50 border ${agentColorInfo.border} shadow-sm`}>
+            <div className={`p-4 rounded-xl bg-white dark:bg-black/20 border ${agentColorInfo.border} shadow-sm`}>
                 <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="flex-shrink-0">{icon}</div>
@@ -188,7 +188,7 @@ export const WorkflowNode = ({ node, sendMessage, onRegenerate, messageId }: Wor
     const hasDetails = !!node.details;
 
     return (
-        <motion.div layout className={`w-full p-4 rounded-xl bg-white dark:bg-zinc-800/50 border shadow-sm ${agentColorInfo ? agentColorInfo.border : 'border-slate-200 dark:border-zinc-700'}`}>
+        <motion.div layout className={`w-full p-4 rounded-xl bg-white dark:bg-black/20 border shadow-sm ${agentColorInfo ? agentColorInfo.border : 'border-gray-200 dark:border-white/10'}`}>
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="flex-shrink-0">{icon}</div>

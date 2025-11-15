@@ -115,7 +115,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
         {visibleMessages.length === 0 ? (
           <WelcomeScreen sendMessage={sendMessage} />
         ) : (
-          <div className="space-y-10 md:space-y-12 py-4 max-w-4xl w-full mx-auto" role="log" aria-live="polite">
+          <div className="space-y-8 md:space-y-10 py-4 w-full" role="log" aria-live="polite">
             {visibleMessages.map((msg) => (
               <MessageComponent 
                   key={msg.id} 

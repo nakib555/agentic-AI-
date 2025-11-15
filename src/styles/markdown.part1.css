@@ -29,10 +29,10 @@
 .custom-blockquote {
   position: relative;
   padding-left: 1rem;
-  border-left: 3px solid #cbd5e1; /* slate-300 */
+  border-left: 3px solid #d1d5db; /* gray-300 */
 }
 .dark .custom-blockquote {
-  border-left-color: #475569; /* slate-600 */
+  border-left-color: #4b5563; /* gray-600 */
 }
 
 /* Ensure paragraphs inside the blockquote don't add extra margins */
