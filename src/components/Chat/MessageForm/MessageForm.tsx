@@ -28,7 +28,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   const hasInput = logic.inputValue.trim().length > 0 || logic.processedFiles.length > 0;
   const hasText = logic.inputValue.trim().length > 0 && logic.processedFiles.length === 0;
 
-  const sendButtonClasses = "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-200 ease-in-out";
+  const sendButtonClasses = "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-200 ease-in-out";
   const isSendButtonActive = hasInput && !isLoading && !logic.isEnhancing && !isProcessingFiles;
   const sendButtonStateClasses = isLoading 
     ? 'bg-red-600 text-white shadow-md hover:bg-red-500 active:scale-90'
@@ -38,10 +38,10 @@ export const MessageForm = forwardRef<MessageFormHandle, {
 
   return (
     <div>
-        <motion.form 
-            className={`bg-white/30 dark:bg-black/20 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-lg flex flex-col p-2`} 
-            onSubmit={logic.handleSubmit}
-            animate={{ borderRadius: logic.isExpanded ? '1rem' : '1.5rem' }}
+      <form onSubmit={logic.handleSubmit} className="flex items-end gap-2">
+        <motion.div 
+            className={`bg-white/30 dark:bg-black/20 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-lg flex flex-col p-2 flex-grow`} 
+            animate={{ borderRadius: '1rem' }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
         >
             <AnimatePresence>
@@ -68,13 +68,19 @@ export const MessageForm = forwardRef<MessageFormHandle, {
               <div ref={logic.inputRef} contentEditable={!logic.isEnhancing} onInput={(e) => logic.setInputValue(e.currentTarget.innerText)} onKeyDown={logic.handleKeyDown} onPaste={logic.handlePaste} aria-label="Chat input" role="textbox" data-placeholder={logic.isRecording ? 'Listening...' : (isLoading ? "Generating response..." : "Ask anything, or drop a file")} className={`content-editable-input w-full px-2 py-1.5 bg-transparent text-gray-900 dark:text-slate-200 focus:outline-none ${logic.isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ minHeight: '32px', maxHeight: '192px', transition: 'height 0.2s ease-in-out' }} />
             </div>
             
-            <div className={`flex items-center justify-between gap-2 ${logic.isExpanded ? 'mt-2 pt-2 border-t border-gray-200/50 dark:border-white/10' : ''}`}>
+            <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-200/50 dark:border-white/10">
+              <div className="flex items-center gap-1">
+                <ModeToggle 
+                    isAgentMode={isAgentMode} 
+                    onToggle={setIsAgentMode}
+                    disabled={isLoading}
+                />
+              </div>
+
               <div className="flex items-center gap-1">
                 <div className="relative">
                     <button ref={logic.attachButtonRef} type="button" onClick={() => logic.setIsUploadMenuOpen(p => !p)} aria-label="Attach files or folder" title="Attach files or folder" disabled={logic.isEnhancing} className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                          <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path clipRule="evenodd" d="M10 3a.75.75 0 01.75.75v5.5h5.5a.75.75 0 010 1.5h-5.5v5.5a.75.75 0 01-1.5 0v-5.5H3.75a.75.75 0 010-1.5h5.5V3.75A.75.75 0 0110 3z" /></svg>
                     </button>
                     <AnimatePresence>
                         {logic.isUploadMenuOpen && ( <UploadMenu menuRef={logic.uploadMenuRef} onFileClick={() => { logic.fileInputRef.current?.click(); logic.setIsUploadMenuOpen(false); }} onFolderClick={() => { logic.folderInputRef.current?.click(); logic.setIsUploadMenuOpen(false); }} /> )}
@@ -89,14 +95,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                   )}
                 </AnimatePresence>
 
-                <ModeToggle 
-                    isAgentMode={isAgentMode} 
-                    onToggle={setIsAgentMode}
-                    disabled={isLoading}
-                />
-              </div>
-
-              <div className="flex items-center gap-1">
                 <AnimatePresence>
                   {hasText && (
                     <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} type="button" onClick={logic.handleEnhancePrompt} disabled={logic.isEnhancing} aria-label="Enhance prompt" title="Enhance prompt" className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50 transition-all">
@@ -104,16 +102,18 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     </motion.button>
                   )}
                 </AnimatePresence>
-                
-                <button type={isLoading ? 'button' : 'submit'} onClick={isLoading ? onCancel : undefined} disabled={!isLoading && (!hasInput || logic.isEnhancing || isProcessingFiles)} aria-label={isLoading ? "Stop generating" : "Send message"} title={isLoading ? "Stop generating" : (isProcessingFiles ? "Processing files..." : "Send message")} className={`${sendButtonClasses} ${sendButtonStateClasses}`}>
-                    {isLoading ? ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M4 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4Z" /></svg> ) : ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M9.47 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1-1.06 1.06L10 4.81V15.75a.75.75 0 0 1-1.5 0V4.81L4.78 8.53a.75.75 0 0 1-1.06-1.06l4.25-4.25Z" clipRule="evenodd" /></svg> )}
-                </button>
               </div>
             </div>
-        </motion.form>
-        <p className="text-center text-sm text-gray-500 dark:text-slate-400 mt-2 px-4">
-            Gemini can make mistakes. Check important info.
-        </p>
+        </motion.div>
+        <div className="flex-shrink-0">
+          <button type={isLoading ? 'button' : 'submit'} onClick={isLoading ? onCancel : undefined} disabled={!isLoading && (!hasInput || logic.isEnhancing || isProcessingFiles)} aria-label={isLoading ? "Stop generating" : "Send message"} title={isLoading ? "Stop generating" : (isProcessingFiles ? "Processing files..." : "Send message")} className={`${sendButtonClasses} ${sendButtonStateClasses}`}>
+              {isLoading ? ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M4 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4Z" /></svg> ) : ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M9.47 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1-1.06 1.06L10 4.81V15.75a.75.75 0 0 1-1.5 0V4.81L4.78 8.53a.75.75 0 0 1-1.06-1.06l4.25-4.25Z" clipRule="evenodd" /></svg> )}
+          </button>
+        </div>
+      </form>
+      <p className="text-center text-sm text-gray-500 dark:text-slate-400 mt-2 px-4">
+          Gemini can make mistakes. Check important info.
+      </p>
     </div>
   );
 });
