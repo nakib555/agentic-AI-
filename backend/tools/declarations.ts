@@ -47,6 +47,18 @@ export const duckduckgoSearchDeclaration: FunctionDeclaration = {
     },
 };
 
+export const browsePageDeclaration: FunctionDeclaration = {
+    name: 'browsePage',
+    description: 'Navigates to a URL, takes a screenshot, and extracts the text content of the page. Use this for in-depth analysis of a specific webpage discovered via search or other means.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        url: { type: Type.STRING, description: 'The fully qualified URL of the webpage to browse (e.g., "https://www.example.com").' },
+      },
+      required: ['url'],
+    },
+};
+
 export const imageGeneratorDeclaration: FunctionDeclaration = {
     name: 'generateImage',
     description: 'Generates one or more images based on a textual description. Use for creating static visual content like photos, illustrations, and graphics.',
@@ -194,6 +206,7 @@ export const writeFileDeclaration: FunctionDeclaration = {
 // Export all tool declarations for the model in a single array
 export const toolDeclarations = [
     duckduckgoSearchDeclaration,
+    browsePageDeclaration,
     getCurrentLocationDeclaration,
     imageGeneratorDeclaration,
     videoGeneratorDeclaration,

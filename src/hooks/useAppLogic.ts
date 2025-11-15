@@ -33,6 +33,7 @@ import {
   DEFAULT_AUTO_PLAY_AUDIO
 } from '../components/App/constants';
 import { API_BASE_URL } from '../utils/api';
+import { testSuite, type TestResult, type TestProgress } from '../components/Testing/testSuite';
 
 
 export const useAppLogic = () => {
@@ -53,6 +54,7 @@ export const useAppLogic = () => {
   const [thinkingMessageId, setThinkingMessageId] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [backendError, setBackendError] = useState<string | null>(null);
+  const [isTestMode, setIsTestMode] = useState(false);
 
   // --- Model Management ---
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
@@ -228,18 +230,77 @@ export const useAppLogic = () => {
     };
     input.click();
   };
+
+  const runDiagnosticTests = useCallback(async (onProgress: (progress: TestProgress) => void) => {
+    const results: TestResult[] = [];
+    let testsPassed = 0;
+
+    for (let i = 0; i < testSuite.length; i++) {
+        const testCase = testSuite[i];
+        onProgress({
+            total: testSuite.length,
+            current: i + 1,
+            description: testCase.description,
+            status: 'running',
+            results
+        });
+
+        let result: TestResult;
+        try {
+            // Ensure a clean chat for each test
+            chat.startNewChat();
+            // This is a short, artificial delay to allow the state to update before sending.
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            const responseMessage = await chat.sendMessageForTest(testCase.prompt, testCase.options);
+            const validation = await testCase.validate(responseMessage);
+            
+            result = { description: testCase.description, ...validation };
+        } catch (error: any) {
+            result = {
+                description: testCase.description,
+                pass: false,
+                details: `Test runner failed: ${error.message || 'Unknown error'}`
+            };
+        }
+        
+        if (result.pass) testsPassed++;
+        results.push(result);
+
+        onProgress({
+            total: testSuite.length,
+            current: i + 1,
+            description: testCase.description,
+            status: result.pass ? 'pass' : 'fail',
+            results
+        });
+    }
+
+    // Final report generation
+    let report = `Agentic AI Chat - Diagnostic Test Report\n`;
+    report += `Date: ${new Date().toISOString()}\n`;
+    report += `----------------------------------------\n`;
+    report += `Summary: ${testsPassed} / ${testSuite.length} tests passed.\n\n`;
+    
+    results.forEach(res => {
+        report += `[${res.pass ? 'PASS' : 'FAIL'}] ${res.description}\n`;
+        report += `     Details: ${res.details}\n\n`;
+    });
+
+    return report;
+}, [chat]);
   
   // --- Return all state and handlers ---
   return {
     appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, setIsAgentMode, ...memory,
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
     isThinkingSidebarOpen, setIsThinkingSidebarOpen, thinkingMessageId, setThinkingMessageId,
-    backendStatus, backendError,
+    backendStatus, backendError, isTestMode, setIsTestMode,
     availableModels, modelsLoading, activeModel, handleModelChange,
     aboutUser, setAboutUser, aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens, setMaxTokens,
     imageModel, setImageModel, videoModel, setVideoModel, ttsVoice, setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled,
     ...chat, isChatActive, thinkingMessageForSidebar,
     handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,
-    handleExportChat, handleShareChat, handleImportChat
+    handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests
   };
 };

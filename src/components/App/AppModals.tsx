@@ -18,6 +18,7 @@ type AppModalsProps = {
   setIsSettingsOpen: (isOpen: boolean) => void;
   isMemoryModalOpen: boolean;
   setIsMemoryModalOpen: (isOpen: boolean) => void;
+  onRunTests: () => void;
   availableModels: Model[];
   activeModel: string;
   handleModelChange: (modelId: string) => void;
@@ -57,7 +58,7 @@ type AppModalsProps = {
 
 export const AppModals: React.FC<AppModalsProps> = (props) => {
   const {
-    isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
+    isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen, onRunTests,
     availableModels, activeModel,
     handleModelChange, modelsLoading, clearAllChats, aboutUser, setAboutUser,
     aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens,
@@ -78,6 +79,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         onModelChange={handleModelChange}
         disabled={modelsLoading}
         onClearAllChats={clearAllChats}
+        onRunTests={onRunTests}
         aboutUser={aboutUser}
         setAboutUser={setAboutUser}
         aboutResponse={aboutResponse}

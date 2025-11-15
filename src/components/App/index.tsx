@@ -16,6 +16,7 @@ import { AppModals } from './AppModals';
 import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 } from './constants';
+import { TestRunner } from '../Testing';
 
 export const App = () => {
   const logic = useAppLogic();
@@ -103,6 +104,7 @@ export const App = () => {
         setIsSettingsOpen={logic.setIsSettingsOpen}
         isMemoryModalOpen={logic.isMemoryModalOpen}
         setIsMemoryModalOpen={logic.setIsMemoryModalOpen}
+        onRunTests={() => logic.setIsTestMode(true)}
         availableModels={logic.availableModels}
         activeModel={logic.activeModel}
         handleModelChange={logic.handleModelChange}
@@ -136,6 +138,14 @@ export const App = () => {
         isAutoPlayEnabled={logic.isAutoPlayEnabled}
         setIsAutoPlayEnabled={logic.setIsAutoPlayEnabled}
       />
+
+      {logic.isTestMode && (
+          <TestRunner 
+              isOpen={logic.isTestMode}
+              onClose={() => logic.setIsTestMode(false)}
+              runTests={logic.runDiagnosticTests}
+          />
+      )}
     </div>
   );
 };

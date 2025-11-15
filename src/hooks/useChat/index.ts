@@ -29,6 +29,8 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     const { chatHistory, currentChatId, updateChatTitle } = chatHistoryHook;
     const abortControllerRef = useRef<AbortController | null>(null);
     const requestIdRef = useRef<string | null>(null); // For explicit cancellation
+    const testResolverRef = useRef<((value: Message | PromiseLike<Message>) => void) | null>(null);
+
 
     // Refs to hold the latest state for callbacks
     const chatHistoryRef = useRef(chatHistory);
@@ -44,6 +46,20 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         if (!currentChatId) return false;
         return chatHistory.find(c => c.id === currentChatId)?.isLoading ?? false;
     }, [chatHistory, currentChatId]);
+
+    // Effect to resolve test promise when loading completes
+    useEffect(() => {
+        if (!isLoading && testResolverRef.current && currentChatId) {
+            const chat = chatHistory.find(c => c.id === currentChatId);
+            if (chat && chat.messages.length > 0) {
+                const lastMessage = chat.messages[chat.messages.length - 1];
+                if (lastMessage.role === 'model') {
+                    testResolverRef.current(lastMessage);
+                    testResolverRef.current = null;
+                }
+            }
+        }
+    }, [isLoading, chatHistory, currentChatId]);
 
     const handleFrontendToolExecution = useCallback(async (callId: string, toolName: string, toolArgs: any) => {
         console.log(`[FRONTEND] Received request to execute tool: ${toolName}`, { callId, toolArgs });
@@ -233,6 +249,13 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         await startBackendChat(activeChatId, modelPlaceholder.id, historyForApi, chatForSettings, { ...settings, isAgentMode: options.isThinkingModeEnabled ?? isAgentMode });
     };
 
+    const sendMessageForTest = (userMessage: string, options?: { isThinkingModeEnabled?: boolean }): Promise<Message> => {
+        return new Promise((resolve) => {
+            testResolverRef.current = resolve;
+            sendMessage(userMessage, undefined, options);
+        });
+    };
+
     const regenerateResponse = useCallback(async (aiMessageId: string) => {
         console.log(`[FRONTEND] regenerateResponse called for messageId: ${aiMessageId}`);
         if (isLoading) cancelGeneration();
@@ -348,5 +371,5 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         }
     }, [chatHistory, currentChatId, updateChatTitle]);
   
-  return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse };
+  return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse, sendMessageForTest };
 };
