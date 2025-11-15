@@ -1,5 +1,4 @@
 import 'dotenv/config';
-// Fix: Import Request and Response types directly from express to resolve type errors.
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -21,7 +20,6 @@ app.use(express.json({ limit: '50mb' }));
 const staticPath = path.join(process.cwd(), 'dist');
 
 // API routes
-// Fix: Use Request and Response types from express.
 app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
 app.post('/api/handler', apiHandler);
 app.get('/api/handler', apiHandler);
@@ -31,7 +29,6 @@ app.get('/api/handler', apiHandler);
 app.use(express.static(staticPath));
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
-// Fix: Use Request and Response types from express.
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });

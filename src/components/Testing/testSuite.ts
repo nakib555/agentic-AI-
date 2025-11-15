@@ -45,11 +45,9 @@ export const testSuite: TestCase[] = [
     {
         description: 'Basic Chat: Simple Greeting',
         prompt: 'Hello, how are you?',
-        // Fix: Ensure all return paths in the validate function return a complete TestResult object.
         validate: async (message): Promise<TestResult> => {
             const description = 'Basic Chat: Simple Greeting';
             const result = validateResponse(message);
-            // FIX: Replaced `!result.pass` with `'details' in result` for more robust type guarding.
             if ('details' in result) {
                 return { description, pass: false, details: result.details };
             }
@@ -65,11 +63,9 @@ export const testSuite: TestCase[] = [
         description: 'Agent Mode: Web Search',
         prompt: 'What is the tallest building in the world as of 2024?',
         options: { isThinkingModeEnabled: true },
-        // Fix: Ensure all return paths in the validate function return a complete TestResult object.
         validate: async (message): Promise<TestResult> => {
             const description = 'Agent Mode: Web Search';
             const result = validateResponse(message);
-            // FIX: Replaced `!result.pass` with `'details' in result` for more robust type guarding.
             if ('details' in result) {
                 return { description, pass: false, details: result.details };
             }
@@ -88,11 +84,9 @@ export const testSuite: TestCase[] = [
         description: 'Agent Mode: Map Display',
         prompt: 'Show me a map of Paris, France',
         options: { isThinkingModeEnabled: true },
-        // Fix: Ensure all return paths in the validate function return a complete TestResult object.
         validate: async (message): Promise<TestResult> => {
             const description = 'Agent Mode: Map Display';
             const result = validateResponse(message);
-            // FIX: Replaced `!result.pass` with `'details' in result` for more robust type guarding.
             if ('details' in result) {
                 return { description, pass: false, details: result.details };
             }
@@ -110,11 +104,9 @@ export const testSuite: TestCase[] = [
         description: 'Agent Mode: Code Execution',
         prompt: 'Calculate 5 * 12 using python and tell me the result.',
         options: { isThinkingModeEnabled: true },
-        // Fix: Ensure all return paths in the validate function return a complete TestResult object.
         validate: async (message): Promise<TestResult> => {
             const description = 'Agent Mode: Code Execution';
             const result = validateResponse(message);
-            // FIX: Replaced `!result.pass` with `'details' in result` for more robust type guarding.
             if ('details' in result) {
                 return { description, pass: false, details: result.details };
             }
@@ -132,11 +124,9 @@ export const testSuite: TestCase[] = [
         description: 'Agent Mode: Image Generation',
         prompt: 'Generate an image of a blue car.',
         options: { isThinkingModeEnabled: true },
-        // Fix: Ensure all return paths in the validate function return a complete TestResult object.
         validate: async (message): Promise<TestResult> => {
             const description = 'Agent Mode: Image Generation';
             const result = validateResponse(message);
-            // FIX: Replaced `!result.pass` with `'details' in result` for more robust type guarding.
             if ('details' in result) {
                 return { description, pass: false, details: result.details };
             }
@@ -158,7 +148,6 @@ export const testSuite: TestCase[] = [
         validate: async (message): Promise<TestResult> => {
             const description = 'Agent Mode: Video Generation';
             const result = validateResponse(message);
-            // FIX: Replaced `!result.pass` with `'details' in result` for more robust type guarding.
             if ('details' in result) return { description, pass: false, details: result.details };
 
             const usedVideoTool = result.response.toolCallEvents?.some(t => t.call.name === 'generateVideo');
@@ -178,7 +167,6 @@ export const testSuite: TestCase[] = [
         validate: async (message): Promise<TestResult> => {
             const description = 'Agent Mode: File System (writeFile & listFiles)';
             const result = validateResponse(message);
-            // FIX: Replaced `!result.pass` with `'details' in result` for more robust type guarding.
             if ('details' in result) return { description, pass: false, details: result.details };
 
             const usedWriteFile = result.response.toolCallEvents?.some(t => t.call.name === 'writeFile');
@@ -198,7 +186,6 @@ export const testSuite: TestCase[] = [
         validate: async (message): Promise<TestResult> => {
             const description = 'Agent Mode: Multi-tool Chaining (Search & Code)';
             const result = validateResponse(message);
-            // FIX: Replaced `!result.pass` with `'details' in result` for more robust type guarding.
             if ('details' in result) return { description, pass: false, details: result.details };
 
             const usedSearch = result.response.toolCallEvents?.some(t => t.call.name === 'duckduckgoSearch');
@@ -218,7 +205,6 @@ export const testSuite: TestCase[] = [
         validate: async (message): Promise<TestResult> => {
             const description = 'Chat Mode: Search Grounding';
             const result = validateResponse(message);
-            // FIX: Replaced `!result.pass` with `'details' in result` for more robust type guarding.
             if ('details' in result) return { description, pass: false, details: result.details };
             
             const grounding = result.response.groundingMetadata;
@@ -236,7 +222,6 @@ export const testSuite: TestCase[] = [
         validate: async (message): Promise<TestResult> => {
             const description = 'Component Rendering: Multiple Choice Question';
             const result = validateResponse(message);
-            // FIX: Replaced `!result.pass` with `'details' in result` for more robust type guarding.
             if ('details' in result) return { description, pass: false, details: result.details };
 
             const mcqMatch = result.response.text.match(/\[MCQ_COMPONENT\](\{.*?\})\[\/MCQ_COMPONENT\]/s);
@@ -258,7 +243,6 @@ export const testSuite: TestCase[] = [
         validate: async (message): Promise<TestResult> => {
             const description = 'Markdown Rendering: KaTeX Math Formulas';
             const result = validateResponse(message);
-            // FIX: Replaced `!result.pass` with `'details' in result` for more robust type guarding.
             if ('details' in result) return { description, pass: false, details: result.details };
             
             const hasDisplayMath = result.response.text.includes('$$');
@@ -274,11 +258,9 @@ export const testSuite: TestCase[] = [
     {
         description: 'Markdown Rendering: Tables',
         prompt: 'Create a markdown table with 2 columns (Name, Age) and 2 rows of data.',
-        // Fix: Ensure all return paths in the validate function return a complete TestResult object.
         validate: async (message): Promise<TestResult> => {
             const description = 'Markdown Rendering: Tables';
             const result = validateResponse(message);
-            // FIX: Replaced `!result.pass` with `'details' in result` for more robust type guarding.
             if ('details' in result) {
                 return { description, pass: false, details: result.details };
             }
@@ -294,7 +276,6 @@ export const testSuite: TestCase[] = [
         description: 'Error Handling: Invalid Tool',
         prompt: 'Use the nonExistentTool to do something.',
         options: { isThinkingModeEnabled: true },
-        // Fix: Ensure all return paths in the validate function return a complete TestResult object.
         validate: async (message): Promise<TestResult> => {
             const description = 'Error Handling: Invalid Tool';
             // This test is expected to fail at the AI level, so we look for an error.
