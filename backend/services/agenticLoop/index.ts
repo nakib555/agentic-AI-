@@ -25,25 +25,27 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
         let stream;
         try {
-            const config: any = {
-                systemInstruction: settings.systemInstruction,
-                tools: settings.tools,
+            const generationConfig: any = {
                 temperature: settings.temperature,
             };
-            // Only set maxOutputTokens if it's a positive number
             if (settings.maxOutputTokens && settings.maxOutputTokens > 0) {
-                config.maxOutputTokens = settings.maxOutputTokens;
+                generationConfig.maxOutputTokens = settings.maxOutputTokens;
             }
+
+            const request: any = {
+                model,
+                contents: currentHistory,
+                systemInstruction: settings.systemInstruction,
+                tools: settings.tools,
+                generationConfig,
+            };
+
             if (settings.thinkingBudget) {
-                config.thinkingConfig = { thinkingBudget: settings.thinkingBudget };
+                request.thinkingConfig = { thinkingBudget: settings.thinkingBudget };
             }
             
             console.log('[AGENTIC_LOOP] Calling Gemini API generateContentStream...');
-            stream = await ai.models.generateContentStream({
-                model,
-                contents: currentHistory,
-                config,
-            });
+            stream = await ai.models.generateContentStream(request);
         } catch (error) {
             console.error('[AGENTIC_LOOP] Gemini API call failed.', { error });
             if ((error as Error).name !== 'AbortError') callbacks.onError(parseApiError(error));
