@@ -17,7 +17,7 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
     const shouldCollapse = isDesktop && isCollapsed;
 
     return (
-        <div className={`relative p-1 rounded-lg bg-violet-100/60 dark:bg-violet-900/30 flex transition-all ${shouldCollapse ? 'flex-col gap-1' : 'justify-between'}`}>
+        <div className={`relative p-1 rounded-lg bg-slate-200 dark:bg-zinc-800 flex transition-all ${shouldCollapse ? 'flex-col gap-1' : 'justify-between'}`}>
             {buttons.map(btn => (
                 <div key={btn.value} className="relative group flex-1">
                     <button
@@ -34,7 +34,7 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
                         {theme === btn.value && (
                             <motion.div
                                 layoutId="theme-toggle-pill"
-                                className="absolute inset-0 bg-white dark:bg-black/20 rounded-md shadow-sm"
+                                className="absolute inset-0 bg-white dark:bg-zinc-700 rounded-md shadow-sm"
                                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                             />
                         )}
