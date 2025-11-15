@@ -15,41 +15,54 @@ const ensureDir = async (dirPath: string) => {
     try {
         await fs.mkdir(dirPath, { recursive: true });
     } catch (error) {
-        console.error(`Error creating directory ${dirPath}:`, error);
+        // Ignore if it already exists, but log other errors
+        // Fix: Replaced NodeJS.ErrnoException with a generic type assertion to resolve namespace error.
+        if ((error as { code?: string }).code !== 'EEXIST') {
+            console.error(`Error creating directory ${dirPath}:`, error);
+        }
     }
 };
 
 // Ensure base uploads directory exists on startup
 ensureDir(UPLOADS_PATH);
 
-const getSafeFilePath = (chatId: string, virtualPath: string): string => {
-    if (!virtualPath.startsWith('/main/output/')) {
-        throw new ToolError('fileStore', 'INVALID_PATH', 'File path is not valid. Files can only be accessed within the "/main/output/" directory.');
-    }
-    const filename = path.basename(virtualPath);
+// Resolves a virtual path to a real, safe filesystem path within a chat's directory.
+const resolveVirtualPath = (chatId: string, virtualPath: string): string => {
+    // Sanitize chatId to prevent traversal
     const safeChatId = path.normalize(chatId).replace(/^(\.\.(\/|\\|$))+/, '');
-    const safeFilename = path.normalize(filename).replace(/^(\.\.(\/|\\|$))+/, '');
-    
-    if (safeFilename.includes('/') || safeFilename.includes('\\')) {
-        throw new ToolError('fileStore', 'INVALID_FILENAME', 'Filename cannot contain path separators.');
+    if (safeChatId.includes('/') || safeChatId.includes('\\')) {
+        throw new ToolError('fileStore', 'INVALID_CHAT_ID', 'Invalid chatId provided.');
     }
+    const chatDirectory = path.join(UPLOADS_PATH, safeChatId);
 
-    return path.join(UPLOADS_PATH, safeChatId, safeFilename);
+    // Sanitize and normalize the virtual path
+    const normalizedVirtualPath = path.normalize(virtualPath).replace(/^(\.\.(\/|\\|$))+/, '');
+    
+    // The virtual FS root is the chat-specific directory
+    const finalPath = path.join(chatDirectory, normalizedVirtualPath);
+
+    // Security check: ensure the final path is still within the chat's directory
+    if (!finalPath.startsWith(chatDirectory)) {
+        throw new ToolError('fileStore', 'PATH_TRAVERSAL_ATTEMPT', 'Access denied: Path is outside the allowed directory.');
+    }
+    
+    return finalPath;
 };
+
 
 export const fileStore = {
     async saveFile(chatId: string, virtualPath: string, data: Buffer | string): Promise<void> {
-        const filePath = getSafeFilePath(chatId, virtualPath);
-        const dir = path.dirname(filePath);
+        const realPath = resolveVirtualPath(chatId, virtualPath);
+        const dir = path.dirname(realPath);
         await ensureDir(dir);
-        await fs.writeFile(filePath, data);
-        console.log(`[FileStore] Saved file to: ${filePath}`);
+        await fs.writeFile(realPath, data);
+        console.log(`[FileStore] Saved file for chat ${chatId} to: ${realPath}`);
     },
 
     async getFile(chatId: string, virtualPath: string): Promise<Buffer | null> {
-        const filePath = getSafeFilePath(chatId, virtualPath);
+        const realPath = resolveVirtualPath(chatId, virtualPath);
         try {
-            return await fs.readFile(filePath);
+            return await fs.readFile(realPath);
         } catch (error: any) {
             if (error.code === 'ENOENT') {
                 return null;
@@ -59,25 +72,25 @@ export const fileStore = {
     },
 
     async listFiles(chatId: string, virtualPath: string): Promise<string[]> {
-        // We only support listing the output directory
-        const dirToList = path.join(UPLOADS_PATH, chatId);
+        const dirPath = resolveVirtualPath(chatId, virtualPath);
         try {
-            const files = await fs.readdir(dirToList);
-            return files.map(file => `/main/output/${file}`);
+            const entries = await fs.readdir(dirPath, { withFileTypes: true });
+            return entries.map(entry => entry.name + (entry.isDirectory() ? '/' : ''));
         } catch (error: any) {
             if (error.code === 'ENOENT') {
-                return []; // Directory doesn't exist, so no files
+                await ensureDir(dirPath); // Create dir if it doesn't exist
+                return []; 
             }
             throw error;
         }
     },
 
     async deleteFile(chatId: string, virtualPath: string): Promise<void> {
-        const filePath = getSafeFilePath(chatId, virtualPath);
+        const realPath = resolveVirtualPath(chatId, virtualPath);
         try {
-            await fs.unlink(filePath);
+            await fs.unlink(realPath);
         } catch (error: any) {
-            if (error.code !== 'ENOENT') { // Don't throw if file is already gone
+            if (error.code !== 'ENOENT') {
                 throw error;
             }
         }

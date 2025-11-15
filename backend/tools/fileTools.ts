@@ -31,7 +31,7 @@ export const executeDisplayFile = async (args: { path: string }, chatId: string)
         let mimeType = 'application/octet-stream';
         const extension = args.path.split('.').pop()?.toLowerCase() || '';
         if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(extension)) {
-            mimeType = `image/${extension}`;
+            mimeType = `image/${extension.replace('jpg', 'jpeg')}`;
         } else if (['mp4', 'webm', 'ogg'].includes(extension)) {
             mimeType = `video/${extension}`;
         } else if (extension === 'pdf') {

@@ -1,6 +1,3 @@
-
-
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -308,7 +305,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 headers: { 'Content-Type': 'application/json' },
                 signal: abortControllerRef.current.signal,
                 body: JSON.stringify({
-                    chatId: chatId, // Pass the chatId to the backend
+                    chatId: chatId,
                     model: runtimeSettings.isAgentMode ? 'gemini-2.5-pro' : chatConfig.model,
                     history: history,
                     settings: {

@@ -44,7 +44,7 @@ export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: str
         const videoArrayBuffer = await response.arrayBuffer();
         const videoBuffer = Buffer.from(videoArrayBuffer);
         const filename = `video_${Date.now()}.mp4`;
-        const virtualPath = `/main/output/${filename}`;
+        const virtualPath = `${filename}`; // Save to the root of the chat's folder
         
         await fileStore.saveFile(chatId, virtualPath, videoBuffer);
 
@@ -52,7 +52,6 @@ export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: str
 
     } catch (error) {
         if (error instanceof ToolError) throw error;
-        // Fix: Use 'error' variable from catch block instead of 'err'.
         const originalError = error instanceof Error ? error : new Error(String(error));
         throw new ToolError('generateVideo', 'BACKEND_EXECUTION_FAILED', originalError.message, originalError);
     }

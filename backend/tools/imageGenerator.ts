@@ -57,7 +57,7 @@ export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: str
     for (let i = 0; i < base64ImageBytesArray.length; i++) {
         const base64 = base64ImageBytesArray[i];
         const filename = `image_${Date.now()}_${i}.png`;
-        const virtualPath = `/main/output/${filename}`;
+        const virtualPath = `${filename}`; // Save at the root of the chat's folder
         const buffer = Buffer.from(base64, 'base64');
         await fileStore.saveFile(chatId, virtualPath, buffer);
         savedFilePaths.push(virtualPath);
