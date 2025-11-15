@@ -361,7 +361,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     // Auto-title generation
     useEffect(() => {
         const currentChat = chatHistory.find(c => c.id === currentChatId);
-        if (currentChat && currentChat.title === "New Chat" && currentChat.messages.length >= 2 && !currentChat.isLoading) {
+        if (currentChat && currentChat.messages && currentChat.title === "New Chat" && currentChat.messages.length >= 2 && !currentChat.isLoading) {
           updateChatTitle(currentChatId!, "Generating title...");
           generateChatTitle(currentChat.messages)
             .then(newTitle => {

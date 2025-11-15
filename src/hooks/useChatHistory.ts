@@ -54,6 +54,28 @@ export const useChatHistory = () => {
     }
   }, [currentChatId, isHistoryLoading]);
 
+  // Effect to load full chat session when currentChatId changes and messages are missing
+  useEffect(() => {
+    if (!currentChatId || isHistoryLoading) return;
+
+    const loadFullChat = async () => {
+        const chat = chatHistory.find(c => c.id === currentChatId);
+        // Check if messages array is missing. An empty array is a valid state (new chat),
+        // but `undefined` means it's a stub from the history list.
+        if (chat && chat.messages === undefined) {
+            try {
+                const fullChat: ChatSession = await fetchApi(`/api/chats/${currentChatId}`);
+                setChatHistory(prev => prev.map(c => c.id === currentChatId ? fullChat : c));
+            } catch (error) {
+                console.error(`Failed to load messages for chat ${currentChatId}:`, error);
+                // Handle error, e.g., show a toast or revert selection
+            }
+        }
+    };
+
+    loadFullChat();
+  }, [currentChatId, chatHistory, isHistoryLoading]);
+
   const startNewChat = useCallback(async (model: string, settings: any): Promise<ChatSession | null> => {
     try {
         const newChat: ChatSession = await fetchApi('/api/chats/new', {
