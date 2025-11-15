@@ -54,7 +54,7 @@ export const useAppLogic = () => {
   const [thinkingMessageId, setThinkingMessageId] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [backendError, setBackendError] = useState<string | null>(null);
-  // FIX: Add state for test mode
+  // Fix: Add state for test mode
   const [isTestMode, setIsTestMode] = useState(false);
 
   // --- Model Management ---
@@ -63,7 +63,7 @@ export const useAppLogic = () => {
   const [activeModel, setActiveModel] = useState(validModels[1]?.id || validModels[0]?.id);
 
   // --- Settings State ---
-  // FIX: Add state for API key
+  // Fix: Add state for API key
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('agentic-apiKey') || '');
   const [aboutUser, setAboutUser] = useState(() => localStorage.getItem('agentic-aboutUser') || DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(() => localStorage.getItem('agentic-aboutResponse') || DEFAULT_ABOUT_RESPONSE);
@@ -78,7 +78,7 @@ export const useAppLogic = () => {
   });
 
   // --- Effect to save settings to localStorage ---
-  // FIX: Add effect to save API key
+  // Fix: Add effect to save API key
   useEffect(() => {
     if (apiKey) localStorage.setItem('agentic-apiKey', apiKey);
     else localStorage.removeItem('agentic-apiKey');
@@ -149,7 +149,7 @@ export const useAppLogic = () => {
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode);
   const { updateChatModel, updateChatSettings } = chat;
 
-  // FIX: Create a wrapper for startNewChat that takes no arguments.
+  // Fix: Create a wrapper for startNewChat that takes no arguments.
   const startNewChat = useCallback(() => {
     chat.startNewChat(activeModel, chatSettings);
   }, [chat, activeModel, chatSettings]);
@@ -181,13 +181,11 @@ export const useAppLogic = () => {
   // Update memory after a chat is completed
   useEffect(() => {
     const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
-    // This effect can run with a chat "stub" that doesn't have messages yet.
-    // We add a guard for `currentChat.messages` and include `chat.chatHistory`
-    // in the dependency array to ensure this runs again once messages are loaded.
-    if (currentChat && !currentChat.isLoading && currentChat.messages && currentChat.messages.length > 0) {
+    if (currentChat && !currentChat.isLoading && currentChat.messages.length > 0) {
       memory.updateMemory(currentChat);
     }
-  }, [chat.isLoading, chat.currentChatId, chat.chatHistory, memory.updateMemory]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat.isLoading, chat.currentChatId, memory.updateMemory]);
 
   // --- Handlers ---
   const handleToggleSidebar = useCallback(() => {

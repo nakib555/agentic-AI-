@@ -17,7 +17,7 @@ const containerVariants = {
     visible: {
       opacity: 1,
       transition: {
-        delayChildren: 0.6,
+        delayChildren: 0.4,
         staggerChildren: 0.08,
       },
     },
@@ -29,16 +29,16 @@ export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
     initial="hidden"
     animate="visible"
     exit="hidden"
-    className="flex flex-wrap justify-center gap-3 mt-12 w-full max-w-2xl"
+    className="flex flex-wrap justify-center gap-3 mt-12 w-full max-w-xl"
   >
-    <PromptButton icon="🧠" text="Reasoning" color="pink/purple" onClick={() => onPromptClick("What is the capital of France?")} />
-    <PromptButton icon="🎥" text="Video" color="blue" onClick={() => onPromptClick("Generate a video of a cat playing a piano.")} />
-    <PromptButton icon="🖼️" text="Image" color="pink" onClick={() => onPromptClick("Generate an image of a robot eating spaghetti.")} />
-    <PromptButton icon="🗺️" text="Map" color="teal" onClick={() => onPromptClick("Show me a map of the Eiffel Tower.")} />
-    <PromptButton icon="🎯" text="MCQ" color="orange" onClick={() => onPromptClick("Ask me a multiple choice question about physics.")} />
-    <PromptButton icon="💻" text="Code" color="blue" onClick={() => onPromptClick("Write a Python script using the reportlab library to generate a PDF containing a list of 5 random job titles. Save the output file as \"jobs.pdf\".")} />
-    <PromptButton icon="📍" text="Nearby" color="red" onClick={() => onPromptClick("Find coffee shops near me.")} />
-    <PromptButton icon="📊" text="Table" color="green" onClick={() => onPromptClick("Create a markdown table comparing the features of Gemini 2.5 Pro and Gemini 2.5 Flash.")} />
-    <PromptButton icon="📝" text="Markdown" color="beige" onClick={() => onPromptClick("Show me a comprehensive example of all the markdown formatting you support.")} />
+    <PromptButton icon="🧠" text="Reasoning" onClick={() => onPromptClick("What is the capital of France?")} />
+    <PromptButton icon="🎬" text="Video" onClick={() => onPromptClick("Generate a video of a cat playing a piano.")} />
+    <PromptButton icon="🎨" text="Image" onClick={() => onPromptClick("Generate an image of a robot eating spaghetti.")} />
+    <PromptButton icon="🗺️" text="Map" onClick={() => onPromptClick("Show me a map of the Eiffel Tower.")} />
+    <PromptButton icon="🤔" text="MCQ" onClick={() => onPromptClick("Ask me a multiple choice question about physics.")} />
+    <PromptButton icon="💻" text="Code" onClick={() => onPromptClick("Write a Python script using the reportlab library to generate a PDF containing a list of 5 random job titles. Save the output file as \"jobs.pdf\".")} />
+    <PromptButton icon="📍" text="Nearby" onClick={() => onPromptClick("Find coffee shops near me.")} />
+    <PromptButton icon="📊" text="Table" onClick={() => onPromptClick("Create a markdown table comparing the features of Gemini 2.5 Pro and Gemini 2.5 Flash.")} />
+    <PromptButton icon="📝" text="Markdown" onClick={() => onPromptClick("Show me a comprehensive example of all the markdown formatting you support.")} />
   </motion.div>
 );

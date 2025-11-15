@@ -13,15 +13,25 @@ type WelcomeScreenProps = {
 };
 
 export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
-    <div className="flex flex-col items-center w-full max-w-2xl text-center px-4 py-8">
+    <div className="flex flex-col items-center w-full max-w-xl text-center px-4 py-8">
         <motion.h1 
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold font-['Space_Grotesk'] tracking-tighter text-gradient"
-            initial={{ opacity: 0, y: 30 }}
+            className="text-4xl sm:text-4xl lg:text-5xl font-bold font-['Space_Grotesk']"
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-            style={{ letterSpacing: "-0.02em" }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
         >
-            How can I help you today?
+            <motion.span
+                className="brand-gradient bg-clip-text text-transparent"
+                animate={{ backgroundPosition: ["0% center", "100% center"] }}
+                transition={{
+                    duration: 5,
+                    repeat: Infinity,
+                    ease: "linear",
+                    repeatType: "reverse",
+                }}
+            >
+                How can I help you today?
+            </motion.span>
         </motion.h1>
         
         <FloatingPrompts onPromptClick={sendMessage} />

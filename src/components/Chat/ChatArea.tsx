@@ -7,7 +7,7 @@ import React, { useRef, useState, useCallback } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import { MessageList, type MessageListHandle } from './MessageList';
-import type { MessageFormHandle } from './MessageForm/index';
+import { MessageForm, type MessageFormHandle } from './MessageForm/index';
 import type { Message } from '../../types';
 import { ModeToggle } from '../UI/ModeToggle';
 
@@ -30,7 +30,6 @@ type ChatAreaProps = {
   setIsAgentMode: (isAgent: boolean) => void;
   backendStatus: 'online' | 'offline' | 'checking';
   backendError: string | null;
-  messageFormRef: React.RefObject<MessageFormHandle>;
 };
 
 export const ChatArea = ({ 
@@ -38,9 +37,9 @@ export const ChatArea = ({
     ttsVoice, isAutoPlayEnabled, currentChatId,
     onShowThinkingProcess, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
-    isAgentMode, setIsAgentMode, backendStatus, backendError,
-    messageFormRef
+    isAgentMode, setIsAgentMode, backendStatus, backendError
 }: ChatAreaProps) => {
+  const messageFormRef = useRef<MessageFormHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   // Use a counter to robustly handle drag enter/leave events on nested elements.
@@ -90,7 +89,7 @@ export const ChatArea = ({
 
   return (
     <div 
-      className="flex-1 flex flex-col min-h-0 relative"
+      className="flex-1 flex flex-col pb-4 min-h-0 relative"
       onDragEnter={handleDragIn}
       onDragLeave={handleDragOut}
       onDragOver={handleDrag}
@@ -169,6 +168,18 @@ export const ChatArea = ({
         )}
       </AnimatePresence>
       
+      <div className="flex-shrink-0 pt-4 px-4 sm:px-6 md:px-8">
+        <div className="relative w-full">
+          <MessageForm 
+            ref={messageFormRef}
+            onSubmit={sendMessage} 
+            isLoading={isLoading || modelsLoading} 
+            onCancel={onCancel}
+            isAgentMode={isAgentMode}
+            setIsAgentMode={setIsAgentMode}
+          />
+        </div>
+      </div>
     </div>
   );
 };
