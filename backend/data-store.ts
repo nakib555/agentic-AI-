@@ -40,7 +40,14 @@ export const dataStore = {
             const chats = await Promise.all(chatPromises);
             // Sort by creation date, newest first
             return chats.sort((a, b) => b.createdAt - a.createdAt);
-        } catch (error) {
+        } catch (error: any) {
+            // If the directory doesn't exist, it's a normal condition on first run.
+            // Create it and return an empty array.
+            if (error.code === 'ENOENT') {
+                await ensureDir(CHATS_PATH);
+                return [];
+            }
+            // For any other error (e.g., malformed JSON, read permissions), log it and return empty.
             console.error('Failed to read chat history:', error);
             return [];
         }
@@ -67,17 +74,16 @@ export const dataStore = {
         const chatFilePath = path.join(CHATS_PATH, `${chatId}.json`);
         try {
             await fs.unlink(chatFilePath);
-        } catch (error) {
-            console.error(`Failed to delete chat file ${chatFilePath}:`, error);
+        } catch (error: any) {
+            if (error.code !== 'ENOENT') { // Ignore "not found" errors
+                console.error(`Failed to delete chat file ${chatFilePath}:`, error);
+            }
         }
 
         // Delete associated uploads directory
         const uploadsDir = path.join(UPLOADS_PATH, chatId);
         try {
-            const stats = await fs.stat(uploadsDir);
-            if (stats.isDirectory()) {
-                await fs.rm(uploadsDir, { recursive: true, force: true });
-            }
+            await fs.rm(uploadsDir, { recursive: true, force: true });
         } catch (error: any) {
             if (error.code !== 'ENOENT') { // Ignore "not found" errors
                 console.error(`Failed to delete uploads directory ${uploadsDir}:`, error);
