@@ -1,22 +1,4 @@
-/* PART 2 of 2 of main.css (Lines 71-139) */
-
-/* Theme-aware CSS Variables for AI-generated HTML */
-:root {
-  --card-bg: #ffffff;
-  --card-text: #1e293b;
-  --gradient-start: #a78bfa;
-  --gradient-end: #7c3aed;
-  --border-color: #e2e8f0;
-  --svg-fill: currentColor;
-}
-.dark {
-  --card-bg: #1e1e1e;
-  --card-text: #e2e8f0;
-  --gradient-start: #818cf8; /* indigo-300 */
-  --gradient-end: #4f46e5; /* indigo-600 */
-  --border-color: #333;
-  --svg-fill: currentColor;
-}
+/* PART 2 of 2 of main.css */
 
 /* Constrain the main application layout to the viewport height */
 html, body, #root {
@@ -36,16 +18,17 @@ html, body, #root {
 }
 .content-editable-input[data-placeholder]:empty::before {
   content: attr(data-placeholder);
-  color: #6B7280; /* text-gray-500 */
+  color: var(--light-text-secondary);
+  opacity: 0.8;
   pointer-events: none;
-  grid-area: 1 / 1 / 2 / 2; /* Place it in the grid area */
+  grid-area: 1 / 1 / 2 / 2;
 }
 
 .dark .content-editable-input[data-placeholder]:empty::before {
-  color: #94a3b8; /* text-slate-400 */
+  color: var(--dark-text-secondary);
 }
 
-/* --- Chat Area Background Pattern --- */
+/* --- Futuristic Animated Chat Background --- */
 @keyframes bg-animate {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -54,24 +37,24 @@ html, body, #root {
 
 .chat-background {
   position: relative;
-  background-color: #f5f3ff; /* Light violet */
+  background-color: var(--light-bg-start);
   background-image: 
-    radial-gradient(at 15% 25%, hsla(250, 90%, 95%, 1) 0px, transparent 50%),
-    radial-gradient(at 85% 35%, hsla(280, 90%, 95%, 1) 0px, transparent 50%),
-    radial-gradient(at 20% 80%, hsla(260, 90%, 95%, 1) 0px, transparent 50%),
-    radial-gradient(at 80% 75%, hsla(290, 90%, 95%, 1) 0px, transparent 50%);
+    radial-gradient(at 15% 25%, hsla(250, 90%, 95%, 0.7) 0px, transparent 50%),
+    radial-gradient(at 85% 35%, hsla(280, 90%, 95%, 0.7) 0px, transparent 50%),
+    radial-gradient(at 20% 80%, hsla(260, 90%, 95%, 0.7) 0px, transparent 50%),
+    radial-gradient(at 80% 75%, hsla(290, 90%, 95%, 0.7) 0px, transparent 50%);
   background-size: 200% 200%;
-  animation: bg-animate 60s ease infinite;
+  animation: bg-animate 40s ease infinite;
 }
 
 .dark .chat-background {
-  background-color: #110e19; /* Very dark violet */
+  background-color: var(--dark-bg-start);
   background-image: 
-    radial-gradient(at 15% 25%, hsla(250, 50%, 20%, 0.5) 0px, transparent 50%),
-    radial-gradient(at 85% 35%, hsla(280, 50%, 20%, 0.5) 0px, transparent 50%),
-    radial-gradient(at 20% 80%, hsla(260, 50%, 20%, 0.5) 0px, transparent 50%),
-    radial-gradient(at 80% 75%, hsla(290, 50%, 20%, 0.5) 0px, transparent 50%);
-  animation: bg-animate 80s ease infinite reverse;
+    radial-gradient(at 15% 25%, hsla(250, 50%, 20%, 0.6) 0px, transparent 50%),
+    radial-gradient(at 85% 35%, hsla(280, 50%, 20%, 0.6) 0px, transparent 50%),
+    radial-gradient(at 20% 80%, hsla(260, 50%, 20%, 0.6) 0px, transparent 50%),
+    radial-gradient(at 80% 75%, hsla(290, 50%, 20%, 0.6) 0px, transparent 50%);
+  animation: bg-animate 60s ease infinite reverse;
 }
 
 
@@ -93,18 +76,17 @@ html, body, #root {
   border-radius: 1.5rem; /* rounded-3xl */
 }
 
-
-/* --- Monaco Editor Display-Only Enhancements --- */
-.monaco-editor .view-lines {
-  pointer-events: none;
-  cursor: default !important;
-}
-.monaco-editor .cursors-layer { display: none !important; }
-.monaco-editor .monaco-mouse-cursor-text { cursor: default !important; }
-.monaco-editor textarea:focus { outline: none !important; }
-
-/* --- Brand Gradient for Welcome Text --- */
+/* --- Brand Gradient for Welcome Text & Send Button --- */
 .brand-gradient {
-  background-image: linear-gradient(to right, #a78bfa, #8b5cf6, #7c3aed, #6d28d9);
+  background-image: linear-gradient(135deg, var(--light-primary-start), var(--light-accent));
   background-size: 300% auto;
+}
+.dark .brand-gradient {
+  background-image: linear-gradient(135deg, var(--dark-primary-start), var(--dark-accent));
+}
+
+/* --- App Layout Adjustments --- */
+/* Add padding to the main chat area to avoid content being hidden by the floating input dock */
+main.chat-background {
+  padding-bottom: 120px; /* Space for the floating form */
 }

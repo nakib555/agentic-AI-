@@ -78,17 +78,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="bg-white dark:bg-[#202123] rounded-2xl shadow-xl w-full max-w-4xl h-[80vh] border border-gray-200 dark:border-white/10 flex flex-col"
+            className="glass-morphic w-full max-w-4xl h-[80vh] rounded-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
+            <div className="flex items-center justify-between p-4 border-b border-white/10 flex-shrink-0">
               <h2 id="settings-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">
                 Settings
               </h2>
               <button
                 onClick={onClose}
-                className="p-1 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-black/20"
+                className="p-1 rounded-full text-gray-500 dark:text-slate-400 hover:bg-black/10 dark:hover:bg-white/10"
                 aria-label="Close settings"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
@@ -99,7 +99,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
             
             <div className="flex-1 flex min-h-0">
                 {/* Left Navigation */}
-                <nav className="w-56 flex-shrink-0 p-4 border-r border-gray-200 dark:border-white/10 overflow-y-auto">
+                <nav className="w-56 flex-shrink-0 p-4 border-r border-white/10 overflow-y-auto">
                     <ul className="space-y-1">
                         {CATEGORIES.map(cat => (
                             <li key={cat.id}>

@@ -29,13 +29,13 @@ export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
     initial="hidden"
     animate="visible"
     exit="hidden"
-    className="flex flex-wrap justify-center gap-3 mt-12 w-full max-w-xl"
+    className="flex flex-wrap justify-center gap-4 mt-12 w-full max-w-4xl"
   >
     <PromptButton icon="🧠" text="Reasoning" onClick={() => onPromptClick("What is the capital of France?")} />
-    <PromptButton icon="🎬" text="Video" onClick={() => onPromptClick("Generate a video of a cat playing a piano.")} />
-    <PromptButton icon="🎨" text="Image" onClick={() => onPromptClick("Generate an image of a robot eating spaghetti.")} />
+    <PromptButton icon="🎥" text="Video" onClick={() => onPromptClick("Generate a video of a cat playing a piano.")} />
+    <PromptButton icon="🖼️" text="Image" onClick={() => onPromptClick("Generate an image of a robot eating spaghetti.")} />
     <PromptButton icon="🗺️" text="Map" onClick={() => onPromptClick("Show me a map of the Eiffel Tower.")} />
-    <PromptButton icon="🤔" text="MCQ" onClick={() => onPromptClick("Ask me a multiple choice question about physics.")} />
+    <PromptButton icon="🎯" text="MCQ" onClick={() => onPromptClick("Ask me a multiple choice question about physics.")} />
     <PromptButton icon="💻" text="Code" onClick={() => onPromptClick("Write a Python script using the reportlab library to generate a PDF containing a list of 5 random job titles. Save the output file as \"jobs.pdf\".")} />
     <PromptButton icon="📍" text="Nearby" onClick={() => onPromptClick("Find coffee shops near me.")} />
     <PromptButton icon="📊" text="Table" onClick={() => onPromptClick("Create a markdown table comparing the features of Gemini 2.5 Pro and Gemini 2.5 Flash.")} />
