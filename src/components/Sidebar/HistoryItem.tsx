@@ -127,7 +127,9 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
                     {isLoading ? (
                          <div className="w-2.5 h-2.5 bg-green-500 dark:bg-green-400 rounded-full animate-pulse"></div>
                     ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-500 dark:text-slate-400"><path d="M3.5 2.75a.75.75 0 0 0-1.5 0v14.5a.75.75 0 0 0 1.5 0v-4.392l1.657-.348a6.445 6.445 0 0 1 4.271 0l.415.083a.75.75 0 0 0 .433-.69V8.69a.75.75 0 0 0-.433-.69l-.415-.083a6.446 6.446 0 0 1-4.271 0L3.5 7.568V2.75Z" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-500 dark:text-slate-400">
+                          <path fillRule="evenodd" d="M10 2c-4.418 0-8 3.134-8 7 0 2.444 1.258 4.604 3.235 5.897.22.14.316.41.226.657l-.54 1.622a.75.75 0 001.108.832l1.732-1.039a.75.75 0 01.487 0l.976.586a.75.75 0 00.832-.832l-.54-1.622a.75.75 0 01.226-.657A8.003 8.003 0 0018 9c0-3.866-3.582-7-8-7zM7.75 9a.75.75 0 000 1.5h.01a.75.75 0 000-1.5H7.75zM10 8.25a.75.75 0 01.75.75v.01a.75.75 0 01-1.5 0V9A.75.75 0 0110 8.25zm2.25.75a.75.75 0 000 1.5h.01a.75.75 0 000-1.5H12.25z" clipRule="evenodd" />
+                        </svg>
                     )}
                 </div>
                 {isEditing ? (
