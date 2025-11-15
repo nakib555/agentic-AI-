@@ -35,7 +35,7 @@ try {
     minify: true,
     sourcemap: true,
     logLevel: 'info',
-    // external: ['express', 'cors'], // This line is commented out to bundle dependencies
+    external: ['playwright'],
   });
   console.log('Backend server bundling complete.');
 
