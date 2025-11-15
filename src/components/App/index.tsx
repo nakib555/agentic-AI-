@@ -119,9 +119,9 @@ export const App = () => {
         maxTokens={logic.maxTokens}
         setMaxTokens={logic.setMaxTokens}
         imageModel={logic.imageModel}
-        setImageModel={logic.setImageModel}
+        onImageModelChange={logic.setImageModel}
         videoModel={logic.videoModel}
-        setVideoModel={logic.setVideoModel}
+        onVideoModelChange={logic.setVideoModel}
         defaultTemperature={DEFAULT_TEMPERATURE}
         defaultMaxTokens={DEFAULT_MAX_TOKENS}
         isMemoryEnabled={logic.isMemoryEnabled}
