@@ -5,12 +5,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { ChatSession, Message, ModelResponse } from '../types';
-import { API_BASE_URL } from '../utils/api';
+import { fetchFromApi } from '../utils/api';
 
 const fetchApi = async (url: string, options?: RequestInit) => {
-    const response = await fetch(`${API_BASE_URL}${url}`, options);
+    const response = await fetchFromApi(url, options);
     if (!response.ok) {
         const error = await response.json().catch(() => ({ message: response.statusText }));
+        if (response.status === 401) {
+            throw new Error('API key is invalid. Please check it in Settings.');
+        }
         throw new Error(error.message || 'API request failed');
     }
     if (response.status === 204) return null; // No Content

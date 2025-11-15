@@ -4,13 +4,13 @@
  */
 
 import type { Message } from '../../types';
-import { API_BASE_URL } from '../../utils/api';
+import { fetchFromApi } from '../../utils/api';
 
 export const generateFollowUpSuggestions = async (conversation: Message[]): Promise<string[]> => {
     if (conversation.length < 2) return [];
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/handler?task=suggestions`, {
+        const response = await fetchFromApi('/api/handler?task=suggestions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ conversation }),

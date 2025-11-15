@@ -8,7 +8,7 @@ import { audioCache } from '../services/audioCache';
 import { audioManager } from '../services/audioService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
 import { cleanTextForTts } from '../components/Chat/AiMessage/utils';
-import { API_BASE_URL } from '../utils/api';
+import { fetchFromApi } from '../utils/api';
 
 type AudioState = 'idle' | 'loading' | 'error' | 'playing';
 
@@ -47,7 +47,7 @@ export const useTts = (text: string, voice: string) => {
     }
     
     try {
-        const response = await fetch(`${API_BASE_URL}/api/handler?task=tts`, {
+        const response = await fetchFromApi('/api/handler?task=tts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: textToSpeak, voice }),

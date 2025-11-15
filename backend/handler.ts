@@ -153,8 +153,12 @@ async function handleSimpleTask(ai: GoogleGenAI, task: string, payload: any): Pr
 
 // FIX: Use Request and Response types from express.
 export const apiHandler = async (req: Request, res: Response) => {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
-    if (!apiKey) return res.status(500).json({ error: { message: "API key is not configured on the backend." } });
+    const frontendApiKey = req.headers['x-api-key'] as string;
+    const apiKey = frontendApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
+    
+    if (!apiKey) {
+      return res.status(401).json({ error: { message: "API key is not configured. Please add it in the app settings or as a server environment variable." } });
+    }
     
     const ai = new GoogleGenAI({ apiKey });
     const task = req.query.task as string;

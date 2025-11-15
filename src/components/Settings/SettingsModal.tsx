@@ -19,6 +19,9 @@ type SettingsModalProps = {
   onModelChange: (modelId: string) => void;
   onClearAllChats: () => void;
   onRunTests: () => void;
+  // API Key
+  apiKey: string;
+  onSaveApiKey: (key: string) => void;
   // Custom Instructions
   aboutUser: string;
   setAboutUser: (prompt: string) => void;
@@ -121,7 +124,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.15 }}
                         >
-                            {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} />}
+                            {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} />}
                             {activeCategory === 'model' && <ModelSettings {...props} />}
                             {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
                             {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}

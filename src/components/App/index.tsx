@@ -11,7 +11,7 @@ import { Sidebar } from '../Sidebar/Sidebar';
 import { ChatHeader } from '../Chat/ChatHeader';
 import { ChatArea } from '../Chat/ChatArea';
 import { ThinkingSidebar } from '../Sidebar/ThinkingSidebar';
-import { useAppLogic } from '../../hooks/useAppLogic';
+import { useAppLogic } from './useAppLogic';
 import { AppModals } from './AppModals';
 import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
@@ -105,12 +105,16 @@ export const App = () => {
         setIsSettingsOpen={logic.setIsSettingsOpen}
         isMemoryModalOpen={logic.isMemoryModalOpen}
         setIsMemoryModalOpen={logic.setIsMemoryModalOpen}
+        // FIX: Pass setIsTestMode to the onRunTests prop.
         onRunTests={() => logic.setIsTestMode(true)}
         availableModels={logic.availableModels}
         activeModel={logic.activeModel}
         handleModelChange={logic.handleModelChange}
         modelsLoading={logic.modelsLoading}
         clearAllChats={logic.clearAllChats}
+        // FIX: Pass apiKey and setApiKey to the modal.
+        apiKey={logic.apiKey}
+        onSaveApiKey={logic.setApiKey}
         aboutUser={logic.aboutUser}
         setAboutUser={logic.setAboutUser}
         aboutResponse={logic.aboutResponse}
@@ -140,6 +144,7 @@ export const App = () => {
         setIsAutoPlayEnabled={logic.setIsAutoPlayEnabled}
       />
 
+      {/* FIX: Use isTestMode from logic to conditionally render the TestRunner. */}
       {logic.isTestMode && (
           <TestRunner 
               isOpen={logic.isTestMode}

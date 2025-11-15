@@ -10,7 +10,7 @@ import { type Message, type ChatSession, ModelResponse } from '../../types';
 import { fileToBase64 } from '../../utils/fileUtils';
 import { useChatHistory } from '../useChatHistory';
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
-import { API_BASE_URL } from '../../utils/api';
+import { fetchFromApi } from '../../utils/api';
 import { toolImplementations as frontendToolImplementations } from '../../tools';
 import { buildApiHistory } from './history-builder';
 
@@ -75,7 +75,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                  result = await toolImplementation(toolArgs);
             }
             console.log(`[FRONTEND] Tool '${toolName}' executed successfully. Sending result to backend.`, { callId, result });
-            await fetch(`${API_BASE_URL}/api/handler?task=tool_response`, {
+            await fetchFromApi('/api/handler?task=tool_response', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ callId, result }),
@@ -83,7 +83,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         } catch (error) {
             const parsedError = parseApiError(error);
             console.error(`[FRONTEND] Tool '${toolName}' execution failed. Sending error to backend.`, { callId, error: parsedError });
-            await fetch(`${API_BASE_URL}/api/handler?task=tool_response`, {
+            await fetchFromApi('/api/handler?task=tool_response', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ callId, error: parsedError.message }),
@@ -99,7 +99,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         // Send the explicit cancel request to the backend fire-and-forget style
         if (requestIdRef.current) {
             console.log('[FRONTEND] Sending explicit cancel request to backend for requestId:', requestIdRef.current);
-            fetch(`${API_BASE_URL}/api/handler?task=cancel`, {
+            fetchFromApi('/api/handler?task=cancel', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ requestId: requestIdRef.current }),
@@ -303,7 +303,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         console.log('[FRONTEND] Starting backend chat stream...', { chatId, messageId, history, chatConfig, runtimeSettings });
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/handler?task=chat`, {
+            const response = await fetchFromApi('/api/handler?task=chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 signal: abortControllerRef.current.signal,

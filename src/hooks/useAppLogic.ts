@@ -32,7 +32,7 @@ import {
   DEFAULT_TTS_VOICE,
   DEFAULT_AUTO_PLAY_AUDIO
 } from '../components/App/constants';
-import { API_BASE_URL } from '../utils/api';
+import { fetchFromApi } from '../utils/api';
 import { testSuite, type TestResult, type TestProgress } from '../components/Testing/testSuite';
 
 
@@ -62,6 +62,7 @@ export const useAppLogic = () => {
   const [activeModel, setActiveModel] = useState(validModels[1]?.id || validModels[0]?.id);
 
   // --- Settings State ---
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('agentic-apiKey') || '');
   const [aboutUser, setAboutUser] = useState(() => localStorage.getItem('agentic-aboutUser') || DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(() => localStorage.getItem('agentic-aboutResponse') || DEFAULT_ABOUT_RESPONSE);
   const [temperature, setTemperature] = useState(() => parseFloat(localStorage.getItem('agentic-temperature') || `${DEFAULT_TEMPERATURE}`));
@@ -75,6 +76,10 @@ export const useAppLogic = () => {
   });
 
   // --- Effect to save settings to localStorage ---
+  useEffect(() => {
+    if (apiKey) localStorage.setItem('agentic-apiKey', apiKey);
+    else localStorage.removeItem('agentic-apiKey');
+  }, [apiKey]);
   useEffect(() => { localStorage.setItem('agentic-aboutUser', aboutUser); }, [aboutUser]);
   useEffect(() => { localStorage.setItem('agentic-aboutResponse', aboutResponse); }, [aboutResponse]);
   useEffect(() => { localStorage.setItem('agentic-temperature', String(temperature)); }, [temperature]);
@@ -99,7 +104,7 @@ export const useAppLogic = () => {
     const checkBackendStatus = async () => {
         try {
             setBackendStatus('checking');
-            const response = await fetch(`${API_BASE_URL}/api/health`);
+            const response = await fetchFromApi('/api/health');
             if (!response.ok) throw new Error(`Status: ${response.status}`);
             const data = await response.json();
             if (data.status !== 'ok') throw new Error('Invalid health response');
@@ -304,6 +309,7 @@ export const useAppLogic = () => {
     isThinkingSidebarOpen, setIsThinkingSidebarOpen, thinkingMessageId, setThinkingMessageId,
     backendStatus, backendError, isTestMode, setIsTestMode,
     availableModels, modelsLoading, activeModel, handleModelChange,
+    apiKey, setApiKey,
     aboutUser, setAboutUser, aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens, setMaxTokens,
     imageModel, setImageModel, videoModel, setVideoModel, ttsVoice, setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled,
     ...chat, isChatActive, thinkingMessageForSidebar,

@@ -4,7 +4,7 @@
  */
 
 import { parseApiError } from './gemini/index';
-import { API_BASE_URL } from '../utils/api';
+import { fetchFromApi } from '../utils/api';
 
 /**
  * Enhances a user's prompt by streaming a rewritten version from the backend.
@@ -20,7 +20,7 @@ export async function* enhanceUserPromptStream(userInput: string): AsyncGenerato
   }
   
   try {
-    const response = await fetch(`${API_BASE_URL}/api/handler?task=enhance`, {
+    const response = await fetchFromApi('/api/handler?task=enhance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userInput }),

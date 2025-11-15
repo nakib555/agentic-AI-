@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 type GeneralSettingsProps = {
   onClearAllChats: () => void;
   onRunTests: () => void;
+  apiKey: string;
+  onSaveApiKey: (key: string) => void;
 };
 
 const SettingField: React.FC<{ label: string; description: string; children: React.ReactNode }> = ({ label, description, children }) => (
@@ -18,7 +20,20 @@ const SettingField: React.FC<{ label: string; description: string; children: Rea
     </div>
 );
 
-export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChats, onRunTests }) => {
+export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChats, onRunTests, apiKey, onSaveApiKey }) => {
+  const [localApiKey, setLocalApiKey] = useState(apiKey);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+
+  useEffect(() => {
+    setLocalApiKey(apiKey);
+  }, [apiKey]);
+
+  const handleSave = () => {
+    onSaveApiKey(localApiKey);
+    setSaveStatus('saved');
+    setTimeout(() => setSaveStatus('idle'), 2000);
+  };
+  
   const handleClear = () => {
     if (window.confirm('Are you sure you want to delete all conversations? This action cannot be undone.')) {
       onClearAllChats();
@@ -27,6 +42,28 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
   return (
     <div className="space-y-8">
       <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">General</h3>
+
+      <SettingField 
+        label="Gemini API Key" 
+        description="Your API key is stored locally in your browser's local storage and sent securely with each request."
+      >
+        <div className="flex items-center gap-2 max-w-sm">
+          <input
+            type="password"
+            value={localApiKey}
+            onChange={e => setLocalApiKey(e.target.value)}
+            placeholder="Enter your API key"
+            className="w-full p-2 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors w-24"
+          >
+            {saveStatus === 'saved' ? 'Saved!' : 'Save'}
+          </button>
+        </div>
+      </SettingField>
+      
       <SettingField 
         label="Clear all chats" 
         description="This will permanently delete all of your chat history."

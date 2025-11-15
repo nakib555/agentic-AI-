@@ -24,6 +24,9 @@ type AppModalsProps = {
   handleModelChange: (modelId: string) => void;
   modelsLoading: boolean;
   clearAllChats: () => void;
+  // API Key
+  apiKey: string;
+  setApiKey: (key: string) => void;
   // Custom Instructions
   aboutUser: string;
   setAboutUser: (value: string) => void;
@@ -67,6 +70,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     setIsMemoryEnabled, memoryContent, clearMemory, isConfirmationOpen,
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
     setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, onManageMemory,
+    apiKey, setApiKey,
   } = props;
 
   return (
@@ -80,6 +84,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         disabled={modelsLoading}
         onClearAllChats={clearAllChats}
         onRunTests={onRunTests}
+        apiKey={apiKey}
+        onSaveApiKey={setApiKey}
         aboutUser={aboutUser}
         setAboutUser={setAboutUser}
         aboutResponse={aboutResponse}

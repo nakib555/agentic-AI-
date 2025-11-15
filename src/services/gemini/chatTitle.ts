@@ -4,11 +4,11 @@
  */
 
 import type { Message } from '../../types';
-import { API_BASE_URL } from '../../utils/api';
+import { fetchFromApi } from '../../utils/api';
 
 export const generateChatTitle = async (messages: Message[]): Promise<string> => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/handler?task=title`, {
+        const response = await fetchFromApi('/api/handler?task=title', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages }),

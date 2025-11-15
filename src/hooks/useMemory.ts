@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { ChatSession } from '../types';
-import { API_BASE_URL } from '../utils/api';
+import { fetchFromApi } from '../utils/api';
 
 const MEMORY_ENABLED_KEY = 'agentic-memoryEnabled';
 const MEMORY_CONTENT_KEY = 'agentic-memoryContent';
@@ -32,7 +32,7 @@ export const useMemory = () => {
     const updateMemory = useCallback(async (completedChat: ChatSession) => {
         if (!isMemoryEnabled || completedChat.messages.length < 2) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/api/handler?task=memory_suggest`, {
+            const response = await fetchFromApi('/api/handler?task=memory_suggest', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ conversation: completedChat.messages }),
@@ -54,7 +54,7 @@ export const useMemory = () => {
         if (!pendingMemoryUpdateRef.current) return;
         const { suggestions, currentMemory } = pendingMemoryUpdateRef.current;
         try {
-            const response = await fetch(`${API_BASE_URL}/api/handler?task=memory_consolidate`, {
+            const response = await fetchFromApi('/api/handler?task=memory_consolidate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ currentMemory, suggestions }),

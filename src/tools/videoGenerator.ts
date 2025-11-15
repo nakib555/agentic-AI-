@@ -4,7 +4,7 @@
  */
 
 import { ToolError } from '../types';
-import { API_BASE_URL } from '../utils/api';
+import { fetchFromApi } from '../utils/api';
 
 // The FunctionDeclaration is now in `declarations.ts`.
 
@@ -28,7 +28,7 @@ export const executeVideoGenerator = async (args: { prompt: string; aspectRatio?
 
   // 2. If prerequisite is met, call the secure backend endpoint to do the work.
   try {
-    const response = await fetch(`${API_BASE_URL}/api/handler?task=tool_exec`, {
+    const response = await fetchFromApi('/api/handler?task=tool_exec', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ toolName: 'generateVideo', toolArgs: args }),
