@@ -13,6 +13,9 @@ import { ChatArea } from '../Chat/ChatArea';
 import { ThinkingSidebar } from '../Sidebar/ThinkingSidebar';
 import { useAppLogic } from './useAppLogic';
 import { AppModals } from './AppModals';
+// Fix: The MessageForm component was refactored into its own directory.
+// The import path is updated to point to the new barrel file.
+import { MessageForm } from '../Chat/MessageForm/index';
 import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 } from './constants';
@@ -20,6 +23,7 @@ import { TestRunner } from '../Testing';
 
 export const App = () => {
   const logic = useAppLogic();
+  const messageFormRef = React.useRef(null);
 
   const currentChat = logic.currentChatId
     ? logic.chatHistory.find(c => c.id === logic.currentChatId)
@@ -84,10 +88,20 @@ export const App = () => {
               setIsAgentMode={logic.setIsAgentMode}
               backendStatus={logic.backendStatus}
               backendError={logic.backendError}
+              messageFormRef={messageFormRef}
            />
         </div>
       </main>
 
+      <MessageForm 
+        ref={messageFormRef}
+        onSubmit={logic.sendMessage} 
+        isLoading={logic.isLoading || logic.modelsLoading} 
+        onCancel={logic.cancelGeneration}
+        isAgentMode={logic.isAgentMode}
+        setIsAgentMode={logic.setIsAgentMode}
+      />
+      
       <ThinkingSidebar
         isOpen={logic.isThinkingSidebarOpen}
         onClose={logic.handleCloseThinkingSidebar}

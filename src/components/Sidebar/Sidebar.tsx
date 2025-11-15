@@ -37,8 +37,8 @@ type SidebarProps = {
 };
 
 const mobileVariants = {
-    open: { translateX: '0%' },
-    closed: { translateX: '-100%' },
+    open: { translateX: '0%', transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+    closed: { translateX: '-100%', transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -128,7 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
 
     return (
-        <aside className={`h-full z-20 ${isDesktop ? 'flex-shrink-0' : 'w-0'}`}>
+        <aside className={`h-full z-30 ${isDesktop ? 'flex-shrink-0' : 'w-0'}`}>
             {/* Overlay for mobile */}
             <AnimatePresence>
                 {!isDesktop && isOpen && (
@@ -137,25 +137,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 bg-black/50 z-10" 
+                        className="fixed inset-0 bg-black/50 z-20" 
                     />
                 )}
             </AnimatePresence>
             
             <motion.div
-                initial={false}
+                initial={isDesktop ? false : "closed"}
                 animate={
                     isDesktop 
-                        ? { width: isCollapsed ? 72 : width } 
+                        ? { width: isCollapsed ? 'var(--sidebar-width-collapsed)' : width } 
                         : (isOpen ? 'open' : 'closed')
                 }
                 variants={isDesktop ? undefined : mobileVariants}
                 transition={{
                     type: isResizing || animationDisabledForResize ? 'tween' : 'spring',
                     duration: isResizing || animationDisabledForResize ? 0 : undefined,
-                    stiffness: 300,
-                    damping: 30,
-                    mass: 1.2,
+                    stiffness: 400,
+                    damping: 40,
+                    mass: 1,
                 }}
                 style={{
                     height: '100%',
@@ -163,9 +163,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     width: !isDesktop ? 288 : 'auto', // Explicitly set width for mobile view
                     left: 0,
                     top: 0,
-                    zIndex: isDesktop ? 'auto' : 30,
+                    zIndex: isDesktop ? 'auto' : 40,
                 }}
-                className="bg-violet-50 dark:bg-[#121212] border-r border-violet-200/50 dark:border-white/10 flex flex-col transform-gpu" // Added transform-gpu to promote to its own layer
+                className="glassmorphic flex flex-col transform-gpu"
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
@@ -190,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     />
                     
                     <motion.div 
-                        className="my-4 border-t border-violet-200/50 dark:border-white/10"
+                        className="my-4 border-t border-[color:var(--surface-border)]"
                         initial={false}
                         animate={{ opacity: isCollapsed ? 0 : 1, height: isCollapsed ? 0 : 'auto' }}
                         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
