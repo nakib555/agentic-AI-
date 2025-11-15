@@ -168,14 +168,18 @@ export const ChatArea = ({
         )}
       </AnimatePresence>
       
-      <MessageForm 
-        ref={messageFormRef}
-        onSubmit={sendMessage} 
-        isLoading={isLoading || modelsLoading} 
-        onCancel={onCancel}
-        isAgentMode={isAgentMode}
-        setIsAgentMode={setIsAgentMode}
-      />
+      <div className="flex-shrink-0 pt-4 px-4 sm:px-6 md:px-8">
+        <div className="relative w-full">
+          <MessageForm 
+            ref={messageFormRef}
+            onSubmit={sendMessage} 
+            isLoading={isLoading || modelsLoading} 
+            onCancel={onCancel}
+            isAgentMode={isAgentMode}
+            setIsAgentMode={setIsAgentMode}
+          />
+        </div>
+      </div>
     </div>
   );
 };

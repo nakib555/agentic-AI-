@@ -52,7 +52,7 @@ export const App = () => {
         onSettingsClick={() => logic.setIsSettingsOpen(true)}
       />
 
-      <main className="relative z-0 flex-1 flex flex-col overflow-hidden chat-background min-w-0">
+      <main className="relative z-10 flex-1 flex flex-col overflow-hidden chat-background min-w-0">
         <div className="flex-1 flex flex-col w-full max-w-4xl mx-auto min-h-0">
            <ChatHeader 
               isDesktop={logic.isDesktop}

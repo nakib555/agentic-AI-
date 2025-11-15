@@ -1,30 +1,4 @@
-/* PART 1 of 2 of main.css */
-
-/* --- Modern, Theme-Aware CSS Variables --- */
-:root {
-  --light-primary-start: #8B5CF6;
-  --light-primary-end: #A78BFA;
-  --light-bg-start: #F3F4F6;
-  --light-bg-end: #E9D5FF;
-  --light-surface: rgba(255, 255, 255, 0.6);
-  --light-text-primary: #111827;
-  --light-text-secondary: #374151;
-  --light-accent: #EC4899;
-  --light-border: rgba(255, 255, 255, 0.5);
-  --light-shadow: rgba(0, 0, 0, 0.1);
-
-  --dark-primary-start: #7C3AED;
-  --dark-primary-end: #A78BFA;
-  --dark-bg-start: #0F0A1F;
-  --dark-bg-end: #1E1B4B;
-  --dark-surface: rgba(30, 27, 75, 0.4);
-  --dark-text-primary: #E5E7EB;
-  --dark-text-secondary: #9CA3AF;
-  --dark-accent: #F472B6;
-  --dark-border: rgba(255, 255, 255, 0.1);
-  --dark-shadow: rgba(0, 0, 0, 0.2);
-}
-
+/* PART 1 of 2 of main.css (Lines 1-70) */
 
 /* --- Modern, Theme-Aware Scrollbar --- */
 
@@ -34,8 +8,8 @@ html {
 
 /* For Webkit-based browsers (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -50,7 +24,7 @@ html {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 .dark ::-webkit-scrollbar-thumb {
@@ -58,10 +32,11 @@ html {
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 /* For Firefox */
+/* Applying to html element for better specificity */
 html {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* thumb color track color */
@@ -76,31 +51,9 @@ html {
 
 body { 
   font-family: 'Inter', sans-serif; 
-  color: var(--light-text-primary);
 }
 
-.dark body {
-  color: var(--dark-text-primary);
-}
-
-
-/* --- Glassmorphism & 3D Effects --- */
-.glass-morphic {
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  background-color: var(--light-surface);
-  border: 1px solid var(--light-border);
-  box-shadow: 0 8px 32px 0 var(--light-shadow);
-}
-
-.dark .glass-morphic {
-  background-color: var(--dark-surface);
-  border-color: var(--dark-border);
-  box-shadow: 0 8px 32px 0 var(--dark-shadow);
-}
-
-
-/* Accessibility utility */
+/* Accessibility utility to hide elements visually but keep them available for screen readers */
 .sr-only {
   position: absolute;
   width: 1px;
