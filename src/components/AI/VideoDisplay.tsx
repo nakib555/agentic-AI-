@@ -6,10 +6,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
-import { fileStore } from '../../services/fileStore';
 
 type VideoDisplayProps = {
-  fileKey?: string;
   srcUrl?: string;
   prompt?: string;
 };
@@ -30,10 +28,7 @@ const formatTime = (timeInSeconds: number) => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
-export const VideoDisplay: React.FC<VideoDisplayProps> = ({ fileKey, srcUrl, prompt }) => {
-    const [videoUrl, setVideoUrl] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
-
+export const VideoDisplay: React.FC<VideoDisplayProps> = ({ srcUrl, prompt }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(true);
     const [volume, setVolume] = useState(1);
@@ -48,47 +43,6 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ fileKey, srcUrl, pro
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const progressRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        // If a direct URL is provided, use it and skip IndexedDB.
-        if (srcUrl) {
-            setVideoUrl(srcUrl);
-            setError(null);
-            return;
-        }
-    
-        let objectUrl: string | null = null;
-        const loadVideo = async () => {
-          // If srcUrl is not provided, we must have a fileKey.
-          if (!fileKey) {
-            setError('No video source provided.');
-            return;
-          }
-    
-          try {
-            const blob = await fileStore.getFile(fileKey);
-            if (blob) {
-              objectUrl = URL.createObjectURL(blob);
-              setVideoUrl(objectUrl);
-              setError(null);
-            } else { 
-              setError('Video not found in local storage.'); 
-            }
-          } catch (err) {
-            console.error('Failed to load video from IndexedDB:', err);
-            setError('Failed to load video.');
-          }
-        };
-        
-        loadVideo();
-        
-        // Cleanup function
-        return () => { 
-          if (objectUrl) { 
-            URL.revokeObjectURL(objectUrl); 
-          }
-        };
-    }, [fileKey, srcUrl]);
 
     const handlePlayState = () => {
         if (videoRef.current) {
@@ -108,7 +62,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ fileKey, srcUrl, pro
                 video.removeEventListener('ended', handlePlayState);
             };
         }
-    }, [videoUrl]);
+    }, [srcUrl]);
 
     const togglePlayPause = () => {
         if (videoRef.current) {
@@ -127,7 +81,6 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ fileKey, srcUrl, pro
     const handleLoadedMetadata = () => {
         if (videoRef.current) {
             setDuration(videoRef.current.duration);
-            // Auto-play the video when metadata is loaded
             videoRef.current.play().catch(e => console.error("Autoplay was prevented:", e));
         }
     };
@@ -208,10 +161,10 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ fileKey, srcUrl, pro
             }}
         >
             <div className="aspect-video w-full bg-slate-900/50 flex items-center justify-center">
-                {videoUrl ? (
+                {srcUrl ? (
                     <video
                         ref={videoRef}
-                        src={videoUrl}
+                        src={srcUrl}
                         playsInline
                         muted
                         onClick={togglePlayPause}
@@ -228,18 +181,13 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ fileKey, srcUrl, pro
                     />
                 ) : (
                     <div className="text-sm text-slate-400 p-4 text-center">
-                        {error ? ( <span>{error}</span> ) : (
-                            <div className="flex items-center gap-2">
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                <span>Loading video...</span>
-                            </div>
-                        )}
+                        <span>No video source provided.</span>
                     </div>
                 )}
             </div>
 
             <AnimatePresence>
-                {isControlsVisible && videoUrl && (
+                {isControlsVisible && srcUrl && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}

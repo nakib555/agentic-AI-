@@ -9,7 +9,7 @@ import { FilePreview } from './FilePreview';
 
 type FileAttachmentProps = {
   filename: string;
-  fileKey: string;
+  srcUrl: string;
   mimeType: string;
 };
 
@@ -23,9 +23,9 @@ const PREVIEWABLE_MIMETYPES = [
     'text/html'
 ];
 
-export const FileAttachment: React.FC<FileAttachmentProps> = ({ filename, fileKey, mimeType }) => {
+export const FileAttachment: React.FC<FileAttachmentProps> = ({ filename, srcUrl, mimeType }) => {
   if (PREVIEWABLE_MIMETYPES.includes(mimeType)) {
-    return <FilePreview filename={filename} fileKey={fileKey} mimeType={mimeType} />;
+    return <FilePreview filename={filename} srcUrl={srcUrl} mimeType={mimeType} />;
   }
-  return <DownloadLink filename={filename} fileKey={fileKey} />;
+  return <DownloadLink filename={filename} srcUrl={srcUrl} />;
 };

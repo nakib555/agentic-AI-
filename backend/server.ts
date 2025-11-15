@@ -4,29 +4,42 @@ import cors from 'cors';
 import path from 'path';
 import process from 'process';
 import { apiHandler } from './handler.js';
+import * as crudHandler from './crudHandler.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middlewares
-// Enable Cross-Origin Resource Sharing for all origins to allow frontend-backend communication.
 app.use(cors({
-  origin: '*', // Allow any origin
-  methods: ['GET', 'POST', 'OPTIONS'], // Allow common methods, including pre-flight
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allow common headers
+  origin: '*', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json({ limit: '50mb' }));
 
 const staticPath = path.join(process.cwd(), 'dist');
+const uploadsPath = path.join(process.cwd(), 'data', 'uploads');
 
 // API routes
 app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
+
+// Streaming and complex tasks handler
 app.post('/api/handler', apiHandler);
 app.get('/api/handler', apiHandler);
 
+// CRUD routes for chat history
+app.get('/api/history', crudHandler.getHistory);
+app.delete('/api/history', crudHandler.deleteAllHistory);
+app.get('/api/chats/:chatId', crudHandler.getChat);
+app.post('/api/chats/new', crudHandler.createNewChat);
+app.put('/api/chats/:chatId', crudHandler.updateChat);
+app.delete('/api/chats/:chatId', crudHandler.deleteChat);
+app.post('/api/import', crudHandler.importChat);
 
-// Serve static assets for the frontend
+// Serve static assets for the frontend and uploads
 app.use(express.static(staticPath));
+app.use('/uploads', express.static(uploadsPath));
+
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
 app.get('*', (req: Request, res: Response) => {

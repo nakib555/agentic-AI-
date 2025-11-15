@@ -141,6 +141,12 @@ export const useAppLogic = () => {
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode);
   const { updateChatModel, updateChatSettings } = chat;
 
+  // FIX: Create a wrapper for startNewChat that takes no arguments.
+  const startNewChat = useCallback(() => {
+    chat.startNewChat(activeModel, chatSettings);
+  }, [chat, activeModel, chatSettings]);
+
+
   // --- Derived State & Memos ---
   const isChatActive = !!chat.currentChatId && chat.messages.length > 0;
   
@@ -248,7 +254,8 @@ export const useAppLogic = () => {
         let result: TestResult;
         try {
             // Ensure a clean chat for each test
-            chat.startNewChat();
+            // FIX: Use the no-argument wrapper for startNewChat.
+            startNewChat();
             // This is a short, artificial delay to allow the state to update before sending.
             await new Promise(resolve => setTimeout(resolve, 50));
             
@@ -288,7 +295,7 @@ export const useAppLogic = () => {
     });
 
     return report;
-}, [chat]);
+}, [chat, startNewChat]);
   
   // --- Return all state and handlers ---
   return {
@@ -300,6 +307,7 @@ export const useAppLogic = () => {
     aboutUser, setAboutUser, aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens, setMaxTokens,
     imageModel, setImageModel, videoModel, setVideoModel, ttsVoice, setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled,
     ...chat, isChatActive, thinkingMessageForSidebar,
+    startNewChat, // Overwrite the original startNewChat with the no-arg wrapper
     handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,
     handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests
   };

@@ -3,48 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { fileStore } from '../../services/fileStore';
 
 type FilePreviewProps = {
   filename: string;
-  fileKey: string;
+  srcUrl: string;
   mimeType: string;
 };
 
-export const FilePreview: React.FC<FilePreviewProps> = ({ filename, fileKey, mimeType }) => {
-  const [objectUrl, setObjectUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let url: string | null = null;
-    const loadFile = async () => {
-      try {
-        const blob = await fileStore.getFile(fileKey);
-        if (blob) {
-          url = URL.createObjectURL(blob);
-          setObjectUrl(url);
-        } else {
-          setError('File not found in local storage.');
-        }
-      } catch (err) {
-        setError('Failed to load file for preview.');
-        console.error('Failed to load file from fileStore:', err);
-      }
-    };
-    loadFile();
-    return () => {
-      if (url) {
-        URL.revokeObjectURL(url);
-      }
-    };
-  }, [fileKey]);
-  
+export const FilePreview: React.FC<FilePreviewProps> = ({ filename, srcUrl, mimeType }) => {
   const handleDownload = () => {
-    if (!objectUrl) return;
+    if (!srcUrl) return;
     const link = document.createElement('a');
-    link.href = objectUrl;
+    link.href = srcUrl;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
@@ -52,27 +24,14 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filename, fileKey, mim
   };
 
   const renderPreviewContent = () => {
-    if (error) {
-        return <p className="p-4 text-sm text-red-500 dark:text-red-400">{error}</p>;
-    }
-    if (!objectUrl) {
-      return (
-        <div className="text-sm text-slate-400 p-4 text-center">
-            <div className="flex items-center gap-2">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <span>Loading preview...</span>
-            </div>
-        </div>
-      );
+    if (!srcUrl) {
+      return <p className="p-4 text-sm text-red-500 dark:text-red-400">File source is missing.</p>;
     }
     if (mimeType.startsWith('image/')) {
-      return <img src={objectUrl} alt={filename} className="max-h-[60vh] w-auto h-auto object-contain" />;
+      return <img src={srcUrl} alt={filename} className="max-h-[60vh] w-auto h-auto object-contain" />;
     }
     if (mimeType === 'application/pdf' || mimeType === 'text/html') {
-        // Use an iframe for native browser rendering. The sandbox attribute is removed
-        // to prevent "blocked by Chrome" errors, especially for content from blob URLs
-        // which are handled by the browser's same-origin security model.
-        return <iframe src={objectUrl} className="w-full h-[60vh] border-none bg-white" title={filename} />;
+        return <iframe src={srcUrl} className="w-full h-[60vh] border-none bg-white" title={filename} />;
     }
     return <p className="p-4 text-sm text-slate-400">No preview available for this file type.</p>;
   };
@@ -90,7 +49,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filename, fileKey, mim
             <span className="text-sm font-medium text-gray-700 dark:text-slate-300 truncate" title={filename}>{filename}</span>
             <button
                 onClick={handleDownload}
-                disabled={!objectUrl || !!error}
+                disabled={!srcUrl}
                 className="flex-shrink-0 p-1.5 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-800 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title={`Download ${filename}`}
             >

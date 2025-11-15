@@ -3,32 +3,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// A simple in-memory store to simulate a virtual filesystem for a single session.
-// This is not persistent across server restarts.
-const fileStoreData = new Map<string, Blob>();
+// A simple in-memory virtual file system for the agentic workflow.
+// In a production environment, this would be replaced with a more robust
+// solution like a cloud bucket (S3, GCS) or a persistent disk.
+
+const fileSystem = new Map<string, Blob>();
 
 export const fileStore = {
-  async saveFile(path: string, blob: Blob): Promise<void> {
-    fileStoreData.set(path, blob);
+  async saveFile(path: string, data: Blob): Promise<void> {
+    console.log(`[FileStore] Saving file to path: ${path} (size: ${data.size})`);
+    fileSystem.set(path, data);
   },
 
-  async getFile(path: string): Promise<Blob | undefined> {
-    return fileStoreData.get(path);
+  async getFile(path: string): Promise<Blob | null> {
+    console.log(`[FileStore] Getting file from path: ${path}`);
+    return fileSystem.get(path) || null;
   },
 
-  async listFiles(path: string): Promise<string[]> {
+  async listFiles(dirPath: string): Promise<string[]> {
+    console.log(`[FileStore] Listing files in path: ${dirPath}`);
     const files: string[] = [];
-    // Basic prefix matching for directory listing
-    const normalizedPath = path.endsWith('/') ? path : `${path}/`;
-    for (const key of fileStoreData.keys()) {
-        if (key.startsWith(normalizedPath)) {
-            files.push(key);
-        }
+    const normalizedDirPath = dirPath.endsWith('/') ? dirPath : `${dirPath}/`;
+    
+    if (dirPath === '/') {
+        return Array.from(fileSystem.keys());
+    }
+
+    for (const path of fileSystem.keys()) {
+      if (path.startsWith(normalizedDirPath)) {
+        files.push(path);
+      }
     }
     return files;
   },
-  
+
   async deleteFile(path: string): Promise<void> {
-    fileStoreData.delete(path);
+    console.log(`[FileStore] Deleting file from path: ${path}`);
+    fileSystem.delete(path);
   },
 };

@@ -41,6 +41,7 @@ export const App = () => {
         setIsResizing={logic.setIsResizing}
         history={logic.chatHistory}
         currentChatId={logic.currentChatId}
+        // FIX: Pass a no-argument function to `onNewChat` to match the expected type.
         onNewChat={logic.startNewChat}
         onLoadChat={logic.loadChat}
         onDeleteChat={logic.deleteChat}

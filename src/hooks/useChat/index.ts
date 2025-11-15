@@ -224,12 +224,18 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         let messagesForHistory = currentChat ? currentChat.messages : [];
 
         if (!activeChatId || !currentChat) {
-            activeChatId = chatHistoryHook.createNewChat(initialModel, {
+            // FIX: Use `startNewChat` instead of `createNewChat` and handle async creation.
+            const newChatSession = await chatHistoryHook.startNewChat(initialModel, {
                 temperature: settings.temperature,
                 maxOutputTokens: settings.maxOutputTokens,
                 imageModel: settings.imageModel,
                 videoModel: settings.videoModel,
             });
+            if (!newChatSession) {
+                console.error("Failed to start a new chat, aborting message send.");
+                return;
+            }
+            activeChatId = newChatSession.id;
         }
     
         const attachmentsData = files?.length ? await Promise.all(files.map(async f => ({ name: f.name, mimeType: f.type, data: await fileToBase64(f) }))) : undefined;
