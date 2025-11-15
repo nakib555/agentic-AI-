@@ -25,24 +25,25 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
         let stream;
         try {
-            const generationConfig: any = {
+            const config: any = {
                 temperature: settings.temperature,
+                systemInstruction: settings.systemInstruction,
+                tools: settings.tools,
             };
+
             if (settings.maxOutputTokens && settings.maxOutputTokens > 0) {
-                generationConfig.maxOutputTokens = settings.maxOutputTokens;
+                config.maxOutputTokens = settings.maxOutputTokens;
+            }
+
+            if (settings.thinkingBudget) {
+                config.thinkingConfig = { thinkingBudget: settings.thinkingBudget };
             }
 
             const request: any = {
                 model,
                 contents: currentHistory,
-                systemInstruction: settings.systemInstruction,
-                tools: settings.tools,
-                generationConfig,
+                config,
             };
-
-            if (settings.thinkingBudget) {
-                request.thinkingConfig = { thinkingBudget: settings.thinkingBudget };
-            }
             
             console.log('[AGENTIC_LOOP] Calling Gemini API generateContentStream...');
             stream = await ai.models.generateContentStream(request);
