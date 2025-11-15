@@ -12,8 +12,13 @@ import { DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from '../src/components/App/
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
 export const getHistory = async (req: Request, res: Response) => {
-    const history = await dataStore.getChatHistoryList();
-    res.status(200).json(history);
+    try {
+        const history = await dataStore.getChatHistoryList();
+        res.status(200).json(history);
+    } catch (error) {
+        console.error('Failed to get chat history:', error);
+        res.status(500).json({ error: 'Failed to retrieve chat history from the server.' });
+    }
 };
 
 export const getChat = async (req: Request, res: Response) => {

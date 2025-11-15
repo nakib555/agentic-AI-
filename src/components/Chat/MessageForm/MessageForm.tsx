@@ -28,20 +28,19 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   const hasInput = logic.inputValue.trim().length > 0 || logic.processedFiles.length > 0;
   const hasText = logic.inputValue.trim().length > 0 && logic.processedFiles.length === 0;
 
-  const sendButtonClasses = "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-200 ease-in-out";
+  const sendButtonClasses = "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-200 ease-in-out";
   const isSendButtonActive = hasInput && !isLoading && !logic.isEnhancing && !isProcessingFiles;
   const sendButtonStateClasses = isLoading 
-    ? 'bg-red-600 text-white shadow-md hover:bg-red-500 active:scale-90'
+    ? 'bg-red-600 text-white hover:bg-red-500'
     : (isSendButtonActive
-        ? 'bg-indigo-600 text-white shadow-md hover:bg-indigo-500 active:scale-90'
+        ? 'bg-indigo-600 text-white hover:bg-indigo-500'
         : 'bg-gray-200 dark:bg-black/20 text-gray-400 dark:text-slate-500');
 
   return (
     <div>
-      <form onSubmit={logic.handleSubmit} className="flex items-end gap-2">
+      <form onSubmit={logic.handleSubmit}>
         <motion.div 
-            className={`bg-white/30 dark:bg-black/20 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-lg flex flex-col p-2 flex-grow`} 
-            animate={{ borderRadius: '1rem' }}
+            className={`bg-white dark:bg-[#202123] border border-gray-200 dark:border-slate-700/50 shadow-md flex flex-col p-2 flex-grow rounded-2xl`} 
             transition={{ duration: 0.2, ease: 'easeInOut' }}
         >
             <AnimatePresence>
@@ -102,14 +101,12 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     </motion.button>
                   )}
                 </AnimatePresence>
+                <button type={isLoading ? 'button' : 'submit'} onClick={isLoading ? onCancel : undefined} disabled={!isLoading && (!hasInput || logic.isEnhancing || isProcessingFiles)} aria-label={isLoading ? "Stop generating" : "Send message"} title={isLoading ? "Stop generating" : (isProcessingFiles ? "Processing files..." : "Send message")} className={`${sendButtonClasses} ${sendButtonStateClasses}`}>
+                    {isLoading ? ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M4 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4Z" /></svg> ) : ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="m3.105 13.667 11.218-11.218a.75.75 0 0 1 1.061 1.061L5.227 15.789a3.75 3.75 0 0 1-4.685-1.06l-.261-.262a.75.75 0 0 1 1.06-1.06l.261.262a2.25 2.25 0 0 0 3.182.654Z" /><path d="M16.442 4.617a.75.75 0 0 1-1.06-1.06l3.182-3.182a.75.75 0 0 1 1.06 1.06l-3.182 3.182Z" /></svg> )}
+                </button>
               </div>
             </div>
         </motion.div>
-        <div className="flex-shrink-0">
-          <button type={isLoading ? 'button' : 'submit'} onClick={isLoading ? onCancel : undefined} disabled={!isLoading && (!hasInput || logic.isEnhancing || isProcessingFiles)} aria-label={isLoading ? "Stop generating" : "Send message"} title={isLoading ? "Stop generating" : (isProcessingFiles ? "Processing files..." : "Send message")} className={`${sendButtonClasses} ${sendButtonStateClasses}`}>
-              {isLoading ? ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M4 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4Z" /></svg> ) : ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M9.47 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1-1.06 1.06L10 4.81V15.75a.75.75 0 0 1-1.5 0V4.81L4.78 8.53a.75.75 0 0 1-1.06-1.06l4.25-4.25Z" clipRule="evenodd" /></svg> )}
-          </button>
-        </div>
       </form>
       <p className="text-center text-sm text-gray-500 dark:text-slate-400 mt-2 px-4">
           Gemini can make mistakes. Check important info.

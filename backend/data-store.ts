@@ -21,9 +21,6 @@ const ensureDir = async (dirPath: string) => {
     }
 };
 
-// Ensure directories exist on startup
-Promise.all([ensureDir(CHATS_PATH), ensureDir(UPLOADS_PATH)]);
-
 export const dataStore = {
     async getChatHistoryList(): Promise<Omit<ChatSession, 'messages'>[]> {
         try {
@@ -60,6 +57,7 @@ export const dataStore = {
     },
 
     async saveChatSession(chatSession: ChatSession): Promise<void> {
+        await ensureDir(CHATS_PATH);
         const filePath = path.join(CHATS_PATH, `${chatSession.id}.json`);
         await fs.writeFile(filePath, JSON.stringify(chatSession, null, 2), 'utf-8');
     },
