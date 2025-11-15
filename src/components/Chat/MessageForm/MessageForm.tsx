@@ -35,7 +35,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
         : 'bg-gray-200 dark:bg-black/20 text-gray-400 dark:text-slate-500');
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-50 flex justify-center pb-4 sm:pb-6 pointer-events-none">
+    <div className="absolute bottom-0 inset-x-0 z-50 flex justify-center pb-4 sm:pb-6 pointer-events-none">
         <motion.form 
             layout
             className="glassmorphic flex flex-col p-2 pointer-events-auto" 

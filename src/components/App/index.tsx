@@ -91,16 +91,15 @@ export const App = () => {
               messageFormRef={messageFormRef}
            />
         </div>
+        <MessageForm 
+          ref={messageFormRef}
+          onSubmit={logic.sendMessage} 
+          isLoading={logic.isLoading || logic.modelsLoading} 
+          onCancel={logic.cancelGeneration}
+          isAgentMode={logic.isAgentMode}
+          setIsAgentMode={logic.setIsAgentMode}
+        />
       </main>
-
-      <MessageForm 
-        ref={messageFormRef}
-        onSubmit={logic.sendMessage} 
-        isLoading={logic.isLoading || logic.modelsLoading} 
-        onCancel={logic.cancelGeneration}
-        isAgentMode={logic.isAgentMode}
-        setIsAgentMode={logic.setIsAgentMode}
-      />
       
       <ThinkingSidebar
         isOpen={logic.isThinkingSidebarOpen}
