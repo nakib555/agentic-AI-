@@ -54,6 +54,7 @@ export const useAppLogic = () => {
   const [thinkingMessageId, setThinkingMessageId] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [backendError, setBackendError] = useState<string | null>(null);
+  // Fix: Add state for test mode
   const [isTestMode, setIsTestMode] = useState(false);
 
   // --- Model Management ---
@@ -62,6 +63,7 @@ export const useAppLogic = () => {
   const [activeModel, setActiveModel] = useState(validModels[1]?.id || validModels[0]?.id);
 
   // --- Settings State ---
+  // Fix: Add state for API key
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('agentic-apiKey') || '');
   const [aboutUser, setAboutUser] = useState(() => localStorage.getItem('agentic-aboutUser') || DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(() => localStorage.getItem('agentic-aboutResponse') || DEFAULT_ABOUT_RESPONSE);
@@ -76,6 +78,7 @@ export const useAppLogic = () => {
   });
 
   // --- Effect to save settings to localStorage ---
+  // Fix: Add effect to save API key
   useEffect(() => {
     if (apiKey) localStorage.setItem('agentic-apiKey', apiKey);
     else localStorage.removeItem('agentic-apiKey');
@@ -146,7 +149,7 @@ export const useAppLogic = () => {
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode);
   const { updateChatModel, updateChatSettings } = chat;
 
-  // FIX: Create a wrapper for startNewChat that takes no arguments.
+  // Fix: Create a wrapper for startNewChat that takes no arguments.
   const startNewChat = useCallback(() => {
     chat.startNewChat(activeModel, chatSettings);
   }, [chat, activeModel, chatSettings]);
@@ -242,6 +245,7 @@ export const useAppLogic = () => {
     input.click();
   };
 
+  // Fix: Add implementation for running diagnostic tests.
   const runDiagnosticTests = useCallback(async (onProgress: (progress: TestProgress) => void) => {
     const results: TestResult[] = [];
     let testsPassed = 0;
@@ -259,7 +263,6 @@ export const useAppLogic = () => {
         let result: TestResult;
         try {
             // Ensure a clean chat for each test
-            // FIX: Use the no-argument wrapper for startNewChat.
             startNewChat();
             // This is a short, artificial delay to allow the state to update before sending.
             await new Promise(resolve => setTimeout(resolve, 50));
@@ -300,7 +303,7 @@ export const useAppLogic = () => {
     });
 
     return report;
-}, [chat, startNewChat]);
+  }, [chat, startNewChat]);
   
   // --- Return all state and handlers ---
   return {

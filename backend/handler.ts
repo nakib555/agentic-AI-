@@ -3,9 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Import Request and Response types directly from express to resolve type errors.
 import type { Request, Response } from 'express';
-// FIX: Use `GoogleGenAI` instead of the deprecated `GoogleGenerativeAI`.
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -19,19 +17,15 @@ import { ToolCallEvent } from './services/agenticLoop/types.js';
 import { toolDeclarations } from './tools/declarations.js';
 
 // --- State for handling asynchronous frontend interactions ---
-
-// Stores AbortControllers for ongoing 'chat' requests, allowing for explicit cancellation.
 const activeRequests = new Map<string, AbortController>();
-// Stores resolver functions for pending tool calls that require frontend execution.
 const pendingFrontendTools = new Map<string, (result: string | { error: string }) => void>();
 
 const generateRequestId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-// FIX: Use the Response type from express.
 async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
-    const { model, history, settings } = payload;
+    const { chatId, model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
-    console.log('[BACKEND] handleChat started.', { model, isAgentMode, requestId });
+    console.log('[BACKEND] handleChat started.', { chatId, model, isAgentMode, requestId });
 
     res.setHeader('Content-Type', 'application/x-ndjson');
     
@@ -44,15 +38,13 @@ async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payloa
       }
     };
     
-    // Immediately send a start event with the unique ID to establish the connection
     enqueue({ type: 'start', payload: { requestId } });
 
-    // Heartbeat to keep the connection alive on some hosting platforms
     const heartbeat = setInterval(() => {
         enqueue({ type: 'ping' });
-    }, 4000); // Every 4 seconds
+    }, 4000);
     
-    const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, apiKey, (callId, toolName, toolArgs) => {
+    const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, apiKey, chatId, (callId, toolName, toolArgs) => {
         console.log(`[BACKEND] Requesting frontend to execute tool: ${toolName}`, { callId, toolArgs });
         return new Promise((resolve) => {
             pendingFrontendTools.set(callId, resolve);
@@ -98,7 +90,7 @@ async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payloa
         if ((error as Error).name !== 'AbortError') callbacks.onError(parseApiError(error));
     } finally {
         clearInterval(heartbeat);
-        activeRequests.delete(requestId); // Clean up the request map
+        activeRequests.delete(requestId);
         console.log('[BACKEND] Closing chat stream.', { requestId });
         if (!res.writableEnded) res.end();
     }
@@ -151,7 +143,6 @@ async function handleSimpleTask(ai: GoogleGenAI, task: string, payload: any): Pr
     }
 }
 
-// FIX: Use Request and Response types from express.
 export const apiHandler = async (req: Request, res: Response) => {
     const frontendApiKey = req.headers['x-api-key'] as string;
     const apiKey = frontendApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
@@ -181,7 +172,7 @@ export const apiHandler = async (req: Request, res: Response) => {
             });
 
             await handleChat(res, ai, apiKey, payload, requestId, controller.signal);
-            return; // Streaming response is handled, so we return.
+            return;
         }
 
         if (task === 'cancel') {

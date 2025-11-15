@@ -16,19 +16,19 @@ import { executeBrowsePage } from "./browser.js";
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-const BACKEND_TOOL_IMPLEMENTATIONS: Record<string, (ai: GoogleGenAI, args: any, apiKey?: string) => Promise<string>> = {
-    'generateImage': (ai, args) => executeImageGenerator(ai, args),
+const BACKEND_TOOL_IMPLEMENTATIONS: Record<string, (ai: GoogleGenAI, args: any, apiKey: string, chatId: string) => Promise<string>> = {
+    'generateImage': (ai, args, apiKey, chatId) => executeImageGenerator(ai, args, chatId),
     'duckduckgoSearch': (ai, args) => executeWebSearch(ai, args),
     'browsePage': (ai, args) => executeBrowsePage(args),
     'analyzeMapVisually': (ai, args) => executeAnalyzeMapVisually(ai, args),
-    'analyzeImageVisually': (ai, args) => executeAnalyzeImageVisually(ai, args),
-    'executeCode': (ai, args) => executeCode(args),
-    'generateVideo': (ai, args, apiKey) => executeVideoGenerator(ai, args, apiKey!),
+    'analyzeImageVisually': (ai, args, apiKey, chatId) => executeAnalyzeImageVisually(ai, args, chatId),
+    'executeCode': (ai, args, apiKey, chatId) => executeCode(args, chatId),
+    'generateVideo': (ai, args, apiKey, chatId) => executeVideoGenerator(ai, args, apiKey!, chatId),
     'calculator': (ai, args) => Promise.resolve(executeCalculator(args)),
-    'writeFile': (ai, args) => executeWriteFile(args),
-    'listFiles': (ai, args) => executeListFiles(args),
-    'displayFile': (ai, args) => executeDisplayFile(args),
-    'deleteFile': (ai, args) => executeDeleteFile(args),
+    'writeFile': (ai, args, apiKey, chatId) => executeWriteFile(args, chatId),
+    'listFiles': (ai, args, apiKey, chatId) => executeListFiles(args, chatId),
+    'displayFile': (ai, args, apiKey, chatId) => executeDisplayFile(args, chatId),
+    'deleteFile': (ai, args, apiKey, chatId) => executeDeleteFile(args, chatId),
     'displayMap': (ai, args) => Promise.resolve(executeDisplayMap(args)),
 };
 
@@ -44,12 +44,12 @@ export const createToolExecutor = (
     imageModel: string,
     videoModel: string,
     apiKey: string,
+    chatId: string,
     requestFrontendExecution: (callId: string, toolName: string, toolArgs: any) => Promise<string | { error: string }>
 ) => {
     return async (name: string, args: any): Promise<string> => {
-        console.log(`[TOOL_EXECUTOR] Received request to execute tool: "${name}"`, { args });
+        console.log(`[TOOL_EXECUTOR] Received request to execute tool: "${name}"`, { args, chatId });
         
-        // --- Frontend Tool Execution ---
         if (FRONTEND_TOOLS.has(name)) {
             const callId = `${name}-${generateId()}`;
             const result = await requestFrontendExecution(callId, name, args);
@@ -59,7 +59,6 @@ export const createToolExecutor = (
             return result as string;
         }
 
-        // --- Backend Tool Execution ---
         const toolImplementation = BACKEND_TOOL_IMPLEMENTATIONS[name];
         if (!toolImplementation) {
             console.error(`[TOOL_EXECUTOR] Tool not found: "${name}"`);
@@ -67,13 +66,12 @@ export const createToolExecutor = (
         }
 
         try {
-            // Inject model selections for relevant tools
             let finalArgs = { ...args };
             if (name === 'generateImage') finalArgs.model = imageModel;
             if (name === 'generateVideo') finalArgs.model = videoModel;
 
             console.log(`[TOOL_EXECUTOR] Executing backend tool "${name}"...`);
-            const result = await toolImplementation(ai, finalArgs, apiKey);
+            const result = await toolImplementation(ai, finalArgs, apiKey, chatId);
             console.log(`[TOOL_EXECUTOR] Backend tool "${name}" finished successfully.`);
             return result;
         } catch (err) {

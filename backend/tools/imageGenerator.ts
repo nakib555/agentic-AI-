@@ -5,11 +5,11 @@
 
 import { GoogleGenAI, Modality } from "@google/genai";
 import { ToolError } from "../utils/apiError";
+import { fileStore } from "../services/fileStore";
+import { Buffer } from 'buffer';
 
-const generateId = () => `img_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: string, numberOfImages?: number, model: string, aspectRatio?: string }): Promise<string> => {
-  const defaultAspectRatio = '16:9'; // Default for backend
+export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: string, numberOfImages?: number, model: string, aspectRatio?: string }, chatId: string): Promise<string> => {
+  const defaultAspectRatio = '1:1';
   const { prompt, numberOfImages = 1, model, aspectRatio = defaultAspectRatio } = args;
 
   try {
@@ -31,7 +31,7 @@ export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: str
             if (part.inlineData) base64ImageBytesArray.push(part.inlineData.data);
         }
     } else { // Assume Imagen model
-        const count = Math.max(1, Math.min(5, Math.floor(numberOfImages)));
+        const count = Math.max(1, Math.min(4, Math.floor(numberOfImages)));
         const validAspectRatios = ["1:1", "3:4", "4:3", "9:16", "16:9"];
         const response = await ai.models.generateImages({
             model: model,
@@ -53,20 +53,17 @@ export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: str
         throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any image data.');
     }
 
-    const results = base64ImageBytesArray.map((base64, i) => {
-        // Since this is executed on the backend, we will return a data URL directly
-        // for the frontend to render, bypassing the need for client-side IndexedDB for generated images.
-        const imageData = {
-            srcUrl: `data:image/png;base64,${base64}`,
-            prompt: i > 0 ? `${prompt} (variation ${i + 1})` : prompt,
-            alt: i > 0 ? `${prompt} (variation ${i + 1})` : prompt,
-            // Provide a unique key for frontend editing purposes.
-            editKey: `generated_${Date.now()}_${i}`
-        };
-        return `[IMAGE_COMPONENT]${JSON.stringify(imageData)}[/IMAGE_COMPONENT]`;
-    });
+    const savedFilePaths: string[] = [];
+    for (let i = 0; i < base64ImageBytesArray.length; i++) {
+        const base64 = base64ImageBytesArray[i];
+        const filename = `image_${Date.now()}_${i}.png`;
+        const virtualPath = `/main/output/${filename}`;
+        const buffer = Buffer.from(base64, 'base64');
+        await fileStore.saveFile(chatId, virtualPath, buffer);
+        savedFilePaths.push(virtualPath);
+    }
     
-    return `Successfully generated ${results.length} image(s).\n\n${results.join('\n')}`;
+    return `Successfully generated ${savedFilePaths.length} image(s) and saved to the following paths:\n- ${savedFilePaths.join('\n- ')}\n\nYou should now use the 'displayFile' tool to show the user the image(s).`;
 
   } catch (err) {
     console.error("Image generation tool failed:", err);

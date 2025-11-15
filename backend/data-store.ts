@@ -5,9 +5,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-// FIX: Import `process` to make `process.cwd()` available.
 import process from 'process';
-// FIX: Import `Buffer` to make the type available for Node.js environments.
 import { Buffer } from 'buffer';
 import type { ChatSession } from '../src/types';
 
@@ -41,13 +39,10 @@ export const dataStore = {
             // Sort by creation date, newest first
             return chats.sort((a, b) => b.createdAt - a.createdAt);
         } catch (error: any) {
-            // If the directory doesn't exist, it's a normal condition on first run.
-            // Create it and return an empty array.
             if (error.code === 'ENOENT') {
                 await ensureDir(CHATS_PATH);
                 return [];
             }
-            // For any other error (e.g., malformed JSON, read permissions), log it and return empty.
             console.error('Failed to read chat history:', error);
             return [];
         }
@@ -75,7 +70,7 @@ export const dataStore = {
         try {
             await fs.unlink(chatFilePath);
         } catch (error: any) {
-            if (error.code !== 'ENOENT') { // Ignore "not found" errors
+            if (error.code !== 'ENOENT') {
                 console.error(`Failed to delete chat file ${chatFilePath}:`, error);
             }
         }
@@ -85,7 +80,7 @@ export const dataStore = {
         try {
             await fs.rm(uploadsDir, { recursive: true, force: true });
         } catch (error: any) {
-            if (error.code !== 'ENOENT') { // Ignore "not found" errors
+            if (error.code !== 'ENOENT') {
                 console.error(`Failed to delete uploads directory ${uploadsDir}:`, error);
             }
         }
@@ -102,6 +97,6 @@ export const dataStore = {
         await ensureDir(chatUploadsPath);
         const filePath = path.join(chatUploadsPath, filename);
         await fs.writeFile(filePath, data);
-        return `/uploads/${chatId}/${filename}`; // Return the web-accessible path
+        return `/uploads/${chatId}/${filename}`;
     },
 };

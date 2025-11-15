@@ -7,7 +7,7 @@ import { ToolError } from '../utils/apiError';
 import { fileStore } from '../services/fileStore';
 import { executeWithPiston } from './piston';
 
-export const executeCode = async (args: { language: string; code: string; packages?: string[]; input_filenames?: string[] }): Promise<string> => {
+export const executeCode = async (args: { language: string; code: string; packages?: string[]; input_filenames?: string[] }, chatId: string): Promise<string> => {
   const { language, code } = args;
 
   try {

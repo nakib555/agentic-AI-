@@ -26,7 +26,8 @@ type AppModalsProps = {
   clearAllChats: () => void;
   // API Key
   apiKey: string;
-  setApiKey: (key: string) => void;
+  // Fix: Rename prop from setApiKey to onSaveApiKey to match parent component.
+  onSaveApiKey: (key: string) => void;
   // Custom Instructions
   aboutUser: string;
   setAboutUser: (value: string) => void;
@@ -70,7 +71,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     setIsMemoryEnabled, memoryContent, clearMemory, isConfirmationOpen,
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
     setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, onManageMemory,
-    apiKey, setApiKey,
+    apiKey, onSaveApiKey,
   } = props;
 
   return (
@@ -85,7 +86,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         onClearAllChats={clearAllChats}
         onRunTests={onRunTests}
         apiKey={apiKey}
-        onSaveApiKey={setApiKey}
+        onSaveApiKey={onSaveApiKey}
         aboutUser={aboutUser}
         setAboutUser={setAboutUser}
         aboutResponse={aboutResponse}

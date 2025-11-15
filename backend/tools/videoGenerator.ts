@@ -6,8 +6,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { ToolError } from "../utils/apiError";
 import { fileStore } from "../services/fileStore";
+import { Buffer } from 'buffer';
 
-export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }, apiKey: string): Promise<string> => {
+export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }, apiKey: string, chatId: string): Promise<string> => {
     const { prompt, aspectRatio = '16:9', resolution = '720p', model } = args;
 
     try {
@@ -21,7 +22,6 @@ export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: str
             }
         });
 
-        // Simplified polling loop for development
         while (!operation.done) {
             await new Promise(resolve => setTimeout(resolve, 5000));
             operation = await ai.operations.getVideosOperation({ operation: operation });
@@ -41,17 +41,18 @@ export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: str
             throw new Error(`Failed to download video file. Status: ${response.status}`);
         }
 
-        const videoBlob = await response.blob();
+        const videoArrayBuffer = await response.arrayBuffer();
+        const videoBuffer = Buffer.from(videoArrayBuffer);
         const filename = `video_${Date.now()}.mp4`;
-        const filePath = `/main/output/${filename}`;
+        const virtualPath = `/main/output/${filename}`;
         
-        await fileStore.saveFile(filePath, videoBlob);
+        await fileStore.saveFile(chatId, virtualPath, videoBuffer);
 
-        const videoData = { fileKey: filePath, prompt: prompt };
-        return `Successfully generated video and saved to ${filePath}.\n\n[VIDEO_COMPONENT]${JSON.stringify(videoData)}[/VIDEO_COMPONENT]`;
+        return `Successfully generated video and saved to ${virtualPath}.\n\nYou should now use the 'displayFile' tool to show the user the video.`;
 
     } catch (error) {
         if (error instanceof ToolError) throw error;
+        // Fix: Use 'error' variable from catch block instead of 'err'.
         const originalError = error instanceof Error ? error : new Error(String(error));
         throw new ToolError('generateVideo', 'BACKEND_EXECUTION_FAILED', originalError.message, originalError);
     }

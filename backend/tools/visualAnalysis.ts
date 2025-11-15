@@ -5,6 +5,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { ToolError } from "../utils/apiError";
+import { fileStore } from '../services/fileStore';
 
 export const executeAnalyzeMapVisually = async (ai: GoogleGenAI, args: { latitude: number, longitude: number }): Promise<string> => {
     const { latitude, longitude } = args;
@@ -24,20 +25,27 @@ export const executeAnalyzeMapVisually = async (ai: GoogleGenAI, args: { latitud
     }
 };
 
-export const executeAnalyzeImageVisually = async (ai: GoogleGenAI, args: { filePath?: string, imageBase64?: string }): Promise<string> => {
+export const executeAnalyzeImageVisually = async (ai: GoogleGenAI, args: { filePath?: string, imageBase64?: string }, chatId: string): Promise<string> => {
     const { filePath, imageBase64 } = args;
     if (!filePath && !imageBase64) {
       throw new ToolError('analyzeImageVisually', 'MISSING_ARGUMENT', 'Either filePath or imageBase64 must be provided.');
     }
     
-    // In this backend version, we expect the frontend to send base64 data.
-    // The filePath logic would require a shared file system (e.g., S3), which is out of scope.
-    if (!imageBase64) {
-      throw new ToolError('analyzeImageVisually', 'MISSING_DATA', 'Backend image analysis requires imageBase64 data.');
+    let imageData = imageBase64;
+    if (filePath) {
+        const fileBuffer = await fileStore.getFile(chatId, filePath);
+        if (!fileBuffer) {
+            throw new ToolError('analyzeImageVisually', 'FILE_NOT_FOUND', `File not found at path: ${filePath}`);
+        }
+        imageData = fileBuffer.toString('base64');
+    }
+  
+    if (!imageData) {
+        throw new ToolError('analyzeImageVisually', 'MISSING_DATA', 'Backend image analysis requires image data.');
     }
   
     try {
-      const imagePart = { inlineData: { mimeType: 'image/png', data: imageBase64 } };
+      const imagePart = { inlineData: { mimeType: 'image/png', data: imageData } };
       const textPart = { text: "Describe this image in meticulous detail. What does it show? Are there any visible flaws, errors, or unexpected elements?" };
       
       const response = await ai.models.generateContent({

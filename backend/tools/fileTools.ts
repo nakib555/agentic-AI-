@@ -5,10 +5,11 @@
 
 import { ToolError } from '../utils/apiError';
 import { fileStore } from '../services/fileStore';
+import { MimeType } from 'playwright';
 
-export const executeListFiles = async (args: { path: string }): Promise<string> => {
+export const executeListFiles = async (args: { path: string }, chatId: string): Promise<string> => {
     try {
-        const files = await fileStore.listFiles(args.path);
+        const files = await fileStore.listFiles(chatId, args.path);
         if (files.length === 0) {
             return `No files found in directory: ${args.path}`;
         }
@@ -19,22 +20,36 @@ export const executeListFiles = async (args: { path: string }): Promise<string> 
     }
 };
 
-export const executeDisplayFile = async (args: { path: string }): Promise<string> => {
+export const executeDisplayFile = async (args: { path: string }, chatId: string): Promise<string> => {
     try {
-        const blob = await fileStore.getFile(args.path);
-        if (!blob) {
+        const fileBuffer = await fileStore.getFile(chatId, args.path);
+        if (!fileBuffer) {
             throw new Error(`File not found at path: ${args.path}`);
         }
 
-        const mimeType = blob.type;
+        // A simple way to infer mime type for common formats
+        let mimeType = 'application/octet-stream';
+        const extension = args.path.split('.').pop()?.toLowerCase() || '';
+        if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(extension)) {
+            mimeType = `image/${extension}`;
+        } else if (['mp4', 'webm', 'ogg'].includes(extension)) {
+            mimeType = `video/${extension}`;
+        } else if (extension === 'pdf') {
+            mimeType = 'application/pdf';
+        } else if (['html', 'htm'].includes(extension)) {
+            mimeType = 'text/html';
+        }
+
         const filename = args.path.split('/').pop() || 'file';
-        const fileData = { fileKey: args.path, filename, mimeType };
+        const srcUrl = `/uploads/${chatId}/${filename}`;
+
+        const fileData = { filename, srcUrl, mimeType };
 
         if (mimeType.startsWith('image/')) {
-            return `[IMAGE_COMPONENT]${JSON.stringify({ fileKey: args.path, caption: `Image: ${filename}` })}[/IMAGE_COMPONENT]`;
+            return `[IMAGE_COMPONENT]${JSON.stringify({ srcUrl, caption: `Image: ${filename}`, editKey: args.path })}[/IMAGE_COMPONENT]`;
         }
         if (mimeType.startsWith('video/')) {
-            return `[VIDEO_COMPONENT]${JSON.stringify({ fileKey: args.path, prompt: `Video: ${filename}` })}[/VIDEO_COMPONENT]`;
+            return `[VIDEO_COMPONENT]${JSON.stringify({ srcUrl, prompt: `Video: ${filename}` })}[/VIDEO_COMPONENT]`;
         }
         
         return `[FILE_ATTACHMENT_COMPONENT]${JSON.stringify(fileData)}[/FILE_ATTACHMENT_COMPONENT]`;
@@ -45,13 +60,9 @@ export const executeDisplayFile = async (args: { path: string }): Promise<string
     }
 };
 
-export const executeDeleteFile = async (args: { path: string }): Promise<string> => {
+export const executeDeleteFile = async (args: { path: string }, chatId: string): Promise<string> => {
     try {
-        const fileExists = await fileStore.getFile(args.path);
-        if (!fileExists) {
-            throw new Error(`File not found at path: ${args.path}`);
-        }
-        await fileStore.deleteFile(args.path);
+        await fileStore.deleteFile(chatId, args.path);
         return `File deleted successfully: ${args.path}`;
     } catch (err) {
         const originalError = err instanceof Error ? err : new Error(String(err));
@@ -59,18 +70,13 @@ export const executeDeleteFile = async (args: { path: string }): Promise<string>
     }
 };
 
-export const executeWriteFile = async (args: { path: string, content: string }): Promise<string> => {
+export const executeWriteFile = async (args: { path: string, content: string }, chatId: string): Promise<string> => {
     const { path, content } = args;
-
-    if (!path.startsWith('/main/output/')) {
-        throw new ToolError('writeFile', 'INVALID_PATH', 'File path is not valid. Files can only be saved within the "/main/output/" directory.', undefined, 'Files can only be written to the "/main/output/" directory. Please correct the path.');
-    }
-
     try {
-        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-        await fileStore.saveFile(path, blob);
+        await fileStore.saveFile(chatId, path, content);
         return `File saved successfully: ${path}`;
     } catch (err) {
+        if (err instanceof ToolError) throw err;
         const originalError = err instanceof Error ? err : new Error(String(err));
         throw new ToolError('writeFile', 'WRITE_FAILED', originalError.message, originalError, "Could not write to the file. The path may be invalid or the storage might be full.");
     }
