@@ -90,16 +90,15 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // --- Unified Button Styling ---
-    const baseButtonClasses = "p-1.5 rounded-md transition-colors";
-    const activeClasses = "bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300 hover:bg-indigo-200/60 dark:hover:bg-indigo-500/30";
-    const inactiveClasses = "text-slate-700 hover:bg-indigo-100/60 hover:text-indigo-800 dark:text-slate-200 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-300";
+    const baseButtonClasses = "w-12 h-12 flex items-center justify-center rounded-full transition-colors backdrop-blur-md border shadow-sm";
+    const activeClasses = "bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/40";
+    const inactiveClasses = "bg-white/60 text-slate-700 border-slate-200/80 hover:bg-white/90 dark:bg-black/20 dark:text-slate-200 dark:border-white/10 dark:hover:bg-black/40";
     
     const toggleButtonClasses = `${baseButtonClasses} ${isSidebarActive ? activeClasses : inactiveClasses}`;
     const moreOptionsButtonClasses = `${baseButtonClasses} ${isMenuOpen ? activeClasses : inactiveClasses}`;
 
     return (
-        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center sticky top-0 z-10 bg-violet-50/80 dark:bg-[#121212]/80 backdrop-blur-md border-b border-violet-200/50 dark:border-white/10">
+        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 z-10 gap-4">
         
         {/* --- Left controls --- */}
         <div className="flex-shrink-0">
@@ -114,12 +113,18 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         </div>
 
         {/* --- Centered Title --- */}
-        <div className="flex-1 min-w-0 text-left md:text-center px-2 sm:px-4">
-            {chatTitle && (
-                <h1 className="text-sm font-semibold text-gray-800 dark:text-slate-200 truncate" title={chatTitle}>
-                    {chatTitle}
-                </h1>
-            )}
+        <div className="flex-1 min-w-0 text-center">
+            <AnimatePresence>
+                {chatTitle && (
+                    <motion.h1
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 truncate px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-sm" title={chatTitle}>
+                        {chatTitle}
+                    </motion.h1>
+                )}
+            </AnimatePresence>
         </div>
 
         {/* --- Right controls --- */}
