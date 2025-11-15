@@ -144,7 +144,6 @@ export const useChatHistory = () => {
       if (activeIdx < 0 || activeIdx >= messageToUpdate.responses.length) return chat;
       const updatedResponses = [...messageToUpdate.responses];
       const currentResponse = updatedResponses[activeIdx];
-      // FIX: Use `updateFn(currentResponse)` instead of `update`
       updatedResponses[activeIdx] = { ...currentResponse, ...updateFn(currentResponse) };
       messageToUpdate.responses = updatedResponses;
       updatedMessages[messageIndex] = messageToUpdate;
@@ -185,7 +184,7 @@ export const useChatHistory = () => {
     }));
   }, []);
 
-  const updateChatProperty = async (chatId: string, update: Partial<ChatSession>) => {
+  const updateChatProperty = useCallback(async (chatId: string, update: Partial<ChatSession>) => {
       try {
           await fetchApi(`/api/chats/${chatId}`, {
               method: 'PUT',
@@ -196,11 +195,11 @@ export const useChatHistory = () => {
       } catch (error) {
           console.error(`Failed to update chat ${chatId}:`, error);
       }
-  };
+  }, []);
   
-  const updateChatTitle = (chatId: string, title: string) => updateChatProperty(chatId, { title });
-  const updateChatModel = (chatId: string, model: string) => updateChatProperty(chatId, { model });
-  const updateChatSettings = (chatId: string, settings: Partial<Pick<ChatSession, 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>>) => updateChatProperty(chatId, settings);
+  const updateChatTitle = useCallback((chatId: string, title: string) => updateChatProperty(chatId, { title }), [updateChatProperty]);
+  const updateChatModel = useCallback((chatId: string, model: string) => updateChatProperty(chatId, { model }), [updateChatProperty]);
+  const updateChatSettings = useCallback((chatId: string, settings: Partial<Pick<ChatSession, 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>>) => updateChatProperty(chatId, settings), [updateChatProperty]);
 
   return { 
     chatHistory, currentChatId, isHistoryLoading,

@@ -47,14 +47,23 @@ export const createNewChat = async (req: Request, res: Response) => {
 export const updateChat = async (req: Request, res: Response) => {
     const { chatId } = req.params;
     const updates = req.body;
-    const chat = await dataStore.getChatSession(chatId);
-    if (chat) {
-        const updatedChat = { ...chat, ...updates };
-        await dataStore.saveChatSession(updatedChat);
-        res.status(200).json(updatedChat);
-    } else {
-        res.status(404).json({ error: 'Chat not found' });
+    let chat = await dataStore.getChatSession(chatId);
+    
+    // Upsert logic: If chat doesn't exist, create a new one to prevent errors.
+    if (!chat) {
+        console.warn(`[CRUD] updateChat called for non-existent chatId "${chatId}". Creating new session.`);
+        chat = {
+            id: chatId,
+            title: "New Chat",
+            messages: [],
+            model: validModels[1]?.id || validModels[0]?.id,
+            createdAt: Date.now(),
+        };
     }
+
+    const updatedChat = { ...chat, ...updates };
+    await dataStore.saveChatSession(updatedChat);
+    res.status(200).json(updatedChat);
 };
 
 export const deleteChat = async (req: Request, res: Response) => {
