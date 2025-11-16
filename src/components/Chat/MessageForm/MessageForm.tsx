@@ -78,10 +78,10 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     >
                         <TextType
                             text={logic.placeholder}
-                            loop={false}
+                            loop={true}
                             typingSpeed={65}
                             deletingSpeed={50}
-                            pauseDuration={1500}
+                            pauseDuration={2000}
                             showCursor={false}
                             cursorBlinkDuration={0.5}
                         />
