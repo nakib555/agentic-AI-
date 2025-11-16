@@ -10,11 +10,19 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middlewares
-app.use(cors({
+
+// Define CORS options
+const corsOptions = {
   origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
-}));
+};
+
+// Explicitly handle pre-flight requests for all routes.
+// This ensures the browser receives a valid CORS response before sending the actual API request.
+app.options('*', cors(corsOptions)); 
+app.use(cors(corsOptions));
+
 app.use(express.json({ limit: '50mb' }));
 
 const staticPath = path.join(process.cwd(), 'dist');
