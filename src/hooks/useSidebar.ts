@@ -3,26 +3,43 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useViewport } from './useViewport';
 
 export const useSidebar = () => {
+  const { isDesktop, isWideDesktop } = useViewport();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+  // This state will hold the user's explicit choice (true for collapsed, false for expanded).
+  // `null` means the user hasn't made a choice yet, so we use automatic behavior.
+  const [userCollapseChoice, setUserCollapseChoice] = useState<boolean | null>(() => {
     const savedState = localStorage.getItem('sidebarCollapsed');
-    return savedState ? JSON.parse(savedState) : false;
+    // If a value exists, parse it. Otherwise, it's null (auto).
+    return savedState ? JSON.parse(savedState) : null;
   });
+
+  // The final collapsed state depends on user choice or screen size
+  const isSidebarCollapsed = useMemo(() => {
+    if (!isDesktop) {
+        return false; // Sidebar is never "collapsed" on mobile, it's open or closed.
+    }
+    if (userCollapseChoice !== null) {
+        return userCollapseChoice; // Respect the user's manual setting.
+    }
+    // Automatic behavior: collapse on medium screens, expand on wide screens.
+    return !isWideDesktop;
+  }, [isDesktop, isWideDesktop, userCollapseChoice]);
+  
+  const handleSetSidebarCollapsed = (collapsed: boolean) => {
+    setUserCollapseChoice(collapsed); // Record user's choice
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(collapsed));
+  };
   
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const savedWidth = localStorage.getItem('sidebarWidth');
     return savedWidth ? Math.max(220, Math.min(480, Number(savedWidth))) : 272;
   });
-
-  const handleSetSidebarCollapsed = (collapsed: boolean) => {
-    setIsSidebarCollapsed(collapsed);
-    localStorage.setItem('sidebarCollapsed', JSON.stringify(collapsed));
-  };
 
   const handleSetSidebarWidth = useCallback((width: number) => {
     const newWidth = Math.max(220, Math.min(480, width));
