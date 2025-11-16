@@ -16,7 +16,7 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
 
     const shouldCollapse = isDesktop && isCollapsed;
 
-    const containerClasses = `relative p-1 rounded-full flex items-center bg-violet-900/50 dark:bg-black/40 border border-white/10 shadow-inner shadow-black/50`;
+    const containerClasses = `relative p-1 rounded-full flex items-center bg-violet-100/60 dark:bg-black/40 backdrop-blur-md border border-violet-200/50 dark:border-white/10 shadow-md`;
     const layoutClasses = shouldCollapse ? `flex-col gap-1 ${containerClasses}` : `justify-between ${containerClasses}`;
 
     return (
@@ -37,10 +37,7 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
                             {isActive && (
                                 <motion.div
                                     layoutId="theme-knob"
-                                    className="absolute inset-0 rounded-full border border-white/20 shadow-lg shadow-purple-500/50 flex items-center justify-center"
-                                    style={{
-                                        background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), rgba(120,80,220,0.5) 60%, transparent 100%)',
-                                    }}
+                                    className="absolute inset-0 bg-white/20 dark:bg-white/10 border border-white/30 shadow-inner rounded-full"
                                     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                                 />
                             )}
@@ -48,7 +45,7 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
                             <div className="relative z-10 flex items-center gap-2">
                                 <motion.div
                                     className="transition-colors"
-                                    animate={{ color: isActive ? '#fff' : '#d8b4fe' }}
+                                    animate={{ color: isActive ? (theme === 'dark' ? '#fff' : '#4c1d95') : '#6b7280' }}
                                     transition={{ duration: 0.3 }}
                                 >
                                     {btn.icon}
@@ -65,7 +62,7 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
                                 >
                                     <motion.span
                                         className="transition-colors"
-                                        animate={{ color: isActive ? '#fff' : '#d8b4fe' }}
+                                        animate={{ color: isActive ? (theme === 'dark' ? '#fff' : '#4c1d95') : '#6b7280' }}
                                         transition={{ duration: 0.3 }}
                                     >
                                         {btn.label}
