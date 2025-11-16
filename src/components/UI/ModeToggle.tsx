@@ -22,36 +22,43 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
   ];
 
   return (
-    <div className={`flex items-center gap-1 p-1 rounded-full bg-gray-200/70 dark:bg-black/20 ${disabled ? 'opacity-50' : ''}`}>
+    <div
+      className={`flex items-center gap-1 p-1 rounded-full bg-white/10 backdrop-blur-md dark:bg-black/20 border border-white/20 dark:border-white/10 shadow-lg ${disabled ? 'opacity-50' : ''}`}
+      style={{ transformStyle: 'preserve-3d', perspective: '800px' }}
+    >
       {modes.map(mode => {
         const isActive = isAgentMode === mode.isAgent;
         return (
-          <button
+          <motion.button
             key={mode.label}
             onClick={() => onToggle(mode.isAgent)}
             disabled={disabled}
             className="group relative px-3 py-1.5 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full"
             aria-pressed={isActive}
+            whileHover={{ scale: 1.1, y: -2 }}
+            whileTap={{ scale: 0.95, y: 1 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+            style={{ transform: 'translateZ(0)' }}
           >
             {/* The active state has a solid pill that animates */}
             {isActive && (
               <motion.div
                 layoutId="mode-pill"
-                className="absolute inset-0 bg-white dark:bg-slate-700 shadow-sm rounded-full"
+                className="absolute inset-0 bg-white/20 dark:bg-white/10 border border-white/30 shadow-inner rounded-full"
                 transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               />
             )}
 
             {/* A hidden background for the hover effect on the inactive button */}
             {!isActive && (
-                <div className="absolute inset-0 bg-white dark:bg-slate-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                <div className="absolute inset-0 bg-white/10 dark:bg-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
             )}
 
-            <span className={`relative z-10 flex items-center gap-2 ${isActive ? 'text-gray-900 dark:text-slate-50' : 'text-gray-500 dark:text-slate-400 group-hover:text-gray-900 dark:group-hover:text-slate-50 transition-colors duration-200'}`}>
+            <span className={`relative z-10 flex items-center gap-2 ${isActive ? 'text-white' : 'text-slate-200 group-hover:text-white transition-colors duration-200'}`}>
               {mode.icon}
               {mode.label}
             </span>
-          </button>
+          </motion.button>
         )
       })}
     </div>
