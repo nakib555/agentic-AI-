@@ -39,7 +39,7 @@ export const TextType = ({
   ...props
 }: TextTypeProps & React.HTMLAttributes<HTMLElement>) => {
   const [textIndex, setTextIndex] = useState(0);
-  const [displayedText, setDisplayedText] = useState(text.length > 0 ? text[0] : '');
+  const [displayedText, setDisplayedText] = useState(text[0] || '');
   const [isDeleting, setIsDeleting] = useState(true);
   const isMounted = useRef(true);
 
@@ -49,7 +49,6 @@ export const TextType = ({
   }, []);
 
   useEffect(() => {
-    // This effect handles the animation logic using timeouts.
     let timeoutId: number;
 
     const handleAnimation = () => {
@@ -62,7 +61,7 @@ export const TextType = ({
         } else {
           // Finished deleting
           setIsDeleting(false);
-          const nextIndex = textIndex + 1;
+          const nextIndex = (textIndex + 1);
           if (nextIndex < text.length) {
             setTextIndex(nextIndex);
           } else if (loop) {
@@ -76,14 +75,13 @@ export const TextType = ({
           const isLast = textIndex === text.length - 1;
           if (isLast && !loop) {
             if (onSequenceComplete) onSequenceComplete();
-            return; // Stop
+            return; // Stop animation
           }
           timeoutId = window.setTimeout(() => setIsDeleting(true), pauseDuration);
         }
       }
     };
     
-    // Start the animation with an initial delay if specified
     const delay = (isDeleting && textIndex === 0 && displayedText.length === text[0].length) ? initialDelay : 0;
     timeoutId = window.setTimeout(handleAnimation, delay);
 

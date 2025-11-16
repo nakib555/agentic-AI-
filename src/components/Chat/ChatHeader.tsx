@@ -146,9 +146,7 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
                             <TextType
                                 key={animationKey}
                                 text={['New Chat', animationKey]}
-                                typingSpeed={40}
-                                deletingSpeed={25}
-                                pauseDuration={300}
+                                loop={false}
                                 onSequenceComplete={() => setIsAnimatingTitle(false)}
                             />
                         ) : (
