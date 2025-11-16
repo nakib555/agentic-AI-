@@ -4,7 +4,8 @@
  */
 
 // FIX: Use a type-only import for express to avoid polluting the namespace and alias to prevent global type conflicts.
-import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+// The previous fix was insufficient. Using direct, non-aliased types from express.
+import { Request, Response } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -24,7 +25,8 @@ const pendingFrontendTools = new Map<string, (result: string | { error: string }
 const generateRequestId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
 // FIX: Use explicit aliased express types for response.
-async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
+// The previous fix was insufficient. Using direct, non-aliased types from express.
+async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
     const { chatId, model, history, settings } = payload;
     // FIX: Destructure properties from settings to make them available in the function scope.
     const { isAgentMode, memoryContent, systemPrompt } = settings;
@@ -165,7 +167,8 @@ PLACEHOLDER:`;
 }
 
 // FIX: Use explicit aliased express types for req and res.
-export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
+// The previous fix was insufficient. Using direct, non-aliased types from express.
+export const apiHandler = async (req: Request, res: Response) => {
     const frontendApiKey = req.headers['x-api-key'] as string;
     const apiKey = frontendApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
     

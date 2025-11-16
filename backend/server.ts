@@ -1,6 +1,7 @@
 import 'dotenv/config';
 // FIX: Import Request and Response types directly from express to resolve type conflicts, using aliases.
-import express, { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+// The previous fix was insufficient. Using direct, non-aliased types from express.
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';
@@ -31,7 +32,8 @@ const uploadsPath = path.join(process.cwd(), 'data', 'uploads');
 
 // API routes
 // FIX: Explicitly type req and res to use aliased express types.
-app.get('/api/health', (req: ExpressRequest, res: ExpressResponse) => res.json({ status: 'ok' }));
+// The previous fix was insufficient. Using direct, non-aliased types from express.
+app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
 
 // Streaming and complex tasks handler
 app.post('/api/handler', apiHandler);
@@ -53,7 +55,8 @@ app.use('/uploads', express.static(uploadsPath));
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
 // FIX: Explicitly type req and res to use aliased express types.
-app.get('*', (req: ExpressRequest, res: ExpressResponse) => {
+// The previous fix was insufficient. Using direct, non-aliased types from express.
+app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 

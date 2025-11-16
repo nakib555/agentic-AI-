@@ -57,7 +57,6 @@ export const TextType = ({
     // start the delete-and-type sequence.
     if (text.length > 1 && text[1] !== displayedText && !isDeleting) {
       setTextIndex(0); // This will point to the old text
-      setDisplayedText(text[0]); // Ensure we are deleting the old text
       setIsDeleting(true); // Start deleting
     } else if (text.length === 1 && text[0] !== displayedText) {
       // If we only have one item, just set it
