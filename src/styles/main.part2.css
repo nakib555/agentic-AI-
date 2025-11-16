@@ -54,12 +54,12 @@ html, body, #root {
 
 .chat-background {
   position: relative;
-  background-color: #f5f3ff; /* Light violet */
+  background-color: #F5F5F0;
   background-image: 
-    radial-gradient(at 15% 25%, hsla(250, 90%, 95%, 1) 0px, transparent 50%),
-    radial-gradient(at 85% 35%, hsla(280, 90%, 95%, 1) 0px, transparent 50%),
-    radial-gradient(at 20% 80%, hsla(260, 90%, 95%, 1) 0px, transparent 50%),
-    radial-gradient(at 80% 75%, hsla(290, 90%, 95%, 1) 0px, transparent 50%);
+    radial-gradient(at 15% 25%, hsla(60, 30%, 97%, 1) 0px, transparent 50%),
+    radial-gradient(at 85% 35%, hsla(50, 30%, 97%, 1) 0px, transparent 50%),
+    radial-gradient(at 20% 80%, hsla(70, 30%, 97%, 1) 0px, transparent 50%),
+    radial-gradient(at 80% 75%, hsla(40, 30%, 97%, 1) 0px, transparent 50%);
   background-size: 200% 200%;
   animation: bg-animate 60s ease infinite;
 }
