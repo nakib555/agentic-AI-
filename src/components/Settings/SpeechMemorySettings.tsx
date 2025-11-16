@@ -43,7 +43,7 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
         <div className="space-y-8">
             <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Speech & Memory</h3>
 
-            <SettingField label="Conversation Memory" description="Allow Gemini to remember key details across conversations for a more personalized experience.">
+            <SettingField label="Conversation Memory" description="Allow the AI to remember key details across chats for a more personalized experience.">
                 <div className="flex items-center justify-between py-2">
                     <span className="font-semibold text-sm text-gray-800 dark:text-slate-200">Enable Memory</span>
                     <ToggleSwitch checked={isMemoryEnabled} onChange={setIsMemoryEnabled} disabled={disabled} />
@@ -57,7 +57,7 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                 </button>
             </SettingField>
 
-            <SettingField label="Text-to-Speech Voice" description="Select the voice for the 'Listen' feature on Gemini's responses.">
+            <SettingField label="Text-to-Speech Voice" description="Select the voice for the 'Listen' feature on AI messages.">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {TTS_VOICES.map((voice) => (
                         <button
@@ -76,7 +76,7 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                 </div>
             </SettingField>
 
-            <SettingField label="Auto-Play Audio" description="Automatically play audio for new responses once generation is complete.">
+            <SettingField label="Auto-Play Audio" description="Automatically play the audio for new AI messages when they are complete.">
                 <div className="flex items-center justify-between py-2">
                     <span className="font-semibold text-sm text-gray-800 dark:text-slate-200">Enable Auto-Play</span>
                     <ToggleSwitch checked={isAutoPlayEnabled} onChange={setIsAutoPlayEnabled} disabled={disabled} />

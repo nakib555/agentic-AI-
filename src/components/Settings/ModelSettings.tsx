@@ -42,21 +42,19 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
     return (
         <div className="space-y-8">
             <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Model & Behavior</h3>
-            <SettingField label="Chat Model" description="Choose the primary model for new conversations. This setting won't affect existing chats.">
+            <SettingField label="Chat Model" description="Select the model for new chats. This can be changed for the current chat.">
                 <ModelSelector models={models} selectedModel={selectedModel} onModelChange={onModelChange} disabled={disabled} className="max-w-xs" />
             </SettingField>
 
-            <SettingField label="Image Generation Model" description="Select the model used by the Agent for image generation tasks.">
-                {/* FIX: Changed prop `onImageModelChange` to `onModelChange` to match the ModelSelector component's expected props. */}
+            <SettingField label="Image Generation Model" description="Select the model used by the `generateImage` tool.">
                 <ModelSelector models={validImageModels} selectedModel={imageModel} onModelChange={onImageModelChange} disabled={disabled} className="max-w-xs" />
             </SettingField>
 
-            <SettingField label="Video Generation Model" description="Select the model used by the Agent for video generation tasks.">
-                {/* FIX: Changed prop `onVideoModelChange` to `onModelChange` to match the ModelSelector component's expected props. */}
+            <SettingField label="Video Generation Model" description="Select the model used by the `generateVideo` tool.">
                 <ModelSelector models={validVideoModels} selectedModel={videoModel} onModelChange={onVideoModelChange} disabled={disabled} className="max-w-xs" />
             </SettingField>
             
-            <SettingField label="Temperature" description="Controls creativity. Lower values are more deterministic and factual, while higher values are more creative.">
+            <SettingField label="Temperature" description="Controls randomness. Lower values are more deterministic, higher values are more creative.">
                 <div className="flex items-center gap-3 max-w-xs">
                     <input
                         type="range"
@@ -83,7 +81,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                 </button>
             </SettingField>
 
-            <SettingField label="Max Output Tokens" description="Limit the number of tokens per response. Leave at 0 to use the model's default. Very low limits may result in incomplete responses.">
+            <SettingField label="Max Output Tokens" description="Set a limit on the number of tokens per model response. Leave at 0 to use the model's default.">
                  <div className="flex items-center gap-4 max-w-xs">
                     <input
                         type="number"

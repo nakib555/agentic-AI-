@@ -46,23 +46,23 @@ export const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProp
             <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Custom Instructions</h3>
             
             <p className="text-sm text-gray-500 dark:text-slate-400">
-                Provide details for Gemini to use in its responses. This will apply to all new chats.
+                Provide details for the AI to use in its responses. This will apply to all new chats.
             </p>
 
             <InstructionField
-                label="What would you like Gemini to know about you to provide better responses?"
+                label="What would you like the AI to know about you to provide better responses?"
                 value={aboutUser}
                 onChange={setAboutUser}
                 disabled={disabled}
-                placeholder={"e.g., I'm a software architect in San Francisco. My work focuses on cloud-native applications in Go. I value concise, technical answers with code examples and diagrams."}
+                placeholder={"e.g., I'm a software engineer working on a project in London. I prefer code examples in TypeScript. My goal is to learn about building scalable web applications."}
             />
 
             <InstructionField
-                label="How would you like Gemini to respond?"
+                label="How would you like the AI to respond?"
                 value={aboutResponse}
                 onChange={setAboutResponse}
                 disabled={disabled}
-                placeholder={"e.g., Respond as a senior principal engineer. Be formal. Use markdown for structure. Always justify your recommendations with trade-offs. Prefer a direct and professional tone."}
+                placeholder={"e.g., Act as a senior software architect. Be formal and provide detailed, technical explanations. Always include code examples when relevant. Structure responses with clear headings."}
             />
         </div>
     );

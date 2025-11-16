@@ -160,7 +160,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ srcUrl, prompt }) =>
                 setIsVolumeSliderVisible(false);
             }}
         >
-            <div className="aspect-video w-full bg-slate-100 dark:bg-slate-900/50 flex items-center justify-center">
+            <div className="aspect-video w-full bg-slate-900/50 flex items-center justify-center">
                 {srcUrl ? (
                     <video
                         ref={videoRef}
@@ -180,7 +180,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ srcUrl, prompt }) =>
                         aria-label={prompt || "Generated video"}
                     />
                 ) : (
-                    <div className="text-sm text-slate-500 dark:text-slate-400 p-4 text-center">
+                    <div className="text-sm text-slate-400 p-4 text-center">
                         <span>No video source provided.</span>
                     </div>
                 )}
@@ -204,7 +204,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ srcUrl, prompt }) =>
                                 max="100"
                                 value={progress}
                                 onChange={handleSeek}
-                                className="w-full h-1.5 bg-gray-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer range-sm"
+                                className="w-full h-1.5 bg-slate-600 rounded-lg appearance-none cursor-pointer range-sm"
                                 style={progressStyle}
                             />
                         </div>
@@ -236,7 +236,7 @@ export const VideoDisplay: React.FC<VideoDisplayProps> = ({ srcUrl, prompt }) =>
                                                 step="0.05"
                                                 value={isMuted ? 0 : volume}
                                                 onChange={handleVolumeChange}
-                                                className="w-20 h-1.5 bg-gray-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer range-sm"
+                                                className="w-20 h-1.5 bg-slate-600 rounded-lg appearance-none cursor-pointer range-sm"
                                                 style={volumeStyle}
                                             />
                                         )}

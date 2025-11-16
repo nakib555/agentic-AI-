@@ -14,7 +14,6 @@ import { useInputEnhancements } from './useInputEnhancements';
 export const useMessageForm = (
   onSubmit: (message: string, files?: File[], options?: { isThinkingModeEnabled?: boolean }) => void,
   isLoading: boolean,
-  isAgentMode: boolean,
   ref: React.ForwardedRef<MessageFormHandle>
 ) => {
   const [inputValue, setInputValue] = useState('');
@@ -119,20 +118,11 @@ export const useMessageForm = (
     }
   };
 
-  const placeholder = enhancements.isRecording
-    ? 'Listening...'
-    : isLoading
-    ? 'Gemini is thinking...'
-    : isAgentMode
-    ? 'Describe your mission, or drop a file...'
-    : 'Message Gemini, or drop a file...';
-
   return {
     inputValue, setInputValue,
     isExpanded, isUploadMenuOpen, setIsUploadMenuOpen,
     inputRef, attachButtonRef, uploadMenuRef,
     handleSubmit, handlePaste, handleKeyDown,
-    placeholder,
     ...fileHandling,
     ...enhancements,
   };
