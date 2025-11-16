@@ -134,10 +134,8 @@ export const ChatArea = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
-                whileHover={{ scale: 1.05, y: -3 }}
-                whileTap={{ scale: 0.95 }}
                 onClick={() => messageListRef.current?.scrollToBottom()}
-                className="pointer-events-auto bg-white/10 dark:bg-black/20 backdrop-blur-md rounded-full shadow-lg border border-white/20 dark:border-white/10 px-4 py-2 flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-slate-200 hover:bg-white/20 dark:hover:bg-black/30"
+                className="pointer-events-auto bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-white/10 px-4 py-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-200 hover:bg-gray-100/90 dark:hover:bg-black/80"
                 aria-label="Scroll to latest message"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">

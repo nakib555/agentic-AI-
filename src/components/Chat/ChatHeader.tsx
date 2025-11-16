@@ -90,30 +90,26 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const baseButtonClasses = "w-12 h-12 flex items-center justify-center rounded-full transition-colors backdrop-blur-md border shadow-lg";
-    const activeClasses = "bg-indigo-500/20 text-indigo-300 border-indigo-500/40";
-    const inactiveClasses = "bg-white/10 text-slate-800 border-white/20 hover:bg-white/20 dark:bg-black/20 dark:text-slate-200 dark:border-white/10 dark:hover:bg-black/40";
+    const baseButtonClasses = "w-12 h-12 flex items-center justify-center rounded-full transition-colors backdrop-blur-md border shadow-sm";
+    const activeClasses = "bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/40";
+    const inactiveClasses = "bg-white/60 text-slate-700 border-slate-200/80 hover:bg-white/90 dark:bg-black/20 dark:text-slate-200 dark:border-white/10 dark:hover:bg-black/40";
     
     const toggleButtonClasses = `${baseButtonClasses} ${isSidebarActive ? activeClasses : inactiveClasses}`;
     const moreOptionsButtonClasses = `${baseButtonClasses} ${isMenuOpen ? activeClasses : inactiveClasses}`;
 
     return (
-        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 z-10 gap-4" style={{ perspective: '800px' }}>
+        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 z-10 gap-4">
         
         {/* --- Left controls --- */}
         <div className="flex-shrink-0">
-            <motion.button
+            <button
                 onClick={handleToggleSidebar}
                 className={toggleButtonClasses}
                 aria-label={getAriaAndTitle()}
                 title={getAriaAndTitle()}
-                whileHover={{ scale: 1.1, y: -2, z: 10 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                style={{ transformStyle: 'preserve-3d' }}
             >
                 <ToggleIcon />
-            </motion.button>
+            </button>
         </div>
 
         {/* --- Centered Title --- */}
@@ -124,7 +120,7 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 truncate px-4 py-2 rounded-full bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-lg" title={chatTitle}>
+                        className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 truncate px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-sm" title={chatTitle}>
                         {chatTitle}
                     </motion.h1>
                 )}
@@ -134,7 +130,7 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         {/* --- Right controls --- */}
         <div className="flex-shrink-0">
             <div className="relative">
-                <motion.button
+                <button
                     ref={buttonRef}
                     onClick={() => setIsMenuOpen(prev => !prev)}
                     className={moreOptionsButtonClasses}
@@ -142,13 +138,9 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
                     title="More chat options"
                     aria-haspopup="true"
                     aria-expanded={isMenuOpen}
-                    whileHover={{ scale: 1.1, y: -2, z: 10 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                    style={{ transformStyle: 'preserve-3d' }}
                 >
                     <MoreOptionsIcon />
-                </motion.button>
+                </button>
                 <AnimatePresence>
                     {isMenuOpen && (
                         <motion.div

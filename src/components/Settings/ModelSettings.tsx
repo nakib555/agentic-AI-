@@ -6,7 +6,6 @@
 import React from 'react';
 import { Model, validImageModels, validVideoModels } from '../../services/modelService';
 import { ModelSelector } from '../UI/ModelSelector';
-import { motion } from 'framer-motion';
 
 type ModelSettingsProps = {
   models: Model[];
@@ -41,7 +40,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
     disabled
 }) => {
     return (
-        <div className="space-y-8" style={{ perspective: '800px' }}>
+        <div className="space-y-8">
             <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Model & Behavior</h3>
             <SettingField label="Chat Model" description="Select the model for new chats. This can be changed for the current chat.">
                 <ModelSelector models={models} selectedModel={selectedModel} onModelChange={onModelChange} disabled={disabled} className="max-w-xs" />
@@ -73,15 +72,13 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     <span>Deterministic</span>
                     <span>Creative</span>
                 </div>
-                <motion.button
+                <button
                     onClick={() => setTemperature(defaultTemperature)}
                     disabled={disabled || temperature === defaultTemperature}
-                    className="mt-3 px-3 py-1 text-xs font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white/10 dark:bg-black/20 text-gray-800 dark:text-slate-200 border border-white/20 dark:border-white/10 shadow-md hover:bg-white/20 dark:hover:bg-black/30"
-                    whileHover={{ scale: 1.05, y: -1, z: 5 }}
-                    whileTap={{ scale: 0.95 }}
+                    className="mt-3 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Reset to default ({defaultTemperature.toFixed(1)})
-                </motion.button>
+                </button>
             </SettingField>
 
             <SettingField label="Max Output Tokens" description="Set a limit on the number of tokens per model response. Leave at 0 to use the model's default.">
@@ -95,15 +92,13 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                         className="w-full p-2 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                         disabled={disabled}
                     />
-                    <motion.button
+                    <button
                         onClick={() => setMaxTokens(defaultMaxTokens)}
                         disabled={disabled || maxTokens === defaultMaxTokens}
-                        className="px-3 py-1 text-xs font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white/10 dark:bg-black/20 text-gray-800 dark:text-slate-200 border border-white/20 dark:border-white/10 shadow-md hover:bg-white/20 dark:hover:bg-black/30"
-                        whileHover={{ scale: 1.05, y: -1, z: 5 }}
-                        whileTap={{ scale: 0.95 }}
+                        className="px-3 py-1 text-xs font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Reset
-                    </motion.button>
+                    </button>
                 </div>
             </SettingField>
         </div>

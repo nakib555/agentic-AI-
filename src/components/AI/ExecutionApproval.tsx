@@ -91,8 +91,7 @@ ${editedPlan}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="w-full flex flex-col gap-4 p-4 rounded-xl bg-white/50 dark:bg-black/20 backdrop-blur-md border border-white/20 dark:border-white/10"
-            style={{ perspective: '800px' }}
+            className="w-full flex flex-col gap-4 p-4 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10"
         >
             <div className="flex items-center gap-3">
                 <PlannerIcon />
@@ -107,18 +106,13 @@ ${editedPlan}
                     Review the proposed plan. You can edit the steps before approving.
                 </p>
                 {!isEditing && (
-                    <motion.button 
-                        onClick={() => setIsEditing(true)} 
-                        className="px-3 py-1 text-sm font-semibold text-indigo-700 dark:text-indigo-300 rounded-md bg-indigo-500/10 hover:bg-indigo-500/20"
-                        whileHover={{ scale: 1.05, y: -1 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
+                    <button onClick={() => setIsEditing(true)} className="px-3 py-1 text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 rounded-md hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30">
                         Edit Plan
-                    </motion.button>
+                    </button>
                 )}
             </div>
 
-            <div className="space-y-4 p-4 bg-black/5 dark:bg-black/20 rounded-lg border border-white/10 dark:border-white/10">
+            <div className="space-y-4 p-4 bg-gray-50 dark:bg-black/20 rounded-lg border border-gray-200 dark:border-white/10">
                 <PlanSection icon={<GoalAnalysisIcon />} title="Mission Objective" content={originalObjective} />
                 <PlanSection icon={<ToolsIcon />} title="Required Specialists" content={originalSpecialists} />
 
@@ -131,34 +125,22 @@ ${editedPlan}
 
             <div className="flex items-center justify-end gap-3 pt-2">
                 {isEditing && (
-                    <motion.button 
-                        onClick={handleReset} 
-                        className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors bg-white/10 dark:bg-black/20 text-gray-800 dark:text-slate-200 border border-white/20 dark:border-white/10 shadow-md hover:bg-white/20 dark:hover:bg-black/30"
-                        whileHover={{ scale: 1.05, y: -2, z: 10 }}
-                        whileTap={{ scale: 0.95, y: 1, z: -5 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                    >
+                    <button onClick={handleReset} className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200/50 dark:hover:bg-black/20 rounded-lg transition-colors">
                         Reset
-                    </motion.button>
+                    </button>
                 )}
-                <motion.button
+                <button
                     onClick={onDeny}
-                    className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors bg-white/10 dark:bg-black/20 text-gray-800 dark:text-slate-200 border border-white/20 dark:border-white/10 shadow-md hover:bg-white/20 dark:hover:bg-black/30"
-                    whileHover={{ scale: 1.05, y: -2, z: 10 }}
-                    whileTap={{ scale: 0.95, y: 1, z: -5 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                    className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
                 >
                     Cancel
-                </motion.button>
-                <motion.button
+                </button>
+                <button
                     onClick={handleApprove}
-                    className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow-lg"
-                    whileHover={{ scale: 1.05, y: -2, z: 10, filter: 'brightness(1.1)' }}
-                    whileTap={{ scale: 0.95, y: 1, z: -5 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                    className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
                 >
                     Approve & Continue
-                </motion.button>
+                </button>
             </div>
         </motion.div>
     );
