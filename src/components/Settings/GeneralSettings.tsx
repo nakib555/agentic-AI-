@@ -8,6 +8,7 @@ import React, { useState, useEffect } from 'react';
 type GeneralSettingsProps = {
   onClearAllChats: () => void;
   onRunTests: () => void;
+  onDownloadLogs: () => void;
   apiKey: string;
   onSaveApiKey: (key: string) => void;
 };
@@ -20,7 +21,7 @@ const SettingField: React.FC<{ label: string; description: string; children: Rea
     </div>
 );
 
-export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChats, onRunTests, apiKey, onSaveApiKey }) => {
+export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChats, onRunTests, onDownloadLogs, apiKey, onSaveApiKey }) => {
   const [localApiKey, setLocalApiKey] = useState(apiKey);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
 
@@ -84,6 +85,17 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
           className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
         >
           Run Diagnostic Tests
+        </button>
+      </SettingField>
+      <SettingField 
+        label="Download Console Log" 
+        description="Download a copy of the browser's console log for this session. This is useful for debugging."
+      >
+        <button
+          onClick={onDownloadLogs}
+          className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+        >
+          Download Log File
         </button>
       </SettingField>
     </div>

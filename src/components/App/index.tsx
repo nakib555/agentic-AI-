@@ -67,7 +67,7 @@ export const App = () => {
            <ChatArea 
               messageListRef={logic.messageListRef}
               messages={logic.messages}
-              isLoading={logic.isLoading || logic.modelsLoading || logic.backendStatus !== 'online'}
+              isLoading={logic.isLoading || logic.modelsLoading || logic.settingsLoading || logic.backendStatus !== 'online'}
               sendMessage={logic.sendMessage}
               modelsLoading={logic.modelsLoading}
               onCancel={logic.cancelGeneration}
@@ -80,7 +80,6 @@ export const App = () => {
               onRegenerate={logic.regenerateResponse}
               onSetActiveResponseIndex={logic.setActiveResponseIndex}
               isAgentMode={logic.isAgentMode}
-              // FIX: Use the correct prop name as returned by useAppLogic
               setIsAgentMode={logic.setIsAgentMode}
               backendStatus={logic.backendStatus}
               backendError={logic.backendError}
@@ -100,7 +99,6 @@ export const App = () => {
         onRegenerate={logic.regenerateResponse}
       />
 
-      {/* FIX: Use correct prop names for setters as returned by useAppLogic */}
       <AppModals
         isSettingsOpen={logic.isSettingsOpen}
         setIsSettingsOpen={logic.setIsSettingsOpen}
@@ -110,6 +108,7 @@ export const App = () => {
         setIsImportModalOpen={logic.setIsImportModalOpen}
         handleFileUploadForImport={logic.handleFileUploadForImport}
         onRunTests={() => logic.setIsTestMode(true)}
+        onDownloadLogs={logic.handleDownloadLogs}
         availableModels={logic.availableModels}
         activeModel={logic.activeModel}
         handleModelChange={logic.handleModelChange}
@@ -126,9 +125,9 @@ export const App = () => {
         maxTokens={logic.maxTokens}
         setMaxTokens={logic.setMaxTokens}
         imageModel={logic.imageModel}
-        onImageModelChange={logic.setImageModel}
+        onImageModelChange={logic.onImageModelChange}
         videoModel={logic.videoModel}
-        onVideoModelChange={logic.setVideoModel}
+        onVideoModelChange={logic.onVideoModelChange}
         defaultTemperature={DEFAULT_TEMPERATURE}
         defaultMaxTokens={DEFAULT_MAX_TOKENS}
         isMemoryEnabled={logic.isMemoryEnabled}

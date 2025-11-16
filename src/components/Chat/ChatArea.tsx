@@ -173,7 +173,7 @@ export const ChatArea = ({
           <MessageForm 
             ref={messageFormRef}
             onSubmit={sendMessage} 
-            isLoading={isLoading || modelsLoading} 
+            isLoading={isLoading} 
             onCancel={onCancel}
             isAgentMode={isAgentMode}
             setIsAgentMode={setIsAgentMode}

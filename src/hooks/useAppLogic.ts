@@ -34,6 +34,7 @@ import {
 import { fetchFromApi } from '../utils/api';
 import { testSuite, type TestResult, type TestProgress } from '../components/Testing/testSuite';
 import { getSettings, updateSettings } from '../services/settingsService';
+import { logCollector } from '../utils/logCollector';
 
 
 export const useAppLogic = () => {
@@ -53,7 +54,6 @@ export const useAppLogic = () => {
   const [thinkingMessageId, setThinkingMessageId] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [backendError, setBackendError] = useState<string | null>(null);
-  // FIX: Add state for test mode
   const [isTestMode, setIsTestMode] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(true);
 
@@ -63,7 +63,6 @@ export const useAppLogic = () => {
   const [activeModel, setActiveModel] = useState(validModels[1]?.id || validModels[0]?.id);
 
   // --- Settings State ---
-  // FIX: Add state for API key
   const [apiKey, setApiKey] = useState('');
   const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
@@ -80,6 +79,11 @@ export const useAppLogic = () => {
   const memory = useMemory(isMemoryEnabled);
 
   // --- Settings Management ---
+
+  // --- Start Log Collector on Mount ---
+  useEffect(() => {
+    logCollector.start();
+  }, []);
 
   // Fetch all settings from backend on initial load
   useEffect(() => {
@@ -223,6 +227,7 @@ export const useAppLogic = () => {
     if (currentChat && !currentChat.isLoading && currentChat.messages && currentChat.messages.length > 0) {
       memory.updateMemory(currentChat);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat.isLoading, chat.currentChatId, chat.chatHistory, memory.updateMemory]);
 
   // --- Handlers ---
@@ -280,6 +285,19 @@ export const useAppLogic = () => {
     }
   };
 
+  const handleDownloadLogs = useCallback(() => {
+    const logContent = logCollector.formatLogs();
+    const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    link.download = `agentic-ai-console-log-${timestamp}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, []);
 
   const runDiagnosticTests = useCallback(async (onProgress: (progress: TestProgress) => void) => {
     const results: TestResult[] = [];
@@ -338,7 +356,7 @@ export const useAppLogic = () => {
   }, [chat, startNewChat]);
   
   // --- Return all state and handlers ---
-  // FIX: Alias setters to match component props and add missing properties.
+  // FIX: Fix props not being passed down correctly.
   return {
     appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, ...memory,
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
@@ -357,9 +375,9 @@ export const useAppLogic = () => {
     maxTokens,
     setMaxTokens: handleSetMaxTokens,
     imageModel,
-    setImageModel: handleSetImageModel,
+    onImageModelChange: handleSetImageModel,
     videoModel,
-    setVideoModel: handleSetVideoModel,
+    onVideoModelChange: handleSetVideoModel,
     ttsVoice,
     setTtsVoice: handleSetTtsVoice,
     isAutoPlayEnabled,
@@ -372,5 +390,6 @@ export const useAppLogic = () => {
     handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,
     handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests,
     handleFileUploadForImport,
+    handleDownloadLogs,
   };
 };

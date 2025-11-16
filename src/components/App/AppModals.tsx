@@ -23,6 +23,7 @@ type AppModalsProps = {
   setIsImportModalOpen: (isOpen: boolean) => void;
   handleFileUploadForImport: (file: File) => void;
   onRunTests: () => void;
+  onDownloadLogs: () => void;
   availableModels: Model[];
   activeModel: string;
   handleModelChange: (modelId: string) => void;
@@ -74,7 +75,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     setIsMemoryEnabled, memoryContent, clearMemory, isConfirmationOpen,
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
     setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, onManageMemory,
-    apiKey, onSaveApiKey, isImportModalOpen, setIsImportModalOpen, handleFileUploadForImport
+    apiKey, onSaveApiKey, isImportModalOpen, setIsImportModalOpen, handleFileUploadForImport,
+    onDownloadLogs,
   } = props;
 
   return (
@@ -88,6 +90,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         disabled={modelsLoading}
         onClearAllChats={clearAllChats}
         onRunTests={onRunTests}
+        onDownloadLogs={onDownloadLogs}
         apiKey={apiKey}
         onSaveApiKey={onSaveApiKey}
         aboutUser={aboutUser}
