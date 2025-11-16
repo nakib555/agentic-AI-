@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.28.0",
-    "flow-token": "latest",
+    "flowtoken": "latest",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

@@ -23,7 +23,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
 
   return (
     <div
-      className={`flex items-center gap-1 p-1 rounded-full bg-white/10 backdrop-blur-md dark:bg-black/20 border border-white/20 dark:border-white/10 shadow-lg ${disabled ? 'opacity-50' : ''}`}
+      className={`flex items-center gap-1 p-1 rounded-full bg-gray-200/50 dark:bg-black/20 backdrop-blur-md border border-gray-300/50 dark:border-white/10 shadow-lg ${disabled ? 'opacity-50' : ''}`}
       style={{ transformStyle: 'preserve-3d', perspective: '800px' }}
     >
       {modes.map(mode => {
@@ -44,17 +44,17 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
             {isActive && (
               <motion.div
                 layoutId="mode-pill"
-                className="absolute inset-0 bg-white/20 dark:bg-white/10 border border-white/30 shadow-inner rounded-full"
+                className="absolute inset-0 bg-indigo-600 dark:bg-indigo-500 shadow-inner rounded-full"
                 transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               />
             )}
 
             {/* A hidden background for the hover effect on the inactive button */}
             {!isActive && (
-                <div className="absolute inset-0 bg-white/10 dark:bg-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                <div className="absolute inset-0 bg-gray-300/50 dark:bg-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
             )}
 
-            <span className={`relative z-10 flex items-center gap-2 ${isActive ? 'text-white' : 'text-slate-200 group-hover:text-white transition-colors duration-200'}`}>
+            <span className={`relative z-10 flex items-center gap-2 ${isActive ? 'text-white' : 'text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors duration-200'}`}>
               {mode.icon}
               {mode.label}
             </span>
