@@ -30,10 +30,10 @@ export const useChatHistory = () => {
     const loadHistory = async () => {
         try {
             const history = await fetchApi('/api/history');
-            setChatHistory(history);
+            setChatHistory(history || []);
             
             const savedChatId = localStorage.getItem('currentChatId');
-            if (savedChatId && history.some((c: ChatSession) => c.id === savedChatId)) {
+            if (savedChatId && (history || []).some((c: ChatSession) => c.id === savedChatId)) {
                 setCurrentChatId(savedChatId);
             } else {
                 setCurrentChatId(null);
