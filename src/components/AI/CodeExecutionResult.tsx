@@ -17,11 +17,13 @@ export const CodeExecutionResult: React.FC<CodeExecutionResultProps> = ({ output
   const [activeTab, setActiveTab] = useState<'visual' | 'text'>('visual');
 
   return (
-    <div className="my-6 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 shadow-lg bg-white dark:bg-[#1e1e1e]">
+    <div className="my-6 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 shadow-lg bg-white/5 dark:bg-[#1e1e1e]">
       {/* Tab Navigation */}
-      <div className="flex items-center border-b border-gray-200 dark:border-slate-700 px-2 bg-gray-50 dark:bg-black/20">
-        <TabButton label="Visual Output" isActive={activeTab === 'visual'} onClick={() => setActiveTab('visual')} />
-        <TabButton label="Text Logs" isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
+      <div className="p-2 bg-gray-50 dark:bg-black/20">
+        <div className="relative flex items-center p-1 rounded-full bg-gray-200/50 dark:bg-black/20">
+            <TabButton label="Visual Output" isActive={activeTab === 'visual'} onClick={() => setActiveTab('visual')} />
+            <TabButton label="Text Logs" isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
+        </div>
       </div>
 
       {/* Tab Content */}

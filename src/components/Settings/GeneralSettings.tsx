@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 type GeneralSettingsProps = {
   onClearAllChats: () => void;
@@ -40,7 +41,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
     }
   };
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" style={{ perspective: '800px' }}>
       <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">General</h3>
 
       <SettingField 
@@ -55,12 +56,14 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
             placeholder="Enter your API key"
             className="w-full p-2 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
-          <button
+          <motion.button
             onClick={handleSave}
-            className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors w-24"
+            className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors w-24 shadow-lg"
+            whileHover={{ scale: 1.05, y: -1, z: 5 }}
+            whileTap={{ scale: 0.95 }}
           >
             {saveStatus === 'saved' ? 'Saved!' : 'Save'}
-          </button>
+          </motion.button>
         </div>
       </SettingField>
       
@@ -68,23 +71,27 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
         label="Clear all chats" 
         description="This will permanently delete all of your chat history."
       >
-        <button
+        <motion.button
           onClick={handleClear}
-          className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+          className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-500 rounded-lg transition-colors shadow-lg"
+          whileHover={{ scale: 1.05, y: -1, z: 5 }}
+          whileTap={{ scale: 0.95 }}
         >
           Clear all chats
-        </button>
+        </motion.button>
       </SettingField>
       <SettingField 
         label="Run Diagnostic Tests" 
         description="Run a suite of automated tests to verify AI functionality, component rendering, and end-to-end response generation. This may take a few minutes."
       >
-        <button
+        <motion.button
           onClick={onRunTests}
-          className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+          className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors shadow-lg"
+          whileHover={{ scale: 1.05, y: -1, z: 5 }}
+          whileTap={{ scale: 0.95 }}
         >
           Run Diagnostic Tests
-        </button>
+        </motion.button>
       </SettingField>
     </div>
   );

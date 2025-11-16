@@ -16,45 +16,72 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
 
     const shouldCollapse = isDesktop && isCollapsed;
 
+    const containerClasses = `relative p-1 rounded-full flex items-center bg-violet-900/50 dark:bg-black/40 border border-white/10 shadow-inner shadow-black/50`;
+    const layoutClasses = shouldCollapse ? `flex-col gap-1 ${containerClasses}` : `justify-between ${containerClasses}`;
+
     return (
-        <div className={`relative p-1 rounded-lg bg-violet-100/60 dark:bg-violet-900/30 flex transition-all ${shouldCollapse ? 'flex-col gap-1' : 'justify-between'}`}>
-            {buttons.map(btn => (
-                <div key={btn.value} className="relative group flex-1">
-                    <button
-                        onClick={() => setTheme(btn.value as Theme)}
-                        className={`relative w-full flex items-center gap-2 p-1.5 rounded-md text-sm transition-colors z-10 ${
-                            theme === btn.value
-                                ? 'text-slate-800 dark:text-slate-100'
-                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'
-                        } ${shouldCollapse ? 'justify-center' : ''}`}
-                        aria-label={`Set theme to ${btn.label}`}
-                        title={btn.label}
-                        aria-pressed={theme === btn.value}
+        <div className={layoutClasses} style={{ transformStyle: 'preserve-3d', perspective: '800px' }}>
+            {buttons.map(btn => {
+                const isActive = theme === btn.value;
+                return (
+                    <motion.div
+                        key={btn.value}
+                        className="relative group flex-1"
+                        whileHover={{ z: 5 }}
                     >
-                        {theme === btn.value && (
-                            <motion.div
-                                layoutId="theme-toggle-pill"
-                                className="absolute inset-0 bg-white dark:bg-black/20 rounded-md shadow-sm"
-                                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                            />
-                        )}
-                        <span className="relative z-20">{btn.icon}</span>
-                        <motion.span
-                            className="relative z-20 overflow-hidden"
-                            initial={false}
-                            animate={{ width: shouldCollapse ? 0 : 'auto', opacity: shouldCollapse ? 0 : 1, x: shouldCollapse ? -5 : 0 }}
-                            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                        <button
+                            onClick={() => setTheme(btn.value as Theme)}
+                            className={`relative w-full flex items-center justify-center rounded-full text-sm transition-colors z-10 focus:outline-none focus-visible:ring-2 ring-purple-400 ${shouldCollapse ? 'h-9 w-9' : 'px-3 py-1.5'}`}
+                            style={{ transform: 'translateZ(0)' }}
                         >
-                            {btn.label}
-                        </motion.span>
-                    </button>
-                    {shouldCollapse && (
-                        <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-white dark:bg-[#2D2D2D] text-slate-800 dark:text-slate-100 text-sm font-semibold rounded-md shadow-lg border border-gray-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                            {btn.label}
-                        </div>
-                    )}
-                </div>
-            ))}
+                            {isActive && (
+                                <motion.div
+                                    layoutId="theme-knob"
+                                    className="absolute inset-0 rounded-full border border-white/20 shadow-lg shadow-purple-500/50 flex items-center justify-center"
+                                    style={{
+                                        background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), rgba(120,80,220,0.5) 60%, transparent 100%)',
+                                    }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                                />
+                            )}
+                            
+                            <div className="relative z-10 flex items-center gap-2">
+                                <motion.div
+                                    className="transition-colors"
+                                    animate={{ color: isActive ? '#fff' : '#d8b4fe' }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    {btn.icon}
+                                </motion.div>
+                                <motion.span
+                                    className="overflow-hidden font-semibold"
+                                    initial={false}
+                                    animate={{ 
+                                        width: shouldCollapse ? 0 : 'auto', 
+                                        opacity: shouldCollapse ? 0 : 1,
+                                        marginLeft: shouldCollapse ? 0 : '0.1rem'
+                                    }}
+                                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                >
+                                    <motion.span
+                                        className="transition-colors"
+                                        animate={{ color: isActive ? '#fff' : '#d8b4fe' }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        {btn.label}
+                                    </motion.span>
+                                </motion.span>
+                            </div>
+                        </button>
+
+                        {shouldCollapse && (
+                            <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-white dark:bg-[#2D2D2D] text-slate-800 dark:text-slate-100 text-sm font-semibold rounded-md shadow-lg border border-gray-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                {btn.label}
+                            </div>
+                        )}
+                    </motion.div>
+                );
+            })}
         </div>
     );
 };

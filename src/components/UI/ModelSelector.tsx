@@ -36,13 +36,18 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({ models, selectedMo
   };
 
   return (
-    <div className={`relative ${className}`} ref={selectorRef}>
-      <button
+    <div className={`relative ${className}`} ref={selectorRef} style={{ perspective: '800px' }}>
+      <motion.button
+        type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 w-full border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 backdrop-blur-md flex items-center justify-between gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+        className="px-3 py-2 w-full border border-white/20 dark:border-white/10 rounded-lg shadow-lg bg-white/10 dark:bg-black/20 backdrop-blur-md flex items-center justify-between gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        whileHover={{ scale: 1.03, y: -1, z: 5 }}
+        whileTap={{ scale: 0.97 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+        style={{ transformStyle: 'preserve-3d' }}
       >
         <div className="flex items-center gap-2">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-indigo-600 dark:text-indigo-400">
@@ -53,7 +58,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({ models, selectedMo
         <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-400 dark:text-slate-500"><path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
         </motion.div>
-      </button>
+      </motion.button>
 
       <AnimatePresence>
         {isOpen && (
