@@ -124,6 +124,24 @@ async function handleSimpleTask(ai: GoogleGenAI, task: string, payload: any): Pr
             result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
             return { status: 200, body: { suggestions: JSON.parse(getText(result) || '[]') } };
         }
+        case 'placeholder': {
+            const { conversationContext, isAgentMode } = payload;
+            const persona = isAgentMode
+                ? "You are in 'Agent Mode'. Suggest a creative or complex task the user could perform, like generating an image, analyzing data, or writing code."
+                : "You are in 'Chat Mode'. Suggest a relevant follow-up question or a conversational topic related to the last message.";
+
+            const prompt = `Based on the last message in a conversation, suggest a short, engaging placeholder for a chat input box (max 7 words). The placeholder should prompt the user to continue the conversation. Do not use quotes.
+
+${persona}
+
+LAST MESSAGE:
+"${conversationContext}"
+
+PLACEHOLDER:`;
+            result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+            const placeholder = getText(result).trim().replace(/["']/g, '');
+            return { status: 200, body: { placeholder } };
+        }
         case 'tts': {
             const { text, voice } = payload;
             const base64Audio = await executeTextToSpeech(ai, text, voice);

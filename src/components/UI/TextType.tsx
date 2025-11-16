@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Fix: Import React to resolve namespace errors.
 import React, { ElementType, useEffect, useState, createElement, useRef } from 'react';
 import { motion } from 'framer-motion';
 
@@ -33,7 +32,7 @@ export const TextType = ({
   loop = false,
   className = '',
   showCursor = true,
-  cursorCharacter = '●',
+  cursorCharacter = '|',
   cursorClassName = '',
   cursorBlinkDuration = 0.5,
   onSequenceComplete,
@@ -50,11 +49,26 @@ export const TextType = ({
   }, []);
 
   useEffect(() => {
+    // When the text prop changes (e.g., a new placeholder arrives),
+    // start the delete-and-type sequence.
+    if (text.length > 1 && text[1] !== displayedText && !isDeleting) {
+      setTextIndex(0); // This will point to the old text
+      setDisplayedText(text[0]); // Ensure we are deleting the old text
+      setIsDeleting(true); // Start deleting
+    } else if (text.length === 1 && text[0] !== displayedText) {
+      // If we only have one item, just set it
+      setDisplayedText(text[0]);
+    }
+  }, [text]);
+
+  useEffect(() => {
     let timeoutId: number;
 
     const handleAnimation = () => {
       if (!isMounted.current) return;
-      const currentText = text[textIndex];
+      
+      const sequence = text;
+      const currentText = sequence[textIndex];
       
       if (isDeleting) {
         if (displayedText.length > 0) {
@@ -63,17 +77,18 @@ export const TextType = ({
           // Finished deleting
           setIsDeleting(false);
           const nextIndex = (textIndex + 1);
-          if (nextIndex < text.length) {
+          if (nextIndex < sequence.length) {
             setTextIndex(nextIndex);
           } else if (loop) {
             setTextIndex(0);
           }
         }
       } else { // Typing
-        if (displayedText.length < currentText.length) {
-          timeoutId = window.setTimeout(() => setDisplayedText(currentText.slice(0, displayedText.length + 1)), typingSpeed);
+        const targetText = sequence[textIndex];
+        if (displayedText.length < targetText.length) {
+          timeoutId = window.setTimeout(() => setDisplayedText(targetText.slice(0, displayedText.length + 1)), typingSpeed);
         } else { // Finished typing
-          const isLast = textIndex === text.length - 1;
+          const isLast = textIndex === sequence.length - 1;
           if (isLast && !loop) {
             if (onSequenceComplete) onSequenceComplete();
             return; // Stop animation
@@ -83,6 +98,7 @@ export const TextType = ({
       }
     };
     
+    // Start deleting the first text after an initial delay
     const delay = (isDeleting && textIndex === 0 && displayedText.length === text[0].length) ? initialDelay : 0;
     timeoutId = window.setTimeout(handleAnimation, delay);
 

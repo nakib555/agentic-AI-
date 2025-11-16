@@ -177,6 +177,7 @@ export const ChatArea = ({
             onCancel={onCancel}
             isAgentMode={isAgentMode}
             setIsAgentMode={setIsAgentMode}
+            messages={messages}
           />
         </div>
       </div>

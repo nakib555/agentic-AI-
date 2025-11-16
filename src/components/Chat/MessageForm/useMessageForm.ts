@@ -6,19 +6,24 @@
 // This is the simplified main hook for the MessageForm component.
 // It composes smaller, more focused hooks for file handling and input enhancements.
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { type MessageFormHandle } from './types';
 import { useFileHandling } from './useFileHandling';
 import { useInputEnhancements } from './useInputEnhancements';
+import type { Message } from '../../../types';
+import { usePlaceholder } from '../../../hooks/usePlaceholder';
 
 export const useMessageForm = (
   onSubmit: (message: string, files?: File[], options?: { isThinkingModeEnabled?: boolean }) => void,
   isLoading: boolean,
-  ref: React.ForwardedRef<MessageFormHandle>
+  ref: React.ForwardedRef<MessageFormHandle>,
+  messages: Message[],
+  isAgentMode: boolean
 ) => {
   const [inputValue, setInputValue] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUploadMenuOpen, setIsUploadMenuOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const inputRef = useRef<HTMLDivElement>(null);
   const attachButtonRef = useRef<HTMLButtonElement>(null);
@@ -26,6 +31,18 @@ export const useMessageForm = (
 
   const fileHandling = useFileHandling(ref);
   const enhancements = useInputEnhancements(inputValue, setInputValue, fileHandling.processedFiles.length > 0, onSubmit);
+  
+  const lastMessageText = useMemo(() => {
+    const lastVisibleMessage = messages.filter(m => !m.isHidden).pop();
+    if (!lastVisibleMessage) return '';
+    if (lastVisibleMessage.role === 'model') {
+        const activeResponse = lastVisibleMessage.responses?.[lastVisibleMessage.activeResponseIndex];
+        return activeResponse?.text || '';
+    }
+    return lastVisibleMessage.text || '';
+  }, [messages]);
+
+  const placeholder = usePlaceholder(!inputValue.trim() && !isFocused, lastMessageText, isAgentMode);
 
   useEffect(() => {
     // Restore text draft from local storage on initial load
@@ -121,6 +138,8 @@ export const useMessageForm = (
   return {
     inputValue, setInputValue,
     isExpanded, isUploadMenuOpen, setIsUploadMenuOpen,
+    isFocused, setIsFocused,
+    placeholder,
     inputRef, attachButtonRef, uploadMenuRef,
     handleSubmit, handlePaste, handleKeyDown,
     ...fileHandling,

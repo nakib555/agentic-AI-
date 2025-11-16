@@ -14,6 +14,8 @@ import { UploadMenu } from './UploadMenu';
 import { useMessageForm } from './useMessageForm';
 import { type MessageFormHandle } from './types';
 import { ModeToggle } from '../../UI/ModeToggle';
+import { TextType } from '../../UI/TextType';
+import type { Message } from '../../../types';
 
 export const MessageForm = forwardRef<MessageFormHandle, {
   onSubmit: (message: string, files?: File[], options?: { isThinkingModeEnabled?: boolean }) => void;
@@ -21,8 +23,9 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   onCancel: () => void;
   isAgentMode: boolean;
   setIsAgentMode: (isAgent: boolean) => void;
-}>(({ onSubmit, isLoading, onCancel, isAgentMode, setIsAgentMode }, ref) => {
-  const logic = useMessageForm(onSubmit, isLoading, ref);
+  messages: Message[];
+}>(({ onSubmit, isLoading, onCancel, isAgentMode, setIsAgentMode, messages }, ref) => {
+  const logic = useMessageForm(onSubmit, isLoading, ref, messages, isAgentMode);
   
   const isProcessingFiles = logic.processedFiles.some(f => f.progress < 100 && !f.error);
   const hasInput = logic.inputValue.trim().length > 0 || logic.processedFiles.length > 0;
@@ -40,7 +43,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
     <div>
       <form onSubmit={logic.handleSubmit}>
         <motion.div 
-            className={`bg-white dark:bg-[#110e19] border border-[rgb(206,217,239)] dark:border-slate-700/50 flex flex-col p-2 flex-grow rounded-2xl`} 
+            className={`bg-theme-bg-light dark:bg-[#121212] border border-[rgb(206,217,239)] dark:border-slate-700/50 flex flex-col p-2 flex-grow rounded-2xl`} 
             transition={{ duration: 0.2, ease: 'easeInOut' }}
         >
             <AnimatePresence>
@@ -64,7 +67,28 @@ export const MessageForm = forwardRef<MessageFormHandle, {
             <input type="file" ref={logic.folderInputRef} onChange={logic.handleFileChange} className="hidden" aria-hidden="true" {...{ webkitdirectory: "", directory: "" }} multiple />
             
             <div className="relative flex-grow">
-              <div ref={logic.inputRef} contentEditable={!logic.isEnhancing} onInput={(e) => logic.setInputValue(e.currentTarget.innerText)} onKeyDown={logic.handleKeyDown} onPaste={logic.handlePaste} aria-label="Chat input" role="textbox" data-placeholder={logic.isRecording ? 'Listening...' : (isLoading ? "Generating response..." : "Ask anything, or drop a file")} className={`content-editable-input w-full px-2 py-1.5 bg-transparent text-gray-900 dark:text-slate-200 focus:outline-none ${logic.isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ minHeight: '32px', maxHeight: '192px', transition: 'height 0.2s ease-in-out' }} />
+              <AnimatePresence>
+                {!hasInput && !logic.isFocused && (
+                    <motion.div
+                        key="placeholder"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 px-2 py-1.5 text-gray-500 dark:text-slate-400 pointer-events-none"
+                    >
+                        <TextType
+                            text={logic.placeholder}
+                            loop={false}
+                            typingSpeed={65}
+                            deletingSpeed={50}
+                            pauseDuration={1500}
+                            showCursor={false}
+                            cursorBlinkDuration={0.5}
+                        />
+                    </motion.div>
+                )}
+              </AnimatePresence>
+              <div ref={logic.inputRef} contentEditable={!logic.isEnhancing} onInput={(e) => logic.setInputValue(e.currentTarget.innerText)} onKeyDown={logic.handleKeyDown} onPaste={logic.handlePaste} onFocus={() => logic.setIsFocused(true)} onBlur={() => logic.setIsFocused(false)} aria-label="Chat input" role="textbox" className={`content-editable-input w-full px-2 py-1.5 bg-transparent text-gray-900 dark:text-slate-200 focus:outline-none relative z-10 ${logic.isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ minHeight: '32px', maxHeight: '192px', transition: 'height 0.2s ease-in-out' }} />
             </div>
             
             <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-200/50 dark:border-white/10">
