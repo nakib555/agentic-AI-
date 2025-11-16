@@ -23,7 +23,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
 
   return (
     <div
-      className={`flex items-center gap-1 p-1 rounded-full bg-white/10 backdrop-blur-md dark:bg-black/20 border border-white/20 dark:border-white/10 shadow-lg ${disabled ? 'opacity-50' : ''}`}
+      className={`flex items-center gap-1 p-1 rounded-full bg-white/60 dark:bg-black/20 backdrop-blur-md border border-slate-200/80 dark:border-white/10 ${disabled ? 'opacity-50' : ''}`}
       style={{ transformStyle: 'preserve-3d', perspective: '800px' }}
     >
       {modes.map(mode => {
@@ -35,26 +35,20 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
             disabled={disabled}
             className="group relative px-3 py-1.5 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full"
             aria-pressed={isActive}
-            whileHover={{ scale: 1.1, y: -2 }}
-            whileTap={{ scale: 0.95, y: 1 }}
+            whileHover={{ y: -1 }}
+            whileTap={{ y: 1 }}
             transition={{ type: 'spring', stiffness: 400, damping: 15 }}
             style={{ transform: 'translateZ(0)' }}
           >
-            {/* The active state has a solid pill that animates */}
             {isActive && (
               <motion.div
                 layoutId="mode-pill"
-                className="absolute inset-0 bg-white/20 dark:bg-white/10 border border-white/30 shadow-inner rounded-full"
+                className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 shadow-[inset_0_1px_2px_rgba(255,255,255,0.4),_inset_0_-2px_4px_rgba(0,0,0,0.2)]"
                 transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               />
             )}
-
-            {/* A hidden background for the hover effect on the inactive button */}
-            {!isActive && (
-                <div className="absolute inset-0 bg-white/10 dark:bg-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-            )}
-
-            <span className={`relative z-10 flex items-center gap-2 ${isActive ? 'text-white' : 'text-slate-200 group-hover:text-white transition-colors duration-200'}`}>
+            
+            <span className={`relative z-10 flex items-center gap-2 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-slate-100'}`}>
               {mode.icon}
               {mode.label}
             </span>

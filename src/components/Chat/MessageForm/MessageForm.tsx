@@ -22,7 +22,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   isAgentMode: boolean;
   setIsAgentMode: (isAgent: boolean) => void;
 }>(({ onSubmit, isLoading, onCancel, isAgentMode, setIsAgentMode }, ref) => {
-  const logic = useMessageForm(onSubmit, isLoading, ref);
+  const logic = useMessageForm(onSubmit, isLoading, isAgentMode, ref);
   
   const isProcessingFiles = logic.processedFiles.some(f => f.progress < 100 && !f.error);
   const hasInput = logic.inputValue.trim().length > 0 || logic.processedFiles.length > 0;
@@ -64,7 +64,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
             <input type="file" ref={logic.folderInputRef} onChange={logic.handleFileChange} className="hidden" aria-hidden="true" {...{ webkitdirectory: "", directory: "" }} multiple />
             
             <div className="relative flex-grow">
-              <div ref={logic.inputRef} contentEditable={!logic.isEnhancing} onInput={(e) => logic.setInputValue(e.currentTarget.innerText)} onKeyDown={logic.handleKeyDown} onPaste={logic.handlePaste} aria-label="Chat input" role="textbox" data-placeholder={logic.isRecording ? 'Listening...' : (isLoading ? "Generating response..." : "Ask anything, or drop a file")} className={`content-editable-input w-full px-2 py-1.5 bg-transparent text-gray-900 dark:text-slate-200 focus:outline-none ${logic.isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ minHeight: '32px', maxHeight: '192px', transition: 'height 0.2s ease-in-out' }} />
+              <div ref={logic.inputRef} contentEditable={!logic.isEnhancing} onInput={(e) => logic.setInputValue(e.currentTarget.innerText)} onKeyDown={logic.handleKeyDown} onPaste={logic.handlePaste} aria-label="Chat input" role="textbox" data-placeholder={logic.placeholder} className={`content-editable-input w-full px-2 py-1.5 bg-transparent text-gray-900 dark:text-slate-200 focus:outline-none ${logic.isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ minHeight: '32px', maxHeight: '192px', transition: 'height 0.2s ease-in-out' }} />
             </div>
             
             <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-200/50 dark:border-white/10">

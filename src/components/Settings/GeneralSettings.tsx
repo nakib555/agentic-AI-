@@ -35,7 +35,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
   };
   
   const handleClear = () => {
-    if (window.confirm('Are you sure you want to delete all conversations? This action cannot be undone.')) {
+    if (window.confirm('Are you sure you want to delete all chats? This action cannot be undone.')) {
       onClearAllChats();
     }
   };
@@ -45,7 +45,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
 
       <SettingField 
         label="Gemini API Key" 
-        description="Your API key is stored locally in your browser's local storage and sent securely with each request."
+        description="Your API key is stored locally and securely in your browser. It is required to communicate with the Gemini API."
       >
         <div className="flex items-center gap-2 max-w-sm">
           <input
@@ -66,7 +66,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
       
       <SettingField 
         label="Clear all chats" 
-        description="This will permanently delete all of your chat history."
+        description="Permanently delete all conversation history. This action cannot be undone."
       >
         <button
           onClick={handleClear}
@@ -77,7 +77,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
       </SettingField>
       <SettingField 
         label="Run Diagnostic Tests" 
-        description="Run a suite of automated tests to verify AI functionality, component rendering, and end-to-end response generation. This may take a few minutes."
+        description="Verify core AI functionality with an automated test suite. This may create several new chats and take a few minutes."
       >
         <button
           onClick={onRunTests}

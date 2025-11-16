@@ -66,7 +66,7 @@ export const MapDisplay = ({ latitude, longitude, zoom, markerText }: MapDisplay
     return (
       <div className="my-6 rounded-xl overflow-hidden border border-slate-200/10 shadow-lg relative z-0">
         <div
-          className="h-80 w-full bg-slate-800 flex items-center justify-center text-red-400 p-4 text-center text-sm"
+          className="h-80 w-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-red-600 dark:text-red-400 p-4 text-center text-sm"
           aria-label="Map loading error"
         >
           <p>Error: Invalid coordinates provided for the map. The AI may have failed to find the correct location.</p>
@@ -79,7 +79,7 @@ export const MapDisplay = ({ latitude, longitude, zoom, markerText }: MapDisplay
     <div className="my-6 rounded-xl overflow-hidden border border-slate-200/10 shadow-lg relative z-0">
       <div
         ref={mapRef}
-        className="h-80 w-full bg-slate-800"
+        className="h-80 w-full bg-slate-200 dark:bg-slate-800"
         aria-label={`Map centered at latitude ${latitude}, longitude ${longitude}`}
       />
     </div>

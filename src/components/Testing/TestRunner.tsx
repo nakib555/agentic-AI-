@@ -67,7 +67,7 @@ export const TestRunner: React.FC<TestRunnerProps> = ({ isOpen, onClose, runTest
             <div className="flex-1 p-6 overflow-y-auto">
               {!isRunning && !finalReport && (
                 <div className="text-center">
-                  <p className="text-gray-600 dark:text-slate-300 mb-6">Run a suite of end-to-end tests to validate core AI functionality. This will open new chats and may take a few minutes.</p>
+                  <p className="text-gray-600 dark:text-slate-300 mb-6">This will run a suite of automated tests to verify core AI functionality and component rendering. Several new chats will be created automatically. The process may take a few minutes.</p>
                   <button onClick={handleRunTests} className="px-6 py-2 font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-500">Start Tests</button>
                 </div>
               )}

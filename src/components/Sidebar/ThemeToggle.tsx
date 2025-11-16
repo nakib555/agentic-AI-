@@ -16,7 +16,7 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
 
     const shouldCollapse = isDesktop && isCollapsed;
 
-    const containerClasses = `relative p-1 rounded-full flex items-center bg-violet-100/60 dark:bg-black/40 backdrop-blur-md border border-violet-200/50 dark:border-white/10 shadow-md`;
+    const containerClasses = `relative p-1 rounded-full flex items-center bg-white/60 dark:bg-black/20 backdrop-blur-md border border-slate-200/80 dark:border-white/10`;
     const layoutClasses = shouldCollapse ? `flex-col gap-1 ${containerClasses}` : `justify-between ${containerClasses}`;
 
     return (
@@ -37,19 +37,13 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
                             {isActive && (
                                 <motion.div
                                     layoutId="theme-knob"
-                                    className="absolute inset-0 bg-white/20 dark:bg-white/10 border border-white/30 shadow-inner rounded-full"
+                                    className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 shadow-[inset_0_1px_2px_rgba(255,255,255,0.4),_inset_0_-2px_4px_rgba(0,0,0,0.2)]"
                                     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                                 />
                             )}
                             
-                            <div className="relative z-10 flex items-center gap-2">
-                                <motion.div
-                                    className="transition-colors"
-                                    animate={{ color: isActive ? (theme === 'dark' ? '#fff' : '#4c1d95') : '#6b7280' }}
-                                    transition={{ duration: 0.3 }}
-                                >
-                                    {btn.icon}
-                                </motion.div>
+                            <div className={`relative z-10 flex items-center gap-2 transition-colors ${isActive ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+                                {btn.icon}
                                 <motion.span
                                     className="overflow-hidden font-semibold"
                                     initial={false}
@@ -60,13 +54,7 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
                                     }}
                                     transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                                 >
-                                    <motion.span
-                                        className="transition-colors"
-                                        animate={{ color: isActive ? (theme === 'dark' ? '#fff' : '#4c1d95') : '#6b7280' }}
-                                        transition={{ duration: 0.3 }}
-                                    >
-                                        {btn.label}
-                                    </motion.span>
+                                    {btn.label}
                                 </motion.span>
                             </div>
                         </button>
