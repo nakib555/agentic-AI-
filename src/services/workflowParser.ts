@@ -183,30 +183,31 @@ export const parseAgenticWorkflow = (
     }
     if (!failureAssigned && executionLog.length > 0) {
         executionLog[executionLog.length - 1].status = 'failed';
+        executionLog[executionLog.length - 1].details = error;
     }
-    // Fix: Complete the function body.
+    
+    let failurePointReached = false;
+    executionLog.forEach(node => {
+        if (node.status === 'failed') failurePointReached = true;
+        if (node.status !== 'failed' && !failurePointReached) node.status = 'done';
+    });
+
   } else if (isThinkingComplete) {
-    // If thinking is done and there's no error, mark all non-failed, non-done nodes as 'done'.
-    for (const node of executionLog) {
-      if (node.status === 'pending' || node.status === 'active') {
-        node.status = 'done';
-      }
-    }
+    executionLog.forEach(node => {
+      if (node.status !== 'failed') node.status = 'done';
+    });
   } else {
-    // Thinking is still in progress. Find the last non-complete node and mark it 'active'.
-    // Mark all preceding 'pending' nodes as 'done'.
-    let activeNodeFound = false;
+    let lastActiveNodeFound = false;
     for (let i = executionLog.length - 1; i >= 0; i--) {
-      const node = executionLog[i];
-      if (!activeNodeFound && (node.status === 'pending' || node.status === 'active')) {
-        node.status = 'active';
-        activeNodeFound = true;
-      } else if (activeNodeFound && node.status === 'pending') {
-        // Any pending text nodes before the current active step must be considered done.
-        node.status = 'done';
-      }
+        const node = executionLog[i];
+        if (!lastActiveNodeFound && node.status !== 'done') {
+            node.status = 'active';
+            lastActiveNodeFound = true;
+        } else if (node.status === 'pending') {
+            node.status = 'done';
+        }
     }
   }
-
+  
   return { plan: planText, executionLog };
 };
