@@ -3,5 +3,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-@import './main.part1.css';
-@import './main.part2.css';
+export * from './WelcomeScreen';

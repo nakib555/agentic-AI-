@@ -52,9 +52,7 @@ src/hooks/useChat.ts
 
 src/hooks/useChat/
     ├── index.ts              # The main useChat hook, composing other parts
-    ├── chat-callbacks.ts     # Defines callbacks for the agentic loop
     ├── history-builder.ts    # Logic for constructing the API message history
-    └── tool-executor.ts      # Wrapper function for executing tools
 ```
 
 ---

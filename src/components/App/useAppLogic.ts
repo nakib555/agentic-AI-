@@ -182,11 +182,12 @@ export const useAppLogic = () => {
   // Update memory after a chat is completed
   useEffect(() => {
     const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
-    if (currentChat && !currentChat.isLoading && currentChat.messages.length > 0) {
+    // FIX: Add a check for `currentChat.messages` to prevent crash on new/unloaded chats.
+    if (currentChat && !currentChat.isLoading && currentChat.messages && currentChat.messages.length > 0) {
       memory.updateMemory(currentChat);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chat.isLoading, chat.currentChatId, memory.updateMemory]);
+  }, [chat.isLoading, chat.currentChatId, chat.chatHistory, memory.updateMemory]);
 
   // --- Handlers ---
   const handleToggleSidebar = useCallback(() => {
@@ -242,6 +243,7 @@ export const useAppLogic = () => {
       reader.readAsText(file);
     }
   };
+
 
   // FIX: Add implementation for running diagnostic tests.
   const runDiagnosticTests = useCallback(async (onProgress: (progress: TestProgress) => void) => {
