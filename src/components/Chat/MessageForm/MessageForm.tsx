@@ -40,7 +40,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
     <div>
       <form onSubmit={logic.handleSubmit}>
         <motion.div 
-            className={`bg-white dark:bg-[#202123] border border-gray-200 dark:border-slate-700/50 shadow-md flex flex-col p-2 flex-grow rounded-2xl`} 
+            className={`bg-violet-50 dark:bg-[#110e19] border border-gray-200 dark:border-slate-700/50 shadow-md flex flex-col p-2 flex-grow rounded-2xl`} 
             transition={{ duration: 0.2, ease: 'easeInOut' }}
         >
             <AnimatePresence>

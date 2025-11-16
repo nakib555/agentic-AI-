@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ElementType, useEffect, useState, createElement, useRef } from 'react';
+// Fix: Import React to resolve namespace errors.
+import React, { ElementType, useEffect, useState, createElement, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 interface TextTypeProps {
