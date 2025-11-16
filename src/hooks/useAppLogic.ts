@@ -50,11 +50,12 @@ export const useAppLogic = () => {
   // --- UI State ---
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isThinkingSidebarOpen, setIsThinkingSidebarOpen] = useState(false);
   const [thinkingMessageId, setThinkingMessageId] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [backendError, setBackendError] = useState<string | null>(null);
-  // Fix: Add state for test mode
+  // FIX: Add state for test mode
   const [isTestMode, setIsTestMode] = useState(false);
 
   // --- Model Management ---
@@ -63,7 +64,7 @@ export const useAppLogic = () => {
   const [activeModel, setActiveModel] = useState(validModels[1]?.id || validModels[0]?.id);
 
   // --- Settings State ---
-  // Fix: Add state for API key
+  // FIX: Add state for API key
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('agentic-apiKey') || '');
   const [aboutUser, setAboutUser] = useState(() => localStorage.getItem('agentic-aboutUser') || DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(() => localStorage.getItem('agentic-aboutResponse') || DEFAULT_ABOUT_RESPONSE);
@@ -78,7 +79,7 @@ export const useAppLogic = () => {
   });
 
   // --- Effect to save settings to localStorage ---
-  // Fix: Add effect to save API key
+  // FIX: Add effect to save API key
   useEffect(() => {
     if (apiKey) localStorage.setItem('agentic-apiKey', apiKey);
     else localStorage.removeItem('agentic-apiKey');
@@ -149,7 +150,7 @@ export const useAppLogic = () => {
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode);
   const { updateChatModel, updateChatSettings } = chat;
 
-  // Fix: Create a wrapper for startNewChat that takes no arguments.
+  // FIX: Create a wrapper for startNewChat that takes no arguments.
   const startNewChat = useCallback(() => {
     chat.startNewChat(activeModel, chatSettings);
   }, [chat, activeModel, chatSettings]);
@@ -181,11 +182,12 @@ export const useAppLogic = () => {
   // Update memory after a chat is completed
   useEffect(() => {
     const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
-    if (currentChat && !currentChat.isLoading && currentChat.messages.length > 0) {
+    // FIX: Add a check for `currentChat.messages` to prevent crash on new/unloaded chats.
+    if (currentChat && !currentChat.isLoading && currentChat.messages && currentChat.messages.length > 0) {
       memory.updateMemory(currentChat);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chat.isLoading, chat.currentChatId, memory.updateMemory]);
+  }, [chat.isLoading, chat.currentChatId, chat.chatHistory, memory.updateMemory]);
 
   // --- Handlers ---
   const handleToggleSidebar = useCallback(() => {
@@ -223,29 +225,27 @@ export const useAppLogic = () => {
   };
   
   const handleImportChat = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const importedChat = JSON.parse(event.target?.result as string);
-            chat.importChat(importedChat as ChatSession);
-          } catch (error) {
-            console.error("Failed to parse imported chat file:", error);
-            alert('Invalid chat file format.');
-          }
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
+    setIsImportModalOpen(true);
   };
 
-  // Fix: Add implementation for running diagnostic tests.
+  const handleFileUploadForImport = (file: File) => {
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const importedChat = JSON.parse(event.target?.result as string);
+          chat.importChat(importedChat as ChatSession);
+        } catch (error) {
+          console.error("Failed to parse imported chat file:", error);
+          alert('Invalid chat file format.');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+
+  // FIX: Add implementation for running diagnostic tests.
   const runDiagnosticTests = useCallback(async (onProgress: (progress: TestProgress) => void) => {
     const results: TestResult[] = [];
     let testsPassed = 0;
@@ -309,6 +309,7 @@ export const useAppLogic = () => {
   return {
     appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, setIsAgentMode, ...memory,
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
+    isImportModalOpen, setIsImportModalOpen,
     isThinkingSidebarOpen, setIsThinkingSidebarOpen, thinkingMessageId, setThinkingMessageId,
     backendStatus, backendError, isTestMode, setIsTestMode,
     availableModels, modelsLoading, activeModel, handleModelChange,
@@ -318,6 +319,7 @@ export const useAppLogic = () => {
     ...chat, isChatActive, thinkingMessageForSidebar,
     startNewChat, // Overwrite the original startNewChat with the no-arg wrapper
     handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,
-    handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests
+    handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests,
+    handleFileUploadForImport,
   };
 };
