@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import type { Message } from '../../../types';
@@ -13,7 +13,6 @@ import { ImageDisplay } from '../../AI/ImageDisplay';
 import { VideoDisplay } from '../../AI/VideoDisplay';
 import { ManualCodeRenderer } from '../../Markdown/ManualCodeRenderer';
 import { TypingIndicator } from '../TypingIndicator';
-import { TypingWrapper } from '../../AI/TypingWrapper';
 import { McqComponent } from '../../AI/McqComponent';
 import { MapDisplay } from '../../AI/MapDisplay';
 import { FileAttachment } from '../../AI/FileAttachment';
@@ -22,6 +21,8 @@ import { ExecutionApproval } from '../../AI/ExecutionApproval';
 import type { MessageFormHandle } from '../MessageForm/index';
 import { useAiMessageLogic } from './useAiMessageLogic';
 import { MessageToolbar } from './MessageToolbar';
+import { FlowToken } from '../../AI/FlowToken';
+import { cleanTextForTts } from './utils';
 
 const animationProps = {
   initial: { opacity: 0, y: 20 },
@@ -52,9 +53,17 @@ export const AiMessage: React.FC<AiMessageProps> = (props) => {
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, isAutoPlayEnabled, ttsVoice, sendMessage, isLoading);
-  const { activeResponse } = logic;
+  const { activeResponse, finalAnswerText, thinkingIsComplete, isStreamingFinalAnswer } = logic;
+  const [animationComplete, setAnimationComplete] = useState(false);
 
-  const renderProgressiveAnswer = useCallback((txt: string, isStreaming: boolean) => {
+  useEffect(() => {
+    // Reset animation state when the message content changes (e.g., regeneration)
+    setAnimationComplete(false);
+  }, [finalAnswerText, msg.activeResponseIndex]);
+
+  const showFinalContent = thinkingIsComplete || animationComplete;
+
+  const renderProgressiveAnswer = useCallback((txt: string) => {
     const componentRegex = /(\[(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT)\].*?\[\/(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT)\])/s;
     const parts = txt.split(componentRegex).filter(part => part);
 
@@ -100,7 +109,7 @@ export const AiMessage: React.FC<AiMessageProps> = (props) => {
         const cleanedPart = part.replace(incompleteTagRegex, '');
 
         if (cleanedPart) {
-            return <ManualCodeRenderer key={key} text={cleanedPart} components={MarkdownComponents} isStreaming={isStreaming} onRunCode={isAgentMode ? logic.handleRunCode : undefined} isRunDisabled={isLoading} />;
+            return <ManualCodeRenderer key={key} text={cleanedPart} components={MarkdownComponents} isStreaming={false} onRunCode={isAgentMode ? logic.handleRunCode : undefined} isRunDisabled={isLoading} />;
         }
         return null;
     });
@@ -133,13 +142,17 @@ export const AiMessage: React.FC<AiMessageProps> = (props) => {
         <div className="w-full flex flex-col gap-4">
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
-          {logic.hasFinalAnswer && !activeResponse?.error && (
-              <div className="markdown-content max-w-none w-full">
-                  <TypingWrapper fullText={logic.finalAnswerText} isAnimating={logic.isStreamingFinalAnswer}>
-                    {(displayedText) => renderProgressiveAnswer(logic.isStreamingFinalAnswer ? displayedText : logic.finalAnswerText, logic.isStreamingFinalAnswer)}
-                  </TypingWrapper>
-              </div>
-          )}
+          
+          <div className="markdown-content max-w-none w-full">
+            {isStreamingFinalAnswer && !showFinalContent && (
+              <FlowToken tps={10} onComplete={() => setAnimationComplete(true)}>
+                  {cleanTextForTts(finalAnswerText)}
+              </FlowToken>
+            )}
+            {showFinalContent && logic.hasFinalAnswer && !activeResponse.error && (
+              renderProgressiveAnswer(finalAnswerText)
+            )}
+          </div>
         </div>
       )}
       

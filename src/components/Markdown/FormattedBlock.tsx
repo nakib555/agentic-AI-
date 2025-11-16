@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ManualCodeRenderer } from './ManualCodeRenderer';
 import { MarkdownComponents } from './markdownComponents';
-import { TypingWrapper } from '../AI/TypingWrapper';
+import { FlowToken } from '../AI/FlowToken';
 
 type FormattedBlockProps = {
   content: string;
@@ -16,7 +16,14 @@ type FormattedBlockProps = {
 
 export const FormattedBlock: React.FC<FormattedBlockProps> = ({ content, isStreaming }) => {
   const [isRawVisible, setIsRawVisible] = useState(false);
+  const [animationComplete, setAnimationComplete] = useState(false);
   const cleanContent = content.trim();
+
+  useEffect(() => {
+    setAnimationComplete(false);
+  }, [cleanContent]);
+
+  const showFinalContent = !isStreaming || animationComplete;
 
   return (
     <div className="my-4 rounded-lg text-sm overflow-hidden shadow-lg dark:shadow-2xl dark:shadow-black/30 border border-slate-200 dark:border-slate-700">
@@ -50,12 +57,13 @@ export const FormattedBlock: React.FC<FormattedBlockProps> = ({ content, isStrea
                     </pre>
                 ) : (
                     <div className="p-4 bg-white dark:bg-[#121212]">
-                       <TypingWrapper
-                            fullText={cleanContent}
-                            isAnimating={isStreaming}
-                       >
-                           {(displayedText) => <ManualCodeRenderer text={isStreaming ? displayedText : cleanContent} components={MarkdownComponents} isStreaming={isStreaming} />}
-                       </TypingWrapper>
+                       {isStreaming && !showFinalContent ? (
+                           <FlowToken tps={10} onComplete={() => setAnimationComplete(true)}>
+                               {cleanContent}
+                           </FlowToken>
+                       ) : (
+                           <ManualCodeRenderer text={cleanContent} components={MarkdownComponents} isStreaming={false} />
+                       )}
                     </div>
                 )}
             </motion.div>

@@ -3,17 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
 import type { MessageError, ToolCallEvent, WorkflowNodeData } from '../../types';
 import { ToolCallStep } from './ToolCallStep';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
-import { TypingWrapper } from './TypingWrapper';
 import { ObservationIcon, SearchIcon, TodoListIcon, HandoffIcon, ValidationIcon, CorrectionIcon, ExecutorIcon, ThoughtIcon } from './icons/index';
 import { SearchToolResult } from './SearchToolResult';
 import { getAgentColor } from '../../utils/agentUtils';
+import { FlowToken } from './FlowToken';
 
 
 type WorkflowNodeProps = {
@@ -60,6 +60,32 @@ const getNodeVisuals = (node: WorkflowNodeData) => {
 };
 
 
+const DetailsRenderer: React.FC<{ node: WorkflowNodeData }> = ({ node }) => {
+    const detailsText = node.details as string;
+    const isStreaming = node.status === 'active';
+    const [animationComplete, setAnimationComplete] = useState(false);
+
+    useEffect(() => {
+        setAnimationComplete(false);
+    }, [detailsText]);
+
+    const showFinalContent = !isStreaming || animationComplete;
+
+    return (
+        <div className="text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
+            {isStreaming && !showFinalContent && (
+                <FlowToken tps={10} onComplete={() => setAnimationComplete(true)}>
+                    {detailsText}
+                </FlowToken>
+            )}
+            {showFinalContent && (
+                <ManualCodeRenderer text={detailsText} components={WorkflowMarkdownComponents} isStreaming={false} />
+            )}
+        </div>
+    );
+};
+
+
 const renderDetails = (
     node: WorkflowNodeData,
     sendMessage: WorkflowNodeProps['sendMessage'],
@@ -83,18 +109,7 @@ const renderDetails = (
     }
     
     if (typeof node.details === 'string') {
-        const detailsText = node.details;
-        return (
-            <div className="text-sm text-gray-700 dark:text-slate-300 workflow-markdown">
-                <TypingWrapper
-                    fullText={detailsText}
-                    isAnimating={node.status === 'active'}
-                    delay={250}
-                >
-                    {(text) => <ManualCodeRenderer text={node.status === 'active' ? text : detailsText} components={WorkflowMarkdownComponents} isStreaming={node.status === 'active'} />}
-                </TypingWrapper>
-            </div>
-        );
+        return <DetailsRenderer node={node} />;
     }
     
     return null;
@@ -103,6 +118,14 @@ const renderDetails = (
 const HandoffNode: React.FC<{ from: string; to: string; details?: string; isStreaming: boolean }> = ({ from, to, details, isStreaming }) => {
     const fromColor = getAgentColor(from);
     const toColor = getAgentColor(to);
+    const [animationComplete, setAnimationComplete] = useState(false);
+    
+    useEffect(() => {
+        setAnimationComplete(false);
+    }, [details]);
+
+    const showFinalContent = !isStreaming || animationComplete;
+
     return (
         <div className="flex items-center gap-3 py-2 pl-1">
             <div className="flex-shrink-0 pt-0.5"><HandoffIcon /></div>
@@ -114,9 +137,14 @@ const HandoffNode: React.FC<{ from: string; to: string; details?: string; isStre
                 </div>
                 {details && (
                     <div className="text-slate-600 dark:text-slate-400 text-sm workflow-markdown">
-                        <TypingWrapper fullText={details} isAnimating={isStreaming} delay={250}>
-                            {(text) => <ManualCodeRenderer text={isStreaming ? text : details as string} components={WorkflowMarkdownComponents} isStreaming={isStreaming} />}
-                        </TypingWrapper>
+                        {isStreaming && !showFinalContent && (
+                            <FlowToken tps={10} onComplete={() => setAnimationComplete(true)}>
+                                {details}
+                            </FlowToken>
+                        )}
+                        {showFinalContent && (
+                            <ManualCodeRenderer text={details as string} components={WorkflowMarkdownComponents} isStreaming={false} />
+                        )}
                     </div>
                 )}
             </div>
