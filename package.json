@@ -10,7 +10,7 @@
     "dev": "node dev.js"
   },
   "dependencies": {
-    "@google/genai": "^0.14.0",
+    "@google/genai": "^1.28.0",
     "@local/flowtoken": "letast",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
