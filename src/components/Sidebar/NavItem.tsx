@@ -21,9 +21,9 @@ export const NavItem = ({ icon, text, active, isCollapsed, isDesktop, onClick, d
     
     const baseClasses = `w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left text-sm transition-all duration-200`;
     
-    const activeClasses = `bg-gray-200/60 dark:bg-violet-900/60 shadow-inner text-slate-900 font-semibold dark:text-slate-50`;
-    const inactiveClasses = `bg-gray-100/30 dark:bg-violet-900/20 text-slate-600 dark:text-slate-300 shadow-sm border border-gray-200/50 dark:border-white/10`;
-    const hoverClasses = `hover:shadow-md hover:border-gray-300/80 dark:hover:border-white/20 hover:bg-gray-100/80 dark:hover:bg-violet-900/40`;
+    const activeClasses = `bg-gray-200/60 dark:bg-slate-700/50 shadow-inner text-slate-900 font-semibold dark:text-slate-50`;
+    const inactiveClasses = `bg-gray-100/30 dark:bg-black/20 text-slate-600 dark:text-slate-300 shadow-sm border border-gray-200/50 dark:border-white/10`;
+    const hoverClasses = `hover:shadow-md hover:border-gray-300/80 dark:hover:border-white/20 hover:bg-gray-100/80 dark:hover:bg-black/30`;
 
     const disabledClasses = `opacity-50 cursor-not-allowed`;
     const layoutClasses = shouldCollapse ? 'justify-center' : '';
