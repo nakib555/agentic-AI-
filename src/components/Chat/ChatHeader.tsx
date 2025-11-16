@@ -6,6 +6,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import type { Message } from '../../types';
+import { TextType } from '../UI/TextType';
 const motion = motionTyped as any;
 
 type ChatHeaderProps = {
@@ -68,6 +69,11 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
 
+    const [isAnimatingTitle, setIsAnimatingTitle] = useState(false);
+    const [animationKey, setAnimationKey] = useState(chatTitle);
+    const prevChatTitleRef = useRef(chatTitle);
+
+
     const isSidebarActive = isDesktop ? !isSidebarCollapsed : isSidebarOpen;
 
     const getAriaAndTitle = () => {
@@ -76,6 +82,20 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         }
         return isSidebarOpen ? "Close sidebar" : "Open sidebar";
     };
+
+    useEffect(() => {
+        const prevTitle = prevChatTitleRef.current;
+        const isGenerated = chatTitle && chatTitle !== 'New Chat' && chatTitle !== 'Generating title...';
+        const wasPlaceholder = prevTitle === 'New Chat' || prevTitle === 'Generating title...';
+
+        if (wasPlaceholder && isGenerated) {
+            setAnimationKey(chatTitle);
+            setIsAnimatingTitle(true);
+        } else {
+            setIsAnimatingTitle(false);
+        }
+        prevChatTitleRef.current = chatTitle;
+    }, [chatTitle]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -116,13 +136,28 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         <div className="flex-1 min-w-0 text-center">
             <AnimatePresence>
                 {chatTitle && (
-                    <motion.h1
+                    <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 truncate px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-sm" title={chatTitle}>
-                        {chatTitle}
-                    </motion.h1>
+                        className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-sm min-h-[32px]" title={chatTitle}>
+                        
+                        {isAnimatingTitle && animationKey ? (
+                            <TextType
+                                key={animationKey}
+                                text={['New Chat', animationKey]}
+                                typingSpeed={40}
+                                deletingSpeed={25}
+                                pauseDuration={300}
+                                onSequenceComplete={() => setIsAnimatingTitle(false)}
+                            />
+                        ) : (
+                            <span className="truncate max-w-[200px] sm:max-w-sm md:max-w-md inline-block align-middle">
+                                {chatTitle}
+                            </span>
+                        )}
+
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>
