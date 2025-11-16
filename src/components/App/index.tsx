@@ -105,6 +105,9 @@ export const App = () => {
         setIsSettingsOpen={logic.setIsSettingsOpen}
         isMemoryModalOpen={logic.isMemoryModalOpen}
         setIsMemoryModalOpen={logic.setIsMemoryModalOpen}
+        isImportModalOpen={logic.isImportModalOpen}
+        setIsImportModalOpen={logic.setIsImportModalOpen}
+        handleFileUploadForImport={logic.handleFileUploadForImport}
         // FIX: Pass setIsTestMode to the onRunTests prop.
         onRunTests={() => logic.setIsTestMode(true)}
         availableModels={logic.availableModels}

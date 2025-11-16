@@ -12,12 +12,16 @@ import { MemoryModal } from '../Settings/MemoryModal';
 import { MemoryConfirmationModal } from '../Settings/MemoryConfirmationModal';
 import type { Model } from '../../services/modelService';
 import type { Message } from '../../types';
+import { ImportChatModal } from '../Settings/ImportChatModal';
 
 type AppModalsProps = {
   isSettingsOpen: boolean;
   setIsSettingsOpen: (isOpen: boolean) => void;
   isMemoryModalOpen: boolean;
   setIsMemoryModalOpen: (isOpen: boolean) => void;
+  isImportModalOpen: boolean;
+  setIsImportModalOpen: (isOpen: boolean) => void;
+  handleFileUploadForImport: (file: File) => void;
   onRunTests: () => void;
   availableModels: Model[];
   activeModel: string;
@@ -71,7 +75,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     setIsMemoryEnabled, memoryContent, clearMemory, isConfirmationOpen,
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
     setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, onManageMemory,
-    apiKey, onSaveApiKey,
+    apiKey, onSaveApiKey, isImportModalOpen, setIsImportModalOpen, handleFileUploadForImport
   } = props;
 
   return (
@@ -120,6 +124,11 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         suggestions={memorySuggestions}
         onConfirm={confirmMemoryUpdate}
         onCancel={cancelMemoryUpdate}
+      />
+      <ImportChatModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onFileUpload={handleFileUploadForImport}
       />
     </>
   );
