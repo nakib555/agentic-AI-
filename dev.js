@@ -33,7 +33,7 @@ try {
     'nodemon',
     '--watch', 'backend',
     '--ext', 'ts',
-    '--exec', 'ts-node backend/server.ts'
+    '--exec', 'node --loader ts-node/esm backend/server.ts'
   ], {
     stdio: 'inherit',
     shell: true, // Use shell to correctly resolve `npx` on different systems

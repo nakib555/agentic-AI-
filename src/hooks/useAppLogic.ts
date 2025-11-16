@@ -55,7 +55,6 @@ export const useAppLogic = () => {
   const [thinkingMessageId, setThinkingMessageId] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [backendError, setBackendError] = useState<string | null>(null);
-  // FIX: Add state for test mode
   const [isTestMode, setIsTestMode] = useState(false);
 
   // --- Model Management ---
@@ -64,7 +63,6 @@ export const useAppLogic = () => {
   const [activeModel, setActiveModel] = useState(validModels[1]?.id || validModels[0]?.id);
 
   // --- Settings State ---
-  // FIX: Add state for API key
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('agentic-apiKey') || '');
   const [aboutUser, setAboutUser] = useState(() => localStorage.getItem('agentic-aboutUser') || DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(() => localStorage.getItem('agentic-aboutResponse') || DEFAULT_ABOUT_RESPONSE);
@@ -79,7 +77,6 @@ export const useAppLogic = () => {
   });
 
   // --- Effect to save settings to localStorage ---
-  // FIX: Add effect to save API key
   useEffect(() => {
     if (apiKey) localStorage.setItem('agentic-apiKey', apiKey);
     else localStorage.removeItem('agentic-apiKey');
@@ -150,9 +147,8 @@ export const useAppLogic = () => {
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode);
   const { updateChatModel, updateChatSettings } = chat;
 
-  // FIX: Create a wrapper for startNewChat that takes no arguments.
-  const startNewChat = useCallback(() => {
-    chat.startNewChat(activeModel, chatSettings);
+  const startNewChat = useCallback(async () => {
+    await chat.startNewChat(activeModel, chatSettings);
   }, [chat, activeModel, chatSettings]);
 
 
@@ -182,7 +178,6 @@ export const useAppLogic = () => {
   // Update memory after a chat is completed
   useEffect(() => {
     const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
-    // FIX: Add a check for `currentChat.messages` to prevent crash on new/unloaded chats.
     if (currentChat && !currentChat.isLoading && currentChat.messages && currentChat.messages.length > 0) {
       memory.updateMemory(currentChat);
     }
@@ -245,7 +240,6 @@ export const useAppLogic = () => {
   };
 
 
-  // FIX: Add implementation for running diagnostic tests.
   const runDiagnosticTests = useCallback(async (onProgress: (progress: TestProgress) => void) => {
     const results: TestResult[] = [];
     let testsPassed = 0;
@@ -262,10 +256,7 @@ export const useAppLogic = () => {
 
         let result: TestResult;
         try {
-            // Ensure a clean chat for each test
-            startNewChat();
-            // This is a short, artificial delay to allow the state to update before sending.
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await startNewChat();
             
             const responseMessage = await chat.sendMessageForTest(testCase.prompt, testCase.options);
             const validation = await testCase.validate(responseMessage);
@@ -317,7 +308,7 @@ export const useAppLogic = () => {
     aboutUser, setAboutUser, aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens, setMaxTokens,
     imageModel, setImageModel, videoModel, setVideoModel, ttsVoice, setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled,
     ...chat, isChatActive, thinkingMessageForSidebar,
-    startNewChat, // Overwrite the original startNewChat with the no-arg wrapper
+    startNewChat,
     handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,
     handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests,
     handleFileUploadForImport,

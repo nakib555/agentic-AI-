@@ -49,6 +49,10 @@ export const TextType = ({
   }, []);
 
   useEffect(() => {
+    // Do not interrupt an animation in progress. Only apply changes when the
+    // displayed text is a complete word from the sequence (i.e., in a paused state).
+    if (!text.includes(displayedText)) return;
+
     // When the text prop changes (e.g., a new placeholder arrives),
     // start the delete-and-type sequence.
     if (text.length > 1 && text[1] !== displayedText && !isDeleting) {
