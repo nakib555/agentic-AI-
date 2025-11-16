@@ -7,6 +7,8 @@ import path from 'path';
 import process from 'process';
 import { apiHandler } from './handler.js';
 import * as crudHandler from './crudHandler.js';
+import { getSettings, updateSettings } from './settingsHandler.js';
+import { getMemory, updateMemory, clearMemory } from './memoryHandler.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -47,6 +49,15 @@ app.post('/api/chats/new', crudHandler.createNewChat);
 app.put('/api/chats/:chatId', crudHandler.updateChat);
 app.delete('/api/chats/:chatId', crudHandler.deleteChat);
 app.post('/api/import', crudHandler.importChat);
+
+// Settings routes
+app.get('/api/settings', getSettings);
+app.put('/api/settings', updateSettings);
+
+// Memory routes
+app.get('/api/memory', getMemory);
+app.put('/api/memory', updateMemory);
+app.delete('/api/memory', clearMemory);
 
 // Serve static assets for the frontend and uploads
 app.use(express.static(staticPath));

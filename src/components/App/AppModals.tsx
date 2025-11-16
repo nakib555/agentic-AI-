@@ -30,7 +30,6 @@ type AppModalsProps = {
   clearAllChats: () => void;
   // API Key
   apiKey: string;
-  // Fix: Rename prop from setApiKey to onSaveApiKey to match parent component.
   onSaveApiKey: (key: string) => void;
   // Custom Instructions
   aboutUser: string;
@@ -43,9 +42,9 @@ type AppModalsProps = {
   maxTokens: number;
   setMaxTokens: (value: number) => void;
   imageModel: string;
-  setImageModel: (modelId: string) => void;
+  onImageModelChange: (modelId: string) => void;
   videoModel: string;
-  setVideoModel: (modelId: string) => void;
+  onVideoModelChange: (modelId: string) => void;
   defaultTemperature: number;
   defaultMaxTokens: number;
   // Speech & Memory
@@ -70,7 +69,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     availableModels, activeModel,
     handleModelChange, modelsLoading, clearAllChats, aboutUser, setAboutUser,
     aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens,
-    setMaxTokens, imageModel, setImageModel, videoModel, setVideoModel,
+    setMaxTokens, imageModel, onImageModelChange, videoModel, onVideoModelChange,
     defaultTemperature, defaultMaxTokens, isMemoryEnabled,
     setIsMemoryEnabled, memoryContent, clearMemory, isConfirmationOpen,
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
@@ -100,9 +99,9 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         maxTokens={maxTokens}
         setMaxTokens={setMaxTokens}
         imageModel={imageModel}
-        onImageModelChange={setImageModel}
+        onImageModelChange={onImageModelChange}
         videoModel={videoModel}
-        onVideoModelChange={setVideoModel}
+        onVideoModelChange={onVideoModelChange}
         defaultTemperature={defaultTemperature}
         defaultMaxTokens={defaultMaxTokens}
         isMemoryEnabled={isMemoryEnabled}

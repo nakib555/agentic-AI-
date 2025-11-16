@@ -6,13 +6,12 @@
 // This file contains the logic extracted from App.tsx.
 // It uses a custom hook to manage state, side effects, and event handlers.
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { useChat } from './useChat/index';
 import { useTheme } from './useTheme';
 import { useSidebar } from './useSidebar';
 import { useViewport } from './useViewport';
 import { useMemory } from './useMemory';
-import { useModeToggle } from './useModeToggle';
 import { getAvailableModels, type Model, validModels } from '../services/modelService';
 import type { Message, ChatSession } from '../types';
 import {
@@ -34,6 +33,7 @@ import {
 } from '../components/App/constants';
 import { fetchFromApi } from '../utils/api';
 import { testSuite, type TestResult, type TestProgress } from '../components/Testing/testSuite';
+import { getSettings, updateSettings } from '../services/settingsService';
 
 
 export const useAppLogic = () => {
@@ -44,9 +44,7 @@ export const useAppLogic = () => {
   const { theme, setTheme } = useTheme();
   const { isDesktop } = useViewport();
   const sidebar = useSidebar();
-  const { isAgentMode, setIsAgentMode } = useModeToggle();
-  const memory = useMemory();
-
+  
   // --- UI State ---
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
@@ -55,7 +53,9 @@ export const useAppLogic = () => {
   const [thinkingMessageId, setThinkingMessageId] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [backendError, setBackendError] = useState<string | null>(null);
+  // FIX: Add state for test mode
   const [isTestMode, setIsTestMode] = useState(false);
+  const [settingsLoading, setSettingsLoading] = useState(true);
 
   // --- Model Management ---
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
@@ -63,32 +63,73 @@ export const useAppLogic = () => {
   const [activeModel, setActiveModel] = useState(validModels[1]?.id || validModels[0]?.id);
 
   // --- Settings State ---
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('agentic-apiKey') || '');
-  const [aboutUser, setAboutUser] = useState(() => localStorage.getItem('agentic-aboutUser') || DEFAULT_ABOUT_USER);
-  const [aboutResponse, setAboutResponse] = useState(() => localStorage.getItem('agentic-aboutResponse') || DEFAULT_ABOUT_RESPONSE);
-  const [temperature, setTemperature] = useState(() => parseFloat(localStorage.getItem('agentic-temperature') || `${DEFAULT_TEMPERATURE}`));
-  const [maxTokens, setMaxTokens] = useState(() => parseInt(localStorage.getItem('agentic-maxTokens') || `${DEFAULT_MAX_TOKENS}`, 10));
-  const [imageModel, setImageModel] = useState(() => localStorage.getItem('agentic-imageModel') || DEFAULT_IMAGE_MODEL);
-  const [videoModel, setVideoModel] = useState(() => localStorage.getItem('agentic-videoModel') || DEFAULT_VIDEO_MODEL);
-  const [ttsVoice, setTtsVoice] = useState(() => localStorage.getItem('agentic-ttsVoice') || DEFAULT_TTS_VOICE);
-  const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState(() => {
-    const saved = localStorage.getItem('agentic-autoPlayAudio');
-    return saved ? JSON.parse(saved) : DEFAULT_AUTO_PLAY_AUDIO;
-  });
+  // FIX: Add state for API key
+  const [apiKey, setApiKey] = useState('');
+  const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
+  const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
+  const [temperature, setTemperature] = useState(DEFAULT_TEMPERATURE);
+  const [maxTokens, setMaxTokens] = useState(DEFAULT_MAX_TOKENS);
+  const [imageModel, setImageModel] = useState(DEFAULT_IMAGE_MODEL);
+  const [videoModel, setVideoModel] = useState(DEFAULT_VIDEO_MODEL);
+  const [ttsVoice, setTtsVoice] = useState(DEFAULT_TTS_VOICE);
+  const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState(DEFAULT_AUTO_PLAY_AUDIO);
+  const [isAgentMode, setIsAgentModeState] = useState(true);
+  
+  // Memory state is managed by its own hook, but we need to pass the enabled flag.
+  const [isMemoryEnabled, setIsMemoryEnabledState] = useState(false);
+  const memory = useMemory(isMemoryEnabled);
 
-  // --- Effect to save settings to localStorage ---
+  // --- Settings Management ---
+
+  // Fetch all settings from backend on initial load
   useEffect(() => {
-    if (apiKey) localStorage.setItem('agentic-apiKey', apiKey);
-    else localStorage.removeItem('agentic-apiKey');
-  }, [apiKey]);
-  useEffect(() => { localStorage.setItem('agentic-aboutUser', aboutUser); }, [aboutUser]);
-  useEffect(() => { localStorage.setItem('agentic-aboutResponse', aboutResponse); }, [aboutResponse]);
-  useEffect(() => { localStorage.setItem('agentic-temperature', String(temperature)); }, [temperature]);
-  useEffect(() => { localStorage.setItem('agentic-maxTokens', String(maxTokens)); }, [maxTokens]);
-  useEffect(() => { localStorage.setItem('agentic-imageModel', imageModel); }, [imageModel]);
-  useEffect(() => { localStorage.setItem('agentic-videoModel', videoModel); }, [videoModel]);
-  useEffect(() => { localStorage.setItem('agentic-ttsVoice', ttsVoice); }, [ttsVoice]);
-  useEffect(() => { localStorage.setItem('agentic-autoPlayAudio', JSON.stringify(isAutoPlayEnabled)); }, [isAutoPlayEnabled]);
+    const loadSettings = async () => {
+        try {
+            setSettingsLoading(true);
+            const settings = await getSettings();
+            setApiKey(settings.apiKey);
+            setAboutUser(settings.aboutUser);
+            setAboutResponse(settings.aboutResponse);
+            setTemperature(settings.temperature);
+            setMaxTokens(settings.maxTokens);
+            setImageModel(settings.imageModel);
+            setVideoModel(settings.videoModel);
+            setIsMemoryEnabledState(settings.isMemoryEnabled);
+            setTtsVoice(settings.ttsVoice);
+            setIsAutoPlayEnabled(settings.isAutoPlayEnabled);
+            setIsAgentModeState(settings.isAgentMode);
+        } catch (error) {
+            console.error("Failed to load settings from backend:", error);
+        } finally {
+            setSettingsLoading(false);
+        }
+    };
+    loadSettings();
+  }, []);
+
+  // Generic function to create a state setter that also persists to the backend
+  // FIX: Use Dispatch and SetStateAction directly to avoid React namespace error.
+  const createSettingUpdater = <T,>(
+    setter: Dispatch<SetStateAction<T>>, 
+    key: string
+  ) => {
+    return useCallback((newValue: T) => {
+        setter(newValue);
+        updateSettings({ [key]: newValue }).catch(err => console.error(`Failed to save setting ${key}:`, err));
+    }, [setter, key]);
+  };
+
+  const handleSetApiKey = createSettingUpdater(setApiKey, 'apiKey');
+  const handleSetAboutUser = createSettingUpdater(setAboutUser, 'aboutUser');
+  const handleSetAboutResponse = createSettingUpdater(setAboutResponse, 'aboutResponse');
+  const handleSetTemperature = createSettingUpdater(setTemperature, 'temperature');
+  const handleSetMaxTokens = createSettingUpdater(setMaxTokens, 'maxTokens');
+  const handleSetImageModel = createSettingUpdater(setImageModel, 'imageModel');
+  const handleSetVideoModel = createSettingUpdater(setVideoModel, 'videoModel');
+  const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
+  const handleSetIsAutoPlayEnabled = createSettingUpdater(setIsAutoPlayEnabled, 'isAutoPlayEnabled');
+  const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
+  const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
 
   // --- Fetch available models on mount ---
   useEffect(() => {
@@ -147,6 +188,7 @@ export const useAppLogic = () => {
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode);
   const { updateChatModel, updateChatSettings } = chat;
 
+  // FIX: Pass arguments to startNewChat and make wrapper async.
   const startNewChat = useCallback(async () => {
     await chat.startNewChat(activeModel, chatSettings);
   }, [chat, activeModel, chatSettings]);
@@ -181,7 +223,6 @@ export const useAppLogic = () => {
     if (currentChat && !currentChat.isLoading && currentChat.messages && currentChat.messages.length > 0) {
       memory.updateMemory(currentChat);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat.isLoading, chat.currentChatId, chat.chatHistory, memory.updateMemory]);
 
   // --- Handlers ---
@@ -297,16 +338,35 @@ export const useAppLogic = () => {
   }, [chat, startNewChat]);
   
   // --- Return all state and handlers ---
+  // FIX: Alias setters to match component props and add missing properties.
   return {
-    appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, setIsAgentMode, ...memory,
+    appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, ...memory,
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
     isImportModalOpen, setIsImportModalOpen,
     isThinkingSidebarOpen, setIsThinkingSidebarOpen, thinkingMessageId, setThinkingMessageId,
-    backendStatus, backendError, isTestMode, setIsTestMode,
+    backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading,
     availableModels, modelsLoading, activeModel, handleModelChange,
-    apiKey, setApiKey,
-    aboutUser, setAboutUser, aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens, setMaxTokens,
-    imageModel, setImageModel, videoModel, setVideoModel, ttsVoice, setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled,
+    apiKey,
+    onSaveApiKey: handleSetApiKey,
+    aboutUser,
+    setAboutUser: handleSetAboutUser,
+    aboutResponse,
+    setAboutResponse: handleSetAboutResponse,
+    temperature,
+    setTemperature: handleSetTemperature,
+    maxTokens,
+    setMaxTokens: handleSetMaxTokens,
+    imageModel,
+    setImageModel: handleSetImageModel,
+    videoModel,
+    setVideoModel: handleSetVideoModel,
+    ttsVoice,
+    setTtsVoice: handleSetTtsVoice,
+    isAutoPlayEnabled,
+    setIsAutoPlayEnabled: handleSetIsAutoPlayEnabled,
+    isMemoryEnabled,
+    setIsMemoryEnabled: handleSetIsMemoryEnabled,
+    setIsAgentMode: handleSetIsAgentMode,
     ...chat, isChatActive, thinkingMessageForSidebar,
     startNewChat,
     handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,

@@ -16,10 +16,40 @@ const UPLOADS_PATH = path.join(DATA_PATH, 'uploads');
 const ensureDir = async (dirPath: string) => {
     try {
         await fs.mkdir(dirPath, { recursive: true });
-    } catch (error) {
-        console.error(`Error creating directory ${dirPath}:`, error);
+    } catch (error: any) {
+        if (error.code !== 'EEXIST') {
+            console.error(`Error creating directory ${dirPath}:`, error);
+            throw error;
+        }
     }
 };
+
+// Ensure base uploads directory exists on startup
+ensureDir(UPLOADS_PATH);
+
+// Resolves a virtual path to a real, safe filesystem path within a chat's directory.
+const resolveVirtualPath = (chatId: string, virtualPath: string): string => {
+    // Sanitize chatId to prevent traversal
+    const safeChatId = path.normalize(chatId).replace(/^(\.\.(\/|\\|$))+/, '');
+    if (safeChatId.includes('/') || safeChatId.includes('\\')) {
+        throw new Error('Invalid chatId provided.');
+    }
+    const chatDirectory = path.join(UPLOADS_PATH, safeChatId);
+
+    // Sanitize and normalize the virtual path
+    const normalizedVirtualPath = path.normalize(virtualPath).replace(/^(\.\.(\/|\\|$))+/, '');
+    
+    // The virtual FS root is the chat-specific directory
+    const finalPath = path.join(chatDirectory, normalizedVirtualPath);
+
+    // Security check: ensure the final path is still within the chat's directory
+    if (!finalPath.startsWith(chatDirectory)) {
+        throw new Error('Access denied: Path is outside the allowed directory.');
+    }
+    
+    return finalPath;
+};
+
 
 export const dataStore = {
     async getChatHistoryList(): Promise<Omit<ChatSession, 'messages'>[]> {

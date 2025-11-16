@@ -17,6 +17,7 @@ import { getText } from "./utils/geminiUtils.js";
 import { createToolExecutor } from "./tools/index.js";
 import { ToolCallEvent } from './services/agenticLoop/types.js';
 import { toolDeclarations } from './tools/declarations.js';
+import { getApiKey } from './settingsHandler.js';
 
 // --- State for handling asynchronous frontend interactions ---
 const activeRequests = new Map<string, AbortController>();
@@ -169,8 +170,8 @@ PLACEHOLDER:`;
 // FIX: Use explicit aliased express types for req and res.
 // The previous fix was insufficient. Using direct, non-aliased types from express.
 export const apiHandler = async (req: Request, res: Response) => {
-    const frontendApiKey = req.headers['x-api-key'] as string;
-    const apiKey = frontendApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
+    const storedApiKey = await getApiKey();
+    const apiKey = storedApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
     
     if (!apiKey) {
       return res.status(401).json({ error: { message: "API key is not configured. Please add it in the app settings or as a server environment variable." } });

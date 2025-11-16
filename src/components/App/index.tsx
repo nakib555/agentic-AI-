@@ -41,7 +41,6 @@ export const App = () => {
         setIsResizing={logic.setIsResizing}
         history={logic.chatHistory}
         currentChatId={logic.currentChatId}
-        // FIX: Pass a no-argument function to `onNewChat` to match the expected type.
         onNewChat={logic.startNewChat}
         onLoadChat={logic.loadChat}
         onDeleteChat={logic.deleteChat}
@@ -81,6 +80,7 @@ export const App = () => {
               onRegenerate={logic.regenerateResponse}
               onSetActiveResponseIndex={logic.setActiveResponseIndex}
               isAgentMode={logic.isAgentMode}
+              // FIX: Use the correct prop name as returned by useAppLogic
               setIsAgentMode={logic.setIsAgentMode}
               backendStatus={logic.backendStatus}
               backendError={logic.backendError}
@@ -100,6 +100,7 @@ export const App = () => {
         onRegenerate={logic.regenerateResponse}
       />
 
+      {/* FIX: Use correct prop names for setters as returned by useAppLogic */}
       <AppModals
         isSettingsOpen={logic.isSettingsOpen}
         setIsSettingsOpen={logic.setIsSettingsOpen}
@@ -108,16 +109,14 @@ export const App = () => {
         isImportModalOpen={logic.isImportModalOpen}
         setIsImportModalOpen={logic.setIsImportModalOpen}
         handleFileUploadForImport={logic.handleFileUploadForImport}
-        // FIX: Pass setIsTestMode to the onRunTests prop.
         onRunTests={() => logic.setIsTestMode(true)}
         availableModels={logic.availableModels}
         activeModel={logic.activeModel}
         handleModelChange={logic.handleModelChange}
-        modelsLoading={logic.modelsLoading}
+        modelsLoading={logic.modelsLoading || logic.settingsLoading}
         clearAllChats={logic.clearAllChats}
-        // FIX: Pass apiKey and setApiKey to the modal.
         apiKey={logic.apiKey}
-        onSaveApiKey={logic.setApiKey}
+        onSaveApiKey={logic.onSaveApiKey}
         aboutUser={logic.aboutUser}
         setAboutUser={logic.setAboutUser}
         aboutResponse={logic.aboutResponse}
@@ -127,9 +126,9 @@ export const App = () => {
         maxTokens={logic.maxTokens}
         setMaxTokens={logic.setMaxTokens}
         imageModel={logic.imageModel}
-        setImageModel={logic.setImageModel}
+        onImageModelChange={logic.setImageModel}
         videoModel={logic.videoModel}
-        setVideoModel={logic.setVideoModel}
+        onVideoModelChange={logic.setVideoModel}
         defaultTemperature={DEFAULT_TEMPERATURE}
         defaultMaxTokens={DEFAULT_MAX_TOKENS}
         isMemoryEnabled={logic.isMemoryEnabled}
@@ -147,7 +146,6 @@ export const App = () => {
         setIsAutoPlayEnabled={logic.setIsAutoPlayEnabled}
       />
 
-      {/* FIX: Use isTestMode from logic to conditionally render the TestRunner. */}
       {logic.isTestMode && (
           <TestRunner 
               isOpen={logic.isTestMode}

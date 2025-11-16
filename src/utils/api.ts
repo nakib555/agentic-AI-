@@ -17,14 +17,6 @@ const getApiBaseUrl = () => {
 export const API_BASE_URL = getApiBaseUrl();
 
 export const fetchFromApi = (url: string, options: RequestInit = {}): Promise<Response> => {
-    const apiKey = localStorage.getItem('agentic-apiKey');
-    const headers = new Headers(options.headers);
-    if (apiKey) {
-        headers.set('X-API-Key', apiKey);
-    }
-
-    return fetch(`${API_BASE_URL}${url}`, {
-        ...options,
-        headers,
-    });
+    // The API key is no longer sent from the client. The backend retrieves it from its own settings store.
+    return fetch(`${API_BASE_URL}${url}`, options);
 };

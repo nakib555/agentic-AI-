@@ -68,7 +68,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="settings-title"
@@ -78,7 +78,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="bg-white dark:bg-[#202123] rounded-2xl shadow-xl w-full max-w-4xl h-[80vh] border border-gray-200 dark:border-white/10 flex flex-col"
+            className="bg-white dark:bg-[#202123] w-full h-full shadow-xl md:rounded-2xl md:max-w-4xl md:h-[90vh] border border-gray-200 dark:border-white/10 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -97,12 +97,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
               </button>
             </div>
             
-            <div className="flex-1 flex min-h-0">
-                {/* Left Navigation */}
-                <nav className="w-56 flex-shrink-0 p-4 border-r border-gray-200 dark:border-white/10 overflow-y-auto">
-                    <ul className="space-y-1">
+            <div className="flex-1 flex flex-col md:flex-row min-h-0">
+                {/* Navigation: top on mobile, left on desktop */}
+                <nav className="flex-shrink-0 p-2 md:p-4 border-b md:border-b-0 md:border-r border-gray-200 dark:border-white/10 md:w-56">
+                    {/* Horizontal list on mobile, vertical on desktop */}
+                    <ul className="flex flex-row md:flex-col gap-1 md:gap-0 md:space-y-1 overflow-x-auto md:overflow-x-hidden pb-2 md:pb-0">
                         {CATEGORIES.map(cat => (
-                            <li key={cat.id}>
+                            <li key={cat.id} className="flex-shrink-0 md:w-full">
                                 <SettingsCategoryButton
                                     icon={cat.icon}
                                     label={cat.label}
@@ -114,8 +115,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                     </ul>
                 </nav>
 
-                {/* Right Content */}
-                <div className="flex-1 p-6 overflow-y-auto">
+                {/* Content Area */}
+                <div className="flex-1 p-4 md:p-6 overflow-y-auto">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeCategory}

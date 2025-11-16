@@ -1,0 +1,80 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { Request, Response } from 'express';
+import { promises as fs } from 'fs';
+import path from 'path';
+import process from 'process';
+
+const DATA_PATH = path.join(process.cwd(), 'data');
+const SETTINGS_PATH = path.join(DATA_PATH, 'settings.json');
+
+// Default settings structure
+const defaultSettings = {
+    apiKey: '',
+    aboutUser: '',
+    aboutResponse: '',
+    temperature: 0.7,
+    maxTokens: 0,
+    imageModel: 'imagen-4.0-generate-001',
+    videoModel: 'veo-3.1-fast-generate-preview',
+    isMemoryEnabled: false,
+    ttsVoice: 'Kore',
+    isAutoPlayEnabled: false,
+    isAgentMode: true,
+};
+
+const ensureDataDir = async () => {
+    try {
+        await fs.mkdir(DATA_PATH, { recursive: true });
+    } catch (error: any) {
+        if (error.code !== 'EEXIST') {
+            console.error('Failed to create data directory:', error);
+            throw error;
+        }
+    }
+};
+
+const readSettings = async () => {
+    try {
+        const content = await fs.readFile(SETTINGS_PATH, 'utf-8');
+        return { ...defaultSettings, ...JSON.parse(content) };
+    } catch (error: any) {
+        if (error.code === 'ENOENT') {
+            await ensureDataDir();
+            await fs.writeFile(SETTINGS_PATH, JSON.stringify(defaultSettings, null, 2), 'utf-8');
+            return defaultSettings;
+        }
+        console.error('Failed to read settings:', error);
+        return defaultSettings;
+    }
+};
+
+export const getSettings = async (req: Request, res: Response) => {
+    try {
+        const settings = await readSettings();
+        res.status(200).json(settings);
+    } catch (error) {
+        console.error('Failed to get settings:', error);
+        res.status(500).json({ error: 'Failed to retrieve settings.' });
+    }
+};
+
+export const updateSettings = async (req: Request, res: Response) => {
+    try {
+        const currentSettings = await readSettings();
+        const updatedSettings = { ...currentSettings, ...req.body };
+        await fs.writeFile(SETTINGS_PATH, JSON.stringify(updatedSettings, null, 2), 'utf-8');
+        res.status(200).json(updatedSettings);
+    } catch (error) {
+        console.error('Failed to update settings:', error);
+        res.status(500).json({ error: 'Failed to save settings.' });
+    }
+};
+
+export const getApiKey = async (): Promise<string | null> => {
+    const settings = await readSettings();
+    return settings.apiKey || null;
+};

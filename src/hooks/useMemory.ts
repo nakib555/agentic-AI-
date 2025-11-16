@@ -7,30 +7,45 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { ChatSession } from '../types';
 import { fetchFromApi } from '../utils/api';
 
-const MEMORY_ENABLED_KEY = 'agentic-memoryEnabled';
-const MEMORY_CONTENT_KEY = 'agentic-memoryContent';
-
-export const useMemory = () => {
-    const [isMemoryEnabled, setIsMemoryEnabled] = useState<boolean>(() => JSON.parse(localStorage.getItem(MEMORY_ENABLED_KEY) || 'false'));
-    const [memoryContent, setMemoryContent] = useState<string>(() => localStorage.getItem(MEMORY_CONTENT_KEY) || '');
+export const useMemory = (isMemoryEnabled: boolean) => {
+    const [memoryContent, setMemoryContent] = useState<string>('');
     const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
     const [memorySuggestions, setMemorySuggestions] = useState<string[]>([]);
     const pendingMemoryUpdateRef = useRef<{ suggestions: string[], currentMemory: string } | null>(null);
 
     useEffect(() => {
-        localStorage.setItem(MEMORY_ENABLED_KEY, JSON.stringify(isMemoryEnabled));
-        if (!isMemoryEnabled) {
-            localStorage.removeItem(MEMORY_CONTENT_KEY);
-            setMemoryContent('');
-        }
+        const fetchMemory = async () => {
+            if (isMemoryEnabled) {
+                try {
+                    const response = await fetchFromApi('/api/memory');
+                    if (!response.ok) throw new Error('Failed to fetch memory');
+                    const data = await response.json();
+                    setMemoryContent(data.content || '');
+                } catch (error) {
+                    console.error("Failed to fetch memory:", error);
+                }
+            } else {
+                setMemoryContent('');
+            }
+        };
+        fetchMemory();
     }, [isMemoryEnabled]);
 
-    useEffect(() => {
-        if (isMemoryEnabled) localStorage.setItem(MEMORY_CONTENT_KEY, memoryContent);
-    }, [memoryContent, isMemoryEnabled]);
+    const updateBackendMemory = useCallback(async (newContent: string) => {
+        try {
+            await fetchFromApi('/api/memory', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: newContent }),
+            });
+            setMemoryContent(newContent);
+        } catch (error) {
+            console.error("Failed to update memory on backend:", error);
+        }
+    }, []);
 
     const updateMemory = useCallback(async (completedChat: ChatSession) => {
-        if (!isMemoryEnabled || completedChat.messages.length < 2) return;
+        if (!isMemoryEnabled || !completedChat.messages || completedChat.messages.length < 2) return;
         try {
             const response = await fetchFromApi('/api/handler?task=memory_suggest', {
                 method: 'POST',
@@ -61,7 +76,7 @@ export const useMemory = () => {
             });
             if (!response.ok) throw new Error(`Server error: ${response.status}`);
             const { memory } = await response.json();
-            setMemoryContent(memory);
+            await updateBackendMemory(memory);
         } catch (error) {
             console.error("Failed to consolidate memory:", error);
         } finally {
@@ -69,7 +84,7 @@ export const useMemory = () => {
             setMemorySuggestions([]);
             pendingMemoryUpdateRef.current = null;
         }
-    }, []);
+    }, [updateBackendMemory]);
     
     const cancelMemoryUpdate = useCallback(() => {
         setIsConfirmationOpen(false);
@@ -77,13 +92,23 @@ export const useMemory = () => {
         pendingMemoryUpdateRef.current = null;
     }, []);
 
-    const clearMemory = useCallback(() => {
-        setMemoryContent('');
-        localStorage.removeItem(MEMORY_CONTENT_KEY);
+    const clearMemory = useCallback(async () => {
+        try {
+            await fetchFromApi('/api/memory', { method: 'DELETE' });
+            setMemoryContent('');
+        } catch (error) {
+            console.error("Failed to clear memory on backend:", error);
+        }
     }, []);
 
     return {
-        isMemoryEnabled, setIsMemoryEnabled, memoryContent, updateMemory, clearMemory,
-        isConfirmationOpen, memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate,
+        isMemoryEnabled,
+        memoryContent,
+        updateMemory,
+        clearMemory,
+        isConfirmationOpen,
+        memorySuggestions,
+        confirmMemoryUpdate,
+        cancelMemoryUpdate,
     };
 };
