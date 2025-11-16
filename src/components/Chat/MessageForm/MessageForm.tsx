@@ -88,7 +88,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     </motion.div>
                 )}
               </AnimatePresence>
-              <div ref={logic.inputRef} contentEditable={!logic.isEnhancing} onInput={(e) => logic.setInputValue(e.currentTarget.innerText)} onKeyDown={logic.handleKeyDown} onPaste={logic.handlePaste} onFocus={() => logic.setIsFocused(true)} onBlur={() => logic.setIsFocused(false)} aria-label="Chat input" role="textbox" className={`content-editable-input w-full px-2 py-1.5 bg-transparent text-gray-900 dark:text-slate-200 focus:outline-none relative z-10 ${logic.isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ minHeight: '32px', maxHeight: '192px', transition: 'height 0.2s ease-in-out' }} />
+              <div ref={logic.inputRef} contentEditable={!logic.isEnhancing} onInput={(e) => logic.setInputValue(e.currentTarget.innerText)} onKeyDown={logic.handleKeyDown} onPaste={logic.handlePaste} onFocus={() => logic.setIsFocused(true)} onBlur={() => logic.setIsFocused(false)} aria-label="Chat input" role="textbox" className={`content-editable-input w-full px-2 py-1.5 bg-transparent text-gray-900 dark:text-slate-200 focus:outline-none relative z-10 ${logic.isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ minHeight: '56px', maxHeight: '192px', transition: 'height 0.2s ease-in-out' }} />
             </div>
             
             <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-200/50 dark:border-white/10">
