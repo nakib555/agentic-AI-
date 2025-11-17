@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect } from 'react';
-import { motion as motionTyped } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import type { ChatSession } from '../../types';
 import { HistoryItem } from './HistoryItem';
@@ -61,6 +61,12 @@ const NoResults = () => (
     </motion.div>
 );
 
+const ChevronIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 transition-transform">
+        <path fillRule="evenodd" d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+    </svg>
+);
+
 export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, isDesktop, onLoadChat, onDeleteChat, onUpdateChatTitle }: HistoryListProps) => {
     const filteredHistory = history.filter(item =>
         item.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -72,18 +78,45 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
     
     const shouldCollapse = isDesktop && isCollapsed;
 
+    const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
+        try {
+            const savedState = localStorage.getItem('chatHistoryGroups');
+            return savedState ? JSON.parse(savedState) : {};
+        } catch (e) {
+            console.error("Failed to parse chat history groups from localStorage", e);
+            return {};
+        }
+    });
+
+    useEffect(() => {
+        localStorage.setItem('chatHistoryGroups', JSON.stringify(collapsedGroups));
+    }, [collapsedGroups]);
+
+    const toggleGroup = (groupName: string) => {
+        setCollapsedGroups(prev => ({
+            ...prev,
+            [groupName]: !prev[groupName],
+        }));
+    };
+
     return (
         <div className={`flex-1 min-h-0 text-sm ${!shouldCollapse ? 'overflow-y-auto' : ''}`}>
             {Object.keys(groupedHistory).length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-1">
                     {groupOrder.map(groupName => {
                         const chatsInGroup = groupedHistory[groupName];
                         if (!chatsInGroup || chatsInGroup.length === 0) return null;
 
+                        const isGroupCollapsed = collapsedGroups[groupName] ?? false;
+
                         return (
                             <div key={groupName}>
-                                <h3 
-                                    className="px-2 text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2"
+                                <button
+                                    onClick={() => !shouldCollapse && toggleGroup(groupName)}
+                                    disabled={shouldCollapse}
+                                    className="w-full flex items-center justify-between px-2 text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 hover:bg-gray-100/60 dark:hover:bg-violet-900/30 rounded disabled:cursor-default disabled:bg-transparent dark:disabled:bg-transparent"
+                                    aria-expanded={!isGroupCollapsed}
+                                    aria-controls={`group-content-${groupName}`}
                                 >
                                     <motion.span
                                         className="block overflow-hidden whitespace-nowrap"
@@ -93,23 +126,48 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                                     >
                                         {groupName}
                                     </motion.span>
-                                </h3>
-                                <div className="space-y-0.5">
-                                    {chatsInGroup.map((item) => (
-                                        <HistoryItem 
-                                            key={item.id} 
-                                            text={item.title} 
-                                            isCollapsed={isCollapsed}
-                                            isDesktop={isDesktop}
-                                            searchQuery={searchQuery}
-                                            active={item.id === currentChatId}
-                                            onClick={() => onLoadChat(item.id)}
-                                            onDelete={() => onDeleteChat(item.id)}
-                                            onUpdateTitle={(newTitle) => onUpdateChatTitle(item.id, newTitle)}
-                                            isLoading={item.isLoading ?? false}
-                                        />
-                                    ))}
-                                </div>
+                                    <motion.div
+                                        className={shouldCollapse ? 'hidden' : 'block'}
+                                        animate={{ rotate: isGroupCollapsed ? 0 : 90 }}
+                                        transition={{ duration: 0.2, ease: 'easeOut' }}
+                                    >
+                                        <ChevronIcon />
+                                    </motion.div>
+                                </button>
+                                <AnimatePresence initial={false}>
+                                    {!isGroupCollapsed && !shouldCollapse && (
+                                        <motion.div
+                                            id={`group-content-${groupName}`}
+                                            key="content"
+                                            initial="collapsed"
+                                            animate="open"
+                                            exit="collapsed"
+                                            variants={{
+                                                open: { opacity: 1, height: 'auto' },
+                                                collapsed: { opacity: 0, height: 0 }
+                                            }}
+                                            transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="space-y-0.5">
+                                                {chatsInGroup.map((item) => (
+                                                    <HistoryItem 
+                                                        key={item.id} 
+                                                        text={item.title} 
+                                                        isCollapsed={isCollapsed}
+                                                        isDesktop={isDesktop}
+                                                        searchQuery={searchQuery}
+                                                        active={item.id === currentChatId}
+                                                        onClick={() => onLoadChat(item.id)}
+                                                        onDelete={() => onDeleteChat(item.id)}
+                                                        onUpdateTitle={(newTitle) => onUpdateChatTitle(item.id, newTitle)}
+                                                        isLoading={item.isLoading ?? false}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         )
                     })}
