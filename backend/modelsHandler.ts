@@ -4,30 +4,76 @@
  */
 
 import { Request, Response } from 'express';
-import { GoogleGenAI } from "@google/genai";
 import { getApiKey } from './settingsHandler.js';
-import { validModels, validImageModels, validVideoModels } from './models.js';
+import type { Model } from '../src/types/index.js';
+
+// Whitelist and order of models to display in the UI for a consistent experience.
+const CHAT_MODELS_ORDER = ['gemini-2.5-pro', 'gemini-2.5-flash'];
+const IMAGE_MODELS_ORDER = ['imagen-4.0-generate-001', 'gemini-2.5-flash-image'];
+const VIDEO_MODELS_ORDER = ['veo-3.1-generate-preview', 'veo-3.1-fast-generate-preview'];
 
 export const getAvailableModelsHandler = async (req: Request, res: Response) => {
     const apiKey = await getApiKey();
     if (!apiKey) {
+        // If no key is configured, return empty lists.
         return res.status(200).json({ models: [], imageModels: [], videoModels: [] });
     }
 
     try {
-        const ai = new GoogleGenAI({ apiKey });
-        // A simple, low-cost call to verify the key.
-        await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: ' ' });
+        // Use the Gemini REST API's 'models' endpoint to dynamically list available models.
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
         
-        // If the call succeeds, the key is valid. Return the hardcoded model lists.
+        if (!response.ok) {
+            // This failure indicates an invalid API key or permission issue.
+            const errorBody = await response.text();
+            throw new Error(`Failed to fetch models from Google API: ${response.status} ${response.statusText} - ${errorBody}`);
+        }
+
+        const data = await response.json();
+
+        const availableChatModels: Model[] = [];
+        const availableImageModels: Model[] = [];
+        const availableVideoModels: Model[] = [];
+
+        const allWhitelistedModels = new Set([...CHAT_MODELS_ORDER, ...IMAGE_MODELS_ORDER, ...VIDEO_MODELS_ORDER]);
+
+        for (const model of data.models) {
+            // The API returns full names like "models/gemini-2.5-pro", we use the short form.
+            const modelId = model.name.replace('models/', '');
+
+            // We only care about models whitelisted for this application.
+            if (allWhitelistedModels.has(modelId)) {
+                const modelInfo: Model = {
+                    id: modelId,
+                    name: model.displayName,
+                    description: model.description,
+                };
+
+                // Categorize the model based on our predefined lists.
+                if (CHAT_MODELS_ORDER.includes(modelId)) {
+                    availableChatModels.push(modelInfo);
+                } else if (IMAGE_MODELS_ORDER.includes(modelId)) {
+                    availableImageModels.push(modelInfo);
+                } else if (VIDEO_MODELS_ORDER.includes(modelId)) {
+                    availableVideoModels.push(modelInfo);
+                }
+            }
+        }
+        
+        // Sort the models according to our predefined order for a consistent UI.
+        const sortModels = (models: Model[], order: string[]) => {
+            return models.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+        };
+
         res.status(200).json({
-            models: validModels,
-            imageModels: validImageModels,
-            videoModels: validVideoModels,
+            models: sortModels(availableChatModels, CHAT_MODELS_ORDER),
+            imageModels: sortModels(availableImageModels, IMAGE_MODELS_ORDER),
+            videoModels: sortModels(availableVideoModels, VIDEO_MODELS_ORDER),
         });
+
     } catch (error: any) {
-        console.warn('API Key validation failed while fetching models:', error.message);
-        // If the key is invalid, return empty arrays.
+        console.warn('API Key validation or model fetch failed:', error.message);
+        // If the key is invalid or the fetch fails, return empty arrays to the client.
         res.status(200).json({ models: [], imageModels: [], videoModels: [] });
     }
 };
