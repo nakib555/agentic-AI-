@@ -34,7 +34,8 @@ export const updateSettings = async (settings: Partial<AppSettings>): Promise<Ap
         body: JSON.stringify(settings),
     });
     if (!response.ok) {
-        throw new Error('Failed to update settings');
+        const errorBody = await response.json().catch(() => ({ error: 'An unknown error occurred while saving settings.' }));
+        throw new Error(errorBody.error);
     }
     return response.json();
 };

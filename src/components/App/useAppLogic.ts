@@ -12,7 +12,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useSidebar } from '../../hooks/useSidebar';
 import { useViewport } from '../../hooks/useViewport';
 import { useMemory } from '../../hooks/useMemory';
-import { getAvailableModels, type Model, validModels } from '../../services/modelService';
+import { type Model, validModels } from '../../services/modelService';
 import type { Message, ChatSession } from '../../types';
 import {
   exportChatToJson,
@@ -34,6 +34,7 @@ import {
 import { fetchFromApi } from '../../utils/api';
 import { testSuite, type TestResult, type TestProgress } from '../Testing/testSuite';
 import { getSettings, updateSettings } from '../../services/settingsService';
+import { logCollector } from '../../utils/logCollector';
 
 
 export const useAppLogic = () => {
@@ -58,6 +59,8 @@ export const useAppLogic = () => {
 
   // --- Model Management ---
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
+  const [availableImageModels, setAvailableImageModels] = useState<Model[]>([]);
+  const [availableVideoModels, setAvailableVideoModels] = useState<Model[]>([]);
   const [modelsLoading, setModelsLoading] = useState(true);
   const [activeModel, setActiveModel] = useState(validModels[1]?.id || validModels[0]?.id);
 
@@ -77,7 +80,38 @@ export const useAppLogic = () => {
   const [isMemoryEnabled, setIsMemoryEnabledState] = useState(false);
   const memory = useMemory(isMemoryEnabled);
 
-  // --- Settings Management ---
+  // --- Start Log Collector on Mount ---
+  useEffect(() => {
+    logCollector.start();
+  }, []);
+  
+  // --- Settings and Model Management ---
+
+  const fetchModels = useCallback(async () => {
+    try {
+        setModelsLoading(true);
+        const response = await fetchFromApi('/api/models');
+        if (!response.ok) throw new Error('Failed to fetch models');
+        const data = await response.json();
+
+        const newModels = data.models || [];
+        setAvailableModels(newModels);
+        setAvailableImageModels(data.imageModels || []);
+        setAvailableVideoModels(data.videoModels || []);
+        
+        if (newModels.length > 0 && !newModels.some((m: Model) => m.id === activeModel)) {
+          setActiveModel(newModels[1]?.id || newModels[0]?.id);
+        }
+
+    } catch (error) {
+        console.error("Failed to fetch available models:", error);
+        setAvailableModels([]);
+        setAvailableImageModels([]);
+        setAvailableVideoModels([]);
+    } finally {
+        setModelsLoading(false);
+    }
+  }, [activeModel]);
 
   // Fetch all settings from backend on initial load
   useEffect(() => {
@@ -105,8 +139,13 @@ export const useAppLogic = () => {
     loadSettings();
   }, []);
 
-  // Generic function to create a state setter that also persists to the backend
-  // FIX: Use Dispatch and SetStateAction directly to avoid React namespace error.
+  // Fetch models after settings (including API key) are loaded
+  useEffect(() => {
+    if (!settingsLoading) {
+      fetchModels();
+    }
+  }, [settingsLoading, fetchModels]);
+
   const createSettingUpdater = <T,>(
     setter: Dispatch<SetStateAction<T>>, 
     key: string
@@ -116,8 +155,24 @@ export const useAppLogic = () => {
         updateSettings({ [key]: newValue }).catch(err => console.error(`Failed to save setting ${key}:`, err));
     }, [setter, key]);
   };
+  
+  // Special handler for API key to trigger model re-fetch
+  const handleSetApiKey = useCallback(async (newApiKey: string) => {
+    // Optimistically update the state for UI responsiveness
+    setApiKey(newApiKey);
+    try {
+        await updateSettings({ apiKey: newApiKey });
+        // After successful save and verification on the backend, fetch models
+        await fetchModels();
+    } catch (error) {
+        // If it fails, the error is thrown from updateSettings
+        // and handled in GeneralSettings.tsx. We don't need to revert the key here,
+        // as the user will see the error and can correct it.
+        console.error("API Key save/verify failed:", error);
+        throw error; // Re-throw to be caught by the UI
+    }
+  }, [fetchModels]);
 
-  const handleSetApiKey = createSettingUpdater(setApiKey, 'apiKey');
   const handleSetAboutUser = createSettingUpdater(setAboutUser, 'aboutUser');
   const handleSetAboutResponse = createSettingUpdater(setAboutResponse, 'aboutResponse');
   const handleSetTemperature = createSettingUpdater(setTemperature, 'temperature');
@@ -128,14 +183,6 @@ export const useAppLogic = () => {
   const handleSetIsAutoPlayEnabled = createSettingUpdater(setIsAutoPlayEnabled, 'isAutoPlayEnabled');
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
-
-  // --- Fetch available models on mount ---
-  useEffect(() => {
-    getAvailableModels().then(models => {
-      setAvailableModels(models);
-      setModelsLoading(false);
-    });
-  }, []);
 
   // --- Health check effect ---
   useEffect(() => {
@@ -186,7 +233,6 @@ export const useAppLogic = () => {
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode);
   const { updateChatModel, updateChatSettings } = chat;
 
-  // FIX: Pass arguments to startNewChat and make wrapper async.
   const startNewChat = useCallback(async () => {
     await chat.startNewChat(activeModel, chatSettings);
   }, [chat, activeModel, chatSettings]);
@@ -280,6 +326,20 @@ export const useAppLogic = () => {
   };
 
 
+  const handleDownloadLogs = useCallback(() => {
+    const logContent = logCollector.formatLogs();
+    const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    link.download = `agentic-ai-console-log-${timestamp}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, []);
+
   const runDiagnosticTests = useCallback(async (onProgress: (progress: TestProgress) => void) => {
     const results: TestResult[] = [];
     let testsPassed = 0;
@@ -336,15 +396,18 @@ export const useAppLogic = () => {
     return report;
   }, [chat, startNewChat]);
   
-  // --- Return all state and handlers ---
-  // FIX: Alias setters to match component props and add missing properties.
   return {
     appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, ...memory,
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
     isImportModalOpen, setIsImportModalOpen,
     isThinkingSidebarOpen, setIsThinkingSidebarOpen, thinkingMessageId, setThinkingMessageId,
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading,
-    availableModels, modelsLoading, activeModel, handleModelChange,
+    availableModels,
+    availableImageModels,
+    availableVideoModels,
+    modelsLoading,
+    activeModel,
+    onModelChange: handleModelChange,
     apiKey,
     onSaveApiKey: handleSetApiKey,
     aboutUser,
@@ -356,9 +419,9 @@ export const useAppLogic = () => {
     maxTokens,
     setMaxTokens: handleSetMaxTokens,
     imageModel,
-    setImageModel: handleSetImageModel,
+    onImageModelChange: handleSetImageModel,
     videoModel,
-    setVideoModel: handleSetVideoModel,
+    onVideoModelChange: handleSetVideoModel,
     ttsVoice,
     setTtsVoice: handleSetTtsVoice,
     isAutoPlayEnabled,
@@ -371,5 +434,6 @@ export const useAppLogic = () => {
     handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,
     handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests,
     handleFileUploadForImport,
+    handleDownloadLogs,
   };
 };

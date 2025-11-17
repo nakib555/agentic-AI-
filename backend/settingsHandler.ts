@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 import { promises as fs } from 'fs';
 import path from 'path';
 import process from 'process';
+import { GoogleGenAI } from "@google/genai";
 
 const DATA_PATH = path.join(process.cwd(), 'data');
 const SETTINGS_PATH = path.join(DATA_PATH, 'settings.json');
@@ -65,9 +66,23 @@ export const getSettings = async (req: Request, res: Response) => {
 export const updateSettings = async (req: Request, res: Response) => {
     try {
         const currentSettings = await readSettings();
-        const updatedSettings = { ...currentSettings, ...req.body };
-        await fs.writeFile(SETTINGS_PATH, JSON.stringify(updatedSettings, null, 2), 'utf-8');
-        res.status(200).json(updatedSettings);
+        const newSettings = { ...currentSettings, ...req.body };
+
+        // If a new API key is being provided and it's different, verify it.
+        if (req.body.apiKey && req.body.apiKey !== currentSettings.apiKey) {
+            try {
+                const ai = new GoogleGenAI({ apiKey: req.body.apiKey });
+                await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: ' ' });
+                // Key is valid, proceed to save.
+            } catch (error: any) {
+                console.warn('API Key validation failed on save:', error.message);
+                // Key is invalid. Return an error and do not save.
+                return res.status(401).json({ error: 'Invalid API Key provided. Please check the key and try again.' });
+            }
+        }
+
+        await fs.writeFile(SETTINGS_PATH, JSON.stringify(newSettings, null, 2), 'utf-8');
+        res.status(200).json(newSettings);
     } catch (error) {
         console.error('Failed to update settings:', error);
         res.status(500).json({ error: 'Failed to save settings.' });

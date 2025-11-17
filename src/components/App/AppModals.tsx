@@ -25,13 +25,15 @@ type AppModalsProps = {
   onRunTests: () => void;
   onDownloadLogs: () => void;
   availableModels: Model[];
+  availableImageModels: Model[];
+  availableVideoModels: Model[];
   activeModel: string;
-  handleModelChange: (modelId: string) => void;
+  onModelChange: (modelId: string) => void;
   modelsLoading: boolean;
   clearAllChats: () => void;
   // API Key
   apiKey: string;
-  onSaveApiKey: (key: string) => void;
+  onSaveApiKey: (key: string) => Promise<void>;
   // Custom Instructions
   aboutUser: string;
   setAboutUser: (value: string) => void;
@@ -67,8 +69,8 @@ type AppModalsProps = {
 export const AppModals: React.FC<AppModalsProps> = (props) => {
   const {
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen, onRunTests,
-    availableModels, activeModel,
-    handleModelChange, modelsLoading, clearAllChats, aboutUser, setAboutUser,
+    availableModels, availableImageModels, availableVideoModels, activeModel,
+    onModelChange, modelsLoading, clearAllChats, aboutUser, setAboutUser,
     aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens,
     setMaxTokens, imageModel, onImageModelChange, videoModel, onVideoModelChange,
     defaultTemperature, defaultMaxTokens, isMemoryEnabled,
@@ -85,8 +87,10 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         models={availableModels}
+        imageModels={availableImageModels}
+        videoModels={availableVideoModels}
         selectedModel={activeModel}
-        onModelChange={handleModelChange}
+        onModelChange={onModelChange}
         disabled={modelsLoading}
         onClearAllChats={clearAllChats}
         onRunTests={onRunTests}

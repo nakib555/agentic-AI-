@@ -10,7 +10,7 @@ type GeneralSettingsProps = {
   onRunTests: () => void;
   onDownloadLogs: () => void;
   apiKey: string;
-  onSaveApiKey: (key: string) => void;
+  onSaveApiKey: (key: string) => Promise<void>;
 };
 
 const SettingField: React.FC<{ label: string; description: string; children: React.ReactNode }> = ({ label, description, children }) => (
@@ -23,16 +23,24 @@ const SettingField: React.FC<{ label: string; description: string; children: Rea
 
 export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChats, onRunTests, onDownloadLogs, apiKey, onSaveApiKey }) => {
   const [localApiKey, setLocalApiKey] = useState(apiKey);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalApiKey(apiKey);
   }, [apiKey]);
 
-  const handleSave = () => {
-    onSaveApiKey(localApiKey);
-    setSaveStatus('saved');
-    setTimeout(() => setSaveStatus('idle'), 2000);
+  const handleSave = async () => {
+    setSaveStatus('saving');
+    setSaveError(null);
+    try {
+        await onSaveApiKey(localApiKey);
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (error: any) {
+        setSaveStatus('error');
+        setSaveError(error.message || 'Failed to save and verify API Key.');
+    }
   };
   
   const handleClear = () => {
@@ -58,11 +66,15 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
           />
           <button
             onClick={handleSave}
-            className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors w-24"
+            disabled={saveStatus === 'saving'}
+            className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors w-24 disabled:bg-indigo-400"
           >
-            {saveStatus === 'saved' ? 'Saved!' : 'Save'}
+            {saveStatus === 'saving' ? 'Verifying...' : saveStatus === 'saved' ? 'Saved!' : 'Save'}
           </button>
         </div>
+        {saveStatus === 'error' && saveError && (
+          <p className="text-sm text-red-600 dark:text-red-400 mt-2">{saveError}</p>
+        )}
       </SettingField>
       
       <SettingField 

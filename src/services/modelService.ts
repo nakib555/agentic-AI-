@@ -47,15 +47,3 @@ export const validVideoModels: Model[] = [
         description: 'General video generation tasks.' 
     }
 ];
-
-/**
- * Simulates fetching the available AI models from a backend.
- */
-export const getAvailableModels = (): Promise<Model[]> => {
-    return new Promise((resolve) => {
-        // Simulate a network delay of 1 second
-        setTimeout(() => {
-            resolve(validModels);
-        }, 1000);
-    });
-};

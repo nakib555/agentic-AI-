@@ -110,6 +110,8 @@ export const App = () => {
         onRunTests={() => logic.setIsTestMode(true)}
         onDownloadLogs={logic.handleDownloadLogs}
         availableModels={logic.availableModels}
+        availableImageModels={logic.availableImageModels}
+        availableVideoModels={logic.availableVideoModels}
         activeModel={logic.activeModel}
         onModelChange={logic.onModelChange}
         modelsLoading={logic.modelsLoading || logic.settingsLoading}

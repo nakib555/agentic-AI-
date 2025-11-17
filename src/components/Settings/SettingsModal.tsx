@@ -15,6 +15,8 @@ type SettingsModalProps = {
   isOpen: boolean;
   onClose: () => void;
   models: Model[];
+  imageModels: Model[];
+  videoModels: Model[];
   selectedModel: string;
   onModelChange: (modelId: string) => void;
   onClearAllChats: () => void;
@@ -22,7 +24,7 @@ type SettingsModalProps = {
   onDownloadLogs: () => void;
   // API Key
   apiKey: string;
-  onSaveApiKey: (key: string) => void;
+  onSaveApiKey: (key: string) => Promise<void>;
   // Custom Instructions
   aboutUser: string;
   setAboutUser: (prompt: string) => void;

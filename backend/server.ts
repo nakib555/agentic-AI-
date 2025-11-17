@@ -9,6 +9,7 @@ import { apiHandler } from './handler.js';
 import * as crudHandler from './crudHandler.js';
 import { getSettings, updateSettings } from './settingsHandler.js';
 import { getMemory, updateMemory, clearMemory } from './memoryHandler.js';
+import { getAvailableModelsHandler } from './modelsHandler.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -36,6 +37,7 @@ const uploadsPath = path.join(process.cwd(), 'data', 'uploads');
 // FIX: Explicitly type req and res to use aliased express types.
 // The previous fix was insufficient. Using direct, non-aliased types from express.
 app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
+app.get('/api/models', getAvailableModelsHandler);
 
 // Streaming and complex tasks handler
 app.post('/api/handler', apiHandler);

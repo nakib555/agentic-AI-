@@ -4,11 +4,13 @@
  */
 
 import React from 'react';
-import { Model, validImageModels, validVideoModels } from '../../services/modelService';
+import { Model } from '../../services/modelService';
 import { ModelSelector } from '../UI/ModelSelector';
 
 type ModelSettingsProps = {
   models: Model[];
+  imageModels: Model[];
+  videoModels: Model[];
   selectedModel: string;
   onModelChange: (modelId: string) => void;
   temperature: number;
@@ -33,25 +35,35 @@ const SettingField: React.FC<{ label: string; description: string; children: Rea
 );
 
 export const ModelSettings: React.FC<ModelSettingsProps> = ({
-    models, selectedModel, onModelChange,
+    models, imageModels, videoModels, selectedModel, onModelChange,
     temperature, setTemperature, maxTokens, setMaxTokens,
     imageModel, onImageModelChange, videoModel, onVideoModelChange,
     defaultTemperature, defaultMaxTokens,
     disabled
 }) => {
+    const noModelsAvailable = models.length === 0;
     return (
         <div className="space-y-8">
             <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Model & Behavior</h3>
+            
+            {noModelsAvailable && (
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-500/30 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  Model selection is unavailable. Please add a valid Gemini API key in the 'General' settings tab to load available models.
+                </p>
+              </div>
+            )}
+
             <SettingField label="Chat Model" description="Select the model for new chats. This can be changed for the current chat.">
-                <ModelSelector models={models} selectedModel={selectedModel} onModelChange={onModelChange} disabled={disabled} className="max-w-xs" />
+                <ModelSelector models={models} selectedModel={selectedModel} onModelChange={onModelChange} disabled={disabled || noModelsAvailable} className="max-w-xs" />
             </SettingField>
 
             <SettingField label="Image Generation Model" description="Select the model used by the `generateImage` tool.">
-                <ModelSelector models={validImageModels} selectedModel={imageModel} onModelChange={onImageModelChange} disabled={disabled} className="max-w-xs" />
+                <ModelSelector models={imageModels} selectedModel={imageModel} onModelChange={onImageModelChange} disabled={disabled || noModelsAvailable} className="max-w-xs" />
             </SettingField>
 
             <SettingField label="Video Generation Model" description="Select the model used by the `generateVideo` tool.">
-                <ModelSelector models={validVideoModels} selectedModel={videoModel} onModelChange={onVideoModelChange} disabled={disabled} className="max-w-xs" />
+                <ModelSelector models={videoModels} selectedModel={videoModel} onModelChange={onVideoModelChange} disabled={disabled || noModelsAvailable} className="max-w-xs" />
             </SettingField>
             
             <SettingField label="Temperature" description="Controls randomness. Lower values are more deterministic, higher values are more creative.">
