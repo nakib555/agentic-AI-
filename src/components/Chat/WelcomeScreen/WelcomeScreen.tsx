@@ -20,11 +20,18 @@ export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
         >
-            <span
+            <motion.span
                 className="brand-gradient bg-clip-text text-transparent"
+                animate={{ backgroundPosition: ["0% center", "100% center"] }}
+                transition={{
+                    duration: 5,
+                    repeat: Infinity,
+                    ease: "linear",
+                    repeatType: "reverse",
+                }}
             >
                 How can I help you today?
-            </span>
+            </motion.span>
         </motion.h1>
         
         <FloatingPrompts onPromptClick={sendMessage} />

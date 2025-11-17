@@ -44,7 +44,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
             {isActive && (
               <motion.div
                 layoutId="mode-pill"
-                className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-violet-600 shadow-lg rounded-full"
+                className="absolute inset-0 bg-indigo-600 dark:bg-indigo-500 shadow-inner rounded-full"
                 transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               />
             )}
