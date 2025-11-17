@@ -165,18 +165,12 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 >
                     {isGeneratingResponse ? ( 
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-label="loading" className="w-9 h-9">
-                            {/* Background circle */}
-                            <circle
-                                cx="24" cy="24" r="22"
-                                className="fill-white dark:fill-slate-800"
-                            />
-                        
                             {/* Stop box in the center, themed for visibility */}
                             <rect
-                                x="20" y="20"
-                                width="8" height="8"
+                                x="18" y="18"
+                                width="12" height="12"
                                 rx="2" ry="2"
-                                className="fill-slate-800 dark:fill-slate-100"
+                                className="fill-slate-800 dark:fill-slate-200"
                             />
                         
                             {/* Animated ring spinner on top */}
