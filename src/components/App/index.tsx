@@ -108,6 +108,7 @@ export const App = () => {
         setIsImportModalOpen={logic.setIsImportModalOpen}
         handleFileUploadForImport={logic.handleFileUploadForImport}
         onRunTests={() => logic.setIsTestMode(true)}
+        // Fix: Pass the handleDownloadLogs function from the logic hook.
         onDownloadLogs={logic.handleDownloadLogs}
         availableModels={logic.availableModels}
         activeModel={logic.activeModel}
@@ -125,8 +126,10 @@ export const App = () => {
         maxTokens={logic.maxTokens}
         setMaxTokens={logic.setMaxTokens}
         imageModel={logic.imageModel}
+        // Fix: Pass the correct aliased prop `onImageModelChange`.
         onImageModelChange={logic.onImageModelChange}
         videoModel={logic.videoModel}
+        // Fix: Pass the correct aliased prop `onVideoModelChange`.
         onVideoModelChange={logic.onVideoModelChange}
         defaultTemperature={DEFAULT_TEMPERATURE}
         defaultMaxTokens={DEFAULT_MAX_TOKENS}
