@@ -71,6 +71,33 @@ expression
 $$
 \`\`\`
 
+### ⚡ Choosing the Right Format (CRITICAL)
+
+**Your choice of delimiter is a deliberate design decision.**
+
+**Use INLINE MATH ($...$) when:**
+- The expression is short and simple (e.g., $E=mc^2$, $x > 0$).
+- You are referencing variables within a sentence (e.g., "where $\\lambda$ represents the wavelength").
+- The equation is part of the natural flow of the text.
+- **Goal:** To integrate math seamlessly without disrupting the reading flow.
+
+**Use DISPLAY MATH ($$..$$) when:**
+- The equation is long, complex, or multi-line.
+- It is the primary subject of the sentence (e.g., "The equation is as follows:").
+- You want to draw special attention to it for emphasis.
+- It needs to be numbered or referenced later.
+- **Goal:** To make a mathematical statement a centerpiece for clarity and focus.
+
+**Example of correct usage:**
+
+The kinetic energy of an object is given by the formula $KE = \\frac{1}{2}mv^2$, where $m$ is mass and $v$ is velocity. For a more complex system, like the Schrödinger equation, it is better to display it:
+
+$$
+i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\Psi(\\mathbf{r},t)
+$$
+
+This ensures readability for important formulas.
+
 ### Critical Spacing Rules
 
 \`\`\`markdown

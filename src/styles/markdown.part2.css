@@ -2,49 +2,26 @@
 
 /* KaTeX Math Formula Styling */
 
-/* Apply font size and color directly to the rendered HTML portion of KaTeX */
-.katex .katex-html {
-  font-size: 1.1em !important;
-  color: #1F2937; /* gray-800 */
-}
-
-.dark .katex .katex-html {
-  color: #e2e8f0; /* slate-200 */
-}
-
-/* Style the main container for inline math for background and spacing */
+/* Base KaTeX styling. Inline math will use this and should blend with text. */
 .katex {
-  padding: 0.1em 0.3em;
-  margin: 0 0.15em;
-  border-radius: 0.25rem;
-  background-color: #F3F4F6; /* gray-100 */
-  border: 1px solid #E5E7EB; /* gray-200 */
-}
-.dark .katex {
-  background-color: #334155; /* slate-700 */
-  border-color: #475569; /* slate-600 */
+  /* Removing background and padding to make inline math seamless. */
 }
 
+/* Styles for display (block) math. This container gets the background and padding. */
 .katex-display {
   display: block;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 1em;
   margin: 1em 0;
+  padding: 0.75em;
   border-radius: 0.5rem;
-  background-color: #F9FAFB; /* gray-5 */
-  border: 1px solid #E5E7EB; /* gray-200 */
-}
-.dark .katex-display {
-  background-color: #1e293b; /* slate-800 */
-  border-color: #334155; /* slate-700 */
+  background-color: #f9fafb; /* gray-50 */
 }
 
-/* Ensure KaTeX display equations don't have extra margin from surrounding <p> tags */
-.markdown-content p > .katex-display {
-    margin-top: 0;
-    margin-bottom: 0;
+.dark .katex-display {
+  background-color: rgba(0,0,0,0.2);
 }
+
 
 /* Styles for bullet points inside the new thinking workflow */
 .workflow-markdown ul {
