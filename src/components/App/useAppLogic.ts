@@ -257,6 +257,14 @@ export const useAppLogic = () => {
   const { updateChatModel, updateChatSettings } = chat;
 
   const startNewChat = useCallback(async () => {
+    // Check if the most recent chat is already a new, empty chat.
+    const mostRecentChat = chat.chatHistory[0];
+    if (mostRecentChat && mostRecentChat.title === 'New Chat' && mostRecentChat.messages.length === 0) {
+      // If so, just switch to it instead of creating a new one.
+      chat.loadChat(mostRecentChat.id);
+      return;
+    }
+    // Otherwise, create a new chat session.
     await chat.startNewChat(activeModel, chatSettings);
   }, [chat, activeModel, chatSettings]);
 
