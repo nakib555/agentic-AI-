@@ -34,7 +34,7 @@ import {
 import { fetchFromApi } from '../utils/api';
 import { testSuite, type TestResult, type TestProgress } from '../components/Testing/testSuite';
 import { getSettings, updateSettings } from '../services/settingsService';
-// FIX: Add import for logCollector to handle log downloads.
+// Fix: Add import for logCollector to handle log downloads.
 import { logCollector } from '../utils/logCollector';
 
 
@@ -81,7 +81,7 @@ export const useAppLogic = () => {
 
   // --- Settings Management ---
 
-  // FIX: Start the log collector when the app initializes.
+  // Fix: Start the log collector when the app initializes.
   // --- Start Log Collector on Mount ---
   useEffect(() => {
     logCollector.start();
