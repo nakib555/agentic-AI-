@@ -14,8 +14,8 @@ import { ModeToggle } from '../UI/ModeToggle';
 type ChatAreaProps = {
   messages: Message[];
   isLoading: boolean;
+  isAppLoading: boolean;
   sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
-  modelsLoading: boolean;
   onCancel: () => void;
   ttsVoice: string;
   isAutoPlayEnabled: boolean;
@@ -33,7 +33,7 @@ type ChatAreaProps = {
 };
 
 export const ChatArea = ({ 
-    messages, isLoading, sendMessage, modelsLoading, onCancel, 
+    messages, isLoading, isAppLoading, sendMessage, onCancel, 
     ttsVoice, isAutoPlayEnabled, currentChatId,
     onShowThinkingProcess, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
@@ -174,6 +174,8 @@ export const ChatArea = ({
             ref={messageFormRef}
             onSubmit={sendMessage} 
             isLoading={isLoading} 
+            isAppLoading={isAppLoading}
+            backendStatus={backendStatus}
             onCancel={onCancel}
             isAgentMode={isAgentMode}
             setIsAgentMode={setIsAgentMode}

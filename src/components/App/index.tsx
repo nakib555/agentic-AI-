@@ -67,9 +67,9 @@ export const App = () => {
            <ChatArea 
               messageListRef={logic.messageListRef}
               messages={logic.messages}
-              isLoading={logic.isLoading || logic.modelsLoading || logic.settingsLoading || logic.backendStatus !== 'online'}
+              isLoading={logic.isLoading}
+              isAppLoading={logic.modelsLoading || logic.settingsLoading}
               sendMessage={logic.sendMessage}
-              modelsLoading={logic.modelsLoading}
               onCancel={logic.cancelGeneration}
               ttsVoice={logic.ttsVoice}
               isAutoPlayEnabled={logic.isAutoPlayEnabled}

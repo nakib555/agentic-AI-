@@ -20,24 +20,35 @@ import type { Message } from '../../../types';
 export const MessageForm = forwardRef<MessageFormHandle, {
   onSubmit: (message: string, files?: File[], options?: { isThinkingModeEnabled?: boolean }) => void;
   isLoading: boolean;
+  isAppLoading: boolean;
+  backendStatus: 'online' | 'offline' | 'checking';
   onCancel: () => void;
   isAgentMode: boolean;
   setIsAgentMode: (isAgent: boolean) => void;
   messages: Message[];
-}>(({ onSubmit, isLoading, onCancel, isAgentMode, setIsAgentMode, messages }, ref) => {
+}>(({ onSubmit, isLoading, onCancel, isAppLoading, backendStatus, isAgentMode, setIsAgentMode, messages }, ref) => {
   const logic = useMessageForm(onSubmit, isLoading, ref, messages, isAgentMode);
+  
+  const isBackendOffline = backendStatus !== 'online';
+  const isGeneratingResponse = isLoading;
   
   const isProcessingFiles = logic.processedFiles.some(f => f.progress < 100 && !f.error);
   const hasInput = logic.inputValue.trim().length > 0 || logic.processedFiles.length > 0;
   const hasText = logic.inputValue.trim().length > 0 && logic.processedFiles.length === 0;
 
+  // The button is disabled if the app isn't ready or there's nothing to send.
+  // It is NOT disabled when generating, because it becomes a cancel button.
+  const isSendDisabled = isBackendOffline || isAppLoading || isProcessingFiles || logic.isEnhancing || !hasInput;
+  
   const sendButtonClasses = "flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-200 ease-in-out";
-  const isSendButtonActive = hasInput && !isLoading && !logic.isEnhancing && !isProcessingFiles;
-  const sendButtonStateClasses = isLoading 
-    ? 'bg-transparent'
-    : (isSendButtonActive
-        ? 'bg-indigo-600 text-white hover:bg-indigo-500'
-        : 'bg-gray-200 dark:bg-black/20 text-gray-400 dark:text-slate-500');
+
+  // Determine button color and state
+  let sendButtonStateClasses = 'bg-gray-200 dark:bg-black/20 text-gray-400 dark:text-slate-500'; // Default disabled
+  if (isGeneratingResponse) {
+    sendButtonStateClasses = 'bg-transparent'; // Spinner state
+  } else if (!isSendDisabled) {
+    sendButtonStateClasses = 'bg-indigo-600 text-white hover:bg-indigo-500'; // Active state
+  }
 
   return (
     <div>
@@ -90,7 +101,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
               </AnimatePresence>
               <textarea
                 ref={logic.inputRef}
-                disabled={logic.isEnhancing}
+                disabled={logic.isEnhancing || isAppLoading || isBackendOffline}
                 value={logic.inputValue}
                 onChange={(e) => logic.setInputValue(e.target.value)}
                 onKeyDown={logic.handleKeyDown}
@@ -109,13 +120,13 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 <ModeToggle 
                     isAgentMode={isAgentMode} 
                     onToggle={setIsAgentMode}
-                    disabled={isLoading}
+                    disabled={isLoading || isAppLoading || isBackendOffline}
                 />
               </div>
 
               <div className="flex items-center gap-2">
                 <div className="relative">
-                    <button ref={logic.attachButtonRef} type="button" onClick={() => logic.setIsUploadMenuOpen(p => !p)} aria-label="Attach files or folder" title="Attach files or folder" disabled={logic.isEnhancing} className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50 transition-colors">
+                    <button ref={logic.attachButtonRef} type="button" onClick={() => logic.setIsUploadMenuOpen(p => !p)} aria-label="Attach files or folder" title="Attach files or folder" disabled={logic.isEnhancing || isAppLoading || isBackendOffline} className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path clipRule="evenodd" d="M10 3a.75.75 0 01.75.75v5.5h5.5a.75.75 0 010 1.5h-5.5v5.5a.75.75 0 01-1.5 0v-5.5H3.75a.75.75 0 010-1.5h5.5V3.75A.75.75 0 0110 3z" /></svg>
                     </button>
                     <AnimatePresence>
@@ -125,7 +136,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 
                 <AnimatePresence>
                   {logic.isSupported && (
-                      <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} type="button" onClick={logic.handleMicClick} disabled={isLoading || logic.isEnhancing} aria-label={logic.isRecording ? 'Stop recording' : 'Start recording'} title={logic.isRecording ? 'Stop recording' : 'Start recording'} className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50 transition-all ${logic.isRecording ? 'bg-red-500/20 !text-red-500' : ''}`}>
+                      <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} type="button" onClick={logic.handleMicClick} disabled={isLoading || logic.isEnhancing || isAppLoading || isBackendOffline} aria-label={logic.isRecording ? 'Stop recording' : 'Start recording'} title={logic.isRecording ? 'Stop recording' : 'Start recording'} className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50 transition-all ${logic.isRecording ? 'bg-red-500/20 !text-red-500' : ''}`}>
                           {logic.isRecording ? ( <motion.div initial={{ scale: 1 }} animate={{ scale: 1.1 }} transition={{ duration: 0.4, repeat: Infinity, repeatType: 'reverse' }}><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M5 3.5A1.5 1.5 0 0 1 6.5 2h7A1.5 1.5 0 0 1 15 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 5 12.5v-9Z" /></svg></motion.div> ) : ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m12 0v-1.5a6 6 0 0 0-6-6v0a6 6 0 0 0-6 6v1.5m6 7.5v3.75m-3.75 0h7.5" /></svg> )}
                       </motion.button>
                   )}
@@ -133,13 +144,26 @@ export const MessageForm = forwardRef<MessageFormHandle, {
 
                 <AnimatePresence>
                   {hasText && (
-                    <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} type="button" onClick={logic.handleEnhancePrompt} disabled={logic.isEnhancing} aria-label="Enhance prompt" title="Enhance prompt" className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50 transition-all">
+                    <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} type="button" onClick={logic.handleEnhancePrompt} disabled={logic.isEnhancing || isAppLoading || isBackendOffline} aria-label="Enhance prompt" title="Enhance prompt" className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50 transition-all">
                       {logic.isEnhancing ? ( <motion.div className="w-4 h-4" animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-4.991-2.691V5.25a3.375 3.375 0 00-3.375-3.375H8.25a3.375 3.375 0 00-3.375 3.375v2.25" /></svg></motion.div> ) : ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M9.422 2.22a.75.75 0 0 1 .862.053l4.25 3.5a.75.75 0 0 1-.053 1.328L10.5 8.165l2.121 2.122a.75.75 0 0 1-1.06 1.06L9.44 9.227a.75.75 0 0 1 0-1.06l4.25-4.25-1.928-1.593a.75.75 0 0 1 .66-1.328ZM3.79 8.29a.75.75 0 0 1 0 1.06l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L5.81 15.5l-2.12-2.121a.75.75 0 0 1 1.06-1.06l2.12 2.121L3.79 8.29Z" clipRule="evenodd" /><path d="m11.5 5.5.034-.034a.75.75 0 0 1 1.028.034l3.5 4.25a.75.75 0 0 1-1.114.996L12.5 7.695V14.5a.75.75 0 0 1-1.5 0V5.5Z" /></svg> )}
                     </motion.button>
                   )}
                 </AnimatePresence>
-                <button type={isLoading ? 'button' : 'submit'} onClick={isLoading ? onCancel : undefined} disabled={!isLoading && (!hasInput || logic.isEnhancing || isProcessingFiles)} aria-label={isLoading ? "Stop generating" : "Send message"} title={isLoading ? "Stop generating" : (isProcessingFiles ? "Processing files..." : "Send message")} className={`${sendButtonClasses} ${sendButtonStateClasses}`}>
-                    {isLoading ? ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-label="loading" className="w-6 h-6">
+                <button
+                    type={isGeneratingResponse ? 'button' : 'submit'}
+                    onClick={isGeneratingResponse ? onCancel : undefined}
+                    disabled={isGeneratingResponse ? false : isSendDisabled}
+                    aria-label={isGeneratingResponse ? "Stop generating" : "Send message"}
+                    title={
+                        isBackendOffline ? "Server not connected" :
+                        isAppLoading ? "Initializing..." :
+                        isProcessingFiles ? "Processing files..." :
+                        isGeneratingResponse ? "Stop generating" :
+                        "Send message"
+                    }
+                    className={`${sendButtonClasses} ${sendButtonStateClasses}`}
+                >
+                    {isGeneratingResponse ? ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-label="loading" className="w-6 h-6">
                       <circle 
                         cx="24" cy="24" r="16" fill="none" stroke="#4f46e5" strokeWidth="4.5" strokeLinecap="round"
                         strokeDasharray="80 100" strokeDashoffset="0">
