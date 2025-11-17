@@ -8,7 +8,7 @@ import type { Request, Response } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
-import { parseApiError } from './utils/apiError.js';
+import { parseApiError, ToolError } from './utils/apiError.js';
 import { executeTextToSpeech } from "./tools/tts.js";
 import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory.js";
 import { runAgenticLoop } from './services/agenticLoop/index.js';
@@ -49,8 +49,29 @@ async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payloa
     
     const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, apiKey, chatId, (callId, toolName, toolArgs) => {
         console.log(`[BACKEND] Requesting frontend to execute tool: ${toolName}`, { callId, toolArgs });
-        return new Promise((resolve) => {
-            pendingFrontendTools.set(callId, resolve);
+        return new Promise((resolve, reject) => { // Make it rejectable
+            const timeout = 30000; // 30 seconds
+            const timer = setTimeout(() => {
+                pendingFrontendTools.delete(callId);
+                reject(new ToolError(toolName, 'FRONTEND_TIMEOUT', `Frontend execution timed out after ${timeout / 1000} seconds.`));
+            }, timeout);
+    
+            const onAbort = () => {
+                clearTimeout(timer);
+                pendingFrontendTools.delete(callId);
+                const abortError = new Error('Request aborted by client');
+                abortError.name = 'AbortError';
+                reject(abortError);
+            };
+    
+            signal.addEventListener('abort', onAbort, { once: true });
+    
+            pendingFrontendTools.set(callId, (result) => {
+                clearTimeout(timer);
+                signal.removeEventListener('abort', onAbort);
+                resolve(result);
+            });
+    
             enqueue({ type: 'frontend-tool-request', payload: { callId, toolName, toolArgs } });
         });
     });

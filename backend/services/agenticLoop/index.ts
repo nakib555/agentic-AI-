@@ -97,6 +97,9 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                         callbacks.onToolResult(event.id, toolResult);
                         return { functionResponse: { name: event.call.name, response: { result: toolResult } } };
                     } catch (error: any) {
+                        if (error.name === 'AbortError') {
+                            throw error; // Re-throw to be caught by the outer catch and stop the loop
+                        }
                         console.error(`[AGENTIC_LOOP] Tool '${event.call.name}' failed.`, { error });
                         const errorResult = `Tool execution failed. Reason: ${error.message}`;
                         callbacks.onToolResult(event.id, errorResult);
