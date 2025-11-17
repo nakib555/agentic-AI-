@@ -109,7 +109,7 @@ E = mc^2
 $$
 
 ❌ WRONG:
-The equation $$E = mc^2$$ is famous.  ← Display math inline
+The equation $$E=mc^2$$ is famous.  ← Display math inline
 $ E = mc^2 $                          ← Spaces inside delimiters
 $$E = mc^2$$                          ← Display math not on own line
 \`\`\`
@@ -118,23 +118,7 @@ $$E = mc^2$$                          ← Display math not on own line
 
 ## 💫 INLINE MATHEMATICS {#inline-math}
 
-**Purpose:** Seamlessly integrate math within prose.
-
 ### Basic Examples
-
-\`\`\`markdown
-The Pythagorean theorem states that $a^2 + b^2 = c^2$ for right triangles.
-
-Newton's second law: $F = ma$ relates force, mass, and acceleration.
-
-The quadratic formula $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$ solves any quadratic.
-
-Euler's identity: $e^{i\\pi} + 1 = 0$ unites five fundamental constants.
-
-The derivative $\\frac{dy}{dx}$ represents instantaneous rate of change.
-\`\`\`
-
-### Rendered Output
 
 The Pythagorean theorem states that $a^2 + b^2 = c^2$ for right triangles.
 
@@ -150,31 +134,7 @@ The derivative $\\frac{dy}{dx}$ represents instantaneous rate of change.
 
 ## 🎆 DISPLAY MATHEMATICS {#display-math}
 
-**Purpose:** Highlight important equations that deserve focus.
-
 ### Fundamental Theorems
-
-\`\`\`markdown
-The fundamental theorem of calculus:
-
-$$
-\\int_a^b f(x)\\,dx = F(b) - F(a)
-$$
-
-The Schrödinger equation governs quantum mechanics:
-
-$$
-i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\Psi(\\mathbf{r},t)
-$$
-
-The Fourier transform connects time and frequency domains:
-
-$$
-F(\\omega) = \\int_{-\\infty}^{\\infty} f(t)e^{-i\\omega t}\\,dt
-$$
-\`\`\`
-
-### Rendered Output
 
 The fundamental theorem of calculus:
 
@@ -200,7 +160,6 @@ $$
 
 ### Arithmetic Operators
 
-\`\`\`markdown
 **Addition & Subtraction:**
 $a + b - c$
 
@@ -217,19 +176,6 @@ $x = a \\pm b$
 
 **Minus-Plus:**
 $x = a \\mp b$
-\`\`\`
-
-### Rendered Examples
-
-Addition & subtraction: $a + b - c$
-
-Multiplication: $a \\times b$ or $a \\cdot b$ or $ab$
-
-Division: $a \\div b$ or $a / b$ or $\\frac{a}{b}$
-
-Plus-minus: $x = a \\pm b$
-
-Minus-plus: $x = a \\mp b$
 
 ---
 
@@ -237,7 +183,6 @@ Minus-plus: $x = a \\mp b$
 
 ### Fraction Variants
 
-\`\`\`markdown
 **Standard Fraction:**
 $$
 \\frac{numerator}{denominator}
@@ -255,11 +200,9 @@ $$
 
 **Mixed Fractions (using \\tfrac for inline):**
 Text with $\\tfrac{1}{2}$ inline fraction.
-\`\`\`
 
 ### Root Expressions
 
-\`\`\`markdown
 **Square Root:**
 $\\sqrt{x}$ or $\\sqrt{x^2 + y^2}$
 
@@ -270,21 +213,6 @@ $\\sqrt[n]{x}$ produces $\\sqrt[3]{27} = 3$
 $$
 \\sqrt{2 + \\sqrt{2 + \\sqrt{2 + \\cdots}}}
 $$
-\`\`\`
-
-### Rendered Output
-
-Standard fraction: $\\frac{numerator}{denominator}$
-
-Continued fraction:
-
-$$
-x = a_0 + \\frac{1}{a_1 + \\frac{1}{a_2 + \\frac{1}{a_3 + \\cdots}}}
-$$
-
-Binomial coefficient: $\\binom{n}{k} = \\frac{n!}{k!(n-k)!}$
-
-Roots: $\\sqrt{x}$, $\\sqrt[n]{x}$, $\\sqrt[3]{27} = 3$
 
 ---
 
@@ -292,7 +220,6 @@ Roots: $\\sqrt{x}$, $\\sqrt[n]{x}$, $\\sqrt[3]{27} = 3$
 
 ### Basic Syntax
 
-\`\`\`markdown
 **Superscripts (Exponents):**
 $x^2$, $e^{-\\frac{x^2}{2}}$, $2^{2^{2^2}}$
 
@@ -301,11 +228,9 @@ $x_1$, $a_{ij}$, $x_{n+1}$
 
 **Combined:**
 $x_i^2$, $\\sum_{i=1}^{n} x_i^2$
-\`\`\`
 
 ### Complex Examples
 
-\`\`\`markdown
 **Exponential Function:**
 $$
 e^x = \\sum_{n=0}^{\\infty} \\frac{x^n}{n!}
@@ -320,19 +245,6 @@ $$
 $$
 T^{\\mu\\nu}_{\alpha\\beta}
 $$
-\`\`\`
-
-### Rendered Output
-
-Exponential function:
-
-$$
-e^x = \\sum_{n=0}^{\\infty} \\frac{x^n}{n!}
-$$
-
-Tower of powers: $2^{2^{2^{2}}}$
-
-Multiple indices: $T^{\\mu\\nu}_{\alpha\\beta}$
 
 ---
 
@@ -340,7 +252,6 @@ Multiple indices: $T^{\\mu\\nu}_{\alpha\\beta}$
 
 ### Complete Greek Alphabet
 
-\`\`\`markdown
 **Lowercase:**
 $\\alpha$ \\alpha    $\\beta$ \\beta      $\\gamma$ \\gamma    $\\delta$ \\delta
 $\\epsilon$ \\epsilon  $\\zeta$ \\zeta   $\\eta$ \\eta        $\\theta$ \\theta
@@ -357,11 +268,9 @@ $\\Psi$ \\Psi        $\\Omega$ \\Omega
 **Variants:**
 $\\varepsilon$ \\varepsilon    $\\vartheta$ \\vartheta    $\\varphi$ \\varphi
 $\\varrho$ \\varrho            $\\varsigma$ \\varsigma
-\`\`\`
 
 ### Common Mathematical Symbols
 
-\`\`\`markdown
 **Infinity & Special:**
 $\\infty$ \\infty          $\\partial$ \\partial      $\\nabla$ \\nabla
 $\\hbar$ \\hbar            $\\ell$ \\ell              $\\aleph$ \\aleph
@@ -384,17 +293,6 @@ $\\exists$ \\exists    $\\nexists$ \\nexists
 **Logic:**
 $\\land$ \\land    $\\lor$ \\lor    $\\neg$ \\neg    $\\implies$ \\implies
 $\\iff$ \\iff
-\`\`\`
-
-### Rendered Examples
-
-Greek letters: $\\alpha, \\beta, \\gamma, \\delta, \\epsilon, \\theta, \\lambda, \\mu, \\pi, \\sigma, \\phi, \\omega$
-
-Uppercase: $\\Gamma, \\Delta, \\Theta, \\Lambda, \\Xi, \\Pi, \\Sigma, \\Phi, \\Psi, \\Omega$
-
-Symbols: $\\infty, \\partial, \\nabla, \\hbar$
-
-Comparisons: $\\leq, \\geq, \\neq, \\approx, \\equiv$
 
 ---
 
@@ -402,7 +300,6 @@ Comparisons: $\\leq, \\geq, \\neq, \\approx, \\equiv$
 
 ### Derivatives
 
-\`\`\`markdown
 **Basic Derivative:**
 $\\frac{dy}{dx}$ or $\\frac{df}{dx}$ or $f'(x)$ or $\\dot{x}$
 
@@ -421,11 +318,9 @@ $$
 $$
 \\nabla^2 f = \\frac{\\partial^2 f}{\\partial x^2} + \\frac{\\partial^2 f}{\\partial y^2} + \\frac{\\partial^2 f}{\\partial z^2}
 $$
-\`\`\`
 
 ### Integrals
 
-\`\`\`markdown
 **Definite Integral:**
 $$
 \\int_a^b f(x)\\,dx
@@ -450,11 +345,9 @@ $$
 $$
 \\int_C \\mathbf{F} \\cdot d\\mathbf{r}
 $$
-\`\`\`
 
 ### Limits
 
-\`\`\`markdown
 **Standard Limit:**
 $$
 \\lim_{x \\to a} f(x) = L
@@ -474,31 +367,6 @@ $$
 $$
 \\lim_{x \\to a} \\frac{f(x)}{g(x)} = \\lim_{x \\to a} \\frac{f'(x)}{g'(x)}
 $$
-\`\`\`
-
-### Rendered Output
-
-Derivative: $\\frac{dy}{dx}$ or $f'(x)$
-
-Partial derivative: $\\frac{\\partial f}{\\partial x}$
-
-Gradient:
-
-$$
-\\nabla f = \\left(\\frac{\\partial f}{\\partial x}, \\frac{\\partial f}{\\partial y}, \\frac{\\partial f}{\\partial z}\\right)
-$$
-
-Definite integral:
-
-$$
-\\int_a^b f(x)\\,dx
-$$
-
-Limit:
-
-$$
-\\lim_{x \\to \\infty} \\frac{1}{x} = 0
-$$
 
 ---
 
@@ -506,7 +374,6 @@ $$
 
 ### Vectors
 
-\`\`\`markdown
 **Vector Notation:**
 $\\vec{v}$ or $\\mathbf{v}$ or $\\boldsymbol{v}$
 
@@ -529,11 +396,9 @@ $$
 $$
 \\mathbf{a} \\times \\mathbf{b} = \\begin{vmatrix} \\mathbf{i} & \\mathbf{j} & \\mathbf{k} \\\\ a_1 & a_2 & a_3 \\\\ b_1 & b_2 & b_3 \\end{vmatrix}
 $$
-\`\`\`
 
 ### Matrices
 
-\`\`\`markdown
 **Basic Matrix:**
 $$
 A = \\begin{bmatrix}
@@ -580,11 +445,9 @@ $$
 $$
 A^{-1}A = AA^{-1} = I
 $$
-\`\`\`
 
 ### Matrix Operations
 
-\`\`\`markdown
 **Eigenvalue Equation:**
 $$
 A\\mathbf{v} = \\lambda\\mathbf{v}
@@ -604,27 +467,6 @@ $$
 $$
 \\text{tr}(A) = \\sum_{i=1}^{n} a_{ii}
 $$
-\`\`\`
-
-### Rendered Output
-
-Column vector:
-
-$$
-\\mathbf{v} = \\begin{bmatrix} v_1 \\\\ v_2 \\\\ v_3 \\end{bmatrix}
-$$
-
-Matrix:
-
-$$
-A = \\begin{bmatrix}
-a_{11} & a_{12} & a_{13} \\\\
-a_{21} & a_{22} & a_{23} \\\\
-a_{31} & a_{32} & a_{33}
-\\end{bmatrix}
-$$
-
-Eigenvalue equation: $A\\mathbf{v} = \\lambda\\mathbf{v}$
 
 ---
 
@@ -632,7 +474,6 @@ Eigenvalue equation: $A\\mathbf{v} = \\lambda\\mathbf{v}$
 
 ### Set Notation
 
-\`\`\`markdown
 **Basic Sets:**
 - Natural numbers: $\\mathbb{N} = \\{1, 2, 3, \\ldots\\}$
 - Integers: $\\mathbb{Z} = \\{\\ldots, -2, -1, 0, 1, 2, \\ldots\\}$
@@ -656,11 +497,9 @@ $$
 $$
 A \\subset B \\quad A \\subseteq B \\quad A \\supset B \\quad A \\supseteq B
 $$
-\`\`\`
 
 ### Logic Symbols
 
-\`\`\`markdown
 **Quantifiers:**
 - Universal: $\\forall x \\in S, P(x)$
 - Existential: $\\exists x \\in S, P(x)$
@@ -684,19 +523,6 @@ F & T & F \\\\
 F & F & F
 \\end{array}
 $$
-\`\`\`
-
-### Rendered Output
-
-Set builder notation: $S = \\{x \\in \\mathbb{R} \\mid x^2 < 4\\}$
-
-Number sets: $\\mathbb{N}, \\mathbb{Z}, \\mathbb{Q}, \\mathbb{R}, \\mathbb{C}$
-
-Universal quantifier: $\\forall x \\in S, P(x)$
-
-Existential quantifier: $\\exists x \\in S, P(x)$
-
-Logic: $P \\land Q$, $P \\lor Q$, $\\neg P$, $P \\implies Q$, $P \\iff Q$
 
 ---
 
@@ -704,7 +530,6 @@ Logic: $P \\land Q$, $P \\lor Q$, $\\neg P$, $P \\implies Q$, $P \\iff Q$
 
 ### Probability Notation
 
-\`\`\`markdown
 **Basic Probability:**
 $$
 P(A) \\quad P(A \\cap B) \\quad P(A \\cup B)
@@ -724,11 +549,9 @@ $$
 $$
 P(B) = \\sum_{i=1}^{n} P(B|A_i)P(A_i)
 $$
-\`\`\`
 
 ### Statistical Measures
 
-\`\`\`markdown
 **Mean (Expected Value):**
 $$
 \\mu = \\mathbb{E}[X] = \\sum_{i=1}^{n} x_i p_i \\quad \\text{or} \\quad \\int_{-\\infty}^{\\infty} x f(x)\\,dx
@@ -753,11 +576,9 @@ $$
 $$
 \\rho_{X,Y} = \\frac{\\text{Cov}(X,Y)}{\\sigma_X \\sigma_Y}
 $$
-\`\`\`
 
 ### Distributions
 
-\`\`\`markdown
 **Normal Distribution:**
 $$
 f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}
@@ -777,25 +598,6 @@ $$
 $$
 \\chi^2 = \\sum_{i=1}^{n} \\frac{(O_i - E_i)^2}{E_i}
 $$
-\`\`\`
-
-### Rendered Output
-
-Bayes' theorem:
-
-$$
-P(A|B) = \\frac{P(B|A) \\cdot P(A)}{P(B)}
-$$
-
-Normal distribution:
-
-$$
-f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}
-$$
-
-Expected value: $\\mu = \\mathbb{E}[X]$
-
-Variance: $\\sigma^2 = \\text{Var}(X)$
 
 ---
 
@@ -803,7 +605,6 @@ Variance: $\\sigma^2 = \\text{Var}(X)$
 
 ### Piecewise Functions
 
-\`\`\`markdown
 $$
 f(x) = \\begin{cases}
 x^2 & \\text{if } x \\geq 0 \\\\
@@ -827,11 +628,9 @@ H(x) = \\begin{cases}
 1 & \\text{if } x > 0
 \\end{cases}
 $$
-\`\`\`
 
 ### Multi-line Equations with Alignment
 
-\`\`\`markdown
 $$
 \\begin{align}
 f(x) &= (x+1)^2 \\\\
@@ -847,11 +646,9 @@ $$
 \\nabla \\times \\vec{B} &= \\mu_0\\vec{J} + \\mu_0\\epsilon_0\\frac{\\partial \\vec{E}}{\\partial t}
 \\end{aligned}
 $$
-\`\`\`
 
 ### Systems of Equations
 
-\`\`\`markdown
 $$
 \\begin{cases}
 x + y = 5 \\\\
@@ -875,11 +672,9 @@ y
 1
 \\end{bmatrix}
 $$
-\`\`\`
 
 ### Summations and Products
 
-\`\`\`markdown
 **Finite Sum:**
 $$
 \\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}
@@ -904,29 +699,6 @@ $$
 $$
 (x+y)^n = \\sum_{k=0}^{n} \\binom{n}{k} x^{n-k} y^k
 $$
-\`\`\`
-
-### Rendered Output
-
-Piecewise function:
-
-$$
-f(x) = \\begin{cases}
-x^2 & \\text{if } x \\geq 0 \\\\
--x^2 & \\text{if } x < 0
-\\end{cases}
-$$
-
-Aligned equations:
-
-$$
-\\begin{aligned}
-f(x) &= (x+1)^2 \\\\
-     &= x^2 + 2x + 1
-\\end{aligned}
-$$
-
-Summation: $\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$
 
 ---
 
@@ -934,7 +706,6 @@ Summation: $\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$
 
 ### Classical Mechanics
 
-\`\`\`markdown
 **Newton's Laws:**
 $$
 \\vec{F} = m\\vec{a} = \\frac{d\\vec{p}}{dt}
@@ -959,11 +730,9 @@ $$
 $$
 \\vec{L} = \\vec{r} \\times \\vec{p} = I\\vec{\\omega}
 $$
-\`\`\`
 
 ### Electromagnetism
 
-\`\`\`markdown
 **Maxwell's Equations:**
 $$
 \\begin{aligned}
@@ -983,11 +752,9 @@ $$
 $$
 \\vec{F} = k_e \\frac{q_1 q_2}{r^2} \\hat{r}
 $$
-\`\`\`
 
 ### Quantum Mechanics
 
-\`\`\`markdown
 **Schrödinger Equation (Time-Dependent):**
 $$
 i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\Psi(\\mathbf{r},t)
@@ -1012,11 +779,9 @@ $$
 $$
 [\\hat{A}, \\hat{B}] = \\hat{A}\\hat{B} - \\hat{B}\\hat{A}
 $$
-\`\`\`
 
 ### Relativity
 
-\`\`\`markdown
 **Special Relativity - Energy-Mass:**
 $$
 E = mc^2
@@ -1044,11 +809,9 @@ $
 $
 ds^2 = -\\left(1-\\frac{2GM}{c^2r}\\right)c^2dt^2 + \\left(1-\\frac{2GM}{c^2r}\\right)^{-1}dr^2 + r^2d\\Omega^2
 $
-\`\`\`
 
 ### Thermodynamics
 
-\`\`\`markdown
 **First Law:**
 $
 dU = \\delta Q - \\delta W
@@ -1073,24 +836,6 @@ $
 $
 PV = nRT = Nk_BT
 $
-\`\`\`
-
-### Rendered Output
-
-Maxwell's equations:
-
-$
-\\begin{aligned}
-\\nabla \\cdot \\vec{E} &= \\frac{\\rho}{\\epsilon_0} \\\\
-\\nabla \\cdot \\vec{B} &= 0 \\\\
-\\nabla \\times \\vec{E} &= -\\frac{\\partial \\vec{B}}{\\partial t} \\\\
-\\nabla \\times \\vec{B} &= \\mu_0\\vec{J} + \\mu_0\\epsilon_0\\frac{\\partial \\vec{E}}{\\partial t}
-\\end{aligned}
-$
-
-Schrödinger equation: $i\\hbar\\frac{\\partial}{\\partial t}\\Psi = \\hat{H}\\Psi$
-
-Einstein mass-energy: $E = mc^2$
 
 ---
 
@@ -1098,7 +843,6 @@ Einstein mass-energy: $E = mc^2$
 
 ### Chemical Equations
 
-\`\`\`markdown
 **Combustion Reaction:**
 $
 \\text{CH}_4 + 2\\text{O}_2 \\rightarrow \\text{CO}_2 + 2\\text{H}_2\\text{O}
@@ -1113,11 +857,9 @@ $
 $
 \\text{Ag}^+ + \\text{Cl}^- \\rightarrow \\text{AgCl}_{(s)}
 $
-\`\`\`
 
 ### Thermochemistry
 
-\`\`\`markdown
 **Enthalpy Change:**
 $
 \\Delta H = H_{\\text{products}} - H_{\\text{reactants}}
@@ -1137,11 +879,9 @@ $
 $
 E = E^\\circ - \\frac{RT}{nF}\\ln Q
 $
-\`\`\`
 
 ### Quantum Chemistry
 
-\`\`\`markdown
 **Molecular Orbitals:**
 $
 \\Psi_{\\text{bonding}} = \\psi_A + \\psi_B
@@ -1156,15 +896,6 @@ $
 $
 \\Psi_{\\text{total}} = \\Psi_{\\text{electronic}} \\cdot \\Psi_{\\text{nuclear}}
 $
-\`\`\`
-
-### Rendered Output
-
-Chemical equilibrium: $\\text{N}_2 + 3\\text{H}_2 \\rightleftharpoons 2\\text{NH}_3$
-
-Gibbs free energy: $\\Delta G = \\Delta H - T\\Delta S$
-
-Equilibrium constant: $K_{eq} = \\frac{[\\text{C}]^c[\\text{D}]^d}{[\\text{A}]^a[\\text{B}]^b}$
 
 ---
 
@@ -1172,7 +903,6 @@ Equilibrium constant: $K_{eq} = \\frac{[\\text{C}]^c[\\text{D}]^d}{[\\text{A}]^a
 
 ### Text in Math Mode
 
-\`\`\`markdown
 **Roman Text:**
 $
 \\text{force} = \\text{mass} \\times \\text{acceleration}
@@ -1202,11 +932,9 @@ $
 $
 \\mathscr{L}, \\mathscr{F}
 $
-\`\`\`
 
 ### Spacing Control
 
-\`\`\`markdown
 **Thin Space:** $a\\,b$ using \\,
 **Medium Space:** $a\\:b$ using \\:
 **Thick Space:** $a\\;b$ using \\;
@@ -1222,11 +950,9 @@ $
 $
 \\int x^2 dx \\quad \\text{(no spacing - less clear)}
 $
-\`\`\`
 
 ### Accents and Decorations
 
-\`\`\`markdown
 **Hat:** $\\hat{x}$, $\\widehat{xyz}$
 **Bar:** $\\bar{x}$, $\\overline{xyz}$
 **Tilde:** $\\tilde{x}$, $\\widetilde{xyz}$
@@ -1236,17 +962,6 @@ $
 **Underline:** $\\underline{x}$
 **Overbrace:** $\\overbrace{a+b+c}^{\\text{sum}}$
 **Underbrace:** $\\underbrace{a+b+c}_{\\text{sum}}$
-\`\`\`
-
-### Rendered Output
-
-Text in math: $\\text{force} = \\text{mass} \\times \\text{acceleration}$
-
-Number sets: $\\mathbb{R}, \\mathbb{C}, \\mathbb{N}, \\mathbb{Z}, \\mathbb{Q}$
-
-Accents: $\\hat{x}, \\bar{x}, \\tilde{x}, \\dot{x}, \\vec{v}$
-
-Decorations: $\\overbrace{a+b+c}^{\\text{sum}}$ and $\\underbrace{a+b+c}_{\\text{sum}}$
 
 ---
 
