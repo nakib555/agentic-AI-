@@ -35,27 +35,29 @@ export const getAvailableModelsHandler = async (req: Request, res: Response) => 
         const availableImageModels: Model[] = [];
         const availableVideoModels: Model[] = [];
 
-        const allWhitelistedModels = new Set([...CHAT_MODELS_ORDER, ...IMAGE_MODELS_ORDER, ...VIDEO_MODELS_ORDER]);
-
         for (const model of data.models) {
             // The API returns full names like "models/gemini-2.5-pro", we use the short form.
             const modelId = model.name.replace('models/', '');
 
-            // We only care about models whitelisted for this application.
-            if (allWhitelistedModels.has(modelId)) {
-                const modelInfo: Model = {
-                    id: modelId,
-                    name: model.displayName,
-                    description: model.description,
-                };
+            const modelInfo: Model = {
+                id: modelId,
+                name: model.displayName,
+                description: model.description,
+            };
 
-                // Categorize the model based on our predefined lists.
-                if (CHAT_MODELS_ORDER.includes(modelId)) {
-                    availableChatModels.push(modelInfo);
-                } else if (IMAGE_MODELS_ORDER.includes(modelId)) {
+            const methods = model.supportedGenerationMethods || [];
+
+            if (methods.includes('generateVideos')) {
+                availableVideoModels.push(modelInfo);
+            } else if (methods.includes('generateImages')) {
+                availableImageModels.push(modelInfo);
+            } else if (methods.includes('generateContent')) {
+                // This is a broad category. We can distinguish based on model names.
+                if (modelId.includes('image')) {
                     availableImageModels.push(modelInfo);
-                } else if (VIDEO_MODELS_ORDER.includes(modelId)) {
-                    availableVideoModels.push(modelInfo);
+                } else if (!modelId.includes('tts') && !modelId.includes('audio')) {
+                    // Assume it's a chat model if it's not specialized for other modalities.
+                    availableChatModels.push(modelInfo);
                 }
             }
         }
