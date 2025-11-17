@@ -359,7 +359,7 @@ export const useAppLogic = () => {
   }, [chat, startNewChat]);
   
   // --- Return all state and handlers ---
-  // Fix: Add missing `handleDownloadLogs` and alias the model setters to match component props.
+  // FIX: Add missing `handleDownloadLogs` and alias the model setters to match component props.
   return {
     appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, ...memory,
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
@@ -378,8 +378,10 @@ export const useAppLogic = () => {
     maxTokens,
     setMaxTokens: handleSetMaxTokens,
     imageModel,
+    // FIX: Rename `setImageModel` to `onImageModelChange` to match the prop expected by AppModals.
     onImageModelChange: handleSetImageModel,
     videoModel,
+    // FIX: Rename `setVideoModel` to `onVideoModelChange` to match the prop expected by AppModals.
     onVideoModelChange: handleSetVideoModel,
     ttsVoice,
     setTtsVoice: handleSetTtsVoice,
@@ -393,6 +395,7 @@ export const useAppLogic = () => {
     handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,
     handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests,
     handleFileUploadForImport,
+    // FIX: Add `handleDownloadLogs` to the return object so it's available to AppModals.
     handleDownloadLogs,
   };
 };
