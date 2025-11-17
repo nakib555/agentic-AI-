@@ -34,6 +34,7 @@ import {
 import { fetchFromApi } from '../utils/api';
 import { testSuite, type TestResult, type TestProgress } from '../components/Testing/testSuite';
 import { getSettings, updateSettings } from '../services/settingsService';
+// FIX: Add import for logCollector to handle log downloads.
 import { logCollector } from '../utils/logCollector';
 
 
@@ -80,6 +81,7 @@ export const useAppLogic = () => {
 
   // --- Settings Management ---
 
+  // FIX: Start the log collector when the app initializes.
   // --- Start Log Collector on Mount ---
   useEffect(() => {
     logCollector.start();
@@ -285,6 +287,7 @@ export const useAppLogic = () => {
     }
   };
 
+  // Fix: Add the handleDownloadLogs function to be exposed to the UI.
   const handleDownloadLogs = useCallback(() => {
     const logContent = logCollector.formatLogs();
     const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8' });
@@ -356,7 +359,7 @@ export const useAppLogic = () => {
   }, [chat, startNewChat]);
   
   // --- Return all state and handlers ---
-  // FIX: Fix props not being passed down correctly.
+  // Fix: Add missing `handleDownloadLogs` and alias the model setters to match component props.
   return {
     appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, ...memory,
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
