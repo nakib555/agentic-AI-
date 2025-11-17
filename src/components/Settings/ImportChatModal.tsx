@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 type ImportChatModalProps = {
@@ -59,6 +59,8 @@ const getHighlightedJson = (jsonString: string) => {
 
 
 export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClose, onFileUpload }) => {
+  const [isCopied, setIsCopied] = useState(false);
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -69,6 +71,13 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
 
   const openFileDialog = () => {
     document.getElementById('import-file-input')?.click();
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(jsonStructureExample.trim()).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    });
   };
 
   return (
@@ -133,8 +142,25 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
                   Your file must match the structure below. Fields like `id` and `createdAt` will be regenerated on import.
                 </p>
                 <div className="rounded-lg bg-slate-100 dark:bg-black/30 overflow-hidden shadow-inner dark:shadow-black/50">
-                    <div className="px-4 py-2 bg-slate-200 dark:bg-black/40 border-b border-slate-300 dark:border-white/10">
+                    <div className="px-4 py-2 bg-slate-200 dark:bg-black/40 border-b border-slate-300 dark:border-white/10 flex justify-between items-center">
                       <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">Example: chat-export.json</p>
+                      <button
+                        onClick={handleCopy}
+                        className="p-1.5 rounded-md text-slate-500 hover:bg-slate-300/50 dark:text-slate-400 dark:hover:bg-slate-600/50 transition-colors"
+                        title={isCopied ? 'Copied!' : 'Copy JSON structure'}
+                      >
+                        <AnimatePresence mode="wait" initial={false}>
+                          {isCopied ? (
+                              <motion.div key="check" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} className="w-4 h-4 text-green-500">
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
+                              </motion.div>
+                          ) : (
+                              <motion.div key="copy" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} className="w-4 h-4">
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3.5A1.5 1.5 0 0 1 8.5 2h5.879a1.5 1.5 0 0 1 1.06.44l3.122 3.121A1.5 1.5 0 0 1 19 6.621V16.5A1.5 1.5 0 0 1 17.5 18h-9A1.5 1.5 0 0 1 7 16.5v-13Z" /><path d="M5 2.5a.5.5 0 0 0-.5.5v12a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5H5Z" /><path d="M3 4.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h.5a.5.5 0 0 0 .5-.5v-10a.5.5 0 0 0-.5-.5H3Z" /></svg>
+                              </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </button>
                     </div>
                     <pre className="p-4 text-xs font-mono whitespace-pre-wrap break-all leading-relaxed">
                       <code dangerouslySetInnerHTML={getHighlightedJson(jsonStructureExample.trim())} />

@@ -1,0 +1,1407 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+export const MATH_RENDERING_INSTRUCTIONS = `
+# 📐 THE COMPLETE MATHEMATICS RENDERING DOCTRINE
+## Master Guide to KaTeX Mathematical Typography
+
+\`\`\`
+╔════════════════════════════════════════════════════════════╗
+║  THE LAW OF MATHEMATICAL BEAUTY                            ║
+║  "Mathematics is the poetry of logical ideas"              ║
+║  - Albert Einstein                                         ║
+║                                                            ║
+║  VERSION: Comprehensive Edition                            ║
+║  RENDERER: KaTeX (The Gold Standard)                       ║
+║  STATUS: ⚡ MANDATORY COMPLIANCE                           ║
+╚════════════════════════════════════════════════════════════╝
+\`\`\`
+
+---
+
+## 🌟 PHILOSOPHICAL FOUNDATION
+
+Mathematical notation is not merely functional—it is an **art form** that communicates the profound elegance of logical relationships. Proper rendering transforms abstract concepts into visual poetry.
+
+**Core Principles:**
+- ✨ **Clarity:** Every symbol must be unambiguous
+- 🎯 **Precision:** Spacing and alignment matter
+- 💫 **Elegance:** Beauty emerges from correct structure
+- 🚀 **Consistency:** Use uniform notation throughout
+
+---
+
+## 📘 TABLE OF CONTENTS
+
+1. [Basic Syntax Rules](#basic-syntax)
+2. [Inline Mathematics](#inline-math)
+3. [Display Mathematics](#display-math)
+4. [Fundamental Operations](#operations)
+5. [Fractions & Roots](#fractions-roots)
+6. [Exponents & Subscripts](#exponents-subscripts)
+7. [Greek Letters & Symbols](#greek-symbols)
+8. [Calculus Notation](#calculus)
+9. [Linear Algebra](#linear-algebra)
+10. [Set Theory & Logic](#set-theory)
+11. [Statistics & Probability](#statistics)
+12. [Advanced Structures](#advanced)
+13. [Physics Equations](#physics)
+14. [Chemistry Notation](#chemistry)
+15. [Common Errors](#errors)
+
+---
+
+## 🎯 BASIC SYNTAX RULES {#basic-syntax}
+
+### Delimiter Taxonomy
+
+**INLINE MATH** (flows with text):
+\`\`\`markdown
+Use single dollar signs: $expression$
+\`\`\`
+
+**DISPLAY MATH** (centered, standalone):
+\`\`\`markdown
+Use double dollar signs on separate lines:
+
+$$
+expression
+$$
+\`\`\`
+
+### Critical Spacing Rules
+
+\`\`\`markdown
+✅ CORRECT:
+The equation $E = mc^2$ is famous.
+
+$$
+E = mc^2
+$$
+
+❌ WRONG:
+The equation $$E = mc^2$$ is famous.  ← Display math inline
+$ E = mc^2 $                          ← Spaces inside delimiters
+$$E = mc^2$$                          ← Display math not on own line
+\`\`\`
+
+---
+
+## 💫 INLINE MATHEMATICS {#inline-math}
+
+**Purpose:** Seamlessly integrate math within prose.
+
+### Basic Examples
+
+\`\`\`markdown
+The Pythagorean theorem states that $a^2 + b^2 = c^2$ for right triangles.
+
+Newton's second law: $F = ma$ relates force, mass, and acceleration.
+
+The quadratic formula $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$ solves any quadratic.
+
+Euler's identity: $e^{i\\pi} + 1 = 0$ unites five fundamental constants.
+
+The derivative $\\frac{dy}{dx}$ represents instantaneous rate of change.
+\`\`\`
+
+### Rendered Output
+
+The Pythagorean theorem states that $a^2 + b^2 = c^2$ for right triangles.
+
+Newton's second law: $F = ma$ relates force, mass, and acceleration.
+
+The quadratic formula $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$ solves any quadratic.
+
+Euler's identity: $e^{i\\pi} + 1 = 0$ unites five fundamental constants.
+
+The derivative $\\frac{dy}{dx}$ represents instantaneous rate of change.
+
+---
+
+## 🎆 DISPLAY MATHEMATICS {#display-math}
+
+**Purpose:** Highlight important equations that deserve focus.
+
+### Fundamental Theorems
+
+\`\`\`markdown
+The fundamental theorem of calculus:
+
+$$
+\\int_a^b f(x)\\,dx = F(b) - F(a)
+$$
+
+The Schrödinger equation governs quantum mechanics:
+
+$$
+i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\Psi(\\mathbf{r},t)
+$$
+
+The Fourier transform connects time and frequency domains:
+
+$$
+F(\\omega) = \\int_{-\\infty}^{\\infty} f(t)e^{-i\\omega t}\\,dt
+$$
+\`\`\`
+
+### Rendered Output
+
+The fundamental theorem of calculus:
+
+$$
+\\int_a^b f(x)\\,dx = F(b) - F(a)
+$$
+
+The Schrödinger equation governs quantum mechanics:
+
+$$
+i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\Psi(\\mathbf{r},t)
+$$
+
+The Fourier transform connects time and frequency domains:
+
+$$
+F(\\omega) = \\int_{-\\infty}^{\\infty} f(t)e^{-i\\omega t}\\,dt
+$$
+
+---
+
+## ➕ FUNDAMENTAL OPERATIONS {#operations}
+
+### Arithmetic Operators
+
+\`\`\`markdown
+**Addition & Subtraction:**
+$a + b - c$
+
+**Multiplication:**
+- Explicit: $a \\times b$ or $a \\cdot b$
+- Implicit: $ab$ or $2x$
+
+**Division:**
+- Inline: $a \\div b$ or $a / b$
+- Fraction: $\\frac{a}{b}$
+
+**Plus-Minus:**
+$x = a \\pm b$
+
+**Minus-Plus:**
+$x = a \\mp b$
+\`\`\`
+
+### Rendered Examples
+
+Addition & subtraction: $a + b - c$
+
+Multiplication: $a \\times b$ or $a \\cdot b$ or $ab$
+
+Division: $a \\div b$ or $a / b$ or $\\frac{a}{b}$
+
+Plus-minus: $x = a \\pm b$
+
+Minus-plus: $x = a \\mp b$
+
+---
+
+## 📊 FRACTIONS & ROOTS {#fractions-roots}
+
+### Fraction Variants
+
+\`\`\`markdown
+**Standard Fraction:**
+$$
+\\frac{numerator}{denominator}
+$$
+
+**Continued Fractions:**
+$$
+x = a_0 + \\frac{1}{a_1 + \\frac{1}{a_2 + \\frac{1}{a_3 + \\cdots}}}
+$$
+
+**Binomial Coefficient:**
+$$
+\\binom{n}{k} = \\frac{n!}{k!(n-k)!}
+$$
+
+**Mixed Fractions (using \\tfrac for inline):**
+Text with $\\tfrac{1}{2}$ inline fraction.
+\`\`\`
+
+### Root Expressions
+
+\`\`\`markdown
+**Square Root:**
+$\\sqrt{x}$ or $\\sqrt{x^2 + y^2}$
+
+**Nth Root:**
+$\\sqrt[n]{x}$ produces $\\sqrt[3]{27} = 3$
+
+**Nested Roots:**
+$$
+\\sqrt{2 + \\sqrt{2 + \\sqrt{2 + \\cdots}}}
+$$
+\`\`\`
+
+### Rendered Output
+
+Standard fraction: $\\frac{numerator}{denominator}$
+
+Continued fraction:
+
+$$
+x = a_0 + \\frac{1}{a_1 + \\frac{1}{a_2 + \\frac{1}{a_3 + \\cdots}}}
+$$
+
+Binomial coefficient: $\\binom{n}{k} = \\frac{n!}{k!(n-k)!}$
+
+Roots: $\\sqrt{x}$, $\\sqrt[n]{x}$, $\\sqrt[3]{27} = 3$
+
+---
+
+## ⬆️ EXPONENTS & SUBSCRIPTS {#exponents-subscripts}
+
+### Basic Syntax
+
+\`\`\`markdown
+**Superscripts (Exponents):**
+$x^2$, $e^{-\\frac{x^2}{2}}$, $2^{2^{2^2}}$
+
+**Subscripts (Indices):**
+$x_1$, $a_{ij}$, $x_{n+1}$
+
+**Combined:**
+$x_i^2$, $\\sum_{i=1}^{n} x_i^2$
+\`\`\`
+
+### Complex Examples
+
+\`\`\`markdown
+**Exponential Function:**
+$$
+e^x = \\sum_{n=0}^{\\infty} \\frac{x^n}{n!}
+$$
+
+**Tower of Powers:**
+$$
+2^{2^{2^{2}}}
+$$
+
+**Multiple Subscripts:**
+$$
+T^{\\mu\\nu}_{\alpha\\beta}
+$$
+\`\`\`
+
+### Rendered Output
+
+Exponential function:
+
+$$
+e^x = \\sum_{n=0}^{\\infty} \\frac{x^n}{n!}
+$$
+
+Tower of powers: $2^{2^{2^{2}}}$
+
+Multiple indices: $T^{\\mu\\nu}_{\alpha\\beta}$
+
+---
+
+## 🔤 GREEK LETTERS & SYMBOLS {#greek-symbols}
+
+### Complete Greek Alphabet
+
+\`\`\`markdown
+**Lowercase:**
+$\\alpha$ \\alpha    $\\beta$ \\beta      $\\gamma$ \\gamma    $\\delta$ \\delta
+$\\epsilon$ \\epsilon  $\\zeta$ \\zeta   $\\eta$ \\eta        $\\theta$ \\theta
+$\\iota$ \\iota      $\\kappa$ \\kappa    $\\lambda$ \\lambda  $\\mu$ \\mu
+$\\nu$ \\nu          $\\xi$ \\xi          $\\pi$ \\pi          $\\rho$ \\rho
+$\\sigma$ \\sigma    $\\tau$ \\tau        $\\upsilon$ \\upsilon $\\phi$ \\phi
+$\\chi$ \\chi        $\\psi$ \\psi        $\\omega$ \\omega
+
+**Uppercase:**
+$\\Gamma$ \\Gamma    $\\Delta$ \\Delta    $\\Theta$ \\Theta    $\\Lambda$ \\Lambda
+$\\Xi$ \\Xi          $\\Pi$ \\Pi          $\\Sigma$ \\Sigma    $\\Phi$ \\Phi
+$\\Psi$ \\Psi        $\\Omega$ \\Omega
+
+**Variants:**
+$\\varepsilon$ \\varepsilon    $\\vartheta$ \\vartheta    $\\varphi$ \\varphi
+$\\varrho$ \\varrho            $\\varsigma$ \\varsigma
+\`\`\`
+
+### Common Mathematical Symbols
+
+\`\`\`markdown
+**Infinity & Special:**
+$\\infty$ \\infty          $\\partial$ \\partial      $\\nabla$ \\nabla
+$\\hbar$ \\hbar            $\\ell$ \\ell              $\\aleph$ \\aleph
+
+**Comparison:**
+$\\leq$ \\leq    $\\geq$ \\geq    $\\neq$ \\neq    $\\approx$ \\approx
+$\\equiv$ \\equiv    $\\sim$ \\sim    $\\propto$ \\propto
+
+**Arrows:**
+$\\rightarrow$ \\rightarrow    $\\leftarrow$ \\leftarrow    
+$\\Rightarrow$ \\Rightarrow    $\\Leftarrow$ \\Leftarrow
+$\\leftrightarrow$ \\leftrightarrow    $\\Leftrightarrow$ \\Leftrightarrow
+$\\mapsto$ \\mapsto            $\\to$ \\to
+
+**Set Operations:**
+$\\in$ \\in    $\\notin$ \\notin    $\\subset$ \\subset    $\\subseteq$ \\subseteq
+$\\cup$ \\cup    $\\cap$ \\cap    $\\emptyset$ \\emptyset    $\\forall$ \\forall
+$\\exists$ \\exists    $\\nexists$ \\nexists
+
+**Logic:**
+$\\land$ \\land    $\\lor$ \\lor    $\\neg$ \\neg    $\\implies$ \\implies
+$\\iff$ \\iff
+\`\`\`
+
+### Rendered Examples
+
+Greek letters: $\\alpha, \\beta, \\gamma, \\delta, \\epsilon, \\theta, \\lambda, \\mu, \\pi, \\sigma, \\phi, \\omega$
+
+Uppercase: $\\Gamma, \\Delta, \\Theta, \\Lambda, \\Xi, \\Pi, \\Sigma, \\Phi, \\Psi, \\Omega$
+
+Symbols: $\\infty, \\partial, \\nabla, \\hbar$
+
+Comparisons: $\\leq, \\geq, \\neq, \\approx, \\equiv$
+
+---
+
+## 📈 CALCULUS NOTATION {#calculus}
+
+### Derivatives
+
+\`\`\`markdown
+**Basic Derivative:**
+$\\frac{dy}{dx}$ or $\\frac{df}{dx}$ or $f'(x)$ or $\\dot{x}$
+
+**Partial Derivatives:**
+$\\frac{\\partial f}{\\partial x}$ or $\\partial_x f$
+
+**Higher Derivatives:**
+$\\frac{d^2y}{dx^2}$ or $f''(x)$ or $\\ddot{x}$
+
+**Gradient:**
+$$
+\\nabla f = \\left(\\frac{\\partial f}{\\partial x}, \\frac{\\partial f}{\\partial y}, \\frac{\\partial f}{\\partial z}\\right)
+$$
+
+**Laplacian:**
+$$
+\\nabla^2 f = \\frac{\\partial^2 f}{\\partial x^2} + \\frac{\\partial^2 f}{\\partial y^2} + \\frac{\\partial^2 f}{\\partial z^2}
+$$
+\`\`\`
+
+### Integrals
+
+\`\`\`markdown
+**Definite Integral:**
+$$
+\\int_a^b f(x)\\,dx
+$$
+
+**Indefinite Integral:**
+$$
+\\int f(x)\\,dx = F(x) + C
+$$
+
+**Multiple Integrals:**
+$$
+\\iint_D f(x,y)\\,dA \\quad \\iiint_V f(x,y,z)\\,dV
+$$
+
+**Contour Integral:**
+$$
+\\oint_C f(z)\\,dz
+$$
+
+**Line Integral:**
+$$
+\\int_C \\mathbf{F} \\cdot d\\mathbf{r}
+$$
+\`\`\`
+
+### Limits
+
+\`\`\`markdown
+**Standard Limit:**
+$$
+\\lim_{x \\to a} f(x) = L
+$$
+
+**One-Sided Limits:**
+$$
+\\lim_{x \\to a^+} f(x) \\quad \\lim_{x \\to a^-} f(x)
+$$
+
+**Infinity Limits:**
+$$
+\\lim_{x \\to \\infty} f(x) \\quad \\lim_{x \\to -\\infty} f(x)
+$$
+
+**L'Hôpital's Rule:**
+$$
+\\lim_{x \\to a} \\frac{f(x)}{g(x)} = \\lim_{x \\to a} \\frac{f'(x)}{g'(x)}
+$$
+\`\`\`
+
+### Rendered Output
+
+Derivative: $\\frac{dy}{dx}$ or $f'(x)$
+
+Partial derivative: $\\frac{\\partial f}{\\partial x}$
+
+Gradient:
+
+$$
+\\nabla f = \\left(\\frac{\\partial f}{\\partial x}, \\frac{\\partial f}{\\partial y}, \\frac{\\partial f}{\\partial z}\\right)
+$$
+
+Definite integral:
+
+$$
+\\int_a^b f(x)\\,dx
+$$
+
+Limit:
+
+$$
+\\lim_{x \\to \\infty} \\frac{1}{x} = 0
+$$
+
+---
+
+## 🔢 LINEAR ALGEBRA {#linear-algebra}
+
+### Vectors
+
+\`\`\`markdown
+**Vector Notation:**
+$\\vec{v}$ or $\\mathbf{v}$ or $\\boldsymbol{v}$
+
+**Column Vector:**
+$$
+\\mathbf{v} = \\begin{bmatrix} v_1 \\\\ v_2 \\\\ v_3 \\end{bmatrix}
+$$
+
+**Row Vector:**
+$$
+\\mathbf{v}^T = \\begin{bmatrix} v_1 & v_2 & v_3 \\end{bmatrix}
+$$
+
+**Dot Product:**
+$$
+\\mathbf{a} \\cdot \\mathbf{b} = \\sum_{i=1}^{n} a_i b_i
+$$
+
+**Cross Product:**
+$$
+\\mathbf{a} \\times \\mathbf{b} = \\begin{vmatrix} \\mathbf{i} & \\mathbf{j} & \\mathbf{k} \\\\ a_1 & a_2 & a_3 \\\\ b_1 & b_2 & b_3 \\end{vmatrix}
+$$
+\`\`\`
+
+### Matrices
+
+\`\`\`markdown
+**Basic Matrix:**
+$$
+A = \\begin{bmatrix}
+a_{11} & a_{12} & a_{13} \\\\
+a_{21} & a_{22} & a_{23} \\\\
+a_{31} & a_{32} & a_{33}
+\\end{bmatrix}
+$$
+
+**Matrix with Parentheses:**
+$$
+A = \\begin{pmatrix}
+1 & 2 \\\\
+3 & 4
+\\end{pmatrix}
+$$
+
+**Determinant:**
+$$
+\\det(A) = \\begin{vmatrix}
+a & b \\\\
+c & d
+\\end{vmatrix} = ad - bc
+$$
+
+**Identity Matrix:**
+$$
+I = \\begin{bmatrix}
+1 & 0 & 0 \\\\
+0 & 1 & 0 \\\\
+0 & 0 & 1
+\\end{bmatrix}
+$$
+
+**Transpose:**
+$$
+A^T = \\begin{bmatrix}
+a_{11} & a_{21} & a_{31} \\\\
+a_{12} & a_{22} & a_{32}
+\\end{bmatrix}
+$$
+
+**Inverse:**
+$$
+A^{-1}A = AA^{-1} = I
+$$
+\`\`\`
+
+### Matrix Operations
+
+\`\`\`markdown
+**Eigenvalue Equation:**
+$$
+A\\mathbf{v} = \\lambda\\mathbf{v}
+$$
+
+**Characteristic Polynomial:**
+$$
+\\det(A - \\lambda I) = 0
+$$
+
+**Matrix Multiplication:**
+$$
+(AB)_{ij} = \\sum_{k=1}^{n} A_{ik}B_{kj}
+$$
+
+**Trace:**
+$$
+\\text{tr}(A) = \\sum_{i=1}^{n} a_{ii}
+$$
+\`\`\`
+
+### Rendered Output
+
+Column vector:
+
+$$
+\\mathbf{v} = \\begin{bmatrix} v_1 \\\\ v_2 \\\\ v_3 \\end{bmatrix}
+$$
+
+Matrix:
+
+$$
+A = \\begin{bmatrix}
+a_{11} & a_{12} & a_{13} \\\\
+a_{21} & a_{22} & a_{23} \\\\
+a_{31} & a_{32} & a_{33}
+\\end{bmatrix}
+$$
+
+Eigenvalue equation: $A\\mathbf{v} = \\lambda\\mathbf{v}$
+
+---
+
+## 🔣 SET THEORY & LOGIC {#set-theory}
+
+### Set Notation
+
+\`\`\`markdown
+**Basic Sets:**
+- Natural numbers: $\\mathbb{N} = \\{1, 2, 3, \\ldots\\}$
+- Integers: $\\mathbb{Z} = \\{\\ldots, -2, -1, 0, 1, 2, \\ldots\\}$
+- Rationals: $\\mathbb{Q}$
+- Reals: $\\mathbb{R}$
+- Complex: $\\mathbb{C}$
+
+**Set Builder Notation:**
+$$
+S = \\{x \\in \\mathbb{R} \\mid x^2 < 4\\}
+$$
+
+**Set Operations:**
+- Union: $A \\cup B$
+- Intersection: $A \\cap B$
+- Difference: $A \\setminus B$
+- Complement: $A^c$ or $\\overline{A}$
+- Cartesian Product: $A \\times B$
+
+**Subset Relations:**
+$$
+A \\subset B \\quad A \\subseteq B \\quad A \\supset B \\quad A \\supseteq B
+$$
+\`\`\`
+
+### Logic Symbols
+
+\`\`\`markdown
+**Quantifiers:**
+- Universal: $\\forall x \\in S, P(x)$
+- Existential: $\\exists x \\in S, P(x)$
+- Unique existence: $\\exists! x, P(x)$
+
+**Logical Connectives:**
+- And: $P \\land Q$
+- Or: $P \\lor Q$
+- Not: $\\neg P$ or $\\lnot P$
+- Implies: $P \\implies Q$ or $P \\Rightarrow Q$
+- If and only if: $P \\iff Q$ or $P \\Leftrightarrow Q$
+
+**Truth Tables:**
+$$
+\\begin{array}{c|c|c}
+P & Q & P \\land Q \\\\
+\\hline
+T & T & T \\\\
+T & F & F \\\\
+F & T & F \\\\
+F & F & F
+\\end{array}
+$$
+\`\`\`
+
+### Rendered Output
+
+Set builder notation: $S = \\{x \\in \\mathbb{R} \\mid x^2 < 4\\}$
+
+Number sets: $\\mathbb{N}, \\mathbb{Z}, \\mathbb{Q}, \\mathbb{R}, \\mathbb{C}$
+
+Universal quantifier: $\\forall x \\in S, P(x)$
+
+Existential quantifier: $\\exists x \\in S, P(x)$
+
+Logic: $P \\land Q$, $P \\lor Q$, $\\neg P$, $P \\implies Q$, $P \\iff Q$
+
+---
+
+## 📊 STATISTICS & PROBABILITY {#statistics}
+
+### Probability Notation
+
+\`\`\`markdown
+**Basic Probability:**
+$$
+P(A) \\quad P(A \\cap B) \\quad P(A \\cup B)
+$$
+
+**Conditional Probability:**
+$$
+P(A|B) = \\frac{P(A \\cap B)}{P(B)}
+$$
+
+**Bayes' Theorem:**
+$$
+P(A|B) = \\frac{P(B|A) \\cdot P(A)}{P(B)}
+$$
+
+**Law of Total Probability:**
+$$
+P(B) = \\sum_{i=1}^{n} P(B|A_i)P(A_i)
+$$
+\`\`\`
+
+### Statistical Measures
+
+\`\`\`markdown
+**Mean (Expected Value):**
+$$
+\\mu = \\mathbb{E}[X] = \\sum_{i=1}^{n} x_i p_i \\quad \\text{or} \\quad \\int_{-\\infty}^{\\infty} x f(x)\\,dx
+$$
+
+**Variance:**
+$$
+\\sigma^2 = \\text{Var}(X) = \\mathbb{E}[(X-\\mu)^2] = \\mathbb{E}[X^2] - (\\mathbb{E}[X])^2
+$$
+
+**Standard Deviation:**
+$$
+\\sigma = \\sqrt{\\text{Var}(X)}
+$$
+
+**Covariance:**
+$$
+\\text{Cov}(X,Y) = \\mathbb{E}[(X-\\mu_X)(Y-\\mu_Y)]
+$$
+
+**Correlation:**
+$$
+\\rho_{X,Y} = \\frac{\\text{Cov}(X,Y)}{\\sigma_X \\sigma_Y}
+$$
+\`\`\`
+
+### Distributions
+
+\`\`\`markdown
+**Normal Distribution:**
+$$
+f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}
+$$
+
+**Binomial Distribution:**
+$$
+P(X = k) = \\binom{n}{k} p^k (1-p)^{n-k}
+$$
+
+**Poisson Distribution:**
+$$
+P(X = k) = \\frac{\\lambda^k e^{-\\lambda}}{k!}
+$$
+
+**Chi-Square Test:**
+$$
+\\chi^2 = \\sum_{i=1}^{n} \\frac{(O_i - E_i)^2}{E_i}
+$$
+\`\`\`
+
+### Rendered Output
+
+Bayes' theorem:
+
+$$
+P(A|B) = \\frac{P(B|A) \\cdot P(A)}{P(B)}
+$$
+
+Normal distribution:
+
+$$
+f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}
+$$
+
+Expected value: $\\mu = \\mathbb{E}[X]$
+
+Variance: $\\sigma^2 = \\text{Var}(X)$
+
+---
+
+## 🎓 ADVANCED STRUCTURES {#advanced}
+
+### Piecewise Functions
+
+\`\`\`markdown
+$$
+f(x) = \\begin{cases}
+x^2 & \\text{if } x \\geq 0 \\\\
+-x^2 & \\text{if } x < 0
+\\end{cases}
+$$
+
+**Absolute Value:**
+$$
+|x| = \\begin{cases}
+x & \\text{if } x \\geq 0 \\\\
+-x & \\text{if } x < 0
+\\end{cases}
+$$
+
+**Heaviside Step Function:**
+$$
+H(x) = \\begin{cases}
+0 & \\text{if } x < 0 \\\\
+\\frac{1}{2} & \\text{if } x = 0 \\\\
+1 & \\text{if } x > 0
+\\end{cases}
+$$
+\`\`\`
+
+### Multi-line Equations with Alignment
+
+\`\`\`markdown
+$$
+\\begin{align}
+f(x) &= (x+1)^2 \\\\
+     &= x^2 + 2x + 1 \\\\
+     &= x^2 + 2x + 1
+\\end{align}
+$$
+
+**Without Numbering (use aligned):**
+$$
+\\begin{aligned}
+\\nabla \\times \\vec{E} &= -\\frac{\\partial \\vec{B}}{\\partial t} \\\\
+\\nabla \\times \\vec{B} &= \\mu_0\\vec{J} + \\mu_0\\epsilon_0\\frac{\\partial \\vec{E}}{\\partial t}
+\\end{aligned}
+$$
+\`\`\`
+
+### Systems of Equations
+
+\`\`\`markdown
+$$
+\\begin{cases}
+x + y = 5 \\\\
+2x - y = 1
+\\end{cases}
+$$
+
+**Matrix Form:**
+$$
+\\begin{bmatrix}
+1 & 1 \\\\
+2 & -1
+\\end{bmatrix}
+\\begin{bmatrix}
+x \\\\
+y
+\\end{bmatrix}
+=
+\\begin{bmatrix}
+5 \\\\
+1
+\\end{bmatrix}
+$$
+\`\`\`
+
+### Summations and Products
+
+\`\`\`markdown
+**Finite Sum:**
+$$
+\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}
+$$
+
+**Infinite Series:**
+$$
+\\sum_{n=0}^{\\infty} \\frac{1}{2^n} = 2
+$$
+
+**Double Summation:**
+$$
+\\sum_{i=1}^{m} \\sum_{j=1}^{n} a_{ij}
+$$
+
+**Product Notation:**
+$$
+\\prod_{i=1}^{n} i = n!
+$$
+
+**Binomial Theorem:**
+$$
+(x+y)^n = \\sum_{k=0}^{n} \\binom{n}{k} x^{n-k} y^k
+$$
+\`\`\`
+
+### Rendered Output
+
+Piecewise function:
+
+$$
+f(x) = \\begin{cases}
+x^2 & \\text{if } x \\geq 0 \\\\
+-x^2 & \\text{if } x < 0
+\\end{cases}
+$$
+
+Aligned equations:
+
+$$
+\\begin{aligned}
+f(x) &= (x+1)^2 \\\\
+     &= x^2 + 2x + 1
+\\end{aligned}
+$$
+
+Summation: $\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$
+
+---
+
+## ⚛️ PHYSICS EQUATIONS {#physics}
+
+### Classical Mechanics
+
+\`\`\`markdown
+**Newton's Laws:**
+$$
+\\vec{F} = m\\vec{a} = \\frac{d\\vec{p}}{dt}
+$$
+
+**Kinetic Energy:**
+$$
+KE = \\frac{1}{2}mv^2
+$$
+
+**Potential Energy (Gravitational):**
+$$
+PE = mgh
+$$
+
+**Conservation of Energy:**
+$$
+E_{\\text{total}} = KE + PE = \\text{constant}
+$$
+
+**Angular Momentum:**
+$$
+\\vec{L} = \\vec{r} \\times \\vec{p} = I\\vec{\\omega}
+$$
+\`\`\`
+
+### Electromagnetism
+
+\`\`\`markdown
+**Maxwell's Equations:**
+$$
+\\begin{aligned}
+\\nabla \\cdot \\vec{E} &= \\frac{\\rho}{\\epsilon_0} & \\text{(Gauss's law)} \\\\
+\\nabla \\cdot \\vec{B} &= 0 & \\text{(No magnetic monopoles)} \\\\
+\\nabla \\times \\vec{E} &= -\\frac{\\partial \\vec{B}}{\\partial t} & \\text{(Faraday's law)} \\\\
+\\nabla \\times \\vec{B} &= \\mu_0\\vec{J} + \\mu_0\\epsilon_0\\frac{\\partial \\vec{E}}{\\partial t} & \\text{(Ampère-Maxwell law)}
+\\end{aligned}
+$$
+
+**Lorentz Force:**
+$$
+\\vec{F} = q(\\vec{E} + \\vec{v} \\times \\vec{B})
+$$
+
+**Coulomb's Law:**
+$$
+\\vec{F} = k_e \\frac{q_1 q_2}{r^2} \\hat{r}
+$$
+\`\`\`
+
+### Quantum Mechanics
+
+\`\`\`markdown
+**Schrödinger Equation (Time-Dependent):**
+$$
+i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\Psi(\\mathbf{r},t)
+$$
+
+**Schrödinger Equation (Time-Independent):**
+$$
+\\hat{H}\\psi(\\mathbf{r}) = E\\psi(\\mathbf{r})
+$$
+
+**Heisenberg Uncertainty Principle:**
+$$
+\\Delta x \\cdot \\Delta p \\geq \\frac{\\hbar}{2}
+$$
+
+**Wave Function Normalization:**
+$$
+\\int_{-\\infty}^{\\infty} |\\Psi(x,t)|^2\\,dx = 1
+$$
+
+**Commutator:**
+$$
+[\\hat{A}, \\hat{B}] = \\hat{A}\\hat{B} - \\hat{B}\\hat{A}
+$$
+\`\`\`
+
+### Relativity
+
+\`\`\`markdown
+**Special Relativity - Energy-Mass:**
+$$
+E = mc^2
+$$
+
+**Relativistic Energy:**
+$$
+E = \\gamma mc^2 \\quad \\text{where} \\quad \\gamma = \\frac{1}{\\sqrt{1-\\frac{v^2}{c^2}}}
+$$
+
+**Lorentz Transformation:**
+$$
+\\begin{aligned}
+x' &= \\gamma(x - vt) \\\\
+t' &= \\gamma\\left(t - \\frac{vx}{c^2}\\right)
+\\end{aligned}
+$$
+
+**Einstein Field Equations:**
+$
+G_{\\mu\\nu} + \\Lambda g_{\\mu\\nu} = \\frac{8\\pi G}{c^4} T_{\\mu\\nu}
+$
+
+**Schwarzschild Metric:**
+$
+ds^2 = -\\left(1-\\frac{2GM}{c^2r}\\right)c^2dt^2 + \\left(1-\\frac{2GM}{c^2r}\\right)^{-1}dr^2 + r^2d\\Omega^2
+$
+\`\`\`
+
+### Thermodynamics
+
+\`\`\`markdown
+**First Law:**
+$
+dU = \\delta Q - \\delta W
+$
+
+**Entropy:**
+$
+S = k_B \\ln \\Omega
+$
+
+**Carnot Efficiency:**
+$
+\\eta = 1 - \\frac{T_C}{T_H}
+$
+
+**Boltzmann Distribution:**
+$
+P(E) = \\frac{e^{-E/k_BT}}{Z} \\quad \\text{where} \\quad Z = \\sum_i e^{-E_i/k_BT}
+$
+
+**Ideal Gas Law:**
+$
+PV = nRT = Nk_BT
+$
+\`\`\`
+
+### Rendered Output
+
+Maxwell's equations:
+
+$
+\\begin{aligned}
+\\nabla \\cdot \\vec{E} &= \\frac{\\rho}{\\epsilon_0} \\\\
+\\nabla \\cdot \\vec{B} &= 0 \\\\
+\\nabla \\times \\vec{E} &= -\\frac{\\partial \\vec{B}}{\\partial t} \\\\
+\\nabla \\times \\vec{B} &= \\mu_0\\vec{J} + \\mu_0\\epsilon_0\\frac{\\partial \\vec{E}}{\\partial t}
+\\end{aligned}
+$
+
+Schrödinger equation: $i\\hbar\\frac{\\partial}{\\partial t}\\Psi = \\hat{H}\\Psi$
+
+Einstein mass-energy: $E = mc^2$
+
+---
+
+## 🧪 CHEMISTRY NOTATION {#chemistry}
+
+### Chemical Equations
+
+\`\`\`markdown
+**Combustion Reaction:**
+$
+\\text{CH}_4 + 2\\text{O}_2 \\rightarrow \\text{CO}_2 + 2\\text{H}_2\\text{O}
+$
+
+**Equilibrium:**
+$
+\\text{N}_2 + 3\\text{H}_2 \\rightleftharpoons 2\\text{NH}_3
+$
+
+**Ionic Equation:**
+$
+\\text{Ag}^+ + \\text{Cl}^- \\rightarrow \\text{AgCl}_{(s)}
+$
+\`\`\`
+
+### Thermochemistry
+
+\`\`\`markdown
+**Enthalpy Change:**
+$
+\\Delta H = H_{\\text{products}} - H_{\\text{reactants}}
+$
+
+**Gibbs Free Energy:**
+$
+\\Delta G = \\Delta H - T\\Delta S
+$
+
+**Equilibrium Constant:**
+$
+K_{eq} = \\frac{[\\text{C}]^c[\\text{D}]^d}{[\\text{A}]^a[\\text{B}]^b}
+$
+
+**Nernst Equation:**
+$
+E = E^\\circ - \\frac{RT}{nF}\\ln Q
+$
+\`\`\`
+
+### Quantum Chemistry
+
+\`\`\`markdown
+**Molecular Orbitals:**
+$
+\\Psi_{\\text{bonding}} = \\psi_A + \\psi_B
+$
+
+**Pauli Exclusion Principle:**
+$
+|\\Psi(x_1, x_2)\\rangle = -|\\Psi(x_2, x_1)\\rangle
+$
+
+**Born-Oppenheimer Approximation:**
+$
+\\Psi_{\\text{total}} = \\Psi_{\\text{electronic}} \\cdot \\Psi_{\\text{nuclear}}
+$
+\`\`\`
+
+### Rendered Output
+
+Chemical equilibrium: $\\text{N}_2 + 3\\text{H}_2 \\rightleftharpoons 2\\text{NH}_3$
+
+Gibbs free energy: $\\Delta G = \\Delta H - T\\Delta S$
+
+Equilibrium constant: $K_{eq} = \\frac{[\\text{C}]^c[\\text{D}]^d}{[\\text{A}]^a[\\text{B}]^b}$
+
+---
+
+## 🎨 SPECIAL FORMATTING & TEXT {#special-formatting}
+
+### Text in Math Mode
+
+\`\`\`markdown
+**Roman Text:**
+$
+\\text{force} = \\text{mass} \\times \\text{acceleration}
+$
+
+**Bold Math:**
+$
+\\mathbf{F} = m\\mathbf{a}
+$
+
+**Calligraphic:**
+$
+\\mathcal{L}, \\mathcal{F}, \\mathcal{H}
+$
+
+**Blackboard Bold (for number sets):**
+$
+\\mathbb{R}, \\mathbb{C}, \\mathbb{N}, \\mathbb{Z}, \\mathbb{Q}
+$
+
+**Fraktur:**
+$
+\\mathfrak{g}, \\mathfrak{su}(2)
+$
+
+**Script:**
+$
+\\mathscr{L}, \\mathscr{F}
+$
+\`\`\`
+
+### Spacing Control
+
+\`\`\`markdown
+**Thin Space:** $a\\,b$ using \\,
+**Medium Space:** $a\\:b$ using \\:
+**Thick Space:** $a\\;b$ using \\;
+**Quad Space:** $a\\quad b$ using \\quad
+**Double Quad:** $a\\qquad b$ using \\qquad
+**Negative Space:** $a\\!b$ using \\!
+
+**Example - Differential:**
+$
+\\int x^2\\,dx \\quad \\text{(correct spacing)}
+$
+
+$
+\\int x^2 dx \\quad \\text{(no spacing - less clear)}
+$
+\`\`\`
+
+### Accents and Decorations
+
+\`\`\`markdown
+**Hat:** $\\hat{x}$, $\\widehat{xyz}$
+**Bar:** $\\bar{x}$, $\\overline{xyz}$
+**Tilde:** $\\tilde{x}$, $\\widetilde{xyz}$
+**Dot (time derivative):** $\\dot{x}$, $\\ddot{x}$
+**Vector:** $\\vec{v}$
+**Arrow:** $\\overrightarrow{AB}$
+**Underline:** $\\underline{x}$
+**Overbrace:** $\\overbrace{a+b+c}^{\\text{sum}}$
+**Underbrace:** $\\underbrace{a+b+c}_{\\text{sum}}$
+\`\`\`
+
+### Rendered Output
+
+Text in math: $\\text{force} = \\text{mass} \\times \\text{acceleration}$
+
+Number sets: $\\mathbb{R}, \\mathbb{C}, \\mathbb{N}, \\mathbb{Z}, \\mathbb{Q}$
+
+Accents: $\\hat{x}, \\bar{x}, \\tilde{x}, \\dot{x}, \\vec{v}$
+
+Decorations: $\\overbrace{a+b+c}^{\\text{sum}}$ and $\\underbrace{a+b+c}_{\\text{sum}}$
+
+---
+
+## 🚫 COMMON ERRORS & TROUBLESHOOTING {#errors}
+
+### ❌ **ERROR 1: Wrong Delimiters**
+
+**Problem:**
+\`\`\`markdown
+\\(x^2\\) or \\[x^2\\]  ← LaTeX-style (WRONG)
+\`\`\`
+
+**Solution:**
+\`\`\`markdown
+$x^2$ (inline) or $$ x^2 $$ (display) ← KaTeX-style (CORRECT)
+\`\`\`
+
+---
+
+### ❌ **ERROR 2: Display Math Inline**
+
+**Problem:**
+\`\`\`markdown
+The equation $$E=mc^2$$ shows... ← Display delimiters inline (WRONG)
+\`\`\`
+
+**Solution:**
+\`\`\`markdown
+The equation $E=mc^2$ shows... ← Inline delimiters (CORRECT)
+
+Or use display on separate lines:
+
+$$
+E=mc^2
+$$
+\`\`\`
+
+---
+
+### ❌ **ERROR 3: Missing Escape Characters**
+
+**Problem:**
+\`\`\`markdown
+$x_1, x_2, ..., x_n$ ← Renders literal dots (WRONG)
+\`\`\`
+
+**Solution:**
+\`\`\`markdown
+$x_1, x_2, \\ldots, x_n$ ← Use \\ldots (CORRECT)
+\`\`\`
+
+---
+
+### ❌ **ERROR 4: Incorrect Fraction Syntax**
+
+**Problem:**
+\`\`\`markdown
+$1/2$ ← Renders as division symbol (suboptimal)
+\`\`\`
+
+**Solution:**
+\`\`\`markdown
+$\\frac{1}{2}$ ← Proper fraction rendering (CORRECT)
+\`\`\`
+
+---
+
+### ❌ **ERROR 5: Missing Braces for Multi-Character Sub/Superscripts**
+
+**Problem:**
+\`\`\`markdown
+$x^10$ renders as $x^{10}$ but $x^10$ displays wrong spacing
+$x_max$ ← Only 'm' is subscripted (WRONG)
+\`\`\`
+
+**Solution:**
+\`\`\`markdown
+$x^{10}$ ← Braces for multi-digit exponent (CORRECT)
+$x_{\\text{max}}$ ← Braces for multi-character subscript (CORRECT)
+\`\`\`
+
+---
+
+### ❌ **ERROR 6: Spacing Issues**
+
+**Problem:**
+\`\`\`markdown
+$\\int f(x)dx$ ← No space between function and differential (unclear)
+\`\`\`
+
+**Solution:**
+\`\`\`markdown
+$\\int f(x)\\,dx$ ← Thin space with \\, (CORRECT)
+\`\`\`
+
+---
+
+### ❌ **ERROR 7: Matrix Environment Errors**
+
+**Problem:**
+\`\`\`markdown
+$$
+\\begin{matrix}
+a & b  ← Missing \\\\ at end of row (WRONG)
+c & d
+\\end{matrix}
+$$
+\`\`\`
+
+**Solution:**
+\`\`\`markdown
+$$
+\\begin{matrix}
+a & b \\\\
+c & d
+\\end{matrix}
+$$
+\`\`\`
+
+---
+
+## ✅ BEST PRACTICES CHECKLIST
+
+### For Inline Math:
+- ✅ Use single dollar signs \`$…$\`
+- ✅ Keep expressions concise
+- ✅ Ensure they flow naturally with text
+- ❌ Never use display delimiters \`$$\` inline
+
+### For Display Math:
+- ✅ Use double dollar signs on separate lines
+- ✅ Center important equations
+- ✅ Add blank lines before and after for clarity
+- ❌ Never put other text on the same line
+
+### For Complex Expressions:
+- ✅ Use \`\\left\` and \`\\right\` for auto-sizing delimiters
+- ✅ Use \`\\,\` for spacing in integrals
+- ✅ Use \`\\text{}\` for text within math mode
+- ✅ Use braces \`{}\` for multi-character scripts
+
+### For Readability:
+- ✅ Align multi-line equations with \`aligned\` environment
+- ✅ Use descriptive variable names when possible
+- ✅ Add spacing with \`\\quad\` for visual separation
+- ✅ Break long equations into multiple lines
+
+---
+
+## 🎯 FINAL WISDOM
+
+\`\`\`
+╔══════════════════════════════════════════════════════╗
+║                                                      ║
+║   "Mathematics is the language in which God has      ║
+║    written the universe."                            ║
+║                         - Galileo Galilei            ║
+║                                                      ║
+║   Render it with precision.                          ║
+║   Render it with beauty.                             ║
+║   Render it with KaTeX.                              ║
+║                                                      ║
+╚══════════════════════════════════════════════════════╝
+\`\`\`
+
+**Remember:**
+- 📐 Use \`$…$\` for inline mathematics
+- 🎆 Use \`$$…$$\` on separate lines for display mathematics
+- ✨ Follow proper syntax for beautiful rendering
+- 🚫 Avoid LaTeX-only delimiters \`\\(…\\)\` and \`\\[…\\]\`
+- 💎 Mathematics is an art form—render it elegantly
+
+---
+
+## 📖 END OF COMPREHENSIVE GUIDE
+
+*This document covers basic to advanced mathematical notation rendering with KaTeX. For additional symbols and advanced features, consult the official KaTeX documentation.*
+
+\`\`\`
+═══════════════════════════════════════════════════════
+     Complete KaTeX Mathematics Rendering Guide
+          From Basic Arithmetic to Quantum Mechanics
+═══════════════════════════════════════════════════════
+\`\`\`
+`;
