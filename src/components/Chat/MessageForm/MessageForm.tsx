@@ -163,26 +163,55 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     }
                     className={`${sendButtonClasses} ${sendButtonStateClasses}`}
                 >
-                    {isGeneratingResponse ? ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-label="loading" className="w-6 h-6">
-                      <circle 
-                        cx="24" cy="24" r="16" fill="none" stroke="#4f46e5" strokeWidth="4.5" strokeLinecap="round"
-                        strokeDasharray="80 100" strokeDashoffset="0">
-                        <animateTransform 
-                          attributeName="transform" 
-                          type="rotate" 
-                          from="0 24 24" 
-                          to="360 24 24" 
-                          dur="2.5s" 
-                          repeatCount="indefinite"/>
-                        <animate 
-                          attributeName="stroke-dashoffset" 
-                          values="0; -180" 
-                          dur="2.5s" 
-                          repeatCount="indefinite"/>
-                        <animate attributeName="stroke" dur="10s" repeatCount="indefinite"
-                          values="#f87171;#fb923c;#facc15;#4ade80;#22d3ee;#3b82f6;#818cf8;#e879f9;#f472b6;#f87171"/>
-                      </circle>
-                    </svg> ) : ( 
+                    {isGeneratingResponse ? ( 
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-label="loading" className="w-6 h-6">
+                            {/* Background circle */}
+                            <circle
+                                cx="24" cy="24" r="22"
+                                className="fill-white"
+                            />
+                        
+                            {/* Stop box in the center, themed for visibility */}
+                            <rect
+                                x="20" y="20"
+                                width="8" height="8"
+                                rx="2" ry="2"
+                                className="fill-slate-800 dark:fill-slate-100"
+                            />
+                        
+                            {/* Animated ring spinner on top */}
+                            <circle
+                                cx="24" cy="24" r="16"
+                                fill="none"
+                                stroke="#4f46e5"
+                                strokeWidth="4.5"
+                                strokeLinecap="round"
+                                strokeDasharray="80 100"
+                                strokeDashoffset="0"
+                            >
+                                <animateTransform
+                                    attributeName="transform"
+                                    type="rotate"
+                                    from="0 24 24"
+                                    to="360 24 24"
+                                    dur="2.5s"
+                                    repeatCount="indefinite"
+                                />
+                                <animate
+                                    attributeName="stroke-dashoffset"
+                                    values="0; -180"
+                                    dur="2.5s"
+                                    repeatCount="indefinite"
+                                />
+                                <animate
+                                    attributeName="stroke"
+                                    dur="10s"
+                                    repeatCount="indefinite"
+                                    values="#f87171;#fb923c;#facc15;#4ade80;#22d3ee;#3b82f6;#818cf8;#e879f9;#f472b6;#f87171"
+                                />
+                            </circle>
+                        </svg>
+                    ) : ( 
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-5 h-5">
                             <g transform="matrix(0.8, 0, 0, 0.8, 51.2, 56.2)">
                                 <path d="M481.508 210.335 68.414 38.926c-17.403-7.222-37.063-4.045-51.309 8.287C2.859 59.547-3.099 78.55 1.557 96.808L42.151 256 1.557 415.192c-4.656 18.258 1.301 37.261 15.547 49.595 14.273 12.358 33.938 15.495 51.31 8.287l413.094-171.409C500.316 293.861 512 276.363 512 256s-11.684-37.861-30.492-45.665zm-11.499 63.62L56.916 445.364c-6.947 2.881-14.488 1.665-20.175-3.259-5.686-4.923-7.971-12.212-6.113-19.501L69.287 271h149.065c8.285 0 15.001-6.716 15.001-15.001s-6.716-15.001-15.001-15.001H69.288L30.628 89.396c-1.858-7.288.427-14.578 6.113-19.501 5.686-4.923 13.225-6.141 20.174-3.259l413.094 171.409c11.125 4.616 11.99 14.91 11.99 17.955s-.865 13.339-11.99 17.955z" fill="currentColor" />

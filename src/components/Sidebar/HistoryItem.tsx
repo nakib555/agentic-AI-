@@ -117,7 +117,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
     };
 
     return (
-        <div className="relative group">
+        <div className="relative">
             <button 
                 onClick={isEditing ? undefined : onClick} 
                 disabled={isEditing}
