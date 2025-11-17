@@ -6,7 +6,7 @@
 import { Request, Response } from 'express';
 import { GoogleGenAI } from "@google/genai";
 import { getApiKey } from './settingsHandler.js';
-import { validModels, validImageModels, validVideoModels } from '../src/services/modelService.js';
+import { validModels, validImageModels, validVideoModels } from './models.js';
 
 export const getAvailableModelsHandler = async (req: Request, res: Response) => {
     const apiKey = await getApiKey();

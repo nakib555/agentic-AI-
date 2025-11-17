@@ -8,8 +8,7 @@
 import { Request, Response } from 'express';
 import { dataStore } from './data-store.js';
 import type { ChatSession } from '../src/types';
-import { validModels } from '../src/services/modelService.js';
-import { DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from '../src/components/App/constants.js';
+import { DEFAULT_CHAT_MODEL, DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from './config.js';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -39,7 +38,7 @@ export const createNewChat = async (req: Request, res: Response) => {
         id: newChatId,
         title: "New Chat",
         messages: [],
-        model: model || validModels[1]?.id || validModels[0]?.id,
+        model: model || DEFAULT_CHAT_MODEL,
         isLoading: false,
         createdAt: Date.now(),
         temperature,
@@ -62,7 +61,7 @@ export const updateChat = async (req: Request, res: Response) => {
             id: chatId,
             title: "New Chat",
             messages: [],
-            model: validModels[1]?.id || validModels[0]?.id,
+            model: DEFAULT_CHAT_MODEL,
             createdAt: Date.now(),
         };
     }

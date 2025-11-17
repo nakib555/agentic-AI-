@@ -4,7 +4,7 @@
  */
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { Model } from '../../services/modelService';
+import type { Model } from '../../types';
 import { SettingsCategoryButton } from './SettingsCategoryButton';
 import { GeneralSettings } from './GeneralSettings';
 import { ModelSettings } from './ModelSettings';

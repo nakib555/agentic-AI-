@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { Model } from '../../services/modelService';
+import type { Model } from '../../types';
 
 type ModelSelectorProps = {
   models: Model[];

@@ -3,12 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Fix: Populating this file with model definitions to make it a module
-// and resolve import errors in other components. This data was previously
-// only in the backend, but is needed on the frontend for initialization.
-import type { Model } from '../types';
-
-export type { Model };
+import type { Model } from '../src/types/index.js';
 
 export const validModels: Model[] = [
     { 

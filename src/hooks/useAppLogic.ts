@@ -12,8 +12,7 @@ import { useTheme } from './useTheme';
 import { useSidebar } from './useSidebar';
 import { useViewport } from './useViewport';
 import { useMemory } from './useMemory';
-// FIX: Removed `getAvailableModels` as it's no longer exported; models are fetched from the API.
-import { type Model, validModels } from '../services/modelService';
+import type { Model } from '../types';
 import type { Message, ChatSession } from '../types';
 import {
   exportChatToJson,
@@ -63,7 +62,7 @@ export const useAppLogic = () => {
   const [availableImageModels, setAvailableImageModels] = useState<Model[]>([]);
   const [availableVideoModels, setAvailableVideoModels] = useState<Model[]>([]);
   const [modelsLoading, setModelsLoading] = useState(true);
-  const [activeModel, setActiveModel] = useState(validModels[1]?.id || validModels[0]?.id);
+  const [activeModel, setActiveModel] = useState('gemini-2.5-flash');
 
   // --- Settings State ---
   const [apiKey, setApiKey] = useState('');
@@ -166,9 +165,10 @@ export const useAppLogic = () => {
         // After successful save and verification on the backend, fetch models
         await fetchModels();
     } catch (error) {
-        // If it fails, the error is thrown from updateSettings
-        // and handled in GeneralSettings.tsx. We don't need to revert the key here,
-        // as the user will see the error and can correct it.
+        // If save fails, the key is invalid. Clear the available models.
+        setAvailableModels([]);
+        setAvailableImageModels([]);
+        setAvailableVideoModels([]);
         console.error("API Key save/verify failed:", error);
         throw error; // Re-throw to be caught by the UI
     }
