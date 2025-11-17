@@ -65,12 +65,12 @@ html, body, #root {
 }
 
 .dark .chat-background {
-  background-color: #110e19; /* Very dark violet */
-  background-image: 
-    radial-gradient(at 15% 25%, hsla(250, 50%, 20%, 0.5) 0px, transparent 50%),
-    radial-gradient(at 85% 35%, hsla(280, 50%, 20%, 0.5) 0px, transparent 50%),
-    radial-gradient(at 20% 80%, hsla(260, 50%, 20%, 0.5) 0px, transparent 50%),
-    radial-gradient(at 80% 75%, hsla(290, 50%, 20%, 0.5) 0px, transparent 50%);
+  background-color: #121212; /* Neutral dark */
+  background-image:
+    radial-gradient(at 15% 25%, hsla(0, 0%, 15%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 85% 35%, hsla(0, 0%, 12%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 20% 80%, hsla(0, 0%, 15%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 80% 75%, hsla(0, 0%, 12%, 0.4) 0px, transparent 50%);
   animation: bg-animate 80s ease infinite reverse;
 }
 
