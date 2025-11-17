@@ -36,14 +36,14 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   const sendButtonStateClasses = isLoading 
     ? 'bg-transparent'
     : (isSendButtonActive
-        ? 'bg-indigo-600 text-white hover:bg-indigo-500'
+        ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white hover:opacity-90 shadow-lg'
         : 'bg-gray-200 dark:bg-black/20 text-gray-400 dark:text-slate-500');
 
   return (
     <div>
       <form onSubmit={logic.handleSubmit}>
         <motion.div 
-            className={`bg-theme-bg-light dark:bg-[#121212] border-[1px] border-[rgb(206,217,239)] dark:border-slate-700/50 flex flex-col p-2 flex-grow rounded-2xl`} 
+            className={`bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-300 dark:border-slate-700 shadow-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-gray-900 flex flex-col p-2 flex-grow rounded-2xl transition-all`} 
             transition={{ duration: 0.2, ease: 'easeInOut' }}
         >
             <AnimatePresence>

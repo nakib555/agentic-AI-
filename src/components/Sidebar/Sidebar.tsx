@@ -165,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     top: 0,
                     zIndex: isDesktop ? 'auto' : 30,
                 }}
-                className="bg-white dark:bg-[#121212] border-r border-gray-200/50 dark:border-white/10 flex flex-col transform-gpu" // Added transform-gpu to promote to its own layer
+                className="bg-white dark:bg-zinc-900 border-r border-gray-200/50 dark:border-white/10 flex flex-col transform-gpu" // Added transform-gpu to promote to its own layer
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
