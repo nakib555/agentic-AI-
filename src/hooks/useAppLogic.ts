@@ -34,7 +34,7 @@ import {
 import { fetchFromApi } from '../utils/api';
 import { testSuite, type TestResult, type TestProgress } from '../components/Testing/testSuite';
 import { getSettings, updateSettings } from '../services/settingsService';
-// Fix: Add import for logCollector to handle log downloads.
+// FIX: Add import for logCollector to handle log downloads.
 import { logCollector } from '../utils/logCollector';
 
 
@@ -81,7 +81,7 @@ export const useAppLogic = () => {
 
   // --- Settings Management ---
 
-  // Fix: Start the log collector when the app initializes.
+  // FIX: Start the log collector when the app initializes.
   // --- Start Log Collector on Mount ---
   useEffect(() => {
     logCollector.start();
@@ -287,7 +287,7 @@ export const useAppLogic = () => {
     }
   };
 
-  // Fix: Add the handleDownloadLogs function to be exposed to the UI.
+  // FIX: Add the handleDownloadLogs function to be exposed to the UI.
   const handleDownloadLogs = useCallback(() => {
     const logContent = logCollector.formatLogs();
     const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8' });
@@ -366,7 +366,7 @@ export const useAppLogic = () => {
     isImportModalOpen, setIsImportModalOpen,
     isThinkingSidebarOpen, setIsThinkingSidebarOpen, thinkingMessageId, setThinkingMessageId,
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading,
-    availableModels, modelsLoading, activeModel, handleModelChange,
+    availableModels, modelsLoading, activeModel, onModelChange: handleModelChange,
     apiKey,
     onSaveApiKey: handleSetApiKey,
     aboutUser,

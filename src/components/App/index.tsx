@@ -111,7 +111,7 @@ export const App = () => {
         onDownloadLogs={logic.handleDownloadLogs}
         availableModels={logic.availableModels}
         activeModel={logic.activeModel}
-        handleModelChange={logic.handleModelChange}
+        onModelChange={logic.onModelChange}
         modelsLoading={logic.modelsLoading || logic.settingsLoading}
         clearAllChats={logic.clearAllChats}
         apiKey={logic.apiKey}
