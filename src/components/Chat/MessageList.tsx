@@ -88,7 +88,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   useEffect(() => {
       return () => {
           if (throttleTimeout.current) {
-              clearTimeout(throttleTimeout.current);
+              window.clearTimeout(throttleTimeout.current);
           }
       };
   }, []);

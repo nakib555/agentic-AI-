@@ -49,6 +49,21 @@ export const parseApiError = (error: any): MessageError => {
         details = String(error);
     }
 
+    // Try to parse a nested JSON error message, which is common.
+    if (typeof message === 'string' && message.startsWith('{') && message.endsWith('}')) {
+        try {
+            const nestedError = JSON.parse(message);
+            if (nestedError.error && nestedError.error.message) {
+                message = nestedError.error.message;
+                if (nestedError.error.status) {
+                    status = nestedError.error.status;
+                }
+            }
+        } catch (e) {
+            // Not a valid JSON string, proceed with the original message.
+        }
+    }
+
     const lowerCaseMessage = message.toLowerCase();
     const lowerCaseStatus = status.toLowerCase();
 
@@ -69,8 +84,17 @@ export const parseApiError = (error: any): MessageError => {
             details: `You have sent too many requests or exceeded your quota. Please check your API plan and billing details. Original error: ${message}`
         };
     }
+
+    // 3. 503 Service Unavailable / Overloaded
+    if (lowerCaseStatus === 'unavailable' || lowerCaseMessage.includes('503') || lowerCaseMessage.includes('overloaded')) {
+        return {
+            code: 'UNAVAILABLE',
+            message: 'Model is temporarily unavailable',
+            details: `The model is currently overloaded or down for maintenance. Please try again in a few moments. Original error: ${message}`
+        };
+    }
     
-    // 3. Content Blocked by Safety Settings
+    // 4. Content Blocked by Safety Settings
     if (lowerCaseMessage.includes('response was blocked') || lowerCaseMessage.includes('safety policy')) {
         return {
             code: 'CONTENT_BLOCKED',
@@ -79,7 +103,7 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
     
-    // 4. Model Not Found
+    // 5. Model Not Found
     if (lowerCaseStatus === 'not_found' || lowerCaseMessage.includes('404') || lowerCaseMessage.includes('model not found')) {
         return {
             code: 'MODEL_NOT_FOUND',
@@ -88,7 +112,7 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
     
-    // 5. Invalid Argument (e.g., malformed request)
+    // 6. Invalid Argument (e.g., malformed request)
     if (lowerCaseStatus === 'invalid_argument' || lowerCaseMessage.includes('400') || lowerCaseMessage.includes('bad request')) {
         return {
             code: 'INVALID_ARGUMENT',
@@ -97,7 +121,7 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
 
-    // 6. Network Error
+    // 7. Network Error
     if (lowerCaseMessage.includes('failed to fetch')) {
         return {
             code: 'NETWORK_ERROR',

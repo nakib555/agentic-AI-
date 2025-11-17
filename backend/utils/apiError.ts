@@ -69,6 +69,21 @@ export const parseApiError = (error: any): MessageError => {
         details = String(error);
     }
 
+    // Try to parse a nested JSON error message, which is common.
+    if (typeof message === 'string' && message.startsWith('{') && message.endsWith('}')) {
+        try {
+            const nestedError = JSON.parse(message);
+            if (nestedError.error && nestedError.error.message) {
+                message = nestedError.error.message;
+                if (nestedError.error.status) {
+                    status = nestedError.error.status;
+                }
+            }
+        } catch (e) {
+            // Not a valid JSON string, proceed with the original message.
+        }
+    }
+
     const lowerCaseMessage = message.toLowerCase();
     const lowerCaseStatus = status.toLowerCase();
 
@@ -85,6 +100,15 @@ export const parseApiError = (error: any): MessageError => {
             code: 'RATE_LIMIT_EXCEEDED',
             message: 'API Rate Limit Exceeded',
             details: `You have sent too many requests or exceeded your quota. Please check your API plan and billing details. Original error: ${message}`
+        };
+    }
+
+    // 503 Service Unavailable / Overloaded
+    if (lowerCaseStatus === 'unavailable' || lowerCaseMessage.includes('503') || lowerCaseMessage.includes('overloaded')) {
+        return {
+            code: 'UNAVAILABLE',
+            message: 'Model is temporarily unavailable',
+            details: `The model is currently overloaded or down for maintenance. Please try again in a few moments. Original error: ${message}`
         };
     }
     
