@@ -31,7 +31,7 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 
 const staticPath = path.join(process.cwd(), 'dist');
-const uploadsPath = path.join(process.cwd(), 'data', 'uploads');
+const uploadsPath = process.env.VERCEL_ENV ? path.join('/tmp', 'data', 'uploads') : path.join(process.cwd(), 'data', 'uploads');
 
 // API routes
 // FIX: Use the `Request` and `Response` types from `express`.

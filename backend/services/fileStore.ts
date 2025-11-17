@@ -9,7 +9,7 @@ import process from 'process';
 import { Buffer } from 'buffer';
 import { ToolError } from '../utils/apiError';
 
-const UPLOADS_PATH = path.join(process.cwd(), 'data', 'uploads');
+const UPLOADS_PATH = process.env.VERCEL_ENV ? path.join('/tmp', 'data', 'uploads') : path.join(process.cwd(), 'data', 'uploads');
 
 const ensureDir = async (dirPath: string) => {
     try {

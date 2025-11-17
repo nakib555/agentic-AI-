@@ -9,7 +9,7 @@ import process from 'process';
 import { Buffer } from 'buffer';
 import type { ChatSession } from '../src/types';
 
-const DATA_PATH = path.join(process.cwd(), 'data');
+const DATA_PATH = process.env.VERCEL_ENV ? path.join('/tmp', 'data') : path.join(process.cwd(), 'data');
 const CHATS_PATH = path.join(DATA_PATH, 'chats');
 const UPLOADS_PATH = path.join(DATA_PATH, 'uploads');
 
