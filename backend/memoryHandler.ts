@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Use aliased imports for express Request and Response to avoid conflicts with global types from the DOM.
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+// FIX: Import `Request` and `Response` types from `express` to resolve conflicts with global DOM types.
+import type { Request, Response } from 'express';
 import { promises as fs } from 'fs';
 import path from 'path';
 import process from 'process';
@@ -40,7 +40,7 @@ const readMemory = async (): Promise<{ content: string }> => {
     }
 };
 
-export const getMemory = async (req: ExpressRequest, res: ExpressResponse) => {
+export const getMemory = async (req: Request, res: Response) => {
     try {
         const memory = await readMemory();
         res.status(200).json(memory);
@@ -49,7 +49,7 @@ export const getMemory = async (req: ExpressRequest, res: ExpressResponse) => {
     }
 };
 
-export const updateMemory = async (req: ExpressRequest, res: ExpressResponse) => {
+export const updateMemory = async (req: Request, res: Response) => {
     try {
         const { content } = req.body;
         if (typeof content !== 'string') {
@@ -63,7 +63,7 @@ export const updateMemory = async (req: ExpressRequest, res: ExpressResponse) =>
     }
 };
 
-export const clearMemory = async (req: ExpressRequest, res: ExpressResponse) => {
+export const clearMemory = async (req: Request, res: Response) => {
     try {
         const initialMemory = { content: '' };
         await fs.writeFile(MEMORY_PATH, JSON.stringify(initialMemory, null, 2), 'utf-8');

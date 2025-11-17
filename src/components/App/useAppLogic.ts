@@ -12,8 +12,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useSidebar } from '../../hooks/useSidebar';
 import { useViewport } from '../../hooks/useViewport';
 import { useMemory } from '../../hooks/useMemory';
-import { type Model, validModels } from '../../services/modelService';
-import type { Message, ChatSession } from '../../types';
+import type { Message, ChatSession, Model } from '../../types';
 import {
   exportChatToJson,
   exportChatToMarkdown,
@@ -26,8 +25,6 @@ import {
   DEFAULT_ABOUT_RESPONSE,
   DEFAULT_TEMPERATURE,
   DEFAULT_MAX_TOKENS,
-  DEFAULT_IMAGE_MODEL,
-  DEFAULT_VIDEO_MODEL,
   DEFAULT_TTS_VOICE,
   DEFAULT_AUTO_PLAY_AUDIO
 } from './constants';
@@ -62,7 +59,7 @@ export const useAppLogic = () => {
   const [availableImageModels, setAvailableImageModels] = useState<Model[]>([]);
   const [availableVideoModels, setAvailableVideoModels] = useState<Model[]>([]);
   const [modelsLoading, setModelsLoading] = useState(true);
-  const [activeModel, setActiveModel] = useState(validModels[1]?.id || validModels[0]?.id);
+  const [activeModel, setActiveModel] = useState('');
 
   // --- Settings State ---
   const [apiKey, setApiKey] = useState('');
@@ -70,8 +67,8 @@ export const useAppLogic = () => {
   const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
   const [temperature, setTemperature] = useState(DEFAULT_TEMPERATURE);
   const [maxTokens, setMaxTokens] = useState(DEFAULT_MAX_TOKENS);
-  const [imageModel, setImageModel] = useState(DEFAULT_IMAGE_MODEL);
-  const [videoModel, setVideoModel] = useState(DEFAULT_VIDEO_MODEL);
+  const [imageModel, setImageModel] = useState('');
+  const [videoModel, setVideoModel] = useState('');
   const [ttsVoice, setTtsVoice] = useState(DEFAULT_TTS_VOICE);
   const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState(DEFAULT_AUTO_PLAY_AUDIO);
   const [isAgentMode, setIsAgentModeState] = useState(true);
@@ -95,12 +92,36 @@ export const useAppLogic = () => {
         const data = await response.json();
 
         const newModels = data.models || [];
+        const newImageModels = data.imageModels || [];
+        const newVideoModels = data.videoModels || [];
+
         setAvailableModels(newModels);
-        setAvailableImageModels(data.imageModels || []);
-        setAvailableVideoModels(data.videoModels || []);
+        setAvailableImageModels(newImageModels);
+        setAvailableVideoModels(newVideoModels);
         
-        if (newModels.length > 0 && !newModels.some((m: Model) => m.id === activeModel)) {
-          setActiveModel(newModels[1]?.id || newModels[0]?.id);
+        // Set default chat model if none is selected or the selected one is no longer available
+        if (newModels.length > 0 && (!activeModel || !newModels.some((m: Model) => m.id === activeModel))) {
+          // Prefer 'flash' as a default if available, otherwise take the first.
+          const flashModel = newModels.find(m => m.id.includes('flash'));
+          setActiveModel(flashModel ? flashModel.id : newModels[0].id);
+        } else if (newModels.length === 0) {
+          setActiveModel('');
+        }
+        
+        // Set default image model
+        if (newImageModels.length > 0 && (!imageModel || !newImageModels.some(m => m.id === imageModel))) {
+            const defaultImg = newImageModels.find(m => m.id.includes('imagen')) || newImageModels[0];
+            setImageModel(defaultImg.id);
+        } else if (newImageModels.length === 0) {
+            setImageModel('');
+        }
+
+        // Set default video model
+        if (newVideoModels.length > 0 && (!videoModel || !newVideoModels.some(m => m.id === videoModel))) {
+            const defaultVid = newVideoModels.find(m => m.id.includes('veo')) || newVideoModels[0];
+            setVideoModel(defaultVid.id);
+        } else if (newVideoModels.length === 0) {
+            setVideoModel('');
         }
 
     } catch (error) {
@@ -111,7 +132,7 @@ export const useAppLogic = () => {
     } finally {
         setModelsLoading(false);
     }
-  }, [activeModel]);
+  }, [activeModel, imageModel, videoModel]);
 
   // Fetch all settings from backend on initial load
   useEffect(() => {
@@ -165,9 +186,10 @@ export const useAppLogic = () => {
         // After successful save and verification on the backend, fetch models
         await fetchModels();
     } catch (error) {
-        // If it fails, the error is thrown from updateSettings
-        // and handled in GeneralSettings.tsx. We don't need to revert the key here,
-        // as the user will see the error and can correct it.
+        // If save fails, the key is invalid. Clear the available models.
+        setAvailableModels([]);
+        setAvailableImageModels([]);
+        setAvailableVideoModels([]);
         console.error("API Key save/verify failed:", error);
         throw error; // Re-throw to be caught by the UI
     }

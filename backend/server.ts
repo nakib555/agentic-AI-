@@ -1,6 +1,7 @@
 import 'dotenv/config';
-// FIX: Use aliased imports for express Request and Response to avoid conflicts with global types from the DOM.
-import express, { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import express from 'express';
+// FIX: Import `Request` and `Response` types from `express` to resolve conflicts with global DOM types.
+import type { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';
@@ -33,8 +34,8 @@ const staticPath = path.join(process.cwd(), 'dist');
 const uploadsPath = path.join(process.cwd(), 'data', 'uploads');
 
 // API routes
-// FIX: Use the aliased ExpressRequest and ExpressResponse types to resolve handler signature conflicts.
-app.get('/api/health', (req: ExpressRequest, res: ExpressResponse) => res.json({ status: 'ok' }));
+// FIX: Use the `Request` and `Response` types from `express`.
+app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
 app.get('/api/models', getAvailableModelsHandler);
 
 // Streaming and complex tasks handler
@@ -65,8 +66,8 @@ app.use('/uploads', express.static(uploadsPath));
 
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
-// FIX: Use the aliased ExpressRequest and ExpressResponse types to resolve handler signature conflicts.
-app.get('*', (req: ExpressRequest, res: ExpressResponse) => {
+// FIX: Use the `Request` and `Response` types from `express`.
+app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 

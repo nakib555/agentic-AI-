@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Use aliased imports for express Request and Response to avoid conflicts with global types from the DOM.
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+// FIX: Import `Request` and `Response` types from `express` to resolve conflicts with global DOM types.
+import type { Request, Response } from 'express';
 import { getApiKey } from './settingsHandler.js';
 import type { Model } from '../src/types/index.js';
 
-export const getAvailableModelsHandler = async (req: ExpressRequest, res: ExpressResponse) => {
+export const getAvailableModelsHandler = async (req: Request, res: Response) => {
     const apiKey = await getApiKey();
     if (!apiKey) {
         // If no key is configured, return empty lists.
