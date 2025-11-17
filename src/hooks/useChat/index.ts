@@ -208,7 +208,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         }
     };
     
-    const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean, isThinkingModeEnabled?: boolean } = {}) => {
+    const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean; isThinkingModeEnabled?: boolean } = {}) => {
         console.log('[FRONTEND] sendMessage called.', { userMessage, files: files?.map(f => f.name), options });
         if (isLoading) {
             console.log('[FRONTEND] sendMessage ignored, a request is already in progress.');
@@ -306,7 +306,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 signal: abortControllerRef.current.signal,
                 body: JSON.stringify({
                     chatId: chatId,
-                    model: runtimeSettings.isAgentMode ? 'gemini-2.5-pro' : chatConfig.model,
+                    model: chatConfig.model,
                     history: history,
                     settings: {
                         isAgentMode: runtimeSettings.isAgentMode,

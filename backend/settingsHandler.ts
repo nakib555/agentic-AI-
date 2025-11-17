@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Request, Response } from 'express';
+// FIX: Use aliased imports for express Request and Response to avoid conflicts with global types from the DOM.
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { promises as fs } from 'fs';
 import path from 'path';
 import process from 'process';
@@ -53,7 +54,7 @@ const readSettings = async () => {
     }
 };
 
-export const getSettings = async (req: Request, res: Response) => {
+export const getSettings = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const settings = await readSettings();
         res.status(200).json(settings);
@@ -63,7 +64,7 @@ export const getSettings = async (req: Request, res: Response) => {
     }
 };
 
-export const updateSettings = async (req: Request, res: Response) => {
+export const updateSettings = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const currentSettings = await readSettings();
         const newSettings = { ...currentSettings, ...req.body };

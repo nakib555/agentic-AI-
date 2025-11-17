@@ -3,16 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Request, Response } from 'express';
+// FIX: Use aliased imports for express Request and Response to avoid conflicts with global types from the DOM.
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { getApiKey } from './settingsHandler.js';
 import type { Model } from '../src/types/index.js';
 
-// Whitelist and order of models to display in the UI for a consistent experience.
-const CHAT_MODELS_ORDER = ['gemini-2.5-pro', 'gemini-2.5-flash'];
-const IMAGE_MODELS_ORDER = ['imagen-4.0-generate-001', 'gemini-2.5-flash-image'];
-const VIDEO_MODELS_ORDER = ['veo-3.1-generate-preview', 'veo-3.1-fast-generate-preview'];
-
-export const getAvailableModelsHandler = async (req: Request, res: Response) => {
+export const getAvailableModelsHandler = async (req: ExpressRequest, res: ExpressResponse) => {
     const apiKey = await getApiKey();
     if (!apiKey) {
         // If no key is configured, return empty lists.
@@ -62,15 +58,15 @@ export const getAvailableModelsHandler = async (req: Request, res: Response) => 
             }
         }
         
-        // Sort the models according to our predefined order for a consistent UI.
-        const sortModels = (models: Model[], order: string[]) => {
-            return models.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+        // Sort models alphabetically by their display name for a consistent UI.
+        const sortModelsByName = (models: Model[]) => {
+            return models.sort((a, b) => a.name.localeCompare(b.name));
         };
 
         res.status(200).json({
-            models: sortModels(availableChatModels, CHAT_MODELS_ORDER),
-            imageModels: sortModels(availableImageModels, IMAGE_MODELS_ORDER),
-            videoModels: sortModels(availableVideoModels, VIDEO_MODELS_ORDER),
+            models: sortModelsByName(availableChatModels),
+            imageModels: sortModelsByName(availableImageModels),
+            videoModels: sortModelsByName(availableVideoModels),
         });
 
     } catch (error: any) {

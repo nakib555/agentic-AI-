@@ -15,9 +15,9 @@ export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: str
   try {
     let base64ImageBytesArray: string[] = [];
 
-    if (model === 'gemini-2.5-flash-image') {
+    if (model.includes('flash-image')) {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: model,
             contents: { parts: [{ text: prompt }] },
             config: { responseModalities: [Modality.IMAGE] },
         });

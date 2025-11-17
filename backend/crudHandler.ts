@@ -3,16 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Import aliased Request and Response types from express to avoid global type conflicts.
-// The previous fix was insufficient. Using direct, non-aliased types from express.
-import { Request, Response } from 'express';
+// FIX: Use aliased imports for express Request and Response to avoid conflicts with global types from the DOM.
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { dataStore } from './data-store.js';
 import type { ChatSession } from '../src/types';
-import { DEFAULT_CHAT_MODEL, DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from './config.js';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-export const getHistory = async (req: Request, res: Response) => {
+export const getHistory = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const history = await dataStore.getChatHistoryList();
         res.status(200).json(history);
@@ -22,7 +20,7 @@ export const getHistory = async (req: Request, res: Response) => {
     }
 };
 
-export const getChat = async (req: Request, res: Response) => {
+export const getChat = async (req: ExpressRequest, res: ExpressResponse) => {
     const chat = await dataStore.getChatSession(req.params.chatId);
     if (chat) {
         res.status(200).json(chat);
@@ -31,26 +29,26 @@ export const getChat = async (req: Request, res: Response) => {
     }
 };
 
-export const createNewChat = async (req: Request, res: Response) => {
+export const createNewChat = async (req: ExpressRequest, res: ExpressResponse) => {
     const { model, temperature, maxOutputTokens, imageModel, videoModel } = req.body;
     const newChatId = generateId();
     const newChat: ChatSession = {
         id: newChatId,
         title: "New Chat",
         messages: [],
-        model: model || DEFAULT_CHAT_MODEL,
+        model: model,
         isLoading: false,
         createdAt: Date.now(),
         temperature,
         maxOutputTokens,
-        imageModel: imageModel || DEFAULT_IMAGE_MODEL,
-        videoModel: videoModel || DEFAULT_VIDEO_MODEL,
+        imageModel: imageModel,
+        videoModel: videoModel,
     };
     await dataStore.saveChatSession(newChat);
     res.status(201).json(newChat);
 };
 
-export const updateChat = async (req: Request, res: Response) => {
+export const updateChat = async (req: ExpressRequest, res: ExpressResponse) => {
     const { chatId } = req.params;
     const updates = req.body;
     let chat = await dataStore.getChatSession(chatId);
@@ -61,7 +59,7 @@ export const updateChat = async (req: Request, res: Response) => {
             id: chatId,
             title: "New Chat",
             messages: [],
-            model: DEFAULT_CHAT_MODEL,
+            model: '',
             createdAt: Date.now(),
         };
     }
@@ -71,17 +69,17 @@ export const updateChat = async (req: Request, res: Response) => {
     res.status(200).json(updatedChat);
 };
 
-export const deleteChat = async (req: Request, res: Response) => {
+export const deleteChat = async (req: ExpressRequest, res: ExpressResponse) => {
     await dataStore.deleteChatSession(req.params.chatId);
     res.status(204).send();
 };
 
-export const deleteAllHistory = async (req: Request, res: Response) => {
+export const deleteAllHistory = async (req: ExpressRequest, res: ExpressResponse) => {
     await dataStore.clearAllChatHistory();
     res.status(204).send();
 };
 
-export const importChat = async (req: Request, res: Response) => {
+export const importChat = async (req: ExpressRequest, res: ExpressResponse) => {
     const importedChat = req.body as ChatSession;
     if (!importedChat || typeof importedChat.title !== 'string' || !Array.isArray(importedChat.messages)) {
         return res.status(400).json({ error: "Invalid chat file format." });

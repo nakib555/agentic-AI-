@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Request, Response } from 'express';
+// FIX: Use aliased imports for express Request and Response to avoid conflicts with global types from the DOM.
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { promises as fs } from 'fs';
 import path from 'path';
 import process from 'process';
@@ -39,7 +40,7 @@ const readMemory = async (): Promise<{ content: string }> => {
     }
 };
 
-export const getMemory = async (req: Request, res: Response) => {
+export const getMemory = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const memory = await readMemory();
         res.status(200).json(memory);
@@ -48,7 +49,7 @@ export const getMemory = async (req: Request, res: Response) => {
     }
 };
 
-export const updateMemory = async (req: Request, res: Response) => {
+export const updateMemory = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const { content } = req.body;
         if (typeof content !== 'string') {
@@ -62,7 +63,7 @@ export const updateMemory = async (req: Request, res: Response) => {
     }
 };
 
-export const clearMemory = async (req: Request, res: Response) => {
+export const clearMemory = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const initialMemory = { content: '' };
         await fs.writeFile(MEMORY_PATH, JSON.stringify(initialMemory, null, 2), 'utf-8');

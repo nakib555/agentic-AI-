@@ -12,8 +12,8 @@ import { useTheme } from './useTheme';
 import { useSidebar } from './useSidebar';
 import { useViewport } from './useViewport';
 import { useMemory } from './useMemory';
-import type { Model } from '../types';
-import type { Message, ChatSession } from '../types';
+// FIX: Remove invalid import of `validModels` and import `Model` from the correct path.
+import type { Message, ChatSession, Model } from '../types';
 import {
   exportChatToJson,
   exportChatToMarkdown,
@@ -26,8 +26,6 @@ import {
   DEFAULT_ABOUT_RESPONSE,
   DEFAULT_TEMPERATURE,
   DEFAULT_MAX_TOKENS,
-  DEFAULT_IMAGE_MODEL,
-  DEFAULT_VIDEO_MODEL,
   DEFAULT_TTS_VOICE,
   DEFAULT_AUTO_PLAY_AUDIO
 } from '../components/App/constants';
@@ -62,7 +60,8 @@ export const useAppLogic = () => {
   const [availableImageModels, setAvailableImageModels] = useState<Model[]>([]);
   const [availableVideoModels, setAvailableVideoModels] = useState<Model[]>([]);
   const [modelsLoading, setModelsLoading] = useState(true);
-  const [activeModel, setActiveModel] = useState('gemini-2.5-flash');
+  // FIX: Initialize model state to empty strings. Defaults will be set after fetching models.
+  const [activeModel, setActiveModel] = useState('');
 
   // --- Settings State ---
   const [apiKey, setApiKey] = useState('');
@@ -70,8 +69,9 @@ export const useAppLogic = () => {
   const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
   const [temperature, setTemperature] = useState(DEFAULT_TEMPERATURE);
   const [maxTokens, setMaxTokens] = useState(DEFAULT_MAX_TOKENS);
-  const [imageModel, setImageModel] = useState(DEFAULT_IMAGE_MODEL);
-  const [videoModel, setVideoModel] = useState(DEFAULT_VIDEO_MODEL);
+  // FIX: Initialize model state to empty strings. Defaults will be set after fetching models.
+  const [imageModel, setImageModel] = useState('');
+  const [videoModel, setVideoModel] = useState('');
   const [ttsVoice, setTtsVoice] = useState(DEFAULT_TTS_VOICE);
   const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState(DEFAULT_AUTO_PLAY_AUDIO);
   const [isAgentMode, setIsAgentModeState] = useState(true);
@@ -87,6 +87,7 @@ export const useAppLogic = () => {
   
   // --- Settings and Model Management ---
 
+  // FIX: Enhance `fetchModels` to set default models after fetching the available lists.
   const fetchModels = useCallback(async () => {
     try {
         setModelsLoading(true);
@@ -95,12 +96,36 @@ export const useAppLogic = () => {
         const data = await response.json();
 
         const newModels = data.models || [];
+        const newImageModels = data.imageModels || [];
+        const newVideoModels = data.videoModels || [];
+
         setAvailableModels(newModels);
-        setAvailableImageModels(data.imageModels || []);
-        setAvailableVideoModels(data.videoModels || []);
+        setAvailableImageModels(newImageModels);
+        setAvailableVideoModels(newVideoModels);
         
-        if (newModels.length > 0 && !newModels.some((m: Model) => m.id === activeModel)) {
-          setActiveModel(newModels[1]?.id || newModels[0]?.id);
+        // Set default chat model if none is selected or the selected one is no longer available
+        if (newModels.length > 0 && (!activeModel || !newModels.some((m: Model) => m.id === activeModel))) {
+          // Prefer 'flash' as a default if available, otherwise take the first.
+          const flashModel = newModels.find(m => m.id.includes('flash'));
+          setActiveModel(flashModel ? flashModel.id : newModels[0].id);
+        } else if (newModels.length === 0) {
+          setActiveModel('');
+        }
+        
+        // Set default image model
+        if (newImageModels.length > 0 && (!imageModel || !newImageModels.some(m => m.id === imageModel))) {
+            const defaultImg = newImageModels.find(m => m.id.includes('imagen')) || newImageModels[0];
+            setImageModel(defaultImg.id);
+        } else if (newImageModels.length === 0) {
+            setImageModel('');
+        }
+
+        // Set default video model
+        if (newVideoModels.length > 0 && (!videoModel || !newVideoModels.some(m => m.id === videoModel))) {
+            const defaultVid = newVideoModels.find(m => m.id.includes('veo')) || newVideoModels[0];
+            setVideoModel(defaultVid.id);
+        } else if (newVideoModels.length === 0) {
+            setVideoModel('');
         }
 
     } catch (error) {
@@ -111,7 +136,7 @@ export const useAppLogic = () => {
     } finally {
         setModelsLoading(false);
     }
-  }, [activeModel]);
+  }, [activeModel, imageModel, videoModel]);
 
   // Fetch all settings from backend on initial load
   useEffect(() => {
