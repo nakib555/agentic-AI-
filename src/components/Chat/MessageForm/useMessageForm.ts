@@ -25,7 +25,7 @@ export const useMessageForm = (
   const [isUploadMenuOpen, setIsUploadMenuOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
-  const inputRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const attachButtonRef = useRef<HTMLButtonElement>(null);
   const uploadMenuRef = useRef<HTMLDivElement>(null);
 
@@ -65,10 +65,6 @@ export const useMessageForm = (
   useEffect(() => {
     const element = inputRef.current;
     if (element) {
-        // Sync the contentEditable div with the state if they diverge (e.g., on voice input)
-        if (element.innerText !== inputValue) {
-            element.innerText = inputValue;
-        }
         const MAX_HEIGHT_PX = 192;
         element.style.height = 'auto'; // Reset height to calculate natural scroll height
         const scrollHeight = element.scrollHeight;
@@ -117,21 +113,24 @@ export const useMessageForm = (
     clearDraft();
   };
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
-    e.preventDefault();
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     if (e.clipboardData.files?.length > 0) {
+      e.preventDefault();
       fileHandling.processAndSetFiles(Array.from(e.clipboardData.files));
-      return;
     }
-    const text = e.clipboardData.getData('text/plain');
-    if (text) document.execCommand('insertText', false, text);
+    // Let the default behavior handle text pasting, which will strip formatting.
   };
   
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    // Submit on Ctrl/Cmd + Enter
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      handleSubmit();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Submit on Enter (but not Shift+Enter) for a classic chat experience
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmit();
+    }
+    // Also allow submitting with Ctrl/Cmd+Enter for power users
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        handleSubmit();
     }
   };
 

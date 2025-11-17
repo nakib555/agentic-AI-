@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
 import type { Message } from '../../types';
 import { MessageComponent } from './Message';
 import { WelcomeScreen } from './WelcomeScreen/index';
@@ -48,6 +48,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   
   // This state tracks if the user has manually scrolled away from the bottom.
   const [isAutoScrollPaused, setIsAutoScrollPaused] = useState(false);
+  const throttleTimeout = useRef<number | null>(null);
   
   useImperativeHandle(ref, () => ({
     scrollToBottom: () => {
@@ -82,30 +83,48 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
       setIsAutoScrollPaused(false);
     }
   }, [messages.length, lastMessageContent, isLoading, isAutoScrollPaused]);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+      return () => {
+          if (throttleTimeout.current) {
+              clearTimeout(throttleTimeout.current);
+          }
+      };
+  }, []);
 
   /**
    * This handler is attached to the scrollable message list. It determines whether
    * to pause or resume auto-scrolling based on the user's scroll position.
+   * It is throttled to prevent performance issues.
    */
-  const handleScroll = () => {
-    const element = messageListRef.current;
-    if (!element) return;
-    
-    const SCROLL_THRESHOLD = 200; // Pixels from bottom to show the "scroll to latest" button
-    const { scrollTop, scrollHeight, clientHeight } = element;
-    
-    const isCurrentlyScrolledUp = scrollHeight - scrollTop - clientHeight > SCROLL_THRESHOLD;
-    onScrolledUpChange(isCurrentlyScrolledUp);
+  const handleScroll = useCallback(() => {
+    if (throttleTimeout.current) return;
 
-    // We only care about user scrolling while the AI is generating a response.
-    if (!isLoading) return;
+    throttleTimeout.current = window.setTimeout(() => {
+        const element = messageListRef.current;
+        if (!element) {
+            throttleTimeout.current = null;
+            return;
+        };
+        
+        const SCROLL_THRESHOLD = 200; // Pixels from bottom to show the "scroll to latest" button
+        const { scrollTop, scrollHeight, clientHeight } = element;
+        
+        const isCurrentlyScrolledUp = scrollHeight - scrollTop - clientHeight > SCROLL_THRESHOLD;
+        onScrolledUpChange(isCurrentlyScrolledUp);
 
-    // A small threshold helps account for rendering variations.
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 5;
+        if (isLoading) {
+            // A small threshold helps account for rendering variations.
+            const isAtBottom = scrollHeight - scrollTop - clientHeight < 5;
+            // Pause if the user scrolls up, resume if they scroll back to the bottom.
+            setIsAutoScrollPaused(!isAtBottom);
+        }
 
-    // Pause if the user scrolls up, resume if they scroll back to the bottom.
-    setIsAutoScrollPaused(!isAtBottom);
-  };
+        throttleTimeout.current = null;
+    }, 100); // Throttle scroll events to every 100ms
+  }, [isLoading, onScrolledUpChange]);
+
 
   const visibleMessages = messages.filter(msg => !msg.isHidden);
 
