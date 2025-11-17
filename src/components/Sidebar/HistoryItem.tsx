@@ -193,11 +193,6 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
                     </motion.div>
                 )}
             </AnimatePresence>
-             {shouldCollapse && (
-                <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-white dark:bg-[#2D2D2D] text-slate-800 dark:text-slate-100 text-sm font-semibold rounded-md shadow-lg border border-gray-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                    <Highlight text={text} highlight={searchQuery} />
-                </div>
-            )}
         </div>
     );
 };
