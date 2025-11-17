@@ -44,7 +44,7 @@ export const validVideoModels: Model[] = [
     },
     { 
         id: 'veo-3.1-fast-generate-preview', 
-        name: 'Veo 2.0', 
+        name: 'Veo Fast', 
         description: 'General video generation tasks.' 
     }
 ];
