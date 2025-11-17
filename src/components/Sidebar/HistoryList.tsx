@@ -147,7 +147,6 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                                                 collapsed: { opacity: 0, height: 0 }
                                             }}
                                             transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                            className="overflow-hidden"
                                         >
                                             <div className="space-y-0.5">
                                                 {chatsInGroup.map((item) => (

@@ -164,11 +164,11 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     className={`${sendButtonClasses} ${sendButtonStateClasses}`}
                 >
                     {isGeneratingResponse ? ( 
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-label="loading" className="w-6 h-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-label="loading" className="w-9 h-9">
                             {/* Background circle */}
                             <circle
                                 cx="24" cy="24" r="22"
-                                className="fill-white"
+                                className="fill-white dark:fill-slate-800"
                             />
                         
                             {/* Stop box in the center, themed for visibility */}
