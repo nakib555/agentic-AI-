@@ -35,71 +35,67 @@ export const LocationPermissionRequest: React.FC<{
     text: string;
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
 }> = ({ text, sendMessage }) => {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [resultText, setResultText] = useState('');
+  const [status, setStatus] = useState<'idle' | 'pending' | 'granted' | 'denied'>('idle');
 
-  const handleGrantPermission = () => {
-    setStatus('loading');
-    if (!navigator.geolocation) {
-      setResultText("Geolocation is not supported by your browser.");
-      setStatus('error');
-      return;
-    }
+  const onPermissionResult = (resultText: string) => {
+    sendMessage(resultText, undefined, { isHidden: true });
+  };
+
+  const handleAllow = () => {
+    setStatus('pending');
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const locationString = `User granted location access. Current location: Latitude ${latitude.toFixed(4)}, Longitude ${longitude.toFixed(4)}`;
-        setResultText("Location access granted. The AI will now use your location to continue.");
-        setStatus('success');
-        // Send a hidden message with the location back to the AI to continue the workflow.
-        sendMessage(locationString, undefined, { isHidden: true, isThinkingModeEnabled: true });
+        onPermissionResult(`(User has granted location access) My location is: Latitude ${latitude.toFixed(4)}, Longitude ${longitude.toFixed(4)}.`);
+        setStatus('granted');
       },
       (error) => {
-        let message: string;
-        switch(error.code) {
-          case error.PERMISSION_DENIED:
-            message = "You denied the request for Geolocation. The AI cannot proceed with location-based tasks.";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            message = "Location information is unavailable.";
-            break;
-          case error.TIMEOUT:
-            message = "The request to get user location timed out.";
-            break;
-          default:
-            message = "An unknown error occurred while trying to get your location.";
-            break;
-        }
-        setResultText(message);
-        setStatus('error');
-        // Also inform the AI that the request failed.
-        sendMessage(`User denied location access: ${message}`, undefined, { isHidden: true, isThinkingModeEnabled: true });
-      }
+        onPermissionResult("(User has denied location access again) I was unable to get the location as permission was denied again.");
+        setStatus('denied');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
+  const handleDeny = () => {
+    onPermissionResult("(User has denied location access) I have denied the location permission request.");
+    setStatus('denied');
+  };
+
+  if (status === 'granted') {
+    return <ResultDisplay text="Permission granted. I will now continue with your request." type="success" />;
+  }
+
+  if (status === 'denied') {
+    return <ResultDisplay text="Permission denied. I cannot proceed without your location." type="error" />;
+  }
+
+  if (status === 'pending') {
+      return (
+        <div className="flex items-center gap-2 text-sm p-3 text-slate-400">
+            <span>Waiting for permission...</span>
+            <LoadingDots />
+        </div>
+      );
+  }
+
   return (
-    <div className="p-3 bg-indigo-900/20 border border-indigo-500/30 rounded-lg text-sm space-y-3">
-        <p className="text-indigo-200">{text}</p>
-        
-        {status === 'idle' && (
-            <button 
-                onClick={handleGrantPermission} 
-                className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-md transition-colors text-xs"
-            >
-                Grant Location Access
-            </button>
-        )}
-
-        {status === 'loading' && (
-            <div className="flex items-center gap-2 text-sm text-indigo-300">
-                <span>Requesting permission</span>
-                <LoadingDots />
-            </div>
-        )}
-
-        {status === 'success' && <ResultDisplay text={resultText} type="success" />}
-        {status === 'error' && <ResultDisplay text={resultText} type="error" />}
+    <div className="p-3 bg-slate-700/50 rounded-lg text-sm">
+      <p className="text-slate-200 mb-3">{text}</p>
+      <div className="flex gap-2">
+        <button 
+            onClick={handleAllow} 
+            className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-md transition-colors text-xs"
+        >
+            Allow
+        </button>
+        <button 
+            onClick={handleDeny} 
+            className="px-3 py-1 bg-slate-600 hover:bg-slate-500 text-white font-semibold rounded-md transition-colors text-xs"
+        >
+            Deny
+        </button>
+      </div>
     </div>
   );
 };
