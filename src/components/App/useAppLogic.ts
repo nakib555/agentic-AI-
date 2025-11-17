@@ -13,12 +13,13 @@ import { useSidebar } from '../../hooks/useSidebar';
 import { useViewport } from '../../hooks/useViewport';
 import { useMemory } from '../../hooks/useMemory';
 import type { Message, ChatSession, Model } from '../../types';
+// FIX: Corrected import path to point to the index file within the directory.
 import {
   exportChatToJson,
   exportChatToMarkdown,
   exportChatToPdf,
   exportChatToClipboard,
-} from '../../utils/exportUtils';
+} from '../../utils/exportUtils/index';
 import type { MessageListHandle } from '../Chat/MessageList';
 import {
   DEFAULT_ABOUT_USER,
