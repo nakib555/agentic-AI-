@@ -16,7 +16,26 @@ const getApiBaseUrl = () => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
-export const fetchFromApi = (url: string, options: RequestInit = {}): Promise<Response> => {
-    // The API key is no longer sent from the client. The backend retrieves it from its own settings store.
-    return fetch(`${API_BASE_URL}${url}`, options);
+// Global callback for version mismatch
+let onVersionMismatch = () => {};
+export const setOnVersionMismatch = (callback: () => void) => {
+    onVersionMismatch = callback;
+};
+
+export const fetchFromApi = async (url: string, options: RequestInit = {}): Promise<Response> => {
+    const headers = {
+        ...options.headers,
+        'X-Client-Version': process.env.APP_VERSION || 'unknown',
+    };
+    
+    const response = await fetch(`${API_BASE_URL}${url}`, { ...options, headers });
+    
+    if (response.status === 409) {
+        onVersionMismatch();
+        // Throw an error to stop the current operation and prevent further processing.
+        // The component logic should not need to handle this explicitly; the global overlay will take over.
+        throw new Error('Version mismatch');
+    }
+    
+    return response;
 };

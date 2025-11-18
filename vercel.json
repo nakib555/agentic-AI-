@@ -1,4 +1,5 @@
 {
+  "framework": "create-react-app",
   "version": 2,
   "builds": [
     {

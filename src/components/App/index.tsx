@@ -17,6 +17,7 @@ import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 } from './constants';
 import { TestRunner } from '../Testing';
+import { VersionMismatchOverlay } from '../UI/VersionMismatchOverlay';
 
 export const App = () => {
   const logic = useAppLogic();
@@ -28,6 +29,7 @@ export const App = () => {
 
   return (
     <div ref={logic.appContainerRef} className={`flex h-full bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isResizing || logic.isThinkingResizing ? 'pointer-events-none' : ''}`}>
+      {logic.versionMismatch && <VersionMismatchOverlay />}
       <Sidebar
         key={logic.isDesktop ? 'desktop' : 'mobile'}
         isDesktop={logic.isDesktop}

@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Import `Request` and `Response` types from `express` to resolve conflicts with global DOM types.
 import type { Request, Response } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
@@ -24,7 +23,6 @@ const pendingFrontendTools = new Map<string, (result: string | { error: string }
 
 const generateRequestId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-// FIX: Use the `Response` type from `express` to resolve method conflicts.
 async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
     const { chatId, model, history, settings } = payload;
     const { isAgentMode, memoryContent, systemPrompt } = settings;
@@ -185,7 +183,6 @@ PLACEHOLDER:`;
     }
 }
 
-// FIX: Use the `Request` and `Response` types from `express`.
 export const apiHandler = async (req: Request, res: Response) => {
     const storedApiKey = await getApiKey();
     const apiKey = storedApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;

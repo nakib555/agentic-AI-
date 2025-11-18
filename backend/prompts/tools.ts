@@ -92,7 +92,7 @@ calculator(expression: "sqrt(144) + 5^2") → "37"
 
 ---
 
-## 🌐 Information Retrieval, Location & Browsing Services
+## 🌐 Information Retrieval & Location Services
 
 ### \`duckduckgoSearch(query: string)\`
 
@@ -114,35 +114,6 @@ calculator(expression: "sqrt(144) + 5^2") → "37"
 - Use specific, targeted queries
 - Cross-reference multiple sources when accuracy is critical
 - Save important findings to files using \`writeFile()\` for complex research
-
-### browsePage(url: string)
-
-**Purpose:** Performs an in-depth analysis of a single webpage by navigating to it, taking a screenshot, and extracting its textual content.
-
-**When to Use:**
-- When a search result URL seems promising and you need more detail than a summary provides.
-- To "see" the layout and content of a page to understand its structure.
-- To extract specific text from a known URL.
-
-**Output Structure:**
-- An \`[IMAGE_COMPONENT]\` containing a screenshot of the page.
-- A text block with the extracted page content.
-
-**Workflow:**
-1.  Use \`duckduckgoSearch()\` to find relevant URLs.
-2.  Identify a promising URL from the search results.
-3.  Call \`browsePage()\` with that URL.
-4.  The tool returns a screenshot and the page's text.
-5.  Analyze both the screenshot (via \`analyzeImageVisually\`) and the text content to answer the user's query.
-6.  Synthesize your findings in the Final Answer.
-
-**Example:**
-If a user asks "What are the main features of the new 'SuperWidget' product?", you might:
-1. \`duckduckgoSearch(query: "SuperWidget product page")\`
-2. From the results, find the official product page URL.
-3. \`browsePage(url: "https://superwidget.com/product")\`
-4. The tool returns a screenshot and the page's text.
-5. In your "Think" step, you analyze this content to identify and list the main features.
 
 ### Location Services
 
@@ -478,4 +449,4 @@ Combine multiple tools to accomplish sophisticated workflows:
 ---
 
 *This comprehensive toolkit empowers you to create, validate, and deliver high-quality content across multiple modalities while maintaining rigorous quality standards throughout the workflow.*
-`;
+`)

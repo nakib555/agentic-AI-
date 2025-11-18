@@ -1,11 +1,22 @@
+
 import esbuild from 'esbuild';
 import cpx from 'cpx';
 import { rm } from 'fs/promises';
 import 'dotenv/config';
+import { execSync } from 'child_process';
 
 console.log('Starting production build process...');
 
 try {
+  // 0. Get build version from git hash
+  const version = execSync('git rev-parse --short HEAD').toString().trim();
+  console.log(`Building version: ${version}`);
+
+  const define = {
+    'process.env.NODE_ENV': '"production"',
+    'process.env.APP_VERSION': JSON.stringify(version),
+  };
+
   // 1. Clean the dist directory
   await rm('dist', { recursive: true, force: true });
   console.log('Cleaned dist directory.');
@@ -16,9 +27,7 @@ try {
     bundle: true,
     outfile: 'dist/index.js',
     loader: { '.tsx': 'tsx' },
-    define: {
-      'process.env.NODE_ENV': '"production"',
-    },
+    define,
     minify: true,
     sourcemap: true,
     logLevel: 'info',
@@ -32,10 +41,10 @@ try {
     platform: 'node',
     format: 'cjs',
     outfile: 'dist/server.cjs',
+    define,
     minify: true,
     sourcemap: true,
     logLevel: 'info',
-    external: ['playwright'],
   });
   console.log('Backend server bundling complete.');
 

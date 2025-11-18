@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
-// FIX: Import `Request` and `Response` types from `express` to resolve conflicts with global DOM types.
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';
@@ -20,7 +19,7 @@ const PORT = process.env.PORT || 3001;
 const corsOptions = {
   origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Client-Version'],
 };
 
 // Explicitly handle pre-flight requests for all routes.
@@ -30,11 +29,27 @@ app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '50mb' }));
 
+// Version Check Middleware
+const appVersion = process.env.APP_VERSION;
+if (appVersion) {
+  app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+    const clientVersion = req.header('X-Client-Version');
+    if (clientVersion && clientVersion !== appVersion) {
+      console.warn(`[VERSION_MISMATCH] Client: ${clientVersion}, Server: ${appVersion}.`);
+      return res.status(409).json({
+        error: 'version_mismatch',
+        message: 'Your application version is out of date. Please refresh the page to get the latest version.',
+      });
+    }
+    next();
+  });
+  console.log(`[SERVER] Running version: ${appVersion}`);
+}
+
 const staticPath = path.join(process.cwd(), 'dist');
 const uploadsPath = process.env.VERCEL_ENV ? path.join('/tmp', 'data', 'uploads') : path.join(process.cwd(), 'data', 'uploads');
 
 // API routes
-// FIX: Use the `Request` and `Response` types from `express`.
 app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
 app.get('/api/models', getAvailableModelsHandler);
 
@@ -66,7 +81,6 @@ app.use('/uploads', express.static(uploadsPath));
 
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
-// FIX: Use the `Request` and `Response` types from `express`.
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });

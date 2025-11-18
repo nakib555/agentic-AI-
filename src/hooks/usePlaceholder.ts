@@ -178,24 +178,6 @@ const AGENT_FALLBACK_PLACEHOLDERS = [
   'Analyze this audio file and transcribe the speech',
   'Generate a video showing the construction of a skyscraper in fast-forward',
   'Write a Python script to resize all images in a folder',
-  'Find all the museums in Paris and plot them on a map',
-  'Research and create a presentation on the Apollo 11 mission',
-  'Generate a pixel art animation of a running character',
-  'Write code to generate a QR code for a given URL',
-  'Find the nearest gas station and show me how to get there',
-  'Formulate a marketing strategy for a new e-commerce store',
-  'Analyze this document and provide a summary',
-  'Generate a video of a peaceful zen garden',
-  'Write a Python script to interact with a database',
-  'Show me the current traffic conditions on my commute',
-  'Research and draft a patent application for a new invention',
-  'Generate a comic book style illustration of a superhero',
-  'Write code to build a simple web server',
-  'Find and display information about local events happening this weekend',
-  'Create a workout plan for the next week',
-  'Analyze this spreadsheet and identify any anomalies',
-  'Generate a video of a journey through the solar system',
-  'Write a Python script to organize my downloads folder',
   'Show me a map of all the volcanoes on Earth',
   'Research and write a technical whitepaper on blockchain technology',
   'Generate a synthwave-style image of a car driving into the sunset',
@@ -228,6 +210,7 @@ const AGENT_FALLBACK_PLACEHOLDERS = [
 export const usePlaceholder = (isEnabled: boolean, conversationContext: string, isAgentMode: boolean) => {
     const [placeholder, setPlaceholder] = useState<string[]>(['Ask anything, or drop a file']);
     const intervalId = useRef<number | null>(null);
+    const isFetching = useRef(false);
 
     const setRandomFallback = () => {
         const fallbacks = isAgentMode ? AGENT_FALLBACK_PLACEHOLDERS : CHAT_FALLBACK_PLACEHOLDERS;
@@ -243,6 +226,8 @@ export const usePlaceholder = (isEnabled: boolean, conversationContext: string, 
     };
 
     const fetchPlaceholder = async () => {
+        if (isFetching.current) return;
+        
         // If there's no context to provide, just cycle through our custom fallbacks.
         if (!conversationContext) {
             setRandomFallback();
@@ -250,6 +235,7 @@ export const usePlaceholder = (isEnabled: boolean, conversationContext: string, 
         }
 
         try {
+            isFetching.current = true;
             const response = await fetchFromApi('/api/handler?task=placeholder', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -271,6 +257,8 @@ export const usePlaceholder = (isEnabled: boolean, conversationContext: string, 
         } catch (error) {
             console.warn("AI placeholder fetch failed, using fallback:", error);
             setRandomFallback();
+        } finally {
+            isFetching.current = false;
         }
     };
 

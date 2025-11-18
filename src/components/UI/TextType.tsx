@@ -41,6 +41,7 @@ export const TextType = ({
   const [textIndex, setTextIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState(text[0] || '');
   const [isDeleting, setIsDeleting] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -49,17 +50,12 @@ export const TextType = ({
   }, []);
 
   useEffect(() => {
-    // Do not interrupt an animation in progress. Only apply changes when the
-    // displayed text is a complete word from the sequence (i.e., in a paused state).
     if (!text.includes(displayedText)) return;
 
-    // When the text prop changes (e.g., a new placeholder arrives),
-    // start the delete-and-type sequence.
     if (text.length > 1 && text[1] !== displayedText && !isDeleting) {
-      setTextIndex(0); // This will point to the old text
-      setIsDeleting(true); // Start deleting
+      setTextIndex(0);
+      setIsDeleting(true);
     } else if (text.length === 1 && text[0] !== displayedText) {
-      // If we only have one item, just set it
       setDisplayedText(text[0]);
     }
   }, [text]);
@@ -70,14 +66,17 @@ export const TextType = ({
     const handleAnimation = () => {
       if (!isMounted.current) return;
       
+      setIsPaused(false);
       const sequence = text;
       const currentText = sequence[textIndex];
       
+      const speed = isDeleting ? deletingSpeed : typingSpeed;
+      const randomDelay = speed + (Math.random() - 0.5) * speed * 0.7;
+
       if (isDeleting) {
         if (displayedText.length > 0) {
-          timeoutId = window.setTimeout(() => setDisplayedText(d => d.slice(0, -1)), deletingSpeed);
+          timeoutId = window.setTimeout(() => setDisplayedText(d => d.slice(0, -1)), randomDelay);
         } else {
-          // Finished deleting
           setIsDeleting(false);
           const nextIndex = (textIndex + 1);
           if (nextIndex < sequence.length) {
@@ -89,19 +88,19 @@ export const TextType = ({
       } else { // Typing
         const targetText = sequence[textIndex];
         if (displayedText.length < targetText.length) {
-          timeoutId = window.setTimeout(() => setDisplayedText(targetText.slice(0, displayedText.length + 1)), typingSpeed);
-        } else { // Finished typing
+          timeoutId = window.setTimeout(() => setDisplayedText(targetText.slice(0, displayedText.length + 1)), randomDelay);
+        } else {
+          setIsPaused(true);
           const isLast = textIndex === sequence.length - 1;
           if (isLast && !loop) {
             if (onSequenceComplete) onSequenceComplete();
-            return; // Stop animation
+            return;
           }
           timeoutId = window.setTimeout(() => setIsDeleting(true), pauseDuration);
         }
       }
     };
     
-    // Start deleting the first text after an initial delay
     const delay = (isDeleting && textIndex === 0 && displayedText.length === text[0].length) ? initialDelay : 0;
     timeoutId = window.setTimeout(handleAnimation, delay);
 
@@ -114,9 +113,9 @@ export const TextType = ({
     <span className="inline">{displayedText}</span>,
     showCursor && (
       <motion.span
-        className={`ml-px inline-block opacity-100 ${cursorClassName}`}
-        animate={{ opacity: [1, 0, 1] }}
-        transition={{ duration: cursorBlinkDuration * 2, repeat: Infinity, ease: 'linear' }}
+        className={`ml-px inline-block ${cursorClassName}`}
+        animate={isPaused ? { opacity: [1, 0, 1] } : { opacity: 1 }}
+        transition={isPaused ? { duration: cursorBlinkDuration * 2, repeat: Infinity, ease: 'linear' } : { duration: 0 }}
       >
         {cursorCharacter}
       </motion.span>

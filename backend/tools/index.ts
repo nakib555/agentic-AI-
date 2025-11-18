@@ -12,14 +12,12 @@ import { executeVideoGenerator } from "./videoGenerator.js";
 import { executeCalculator } from "./calculator.js";
 import { executeListFiles, executeDisplayFile, executeDeleteFile, executeWriteFile } from "./fileTools.js";
 import { executeDisplayMap } from "./map.js";
-import { executeBrowsePage } from "./browser.js";
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
 const BACKEND_TOOL_IMPLEMENTATIONS: Record<string, (ai: GoogleGenAI, args: any, apiKey: string, chatId: string) => Promise<string>> = {
     'generateImage': (ai, args, apiKey, chatId) => executeImageGenerator(ai, args, chatId),
     'duckduckgoSearch': (ai, args) => executeWebSearch(ai, args),
-    'browsePage': (ai, args) => executeBrowsePage(args),
     'analyzeMapVisually': (ai, args) => executeAnalyzeMapVisually(ai, args),
     'analyzeImageVisually': (ai, args, apiKey, chatId) => executeAnalyzeImageVisually(ai, args, chatId),
     'executeCode': (ai, args, apiKey, chatId) => executeCode(args, chatId),

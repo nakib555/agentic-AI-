@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Import `Request` and `Response` types from `express` to resolve conflicts with global DOM types.
 import type { Request, Response } from 'express';
 import { getApiKey } from './settingsHandler.js';
 import type { Model } from '../src/types/index.js';

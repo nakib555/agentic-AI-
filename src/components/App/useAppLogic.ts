@@ -29,7 +29,7 @@ import {
   DEFAULT_TTS_VOICE,
   DEFAULT_AUTO_PLAY_AUDIO
 } from './constants';
-import { fetchFromApi } from '../../utils/api';
+import { fetchFromApi, setOnVersionMismatch } from '../../utils/api';
 import { testSuite, type TestResult, type TestProgress } from '../Testing/testSuite';
 import { getSettings, updateSettings } from '../../services/settingsService';
 import { logCollector } from '../../utils/logCollector';
@@ -54,6 +54,7 @@ export const useAppLogic = () => {
   const [backendError, setBackendError] = useState<string | null>(null);
   const [isTestMode, setIsTestMode] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(true);
+  const [versionMismatch, setVersionMismatch] = useState(false);
 
   // --- Model Management ---
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
@@ -78,9 +79,10 @@ export const useAppLogic = () => {
   const [isMemoryEnabled, setIsMemoryEnabledState] = useState(false);
   const memory = useMemory(isMemoryEnabled);
 
-  // --- Start Log Collector on Mount ---
+  // --- Start Log Collector & Version Mismatch Handler on Mount ---
   useEffect(() => {
     logCollector.start();
+    setOnVersionMismatch(() => setVersionMismatch(true));
   }, []);
   
   // --- Settings and Model Management ---
@@ -126,6 +128,7 @@ export const useAppLogic = () => {
         }
 
     } catch (error) {
+        if ((error as Error).message === 'Version mismatch') return;
         console.error("Failed to fetch available models:", error);
         setAvailableModels([]);
         setAvailableImageModels([]);
@@ -153,6 +156,7 @@ export const useAppLogic = () => {
             setIsAutoPlayEnabled(settings.isAutoPlayEnabled);
             setIsAgentModeState(settings.isAgentMode);
         } catch (error) {
+            if ((error as Error).message === 'Version mismatch') return;
             console.error("Failed to load settings from backend:", error);
         } finally {
             setSettingsLoading(false);
@@ -174,7 +178,10 @@ export const useAppLogic = () => {
   ) => {
     return useCallback((newValue: T) => {
         setter(newValue);
-        updateSettings({ [key]: newValue }).catch(err => console.error(`Failed to save setting ${key}:`, err));
+        updateSettings({ [key]: newValue }).catch(err => {
+            if ((err as Error).message === 'Version mismatch') return;
+            console.error(`Failed to save setting ${key}:`, err)
+        });
     }, [setter, key]);
   };
   
@@ -226,6 +233,7 @@ export const useAppLogic = () => {
                 intervalId = null;
             }
         } catch (error) {
+            if ((error as Error).message === 'Version mismatch') return;
             setBackendStatus('offline');
             setBackendError("Could not connect to the backend server. Please ensure it is running.");
             if (!intervalId) {
@@ -433,6 +441,7 @@ export const useAppLogic = () => {
     isImportModalOpen, setIsImportModalOpen,
     isThinkingSidebarOpen, setIsThinkingSidebarOpen, thinkingMessageId, setThinkingMessageId,
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading,
+    versionMismatch,
     availableModels,
     availableImageModels,
     availableVideoModels,
