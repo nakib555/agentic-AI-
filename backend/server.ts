@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
-// FIX: Changed type-only import to a regular import to provide full type information for Express Request, Response, and NextFunction objects, resolving multiple type errors.
-import { Request, Response, NextFunction } from 'express';
+// FIX: Changed regular import to a type-only import to provide full type information for Express Request, Response, and NextFunction objects, resolving multiple type errors.
+import type { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';

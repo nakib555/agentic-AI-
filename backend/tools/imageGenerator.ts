@@ -7,6 +7,7 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import { ToolError } from "../utils/apiError";
 import { fileStore } from "../services/fileStore";
 import { Buffer } from 'buffer';
+import { generateContentWithRetry, generateImagesWithRetry } from "../utils/geminiUtils.js";
 
 export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: string, numberOfImages?: number, model: string, aspectRatio?: string }, chatId: string): Promise<string> => {
   const defaultAspectRatio = '1:1';
@@ -16,7 +17,7 @@ export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: str
     let base64ImageBytesArray: string[] = [];
 
     if (model.includes('flash-image')) {
-        const response = await ai.models.generateContent({
+        const response = await generateContentWithRetry(ai, {
             model: model,
             contents: { parts: [{ text: prompt }] },
             config: { responseModalities: [Modality.IMAGE] },
@@ -33,7 +34,7 @@ export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: str
     } else { // Assume Imagen model
         const count = Math.max(1, Math.min(4, Math.floor(numberOfImages)));
         const validAspectRatios = ["1:1", "3:4", "4:3", "9:16", "16:9"];
-        const response = await ai.models.generateImages({
+        const response = await generateImagesWithRetry(ai, {
             model: model,
             prompt: prompt,
             config: {

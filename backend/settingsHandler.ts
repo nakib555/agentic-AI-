@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Changed type-only import to a regular import to provide full type information for Express Request and Response objects, resolving multiple type errors.
-import { Request, Response } from 'express';
+// FIX: Changed regular import to a type-only import to provide full type information for Express Request and Response objects, resolving multiple type errors.
+import type { Request, Response } from 'express';
 import { promises as fs } from 'fs';
 import { GoogleGenAI } from "@google/genai";
 import { parseApiError } from './utils/apiError.js';

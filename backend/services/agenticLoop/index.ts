@@ -3,11 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Removed non-exported 'GenerateContentStreamResult' type and fixed stream handling logic.
 import { GoogleGenAI, GenerateContentResponse, Part, FunctionCall, FinishReason } from "@google/genai";
 import { parseApiError } from "../../utils/apiError.js";
 import { ToolCallEvent } from "./types.js";
-import { getText } from "../../utils/geminiUtils.js";
+import { getText, generateContentStreamWithRetry } from "../../utils/geminiUtils.js";
 
 type Callbacks = {
     onTextChunk: (text: string) => void;
@@ -66,7 +65,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             let fullTextResponse = '';
             let hasSentPlan = false;
 
-            const streamResult = await ai.models.generateContentStream({
+            const streamResult = await generateContentStreamWithRetry(ai, {
                 model,
                 contents: currentHistory,
                 config: {
@@ -75,7 +74,8 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 },
             });
 
-            for await (const chunk of streamResult.stream) {
+            // FIX: Changed `streamResult.stream` to `streamResult` to align with the new SDK's stream handling.
+            for await (const chunk of streamResult) {
                 if (signal.aborted) {
                     const abortError = new Error("Request aborted by client");
                     abortError.name = 'AbortError';

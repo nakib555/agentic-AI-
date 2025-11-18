@@ -12,7 +12,8 @@ interface TextTypeProps {
   cursorCharacter?: string | React.ReactNode;
   cursorBlinkDuration?: number;
   cursorClassName?: string;
-  sequence: string[];
+  // FIX: Changed prop from 'sequence' to 'text' to match usage and fix error.
+  text: string[];
   as?: ElementType;
   typingSpeed?: number;
   initialDelay?: number;
@@ -28,7 +29,8 @@ const getTypingDelay = (baseSpeed: number, jitter = 0.4): number => {
 };
 
 export const TextType = ({
-  sequence,
+  // FIX: Changed prop from 'sequence' to 'text'.
+  text,
   as: Component = 'span',
   typingSpeed = 50,
   initialDelay = 0,
@@ -48,17 +50,19 @@ export const TextType = ({
   const [phase, setPhase] = useState<'initial' | 'typing' | 'pausing' | 'deleting'>('initial');
 
   const timeoutRef = useRef<number | null>(null);
-  const sequenceRef = useRef(sequence);
+  // FIX: Changed ref name to reflect prop change.
+  const textRef = useRef(text);
 
-  // If the sequence prop changes externally, reset the animation.
+  // If the text prop changes externally, reset the animation.
   useEffect(() => {
-    if (sequenceRef.current !== sequence) {
-      sequenceRef.current = sequence;
+    // FIX: Changed ref name to reflect prop change.
+    if (textRef.current !== text) {
+      textRef.current = text;
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       setSequenceIndex(0);
       setPhase('deleting'); // Start by deleting the current text
     }
-  }, [sequence]);
+  }, [text]);
 
   useEffect(() => {
     const schedule = (fn: () => void, delay: number) => {
@@ -66,7 +70,8 @@ export const TextType = ({
       timeoutRef.current = window.setTimeout(fn, delay);
     };
 
-    const currentTarget = sequenceRef.current[sequenceIndex] || '';
+    // FIX: Changed ref name to reflect prop change.
+    const currentTarget = textRef.current[sequenceIndex] || '';
 
     switch (phase) {
       case 'initial':
@@ -93,7 +98,8 @@ export const TextType = ({
         } else {
           // Finished deleting, move to the next item in the sequence
           const nextIndex = sequenceIndex + 1;
-          if (nextIndex < sequenceRef.current.length) {
+          // FIX: Changed ref name to reflect prop change.
+          if (nextIndex < textRef.current.length) {
             setSequenceIndex(nextIndex);
             setPhase('typing');
           } else if (loop) {
@@ -107,7 +113,8 @@ export const TextType = ({
         break;
 
       case 'pausing':
-        const isLastItem = sequenceIndex === sequenceRef.current.length - 1;
+        // FIX: Changed ref name to reflect prop change.
+        const isLastItem = sequenceIndex === textRef.current.length - 1;
         if (!isLastItem || loop) {
           schedule(() => setPhase('deleting'), pauseDuration);
         } else {

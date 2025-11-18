@@ -4,7 +4,8 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { ToolError } from '../utils/apiError';
+import { ToolError } from '../utils/apiError.js';
+import { generateContentWithRetry } from '../utils/geminiUtils.js';
 
 function hasProperty<K extends PropertyKey>(obj: unknown, prop: K): obj is Record<K, unknown> {
   return typeof obj === 'object' && obj !== null && prop in obj;
@@ -24,7 +25,7 @@ export const executeWebSearch = async (ai: GoogleGenAI, args: { query: string })
       prompt = `You are a web research expert. Your task is to answer the user's query based on Google Search results. Provide a comprehensive, well-structured answer. Synthesize information from multiple sources. Use markdown for formatting. Do not include a list of sources in your response. Query: "${args.query}"`;
     }
     
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: "gemini-2.5-flash",
       contents: prompt,
       config: { tools: [{ googleSearch: {} }] },

@@ -6,6 +6,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { ToolError } from "../utils/apiError";
 import { fileStore } from '../services/fileStore';
+import { generateContentWithRetry } from "../utils/geminiUtils.js";
 
 export const executeAnalyzeMapVisually = async (ai: GoogleGenAI, args: { latitude: number, longitude: number }): Promise<string> => {
     const { latitude, longitude } = args;
@@ -16,7 +17,7 @@ export const executeAnalyzeMapVisually = async (ai: GoogleGenAI, args: { latitud
     try {
       const prompt = `You are a cartography expert. Based on the geographical coordinates latitude=${latitude} and longitude=${longitude}, provide a concise, bulleted list describing the key landmarks, major roads, parks, and general layout of the immediate area. Focus on what would be visually prominent on a standard map view. Do not mention the coordinates in your response.`;
   
-      const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+      const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt });
       return `Visual analysis of the map at lat ${latitude.toFixed(4)}, lon ${longitude.toFixed(4)}:\n${response.text}`;
   
     } catch (err) {
@@ -48,7 +49,7 @@ export const executeAnalyzeImageVisually = async (ai: GoogleGenAI, args: { fileP
       const imagePart = { inlineData: { mimeType: 'image/png', data: imageData } };
       const textPart = { text: "Describe this image in meticulous detail. What does it show? Are there any visible flaws, errors, or unexpected elements?" };
       
-      const response = await ai.models.generateContent({
+      const response = await generateContentWithRetry(ai, {
           model: 'gemini-2.5-pro',
           contents: { parts: [imagePart, textPart] },
       });

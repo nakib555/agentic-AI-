@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Changed type-only import to a regular import to provide full type information for Express Request and Response objects, resolving multiple type errors.
-import { Request, Response } from 'express';
+// FIX: Changed regular import to a type-only import to provide full type information for Express Request and Response objects, resolving multiple type errors.
+import type { Request, Response } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -12,7 +12,7 @@ import { parseApiError, ToolError } from './utils/apiError.js';
 import { executeTextToSpeech } from "./tools/tts.js";
 import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory.js";
 import { runAgenticLoop } from './services/agenticLoop/index.js';
-import { getText } from "./utils/geminiUtils.js";
+import { getText, generateContentWithRetry, generateContentStreamWithRetry } from "./utils/geminiUtils.js";
 import { createToolExecutor } from "./tools/index.js";
 import { ToolCallEvent } from './services/agenticLoop/types.js';
 import { toolDeclarations } from './tools/declarations.js';
@@ -137,14 +137,14 @@ async function handleSimpleTask(ai: GoogleGenAI, task: string, payload: any): Pr
         case 'title': {
             const conversationHistory = payload.messages.map((msg: any) => `${msg.role}: ${(msg.text || '').substring(0, 500)}`).join('\n');
             const prompt = `Based on the following conversation, suggest a short and concise title (5 words maximum). Do not use quotes in the title.\n\nCONVERSATION:\n${conversationHistory}\n\nTITLE:`;
-            result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+            result = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt });
             const title = getText(result).trim().replace(/["']/g, '');
             return { status: 200, body: { title: title || 'Untitled Chat' } };
         }
         case 'suggestions': {
             const conversationTranscript = payload.conversation.filter((msg: any) => !msg.isHidden).slice(-6).map((msg: any) => (msg.responses?.[msg.activeResponseIndex]?.text || msg.text || '').substring(0, 300)).join('\n');
             const prompt = `Based on the recent conversation, suggest 3 concise and relevant follow-up questions or actions a user might take next. The suggestions should be phrased from the user's perspective (e.g., "Explain this in simpler terms"). Output MUST be a valid JSON array of strings. If no good suggestions can be made, return an empty array [].\n\nCONVERSATION:\n${conversationTranscript}\n\nJSON OUTPUT:`;
-            result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
+            result = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
             return { status: 200, body: { suggestions: JSON.parse(getText(result) || '[]') } };
         }
         case 'placeholder': {
@@ -161,7 +161,7 @@ LAST MESSAGE:
 "${conversationContext}"
 
 PLACEHOLDER:`;
-            result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+            result = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt });
             const placeholder = getText(result).trim().replace(/["']/g, '');
             return { status: 200, body: { placeholder } };
         }
@@ -233,13 +233,13 @@ export const apiHandler = async (req: Request, res: Response) => {
         }
         
         if (task === 'enhance') {
-            const stream = await ai.models.generateContentStream({
+            const streamResult = await generateContentStreamWithRetry(ai, {
                 model: 'gemini-2.5-flash',
                 contents: `You are a prompt engineer. Your task is to rewrite a user's prompt to be more detailed, specific, and effective for a powerful AI model. Retain the user's core intent. If the prompt is already good, you can make minimal changes or return it as-is. Do not add conversational filler.\n\nOriginal Prompt:\n${payload.userInput}\n\nEnhanced Prompt:`,
                 config: { temperature: 0.5 }
             });
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            for await (const chunk of stream) res.write(chunk.text);
+            for await (const chunk of streamResult) res.write(chunk.text);
             res.end();
             return;
         }

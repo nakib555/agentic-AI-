@@ -5,10 +5,11 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { ToolError } from "../utils/apiError";
+import { generateContentWithRetry } from "../utils/geminiUtils.js";
 
 export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: string): Promise<string> => {
     try {
-        const response = await ai.models.generateContent({
+        const response = await generateContentWithRetry(ai, {
             model: "gemini-2.5-flash-preview-tts",
             contents: [{ parts: [{ text }] }],
             config: {

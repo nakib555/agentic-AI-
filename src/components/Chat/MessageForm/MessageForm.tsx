@@ -88,7 +88,8 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         className="absolute inset-0 px-2 py-1.5 text-gray-500 dark:text-slate-400 pointer-events-none truncate"
                     >
                         <TextType
-                            sequence={logic.placeholder}
+                            // FIX: Changed prop from 'sequence' to 'text'.
+                            text={logic.placeholder}
                             loop={true}
                             typingSpeed={65}
                             deletingSpeed={50}

@@ -145,8 +145,8 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
                         {isAnimatingTitle && animationKey ? (
                             <TextType
                                 key={animationKey}
-                                /* FIX: Changed prop 'text' to 'sequence' to match TextTypeProps definition. */
-                                sequence={['New Chat', animationKey]}
+                                /* FIX: Changed prop 'sequence' to 'text' to match TextTypeProps definition. */
+                                text={['New Chat', animationKey]}
                                 loop={false}
                                 onSequenceComplete={() => setIsAnimatingTitle(false)}
                             />
