@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchFromApi } from '../utils/api';
 
 // Time in milliseconds to wait before fetching a new placeholder
@@ -209,27 +209,32 @@ const AGENT_FALLBACK_PLACEHOLDERS = [
  */
 export const usePlaceholder = (isEnabled: boolean, conversationContext: string, isAgentMode: boolean) => {
     const [placeholder, setPlaceholder] = useState<string[]>(['Ask anything, or drop a file']);
-    const intervalId = useRef<number | null>(null);
     const isFetching = useRef(false);
+    const contextRef = useRef({ conversationContext, isAgentMode });
 
-    const setRandomFallback = () => {
-        const fallbacks = isAgentMode ? AGENT_FALLBACK_PLACEHOLDERS : CHAT_FALLBACK_PLACEHOLDERS;
-        setPlaceholder(prev => {
-            const current = prev[prev.length - 1];
-            let next = current;
-            // Ensure the next random placeholder is different from the current one
-            while (next === current && fallbacks.length > 1) {
-                next = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-            }
-            return [current, next];
-        });
-    };
+    // Keep the ref updated with the latest values without causing re-renders
+    useEffect(() => {
+        contextRef.current = { conversationContext, isAgentMode };
+    }, [conversationContext, isAgentMode]);
 
-    const fetchPlaceholder = async () => {
+    const fetchNewPlaceholder = useCallback(async () => {
         if (isFetching.current) return;
-        
-        // If there's no context to provide, just cycle through our custom fallbacks.
-        if (!conversationContext) {
+
+        const { conversationContext: currentContext, isAgentMode: currentAgentMode } = contextRef.current;
+
+        const setRandomFallback = () => {
+            const fallbacks = currentAgentMode ? AGENT_FALLBACK_PLACEHOLDERS : CHAT_FALLBACK_PLACEHOLDERS;
+            setPlaceholder(prev => {
+                const current = prev[prev.length - 1];
+                let next = current;
+                while (next === current && fallbacks.length > 1) {
+                    next = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+                }
+                return [current, next];
+            });
+        };
+
+        if (!currentContext.trim()) {
             setRandomFallback();
             return;
         }
@@ -239,19 +244,16 @@ export const usePlaceholder = (isEnabled: boolean, conversationContext: string, 
             const response = await fetchFromApi('/api/handler?task=placeholder', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ conversationContext, isAgentMode }),
+                body: JSON.stringify({ conversationContext: currentContext, isAgentMode: currentAgentMode }),
             });
 
-            if (!response.ok) {
-                throw new Error(`API response not OK: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`API response not OK: ${response.status}`);
 
             const { placeholder: newPlaceholder } = await response.json();
-            
-            if (newPlaceholder && newPlaceholder !== placeholder[placeholder.length - 1]) {
-                setPlaceholder(prev => [prev[prev.length - 1], newPlaceholder]);
-            } else if (!newPlaceholder) {
-                // If the API returns an empty response, use a fallback.
+
+            if (newPlaceholder && typeof newPlaceholder === 'string' && newPlaceholder.trim()) {
+                setPlaceholder(prev => [prev[prev.length - 1], newPlaceholder.trim()]);
+            } else {
                 setRandomFallback();
             }
         } catch (error) {
@@ -260,24 +262,15 @@ export const usePlaceholder = (isEnabled: boolean, conversationContext: string, 
         } finally {
             isFetching.current = false;
         }
-    };
+    }, []); // No dependencies, safe because it uses a ref for context
 
     useEffect(() => {
         if (isEnabled) {
-            fetchPlaceholder();
-            if (intervalId.current) clearInterval(intervalId.current);
-            intervalId.current = window.setInterval(fetchPlaceholder, PLACEHOLDER_INTERVAL);
-        } else {
-            if (intervalId.current) {
-                clearInterval(intervalId.current);
-                intervalId.current = null;
-            }
+            fetchNewPlaceholder(); // Initial fetch
+            const id = window.setInterval(fetchNewPlaceholder, PLACEHOLDER_INTERVAL);
+            return () => clearInterval(id);
         }
-        
-        return () => {
-            if (intervalId.current) clearInterval(intervalId.current);
-        };
-    }, [isEnabled, conversationContext, isAgentMode]);
+    }, [isEnabled, fetchNewPlaceholder]);
 
     return placeholder;
 };

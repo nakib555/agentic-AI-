@@ -15,11 +15,11 @@
   margin: 1em 0;
   padding: 0.75em;
   border-radius: 0.5rem;
-  background-color: #f9fafb; /* gray-50 */
+  background-color: #F5F5F0; /* Matches light theme chat background */
 }
 
 .dark .katex-display {
-  background-color: rgba(0,0,0,0.2);
+  background-color: #121212; /* Matches dark theme chat background */
 }
 
 

@@ -38,20 +38,41 @@ export const useInputEnhancements = (
   const handleEnhancePrompt = async () => {
     const originalPrompt = inputValue;
     if (!originalPrompt.trim() || isEnhancing) return;
-    
+
     setIsEnhancing(true);
-    let enhancedText = '';
+    setInputValue(''); // Clear input once at the start
+
+    let animationFrameId: number | null = null;
+
     try {
         const stream = enhanceUserPromptStream(originalPrompt);
-        setInputValue(''); // Clear input while streaming
+        let accumulatedText = '';
+        let isUpdatePending = false;
+
+        const updateInputValue = () => {
+            setInputValue(accumulatedText);
+            isUpdatePending = false;
+        };
+
         for await (const chunk of stream) {
-            enhancedText += chunk;
-            setInputValue(enhancedText);
+            accumulatedText += chunk;
+            if (!isUpdatePending) {
+                isUpdatePending = true;
+                animationFrameId = requestAnimationFrame(updateInputValue);
+            }
         }
+
+        // After the loop, ensure the final state is set and cancel any pending frame
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+        setInputValue(accumulatedText); // Set final value
+        
         // If the stream was empty or failed, restore the original prompt
-        if (!enhancedText.trim()) {
+        if (!accumulatedText.trim()) {
             setInputValue(originalPrompt);
         }
+
     } catch (e) {
         console.error("Error during prompt enhancement:", e);
         setInputValue(originalPrompt); // Restore on error
