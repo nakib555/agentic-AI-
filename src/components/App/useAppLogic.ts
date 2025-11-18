@@ -71,7 +71,7 @@ export const useAppLogic = () => {
   const [availableImageModels, setAvailableImageModels] = useState<Model[]>([]);
   const [availableVideoModels, setAvailableVideoModels] = useState<Model[]>([]);
   const [modelsLoading, setModelsLoading] = useState(true);
-  const [activeModel, setActiveModel] = useState('');
+  const [activeModel, setActiveModel] = useState('gemini-2.5-pro');
 
   // --- Settings State ---
   const [apiKey, setApiKey] = useState('');
@@ -114,9 +114,8 @@ export const useAppLogic = () => {
         
         // Set default chat model if none is selected or the selected one is no longer available
         if (newModels.length > 0 && (!activeModel || !newModels.some((m: Model) => m.id === activeModel))) {
-          // Prefer 'flash' as a default if available, otherwise take the first.
-          const flashModel = newModels.find(m => m.id.includes('flash'));
-          setActiveModel(flashModel ? flashModel.id : newModels[0].id);
+          const proModel = newModels.find(m => m.id.includes('pro'));
+          setActiveModel(proModel ? proModel.id : newModels[0].id);
         } else if (newModels.length === 0) {
           setActiveModel('');
         }
@@ -370,6 +369,8 @@ export const useAppLogic = () => {
   const handleShowThinkingProcess = (messageId: string) => {
     setThinkingMessageId(messageId);
     setIsThinkingSidebarOpen(true);
+    // If sources is open, close it
+    if (isSourcesSidebarOpen) setIsSourcesSidebarOpen(false);
   };
   
   const handleCloseThinkingSidebar = () => {
@@ -380,6 +381,8 @@ export const useAppLogic = () => {
   const handleShowSources = (sources: Source[]) => {
     setSourcesForSidebar(sources);
     setIsSourcesSidebarOpen(true);
+    // If thinking is open, close it
+    if (isThinkingSidebarOpen) setIsThinkingSidebarOpen(false);
   };
 
   const handleCloseSourcesSidebar = () => {

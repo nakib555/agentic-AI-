@@ -204,8 +204,8 @@ export const apiHandler = async (req: Request, res: Response) => {
             const controller = new AbortController();
             activeRequests.set(requestId, controller);
             
-            req.on('aborted', () => {
-                console.log(`[BACKEND] Request ${requestId} was aborted by the client.`);
+            req.on('close', () => { // Use 'close' instead of 'aborted' for better reliability
+                console.log(`[BACKEND] Request ${requestId} was closed by the client.`);
                 if (activeRequests.has(requestId)) {
                     activeRequests.get(requestId)!.abort();
                     activeRequests.delete(requestId);
