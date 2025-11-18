@@ -18,12 +18,6 @@ type SidebarFooterProps = {
 };
 
 export const SidebarFooter = ({ theme, setTheme, isCollapsed, isDesktop, onClearAllChats, onSettingsClick }: SidebarFooterProps) => {
-  const handleClearAllChats = () => {
-    if (window.confirm('Are you sure you want to delete all conversations? This action cannot be undone.')) {
-      onClearAllChats();
-    }
-  };
-
   return (
     <div className="mt-auto pt-4 border-t border-gray-200/50 dark:border-white/10 space-y-2">
         <NavItem 
@@ -45,7 +39,7 @@ export const SidebarFooter = ({ theme, setTheme, isCollapsed, isDesktop, onClear
             text="Clear conversations"
             isCollapsed={isCollapsed}
             isDesktop={isDesktop}
-            onClick={handleClearAllChats}
+            onClick={onClearAllChats}
         />
         <ThemeToggle theme={theme} setTheme={setTheme} isCollapsed={isCollapsed} isDesktop={isDesktop} />
     </div>

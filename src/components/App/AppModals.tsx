@@ -13,6 +13,7 @@ import { MemoryConfirmationModal } from '../Settings/MemoryConfirmationModal';
 import type { Model } from '../../services/modelService';
 import type { Message } from '../../types';
 import { ImportChatModal } from '../Settings/ImportChatModal';
+import { ConfirmationModal } from '../UI/ConfirmationModal';
 
 type AppModalsProps = {
   isSettingsOpen: boolean;
@@ -64,6 +65,10 @@ type AppModalsProps = {
   setTtsVoice: (value: string) => void;
   isAutoPlayEnabled: boolean;
   setIsAutoPlayEnabled: (enabled: boolean) => void;
+  // Confirmation Modal
+  confirmation: { prompt: string; onConfirm: () => void; onCancel?: () => void; destructive?: boolean } | null;
+  onConfirm: () => void;
+  onCancel: () => void;
 };
 
 export const AppModals: React.FC<AppModalsProps> = (props) => {
@@ -78,7 +83,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
     setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, onManageMemory,
     apiKey, onSaveApiKey, isImportModalOpen, setIsImportModalOpen, handleFileUploadForImport,
-    onDownloadLogs,
+    onDownloadLogs, confirmation, onConfirm, onCancel
   } = props;
 
   return (
@@ -135,6 +140,13 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         onFileUpload={handleFileUploadForImport}
+      />
+      <ConfirmationModal
+        isOpen={!!confirmation}
+        prompt={confirmation?.prompt || ''}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+        destructive={confirmation?.destructive}
       />
     </>
   );

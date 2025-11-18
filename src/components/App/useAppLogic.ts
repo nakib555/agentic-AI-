@@ -56,6 +56,13 @@ export const useAppLogic = () => {
   const [isTestMode, setIsTestMode] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [versionMismatch, setVersionMismatch] = useState(false);
+  const [confirmation, setConfirmation] = useState<{
+    prompt: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    destructive?: boolean;
+  } | null>(null);
+
 
   // --- Model Management ---
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
@@ -277,6 +284,45 @@ export const useAppLogic = () => {
     await chat.startNewChat(activeModel, chatSettings);
   }, [chat, activeModel, chatSettings]);
 
+  // --- Confirmation Modal Logic ---
+  const requestConfirmation = useCallback((
+    prompt: string,
+    onConfirm: () => void,
+    options?: { onCancel?: () => void; destructive?: boolean }
+  ) => {
+      setConfirmation({ prompt, onConfirm, onCancel: options?.onCancel, destructive: options?.destructive });
+  }, []);
+
+  const handleConfirm = useCallback(() => {
+      if (confirmation) {
+          confirmation.onConfirm();
+          setConfirmation(null);
+      }
+  }, [confirmation]);
+
+  const handleCancel = useCallback(() => {
+      if (confirmation) {
+          confirmation.onCancel?.();
+          setConfirmation(null);
+      }
+  }, [confirmation]);
+
+  const handleDeleteChatRequest = useCallback((chatId: string) => {
+      requestConfirmation(
+          'Are you sure you want to delete this chat? This will also delete any associated files.',
+          () => chat.deleteChat(chatId),
+          { destructive: true }
+      );
+  }, [chat.deleteChat, requestConfirmation]);
+
+  const handleRequestClearAll = useCallback(() => {
+      requestConfirmation(
+          'Are you sure you want to delete all conversations? This action cannot be undone.',
+          chat.clearAllChats,
+          { destructive: true }
+      );
+  }, [chat.clearAllChats, requestConfirmation]);
+
 
   // --- Derived State & Memos ---
   const isChatActive = !!chat.currentChatId && chat.messages.length > 0;
@@ -443,6 +489,7 @@ export const useAppLogic = () => {
     isThinkingSidebarOpen, setIsThinkingSidebarOpen, thinkingMessageId, setThinkingMessageId,
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading,
     versionMismatch,
+    confirmation, handleConfirm, handleCancel,
     availableModels,
     availableImageModels,
     availableVideoModels,
@@ -472,6 +519,7 @@ export const useAppLogic = () => {
     setIsAgentMode: handleSetIsAgentMode,
     ...chat, isChatActive, thinkingMessageForSidebar,
     startNewChat,
+    handleDeleteChatRequest, handleRequestClearAll,
     handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,
     handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests,
     handleFileUploadForImport,

@@ -97,16 +97,14 @@ export const useChatHistory = () => {
   }, []);
   
   const deleteChat = useCallback(async (chatId: string) => {
-    if (window.confirm('Are you sure you want to delete this chat? This will also delete any associated files.')) {
-        try {
-            await fetchApi(`/api/chats/${chatId}`, { method: 'DELETE' });
-            setChatHistory(prev => prev.filter(c => c.id !== chatId));
-            if (currentChatId === chatId) {
-                setCurrentChatId(null);
-            }
-        } catch (error) {
-            console.error(`Failed to delete chat ${chatId}:`, error);
+    try {
+        await fetchApi(`/api/chats/${chatId}`, { method: 'DELETE' });
+        setChatHistory(prev => prev.filter(c => c.id !== chatId));
+        if (currentChatId === chatId) {
+            setCurrentChatId(null);
         }
+    } catch (error) {
+        console.error(`Failed to delete chat ${chatId}:`, error);
     }
   }, [currentChatId]);
 

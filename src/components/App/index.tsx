@@ -45,8 +45,8 @@ export const App = () => {
         currentChatId={logic.currentChatId}
         onNewChat={logic.startNewChat}
         onLoadChat={logic.loadChat}
-        onDeleteChat={logic.deleteChat}
-        onClearAllChats={logic.clearAllChats}
+        onDeleteChat={logic.handleDeleteChatRequest}
+        onClearAllChats={logic.handleRequestClearAll}
         onUpdateChatTitle={logic.updateChatTitle}
         theme={logic.theme}
         setTheme={logic.setTheme}
@@ -147,6 +147,9 @@ export const App = () => {
         setTtsVoice={logic.setTtsVoice}
         isAutoPlayEnabled={logic.isAutoPlayEnabled}
         setIsAutoPlayEnabled={logic.setIsAutoPlayEnabled}
+        confirmation={logic.confirmation}
+        onConfirm={logic.handleConfirm}
+        onCancel={logic.handleCancel}
       />
 
       {logic.isTestMode && (

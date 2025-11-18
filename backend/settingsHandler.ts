@@ -9,6 +9,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import process from 'process';
 import { GoogleGenAI } from "@google/genai";
+import { parseApiError } from './utils/apiError.js';
 
 const DATA_PATH = path.join(process.cwd(), 'data');
 const SETTINGS_PATH = path.join(DATA_PATH, 'settings.json');
@@ -77,8 +78,10 @@ export const updateSettings = async (req: Request, res: Response) => {
                 // Key is valid, proceed to save.
             } catch (error: any) {
                 console.warn('API Key validation failed on save:', error.message);
-                // Key is invalid. Return an error and do not save.
-                return res.status(401).json({ error: 'Invalid API Key provided. Please check the key and try again.' });
+                // Key is invalid. Return a more specific error to the user.
+                const parsedError = parseApiError(error);
+                const errorMessage = parsedError.message || 'Invalid API Key provided. Please check the key and try again.';
+                return res.status(401).json({ error: errorMessage });
             }
         }
 
