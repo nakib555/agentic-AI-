@@ -8,10 +8,17 @@ import {
   GenerateContentParameters,
   GenerateImagesResponse,
   GenerateContentResponse,
-  // FIX: Import GenerateContentStreamResult for correct stream return type.
-  GenerateContentStreamResult,
+  // FIX: GenerateContentStreamResult is not an exported member of @google/genai.
+  // It has been removed from imports.
 } from "@google/genai";
 import { parseApiError } from './apiError';
+
+// FIX: The type for the result of a streaming content generation call is not exported.
+// This local type definition mirrors the expected structure: an async generator
+// of response chunks, with an added `response` property for the final aggregated response.
+type GenerateContentStreamResult = AsyncGenerator<GenerateContentResponse> & {
+  readonly response: Promise<GenerateContentResponse>;
+};
 
 const RETRYABLE_ERRORS = ['UNAVAILABLE', 'RATE_LIMIT_EXCEEDED'];
 const MAX_RETRIES = 3;

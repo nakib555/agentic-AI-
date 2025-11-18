@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
-// FIX: Renamed imported types to resolve conflicts with global DOM types.
-import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
+// FIX: Renamed imported types to resolve conflicts with global DOM types and changed from 'import type' to 'import'.
+import { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';

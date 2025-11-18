@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Renamed imported types to resolve conflicts with global Request/Response objects.
-import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+// FIX: Changed from 'import type' to 'import' to resolve type conflicts with global DOM types.
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
