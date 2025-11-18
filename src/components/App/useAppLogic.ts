@@ -89,6 +89,7 @@ export const useAppLogic = () => {
 
   // --- Start Log Collector & Version Mismatch Handler on Mount ---
   useEffect(() => {
+    console.log('[APP_LOGIC] Initializing app...');
     logCollector.start();
     setOnVersionMismatch(() => setVersionMismatch(true));
   }, []);
@@ -131,10 +132,12 @@ export const useAppLogic = () => {
 
   const fetchModels = useCallback(async () => {
     try {
+        console.log('[APP_LOGIC] Fetching available models...');
         setModelsLoading(true);
         const response = await fetchFromApi('/api/models');
         if (!response.ok) throw new Error('Failed to fetch models');
         const data = await response.json();
+        console.log('[APP_LOGIC] Models fetched successfully:', data);
         processModelData(data);
     } catch (error) {
         if ((error as Error).message === 'Version mismatch') return;
@@ -151,8 +154,10 @@ export const useAppLogic = () => {
   useEffect(() => {
     const loadSettings = async () => {
         try {
+            console.log('[APP_LOGIC] Loading settings from backend...');
             setSettingsLoading(true);
             const settings = await getSettings();
+            console.log('[APP_LOGIC] Settings loaded successfully:', settings);
             setApiKey(settings.apiKey);
             setAboutUser(settings.aboutUser);
             setAboutResponse(settings.aboutResponse);
@@ -231,12 +236,14 @@ export const useAppLogic = () => {
 
     const checkBackendStatus = async () => {
         try {
+            console.log('[APP_LOGIC] Checking backend status...');
             setBackendStatus('checking');
             const response = await fetchFromApi('/api/health');
             if (!response.ok) throw new Error(`Status: ${response.status}`);
             const data = await response.json();
             if (data.status !== 'ok') throw new Error('Invalid health response');
 
+            console.log('[APP_LOGIC] Backend is online.');
             setBackendStatus('online');
             setBackendError(null);
             if (intervalId) {
@@ -245,6 +252,7 @@ export const useAppLogic = () => {
             }
         } catch (error) {
             if ((error as Error).message === 'Version mismatch') return;
+            console.error('[APP_LOGIC] Backend is offline:', error);
             setBackendStatus('offline');
             setBackendError("Could not connect to the backend server. Please ensure it is running.");
             if (!intervalId) {

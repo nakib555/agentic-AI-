@@ -26,13 +26,15 @@ const writeEvent = (res: ExpressResponse, type: string, payload: any) => {
     res.write(JSON.stringify({ type, payload }) + '\n');
 };
 
-const generateId = () => Math.random().toString(36).substring(2, 9);
+const generateId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
 export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
     const task = req.query.task as string;
+    console.log(`[HANDLER] Received request for task: "${task}"`);
     
     const apiKey = await getApiKey();
     if (!apiKey && !['tool_response', 'cancel'].includes(task)) {
+        console.error('[HANDLER] API key not configured on server.');
         return res.status(401).json({ error: "API key not configured on the server." });
     }
     const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
@@ -42,6 +44,9 @@ export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
             case 'chat': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { chatId, model, history, settings } = req.body;
+                console.log(`[HANDLER] Starting chat task for chatId: ${chatId}`);
+                console.log('[HANDLER] Chat Request Body:', { model, history_length: history.length, settings });
+
 
                 res.setHeader('Content-Type', 'application/json');
                 res.setHeader('Transfer-Encoding', 'chunked');

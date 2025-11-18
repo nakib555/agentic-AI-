@@ -62,7 +62,7 @@ export const updateSettings = async (req: ExpressRequest, res: ExpressResponse) 
             try {
                 const ai = new GoogleGenAI({ apiKey: req.body.apiKey });
                 // Make a lightweight, free call to validate the key.
-                await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: ' ' });
+                await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: [{ parts: [{ text: ' ' }] }] });
                 // On success, fetch the available models to send back to the client.
                 modelData = await listAvailableModels(req.body.apiKey);
             } catch (error: any) {
