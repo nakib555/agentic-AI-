@@ -1,10 +1,9 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleGenAI, Model as GeminiModel } from "@google/genai";
-// FIX: Renamed local Model type to AppModel to avoid conflict with the SDK's Model type.
 import type { Model as AppModel } from '../../src/types';
 
 // Helper function to sort models alphabetically by display name for a consistent UI.
@@ -13,7 +12,7 @@ const sortModelsByName = (models: AppModel[]): AppModel[] => {
 };
 
 /**
- * Fetches the list of available Gemini models using the @google/genai SDK.
+ * Fetches the list of available Gemini models using the REST API directly.
  * @param apiKey The Gemini API key.
  * @returns An object containing categorized lists of available models.
  */
@@ -23,15 +22,29 @@ export async function listAvailableModels(apiKey: string): Promise<{
     videoModels: AppModel[];
 }> {
     try {
-        const ai = new GoogleGenAI({ apiKey });
-        const modelList = await ai.models.list();
+        // Using fetch with the REST API endpoint to get the list of models.
+        // We pass the API key in the header for security.
+        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+            headers: {
+                'x-goog-api-key': apiKey
+            }
+        });
+        
+        if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(`Failed to fetch models: ${response.status} ${response.statusText} - ${errorBody}`);
+        }
+
+        const data = await response.json();
+        const modelList = data.models || [];
 
         const availableChatModels: AppModel[] = [];
         const availableImageModels: AppModel[] = [];
         const availableVideoModels: AppModel[] = [];
 
-        // FIX: The `list()` method returns a `Pager` which is an async iterable. Iterate over it directly.
-        for await (const model of modelList) {
+        for (const model of modelList) {
+            // Model names in REST API are like "models/gemini-1.5-flash"
+            // We strip the prefix to get the ID used for generation requests.
             const modelId = model.name.replace('models/', '');
             const modelInfo: AppModel = {
                 id: modelId,
@@ -39,7 +52,7 @@ export async function listAvailableModels(apiKey: string): Promise<{
                 description: model.description,
             };
 
-            const methods = (model as GeminiModel & { supportedGenerationMethods: string[] }).supportedGenerationMethods || [];
+            const methods = model.supportedGenerationMethods || [];
 
             if (methods.includes('generateVideos')) {
                 availableVideoModels.push(modelInfo);
