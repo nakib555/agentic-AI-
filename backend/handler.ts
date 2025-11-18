@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Request, Response } from 'express';
+// FIX: Changed type-only import to regular import to resolve type errors.
+import { Request, Response } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -152,7 +153,7 @@ async function handleSimpleTask(ai: GoogleGenAI, task: string, payload: any): Pr
                 ? "You are in 'Agent Mode'. Suggest a creative or complex task the user could perform, like generating an image, analyzing data, or writing code."
                 : "You are in 'Chat Mode'. Suggest a relevant follow-up question or a conversational topic related to the last message.";
 
-            const prompt = `Based on the last message in a conversation, suggest a short, engaging placeholder for a chat input box (max 7 words). The placeholder should prompt the user to continue the conversation. Do not use quotes.
+            const prompt = `Based on the last message in a conversation, suggest a very short, engaging placeholder for a chat input box. It MUST be a single line and between 3 to 7 words. It must not be a long sentence. Do not use quotes.
 
 ${persona}
 

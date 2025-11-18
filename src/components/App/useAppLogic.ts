@@ -12,7 +12,8 @@ import { useTheme } from '../../hooks/useTheme';
 import { useSidebar } from '../../hooks/useSidebar';
 import { useViewport } from '../../hooks/useViewport';
 import { useMemory } from '../../hooks/useMemory';
-import type { Message, ChatSession, Model } from '../../types';
+// FIX: Corrected import path to point to `src/types` instead of the root `types` directory.
+import type { Message, ChatSession, Model } from '../types';
 // FIX: Corrected import path to point to the index file within the directory.
 import {
   exportChatToJson,

@@ -14,10 +14,10 @@ const UPLOADS_PATH = process.env.VERCEL_ENV ? path.join('/tmp', 'data', 'uploads
 const ensureDir = async (dirPath: string) => {
     try {
         await fs.mkdir(dirPath, { recursive: true });
-    } catch (error) {
+    // FIX: Explicitly type `error` as `any` for safe property access.
+    } catch (error: any) {
         // Ignore if it already exists, but log other errors
-        // Fix: Replaced NodeJS.ErrnoException with a generic type assertion to resolve namespace error.
-        if ((error as { code?: string }).code !== 'EEXIST') {
+        if (error.code !== 'EEXIST') {
             console.error(`Error creating directory ${dirPath}:`, error);
         }
     }

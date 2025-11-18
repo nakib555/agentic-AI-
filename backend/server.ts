@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
-import type { Request, Response, NextFunction } from 'express';
+// FIX: Changed type-only import to regular import to resolve type errors.
+import { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';

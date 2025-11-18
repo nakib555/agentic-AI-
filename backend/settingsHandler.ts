@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Request, Response } from 'express';
+// FIX: Changed type-only import to regular import to resolve type errors.
+import { Request, Response } from 'express';
 import { promises as fs } from 'fs';
 import path from 'path';
 import process from 'process';

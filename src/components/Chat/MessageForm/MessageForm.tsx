@@ -85,7 +85,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="absolute inset-0 px-2 py-1.5 text-gray-500 dark:text-slate-400 pointer-events-none"
+                        className="absolute inset-0 px-2 py-1.5 text-gray-500 dark:text-slate-400 pointer-events-none truncate"
                     >
                         <TextType
                             sequence={logic.placeholder}

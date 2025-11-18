@@ -7,8 +7,8 @@
 
 import type { GoogleGenAI, FunctionCall, GenerateContentResponse, Part } from '@google/genai';
 import type { MessageError } from '../../utils/apiError';
-// Fix: Import ParsedWorkflow from the correct path.
-import type { ParsedWorkflow } from '../../../src/types';
+// Fix: Changed type-only import to regular import.
+import { ParsedWorkflow } from '../../../src/types';
 
 type ChatHistory = { role: 'user' | 'model'; parts: Part[] }[];
 type ChatSettings = { 

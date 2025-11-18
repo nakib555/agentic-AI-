@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Request, Response } from 'express';
+// FIX: Changed type-only import to regular import to resolve type errors.
+import { Request, Response } from 'express';
 import { getApiKey } from './settingsHandler.js';
 import type { Model } from '../src/types/index.js';
 

@@ -8,8 +8,8 @@ import { motion } from 'framer-motion';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { GoalAnalysisIcon, PlannerIcon, TodoListIcon, ToolsIcon } from './icons/index';
-// Fix: Import ParsedWorkflow from the correct path.
-import type { ParsedWorkflow } from '../../types';
+// FIX: Changed type-only import to regular import.
+import { ParsedWorkflow } from '../../types';
 import { getAgentColor } from '../../utils/agentUtils';
 
 type ExecutionApprovalProps = {
