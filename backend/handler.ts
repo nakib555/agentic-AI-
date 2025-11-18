@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Changed to type-only import to resolve widespread type conflicts with Express Request/Response objects.
-import type { Request, Response } from 'express';
+// FIX: Renamed imported types to resolve conflicts with global Request/Response objects.
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -24,7 +24,7 @@ const pendingFrontendTools = new Map<string, (result: string | { error: string }
 
 const generateRequestId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
+async function handleChat(res: ExpressResponse, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
     const { chatId, model, history, settings } = payload;
     // FIX: Destructure settings to define isAgentMode, memoryContent, and systemPrompt
     const { isAgentMode, memoryContent, systemPrompt } = settings;
@@ -185,7 +185,7 @@ PLACEHOLDER:`;
     }
 }
 
-export const apiHandler = async (req: Request, res: Response) => {
+export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
     const storedApiKey = await getApiKey();
     const apiKey = storedApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
     

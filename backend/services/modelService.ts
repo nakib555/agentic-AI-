@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleGenAI } from "@google/genai";
-import type { Model } from '../../src/types';
+import { GoogleGenAI, Model as GeminiModel } from "@google/genai";
+// FIX: Renamed local Model type to AppModel to avoid conflict with the SDK's Model type.
+import type { Model as AppModel } from '../../src/types';
 
 // Helper function to sort models alphabetically by display name for a consistent UI.
-const sortModelsByName = (models: Model[]): Model[] => {
+const sortModelsByName = (models: AppModel[]): AppModel[] => {
     return models.sort((a, b) => a.name.localeCompare(b.name));
 };
 
@@ -17,28 +18,28 @@ const sortModelsByName = (models: Model[]): Model[] => {
  * @returns An object containing categorized lists of available models.
  */
 export async function listAvailableModels(apiKey: string): Promise<{
-    chatModels: Model[];
-    imageModels: Model[];
-    videoModels: Model[];
+    chatModels: AppModel[];
+    imageModels: AppModel[];
+    videoModels: AppModel[];
 }> {
     try {
         const ai = new GoogleGenAI({ apiKey });
         const modelList = await ai.models.list();
 
-        const availableChatModels: Model[] = [];
-        const availableImageModels: Model[] = [];
-        const availableVideoModels: Model[] = [];
+        const availableChatModels: AppModel[] = [];
+        const availableImageModels: AppModel[] = [];
+        const availableVideoModels: AppModel[] = [];
 
         // FIX: The `list()` method returns a `Pager` which is an async iterable. Iterate over it directly.
         for await (const model of modelList) {
             const modelId = model.name.replace('models/', '');
-            const modelInfo: Model = {
+            const modelInfo: AppModel = {
                 id: modelId,
                 name: model.displayName,
                 description: model.description,
             };
 
-            const methods = model.supportedGenerationMethods || [];
+            const methods = (model as GeminiModel & { supportedGenerationMethods: string[] }).supportedGenerationMethods || [];
 
             if (methods.includes('generateVideos')) {
                 availableVideoModels.push(modelInfo);

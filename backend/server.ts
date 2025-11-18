@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
-// FIX: Changed regular import to a type-only import to provide full type information for Express Request, Response, and NextFunction objects, resolving multiple type errors.
-import type { Request, Response, NextFunction } from 'express';
+// FIX: Renamed imported types to resolve conflicts with global DOM types.
+import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import process from 'process';
@@ -38,7 +38,7 @@ async function startServer() {
   // Version Check Middleware
   const appVersion = process.env.APP_VERSION;
   if (appVersion) {
-    app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+    app.use('/api', (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
       const clientVersion = req.header('X-Client-Version');
       if (clientVersion && clientVersion !== appVersion) {
         console.warn(`[VERSION_MISMATCH] Client: ${clientVersion}, Server: ${appVersion}.`);
@@ -55,7 +55,7 @@ async function startServer() {
   const staticPath = path.join(process.cwd(), 'dist');
 
   // API routes
-  app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
+  app.get('/api/health', (req: ExpressRequest, res: ExpressResponse) => res.json({ status: 'ok' }));
   app.get('/api/models', getAvailableModelsHandler);
 
   // Streaming and complex tasks handler
@@ -85,7 +85,7 @@ async function startServer() {
   app.use('/uploads', express.static(UPLOADS_PATH));
 
   // Catch-all route to serve index.html for Single Page Application (SPA) routing
-  app.get('*', (req: Request, res: Response) => {
+  app.get('*', (req: ExpressRequest, res: ExpressResponse) => {
     res.sendFile(path.join(staticPath, 'index.html'));
   });
 

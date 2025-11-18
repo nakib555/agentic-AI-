@@ -8,6 +8,8 @@ import {
   GenerateContentParameters,
   GenerateImagesResponse,
   GenerateContentResponse,
+  // FIX: Import GenerateContentStreamResult for correct stream return type.
+  GenerateContentStreamResult,
 } from "@google/genai";
 import { parseApiError } from './apiError';
 
@@ -67,7 +69,7 @@ export async function generateContentWithRetry(ai: GoogleGenAI, request: Generat
 }
 
 // FIX: Replaced GenerateContentStreamRequest with GenerateContentParameters and updated return type
-export async function generateContentStreamWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<any> {
+export async function generateContentStreamWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<GenerateContentStreamResult> {
   const operation = async () => ai.models.generateContentStream(request);
   try {
     return await retryOperation(operation);

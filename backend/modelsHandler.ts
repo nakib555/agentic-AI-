@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Request, Response } from 'express';
+// FIX: Renamed imported types to resolve conflicts with global Request/Response objects.
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { getApiKey } from './settingsHandler.js';
 import { listAvailableModels } from '../services/modelService.js';
 
-export const getAvailableModelsHandler = async (req: Request, res: Response) => {
+export const getAvailableModelsHandler = async (req: ExpressRequest, res: ExpressResponse) => {
     const apiKey = await getApiKey();
     if (!apiKey) {
         // If no key is configured, return empty lists without hitting the API.

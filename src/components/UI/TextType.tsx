@@ -13,7 +13,7 @@ interface TextTypeProps {
   cursorBlinkDuration?: number;
   cursorClassName?: string;
   // FIX: Changed prop from 'sequence' to 'text' to match usage and fix error.
-  text: string[];
+  text: string[] | string;
   as?: ElementType;
   typingSpeed?: number;
   initialDelay?: number;
@@ -50,14 +50,15 @@ export const TextType = ({
   const [phase, setPhase] = useState<'initial' | 'typing' | 'pausing' | 'deleting'>('initial');
 
   const timeoutRef = useRef<number | null>(null);
-  // FIX: Changed ref name to reflect prop change.
-  const textRef = useRef(text);
+  // FIX: Changed ref name to reflect prop change. Also handle string or array for text.
+  const textRef = useRef(Array.isArray(text) ? text : [text]);
 
   // If the text prop changes externally, reset the animation.
   useEffect(() => {
+    const newText = Array.isArray(text) ? text : [text];
     // FIX: Changed ref name to reflect prop change.
-    if (textRef.current !== text) {
-      textRef.current = text;
+    if (textRef.current.join() !== newText.join()) {
+      textRef.current = newText;
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       setSequenceIndex(0);
       setPhase('deleting'); // Start by deleting the current text

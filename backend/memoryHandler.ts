@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Changed to type-only import to resolve widespread type conflicts with Express Request/Response objects.
-import type { Request, Response } from 'express';
+// FIX: Renamed imported types to resolve conflicts with global Request/Response objects.
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { promises as fs } from 'fs';
 import { MEMORY_PATH } from './data-store.js';
 
@@ -24,7 +24,7 @@ const readMemory = async (): Promise<{ content: string }> => {
     }
 };
 
-export const getMemory = async (req: Request, res: Response) => {
+export const getMemory = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const memory = await readMemory();
         res.status(200).json(memory);
@@ -33,7 +33,7 @@ export const getMemory = async (req: Request, res: Response) => {
     }
 };
 
-export const updateMemory = async (req: Request, res: Response) => {
+export const updateMemory = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const { content } = req.body;
         if (typeof content !== 'string') {
@@ -47,7 +47,7 @@ export const updateMemory = async (req: Request, res: Response) => {
     }
 };
 
-export const clearMemory = async (req: Request, res: Response) => {
+export const clearMemory = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const initialMemory = { content: '' };
         await fs.writeFile(MEMORY_PATH, JSON.stringify(initialMemory, null, 2), 'utf-8');

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Changed to type-only import to resolve widespread type conflicts with Express Request/Response objects.
-import type { Request, Response } from 'express';
+// FIX: Renamed imported types to resolve conflicts with global Request/Response objects.
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { promises as fs } from 'fs';
 import { GoogleGenAI } from "@google/genai";
 import { parseApiError } from './utils/apiError.js';
@@ -41,7 +41,7 @@ const readSettings = async () => {
     }
 };
 
-export const getSettings = async (req: Request, res: Response) => {
+export const getSettings = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const settings = await readSettings();
         res.status(200).json(settings);
@@ -51,7 +51,7 @@ export const getSettings = async (req: Request, res: Response) => {
     }
 };
 
-export const updateSettings = async (req: Request, res: Response) => {
+export const updateSettings = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const currentSettings = await readSettings();
         const newSettings = { ...currentSettings, ...req.body };
