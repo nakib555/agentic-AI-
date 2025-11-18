@@ -5,11 +5,9 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import process from 'process';
 import { Buffer } from 'buffer';
 import { ToolError } from '../utils/apiError';
-
-const UPLOADS_PATH = process.env.VERCEL_ENV ? path.join('/tmp', 'data', 'uploads') : path.join(process.cwd(), 'data', 'uploads');
+import { UPLOADS_PATH } from '../data-store.js';
 
 const ensureDir = async (dirPath: string) => {
     try {
@@ -22,9 +20,6 @@ const ensureDir = async (dirPath: string) => {
         }
     }
 };
-
-// Ensure base uploads directory exists on startup
-ensureDir(UPLOADS_PATH);
 
 // Resolves a virtual path to a real, safe filesystem path within a chat's directory.
 const resolveVirtualPath = (chatId: string, virtualPath: string): string => {

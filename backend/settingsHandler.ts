@@ -6,13 +6,9 @@
 // FIX: Changed type-only import to regular import to resolve type errors.
 import { Request, Response } from 'express';
 import { promises as fs } from 'fs';
-import path from 'path';
-import process from 'process';
 import { GoogleGenAI } from "@google/genai";
 import { parseApiError } from './utils/apiError.js';
-
-const DATA_PATH = path.join(process.cwd(), 'data');
-const SETTINGS_PATH = path.join(DATA_PATH, 'settings.json');
+import { SETTINGS_PATH } from './data-store.js';
 
 // Default settings structure
 const defaultSettings = {
@@ -29,24 +25,14 @@ const defaultSettings = {
     isAgentMode: true,
 };
 
-const ensureDataDir = async () => {
-    try {
-        await fs.mkdir(DATA_PATH, { recursive: true });
-    } catch (error: any) {
-        if (error.code !== 'EEXIST') {
-            console.error('Failed to create data directory:', error);
-            throw error;
-        }
-    }
-};
-
 const readSettings = async () => {
     try {
         const content = await fs.readFile(SETTINGS_PATH, 'utf-8');
         return { ...defaultSettings, ...JSON.parse(content) };
     } catch (error: any) {
         if (error.code === 'ENOENT') {
-            await ensureDataDir();
+            // The init script ensures the directory exists, but the file might not.
+            // Create it with defaults if it doesn't.
             await fs.writeFile(SETTINGS_PATH, JSON.stringify(defaultSettings, null, 2), 'utf-8');
             return defaultSettings;
         }

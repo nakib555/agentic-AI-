@@ -6,13 +6,17 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import process from 'process';
-import { Buffer } from 'buffer';
 import type { ChatSession } from '../src/types';
 
+// --- Centralized Path Definitions ---
 const DATA_PATH = process.env.VERCEL_ENV ? path.join('/tmp', 'data') : path.join(process.cwd(), 'data');
-const CHATS_PATH = path.join(DATA_PATH, 'chats');
-const UPLOADS_PATH = path.join(DATA_PATH, 'uploads');
+export const CHATS_PATH = path.join(DATA_PATH, 'chats');
+export const UPLOADS_PATH = path.join(DATA_PATH, 'uploads');
+export const SETTINGS_PATH = path.join(DATA_PATH, 'settings.json');
+export const MEMORY_PATH = path.join(DATA_PATH, 'memory.json');
 
+
+// --- Initialization Logic ---
 const ensureDir = async (dirPath: string) => {
     try {
         await fs.mkdir(dirPath, { recursive: true });
@@ -24,33 +28,15 @@ const ensureDir = async (dirPath: string) => {
     }
 };
 
-// Ensure base uploads directory exists on startup
-ensureDir(UPLOADS_PATH);
-
-// Resolves a virtual path to a real, safe filesystem path within a chat's directory.
-const resolveVirtualPath = (chatId: string, virtualPath: string): string => {
-    // Sanitize chatId to prevent traversal
-    const safeChatId = path.normalize(chatId).replace(/^(\.\.(\/|\\|$))+/, '');
-    if (safeChatId.includes('/') || safeChatId.includes('\\')) {
-        throw new Error('Invalid chatId provided.');
-    }
-    const chatDirectory = path.join(UPLOADS_PATH, safeChatId);
-
-    // Sanitize and normalize the virtual path
-    const normalizedVirtualPath = path.normalize(virtualPath).replace(/^(\.\.(\/|\\|$))+/, '');
-    
-    // The virtual FS root is the chat-specific directory
-    const finalPath = path.join(chatDirectory, normalizedVirtualPath);
-
-    // Security check: ensure the final path is still within the chat's directory
-    if (!finalPath.startsWith(chatDirectory)) {
-        throw new Error('Access denied: Path is outside the allowed directory.');
-    }
-    
-    return finalPath;
+export const initDataStore = async () => {
+    await ensureDir(DATA_PATH);
+    await ensureDir(CHATS_PATH);
+    await ensureDir(UPLOADS_PATH);
+    console.log('[DATA_STORE] Initialized and verified data directories.');
 };
 
 
+// --- Chat Data Store ---
 export const dataStore = {
     async getChatHistoryList(): Promise<Omit<ChatSession, 'messages'>[]> {
         try {
@@ -67,8 +53,7 @@ export const dataStore = {
             return chats.sort((a, b) => b.createdAt - a.createdAt);
         } catch (error: any) {
             if (error.code === 'ENOENT') {
-                await ensureDir(CHATS_PATH);
-                return [];
+                return []; // Directory doesn't exist yet, which is fine on first run.
             }
             console.error('Failed to read chat history:', error);
             return [];
@@ -87,7 +72,6 @@ export const dataStore = {
     },
 
     async saveChatSession(chatSession: ChatSession): Promise<void> {
-        await ensureDir(CHATS_PATH);
         const filePath = path.join(CHATS_PATH, `${chatSession.id}.json`);
         await fs.writeFile(filePath, JSON.stringify(chatSession, null, 2), 'utf-8');
     },
@@ -115,16 +99,9 @@ export const dataStore = {
     },
 
     async clearAllChatHistory(): Promise<void> {
+        // Re-create the directories after deleting to ensure they exist.
         await fs.rm(CHATS_PATH, { recursive: true, force: true });
         await fs.rm(UPLOADS_PATH, { recursive: true, force: true });
         await Promise.all([ensureDir(CHATS_PATH), ensureDir(UPLOADS_PATH)]);
-    },
-
-    async saveFile(chatId: string, filename: string, data: Buffer | string): Promise<string> {
-        const chatUploadsPath = path.join(UPLOADS_PATH, chatId);
-        await ensureDir(chatUploadsPath);
-        const filePath = path.join(chatUploadsPath, filename);
-        await fs.writeFile(filePath, data);
-        return `/uploads/${chatId}/${filename}`;
     },
 };

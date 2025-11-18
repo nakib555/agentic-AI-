@@ -6,22 +6,7 @@
 // FIX: Changed type-only import to regular import to resolve type errors.
 import { Request, Response } from 'express';
 import { promises as fs } from 'fs';
-import path from 'path';
-import process from 'process';
-
-const DATA_PATH = path.join(process.cwd(), 'data');
-const MEMORY_PATH = path.join(DATA_PATH, 'memory.json');
-
-const ensureDataDir = async () => {
-    try {
-        await fs.mkdir(DATA_PATH, { recursive: true });
-    } catch (error: any) {
-        if (error.code !== 'EEXIST') {
-            console.error('Failed to create data directory:', error);
-            throw error;
-        }
-    }
-};
+import { MEMORY_PATH } from './data-store.js';
 
 const readMemory = async (): Promise<{ content: string }> => {
     try {
@@ -29,7 +14,6 @@ const readMemory = async (): Promise<{ content: string }> => {
         return JSON.parse(fileContent);
     } catch (error: any) {
         if (error.code === 'ENOENT') {
-            await ensureDataDir();
             // File doesn't exist, create it with empty content
             const initialMemory = { content: '' };
             await fs.writeFile(MEMORY_PATH, JSON.stringify(initialMemory, null, 2), 'utf-8');

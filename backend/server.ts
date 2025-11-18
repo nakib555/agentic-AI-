@@ -10,6 +10,11 @@ import * as crudHandler from './crudHandler.js';
 import { getSettings, updateSettings } from './settingsHandler.js';
 import { getMemory, updateMemory, clearMemory } from './memoryHandler.js';
 import { getAvailableModelsHandler } from './modelsHandler.js';
+import { initDataStore, UPLOADS_PATH } from './data-store.js';
+
+// --- Initialize Data Store ---
+// This ensures all required directories exist before the server starts.
+await initDataStore();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -48,7 +53,6 @@ if (appVersion) {
 }
 
 const staticPath = path.join(process.cwd(), 'dist');
-const uploadsPath = process.env.VERCEL_ENV ? path.join('/tmp', 'data', 'uploads') : path.join(process.cwd(), 'data', 'uploads');
 
 // API routes
 app.get('/api/health', (req: Request, res: Response) => res.json({ status: 'ok' }));
@@ -78,7 +82,7 @@ app.delete('/api/memory', clearMemory);
 
 // Serve static assets for the frontend and uploads
 app.use(express.static(staticPath));
-app.use('/uploads', express.static(uploadsPath));
+app.use('/uploads', express.static(UPLOADS_PATH));
 
 
 // Catch-all route to serve index.html for Single Page Application (SPA) routing
