@@ -11,6 +11,6 @@ import { executeCaptureCodeOutputScreenshot } from './screenshot';
 export const toolImplementations: Record<string, (args: any) => string | Promise<string>> = {
   'getCurrentLocation': executeGetCurrentLocation,
   'requestLocationPermission': executeRequestLocationPermission,
-  'videoGenerator': executeVideoGenerator,
+  'generateVideo': executeVideoGenerator, // This is the frontend wrapper
   'captureCodeOutputScreenshot': executeCaptureCodeOutputScreenshot,
 };

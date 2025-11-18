@@ -12,9 +12,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useSidebar } from '../../hooks/useSidebar';
 import { useViewport } from '../../hooks/useViewport';
 import { useMemory } from '../../hooks/useMemory';
-// FIX: Corrected import path to point to `src/types` instead of the root `types` directory.
-import type { Message, ChatSession, Model, Source } from '../types';
-// FIX: Corrected import path to point to the index file within the directory.
+import type { Message, ChatSession, Model, Source } from '../../types';
 import {
   exportChatToJson,
   exportChatToMarkdown,
@@ -369,7 +367,6 @@ export const useAppLogic = () => {
   const handleShowThinkingProcess = (messageId: string) => {
     setThinkingMessageId(messageId);
     setIsThinkingSidebarOpen(true);
-    // If sources is open, close it
     if (isSourcesSidebarOpen) setIsSourcesSidebarOpen(false);
   };
   
@@ -381,7 +378,6 @@ export const useAppLogic = () => {
   const handleShowSources = (sources: Source[]) => {
     setSourcesForSidebar(sources);
     setIsSourcesSidebarOpen(true);
-    // If thinking is open, close it
     if (isThinkingSidebarOpen) setIsThinkingSidebarOpen(false);
   };
 

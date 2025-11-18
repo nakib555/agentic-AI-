@@ -313,8 +313,8 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                         systemPrompt: runtimeSettings.systemPrompt,
                         temperature: chatConfig.temperature,
                         maxOutputTokens: chatConfig.maxOutputTokens,
-                        imageModel: chatConfig.imageModel,
-                        videoModel: chatConfig.videoModel,
+                        imageModel: runtimeSettings.imageModel,
+                        videoModel: runtimeSettings.videoModel,
                         memoryContent,
                     }
                 }),

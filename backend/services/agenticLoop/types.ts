@@ -3,66 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Defines types for the refactored agenticLoop service.
-
-import type { GoogleGenAI, FunctionCall, GenerateContentResponse, Part } from '@google/genai';
-import type { MessageError } from '../../utils/apiError';
-// Fix: Changed type-only import to regular import.
-import { ParsedWorkflow } from '../../../src/types';
-
-type ChatHistory = { role: 'user' | 'model'; parts: Part[] }[];
-type ChatSettings = { 
-    isAgentMode?: boolean;
-    tools?: any;
-    systemInstruction?: string; 
-    temperature?: number; 
-    maxOutputTokens?: number; 
-    thinkingBudget?: number; 
-    memoryContent?: string 
-};
+import type { FunctionCall } from "@google/genai";
 
 export type ToolCallEvent = {
     id: string;
     call: FunctionCall;
+    result?: string;
+    startTime?: number;
+    endTime?: number;
 };
-
-export type AgenticLoopCallbacks = {
-    onTextChunk: (fullText: string) => void;
-    onNewToolCalls: (toolCallEvents: ToolCallEvent[]) => void;
-    onToolResult: (eventId: string, result: string) => void;
-    onPlanReady: (plan: ParsedWorkflow) => Promise<boolean | string>;
-    onComplete: (finalText: string, groundingMetadata?: any) => void;
-    onCancel: () => void;
-    onError: (error: MessageError) => void;
-};
-
-export type RunAgenticLoopParams = {
-    ai: GoogleGenAI;
-    model: string;
-    history: ChatHistory;
-    toolExecutor: (name: string, args: any) => Promise<string>;
-    callbacks: AgenticLoopCallbacks;
-    settings: ChatSettings;
-    signal: AbortSignal;
-};
-
-export type StreamProcessorParams = {
-    stream: AsyncGenerator<GenerateContentResponse>;
-    signal: AbortSignal;
-    callbacks: AgenticLoopCallbacks;
-    fullModelResponseText: string;
-    planApproved: boolean;
-};
-
-type StreamResultBase = {
-    fullText: string;
-    planApproved: boolean;
-};
-
-export type StreamProcessorResult =
-    | ({ status: 'aborted' })
-    | ({ status: 'error'; error: MessageError })
-    | (StreamResultBase & { status: 'complete'; groundingMetadata?: any; })
-    | (StreamResultBase & { status: 'running'; nextAction: 'continue_generation'; currentTurnText: string; })
-    | (StreamResultBase & { status: 'running'; nextAction: 'continue_with_tools'; functionCalls: FunctionCall[]; modelTurnParts: Part[]; })
-    | (StreamResultBase & { status: 'running'; nextAction: 'continue_with_edited_plan'; editedPlan: string; modelTurnParts: Part[]; });

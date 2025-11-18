@@ -125,11 +125,6 @@ export const TextType = ({
     sequenceIndex, displayedText, phase, loop, typingSpeed, deletingSpeed, 
     pauseDuration, initialDelay, onSequenceComplete
   ]);
-  
-  // The 'text' prop was renamed to 'sequence' to avoid confusion.
-  // The logic inside useMessageForm passes the placeholder array to a prop named 'text'.
-  // We'll keep the prop name 'text' in the MessageForm component and remap it here.
-  const finalSequence = sequence || (props as any).text || [''];
 
   return createElement(
     Component,
