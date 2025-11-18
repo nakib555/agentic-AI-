@@ -4,7 +4,7 @@
  */
 
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
-import type { Message } from '../../types';
+import type { Message, Source } from '../../types';
 import { MessageComponent } from './Message';
 import { WelcomeScreen } from './WelcomeScreen/index';
 import type { MessageFormHandle } from './MessageForm/index';
@@ -22,6 +22,7 @@ type MessageListProps = {
   isAutoPlayEnabled: boolean;
   currentChatId: string | null;
   onShowThinkingProcess: (messageId: string) => void;
+  onShowSources: (sources: Source[]) => void;
   onScrolledUpChange: (isScrolledUp: boolean) => void;
   approveExecution: (editedPlan: string) => void;
   denyExecution: () => void;
@@ -33,7 +34,7 @@ type MessageListProps = {
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
     messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled, currentChatId, 
-    onShowThinkingProcess, onScrolledUpChange, approveExecution, 
+    onShowThinkingProcess, onShowSources, onScrolledUpChange, approveExecution, 
     denyExecution, messageFormRef, onRegenerate, onSetActiveResponseIndex,
     isAgentMode
 }, ref) => {
@@ -145,6 +146,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                   isAutoPlayEnabled={isAutoPlayEnabled}
                   currentChatId={currentChatId}
                   onShowThinkingProcess={onShowThinkingProcess}
+                  onShowSources={onShowSources}
                   approveExecution={approveExecution}
                   denyExecution={denyExecution}
                   messageFormRef={messageFormRef}

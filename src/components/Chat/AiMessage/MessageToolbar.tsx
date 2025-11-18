@@ -15,6 +15,7 @@ type MessageToolbarProps = {
     messageText: string;
     rawText: string;
     sources: Source[];
+    onShowSources: (sources: Source[]) => void;
     ttsState: 'idle' | 'loading' | 'error' | 'playing';
     onTtsClick: () => void;
     onRegenerate: () => void;
@@ -49,7 +50,7 @@ const IconButton: React.FC<{
 
 
 export const MessageToolbar: React.FC<MessageToolbarProps> = ({
-    messageText, sources, ttsState, onTtsClick, onRegenerate,
+    messageText, sources, onShowSources, ttsState, onTtsClick, onRegenerate,
     responseCount, activeResponseIndex, onResponseChange,
 }) => {
     const [isCopied, setIsCopied] = useState(false);
@@ -114,7 +115,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                     </svg>
                 </IconButton>
                 <div className="flex-shrink-0">
-                    <SourcesPills sources={sources} />
+                    <SourcesPills sources={sources} onShowSources={() => onShowSources(sources)} />
                 </div>
             </div>
         </div>

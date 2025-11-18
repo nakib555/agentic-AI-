@@ -4,22 +4,12 @@
  */
 
 import React from 'react';
-import { motion, Variants } from 'framer-motion';
 import type { Source } from '../../types';
+import { Favicon } from '../UI/Favicon';
 
 type SourcesPillsProps = {
   sources: Source[];
-};
-
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.2,
-    },
-  },
+  onShowSources: () => void;
 };
 
 const PillContent: React.FC<{ source: Source, index: number }> = ({ source, index }) => {
@@ -31,34 +21,32 @@ const PillContent: React.FC<{ source: Source, index: number }> = ({ source, inde
     }
 
     return (
-      <a href={source.uri} target="_blank" rel="noopener noreferrer" title={source.title}>
-        {domain && (
-            <img
-                src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
-                alt={`Favicon for ${domain}`}
-                className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-700 bg-white dark:bg-gray-800"
-                style={{ zIndex: 3 - index }}
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
-        )}
-      </a>
+        <Favicon
+            domain={domain || source.uri}
+            className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-700 bg-white dark:bg-gray-800"
+            style={{ zIndex: 3 - index }}
+        />
     );
 };
 
 
-export const SourcesPills: React.FC<SourcesPillsProps> = ({ sources }) => {
+export const SourcesPills: React.FC<SourcesPillsProps> = ({ sources, onShowSources }) => {
   if (!sources || sources.length === 0) {
     return null;
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <button 
+        onClick={onShowSources}
+        className="flex items-center gap-2 rounded-full px-3 py-1.5 bg-gray-100 dark:bg-black/20 hover:bg-gray-200 dark:hover:bg-black/40 transition-colors"
+        title="View sources"
+    >
         <div className="flex -space-x-2">
             {sources.slice(0, 3).map((source, index) => (
-                <PillContent key={source.uri} source={source} index={index} />
+                <PillContent key={source.uri + index} source={source} index={index} />
             ))}
         </div>
         <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">Sources</span>
-    </div>
+    </button>
   );
 };

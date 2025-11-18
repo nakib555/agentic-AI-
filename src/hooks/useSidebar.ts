@@ -60,6 +60,19 @@ export const useSidebar = () => {
     localStorage.setItem('thinkingSidebarWidth', String(newWidth));
   }, []);
 
+  // --- State for Sources Sidebar ---
+  const [isSourcesResizing, setIsSourcesResizing] = useState(false);
+  const [sourcesSidebarWidth, setSourcesSidebarWidth] = useState(() => {
+    const savedWidth = localStorage.getItem('sourcesSidebarWidth');
+    return savedWidth ? Math.max(320, Math.min(800, Number(savedWidth))) : 384; 
+  });
+
+  const handleSetSourcesSidebarWidth = useCallback((width: number) => {
+    const newWidth = Math.max(320, Math.min(800, width));
+    setSourcesSidebarWidth(newWidth);
+    localStorage.setItem('sourcesSidebarWidth', String(newWidth));
+  }, []);
+
 
   return {
     isSidebarOpen,
@@ -74,5 +87,9 @@ export const useSidebar = () => {
     setIsThinkingResizing,
     thinkingSidebarWidth,
     handleSetThinkingSidebarWidth,
+    isSourcesResizing,
+    setIsSourcesResizing,
+    sourcesSidebarWidth,
+    handleSetSourcesSidebarWidth,
   };
 };

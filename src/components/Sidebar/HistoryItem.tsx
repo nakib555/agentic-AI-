@@ -116,10 +116,19 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
         onDelete();
     };
 
+    const handleDoubleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        // Do not allow editing if the sidebar is collapsed, as the input field would be hidden.
+        if (!shouldCollapse) {
+            setIsEditing(true);
+        }
+    };
+
     return (
         <div className="relative">
             <button 
                 onClick={isEditing ? undefined : onClick} 
+                onDoubleClick={handleDoubleClick}
                 disabled={isEditing}
                 className={`w-full text-sm p-2 rounded-lg text-left flex items-center gap-3 transition-colors ${active ? 'bg-indigo-100 text-indigo-800 font-semibold dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 hover:bg-gray-100/60 dark:text-slate-300 dark:hover:bg-violet-900/30 dark:hover:text-slate-100'} ${shouldCollapse ? 'justify-center' : ''} ${!shouldCollapse ? 'pr-8' : ''}`}
             >

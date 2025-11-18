@@ -11,6 +11,7 @@ import { Sidebar } from '../Sidebar/Sidebar';
 import { ChatHeader } from '../Chat/ChatHeader';
 import { ChatArea } from '../Chat/ChatArea';
 import { ThinkingSidebar } from '../Sidebar/ThinkingSidebar';
+import { SourcesSidebar } from '../AI/SourcesSidebar';
 import { useAppLogic } from './useAppLogic';
 import { AppModals } from './AppModals';
 import {
@@ -77,6 +78,7 @@ export const App = () => {
               isAutoPlayEnabled={logic.isAutoPlayEnabled}
               currentChatId={logic.currentChatId}
               onShowThinkingProcess={logic.handleShowThinkingProcess}
+              onShowSources={logic.handleShowSources}
               approveExecution={logic.approveExecution}
               denyExecution={logic.denyExecution}
               onRegenerate={logic.regenerateResponse}
@@ -97,8 +99,18 @@ export const App = () => {
         width={logic.thinkingSidebarWidth}
         setWidth={logic.handleSetThinkingSidebarWidth}
         isResizing={logic.isThinkingResizing}
-        setIsResizing={logic.setIsResizing}
+        setIsResizing={logic.setIsThinkingResizing}
         onRegenerate={logic.regenerateResponse}
+      />
+
+      <SourcesSidebar
+        isOpen={logic.isSourcesSidebarOpen}
+        onClose={logic.handleCloseSourcesSidebar}
+        sources={logic.sourcesForSidebar}
+        width={logic.sourcesSidebarWidth}
+        setWidth={logic.handleSetSourcesSidebarWidth}
+        isResizing={logic.isSourcesResizing}
+        setIsResizing={logic.setIsSourcesResizing}
       />
 
       <AppModals

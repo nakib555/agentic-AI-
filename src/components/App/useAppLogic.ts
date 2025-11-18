@@ -13,7 +13,7 @@ import { useSidebar } from '../../hooks/useSidebar';
 import { useViewport } from '../../hooks/useViewport';
 import { useMemory } from '../../hooks/useMemory';
 // FIX: Corrected import path to point to `src/types` instead of the root `types` directory.
-import type { Message, ChatSession, Model } from '../types';
+import type { Message, ChatSession, Model, Source } from '../types';
 // FIX: Corrected import path to point to the index file within the directory.
 import {
   exportChatToJson,
@@ -51,6 +51,8 @@ export const useAppLogic = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isThinkingSidebarOpen, setIsThinkingSidebarOpen] = useState(false);
   const [thinkingMessageId, setThinkingMessageId] = useState<string | null>(null);
+  const [isSourcesSidebarOpen, setIsSourcesSidebarOpen] = useState(false);
+  const [sourcesForSidebar, setSourcesForSidebar] = useState<Source[]>([]);
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [backendError, setBackendError] = useState<string | null>(null);
   const [isTestMode, setIsTestMode] = useState(false);
@@ -375,6 +377,15 @@ export const useAppLogic = () => {
     setThinkingMessageId(null);
   };
 
+  const handleShowSources = (sources: Source[]) => {
+    setSourcesForSidebar(sources);
+    setIsSourcesSidebarOpen(true);
+  };
+
+  const handleCloseSourcesSidebar = () => {
+    setIsSourcesSidebarOpen(false);
+  };
+
   const handleExportChat = useCallback((format: 'md' | 'json' | 'pdf') => {
     if (!chat.currentChatId) return;
     const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
@@ -487,6 +498,7 @@ export const useAppLogic = () => {
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
     isImportModalOpen, setIsImportModalOpen,
     isThinkingSidebarOpen, setIsThinkingSidebarOpen, thinkingMessageId, setThinkingMessageId,
+    isSourcesSidebarOpen, sourcesForSidebar,
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading,
     versionMismatch,
     confirmation, handleConfirm, handleCancel,
@@ -521,6 +533,7 @@ export const useAppLogic = () => {
     startNewChat,
     handleDeleteChatRequest, handleRequestClearAll,
     handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,
+    handleShowSources, handleCloseSourcesSidebar,
     handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests,
     handleFileUploadForImport,
     handleDownloadLogs,

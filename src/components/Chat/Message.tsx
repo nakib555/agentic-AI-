@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Message } from '../../types';
+import type { Message, Source } from '../../types';
 import { UserMessage } from './UserMessage';
 import { AiMessage } from './AiMessage/index';
 import type { MessageFormHandle } from './MessageForm/index';
@@ -17,6 +17,7 @@ export const MessageComponent: React.FC<{
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
     onShowThinkingProcess: (messageId: string) => void;
+    onShowSources: (sources: Source[]) => void;
     approveExecution: (editedPlan: string) => void;
     denyExecution: () => void;
     messageFormRef: React.RefObject<MessageFormHandle>;
@@ -25,7 +26,7 @@ export const MessageComponent: React.FC<{
     isAgentMode: boolean;
 }> = ({ 
     msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
-    onShowThinkingProcess, approveExecution, denyExecution, messageFormRef,
+    onShowThinkingProcess, onShowSources, approveExecution, denyExecution, messageFormRef,
     onRegenerate, onSetActiveResponseIndex, isAgentMode
 }) => {
   const messageContent = () => {
@@ -43,6 +44,7 @@ export const MessageComponent: React.FC<{
                 isAutoPlayEnabled={isAutoPlayEnabled} 
                 currentChatId={currentChatId} 
                 onShowThinkingProcess={onShowThinkingProcess}
+                onShowSources={onShowSources}
                 approveExecution={approveExecution}
                 denyExecution={denyExecution}
                 messageFormRef={messageFormRef}

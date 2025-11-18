@@ -74,13 +74,22 @@ export const updateSettings = async (req: Request, res: Response) => {
         if (req.body.apiKey && req.body.apiKey !== currentSettings.apiKey) {
             try {
                 const ai = new GoogleGenAI({ apiKey: req.body.apiKey });
+                // Make a lightweight, free call to validate the key.
                 await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: ' ' });
-                // Key is valid, proceed to save.
             } catch (error: any) {
                 console.warn('API Key validation failed on save:', error.message);
-                // Key is invalid. Return a more specific error to the user.
-                const parsedError = parseApiError(error);
-                const errorMessage = parsedError.message || 'Invalid API Key provided. Please check the key and try again.';
+                
+                // The error from the Gemini SDK is often descriptive enough for the user.
+                // Let's extract and pass that directly.
+                let errorMessage = 'Invalid API Key. Please check the key and try again.';
+                
+                // Example Gemini SDK error: "[GoogleGenerativeAI Error]: API key not valid. Please pass a valid API key."
+                if (error.message && error.message.includes('[GoogleGenerativeAI Error]:')) {
+                    errorMessage = error.message.split('[GoogleGenerativeAI Error]: ')[1];
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+
                 return res.status(401).json({ error: errorMessage });
             }
         }

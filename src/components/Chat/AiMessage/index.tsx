@@ -6,7 +6,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
-import type { Message } from '../../../types';
+import type { Message, Source } from '../../../types';
 import { MarkdownComponents } from '../../Markdown/markdownComponents';
 import { ErrorDisplay } from '../../UI/ErrorDisplay';
 import { ImageDisplay } from '../../AI/ImageDisplay';
@@ -38,6 +38,7 @@ type AiMessageProps = {
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
     onShowThinkingProcess: (messageId: string) => void;
+    onShowSources: (sources: Source[]) => void;
     approveExecution: (editedPlan: string) => void;
     denyExecution: () => void;
     messageFormRef: React.RefObject<MessageFormHandle>;
@@ -48,7 +49,7 @@ type AiMessageProps = {
 
 export const AiMessage: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
-          onShowThinkingProcess, approveExecution, denyExecution, messageFormRef, onRegenerate,
+          onShowThinkingProcess, onShowSources, approveExecution, denyExecution, messageFormRef, onRegenerate,
           onSetActiveResponseIndex, isAgentMode } = props;
   const { id } = msg;
 
@@ -162,6 +163,7 @@ export const AiMessage: React.FC<AiMessageProps> = (props) => {
             messageText={logic.finalAnswerText}
             rawText={activeResponse?.text || ''}
             sources={logic.searchSources}
+            onShowSources={onShowSources}
             ttsState={logic.audioState}
             onTtsClick={logic.playOrStopAudio}
             onRegenerate={() => onRegenerate(id)}

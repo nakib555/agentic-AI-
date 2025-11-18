@@ -8,7 +8,7 @@ import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import { MessageList, type MessageListHandle } from './MessageList';
 import { MessageForm, type MessageFormHandle } from './MessageForm/index';
-import type { Message } from '../../types';
+import type { Message, Source } from '../../types';
 import { ModeToggle } from '../UI/ModeToggle';
 
 type ChatAreaProps = {
@@ -21,6 +21,7 @@ type ChatAreaProps = {
   isAutoPlayEnabled: boolean;
   currentChatId: string | null;
   onShowThinkingProcess: (messageId: string) => void;
+  onShowSources: (sources: Source[]) => void;
   approveExecution: (editedPlan: string) => void;
   denyExecution: () => void;
   messageListRef: React.RefObject<MessageListHandle>;
@@ -35,7 +36,7 @@ type ChatAreaProps = {
 export const ChatArea = ({ 
     messages, isLoading, isAppLoading, sendMessage, onCancel, 
     ttsVoice, isAutoPlayEnabled, currentChatId,
-    onShowThinkingProcess, approveExecution, denyExecution,
+    onShowThinkingProcess, onShowSources, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
     isAgentMode, setIsAgentMode, backendStatus, backendError
 }: ChatAreaProps) => {
@@ -118,6 +119,7 @@ export const ChatArea = ({
           isAutoPlayEnabled={isAutoPlayEnabled}
           currentChatId={currentChatId}
           onShowThinkingProcess={onShowThinkingProcess}
+          onShowSources={onShowSources}
           onScrolledUpChange={setIsScrolledUp}
           approveExecution={approveExecution}
           denyExecution={denyExecution}
