@@ -3,75 +3,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Changed regular import to a type-only import to provide full type information for Express Request and Response objects, resolving multiple type errors.
 import type { Request, Response } from 'express';
 import { getApiKey } from './settingsHandler.js';
-import type { Model } from '../src/types/index.js';
+import { listAvailableModels } from '../services/modelService.js';
 
 export const getAvailableModelsHandler = async (req: Request, res: Response) => {
     const apiKey = await getApiKey();
     if (!apiKey) {
-        // If no key is configured, return empty lists.
+        // If no key is configured, return empty lists without hitting the API.
         return res.status(200).json({ models: [], imageModels: [], videoModels: [] });
     }
 
     try {
-        // Use the Gemini REST API's 'models' endpoint to dynamically list available models.
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        const { chatModels, imageModels, videoModels } = await listAvailableModels(apiKey);
         
-        if (!response.ok) {
-            // This failure indicates an invalid API key or permission issue.
-            const errorBody = await response.text();
-            throw new Error(`Failed to fetch models from Google API: ${response.status} ${response.statusText} - ${errorBody}`);
-        }
-
-        const data = await response.json();
-
-        const availableChatModels: Model[] = [];
-        const availableImageModels: Model[] = [];
-        const availableVideoModels: Model[] = [];
-
-        for (const model of data.models) {
-            // The API returns full names like "models/gemini-2.5-pro", we use the short form.
-            const modelId = model.name.replace('models/', '');
-
-            const modelInfo: Model = {
-                id: modelId,
-                name: model.displayName,
-                description: model.description,
-            };
-
-            const methods = model.supportedGenerationMethods || [];
-
-            if (methods.includes('generateVideos')) {
-                availableVideoModels.push(modelInfo);
-            } else if (methods.includes('generateImages')) {
-                availableImageModels.push(modelInfo);
-            } else if (methods.includes('generateContent')) {
-                // This is a broad category. We can distinguish based on model names.
-                if (modelId.includes('image')) {
-                    availableImageModels.push(modelInfo);
-                } else if (!modelId.includes('tts') && !modelId.includes('audio')) {
-                    // Assume it's a chat model if it's not specialized for other modalities.
-                    availableChatModels.push(modelInfo);
-                }
-            }
-        }
-        
-        // Sort models alphabetically by their display name for a consistent UI.
-        const sortModelsByName = (models: Model[]) => {
-            return models.sort((a, b) => a.name.localeCompare(b.name));
-        };
-
         res.status(200).json({
-            models: sortModelsByName(availableChatModels),
-            imageModels: sortModelsByName(availableImageModels),
-            videoModels: sortModelsByName(availableVideoModels),
+            models: chatModels,
+            imageModels,
+            videoModels,
         });
 
     } catch (error: any) {
-        console.warn('API Key validation or model fetch failed:', error.message);
-        // If the key is invalid or the fetch fails, return empty arrays to the client.
-        res.status(200).json({ models: [], imageModels: [], videoModels: [] });
+        // The service layer logs the specific error.
+        // We return a generic server error to the client.
+        console.error("Error in getAvailableModelsHandler:", error.message);
+        res.status(500).json({ 
+            error: "An error occurred while fetching models.",
+            models: [], 
+            imageModels: [], 
+            videoModels: [] 
+        });
     }
 };

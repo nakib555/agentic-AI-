@@ -130,7 +130,7 @@ export const TextType = ({
     };
   }, [
     sequenceIndex, displayedText, phase, loop, typingSpeed, deletingSpeed, 
-    pauseDuration, initialDelay, onSequenceComplete
+    pauseDuration, initialDelay, onSequenceComplete, text
   ]);
 
   return createElement(

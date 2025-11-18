@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Changed regular import to a type-only import to provide full type information for Express Request and Response objects, resolving multiple type errors.
+// FIX: Changed to type-only import to resolve widespread type conflicts with Express Request/Response objects.
 import type { Request, Response } from 'express';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
@@ -26,6 +26,7 @@ const generateRequestId = () => `req_${Date.now()}_${Math.random().toString(36).
 
 async function handleChat(res: Response, ai: GoogleGenAI, apiKey: string, payload: any, requestId: string, signal: AbortSignal): Promise<void> {
     const { chatId, model, history, settings } = payload;
+    // FIX: Destructure settings to define isAgentMode, memoryContent, and systemPrompt
     const { isAgentMode, memoryContent, systemPrompt } = settings;
     console.log('[BACKEND] handleChat started.', { chatId, model, isAgentMode, requestId });
 

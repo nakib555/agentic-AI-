@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Changed regular import to a type-only import to provide full type information for Express Request and Response objects, resolving multiple type errors.
+// FIX: Changed to type-only import to resolve widespread type conflicts with Express Request/Response objects.
 import type { Request, Response } from 'express';
 import { dataStore } from './data-store.js';
 import type { ChatSession } from '../src/types';
