@@ -9,7 +9,9 @@ import process from 'process';
 import type { ChatSession } from '../src/types';
 
 // --- Centralized Path Definitions ---
-const DATA_PATH = process.env.VERCEL_ENV ? path.join('/tmp', 'data') : path.join(process.cwd(), 'data');
+// This path is now consistent across all environments. For persistence on platforms
+// like Render, this 'data' directory should be mounted to a persistent disk.
+const DATA_PATH = path.join(process.cwd(), 'data');
 export const CHATS_PATH = path.join(DATA_PATH, 'chats');
 export const UPLOADS_PATH = path.join(DATA_PATH, 'uploads');
 export const SETTINGS_PATH = path.join(DATA_PATH, 'settings.json');

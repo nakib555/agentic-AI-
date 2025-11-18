@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleGenAI, GenerateContentStreamResult, Part, FunctionCall, FinishReason } from "@google/genai";
+// FIX: Removed non-exported 'GenerateContentStreamResult' type and fixed stream handling logic.
+import { GoogleGenAI, GenerateContentResponse, Part, FunctionCall, FinishReason } from "@google/genai";
 import { parseApiError } from "../../utils/apiError.js";
 import { ToolCallEvent } from "./types.js";
 import { getText } from "../../utils/geminiUtils.js";
@@ -65,7 +66,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             let fullTextResponse = '';
             let hasSentPlan = false;
 
-            const stream: GenerateContentStreamResult = await ai.models.generateContentStream({
+            const streamResult = await ai.models.generateContentStream({
                 model,
                 contents: currentHistory,
                 config: {
@@ -74,7 +75,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 },
             });
 
-            for await (const chunk of stream) {
+            for await (const chunk of streamResult.stream) {
                 if (signal.aborted) {
                     const abortError = new Error("Request aborted by client");
                     abortError.name = 'AbortError';
@@ -112,7 +113,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
             if (safetyError) break;
 
-            const response = await stream.response;
+            const response = await streamResult.response;
             const functionCalls = response.functionCalls || [];
             
             if (functionCalls.length > 0) {

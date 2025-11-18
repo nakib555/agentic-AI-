@@ -15,6 +15,7 @@ type HistoryListProps = {
   searchQuery: string;
   isCollapsed: boolean;
   isDesktop: boolean;
+  isHistoryLoading: boolean;
   onLoadChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
   onUpdateChatTitle: (id: string, title: string) => void;
@@ -49,7 +50,7 @@ const groupChatsByMonth = (chats: ChatSession[]): { [key: string]: ChatSession[]
 };
 
 
-const NoResults = () => (
+const NoItems = ({ message }: { message: string }) => (
     <motion.div 
         className="text-sm text-slate-500 dark:text-slate-400 text-center py-4"
         initial={{ opacity: 0 }}
@@ -57,8 +58,16 @@ const NoResults = () => (
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
     >
-        <p className="font-medium">No conversations found</p>
+        <p className="font-medium">{message}</p>
     </motion.div>
+);
+
+const HistorySkeleton = () => (
+    <div className="space-y-1 animate-pulse px-2">
+        {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-9 w-full bg-gray-100/60 dark:bg-violet-900/30 rounded-lg"></div>
+        ))}
+    </div>
 );
 
 const ChevronIcon = () => (
@@ -67,7 +76,7 @@ const ChevronIcon = () => (
     </svg>
 );
 
-export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, isDesktop, onLoadChat, onDeleteChat, onUpdateChatTitle }: HistoryListProps) => {
+export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, isDesktop, isHistoryLoading, onLoadChat, onDeleteChat, onUpdateChatTitle }: HistoryListProps) => {
     const filteredHistory = history.filter(item =>
         item.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -98,6 +107,14 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
             [groupName]: !prev[groupName],
         }));
     };
+
+    if (isHistoryLoading) {
+        return (
+            <div className={`flex-1 min-h-0 text-sm ${!shouldCollapse ? 'overflow-y-auto' : ''}`}>
+                <HistorySkeleton />
+            </div>
+        );
+    }
 
     return (
         <div className={`flex-1 min-h-0 text-sm ${!shouldCollapse ? 'overflow-y-auto' : ''}`}>
@@ -172,7 +189,7 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                     })}
                 </div>
             ) : (
-                !shouldCollapse && <NoResults />
+                !shouldCollapse && <NoItems message={searchQuery ? 'No conversations found' : 'No conversations yet'} />
             )}
         </div>
     );

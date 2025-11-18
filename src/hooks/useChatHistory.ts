@@ -31,13 +31,8 @@ export const useChatHistory = () => {
         try {
             const history = await fetchApi('/api/history');
             setChatHistory(history || []);
-            
-            const savedChatId = localStorage.getItem('currentChatId');
-            if (savedChatId && (history || []).some((c: ChatSession) => c.id === savedChatId)) {
-                setCurrentChatId(savedChatId);
-            } else {
-                setCurrentChatId(null);
-            }
+            // Always start with no chat selected to ensure backend is single source of truth.
+            setCurrentChatId(null);
         } catch (error) {
             console.error("Failed to load chat history from backend:", error);
         } finally {
@@ -46,13 +41,6 @@ export const useChatHistory = () => {
     };
     loadHistory();
   }, []);
-
-  // Save currentChatId to localStorage for session persistence
-  useEffect(() => {
-    if (!isHistoryLoading) {
-        localStorage.setItem('currentChatId', String(currentChatId));
-    }
-  }, [currentChatId, isHistoryLoading]);
 
   // Effect to load full chat session when currentChatId changes and messages are missing
   useEffect(() => {

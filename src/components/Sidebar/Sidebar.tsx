@@ -24,6 +24,7 @@ type SidebarProps = {
     isResizing: boolean;
     setIsResizing: (isResizing: boolean) => void;
     history: ChatSession[];
+    isHistoryLoading: boolean;
     currentChatId: string | null;
     onNewChat: () => void;
     onLoadChat: (id: string) => void;
@@ -43,7 +44,7 @@ const mobileVariants = {
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
-    isResizing, setIsResizing, history, currentChatId, onNewChat, onLoadChat,
+    isResizing, setIsResizing, history, isHistoryLoading, currentChatId, onNewChat, onLoadChat,
     onDeleteChat, onClearAllChats, onUpdateChatTitle, theme, setTheme, onSettingsClick,
     isDesktop
 }) => {
@@ -198,6 +199,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     <HistoryList 
                         history={history}
+                        isHistoryLoading={isHistoryLoading}
                         currentChatId={currentChatId}
                         searchQuery={searchQuery}
                         isCollapsed={isCollapsed}

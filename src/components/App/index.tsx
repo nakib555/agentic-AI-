@@ -43,6 +43,7 @@ export const App = () => {
         isResizing={logic.isResizing}
         setIsResizing={logic.setIsResizing}
         history={logic.chatHistory}
+        isHistoryLoading={logic.isHistoryLoading}
         currentChatId={logic.currentChatId}
         onNewChat={logic.startNewChat}
         onLoadChat={logic.loadChat}
