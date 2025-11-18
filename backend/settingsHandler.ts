@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Renamed imported types to resolve conflicts with global Request/Response objects and changed from 'import type' to 'import'.
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { promises as fs } from 'fs';
 import { GoogleGenAI } from "@google/genai";
 import { parseApiError } from './utils/apiError.js';
 import { SETTINGS_PATH } from './data-store.js';
+import { listAvailableModels } from './services/modelService.js';
 
 // Default settings structure
 const defaultSettings = {
@@ -55,6 +55,7 @@ export const updateSettings = async (req: ExpressRequest, res: ExpressResponse) 
     try {
         const currentSettings = await readSettings();
         const newSettings = { ...currentSettings, ...req.body };
+        let modelData: any = null;
 
         // If a new API key is being provided and it's different, verify it.
         if (req.body.apiKey && req.body.apiKey !== currentSettings.apiKey) {
@@ -62,6 +63,8 @@ export const updateSettings = async (req: ExpressRequest, res: ExpressResponse) 
                 const ai = new GoogleGenAI({ apiKey: req.body.apiKey });
                 // Make a lightweight, free call to validate the key.
                 await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: ' ' });
+                // On success, fetch the available models to send back to the client.
+                modelData = await listAvailableModels(req.body.apiKey);
             } catch (error: any) {
                 console.warn('API Key validation failed on save:', error.message);
                 
@@ -81,7 +84,7 @@ export const updateSettings = async (req: ExpressRequest, res: ExpressResponse) 
         }
 
         await fs.writeFile(SETTINGS_PATH, JSON.stringify(newSettings, null, 2), 'utf-8');
-        res.status(200).json(newSettings);
+        res.status(200).json({ ...newSettings, ...modelData });
     } catch (error) {
         console.error('Failed to update settings:', error);
         res.status(500).json({ error: 'Failed to save settings.' });

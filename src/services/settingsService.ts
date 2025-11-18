@@ -4,6 +4,7 @@
  */
 
 import { fetchFromApi } from '../utils/api';
+import type { Model } from '../types';
 
 export type AppSettings = {
     apiKey: string;
@@ -19,6 +20,12 @@ export type AppSettings = {
     isAgentMode: boolean;
 };
 
+export type UpdateSettingsResponse = AppSettings & {
+    models?: Model[];
+    imageModels?: Model[];
+    videoModels?: Model[];
+};
+
 export const getSettings = async (): Promise<AppSettings> => {
     const response = await fetchFromApi('/api/settings');
     if (!response.ok) {
@@ -27,7 +34,7 @@ export const getSettings = async (): Promise<AppSettings> => {
     return response.json();
 };
 
-export const updateSettings = async (settings: Partial<AppSettings>): Promise<AppSettings> => {
+export const updateSettings = async (settings: Partial<AppSettings>): Promise<UpdateSettingsResponse> => {
     const response = await fetchFromApi('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

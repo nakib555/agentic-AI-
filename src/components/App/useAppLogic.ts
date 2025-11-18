@@ -30,7 +30,7 @@ import {
 } from './constants';
 import { fetchFromApi, setOnVersionMismatch } from '../../utils/api';
 import { testSuite, type TestResult, type TestProgress } from '../Testing/testSuite';
-import { getSettings, updateSettings } from '../../services/settingsService';
+import { getSettings, updateSettings, type UpdateSettingsResponse } from '../../services/settingsService';
 import { logCollector } from '../../utils/logCollector';
 
 
@@ -95,45 +95,47 @@ export const useAppLogic = () => {
   
   // --- Settings and Model Management ---
 
+  const processModelData = useCallback((data: { models?: Model[], imageModels?: Model[], videoModels?: Model[] }) => {
+    const newModels = data.models || [];
+    const newImageModels = data.imageModels || [];
+    const newVideoModels = data.videoModels || [];
+
+    setAvailableModels(newModels);
+    setAvailableImageModels(newImageModels);
+    setAvailableVideoModels(newVideoModels);
+    
+    // Set default chat model if none is selected or the selected one is no longer available
+    if (newModels.length > 0 && (!activeModel || !newModels.some((m: Model) => m.id === activeModel))) {
+      const proModel = newModels.find(m => m.id.includes('pro'));
+      setActiveModel(proModel ? proModel.id : newModels[0].id);
+    } else if (newModels.length === 0) {
+      setActiveModel('');
+    }
+    
+    // Set default image model
+    if (newImageModels.length > 0 && (!imageModel || !newImageModels.some(m => m.id === imageModel))) {
+        const defaultImg = newImageModels.find(m => m.id.includes('imagen')) || newImageModels[0];
+        setImageModel(defaultImg.id);
+    } else if (newImageModels.length === 0) {
+        setImageModel('');
+    }
+
+    // Set default video model
+    if (newVideoModels.length > 0 && (!videoModel || !newVideoModels.some(m => m.id === videoModel))) {
+        const defaultVid = newVideoModels.find(m => m.id.includes('veo')) || newVideoModels[0];
+        setVideoModel(defaultVid.id);
+    } else if (newVideoModels.length === 0) {
+        setVideoModel('');
+    }
+  }, [activeModel, imageModel, videoModel]);
+
   const fetchModels = useCallback(async () => {
     try {
         setModelsLoading(true);
         const response = await fetchFromApi('/api/models');
         if (!response.ok) throw new Error('Failed to fetch models');
         const data = await response.json();
-
-        const newModels = data.models || [];
-        const newImageModels = data.imageModels || [];
-        const newVideoModels = data.videoModels || [];
-
-        setAvailableModels(newModels);
-        setAvailableImageModels(newImageModels);
-        setAvailableVideoModels(newVideoModels);
-        
-        // Set default chat model if none is selected or the selected one is no longer available
-        if (newModels.length > 0 && (!activeModel || !newModels.some((m: Model) => m.id === activeModel))) {
-          const proModel = newModels.find(m => m.id.includes('pro'));
-          setActiveModel(proModel ? proModel.id : newModels[0].id);
-        } else if (newModels.length === 0) {
-          setActiveModel('');
-        }
-        
-        // Set default image model
-        if (newImageModels.length > 0 && (!imageModel || !newImageModels.some(m => m.id === imageModel))) {
-            const defaultImg = newImageModels.find(m => m.id.includes('imagen')) || newImageModels[0];
-            setImageModel(defaultImg.id);
-        } else if (newImageModels.length === 0) {
-            setImageModel('');
-        }
-
-        // Set default video model
-        if (newVideoModels.length > 0 && (!videoModel || !newVideoModels.some(m => m.id === videoModel))) {
-            const defaultVid = newVideoModels.find(m => m.id.includes('veo')) || newVideoModels[0];
-            setVideoModel(defaultVid.id);
-        } else if (newVideoModels.length === 0) {
-            setVideoModel('');
-        }
-
+        processModelData(data);
     } catch (error) {
         if ((error as Error).message === 'Version mismatch') return;
         console.error("Failed to fetch available models:", error);
@@ -143,7 +145,7 @@ export const useAppLogic = () => {
     } finally {
         setModelsLoading(false);
     }
-  }, [activeModel, imageModel, videoModel]);
+  }, [processModelData]);
 
   // Fetch all settings from backend on initial load
   useEffect(() => {
@@ -194,12 +196,14 @@ export const useAppLogic = () => {
   
   // Special handler for API key to trigger model re-fetch
   const handleSetApiKey = useCallback(async (newApiKey: string) => {
-    // Optimistically update the state for UI responsiveness
     setApiKey(newApiKey);
     try {
-        await updateSettings({ apiKey: newApiKey });
-        // After successful save and verification on the backend, fetch models
-        await fetchModels();
+        const response: UpdateSettingsResponse = await updateSettings({ apiKey: newApiKey });
+        processModelData({
+            models: response.models,
+            imageModels: response.imageModels,
+            videoModels: response.videoModels
+        });
     } catch (error) {
         // If save fails, the key is invalid. Clear the available models.
         setAvailableModels([]);
@@ -208,7 +212,7 @@ export const useAppLogic = () => {
         console.error("API Key save/verify failed:", error);
         throw error; // Re-throw to be caught by the UI
     }
-  }, [fetchModels]);
+  }, [processModelData]);
 
   const handleSetAboutUser = createSettingUpdater(setAboutUser, 'aboutUser');
   const handleSetAboutResponse = createSettingUpdater(setAboutResponse, 'aboutResponse');
