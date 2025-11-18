@@ -12,7 +12,7 @@ interface TextTypeProps {
   cursorCharacter?: string | React.ReactNode;
   cursorBlinkDuration?: number;
   cursorClassName?: string;
-  text: string[];
+  sequence: string[];
   as?: ElementType;
   typingSpeed?: number;
   initialDelay?: number;
@@ -22,13 +22,18 @@ interface TextTypeProps {
   onSequenceComplete?: () => void;
 }
 
+// Generates a random delay within a range for a more human-like typing feel.
+const getTypingDelay = (baseSpeed: number, jitter = 0.4): number => {
+  return baseSpeed + (Math.random() - 0.5) * baseSpeed * jitter;
+};
+
 export const TextType = ({
-  text,
+  sequence,
   as: Component = 'span',
-  typingSpeed = 70,
+  typingSpeed = 50,
   initialDelay = 0,
   pauseDuration = 1500,
-  deletingSpeed = 60,
+  deletingSpeed = 30,
   loop = false,
   className = '',
   showCursor = true,
@@ -38,74 +43,93 @@ export const TextType = ({
   onSequenceComplete,
   ...props
 }: TextTypeProps & React.HTMLAttributes<HTMLElement>) => {
-  const [textIndex, setTextIndex] = useState(0);
-  const [displayedText, setDisplayedText] = useState(text[0] || '');
-  const [isDeleting, setIsDeleting] = useState(true);
-  const [isPaused, setIsPaused] = useState(false);
-  const isMounted = useRef(true);
+  const [sequenceIndex, setSequenceIndex] = useState(0);
+  const [displayedText, setDisplayedText] = useState('');
+  const [phase, setPhase] = useState<'initial' | 'typing' | 'pausing' | 'deleting'>('initial');
 
+  const timeoutRef = useRef<number | null>(null);
+  const sequenceRef = useRef(sequence);
+
+  // If the sequence prop changes externally, reset the animation.
   useEffect(() => {
-    isMounted.current = true;
-    return () => { isMounted.current = false; };
-  }, []);
-
-  useEffect(() => {
-    if (!text.includes(displayedText)) return;
-
-    if (text.length > 1 && text[1] !== displayedText && !isDeleting) {
-      setTextIndex(0);
-      setIsDeleting(true);
-    } else if (text.length === 1 && text[0] !== displayedText) {
-      setDisplayedText(text[0]);
+    if (sequenceRef.current !== sequence) {
+      sequenceRef.current = sequence;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      setSequenceIndex(0);
+      setPhase('deleting'); // Start by deleting the current text
     }
-  }, [text]);
+  }, [sequence]);
 
   useEffect(() => {
-    let timeoutId: number;
-
-    const handleAnimation = () => {
-      if (!isMounted.current) return;
-      
-      setIsPaused(false);
-      const sequence = text;
-      const currentText = sequence[textIndex];
-      
-      const speed = isDeleting ? deletingSpeed : typingSpeed;
-      const randomDelay = speed + (Math.random() - 0.5) * speed * 0.7;
-
-      if (isDeleting) {
-        if (displayedText.length > 0) {
-          timeoutId = window.setTimeout(() => setDisplayedText(d => d.slice(0, -1)), randomDelay);
-        } else {
-          setIsDeleting(false);
-          const nextIndex = (textIndex + 1);
-          if (nextIndex < sequence.length) {
-            setTextIndex(nextIndex);
-          } else if (loop) {
-            setTextIndex(0);
-          }
-        }
-      } else { // Typing
-        const targetText = sequence[textIndex];
-        if (displayedText.length < targetText.length) {
-          timeoutId = window.setTimeout(() => setDisplayedText(targetText.slice(0, displayedText.length + 1)), randomDelay);
-        } else {
-          setIsPaused(true);
-          const isLast = textIndex === sequence.length - 1;
-          if (isLast && !loop) {
-            if (onSequenceComplete) onSequenceComplete();
-            return;
-          }
-          timeoutId = window.setTimeout(() => setIsDeleting(true), pauseDuration);
-        }
-      }
+    const schedule = (fn: () => void, delay: number) => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = window.setTimeout(fn, delay);
     };
-    
-    const delay = (isDeleting && textIndex === 0 && displayedText.length === text[0].length) ? initialDelay : 0;
-    timeoutId = window.setTimeout(handleAnimation, delay);
 
-    return () => clearTimeout(timeoutId);
-  }, [displayedText, isDeleting, textIndex, text, loop, typingSpeed, deletingSpeed, pauseDuration, initialDelay, onSequenceComplete]);
+    const currentTarget = sequenceRef.current[sequenceIndex] || '';
+
+    switch (phase) {
+      case 'initial':
+        schedule(() => setPhase('typing'), initialDelay);
+        break;
+
+      case 'typing':
+        if (displayedText.length < currentTarget.length) {
+          const nextChar = currentTarget[displayedText.length];
+          // Add a longer pause after spaces or punctuation for realism
+          const isWordEnd = nextChar === ' ' || nextChar === ',' || nextChar === '.';
+          const delay = getTypingDelay(isWordEnd ? typingSpeed * 3 : typingSpeed);
+          schedule(() => setDisplayedText(d => d + nextChar), delay);
+        } else {
+          // Finished typing, move to pausing
+          setPhase('pausing');
+        }
+        break;
+
+      case 'deleting':
+        if (displayedText.length > 0) {
+          const delay = getTypingDelay(deletingSpeed, 0.6);
+          schedule(() => setDisplayedText(d => d.slice(0, -1)), delay);
+        } else {
+          // Finished deleting, move to the next item in the sequence
+          const nextIndex = sequenceIndex + 1;
+          if (nextIndex < sequenceRef.current.length) {
+            setSequenceIndex(nextIndex);
+            setPhase('typing');
+          } else if (loop) {
+            setSequenceIndex(0);
+            setPhase('typing');
+          } else {
+            // Sequence is complete
+            onSequenceComplete?.();
+          }
+        }
+        break;
+
+      case 'pausing':
+        const isLastItem = sequenceIndex === sequenceRef.current.length - 1;
+        if (!isLastItem || loop) {
+          schedule(() => setPhase('deleting'), pauseDuration);
+        } else {
+          // Sequence is complete
+          onSequenceComplete?.();
+        }
+        break;
+    }
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [
+    sequenceIndex, displayedText, phase, loop, typingSpeed, deletingSpeed, 
+    pauseDuration, initialDelay, onSequenceComplete
+  ]);
+  
+  // The 'text' prop was renamed to 'sequence' to avoid confusion.
+  // The logic inside useMessageForm passes the placeholder array to a prop named 'text'.
+  // We'll keep the prop name 'text' in the MessageForm component and remap it here.
+  const finalSequence = sequence || (props as any).text || [''];
 
   return createElement(
     Component,
@@ -114,8 +138,8 @@ export const TextType = ({
     showCursor && (
       <motion.span
         className={`ml-px inline-block ${cursorClassName}`}
-        animate={isPaused ? { opacity: [1, 0, 1] } : { opacity: 1 }}
-        transition={isPaused ? { duration: cursorBlinkDuration * 2, repeat: Infinity, ease: 'linear' } : { duration: 0 }}
+        animate={phase === 'pausing' ? { opacity: [1, 0, 1] } : { opacity: 1 }}
+        transition={phase === 'pausing' ? { duration: cursorBlinkDuration * 2, repeat: Infinity, ease: 'linear' } : { duration: 0 }}
       >
         {cursorCharacter}
       </motion.span>
