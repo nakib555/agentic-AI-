@@ -2,13 +2,7 @@
   "name": "agentic-ai-chat",
   "version": "1.0.0",
   "description": "A responsive chat application powered by the Gemini API, featuring an agentic AI persona.",
-  "keywords": [
-    "react",
-    "gemini",
-    "ai",
-    "chat",
-    "agentic"
-  ],
+  "keywords": ["react", "gemini", "ai", "chat", "agentic"],
   "private": true,
   "type": "module",
   "scripts": {
@@ -19,7 +13,7 @@
   },
   "dependencies": {
     "@google/genai": "1.29.1",
-    "@langchain/community": "0.2.36",
+    "@langchain/community": "0.2.33",
     "@langchain/core": "0.2.31",
     "@langchain/google-genai": "0.0.29",
     "@langchain/langgraph": "0.1.13",
