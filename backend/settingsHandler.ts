@@ -74,7 +74,11 @@ export const updateSettings = async (req: any, res: any) => {
         // If a new API key is being provided and it's different, verify it.
         if (req.body.apiKey && req.body.apiKey !== currentSettings.apiKey) {
             try {
-                const ai = new GoogleGenAI({ apiKey: req.body.apiKey });
+                // Trim the API key to prevent issues with whitespace
+                const cleanKey = req.body.apiKey.trim();
+                newSettings.apiKey = cleanKey;
+                
+                const ai = new GoogleGenAI({ apiKey: cleanKey });
                 
                 // Verification Step with Timeout
                 // We make a lightweight call to ensure the key is valid and active.
@@ -87,7 +91,7 @@ export const updateSettings = async (req: any, res: any) => {
                 // Model Fetch Step with Timeout
                 // We try to fetch the models, but we also protect against this hanging.
                 const fetchedModels = await withTimeout(
-                     listAvailableModels(req.body.apiKey),
+                     listAvailableModels(cleanKey),
                      VALIDATION_TIMEOUT_MS,
                      'Fetching models timed out.'
                 );
