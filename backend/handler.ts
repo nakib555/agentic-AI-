@@ -140,6 +140,42 @@ export const apiHandler = async (req: any, res: any) => {
                 break;
             }
 
+            case 'title': {
+                if (!ai) throw new Error("GoogleGenAI not initialized.");
+                const { messages } = req.body;
+                const historyText = messages.slice(0, 3).map((m: any) => `${m.role}: ${m.text}`).join('\n');
+                const prompt = `You are a helpful assistant. Generate a short, concise title (max 6 words) for this conversation. Do not use quotes or markdown. Just the title text.\n\nCONVERSATION:\n${historyText}\n\nTITLE:`;
+                
+                const response = await generateContentWithRetry(ai, {
+                    model: 'gemini-2.5-flash',
+                    contents: prompt,
+                });
+                res.status(200).json({ title: response.text.trim() });
+                break;
+            }
+
+            case 'suggestions': {
+                if (!ai) throw new Error("GoogleGenAI not initialized.");
+                const { conversation } = req.body;
+                const recentHistory = conversation.slice(-5).map((m: any) => `${m.role}: ${(m.text || '').substring(0, 200)}`).join('\n');
+                const prompt = `Based on the conversation below, suggest 3 short, relevant follow-up questions or actions the user might want to take next. Return ONLY a JSON array of strings. Example: ["Tell me more", "Explain the code", "Generate an image"].\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
+                
+                const response = await generateContentWithRetry(ai, {
+                    model: 'gemini-2.5-flash',
+                    contents: prompt,
+                    config: { responseMimeType: 'application/json' },
+                });
+                
+                let suggestions = [];
+                try {
+                    suggestions = JSON.parse(response.text);
+                } catch (e) {
+                    console.error("Failed to parse suggestions JSON:", e);
+                }
+                res.status(200).json({ suggestions });
+                break;
+            }
+
             case 'tts': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { text, voice } = req.body;
