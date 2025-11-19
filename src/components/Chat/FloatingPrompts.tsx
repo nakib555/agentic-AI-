@@ -1,0 +1,2 @@
+
+// This file has been refactored into src/components/Chat/WelcomeScreen/FloatingPrompts.tsx

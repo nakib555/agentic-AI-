@@ -1,10 +1,12 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ToggleSwitch } from '../UI/ToggleSwitch';
+import { SettingItem } from './SettingItem';
 
 type SpeechMemorySettingsProps = {
   isMemoryEnabled: boolean;
@@ -16,14 +18,6 @@ type SpeechMemorySettingsProps = {
   setIsAutoPlayEnabled: (enabled: boolean) => void;
   disabled: boolean;
 };
-
-const SettingField: React.FC<{ label: string; description: string; children: React.ReactNode }> = ({ label, description, children }) => (
-    <div>
-        <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">{label}</label>
-        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 mb-3">{description}</p>
-        {children}
-    </div>
-);
 
 const TTS_VOICES = [
     { id: 'Kore', name: 'Kore' },
@@ -39,49 +33,84 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
     isAutoPlayEnabled, setIsAutoPlayEnabled,
     disabled
 }) => {
+    const [isPlayingSample, setIsPlayingSample] = useState(false);
+
+    const handlePlaySample = () => {
+        setIsPlayingSample(!isPlayingSample);
+        setTimeout(() => setIsPlayingSample(false), 2000); // Mock playback
+    };
+
     return (
-        <div className="space-y-8">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Speech & Memory</h3>
+        <div className="space-y-1">
+            <h3 className="text-xl font-bold text-content-primary mb-4 px-1">Speech & Memory</h3>
 
-            <SettingField label="Conversation Memory" description="Allow the AI to remember key details across chats for a more personalized experience.">
-                <div className="flex items-center justify-between py-2">
-                    <span className="font-semibold text-sm text-gray-800 dark:text-slate-200">Enable Memory</span>
-                    <ToggleSwitch checked={isMemoryEnabled} onChange={setIsMemoryEnabled} disabled={disabled} />
+            <SettingItem 
+                label="Conversation Memory" 
+                description="Remember details across chats."
+            >
+                <ToggleSwitch checked={isMemoryEnabled} onChange={setIsMemoryEnabled} disabled={disabled} />
+            </SettingItem>
+
+            {isMemoryEnabled && (
+                <div className="py-3 border-b border-border">
+                    <button 
+                        onClick={onManageMemory} 
+                        disabled={disabled}
+                        className="w-full px-4 py-2 text-sm font-semibold text-primary-text bg-primary-subtle hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                        Manage Stored Memory
+                    </button>
                 </div>
-                <button 
-                    onClick={onManageMemory} 
-                    disabled={!isMemoryEnabled || disabled}
-                    className="w-full mt-2 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Manage Memory
-                </button>
-            </SettingField>
+            )}
 
-            <SettingField label="Text-to-Speech Voice" description="Select the voice for the 'Listen' feature on AI messages.">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {TTS_VOICES.map((voice) => (
-                        <button
-                            key={voice.id}
-                            onClick={() => setTtsVoice(voice.id)}
+            <SettingItem label="Voice">
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={handlePlaySample}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-layer-2 hover:bg-layer-3 text-content-primary transition-colors text-sm font-medium"
+                        aria-label={isPlayingSample ? "Stop preview" : "Preview voice"}
+                    >
+                        {isPlayingSample ? (
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
+                                <rect x="6" y="5" width="3" height="10" rx="1" />
+                                <rect x="11" y="5" width="3" height="10" rx="1" />
+                             </svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 ml-0.5">
+                                <path d="M6.3 2.841A1.5 1.5 0 0 0 4 4.11V15.89a1.5 1.5 0 0 0 2.3 1.269l9.344-5.89a1.5 1.5 0 0 0 0-2.538L6.3 2.84Z" />
+                            </svg>
+                        )}
+                        <span>Play</span>
+                    </button>
+                    
+                    <div className="relative group">
+                        <select 
+                            value={ttsVoice}
+                            onChange={(e) => setTtsVoice(e.target.value)}
                             disabled={disabled}
-                            className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors border ${
-                                ttsVoice === voice.id
-                                    ? 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-500/50'
-                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'
-                            } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className="appearance-none bg-transparent text-content-primary font-medium pr-7 pl-2 py-1 focus:outline-none cursor-pointer text-right hover:text-primary-main transition-colors"
                         >
-                            {voice.name}
-                        </button>
-                    ))}
+                            {TTS_VOICES.map(v => (
+                                <option key={v.id} value={v.id} className="bg-layer-1 text-content-primary">
+                                    {v.name}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-content-tertiary group-hover:text-content-primary transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                                <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
-            </SettingField>
+            </SettingItem>
 
-            <SettingField label="Auto-Play Audio" description="Automatically play the audio for new AI messages when they are complete.">
-                <div className="flex items-center justify-between py-2">
-                    <span className="font-semibold text-sm text-gray-800 dark:text-slate-200">Enable Auto-Play</span>
-                    <ToggleSwitch checked={isAutoPlayEnabled} onChange={setIsAutoPlayEnabled} disabled={disabled} />
-                </div>
-            </SettingField>
+            <SettingItem 
+                label="Auto-Play Audio" 
+                description="Play responses automatically."
+            >
+                <ToggleSwitch checked={isAutoPlayEnabled} onChange={setIsAutoPlayEnabled} disabled={disabled} />
+            </SettingItem>
         </div>
     );
 };

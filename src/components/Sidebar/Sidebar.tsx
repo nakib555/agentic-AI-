@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -53,8 +54,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const [animationDisabledForResize, setAnimationDisabledForResize] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
-    // This effect detects when the viewport crosses the mobile/desktop breakpoint.
-    // It disables animations to prevent layout jumps.
     useEffect(() => {
         if (prevIsDesktop.current !== isDesktop) {
             setAnimationDisabledForResize(true);
@@ -62,7 +61,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 setAnimationDisabledForResize(false);
             }, 50);
             prevIsDesktop.current = isDesktop;
-            
             return () => clearTimeout(timer);
         }
     }, [isDesktop]);
@@ -100,37 +98,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
     };
     
-    // This effect handles keyboard shortcuts for search.
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
                 event.preventDefault();
-                // If the sidebar is collapsed, we need to expand it to show the search bar.
-                if (isCollapsed) {
-                    setIsCollapsed(false);
-                }
-                // We'll also ensure the sidebar is open on mobile.
-                if (!isOpen && !isDesktop) {
-                    setIsOpen(true);
-                }
-                // The search input becomes visible after an animation. We need a small delay
-                // before we can focus it, otherwise the focus command might fail.
-                setTimeout(() => {
-                    searchInputRef.current?.focus();
-                }, 100);
+                if (isCollapsed) setIsCollapsed(false);
+                if (!isOpen && !isDesktop) setIsOpen(true);
+                setTimeout(() => searchInputRef.current?.focus(), 100);
             }
         };
-
         window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
+        return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isCollapsed, isDesktop, isOpen, setIsCollapsed, setIsOpen]);
 
 
     return (
         <aside className={`h-full z-20 ${isDesktop ? 'flex-shrink-0' : 'w-0'}`}>
-            {/* Overlay for mobile */}
             <AnimatePresence>
                 {!isDesktop && isOpen && (
                     <motion.div 
@@ -138,18 +121,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 bg-black/50 z-10" 
+                        className="fixed inset-0 bg-black/50 z-10 backdrop-blur-sm" 
                     />
                 )}
             </AnimatePresence>
             
             <motion.div
                 initial={false}
-                animate={
-                    isDesktop 
-                        ? { width: isCollapsed ? 72 : width } 
-                        : (isOpen ? 'open' : 'closed')
-                }
+                animate={isDesktop ? { width: isCollapsed ? 72 : width } : (isOpen ? 'open' : 'closed')}
                 variants={isDesktop ? undefined : mobileVariants}
                 transition={{
                     type: isResizing || animationDisabledForResize ? 'tween' : 'spring',
@@ -161,19 +140,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 style={{
                     height: '100%',
                     position: isDesktop ? 'relative' : 'fixed',
-                    width: !isDesktop ? 288 : 'auto', // Explicitly set width for mobile view
+                    width: !isDesktop ? 288 : 'auto',
                     left: 0,
                     top: 0,
                     zIndex: isDesktop ? 'auto' : 30,
                 }}
-                className="bg-white dark:bg-[#121212] border-r border-gray-200/50 dark:border-white/10 flex flex-col transform-gpu" // Added transform-gpu to promote to its own layer
+                className="bg-layer-1 border-r border-border flex flex-col transform-gpu"
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
                     className="p-3 flex flex-col h-full"
-                    style={{
-                        userSelect: isResizing ? 'none' : 'auto',
-                    }}
+                    style={{ userSelect: isResizing ? 'none' : 'auto' }}
                 >
                     <SidebarHeader 
                         isCollapsed={isCollapsed}
@@ -191,7 +168,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     />
                     
                     <motion.div 
-                        className="my-4 border-t border-gray-200/50 dark:border-white/10"
+                        className="my-4 border-t border-border"
                         initial={false}
                         animate={{ opacity: isCollapsed ? 0 : 1, height: isCollapsed ? 0 : 'auto' }}
                         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
@@ -222,7 +199,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {isDesktop && !isCollapsed && (
                     <div
                         onMouseDown={startResizing}
-                        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-blue-500/30 transition-colors z-10"
+                        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-primary-main/30 transition-colors z-10"
                         title="Resize sidebar"
                     />
                 )}

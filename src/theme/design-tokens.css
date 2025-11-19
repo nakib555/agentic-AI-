@@ -1,0 +1,84 @@
+
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* 
+  SEMANTIC THEMING SYSTEM - THE CONTROL CENTER
+  All colors are defined as CSS variables here.
+  Changing a value here updates the entire application immediately.
+*/
+
+:root {
+  /* --- LIGHT THEME (Default) --- */
+  
+  /* Background Layers */
+  --bg-page: #F5F5F0;                  /* Main app background */
+  --bg-layer-1: #ffffff;               /* Sidebar, Cards, Modals, Menus */
+  --bg-layer-2: #f3f4f6;               /* Hover states, secondary inputs, code blocks */
+  --bg-layer-3: #e5e7eb;               /* Active states, tertiary elements */
+  --bg-glass: rgba(255, 255, 255, 0.8); /* Blurry overlays */
+
+  /* Text Content */
+  --text-primary: #111827;             /* Headings, main body */
+  --text-secondary: #4b5563;           /* Subtitles, descriptions */
+  --text-tertiary: #9ca3af;            /* Placeholders, inactive icons */
+  --text-inverted: #ffffff;            /* Text on primary buttons */
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-default: #e5e7eb;           /* Standard borders */
+  --border-strong: #d1d5db;            /* Inputs, active borders */
+  --border-focus: #6366f1;             /* Focus rings (Indigo-500) */
+
+  /* Brand / Accent Colors */
+  --primary-main: #4f46e5;             /* Indigo-600 */
+  --primary-hover: #4338ca;            /* Indigo-700 */
+  --primary-subtle: #e0e7ff;           /* Indigo-100 (Backgrounds) */
+  --primary-text: #3730a3;             /* Indigo-900 (Text on subtle) */
+
+  /* Functional Status Colors */
+  --status-error-bg: #fef2f2;
+  --status-error-text: #b91c1c;
+  --status-success-bg: #f0fdf4;
+  --status-success-text: #15803d;
+  --status-warning-bg: #fefce8;
+  --status-warning-text: #a16207;
+}
+
+/* --- DARK THEME --- */
+.dark {
+  /* Background Layers */
+  --bg-page: #121212;                  /* Main app background (Deep black) */
+  --bg-layer-1: #1e1e1e;               /* Sidebar, Cards, Modals (Elevated dark) */
+  --bg-layer-2: #2d2d2d;               /* Hover states */
+  --bg-layer-3: #3f3f46;               /* Active states */
+  --bg-glass: rgba(30, 30, 30, 0.8);   /* Blurry overlays */
+
+  /* Text Content */
+  --text-primary: #f3f4f6;             /* Headings, main body */
+  --text-secondary: #9ca3af;           /* Subtitles, descriptions */
+  --text-tertiary: #6b7280;            /* Placeholders, inactive icons */
+  --text-inverted: #ffffff;
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --border-focus: #818cf8;             /* Indigo-400 */
+
+  /* Brand / Accent Colors */
+  --primary-main: #6366f1;             /* Indigo-500 */
+  --primary-hover: #818cf8;            /* Indigo-400 */
+  --primary-subtle: rgba(99, 102, 241, 0.15);
+  --primary-text: #e0e7ff;             /* Indigo-100 */
+
+  /* Functional Status Colors */
+  --status-error-bg: rgba(127, 29, 29, 0.3);
+  --status-error-text: #fca5a5;
+  --status-success-bg: rgba(20, 83, 45, 0.3);
+  --status-success-text: #86efac;
+  --status-warning-bg: rgba(113, 63, 18, 0.3);
+  --status-warning-text: #fde047;
+}

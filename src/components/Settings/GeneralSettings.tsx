@@ -1,9 +1,11 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState, useEffect } from 'react';
+import { SettingItem } from './SettingItem';
 
 type GeneralSettingsProps = {
   onClearAllChats: () => void;
@@ -12,14 +14,6 @@ type GeneralSettingsProps = {
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
 };
-
-const SettingField: React.FC<{ label: string; description: string; children: React.ReactNode }> = ({ label, description, children }) => (
-    <div>
-        <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">{label}</label>
-        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 mb-3">{description}</p>
-        {children}
-    </div>
-);
 
 export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChats, onRunTests, onDownloadLogs, apiKey, onSaveApiKey }) => {
   const [localApiKey, setLocalApiKey] = useState(apiKey);
@@ -48,68 +42,72 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
       onClearAllChats();
     }
   };
-  return (
-    <div className="space-y-8">
-      <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">General</h3>
 
-      <SettingField 
+  return (
+    <div className="space-y-1">
+      <h3 className="text-xl font-bold text-content-primary mb-4 px-1">General</h3>
+
+      <SettingItem 
         label="Gemini API Key" 
-        description="Your API key is stored locally in your browser's local storage and sent securely with each request."
+        description="Stored securely in your browser."
+        layout="col"
       >
-        <div className="flex items-center gap-2 max-w-sm">
+        <div className="flex gap-2">
           <input
             type="password"
             value={localApiKey}
             onChange={e => setLocalApiKey(e.target.value)}
             placeholder="Enter your API key"
-            className="w-full p-2 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="flex-1 p-2 border border-border rounded-lg bg-layer-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-main text-content-primary"
           />
           <button
             onClick={handleSave}
             disabled={saveStatus === 'saving'}
-            className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors w-24 disabled:bg-indigo-400"
+            className="px-4 py-2 text-sm font-semibold text-text-inverted bg-primary-main hover:bg-primary-hover rounded-lg transition-colors min-w-[80px] disabled:opacity-70"
           >
-            {saveStatus === 'saving' ? 'Verifying...' : saveStatus === 'saved' ? 'Saved!' : 'Save'}
+            {saveStatus === 'saving' ? '...' : saveStatus === 'saved' ? '✓' : 'Save'}
           </button>
         </div>
         {saveStatus === 'error' && saveError && (
-          <p className="text-sm text-red-600 dark:text-red-400 mt-2">{saveError}</p>
+          <p className="text-sm text-status-error-text mt-2">{saveError}</p>
         )}
-      </SettingField>
+      </SettingItem>
       
-      <SettingField 
-        label="Clear all chats" 
-        description="This will permanently delete all of your chat history."
+      <SettingItem 
+        label="Clear Conversations" 
+        description="Delete all chat history permanently."
       >
         <button
           onClick={handleClear}
-          className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+          className="px-3 py-1.5 text-sm font-semibold text-status-error-text bg-status-error-bg hover:bg-red-100 dark:hover:bg-red-900/40 rounded-md transition-colors"
         >
-          Clear all chats
+          Delete All
         </button>
-      </SettingField>
-      <SettingField 
-        label="Run Diagnostic Tests" 
-        description="Run a suite of automated tests to verify AI functionality, component rendering, and end-to-end response generation. This may take a few minutes."
+      </SettingItem>
+
+      <SettingItem 
+        label="Diagnostic Tests" 
+        description="Run automated system checks."
       >
         <button
           onClick={onRunTests}
-          className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+          className="px-3 py-1.5 text-sm font-semibold text-primary-text bg-primary-subtle hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-md transition-colors"
         >
-          Run Diagnostic Tests
+          Run Tests
         </button>
-      </SettingField>
-      <SettingField 
-        label="Download Console Log" 
-        description="Download a copy of the browser's console log for this session. This is useful for debugging."
+      </SettingItem>
+
+      <SettingItem 
+        label="Logs" 
+        description="Download session logs for debugging."
       >
         <button
           onClick={onDownloadLogs}
-          className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+          className="px-3 py-1.5 text-sm font-semibold text-content-primary bg-layer-2 hover:bg-layer-3 rounded-md transition-colors"
         >
-          Download Log File
+          Download
         </button>
-      </SettingField>
+      </SettingItem>
     </div>
   );
 };

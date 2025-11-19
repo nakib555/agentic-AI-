@@ -1,33 +1,24 @@
-/* PART 2 of 2 of markdown.css (Lines 69-137) */
+
+/* PART 2 of 2 of markdown.css */
 
 /* KaTeX Math Formula Styling */
 
-/* Base KaTeX styling. Inline math will use this and should blend with text. */
-.katex {
-  /* Removing background and padding to make inline math seamless. */
-}
-
-/* Styles for display (block) math. This container gets the background and padding. */
 .katex-display {
   display: block;
-  overflow-x: auto; /* Enables horizontal scrolling */
+  overflow-x: auto;
   overflow-y: hidden;
   margin: 1em 0;
-  padding: 1.25em; /* Increased padding for better spacing */
-  border-radius: 0.75rem; /* Slightly larger radius */
-  background-color: #F5F5F0; /* Matches light theme chat area background */
-  border: 1px solid #e2e8f0; /* Use slate-200 for a clearer border */
+  padding: 1.25em;
+  border-radius: 0.75rem;
+  
+  /* Use semantic tokens */
+  background-color: var(--bg-layer-2);
+  border: 1px solid var(--border-default);
+  
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  scrollbar-color: var(--text-tertiary) transparent;
 }
 
-.dark .katex-display {
-  background-color: #121212; /* Matches dark theme chat area background */
-  border-color: rgba(226, 232, 240, 0.1); /* Use slate-200/10 for dark mode */
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-}
-
-/* Custom scrollbar for better aesthetics within the math block for Webkit browsers */
 .katex-display::-webkit-scrollbar {
   height: 8px;
 }
@@ -37,26 +28,17 @@
 }
 
 .katex-display::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.3); /* Darker thumb for light mode */
+  background-color: var(--text-tertiary);
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 .katex-display::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: var(--text-secondary);
 }
 
-.dark .katex-display::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.3); /* Lighter thumb for dark mode */
-}
-
-.dark .katex-display::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.4);
-}
-
-
-/* Styles for bullet points inside the new thinking workflow */
+/* Styles for bullet points inside workflow */
 .workflow-markdown ul {
     list-style-type: disc;
     padding-left: 1.25rem;
@@ -67,41 +49,20 @@
 }
 
 /* Highlight / Mark Tag Styling */
-/* This now supports colored highlights via ==[color]text== syntax */
 .mark-highlight {
-  /* background is removed, only text color and font weight are applied */
   background-color: transparent;
   padding: 0;
   margin: 0;
   font-weight: bold;
 }
 
-.mark-highlight-default {
-  color: #9333ea; /* purple-600 */
-}
-
-.dark .mark-highlight-default {
-  color: #c084fc; /* purple-400 */
-}
-
-/* Color variations */
-.mark-highlight-red { color: #dc2626; } /* red-600 */
-.dark .mark-highlight-red { color: #f87171; } /* red-400 */
-
-.mark-highlight-blue { color: #2563eb; } /* blue-600 */
-.dark .mark-highlight-blue { color: #60a5fa; } /* blue-400 */
-
-.mark-highlight-green { color: #16a34a; } /* green-600 */
-.dark .mark-highlight-green { color: #4ade80; } /* green-400 */
-
-.mark-highlight-yellow { color: #ca8a04; } /* yellow-600 */
-.dark .mark-highlight-yellow { color: #facc15; } /* yellow-400 */
-
-.mark-highlight-purple { color: #9333ea; } /* purple-600 */
-.dark .mark-highlight-purple { color: #c084fc; } /* purple-400 */
-
-.mark-highlight-orange { color: #ea580c; } /* orange-600 */
-.dark .mark-highlight-orange { color: #fb923c; } /* orange-400 */
+.mark-highlight-default { color: var(--primary-main); }
+.mark-highlight-red { color: var(--status-error-text); }
+.mark-highlight-blue { color: var(--primary-main); }
+.mark-highlight-green { color: var(--status-success-text); }
+.mark-highlight-yellow { color: var(--status-warning-text); }
+.mark-highlight-purple { color: #9333ea; }
+.mark-highlight-orange { color: #ea580c; }
 
 .markdown-content-user mark {
   background-color: rgba(255, 255, 255, 0.3);

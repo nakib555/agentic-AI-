@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -22,15 +23,12 @@ type SettingsModalProps = {
   onClearAllChats: () => void;
   onRunTests: () => void;
   onDownloadLogs: () => void;
-  // API Key
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
-  // Custom Instructions
   aboutUser: string;
   setAboutUser: (prompt: string) => void;
   aboutResponse: string;
   setAboutResponse: (prompt: string) => void;
-  // Model Settings
   temperature: number;
   setTemperature: (temp: number) => void;
   maxTokens: number;
@@ -41,7 +39,6 @@ type SettingsModalProps = {
   onVideoModelChange: (modelId: string) => void;
   defaultTemperature: number;
   defaultMaxTokens: number;
-  // Speech & Memory
   isMemoryEnabled: boolean;
   setIsMemoryEnabled: (enabled: boolean) => void;
   onManageMemory: () => void;
@@ -71,7 +68,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center sm:p-4"
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="settings-title"
@@ -81,29 +78,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="bg-white dark:bg-[#202123] w-full h-full shadow-xl md:rounded-2xl md:max-w-4xl md:h-[90vh] border border-gray-200 dark:border-white/10 flex flex-col"
+            className="bg-layer-1 w-full shadow-xl rounded-2xl max-w-4xl h-[85vh] border border-border flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
-              <h2 id="settings-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">
+            <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
+              <h2 id="settings-title" className="text-lg font-bold text-content-primary">
                 Settings
               </h2>
               <button
                 onClick={onClose}
-                className="p-1 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-black/20"
-                aria-label="Close settings"
+                className="p-2 rounded-full text-content-tertiary hover:bg-layer-2 hover:text-content-primary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-main"
+                aria-label="Close"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-2.72 2.72a.75.75 0 1 0 1.06 1.06L10 11.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L11.06 10l2.72-2.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
               </button>
             </div>
             
             <div className="flex-1 flex flex-col md:flex-row min-h-0">
-                {/* Navigation: top on mobile, left on desktop */}
-                <nav className="flex-shrink-0 p-2 md:p-4 border-b md:border-b-0 md:border-r border-gray-200 dark:border-white/10 md:w-56">
-                    {/* Horizontal list on mobile, vertical on desktop */}
+                {/* Navigation */}
+                <nav className="flex-shrink-0 p-2 md:p-4 border-b md:border-b-0 md:border-r border-border md:w-56">
                     <ul className="flex flex-row md:flex-col gap-1 md:gap-0 md:space-y-1 overflow-x-auto md:overflow-x-hidden pb-2 md:pb-0">
                         {CATEGORIES.map(cat => (
                             <li key={cat.id} className="flex-shrink-0 md:w-full">
@@ -119,7 +116,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                 </nav>
 
                 {/* Content Area */}
-                <div className="flex-1 p-4 md:p-6 overflow-y-auto">
+                <div className="flex-1 p-4 md:p-6 overflow-y-auto bg-layer-1">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeCategory}

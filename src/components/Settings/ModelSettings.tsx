@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,6 +7,7 @@
 import React from 'react';
 import { Model } from '../../services/modelService';
 import { ModelSelector } from '../UI/ModelSelector';
+import { SettingItem } from './SettingItem';
 
 type ModelSettingsProps = {
   models: Model[];
@@ -26,14 +28,6 @@ type ModelSettingsProps = {
   disabled: boolean;
 };
 
-const SettingField: React.FC<{ label: string; description: string; children: React.ReactNode }> = ({ label, description, children }) => (
-    <div>
-        <label className="text-sm font-semibold text-gray-700 dark:text-slate-200">{label}</label>
-        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 mb-3">{description}</p>
-        {children}
-    </div>
-);
-
 export const ModelSettings: React.FC<ModelSettingsProps> = ({
     models, imageModels, videoModels, selectedModel, onModelChange,
     temperature, setTemperature, maxTokens, setMaxTokens,
@@ -43,31 +37,31 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
 }) => {
     const noModelsAvailable = models.length === 0;
     return (
-        <div className="space-y-8">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Model & Behavior</h3>
+        <div className="space-y-1">
+            <h3 className="text-xl font-bold text-content-primary mb-4 px-1">Model & Behavior</h3>
             
             {noModelsAvailable && (
-              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-500/30 rounded-lg">
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  Model selection is unavailable. Please add a valid Gemini API key in the 'General' settings tab to load available models.
+              <div className="mb-4 p-3 bg-status-warning-bg border border-status-warning-text/20 rounded-lg">
+                <p className="text-sm text-status-warning-text">
+                  Please configure your API key in General settings to load models.
                 </p>
               </div>
             )}
 
-            <SettingField label="Chat Model" description="Select the model for new chats. This can be changed for the current chat.">
-                <ModelSelector models={models} selectedModel={selectedModel} onModelChange={onModelChange} disabled={disabled || noModelsAvailable} className="max-w-xs" />
-            </SettingField>
+            <SettingItem label="Chat Model" layout="col">
+                <ModelSelector models={models} selectedModel={selectedModel} onModelChange={onModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
+            </SettingItem>
 
-            <SettingField label="Image Generation Model" description="Select the model used by the `generateImage` tool.">
-                <ModelSelector models={imageModels} selectedModel={imageModel} onModelChange={onImageModelChange} disabled={disabled || noModelsAvailable} className="max-w-xs" />
-            </SettingField>
+            <SettingItem label="Image Model" layout="col">
+                <ModelSelector models={imageModels} selectedModel={imageModel} onImageModelChange={onImageModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
+            </SettingItem>
 
-            <SettingField label="Video Generation Model" description="Select the model used by the `generateVideo` tool.">
-                <ModelSelector models={videoModels} selectedModel={videoModel} onModelChange={onVideoModelChange} disabled={disabled || noModelsAvailable} className="max-w-xs" />
-            </SettingField>
+            <SettingItem label="Video Model" layout="col">
+                <ModelSelector models={videoModels} selectedModel={videoModel} onModelChange={onVideoModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
+            </SettingItem>
             
-            <SettingField label="Temperature" description="Controls randomness. Lower values are more deterministic, higher values are more creative.">
-                <div className="flex items-center gap-3 max-w-xs">
+            <SettingItem label="Temperature" description={`Value: ${temperature.toFixed(1)}`}>
+                <div className="w-32 flex items-center">
                     <input
                         type="range"
                         min="0"
@@ -75,44 +69,23 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                         step="0.1"
                         value={temperature}
                         onChange={e => setTemperature(parseFloat(e.target.value))}
-                        className="w-full"
+                        className="w-full h-1 bg-layer-3 rounded-lg appearance-none cursor-pointer accent-primary-main"
                         disabled={disabled}
                     />
-                    <span className="font-mono text-sm font-semibold text-gray-800 dark:text-slate-200 w-10 text-center">{temperature.toFixed(1)}</span>
                 </div>
-                <div className="flex justify-between text-xs text-gray-500 dark:text-slate-400 mt-1 max-w-xs px-1">
-                    <span>Deterministic</span>
-                    <span>Creative</span>
-                </div>
-                <button
-                    onClick={() => setTemperature(defaultTemperature)}
-                    disabled={disabled || temperature === defaultTemperature}
-                    className="mt-3 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Reset to default ({defaultTemperature.toFixed(1)})
-                </button>
-            </SettingField>
+            </SettingItem>
 
-            <SettingField label="Max Output Tokens" description="Set a limit on the number of tokens per model response. Leave at 0 to use the model's default.">
-                 <div className="flex items-center gap-4 max-w-xs">
-                    <input
-                        type="number"
-                        min="0"
-                        step="100"
-                        value={maxTokens}
-                        onChange={e => setMaxTokens(parseInt(e.target.value, 10) || 0)}
-                        className="w-full p-2 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                        disabled={disabled}
-                    />
-                    <button
-                        onClick={() => setMaxTokens(defaultMaxTokens)}
-                        disabled={disabled || maxTokens === defaultMaxTokens}
-                        className="px-3 py-1 text-xs font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Reset
-                    </button>
-                </div>
-            </SettingField>
+            <SettingItem label="Max Tokens" description="0 = Model Default">
+                 <input
+                    type="number"
+                    min="0"
+                    step="100"
+                    value={maxTokens}
+                    onChange={e => setMaxTokens(parseInt(e.target.value, 10) || 0)}
+                    className="w-24 p-1.5 bg-layer-2 border border-border rounded-md text-sm text-right focus:outline-none focus:ring-1 focus:ring-primary-main text-content-primary"
+                    disabled={disabled}
+                />
+            </SettingItem>
         </div>
     );
 };

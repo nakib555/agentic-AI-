@@ -9,38 +9,35 @@ export type Theme = 'light' | 'dark' | 'system';
 
 export const useTheme = () => {
   const [theme, setTheme] = useState<Theme>(() => {
-    return (localStorage.getItem('theme') as Theme) || 'system';
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('theme') as Theme) || 'system';
+    }
+    return 'system';
   });
 
   useEffect(() => {
     const root = window.document.documentElement;
-
-    const applyTheme = (themeToApply: 'light' | 'dark') => {
-        if (themeToApply === 'dark') {
-            root.classList.add('dark');
-        } else {
-            root.classList.remove('dark');
-        }
-    };
-
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    if (theme === 'system') {
-        localStorage.removeItem('theme');
-        applyTheme(mediaQuery.matches ? 'dark' : 'light');
-    } else {
-        localStorage.setItem('theme', theme);
-        applyTheme(theme);
-    }
-    
-    const handleChange = (e: MediaQueryListEvent) => {
-        if (theme === 'system') {
-            applyTheme(e.matches ? 'dark' : 'light');
-        }
+
+    const applyTheme = () => {
+      root.classList.remove('light', 'dark');
+
+      if (theme === 'system') {
+        const systemTheme = mediaQuery.matches ? 'dark' : 'light';
+        root.classList.add(systemTheme);
+      } else {
+        root.classList.add(theme);
+      }
     };
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    applyTheme();
+    localStorage.setItem('theme', theme);
+
+    if (theme === 'system') {
+      const handleChange = () => applyTheme();
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
   }, [theme]);
 
   return { theme, setTheme };
