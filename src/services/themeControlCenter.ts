@@ -1,12 +1,11 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import lightTheme from '../theme/light.json';
-import darkTheme from '../theme/dark.json';
-import systemTheme from '../theme/system.json';
+import lightTheme from '../theme/light';
+import darkTheme from '../theme/dark';
+import systemTheme from '../theme/system';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -37,7 +36,7 @@ class ThemeControlCenterService {
    * Logic for System Mode: Detects preference and redirects.
    */
   private handleSystemMode() {
-    const systemConfig = systemTheme; // Reading from system.json
+    const systemConfig = systemTheme; // Reading from system.ts
     if (systemConfig.autoDetect) {
       const resolvedTheme = this.mediaQuery.matches ? 'dark' : 'light';
       console.log(`[ThemeControlCenter] System mode detected: ${resolvedTheme}`);
