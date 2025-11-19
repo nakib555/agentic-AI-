@@ -17,7 +17,7 @@ type SettingItemProps = {
 export const SettingItem: React.FC<SettingItemProps> = ({ label, description, children, className = '', layout = 'row' }) => {
     return (
         <div className={`py-6 border-b border-slate-200/60 dark:border-white/5 last:border-0 ${className}`}>
-            <div className={`flex ${layout === 'row' ? 'flex-row items-start md:items-center justify-between gap-4' : 'flex-col gap-4'}`}>
+            <div className={`flex ${layout === 'row' ? 'flex-col sm:flex-row sm:items-center justify-between gap-4' : 'flex-col gap-4'}`}>
                 <div className="flex-1 min-w-0 pr-4">
                     <label className="text-base font-semibold text-slate-800 dark:text-slate-200 block mb-1">{label}</label>
                     {description && (
@@ -26,7 +26,7 @@ export const SettingItem: React.FC<SettingItemProps> = ({ label, description, ch
                         </p>
                     )}
                 </div>
-                <div className={`flex-shrink-0 ${layout === 'row' ? '' : 'w-full pt-1'}`}>
+                <div className={`flex-shrink-0 ${layout === 'row' ? 'w-full sm:w-auto pt-1 sm:pt-0' : 'w-full pt-1'}`}>
                     {children}
                 </div>
             </div>
