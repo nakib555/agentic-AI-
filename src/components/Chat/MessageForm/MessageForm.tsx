@@ -56,10 +56,10 @@ export const MessageForm = forwardRef<MessageFormHandle, {
       <form onSubmit={logic.handleSubmit} className="relative">
         <motion.div 
             className={`
-              relative flex flex-col p-3 rounded-[1.5rem] transition-shadow duration-300
+              relative flex flex-col p-3 rounded-[1.25rem] transition-colors duration-300 border
               ${logic.isFocused 
-                ? 'bg-white dark:bg-[#1a1a1a] shadow-xl ring-1 ring-black/5 dark:ring-white/10' 
-                : 'bg-gray-50/80 dark:bg-[#121212] border border-gray-200 dark:border-white/5 shadow-sm hover:shadow-md'
+                ? 'bg-white dark:bg-[#1a1a1a] border-gray-300 dark:border-white/20' 
+                : 'bg-gray-50/80 dark:bg-[#121212] border-gray-200 dark:border-white/5'
               }
             `}
             layout
@@ -243,19 +243,25 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     {isGeneratingResponse ? ( 
                        <div className="w-6 h-6">
                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-full h-full">
+                           <!-- Inner white box (using currentColor for proper theme support) -->
                            <rect 
                              x="18" y="18" 
                              width="12" height="12" 
                              rx="2" ry="2"
                              fill="currentColor"
                            />
+                         
+                           <!-- Animated ring -->
                            <circle 
                              cx="24" cy="24" r="16" 
                              fill="none" 
+                             stroke="#4f46e5" 
                              strokeWidth="4.5" 
                              strokeLinecap="round"
                              strokeDasharray="80 100" 
                              strokeDashoffset="0">
+                         
+                             <!-- Rotation -->
                              <animateTransform 
                                attributeName="transform" 
                                type="rotate" 
@@ -263,16 +269,31 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                                to="360 24 24" 
                                dur="2.5s" 
                                repeatCount="indefinite"/>
+                         
+                             <!-- Dash motion -->
                              <animate 
                                attributeName="stroke-dashoffset" 
                                values="0; -180" 
                                dur="2.5s" 
                                repeatCount="indefinite"/>
+                         
+                             <!-- 10-color loop -->
                              <animate 
                                attributeName="stroke" 
                                dur="10s" 
                                repeatCount="indefinite"
-                               values="#f87171;#fb923c;#facc15;#4ade80;#22d3ee;#3b82f6;#818cf8;#e879f9;#f472b6;#f87171"
+                               values="
+                                 #f87171;
+                                 #fb923c;
+                                 #facc15;
+                                 #4ade80;
+                                 #22d3ee;
+                                 #3b82f6;
+                                 #818cf8;
+                                 #e879f9;
+                                 #f472b6;
+                                 #f87171
+                               "
                              />
                            </circle>
                          </svg>
