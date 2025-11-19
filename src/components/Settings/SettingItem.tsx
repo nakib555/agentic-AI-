@@ -42,11 +42,12 @@ export const SettingItem: React.FC<SettingItemProps> = ({ label, description, ch
             {/* 
                 Use flex-wrap with a min-width on the text container. 
                 This ensures that when the container gets "cramped" (narrow), 
-                forcing the text to break into many lines (approx > 3-4 lines at 240px width),
+                forcing the text to break into many lines (approx > 3-4 lines at 200px width),
                 the control element will naturally wrap to the next line (bottom).
+                200px is tuned to wrap "Temperature" at ~4 lines and "Max Tokens" at ~3 lines.
             */}
             <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
-                <div className="flex-1 min-w-[240px] max-w-full">
+                <div className="flex-1 min-w-[200px] max-w-full">
                     <label className="text-base font-semibold text-slate-800 dark:text-slate-200 block mb-1">{label}</label>
                     {description && (
                         <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
