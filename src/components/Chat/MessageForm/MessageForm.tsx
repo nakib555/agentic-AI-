@@ -243,7 +243,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     {isGeneratingResponse ? ( 
                        <div className="w-6 h-6">
                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-full h-full">
-                           <!-- Inner white box (using currentColor for proper theme support) -->
                            <rect 
                              x="18" y="18" 
                              width="12" height="12" 
@@ -251,7 +250,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                              fill="currentColor"
                            />
                          
-                           <!-- Animated ring -->
                            <circle 
                              cx="24" cy="24" r="16" 
                              fill="none" 
@@ -261,7 +259,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                              strokeDasharray="80 100" 
                              strokeDashoffset="0">
                          
-                             <!-- Rotation -->
                              <animateTransform 
                                attributeName="transform" 
                                type="rotate" 
@@ -270,30 +267,17 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                                dur="2.5s" 
                                repeatCount="indefinite"/>
                          
-                             <!-- Dash motion -->
                              <animate 
                                attributeName="stroke-dashoffset" 
                                values="0; -180" 
                                dur="2.5s" 
                                repeatCount="indefinite"/>
                          
-                             <!-- 10-color loop -->
                              <animate 
                                attributeName="stroke" 
                                dur="10s" 
                                repeatCount="indefinite"
-                               values="
-                                 #f87171;
-                                 #fb923c;
-                                 #facc15;
-                                 #4ade80;
-                                 #22d3ee;
-                                 #3b82f6;
-                                 #818cf8;
-                                 #e879f9;
-                                 #f472b6;
-                                 #f87171
-                               "
+                               values="#f87171; #fb923c; #facc15; #4ade80; #22d3ee; #3b82f6; #818cf8; #e879f9; #f472b6; #f87171"
                              />
                            </circle>
                          </svg>
