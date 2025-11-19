@@ -12,10 +12,11 @@ import type { Message } from '../../types';
 import { FileIcon } from '../UI/FileIcon';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 
+// Optimized spring physics for performance
 const animationProps = {
-  initial: { opacity: 0, y: 15, scale: 0.95 },
+  initial: { opacity: 0, y: 15, scale: 0.98 },
   animate: { opacity: 1, y: 0, scale: 1 },
-  transition: { type: "spring", stiffness: 400, damping: 30 },
+  transition: { type: "spring", stiffness: 200, damping: 25 },
 };
 
 

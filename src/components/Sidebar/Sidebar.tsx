@@ -123,6 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         onClick={() => setIsOpen(false)}
                         className="fixed inset-0 bg-black/50 z-10 backdrop-blur-sm" 
+                        style={{ willChange: 'opacity' }}
                     />
                 )}
             </AnimatePresence>
@@ -134,8 +135,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 transition={{
                     type: isResizing || animationDisabledForResize ? 'tween' : 'spring',
                     duration: isResizing || animationDisabledForResize ? 0 : 0.5,
-                    stiffness: 200, // Slightly reduced for better performance on low-end
-                    damping: 25,
+                    stiffness: 180, // Optimized for smoother performance
+                    damping: 24,
                     mass: 1,
                 }}
                 style={{
@@ -145,8 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     left: 0,
                     top: 0,
                     zIndex: isDesktop ? 'auto' : 30,
-                    // Optimize rendering for animation
-                    willChange: isResizing ? 'width' : 'width, transform',
+                    willChange: isResizing ? 'width' : 'width, transform', // GPU hint
                 }}
                 className="bg-layer-1 border-r border-border flex flex-col transform-gpu shadow-xl md:shadow-none"
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
@@ -174,7 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         className="my-4 border-t border-border"
                         initial={false}
                         animate={{ opacity: isCollapsed ? 0 : 1, height: isCollapsed ? 0 : 'auto' }}
-                        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
                     />
 
                     <HistoryList 

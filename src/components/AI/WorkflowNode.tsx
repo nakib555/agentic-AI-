@@ -220,8 +220,7 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId }: Workflo
         <motion.div 
             layout 
             className={`w-full p-4 rounded-xl bg-white dark:bg-black/20 border shadow-sm ${agentColorInfo ? agentColorInfo.border : 'border-gray-200 dark:border-white/10'}`}
-            // Optimize layout animation
-            style={{ willChange: 'transform, opacity' }}
+            style={{ willChange: 'transform, opacity' }} // Optimize layout animation
         >
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">

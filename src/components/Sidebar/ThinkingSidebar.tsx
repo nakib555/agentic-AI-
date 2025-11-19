@@ -162,8 +162,8 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             transition={{
                 type: isResizing ? 'tween' : 'spring',
                 duration: isResizing ? 0 : 0.5,
-                stiffness: 200,
-                damping: 25,
+                stiffness: 180, // Smoother physics
+                damping: 24,
                 mass: 1,
             }}
             className={`
@@ -177,7 +177,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             aria-labelledby="thinking-sidebar-title"
             style={{ 
                 userSelect: isResizing ? 'none' : 'auto',
-                willChange: isResizing ? 'width' : 'width, transform'
+                willChange: isResizing ? 'width' : 'width, transform' // GPU hint
             }}
         >
             <div 
