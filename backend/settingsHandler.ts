@@ -29,7 +29,7 @@ const VALIDATION_TIMEOUT_MS = 10000; // 10 seconds timeout for validation
 
 // Helper for timeout
 const withTimeout = <T>(promise: Promise<T>, ms: number, errorMessage: string): Promise<T> => {
-    let timer: NodeJS.Timeout;
+    let timer: any;
     const timeoutPromise = new Promise<T>((_, reject) => {
         timer = setTimeout(() => reject(new Error(errorMessage)), ms);
     });
@@ -86,11 +86,19 @@ export const updateSettings = async (req: any, res: any) => {
                 
                 // Model Fetch Step with Timeout
                 // We try to fetch the models, but we also protect against this hanging.
-                modelData = await withTimeout(
+                const fetchedModels = await withTimeout(
                      listAvailableModels(req.body.apiKey),
                      VALIDATION_TIMEOUT_MS,
                      'Fetching models timed out.'
                 );
+
+                // Map chatModels to models to match the frontend expectation (same as modelsHandler)
+                modelData = {
+                    models: fetchedModels.chatModels,
+                    imageModels: fetchedModels.imageModels,
+                    videoModels: fetchedModels.videoModels
+                };
+                
             } catch (error: any) {
                 console.warn('API Key validation failed on save:', error.message);
                 
