@@ -132,7 +132,8 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
 
   return (
     <div className="flex-1 overflow-y-auto" ref={messageListRef} onScroll={handleScroll}>
-      <div className={`min-h-full flex w-full justify-center px-4 sm:px-6 md:px-8 ${visibleMessages.length > 0 ? 'items-start' : 'items-center'}`}>
+      {/* Changed items-start to items-end to keep messages at the bottom when few are present */}
+      <div className={`min-h-full flex w-full justify-center px-4 sm:px-6 md:px-8 ${visibleMessages.length > 0 ? 'items-end' : 'items-center'}`}>
         {visibleMessages.length === 0 ? (
           <WelcomeScreen sendMessage={sendMessage} />
         ) : (
