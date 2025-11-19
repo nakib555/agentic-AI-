@@ -7,7 +7,7 @@
 import { promises as fs } from 'fs';
 import { GoogleGenAI } from "@google/genai";
 import { parseApiError } from './utils/apiError.js';
-import { SETTINGS_PATH } from './data-store.js';
+import { SETTINGS_FILE_PATH } from './data-store.js';
 import { listAvailableModels } from './services/modelService.js';
 
 // Default settings structure
@@ -41,13 +41,13 @@ const withTimeout = <T>(promise: Promise<T>, ms: number, errorMessage: string): 
 
 const readSettings = async () => {
     try {
-        const content = await fs.readFile(SETTINGS_PATH, 'utf-8');
+        const content = await fs.readFile(SETTINGS_FILE_PATH, 'utf-8');
         return { ...defaultSettings, ...JSON.parse(content) };
     } catch (error: any) {
         if (error.code === 'ENOENT') {
             // The init script ensures the directory exists, but the file might not.
             // Create it with defaults if it doesn't.
-            await fs.writeFile(SETTINGS_PATH, JSON.stringify(defaultSettings, null, 2), 'utf-8');
+            await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(defaultSettings, null, 2), 'utf-8');
             return defaultSettings;
         }
         console.error('Failed to read settings:', error);
@@ -121,7 +121,7 @@ export const updateSettings = async (req: any, res: any) => {
             }
         }
 
-        await fs.writeFile(SETTINGS_PATH, JSON.stringify(newSettings, null, 2), 'utf-8');
+        await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(newSettings, null, 2), 'utf-8');
         res.status(200).json({ ...newSettings, ...modelData });
     } catch (error) {
         console.error('Failed to update settings:', error);

@@ -125,6 +125,7 @@ export const App = () => {
         handleFileUploadForImport={logic.handleFileUploadForImport}
         onRunTests={() => logic.setIsTestMode(true)}
         onDownloadLogs={logic.handleDownloadLogs}
+        onShowDataStructure={logic.handleShowDataStructure}
         availableModels={logic.availableModels}
         availableImageModels={logic.availableImageModels}
         availableVideoModels={logic.availableVideoModels}

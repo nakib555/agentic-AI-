@@ -10,8 +10,18 @@ import path from 'path';
 // --- Centralized Path Definitions ---
 const DATA_PATH = path.join((process as any).cwd(), 'data');
 export const HISTORY_PATH = path.join(DATA_PATH, 'history');
-export const SETTINGS_PATH = path.join(DATA_PATH, 'settings.json');
-export const MEMORY_PATH = path.join(DATA_PATH, 'memory.json');
+
+// Settings Structure: data/settings/
+export const SETTINGS_DIR = path.join(DATA_PATH, 'settings');
+export const SETTINGS_FILE_PATH = path.join(SETTINGS_DIR, 'settings.json');
+
+// Memory Structure: data/settings/memory/
+export const MEMORY_DIR = path.join(SETTINGS_DIR, 'memory');
+export const MEMORY_CONTENT_PATH = path.join(MEMORY_DIR, 'core.txt');
+export const MEMORY_FILES_DIR = path.join(MEMORY_DIR, 'files');
+
+// Prompts Structure: data/settings/prompts/
+export const PROMPTS_DIR = path.join(SETTINGS_DIR, 'prompts');
 
 // Centralized Indices
 export const HISTORY_INDEX_PATH = path.join(HISTORY_PATH, 'history.json');
@@ -21,6 +31,7 @@ export const TIME_GROUPS_PATH = path.join(HISTORY_PATH, 'timeGroups.json');
 const ensureDir = async (dirPath: string) => {
     try {
         await fs.mkdir(dirPath, { recursive: true });
+        console.log(`[DATA_STORE] Ensured directory exists: ${dirPath}`);
     } catch (error: any) {
         if (error.code !== 'EEXIST') {
             console.error(`Error creating directory ${dirPath}:`, error);
@@ -30,8 +41,19 @@ const ensureDir = async (dirPath: string) => {
 };
 
 export const initDataStore = async () => {
+    console.log('[DATA_STORE] Initializing data store...');
+    
+    // Create Directory Structure
     await ensureDir(DATA_PATH);
     await ensureDir(HISTORY_PATH);
+    await ensureDir(SETTINGS_DIR);
+    
+    // Explicitly create nested memory folders inside settings
+    await ensureDir(MEMORY_DIR);
+    await ensureDir(MEMORY_FILES_DIR);
+    
+    // Create prompts folder inside settings
+    await ensureDir(PROMPTS_DIR);
     
     // Helper to initialize or validate JSON file
     const initJsonFile = async (filePath: string, defaultValue: any) => {
@@ -49,10 +71,11 @@ export const initDataStore = async () => {
         }
     };
 
+    // Initialize History Indices
     await initJsonFile(HISTORY_INDEX_PATH, []);
     await initJsonFile(TIME_GROUPS_PATH, {});
     
-    // Also ensure settings and memory files exist or are valid
+    // Initialize Settings
     const defaultSettings = {
         apiKey: '',
         aboutUser: '',
@@ -66,8 +89,15 @@ export const initDataStore = async () => {
         isAutoPlayEnabled: false,
         isAgentMode: true,
     };
-    await initJsonFile(SETTINGS_PATH, defaultSettings);
-    await initJsonFile(MEMORY_PATH, { content: '' });
+    await initJsonFile(SETTINGS_FILE_PATH, defaultSettings);
+    
+    // Initialize Core Memory File if missing
+    try {
+        await fs.access(MEMORY_CONTENT_PATH);
+    } catch {
+        console.log('[DATA_STORE] Initializing core memory file');
+        await fs.writeFile(MEMORY_CONTENT_PATH, '', 'utf-8');
+    }
 
-    console.log('[DATA_STORE] Initialized data directories and indices.');
+    console.log('[DATA_STORE] Data initialization complete.');
 };

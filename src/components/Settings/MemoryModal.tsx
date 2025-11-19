@@ -205,7 +205,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                 <div className="flex flex-col border-b border-slate-200 dark:border-white/5 bg-white dark:bg-[#1e1e1e] z-10">
                     <div className="flex items-center justify-between px-6 py-5">
                         <div className="flex-1">
-                            <h2 className="text-xl font-bold text-slate-800 dark:text-white">Manage Memory Files</h2>
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-white">Manage Memor</h2>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                                 View and edit the persistent files the AI has created.
                             </p>

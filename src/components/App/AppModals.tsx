@@ -27,6 +27,7 @@ type AppModalsProps = {
   handleFileUploadForImport: (file: File) => void;
   onRunTests: () => void;
   onDownloadLogs: () => void;
+  onShowDataStructure: () => void; // Added
   availableModels: Model[];
   availableImageModels: Model[];
   availableVideoModels: Model[];
@@ -88,7 +89,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
     setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, onManageMemory,
     apiKey, onSaveApiKey, isImportModalOpen, setIsImportModalOpen, handleFileUploadForImport,
-    onDownloadLogs, confirmation, onConfirm, onCancel
+    onDownloadLogs, onShowDataStructure, confirmation, onConfirm, onCancel
   } = props;
 
   return (
@@ -105,6 +106,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         onClearAllChats={clearAllChats}
         onRunTests={onRunTests}
         onDownloadLogs={onDownloadLogs}
+        onShowDataStructure={onShowDataStructure}
         apiKey={apiKey}
         onSaveApiKey={onSaveApiKey}
         aboutUser={aboutUser}

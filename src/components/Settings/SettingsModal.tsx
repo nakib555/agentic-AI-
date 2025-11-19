@@ -23,6 +23,7 @@ type SettingsModalProps = {
   onClearAllChats: () => void;
   onRunTests: () => void;
   onDownloadLogs: () => void;
+  onShowDataStructure: () => void; // Added
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
   aboutUser: string;
@@ -129,7 +130,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 exit={{ opacity: 0, x: -10 }}
                                 transition={{ duration: 0.2, ease: "easeOut" }}
                             >
-                                {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} />}
+                                {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} />}
                                 {activeCategory === 'model' && <ModelSettings {...props} />}
                                 {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
                                 {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}

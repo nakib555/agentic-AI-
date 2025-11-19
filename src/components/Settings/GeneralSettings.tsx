@@ -11,11 +11,12 @@ type GeneralSettingsProps = {
   onClearAllChats: () => void;
   onRunTests: () => void;
   onDownloadLogs: () => void;
+  onShowDataStructure: () => void; // Added
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
 };
 
-export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChats, onRunTests, onDownloadLogs, apiKey, onSaveApiKey }) => {
+export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, apiKey, onSaveApiKey }) => {
   const [localApiKey, setLocalApiKey] = useState(apiKey);
   const [showApiKey, setShowApiKey] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -142,6 +143,16 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /></svg>
                </div>
                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Download Logs</span>
+            </button>
+
+            <button
+              onClick={onShowDataStructure}
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+            >
+               <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M3.75 3A1.75 1.75 0 0 0 2 4.75v3.26a3.235 3.235 0 0 1 1.75-.51h12.5c.644 0 1.245.188 1.75.51V6.75A1.75 1.75 0 0 0 16.25 5h-4.836a.25.25 0 0 1-.177-.073L9.823 3.513A1.75 1.75 0 0 0 8.586 3H3.75ZM3.75 9A1.75 1.75 0 0 0 2 10.75v4.5c0 .966.784 1.75 1.75 1.75h12.5A1.75 1.75 0 0 0 18 15.25v-4.5A1.75 1.75 0 0 0 16.25 9H3.75Z" /></svg>
+               </div>
+               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Data Structure</span>
             </button>
           </div>
       </div>

@@ -6,6 +6,8 @@
 
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { GoogleGenAI } from "@google/genai";
+import { promises as fs } from 'fs';
+import path from 'path';
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
 import { parseApiError } from './utils/apiError.js';
@@ -29,6 +31,32 @@ const writeEvent = (res: any, type: string, payload: any) => {
 };
 
 const generateId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+async function generateAsciiTree(dirPath: string, prefix: string = ''): Promise<string> {
+    let output = '';
+    let entries;
+    try {
+        entries = await fs.readdir(dirPath, { withFileTypes: true });
+    } catch (e) {
+        return `${prefix} [Error reading directory]\n`;
+    }
+
+    // Filter out hidden files/dirs if necessary, e.g. .DS_Store
+    entries = entries.filter(e => !e.name.startsWith('.'));
+
+    for (let i = 0; i < entries.length; i++) {
+        const entry = entries[i];
+        const isLast = i === entries.length - 1;
+        const connector = isLast ? '└── ' : '├── ';
+        output += `${prefix}${connector}${entry.name}\n`;
+
+        if (entry.isDirectory()) {
+            const childPrefix = prefix + (isLast ? '    ' : '│   ');
+            output += await generateAsciiTree(path.join(dirPath, entry.name), childPrefix);
+        }
+    }
+    return output;
+}
 
 // Using 'any' for req/res to bypass strict type checks that are failing due to missing properties in the inferred types
 export const apiHandler = async (req: any, res: any) => {
@@ -232,6 +260,14 @@ export const apiHandler = async (req: any, res: any) => {
                 const toolExecutor = createToolExecutor(ai, '', '', apiKey!, chatId, async () => ({error: 'Frontend execution not supported in this context'}));
                 const result = await toolExecutor(toolName, toolArgs);
                 res.status(200).json({ result });
+                break;
+            }
+
+            case 'debug_data_tree': {
+                const dataPath = path.join(process.cwd(), 'data');
+                let tree = `data/\n`;
+                tree += await generateAsciiTree(dataPath);
+                res.status(200).json({ tree });
                 break;
             }
 
