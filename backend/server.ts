@@ -27,7 +27,7 @@ async function startServer() {
   // Cast handlers to 'any' to avoid TypeScript overload mismatches with Express types
   app.options('*', cors(corsOptions) as any);
   app.use(cors(corsOptions) as any);
-  app.use(express.json({ limit: '50mb' }));
+  app.use(express.json({ limit: '50mb' }) as any);
 
   // Version Check Middleware
   const appVersion = process.env.APP_VERSION;
