@@ -51,10 +51,60 @@ type SettingsModalProps = {
 };
 
 const CATEGORIES = [
-  { id: 'general', label: 'General', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M7.83 4.25A2.75 2.75 0 0 1 10.58 7v.06c.21-.03.42-.06.64-.06 1.12 0 2.16.3 3.08 1.03l-4.08 4.08a2.5 2.5 0 0 1-3.54 0L4.5 9.99A5.48 5.48 0 0 1 7.83 4.25ZM9 9.06a1 1 0 0 0-1.41 0L5.47 11.18a3.98 3.98 0 0 0 4.54 4.54l2.12-2.12a1 1 0 0 0 0-1.41L9 9.06Z" clipRule="evenodd" /></svg> },
-  { id: 'model', label: 'Model & Behavior', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M7.75 2.75a.75.75 0 0 0-1.5 0v1.258a5.523 5.523 0 0 0-1.503 1.334c-.792.792-1.247 1.87-1.247 2.985v.253a.75.75 0 0 0 1.5 0v-.253c0-.8-.316-1.55-.879-2.113a4.023 4.023 0 0 1 2.113-.879H7.75V2.75Z" /><path d="M12.25 2.75a.75.75 0 0 1 1.5 0v1.258a5.523 5.523 0 0 1 1.503 1.334c.792.792 1.247 1.87 1.247 2.985v.253a.75.75 0 0 1-1.5 0v-.253c0-.8-.316-1.55-.879-2.113a4.023 4.023 0 0 0-2.113-.879H12.25V2.75Z" /><path fillRule="evenodd" d="M17 10c0-2.036-1.289-3.796-3.085-4.482A5.526 5.526 0 0 0 10 3.5a5.526 5.526 0 0 0-3.915 1.018C4.289 6.204 3 7.964 3 10c0 2.036 1.289 3.796 3.085 4.482A5.526 5.526 0 0 0 10 16.5a5.526 5.526 0 0 0 3.915-1.018C15.711 13.796 17 12.036 17 10ZM10 5a4.026 4.026 0 0 1 2.848.742A4.49 4.49 0 0 1 15.5 10a4.49 4.49 0 0 1-2.652 4.258A4.026 4.026 0 0 1 10 15a4.026 4.026 0 0 1-2.848-.742A4.49 4.49 0 0 1 4.5 10a4.49 4.49 0 0 1 2.652-4.258A4.026 4.026 0 0 1 10 5Z" clipRule="evenodd" /><path d="M7.75 12.25a.75.75 0 0 0-1.5 0v.253c0 1.114.455 2.193 1.247 2.985a5.523 5.523 0 0 0 1.503 1.334V18a.75.75 0 0 0 1.5 0v-1.178a4.023 4.023 0 0 1-2.113-.879.75.75 0 0 1-.879-2.113V12.25Z" /><path d="M12.25 12.25a.75.75 0 0 1 1.5 0v.253c0 1.114-.455 2.193-1.247 2.985a5.523 5.523 0 0 1-1.503 1.334V18a.75.75 0 0 1-1.5 0v-1.178a4.023 4.023 0 0 0 2.113-.879c.563-.564.879-1.314.879-2.113V12.25Z" /></svg> },
-  { id: 'instructions', label: 'Custom Instructions', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M15.988 3.012A2.25 2.25 0 0 1 18 5.25v9.5A2.25 2.25 0 0 1 15.75 17h-11.5A2.25 2.25 0 0 1 2 14.75v-9.5A2.25 2.25 0 0 1 4.25 3h11.528a2.25 2.25 0 0 1-.04.012ZM13 6.25a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 6.25a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6 8.25a.75.75 0 0 0 0 1.5h8a.75.75 0 0 0 0-1.5H6Z" clipRule="evenodd" /></svg> },
-  { id: 'speech', label: 'Speech & Memory', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M7 4a1 1 0 0 1 2 0v1.906a2.5 2.5 0 0 1 2.375 2.45v.144a2.5 2.5 0 1 1-2.5 2.5V8.5h-1V12a1 1 0 1 1-2 0V5a1 1 0 0 1 1-1Z" /><path d="M12.5 6.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" /></svg> },
+  { 
+    id: 'general', 
+    label: 'General', 
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <line x1="4" y1="21" x2="4" y2="14" />
+        <line x1="4" y1="10" x2="4" y2="3" />
+        <line x1="12" y1="21" x2="12" y2="12" />
+        <line x1="12" y1="8" x2="12" y2="3" />
+        <line x1="20" y1="21" x2="20" y2="16" />
+        <line x1="20" y1="12" x2="20" y2="3" />
+        <line x1="1" y1="14" x2="7" y2="14" />
+        <line x1="9" y1="8" x2="15" y2="8" />
+        <line x1="17" y1="16" x2="23" y2="16" />
+      </svg>
+    ) 
+  },
+  { 
+    id: 'model', 
+    label: 'Model & Behavior', 
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M12 2l9 4.5v9L12 20l-9-4.5v-9L12 2z" />
+        <circle cx="12" cy="11" r="3" />
+        <path d="M12 14v3" />
+        <path d="M9.5 12.5l-2.5 1.5" />
+        <path d="M14.5 12.5l2.5 1.5" />
+      </svg>
+    ) 
+  },
+  { 
+    id: 'instructions', 
+    label: 'Custom Instructions', 
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        <path d="M15 5l3 3" />
+      </svg>
+    ) 
+  },
+  { 
+    id: 'speech', 
+    label: 'Speech & Memory', 
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M3 10v4" />
+        <path d="M7 6v12" />
+        <path d="M11 3v18" />
+        <path d="M15 8v8" />
+        <path d="M19 11v2" />
+      </svg>
+    ) 
+  },
 ];
 
 export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
