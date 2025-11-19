@@ -66,6 +66,7 @@ export const apiHandler = async (req: any, res: any) => {
     const apiKey = await getApiKey();
 
     // Tasks that are allowed to run without an API key
+    // 'debug_data_tree' must be here to allow checking file structure without a valid key setup
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree'];
 
     if (!apiKey && !BYPASS_TASKS.includes(task)) {
