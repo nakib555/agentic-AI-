@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -41,6 +42,7 @@ export const useMemory = (isMemoryEnabled: boolean) => {
             setMemoryContent(newContent);
         } catch (error) {
             console.error("Failed to update memory on backend:", error);
+            throw error; // Re-throw to allow UI to handle error state
         }
     }, []);
 
@@ -105,6 +107,7 @@ export const useMemory = (isMemoryEnabled: boolean) => {
         isMemoryEnabled,
         memoryContent,
         updateMemory,
+        updateBackendMemory, // Exposed for manual editing
         clearMemory,
         isConfirmationOpen,
         memorySuggestions,

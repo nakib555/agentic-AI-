@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -57,6 +58,7 @@ type AppModalsProps = {
   onManageMemory: () => void;
   memoryContent: string;
   clearMemory: () => void;
+  updateBackendMemory: (content: string) => Promise<void>; // Added
   isConfirmationOpen: boolean;
   memorySuggestions: string[];
   confirmMemoryUpdate: () => void;
@@ -79,7 +81,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens,
     setMaxTokens, imageModel, onImageModelChange, videoModel, onVideoModelChange,
     defaultTemperature, defaultMaxTokens, isMemoryEnabled,
-    setIsMemoryEnabled, memoryContent, clearMemory, isConfirmationOpen,
+    setIsMemoryEnabled, memoryContent, clearMemory, updateBackendMemory, isConfirmationOpen,
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
     setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, onManageMemory,
     apiKey, onSaveApiKey, isImportModalOpen, setIsImportModalOpen, handleFileUploadForImport,
@@ -129,6 +131,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         onClose={() => setIsMemoryModalOpen(false)}
         memoryContent={memoryContent}
         onClearMemory={clearMemory}
+        onUpdateMemory={updateBackendMemory}
       />
       <MemoryConfirmationModal
         isOpen={isConfirmationOpen}

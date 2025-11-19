@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -548,5 +549,6 @@ export const useAppLogic = () => {
     handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests,
     handleFileUploadForImport,
     handleDownloadLogs,
+    updateBackendMemory: memory.updateBackendMemory // Explicitly pass this
   };
 };
