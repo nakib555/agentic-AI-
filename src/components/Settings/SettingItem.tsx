@@ -12,9 +12,17 @@ type SettingItemProps = {
     children?: React.ReactNode;
     className?: string;
     layout?: 'row' | 'col';
+    wrapControls?: boolean;
 };
 
-export const SettingItem: React.FC<SettingItemProps> = ({ label, description, children, className = '', layout = 'row' }) => {
+export const SettingItem: React.FC<SettingItemProps> = ({ 
+    label, 
+    description, 
+    children, 
+    className = '', 
+    layout = 'row',
+    wrapControls = true 
+}) => {
     // Explicit column layout (used for things like Image Models that need full width)
     if (layout === 'col') {
         return (
@@ -40,13 +48,10 @@ export const SettingItem: React.FC<SettingItemProps> = ({ label, description, ch
     return (
         <div className={`py-6 border-b border-slate-200/60 dark:border-white/5 last:border-0 ${className}`}>
             {/* 
-                Use flex-wrap with a min-width on the text container. 
-                This ensures that when the container gets "cramped" (narrow), 
-                forcing the text to break into many lines (approx > 3-4 lines at 200px width),
-                the control element will naturally wrap to the next line (bottom).
-                200px is tuned to wrap "Temperature" at ~4 lines and "Max Tokens" at ~3 lines.
+                wrapControls=true: Use flex-wrap with min-width constraints. Controls drop to bottom when text is cramped.
+                wrapControls=false: Use flex-nowrap. Controls stay on the right regardless of text length.
             */}
-            <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+            <div className={`flex ${wrapControls ? 'flex-wrap' : 'flex-nowrap'} items-center justify-between gap-x-8 gap-y-4`}>
                 <div className="flex-1 min-w-[200px] max-w-full">
                     <label className="text-base font-semibold text-slate-800 dark:text-slate-200 block mb-1">{label}</label>
                     {description && (
@@ -55,7 +60,7 @@ export const SettingItem: React.FC<SettingItemProps> = ({ label, description, ch
                         </p>
                     )}
                 </div>
-                <div className="flex-shrink-0 w-full sm:w-auto pt-1 sm:pt-0">
+                <div className={`flex-shrink-0 ${wrapControls ? 'w-full sm:w-auto pt-1 sm:pt-0' : ''}`}>
                     {children}
                 </div>
             </div>
