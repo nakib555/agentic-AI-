@@ -1,5 +1,0 @@
-{
-  "mode": "system",
-  "description": "Automatically detects device preference and redirects to Light or Dark theme files.",
-  "autoDetect": true
-}

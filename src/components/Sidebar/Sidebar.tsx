@@ -120,6 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
                         onClick={() => setIsOpen(false)}
                         className="fixed inset-0 bg-black/50 z-10 backdrop-blur-sm" 
                     />
@@ -132,10 +133,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 variants={isDesktop ? undefined : mobileVariants}
                 transition={{
                     type: isResizing || animationDisabledForResize ? 'tween' : 'spring',
-                    duration: isResizing || animationDisabledForResize ? 0 : undefined,
-                    stiffness: 300,
-                    damping: 30,
-                    mass: 1.2,
+                    duration: isResizing || animationDisabledForResize ? 0 : 0.5,
+                    stiffness: 260, // Premium feel: softer spring
+                    damping: 25,    // Less friction for fluidity
+                    mass: 1,
                 }}
                 style={{
                     height: '100%',
@@ -145,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     top: 0,
                     zIndex: isDesktop ? 'auto' : 30,
                 }}
-                className="bg-layer-1 border-r border-border flex flex-col transform-gpu"
+                className="bg-layer-1 border-r border-border flex flex-col transform-gpu shadow-xl md:shadow-none"
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 

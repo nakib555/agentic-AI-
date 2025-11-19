@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -160,9 +161,10 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             variants={variants}
             transition={{
                 type: isResizing ? 'tween' : 'spring',
-                duration: isResizing ? 0 : undefined,
-                stiffness: 500,
-                damping: 40,
+                duration: isResizing ? 0 : 0.5,
+                stiffness: 260,
+                damping: 25,
+                mass: 1,
             }}
             className={`
                 flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-[#1e1e1e]

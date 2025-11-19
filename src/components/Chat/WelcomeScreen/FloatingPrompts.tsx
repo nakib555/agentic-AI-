@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -18,7 +19,7 @@ const containerVariants = {
       opacity: 1,
       transition: {
         delayChildren: 0.4,
-        staggerChildren: 0.08,
+        staggerChildren: 0.1,
       },
     },
 };

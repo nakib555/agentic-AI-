@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -25,9 +26,9 @@ import { FlowToken } from '../../AI/FlowToken';
 import { cleanTextForTts } from './utils';
 
 const animationProps = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.4, ease: "easeOut" },
+  initial: { opacity: 0, y: 15, scale: 0.95 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  transition: { type: "spring", stiffness: 400, damping: 30 },
 };
 
 type AiMessageProps = { 
@@ -123,7 +124,7 @@ export const AiMessage: React.FC<AiMessageProps> = (props) => {
   }
 
   return (
-    <motion.div {...animationProps} className="w-full flex flex-col items-start gap-4">
+    <motion.div {...animationProps} className="w-full flex flex-col items-start gap-4 origin-bottom-left">
       {logic.hasThinkingProcess && (
         <button
             onClick={() => onShowThinkingProcess(id)}

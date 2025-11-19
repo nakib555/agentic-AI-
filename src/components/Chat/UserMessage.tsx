@@ -13,9 +13,9 @@ import { FileIcon } from '../UI/FileIcon';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 
 const animationProps = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.4, ease: "easeOut" },
+  initial: { opacity: 0, y: 15, scale: 0.95 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  transition: { type: "spring", stiffness: 400, damping: 30 },
 };
 
 
@@ -27,7 +27,7 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
         <div className="w-fit max-w-[75%] flex flex-col items-end">
             <motion.div 
                 {...animationProps} 
-                className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-2xl shadow-md border border-gray-200 dark:border-slate-700/50"
+                className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-2xl shadow-md border border-gray-200 dark:border-slate-700/50 origin-bottom-right"
             >
                 {/* Content Section */}
                 <div className="p-4 flex flex-col gap-4">

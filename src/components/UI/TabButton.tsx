@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -27,7 +28,7 @@ export const TabButton: React.FC<TabButtonProps> = ({ label, isActive, onClick }
       <motion.div
         className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400"
         layoutId="tab-underline"
-        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
       />
     )}
   </button>

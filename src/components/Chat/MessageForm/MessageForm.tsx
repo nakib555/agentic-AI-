@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -55,7 +56,8 @@ export const MessageForm = forwardRef<MessageFormHandle, {
       <form onSubmit={logic.handleSubmit}>
         <motion.div 
             className={`bg-theme-bg-light dark:bg-[#121212] border-[1px] border-[rgb(206,217,239)] dark:border-slate-700/50 flex flex-col p-2 flex-grow rounded-2xl`} 
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            layout
         >
             <AnimatePresence>
                 {logic.proactiveSuggestions.length > 0 && (
@@ -64,7 +66,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
             </AnimatePresence>
             <AnimatePresence>
             {logic.processedFiles.length > 0 && (
-                <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} className="mb-2 flex flex-col gap-2">
+                <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="mb-2 flex flex-col gap-2">
                 {logic.processedFiles.map((pf) => (
                     <motion.div key={pf.id} layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
                     <AttachedFilePreview file={pf.file} onRemove={() => logic.handleRemoveFile(pf.id)} progress={pf.progress} error={pf.error} />
