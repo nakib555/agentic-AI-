@@ -67,7 +67,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
                 value={localApiKey}
                 onChange={e => setLocalApiKey(e.target.value)}
                 placeholder="Enter your Gemini API key"
-                className="w-full pl-4 pr-10 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-black/20 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+                className="w-full pl-3 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-black/20 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400"
                 />
                 <button
                 type="button"
@@ -85,7 +85,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
             <button
                 type="submit"
                 disabled={saveStatus === 'saving' || !localApiKey}
-                className={`flex-shrink-0 px-4 py-2.5 text-sm font-semibold text-white rounded-xl transition-all flex items-center gap-2 ${
+                className={`flex-shrink-0 px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all flex items-center gap-2 ${
                 saveStatus === 'saved' 
                     ? 'bg-green-600 hover:bg-green-700' 
                     : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed'
@@ -97,7 +97,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
             </button>
           </div>
           
-          <div className="flex justify-start">
+          <div className="flex justify-start pl-0.5">
             <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
               Get a Gemini API Key &rarr;
             </a>
