@@ -11,7 +11,7 @@ type GeneralSettingsProps = {
   onClearAllChats: () => void;
   onRunTests: () => void;
   onDownloadLogs: () => void;
-  onShowDataStructure: () => void; // Added
+  onShowDataStructure: () => void;
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
 };
@@ -59,46 +59,48 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
         layout="col"
       >
         <form onSubmit={handleSave} className="space-y-3">
-          <div className="relative flex items-center">
-            <input
-              type={showApiKey ? "text" : "password"}
-              autoComplete="off"
-              value={localApiKey}
-              onChange={e => setLocalApiKey(e.target.value)}
-              placeholder="Enter your Gemini API key"
-              className="w-full pl-4 pr-12 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-black/20 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400"
-            />
+          <div className="flex gap-2 items-center ml-1">
+            <div className="relative flex-1 flex items-center">
+                <input
+                type={showApiKey ? "text" : "password"}
+                autoComplete="off"
+                value={localApiKey}
+                onChange={e => setLocalApiKey(e.target.value)}
+                placeholder="Enter your Gemini API key"
+                className="w-full pl-4 pr-10 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-black/20 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+                />
+                <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="absolute right-2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md transition-colors"
+                title={showApiKey ? "Hide API Key" : "Show API Key"}
+                >
+                {showApiKey ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" /><path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.18l11-7A1.651 1.651 0 0 1 14.25 2.75h.5A1.651 1.651 0 0 1 16.4 4.3l-11 7a1.651 1.651 0 0 1-2.136-1.18l-1.6-6.5A1.651 1.651 0 0 1 .664 10.59ZM19.336 9.41a1.651 1.651 0 0 1 0 1.18l-11 7A1.651 1.651 0 0 1 5.75 17.25h-.5A1.651 1.651 0 0 1 3.6 15.7l11-7a1.651 1.651 0 0 1 2.136 1.18l1.6 6.5A1.651 1.651 0 0 1 19.336 9.41Z" clipRule="evenodd" /></svg>
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.092a4 4 0 0 0-5.557-5.557Z" clipRule="evenodd" /><path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.186A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" /></svg>
+                )}
+                </button>
+            </div>
             <button
-              type="button"
-              onClick={() => setShowApiKey(!showApiKey)}
-              className="absolute right-3 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md transition-colors"
-              title={showApiKey ? "Hide API Key" : "Show API Key"}
+                type="submit"
+                disabled={saveStatus === 'saving' || !localApiKey}
+                className={`flex-shrink-0 px-4 py-2.5 text-sm font-semibold text-white rounded-xl transition-all flex items-center gap-2 ${
+                saveStatus === 'saved' 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                }`}
             >
-              {showApiKey ? (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" /><path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.18l11-7A1.651 1.651 0 0 1 14.25 2.75h.5A1.651 1.651 0 0 1 16.4 4.3l-11 7a1.651 1.651 0 0 1-2.136-1.18l-1.6-6.5A1.651 1.651 0 0 1 .664 10.59ZM19.336 9.41a1.651 1.651 0 0 1 0 1.18l-11 7A1.651 1.651 0 0 1 5.75 17.25h-.5A1.651 1.651 0 0 1 3.6 15.7l11-7a1.651 1.651 0 0 1 2.136 1.18l1.6 6.5A1.651 1.651 0 0 1 19.336 9.41Z" clipRule="evenodd" /></svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.092a4 4 0 0 0-5.557-5.557Z" clipRule="evenodd" /><path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.186A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" /></svg>
-              )}
+                {saveStatus === 'saving' && <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
+                {saveStatus === 'saved' && <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>}
+                <span>{saveStatus === 'saving' ? 'Verifying...' : saveStatus === 'saved' ? 'Saved' : 'Save Key'}</span>
             </button>
           </div>
           
-          <div className="flex items-center justify-between">
+          <div className="flex justify-start ml-1">
             <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
               Get a Gemini API Key &rarr;
             </a>
-            <button
-              type="submit"
-              disabled={saveStatus === 'saving' || !localApiKey}
-              className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all flex items-center gap-2 ${
-                saveStatus === 'saved' 
-                  ? 'bg-green-600 hover:bg-green-700' 
-                  : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed'
-              }`}
-            >
-               {saveStatus === 'saving' && <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
-               {saveStatus === 'saved' && <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>}
-               <span>{saveStatus === 'saving' ? 'Verifying...' : saveStatus === 'saved' ? 'Verified & Saved' : 'Save Key'}</span>
-            </button>
           </div>
           {saveStatus === 'error' && saveError && (
             <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs rounded-lg border border-red-200 dark:border-red-800">
