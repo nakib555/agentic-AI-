@@ -199,12 +199,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     />
                 </div>
 
+                {/* Enhanced Resize Handle */}
                 {isDesktop && !isCollapsed && (
                     <div
+                        className="group absolute top-0 right-0 h-full z-50"
+                        style={{ width: '16px', transform: 'translateX(50%)', cursor: 'col-resize' }}
                         onMouseDown={startResizing}
-                        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-primary-main/30 transition-colors z-10"
-                        title="Resize sidebar"
-                    />
+                    >
+                        <div className={`w-[1.5px] h-full mx-auto transition-colors duration-200 ${isResizing ? 'bg-blue-500' : 'bg-transparent group-hover:bg-blue-400/50'}`}></div>
+                    </div>
                 )}
             </motion.div>
         </aside>
