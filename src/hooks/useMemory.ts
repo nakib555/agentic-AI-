@@ -8,8 +8,16 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { ChatSession } from '../types';
 import { fetchFromApi } from '../utils/api';
 
+export type MemoryFile = {
+    id: string;
+    title: string;
+    content: string;
+    lastUpdated: number;
+};
+
 export const useMemory = (isMemoryEnabled: boolean) => {
     const [memoryContent, setMemoryContent] = useState<string>('');
+    const [memoryFiles, setMemoryFiles] = useState<MemoryFile[]>([]);
     const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
     const [memorySuggestions, setMemorySuggestions] = useState<string[]>([]);
     const pendingMemoryUpdateRef = useRef<{ suggestions: string[], currentMemory: string } | null>(null);
@@ -22,11 +30,13 @@ export const useMemory = (isMemoryEnabled: boolean) => {
                     if (!response.ok) throw new Error('Failed to fetch memory');
                     const data = await response.json();
                     setMemoryContent(data.content || '');
+                    setMemoryFiles(data.files || []);
                 } catch (error) {
                     console.error("Failed to fetch memory:", error);
                 }
             } else {
                 setMemoryContent('');
+                setMemoryFiles([]);
             }
         };
         fetchMemory();
@@ -37,12 +47,26 @@ export const useMemory = (isMemoryEnabled: boolean) => {
             await fetchFromApi('/api/memory', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: newContent }),
+                body: JSON.stringify({ content: newContent }), // Only update content field
             });
             setMemoryContent(newContent);
         } catch (error) {
             console.error("Failed to update memory on backend:", error);
-            throw error; // Re-throw to allow UI to handle error state
+            throw error;
+        }
+    }, []);
+    
+    const updateMemoryFiles = useCallback(async (newFiles: MemoryFile[]) => {
+        try {
+             await fetchFromApi('/api/memory', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ files: newFiles }), // Only update files field
+            });
+            setMemoryFiles(newFiles);
+        } catch (error) {
+            console.error("Failed to update memory files on backend:", error);
+            throw error;
         }
     }, []);
 
@@ -98,6 +122,7 @@ export const useMemory = (isMemoryEnabled: boolean) => {
         try {
             await fetchFromApi('/api/memory', { method: 'DELETE' });
             setMemoryContent('');
+            setMemoryFiles([]);
         } catch (error) {
             console.error("Failed to clear memory on backend:", error);
         }
@@ -106,8 +131,10 @@ export const useMemory = (isMemoryEnabled: boolean) => {
     return {
         isMemoryEnabled,
         memoryContent,
+        memoryFiles,
         updateMemory,
-        updateBackendMemory, // Exposed for manual editing
+        updateBackendMemory,
+        updateMemoryFiles,
         clearMemory,
         isConfirmationOpen,
         memorySuggestions,

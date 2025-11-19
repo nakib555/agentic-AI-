@@ -50,7 +50,7 @@ export const TestRunner: React.FC<TestRunnerProps> = ({ isOpen, onClose, runTest
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/70 z-[80] flex items-center justify-center p-4"
           role="dialog" aria-modal="true" aria-labelledby="test-runner-title"
         >
           <motion.div

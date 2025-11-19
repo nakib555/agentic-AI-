@@ -549,6 +549,8 @@ export const useAppLogic = () => {
     handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests,
     handleFileUploadForImport,
     handleDownloadLogs,
-    updateBackendMemory: memory.updateBackendMemory // Explicitly pass this
+    updateBackendMemory: memory.updateBackendMemory, // Explicitly pass this
+    memoryFiles: memory.memoryFiles,
+    updateMemoryFiles: memory.updateMemoryFiles
   };
 };

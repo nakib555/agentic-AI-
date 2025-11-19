@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -151,7 +152,10 @@ export const App = () => {
         setIsMemoryEnabled={logic.setIsMemoryEnabled}
         onManageMemory={() => logic.setIsMemoryModalOpen(true)}
         memoryContent={logic.memoryContent}
+        memoryFiles={logic.memoryFiles}
         clearMemory={logic.clearMemory}
+        updateBackendMemory={logic.updateBackendMemory}
+        updateMemoryFiles={logic.updateMemoryFiles}
         isConfirmationOpen={logic.isConfirmationOpen}
         memorySuggestions={logic.memorySuggestions}
         confirmMemoryUpdate={logic.confirmMemoryUpdate}
