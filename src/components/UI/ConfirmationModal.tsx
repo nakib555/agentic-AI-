@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -23,7 +24,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, pr
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onCancel}
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/70 z-[110] flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
         >

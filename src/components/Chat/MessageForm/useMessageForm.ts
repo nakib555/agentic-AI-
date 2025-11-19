@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,7 +7,7 @@
 // This is the simplified main hook for the MessageForm component.
 // It composes smaller, more focused hooks for file handling and input enhancements.
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { type MessageFormHandle } from './types';
 import { useFileHandling } from './useFileHandling';
 import { useInputEnhancements } from './useInputEnhancements';
@@ -62,11 +63,16 @@ export const useMessageForm = (
   }, [inputValue, fileHandling.processedFiles.length]);
   
   // Handle automatic resizing of the input area
-  useEffect(() => {
+  // Using useLayoutEffect to prevent visual flicker (FOUC) when resizing
+  useLayoutEffect(() => {
     const element = inputRef.current;
     if (element) {
         const MAX_HEIGHT_PX = 192;
-        element.style.height = 'auto'; // Reset height to calculate natural scroll height
+        
+        // To correctly calculate scrollHeight, the element must be allowed to shrink.
+        // We set height to 'auto' to get the natural height of the content.
+        element.style.height = 'auto'; 
+        
         const scrollHeight = element.scrollHeight;
         const SINGLE_LINE_THRESHOLD = 32; 
         

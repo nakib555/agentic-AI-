@@ -1,9 +1,10 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, memo } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import type { Message, Source } from '../../../types';
@@ -24,10 +25,11 @@ import { MessageToolbar } from './MessageToolbar';
 import { FlowToken } from '../../AI/FlowToken';
 import { cleanTextForTts } from './utils';
 
+// Optimized spring physics for performance
 const animationProps = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.4, ease: "easeOut" },
+  initial: { opacity: 0, y: 15, scale: 0.98 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  transition: { type: "spring", stiffness: 200, damping: 25 },
 };
 
 type AiMessageProps = { 
@@ -47,7 +49,7 @@ type AiMessageProps = {
     isAgentMode: boolean;
 };
 
-export const AiMessage: React.FC<AiMessageProps> = (props) => {
+const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
           onShowThinkingProcess, onShowSources, approveExecution, denyExecution, messageFormRef, onRegenerate,
           onSetActiveResponseIndex, isAgentMode } = props;
@@ -123,7 +125,11 @@ export const AiMessage: React.FC<AiMessageProps> = (props) => {
   }
 
   return (
-    <motion.div {...animationProps} className="w-full flex flex-col items-start gap-4">
+    <motion.div 
+        {...animationProps} 
+        className="w-full flex flex-col items-start gap-4 origin-bottom-left"
+        style={{ willChange: 'transform, opacity' }}
+    >
       {logic.hasThinkingProcess && (
         <button
             onClick={() => onShowThinkingProcess(id)}
@@ -179,3 +185,5 @@ export const AiMessage: React.FC<AiMessageProps> = (props) => {
     </motion.div>
   );
 };
+
+export const AiMessage = memo(AiMessageRaw);

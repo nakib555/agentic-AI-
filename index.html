@@ -16,7 +16,44 @@
         theme: {
           extend: {
             colors: {
-              'theme-bg-light': '#F5F5F0',
+              // Background Layers
+              'page': 'var(--bg-page)',
+              'layer-1': 'var(--bg-layer-1)',
+              'layer-2': 'var(--bg-layer-2)',
+              'layer-3': 'var(--bg-layer-3)',
+              'glass': 'var(--bg-glass)',
+              
+              // Semantic Text
+              'content-primary': 'var(--text-primary)',
+              'content-secondary': 'var(--text-secondary)',
+              'content-tertiary': 'var(--text-tertiary)',
+              'text-inverted': 'var(--text-inverted)',
+              
+              // Semantic Borders
+              'border-subtle': 'var(--border-subtle)',
+              'border-default': 'var(--border-default)',
+              'border-strong': 'var(--border-strong)',
+              'border-focus': 'var(--border-focus)',
+              
+              // Alias standard border to semantic default for easy refactoring
+              'border': 'var(--border-default)',
+
+              // Primary Brand Colors
+              'primary-main': 'var(--primary-main)',
+              'primary-hover': 'var(--primary-hover)',
+              'primary-subtle': 'var(--primary-subtle)',
+              'primary-text': 'var(--primary-text)',
+
+              // Status Indicators
+              'status-error-bg': 'var(--status-error-bg)',
+              'status-error-text': 'var(--status-error-text)',
+              'status-success-bg': 'var(--status-success-bg)',
+              'status-success-text': 'var(--status-success-text)',
+              'status-warning-bg': 'var(--status-warning-bg)',
+              'status-warning-text': 'var(--status-warning-text)',
+
+              // Backward Compatibility
+              'theme-bg-light': 'var(--bg-page)',
             }
           }
         }
@@ -63,12 +100,18 @@
     "process": "https://aistudiocdn.com/process@^0.11.10",
     "buffer": "https://aistudiocdn.com/buffer@^6.0.3",
     "fs": "https://aistudiocdn.com/fs@^0.0.1-security",
-    "playwright": "https://aistudiocdn.com/playwright@^1.56.1"
+    "playwright": "https://aistudiocdn.com/playwright@^1.56.1",
+    "vite": "https://aistudiocdn.com/vite@^7.2.2",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "url": "https://aistudiocdn.com/url@^0.11.4",
+    "@langchain/langgraph": "https://aistudiocdn.com/@langchain/langgraph@^1.0.2",
+    "jszip": "https://aistudiocdn.com/jszip@^3.10.1"
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-theme-bg-light text-gray-900 dark:bg-[#121212] dark:text-slate-200">
+  <body class="bg-page text-content-primary transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="./index.js"></script>
     <script>
@@ -82,5 +125,6 @@
         });
       }
     </script>
-  </body>
+</body>
 </html>
+    

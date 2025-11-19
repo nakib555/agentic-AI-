@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -5,23 +6,32 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import process from 'process';
-import type { ChatSession } from '../src/types';
 
 // --- Centralized Path Definitions ---
-// This path is now consistent across all environments. For persistence on platforms
-// like Render, this 'data' directory should be mounted to a persistent disk.
-const DATA_PATH = path.join(process.cwd(), 'data');
-export const CHATS_PATH = path.join(DATA_PATH, 'chats');
-export const UPLOADS_PATH = path.join(DATA_PATH, 'uploads');
-export const SETTINGS_PATH = path.join(DATA_PATH, 'settings.json');
-export const MEMORY_PATH = path.join(DATA_PATH, 'memory.json');
+const DATA_PATH = path.join((process as any).cwd(), 'data');
+export const HISTORY_PATH = path.join(DATA_PATH, 'history');
 
+// Settings Structure: data/settings/
+export const SETTINGS_DIR = path.join(DATA_PATH, 'settings');
+export const SETTINGS_FILE_PATH = path.join(SETTINGS_DIR, 'settings.json');
+
+// Memory Structure: data/settings/memory/
+export const MEMORY_DIR = path.join(SETTINGS_DIR, 'memory');
+export const MEMORY_CONTENT_PATH = path.join(MEMORY_DIR, 'core.txt');
+export const MEMORY_FILES_DIR = path.join(MEMORY_DIR, 'files');
+
+// Prompts Structure: data/settings/prompts/
+export const PROMPTS_DIR = path.join(SETTINGS_DIR, 'prompts');
+
+// Centralized Indices
+export const HISTORY_INDEX_PATH = path.join(HISTORY_PATH, 'history.json');
+export const TIME_GROUPS_PATH = path.join(HISTORY_PATH, 'timeGroups.json');
 
 // --- Initialization Logic ---
 const ensureDir = async (dirPath: string) => {
     try {
         await fs.mkdir(dirPath, { recursive: true });
+        console.log(`[DATA_STORE] Ensured directory exists: ${dirPath}`);
     } catch (error: any) {
         if (error.code !== 'EEXIST') {
             console.error(`Error creating directory ${dirPath}:`, error);
@@ -31,79 +41,63 @@ const ensureDir = async (dirPath: string) => {
 };
 
 export const initDataStore = async () => {
+    console.log('[DATA_STORE] Initializing data store...');
+    
+    // Create Directory Structure
     await ensureDir(DATA_PATH);
-    await ensureDir(CHATS_PATH);
-    await ensureDir(UPLOADS_PATH);
-    console.log('[DATA_STORE] Initialized and verified data directories.');
-};
-
-
-// --- Chat Data Store ---
-export const dataStore = {
-    async getChatHistoryList(): Promise<Omit<ChatSession, 'messages'>[]> {
+    await ensureDir(HISTORY_PATH);
+    await ensureDir(SETTINGS_DIR);
+    
+    // Explicitly create nested memory folders inside settings
+    await ensureDir(MEMORY_DIR);
+    await ensureDir(MEMORY_FILES_DIR);
+    
+    // Create prompts folder inside settings
+    await ensureDir(PROMPTS_DIR);
+    
+    // Helper to initialize or validate JSON file
+    const initJsonFile = async (filePath: string, defaultValue: any) => {
         try {
-            const files = await fs.readdir(CHATS_PATH);
-            const chatPromises = files
-                .filter(file => file.endsWith('.json'))
-                .map(async (file) => {
-                    const content = await fs.readFile(path.join(CHATS_PATH, file), 'utf-8');
-                    const { id, title, createdAt, model } = JSON.parse(content);
-                    return { id, title, createdAt, model };
-                });
-            const chats = await Promise.all(chatPromises);
-            // Sort by creation date, newest first
-            return chats.sort((a, b) => b.createdAt - a.createdAt);
-        } catch (error: any) {
-            if (error.code === 'ENOENT') {
-                return []; // Directory doesn't exist yet, which is fine on first run.
-            }
-            console.error('Failed to read chat history:', error);
-            return [];
-        }
-    },
-
-    async getChatSession(chatId: string): Promise<ChatSession | null> {
-        try {
-            const filePath = path.join(CHATS_PATH, `${chatId}.json`);
             const content = await fs.readFile(filePath, 'utf-8');
-            return JSON.parse(content) as ChatSession;
+            // Check if empty or invalid JSON
+            if (!content.trim()) {
+                 throw new Error('Empty file');
+            }
+            JSON.parse(content);
         } catch (error) {
-            console.error(`Failed to read chat session ${chatId}:`, error);
-            return null;
+            // If file doesn't exist, is empty, or invalid JSON, write default
+            console.log(`[DATA_STORE] Initializing or resetting ${path.basename(filePath)}`);
+            await fs.writeFile(filePath, JSON.stringify(defaultValue, null, 2), 'utf-8');
         }
-    },
+    };
 
-    async saveChatSession(chatSession: ChatSession): Promise<void> {
-        const filePath = path.join(CHATS_PATH, `${chatSession.id}.json`);
-        await fs.writeFile(filePath, JSON.stringify(chatSession, null, 2), 'utf-8');
-    },
+    // Initialize History Indices
+    await initJsonFile(HISTORY_INDEX_PATH, []);
+    await initJsonFile(TIME_GROUPS_PATH, {});
+    
+    // Initialize Settings
+    const defaultSettings = {
+        apiKey: '',
+        aboutUser: '',
+        aboutResponse: '',
+        temperature: 0.7,
+        maxTokens: 0,
+        imageModel: 'imagen-4.0-generate-001',
+        videoModel: 'veo-3.1-fast-generate-preview',
+        isMemoryEnabled: false,
+        ttsVoice: 'Kore',
+        isAutoPlayEnabled: false,
+        isAgentMode: true,
+    };
+    await initJsonFile(SETTINGS_FILE_PATH, defaultSettings);
+    
+    // Initialize Core Memory File if missing
+    try {
+        await fs.access(MEMORY_CONTENT_PATH);
+    } catch {
+        console.log('[DATA_STORE] Initializing core memory file');
+        await fs.writeFile(MEMORY_CONTENT_PATH, '', 'utf-8');
+    }
 
-    async deleteChatSession(chatId: string): Promise<void> {
-        // Delete chat JSON file
-        const chatFilePath = path.join(CHATS_PATH, `${chatId}.json`);
-        try {
-            await fs.unlink(chatFilePath);
-        } catch (error: any) {
-            if (error.code !== 'ENOENT') {
-                console.error(`Failed to delete chat file ${chatFilePath}:`, error);
-            }
-        }
-
-        // Delete associated uploads directory
-        const uploadsDir = path.join(UPLOADS_PATH, chatId);
-        try {
-            await fs.rm(uploadsDir, { recursive: true, force: true });
-        } catch (error: any) {
-            if (error.code !== 'ENOENT') {
-                console.error(`Failed to delete uploads directory ${uploadsDir}:`, error);
-            }
-        }
-    },
-
-    async clearAllChatHistory(): Promise<void> {
-        // Re-create the directories after deleting to ensure they exist.
-        await fs.rm(CHATS_PATH, { recursive: true, force: true });
-        await fs.rm(UPLOADS_PATH, { recursive: true, force: true });
-        await Promise.all([ensureDir(CHATS_PATH), ensureDir(UPLOADS_PATH)]);
-    },
+    console.log('[DATA_STORE] Data initialization complete.');
 };

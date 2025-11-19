@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -448,6 +449,32 @@ export const useAppLogic = () => {
     URL.revokeObjectURL(url);
   }, []);
 
+  const handleShowDataStructure = useCallback(async () => {
+    try {
+        const response = await fetchFromApi('/api/handler?task=debug_data_tree', {
+            method: 'POST',
+        });
+        if (!response.ok) throw new Error('Failed to fetch data tree');
+        const { tree } = await response.json();
+        
+        console.log('--- Server Data Structure ---\n' + tree);
+        
+        const blob = new Blob([tree], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `data-structure-${new Date().toISOString().slice(0,10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+    } catch (error) {
+        console.error('Error fetching data structure:', error);
+        alert('Failed to fetch data structure.');
+    }
+  }, []);
+
   const runDiagnosticTests = useCallback(async (onProgress: (progress: TestProgress) => void) => {
     const results: TestResult[] = [];
     let testsPassed = 0;
@@ -548,5 +575,9 @@ export const useAppLogic = () => {
     handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests,
     handleFileUploadForImport,
     handleDownloadLogs,
+    handleShowDataStructure, // Export new handler
+    updateBackendMemory: memory.updateBackendMemory, // Explicitly pass this
+    memoryFiles: memory.memoryFiles,
+    updateMemoryFiles: memory.updateMemoryFiles
   };
 };

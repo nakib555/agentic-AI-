@@ -1,9 +1,10 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -22,7 +23,7 @@ type ManualCodeRendererProps = {
 
 const supportedColors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
 
-export const ManualCodeRenderer: React.FC<ManualCodeRendererProps> = ({ text, components, isStreaming, onRunCode, isRunDisabled }) => {
+const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, components, isStreaming, onRunCode, isRunDisabled }) => {
   // Split the text by the code block delimiter to handle streaming correctly.
   const parts = text.split('```');
 
@@ -98,3 +99,5 @@ export const ManualCodeRenderer: React.FC<ManualCodeRendererProps> = ({ text, co
     </>
   );
 };
+
+export const ManualCodeRenderer = memo(ManualCodeRendererRaw);

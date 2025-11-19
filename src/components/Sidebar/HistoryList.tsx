@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -120,7 +119,7 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
     return (
         <div className={`flex-1 min-h-0 text-sm ${!shouldCollapse ? 'overflow-y-auto' : ''}`}>
             {Object.keys(groupedHistory).length > 0 ? (
-                <div className="space-y-1">
+                <div className="space-y-2">
                     {groupOrder.map(groupName => {
                         const chatsInGroup = groupedHistory[groupName];
                         if (!chatsInGroup || chatsInGroup.length === 0) return null;
@@ -132,7 +131,7 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                                 <button
                                     onClick={() => !shouldCollapse && toggleGroup(groupName)}
                                     disabled={shouldCollapse}
-                                    className="w-full flex items-center justify-between px-2 text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 hover:bg-gray-100/60 dark:hover:bg-violet-900/30 rounded disabled:cursor-default disabled:bg-transparent dark:disabled:bg-transparent"
+                                    className="w-full flex items-center justify-between px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 hover:bg-gray-100/60 dark:hover:bg-violet-900/30 rounded py-1 transition-colors disabled:cursor-default disabled:bg-transparent dark:disabled:bg-transparent"
                                     aria-expanded={!isGroupCollapsed}
                                     aria-controls={`group-content-${groupName}`}
                                 >
@@ -167,20 +166,30 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                                             transition={{ duration: 0.3, ease: 'easeInOut' }}
                                         >
                                             <div className="space-y-0.5">
-                                                {chatsInGroup.map((item) => (
-                                                    <HistoryItem 
-                                                        key={item.id} 
-                                                        text={item.title} 
-                                                        isCollapsed={isCollapsed}
-                                                        isDesktop={isDesktop}
-                                                        searchQuery={searchQuery}
-                                                        active={item.id === currentChatId}
-                                                        onClick={() => onLoadChat(item.id)}
-                                                        onDelete={() => onDeleteChat(item.id)}
-                                                        onUpdateTitle={(newTitle) => onUpdateChatTitle(item.id, newTitle)}
-                                                        isLoading={item.isLoading ?? false}
-                                                    />
-                                                ))}
+                                                <AnimatePresence initial={false}>
+                                                    {chatsInGroup.map((item) => (
+                                                        <motion.div
+                                                            key={item.id}
+                                                            layout
+                                                            initial={{ opacity: 0, height: 0 }}
+                                                            animate={{ opacity: 1, height: 'auto' }}
+                                                            exit={{ opacity: 0, height: 0, transition: { duration: 0.2 } }}
+                                                            transition={{ duration: 0.2 }}
+                                                        >
+                                                            <HistoryItem 
+                                                                text={item.title} 
+                                                                isCollapsed={isCollapsed}
+                                                                isDesktop={isDesktop}
+                                                                searchQuery={searchQuery}
+                                                                active={item.id === currentChatId}
+                                                                onClick={() => onLoadChat(item.id)}
+                                                                onDelete={() => onDeleteChat(item.id)}
+                                                                onUpdateTitle={(newTitle) => onUpdateChatTitle(item.id, newTitle)}
+                                                                isLoading={item.isLoading ?? false}
+                                                            />
+                                                        </motion.div>
+                                                    ))}
+                                                </AnimatePresence>
                                             </div>
                                         </motion.div>
                                     )}

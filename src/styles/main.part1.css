@@ -4,6 +4,12 @@
 
 html {
   font-size: 15px;
+  /* Prevent layout shifts when scrollbar appears/disappears */
+  scrollbar-gutter: stable;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 /* For Webkit-based browsers (Chrome, Safari, Edge) */
@@ -21,6 +27,7 @@ html {
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: content-box;
+  transition: background-color 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -28,7 +35,7 @@ html {
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
@@ -36,24 +43,24 @@ html {
 }
 
 /* For Firefox */
-/* Applying to html element for better specificity */
 html {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* thumb color track color */
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
 .dark html {
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
-
 
 /* --- General Styles --- */
 
 body { 
   font-family: 'Inter', sans-serif; 
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Accessibility utility to hide elements visually but keep them available for screen readers */
+/* Accessibility utility */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -64,4 +71,9 @@ body {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+/* Prevent scroll chaining in nested scrollable areas */
+.overflow-y-auto, .overflow-x-auto {
+  overscroll-behavior: contain;
 }

@@ -1,18 +1,17 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Renamed imported types to resolve conflicts with global Request/Response objects and changed from 'import type' to 'import'.
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
-import { dataStore } from './data-store.js';
+import { historyControl } from './services/historyControl.js';
 import type { ChatSession } from '../src/types';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-export const getHistory = async (req: ExpressRequest, res: ExpressResponse) => {
+export const getHistory = async (req: any, res: any) => {
     try {
-        const history = await dataStore.getChatHistoryList();
+        const history = await historyControl.getHistoryList();
         res.status(200).json(history);
     } catch (error) {
         console.error('Failed to get chat history:', error);
@@ -20,8 +19,8 @@ export const getHistory = async (req: ExpressRequest, res: ExpressResponse) => {
     }
 };
 
-export const getChat = async (req: ExpressRequest, res: ExpressResponse) => {
-    const chat = await dataStore.getChatSession(req.params.chatId);
+export const getChat = async (req: any, res: any) => {
+    const chat = await historyControl.getChat(req.params.chatId);
     if (chat) {
         res.status(200).json(chat);
     } else {
@@ -29,7 +28,7 @@ export const getChat = async (req: ExpressRequest, res: ExpressResponse) => {
     }
 };
 
-export const createNewChat = async (req: ExpressRequest, res: ExpressResponse) => {
+export const createNewChat = async (req: any, res: any) => {
     const { model, temperature, maxOutputTokens, imageModel, videoModel } = req.body;
     const newChatId = generateId();
     const newChat: ChatSession = {
@@ -44,42 +43,56 @@ export const createNewChat = async (req: ExpressRequest, res: ExpressResponse) =
         imageModel: imageModel,
         videoModel: videoModel,
     };
-    await dataStore.saveChatSession(newChat);
-    res.status(201).json(newChat);
+    
+    try {
+        await historyControl.createChat(newChat);
+        res.status(201).json(newChat);
+    } catch (error) {
+        console.error("Failed to create chat:", error);
+        res.status(500).json({ error: "Failed to create chat session." });
+    }
 };
 
-export const updateChat = async (req: ExpressRequest, res: ExpressResponse) => {
+export const updateChat = async (req: any, res: any) => {
     const { chatId } = req.params;
     const updates = req.body;
-    let chat = await dataStore.getChatSession(chatId);
     
-    if (!chat) {
-        console.warn(`[CRUD] updateChat called for non-existent chatId "${chatId}". Creating new session.`);
-        chat = {
+    // historyControl.updateChat handles title renaming and index updating automatically
+    const updatedChat = await historyControl.updateChat(chatId, updates);
+    
+    if (!updatedChat) {
+        // If chat doesn't exist in index (e.g. manual deletion or sync issue), attempt to recreate it.
+         console.warn(`[CRUD] updateChat called for non-existent chatId "${chatId}". Creating new session.`);
+         const recoveredChat: ChatSession = {
             id: chatId,
-            title: "New Chat",
-            messages: [],
-            model: '',
+            title: updates.title || "New Chat",
+            messages: updates.messages || [],
+            model: updates.model || '',
             createdAt: Date.now(),
+            ...updates
         };
+        await historyControl.createChat(recoveredChat);
+        res.status(200).json(recoveredChat);
+        return;
     }
 
-    const updatedChat = { ...chat, ...updates };
-    await dataStore.saveChatSession(updatedChat);
     res.status(200).json(updatedChat);
 };
 
-export const deleteChat = async (req: ExpressRequest, res: ExpressResponse) => {
-    await dataStore.deleteChatSession(req.params.chatId);
+export const deleteChat = async (req: any, res: any) => {
+    await historyControl.deleteChat(req.params.chatId);
     res.status(204).send();
 };
 
-export const deleteAllHistory = async (req: ExpressRequest, res: ExpressResponse) => {
-    await dataStore.clearAllChatHistory();
+export const deleteAllHistory = async (req: any, res: any) => {
+    const allChats = await historyControl.getHistoryList();
+    for (const chat of allChats) {
+        await historyControl.deleteChat(chat.id);
+    }
     res.status(204).send();
 };
 
-export const importChat = async (req: ExpressRequest, res: ExpressResponse) => {
+export const importChat = async (req: any, res: any) => {
     const importedChat = req.body as ChatSession;
     if (!importedChat || typeof importedChat.title !== 'string' || !Array.isArray(importedChat.messages)) {
         return res.status(400).json({ error: "Invalid chat file format." });
@@ -90,6 +103,6 @@ export const importChat = async (req: ExpressRequest, res: ExpressResponse) => {
         createdAt: Date.now(),
         isLoading: false,
     };
-    await dataStore.saveChatSession(newChat);
+    await historyControl.createChat(newChat);
     res.status(201).json(newChat);
 };

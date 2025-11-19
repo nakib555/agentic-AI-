@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -18,7 +19,7 @@ export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
             className="text-4xl sm:text-4xl lg:text-5xl font-bold font-['Space_Grotesk']"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
         >
             <motion.span
                 className="brand-gradient bg-clip-text text-transparent"

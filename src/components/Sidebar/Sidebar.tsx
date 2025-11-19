@@ -30,7 +30,6 @@ type SidebarProps = {
     onNewChat: () => void;
     onLoadChat: (id: string) => void;
     onDeleteChat: (id: string) => void;
-    onClearAllChats: () => void;
     onUpdateChatTitle: (id: string, title: string) => void;
     theme: Theme;
     setTheme: (theme: Theme) => void;
@@ -46,7 +45,7 @@ const mobileVariants = {
 export const Sidebar: React.FC<SidebarProps> = ({ 
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
     isResizing, setIsResizing, history, isHistoryLoading, currentChatId, onNewChat, onLoadChat,
-    onDeleteChat, onClearAllChats, onUpdateChatTitle, theme, setTheme, onSettingsClick,
+    onDeleteChat, onUpdateChatTitle, theme, setTheme, onSettingsClick,
     isDesktop
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -120,8 +119,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
                         onClick={() => setIsOpen(false)}
                         className="fixed inset-0 bg-black/50 z-10 backdrop-blur-sm" 
+                        style={{ willChange: 'opacity' }}
                     />
                 )}
             </AnimatePresence>
@@ -132,10 +133,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 variants={isDesktop ? undefined : mobileVariants}
                 transition={{
                     type: isResizing || animationDisabledForResize ? 'tween' : 'spring',
-                    duration: isResizing || animationDisabledForResize ? 0 : undefined,
-                    stiffness: 300,
-                    damping: 30,
-                    mass: 1.2,
+                    duration: isResizing || animationDisabledForResize ? 0 : 0.5,
+                    stiffness: 180, // Optimized for smoother performance
+                    damping: 24,
+                    mass: 1,
                 }}
                 style={{
                     height: '100%',
@@ -144,8 +145,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     left: 0,
                     top: 0,
                     zIndex: isDesktop ? 'auto' : 30,
+                    willChange: isResizing ? 'width' : 'width, transform', // GPU hint
                 }}
-                className="bg-layer-1 border-r border-border flex flex-col transform-gpu"
+                className="bg-layer-1 border-r border-border flex flex-col transform-gpu shadow-xl md:shadow-none"
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
@@ -171,7 +173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         className="my-4 border-t border-border"
                         initial={false}
                         animate={{ opacity: isCollapsed ? 0 : 1, height: isCollapsed ? 0 : 'auto' }}
-                        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
                     />
 
                     <HistoryList 
@@ -191,17 +193,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         setTheme={setTheme}
                         isCollapsed={isCollapsed}
                         isDesktop={isDesktop}
-                        onClearAllChats={onClearAllChats}
                         onSettingsClick={onSettingsClick}
                     />
                 </div>
 
+                {/* Enhanced Resize Handle */}
                 {isDesktop && !isCollapsed && (
                     <div
+                        className="group absolute top-0 right-0 h-full z-50"
+                        style={{ width: '16px', transform: 'translateX(50%)', cursor: 'col-resize' }}
                         onMouseDown={startResizing}
-                        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-primary-main/30 transition-colors z-10"
-                        title="Resize sidebar"
-                    />
+                    >
+                        <div className={`w-[1.5px] h-full mx-auto transition-colors duration-200 ${isResizing ? 'bg-blue-500' : 'bg-transparent group-hover:bg-blue-400/50'}`}></div>
+                    </div>
                 )}
             </motion.div>
         </aside>

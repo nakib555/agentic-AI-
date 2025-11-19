@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -14,6 +15,7 @@ import type { Model } from '../../services/modelService';
 import type { Message } from '../../types';
 import { ImportChatModal } from '../Settings/ImportChatModal';
 import { ConfirmationModal } from '../UI/ConfirmationModal';
+import type { MemoryFile } from '../../hooks/useMemory';
 
 type AppModalsProps = {
   isSettingsOpen: boolean;
@@ -25,6 +27,7 @@ type AppModalsProps = {
   handleFileUploadForImport: (file: File) => void;
   onRunTests: () => void;
   onDownloadLogs: () => void;
+  onShowDataStructure: () => void; // Added
   availableModels: Model[];
   availableImageModels: Model[];
   availableVideoModels: Model[];
@@ -56,7 +59,10 @@ type AppModalsProps = {
   setIsMemoryEnabled: (enabled: boolean) => void;
   onManageMemory: () => void;
   memoryContent: string;
+  memoryFiles: MemoryFile[]; // Added
   clearMemory: () => void;
+  updateBackendMemory: (content: string) => Promise<void>; 
+  updateMemoryFiles: (files: MemoryFile[]) => Promise<void>; // Added
   isConfirmationOpen: boolean;
   memorySuggestions: string[];
   confirmMemoryUpdate: () => void;
@@ -79,11 +85,11 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens,
     setMaxTokens, imageModel, onImageModelChange, videoModel, onVideoModelChange,
     defaultTemperature, defaultMaxTokens, isMemoryEnabled,
-    setIsMemoryEnabled, memoryContent, clearMemory, isConfirmationOpen,
+    setIsMemoryEnabled, memoryContent, memoryFiles, clearMemory, updateBackendMemory, updateMemoryFiles, isConfirmationOpen,
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
     setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, onManageMemory,
     apiKey, onSaveApiKey, isImportModalOpen, setIsImportModalOpen, handleFileUploadForImport,
-    onDownloadLogs, confirmation, onConfirm, onCancel
+    onDownloadLogs, onShowDataStructure, confirmation, onConfirm, onCancel
   } = props;
 
   return (
@@ -100,6 +106,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         onClearAllChats={clearAllChats}
         onRunTests={onRunTests}
         onDownloadLogs={onDownloadLogs}
+        onShowDataStructure={onShowDataStructure}
         apiKey={apiKey}
         onSaveApiKey={onSaveApiKey}
         aboutUser={aboutUser}
@@ -127,8 +134,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
       <MemoryModal
         isOpen={isMemoryModalOpen}
         onClose={() => setIsMemoryModalOpen(false)}
-        memoryContent={memoryContent}
-        onClearMemory={clearMemory}
+        memoryFiles={memoryFiles}
+        onUpdateMemoryFiles={updateMemoryFiles}
       />
       <MemoryConfirmationModal
         isOpen={isConfirmationOpen}

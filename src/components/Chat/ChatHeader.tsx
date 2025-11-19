@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,7 +5,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
-import type { Message } from '../../types';
 import { TextType } from '../UI/TextType';
 const motion = motionTyped as any;
 
@@ -29,41 +27,64 @@ const ToggleIcon = () => (
 );
 
 const MoreOptionsIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 682.667 682.667" xmlSpace="preserve" className="w-5 h-5">
-        <g>
-            <defs>
-                <clipPath id="b" clipPathUnits="userSpaceOnUse">
-                    <path d="M0 512h512V0H0Z" fill="currentColor" opacity="1"></path>
-                </clipPath>
-            </defs>
-            <mask id="a">
-                <rect width="100%" height="100%" fill="#ffffff" opacity="1"></rect>
-            </mask>
-            <g mask="url(#a)">
-                <g clipPath="url(#b)" transform="matrix(1.33333 0 0 -1.33333 0 682.667)">
-                    <path d="M0 0v-67.044h-359.948V0c0 6.629-5.374 12.003-12.003 12.003h-42.02c-6.629 0-12.003-5.374-12.003-12.003V-81.561c0-23.154 18.77-41.925 41.925-41.925h408.15c23.154 0 41.925 18.771 41.925 41.925V0c0 6.629-5.374 12.003-12.004 12.003H12.003C5.374 12.003 0 6.629 0 0Z" transform="translate(435.974 149.179)" fill="currentColor"></path>
-                    <path d="m0 0-49.801 63.767c-6.598 8.449-19.381 8.449-25.979 0L-125.581 0c-8.451-10.821-.741-26.626 12.99-26.626h28.215v-127.26h43.171v127.26h28.215C.741-26.626 8.452-10.821 0 0Z" transform="translate(231.554 416.203)" fill="currentColor"></path>
-                    <path d="m0 0 49.801-63.767c6.598 8.449 19.381 8.449 25.979 0L125.581 0c8.451 10.821.741 26.626-12.99 26.626H84.376v127.26H41.205V26.626H12.99C-.741 26.626-8.452 10.821 0 0Z" transform="translate(280.446 332.42)" fill="currentColor"></path>
-                    <path d="M0 0h-235.702c-10.786 0-19.53 8.744-19.53 19.53 0 10.786 8.744 19.53 19.53 19.53H0c10.786 0 19.53-8.744 19.53-19.53C19.53 8.744 10.786 0 0 0Z" transform="translate(373.851 186.827)" fill="currentColor"></path>
-                    <path d="M0 0h30.614c10.786 0 19.53-8.744 19.53-19.53 0-10.785-8.744-19.529-19.53-19.529h-235.702c-10.786 0-19.53 8.744-19.53 19.529 0 10.786 8.744 19.53 19.53 19.53H-80" transform="translate(343.237 153.327)" fill="currentColor"></path>
-                    <path d="M0 0h.025" transform="translate(303.237 153.327)" fill="currentColor"></path>
-                </g>
-            </g>
-        </g>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+        <path d="M10 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM10 8.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM11.5 15.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Z" />
     </svg>
 );
 
-const MenuItem: React.FC<{ onClick: () => void; disabled: boolean; children: React.ReactNode }> = ({ onClick, disabled, children }) => (
+const ShareIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+      <path d="M13 4.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM8.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5Z" />
+      <path fillRule="evenodd" d="M12.634 11.634a.5.5 0 0 0 .707-.707l-2.633-2.634a.5.5 0 0 0-.707.707l2.633 2.634Z" clipRule="evenodd" />
+      <path fillRule="evenodd" d="M7.366 11.634a.5.5 0 0 1-.707-.707l2.633-2.634a.5.5 0 1 1 .707.707L7.366 11.634Z" clipRule="evenodd" />
+    </svg>
+);
+
+const ImportIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+        <path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm4.75 6.75a.75.75 0 0 1 1.5 0v2.546l.943-1.048a.75.75 0 0 1 1.114 1.004l-2.25 2.5a.75.75 0 0 1-1.114 0l-2.25-2.5a.75.75 0 1 1 1.114-1.004l.943 1.048V8.75Z" clipRule="evenodd" />
+    </svg>
+);
+
+const ExportIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+        <path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z" clipRule="evenodd" />
+    </svg>
+);
+
+const CodeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+        <path fillRule="evenodd" d="M6.28 5.22a.75.75 0 0 1 0 1.06L2.56 10l3.72 3.72a.75.75 0 1 1-1.06 1.06L.97 10.53a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Zm7.44 0a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L17.44 10l-3.72-3.72a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+    </svg>
+);
+
+const PdfIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+        <path fillRule="evenodd" d="M3 3.5A1.5 1.5 0 0 1 4.5 2h6.879a1.5 1.5 0 0 1 1.06.44l4.121 4.12a1.5 1.5 0 0 1 .44 1.061V16.5a1.5 1.5 0 0 1-1.5 1.5h-11a1.5 1.5 0 0 1-1.5-1.5v-13Zm8 0v3.75a.75.75 0 0 0 .75.75h3.75V16.5h-11v-13h6.5Z" clipRule="evenodd" />
+    </svg>
+);
+
+const MenuItem: React.FC<{ onClick: () => void; disabled: boolean; children: React.ReactNode; label: string }> = ({ onClick, disabled, children, label }) => (
     <li>
-        <button 
+        <motion.button 
             onClick={onClick}
             disabled={disabled}
-            className="w-full text-left flex items-center gap-2 px-3 py-1.5 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all text-slate-700 dark:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+            whileHover={{ x: 2, backgroundColor: 'rgba(var(--primary-main), 0.1)' }}
         >
-            {children}
-        </button>
+            <span className="text-slate-400 dark:text-slate-500">{children}</span>
+            <span>{label}</span>
+        </motion.button>
     </li>
 );
+
+const MenuSectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <li className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 opacity-70 select-none mt-1">
+        {children}
+    </li>
+);
+
+const MenuDivider = () => <li className="my-1 h-px bg-slate-100 dark:bg-white/10 mx-2" />;
 
 export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollapsed, onImportChat, onExportChat, onShareChat, isChatActive, isDesktop, chatTitle }: ChatHeaderProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -111,7 +132,7 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const baseButtonClasses = "w-12 h-12 flex items-center justify-center rounded-full transition-colors backdrop-blur-md border shadow-sm";
+    const baseButtonClasses = "w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 backdrop-blur-md border shadow-sm hover:scale-105 active:scale-95";
     const activeClasses = "bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/40";
     const inactiveClasses = "bg-white/60 text-slate-700 border-slate-200/80 hover:bg-white/90 dark:bg-black/20 dark:text-slate-200 dark:border-white/10 dark:hover:bg-black/40";
     
@@ -146,7 +167,6 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
                         {isAnimatingTitle && animationKey ? (
                             <TextType
                                 key={animationKey}
-                                // FIX: Changed prop 'sequence' to 'text' to match TextTypeProps definition.
                                 text={['New Chat', animationKey]}
                                 loop={false}
                                 onSequenceComplete={() => setIsAnimatingTitle(false)}
@@ -169,8 +189,8 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
                     ref={buttonRef}
                     onClick={() => setIsMenuOpen(prev => !prev)}
                     className={moreOptionsButtonClasses}
-                    aria-label="More chat options"
-                    title="More chat options"
+                    aria-label="Chat options"
+                    title="Chat options"
                     aria-haspopup="true"
                     aria-expanded={isMenuOpen}
                 >
@@ -180,34 +200,36 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
                     {isMenuOpen && (
                         <motion.div
                             ref={menuRef}
-                            initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                            initial={{ opacity: 0, y: 8, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                            transition={{ duration: 0.15, ease: 'easeOut' }}
-                            className="absolute right-0 top-full mt-2 w-56 bg-white/80 dark:bg-[#2D2D2D]/80 backdrop-blur-lg rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
+                            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                            className="absolute right-0 top-full mt-2 w-64 bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 p-2 z-20 origin-top-right overflow-hidden"
                         >
-                            <ul className="text-sm">
-                                <MenuItem onClick={onImportChat} disabled={false}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 0 0 1.09 1.03L9.25 4.636v8.614Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
-                                    <span>Import Chat...</span>
+                            <ul className="flex flex-col">
+                                <MenuSectionTitle>Actions</MenuSectionTitle>
+                                <MenuItem onClick={onShareChat} disabled={!isChatActive} label="Share to Clipboard">
+                                    <ShareIcon />
                                 </MenuItem>
-                                <div className="h-px bg-gray-200 dark:bg-white/10 my-1"></div>
-                                <MenuItem onClick={onShareChat} disabled={!isChatActive}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M13 4.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM8.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5ZM12.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5Z" /><path d="M15.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /><path d="M4.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /></svg>
-                                    <span>Share to Clipboard</span>
+
+                                <MenuDivider />
+                                
+                                <MenuSectionTitle>Management</MenuSectionTitle>
+                                <MenuItem onClick={() => { onImportChat(); setIsMenuOpen(false); }} disabled={false} label="Import Chat...">
+                                    <ImportIcon />
                                 </MenuItem>
-                                <div className="h-px bg-gray-200 dark:bg-white/10 my-1"></div>
-                                <MenuItem onClick={() => onExportChat('md')} disabled={!isChatActive}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
-                                    <span>Export as Markdown</span>
+
+                                <MenuDivider />
+
+                                <MenuSectionTitle>Export</MenuSectionTitle>
+                                <MenuItem onClick={() => onExportChat('md')} disabled={!isChatActive} label="Markdown">
+                                    <ExportIcon />
                                 </MenuItem>
-                                <MenuItem onClick={() => onExportChat('json')} disabled={!isChatActive}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
-                                    <span>Export as JSON</span>
+                                <MenuItem onClick={() => onExportChat('json')} disabled={!isChatActive} label="JSON">
+                                    <CodeIcon />
                                 </MenuItem>
-                                <MenuItem onClick={() => onExportChat('pdf')} disabled={!isChatActive}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
-                                    <span>Export as PDF</span>
+                                <MenuItem onClick={() => onExportChat('pdf')} disabled={!isChatActive} label="PDF">
+                                    <PdfIcon />
                                 </MenuItem>
                             </ul>
                         </motion.div>
