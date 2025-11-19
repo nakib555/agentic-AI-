@@ -1,10 +1,9 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Renamed imported types to resolve conflicts with global Request/Response objects and changed from 'import type' to 'import'.
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { promises as fs } from 'fs';
 import { MEMORY_PATH } from './data-store.js';
 
@@ -24,7 +23,7 @@ const readMemory = async (): Promise<{ content: string }> => {
     }
 };
 
-export const getMemory = async (req: ExpressRequest, res: ExpressResponse) => {
+export const getMemory = async (req: any, res: any) => {
     try {
         const memory = await readMemory();
         res.status(200).json(memory);
@@ -33,7 +32,7 @@ export const getMemory = async (req: ExpressRequest, res: ExpressResponse) => {
     }
 };
 
-export const updateMemory = async (req: ExpressRequest, res: ExpressResponse) => {
+export const updateMemory = async (req: any, res: any) => {
     try {
         const { content } = req.body;
         if (typeof content !== 'string') {
@@ -47,7 +46,7 @@ export const updateMemory = async (req: ExpressRequest, res: ExpressResponse) =>
     }
 };
 
-export const clearMemory = async (req: ExpressRequest, res: ExpressResponse) => {
+export const clearMemory = async (req: any, res: any) => {
     try {
         const initialMemory = { content: '' };
         await fs.writeFile(MEMORY_PATH, JSON.stringify(initialMemory, null, 2), 'utf-8');

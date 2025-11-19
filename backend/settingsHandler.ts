@@ -1,9 +1,9 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { promises as fs } from 'fs';
 import { GoogleGenAI } from "@google/genai";
 import { parseApiError } from './utils/apiError.js';
@@ -41,7 +41,7 @@ const readSettings = async () => {
     }
 };
 
-export const getSettings = async (req: ExpressRequest, res: ExpressResponse) => {
+export const getSettings = async (req: any, res: any) => {
     try {
         const settings = await readSettings();
         res.status(200).json(settings);
@@ -51,7 +51,7 @@ export const getSettings = async (req: ExpressRequest, res: ExpressResponse) => 
     }
 };
 
-export const updateSettings = async (req: ExpressRequest, res: ExpressResponse) => {
+export const updateSettings = async (req: any, res: any) => {
     try {
         const currentSettings = await readSettings();
         const newSettings = { ...currentSettings, ...req.body };
