@@ -162,7 +162,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             transition={{
                 type: isResizing ? 'tween' : 'spring',
                 duration: isResizing ? 0 : 0.5,
-                stiffness: 260,
+                stiffness: 200,
                 damping: 25,
                 mass: 1,
             }}
@@ -175,7 +175,10 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             `}
             role="complementary"
             aria-labelledby="thinking-sidebar-title"
-            style={{ userSelect: isResizing ? 'none' : 'auto' }}
+            style={{ 
+                userSelect: isResizing ? 'none' : 'auto',
+                willChange: isResizing ? 'width' : 'width, transform'
+            }}
         >
             <div 
                 className="flex flex-col h-full overflow-hidden" 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
 import type { MessageError, ToolCallEvent, WorkflowNodeData } from '../../types';
@@ -154,7 +154,7 @@ const HandoffNode: React.FC<{ from: string; to: string; details?: string; isStre
 };
 
 
-export const WorkflowNode = ({ node, sendMessage, onRegenerate, messageId }: WorkflowNodeProps) => {
+const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId }: WorkflowNodeProps) => {
     // This type is for internal processing and should not be rendered.
     if (node.type === 'act_marker') {
         return null;
@@ -217,7 +217,12 @@ export const WorkflowNode = ({ node, sendMessage, onRegenerate, messageId }: Wor
     const hasDetails = !!node.details;
 
     return (
-        <motion.div layout className={`w-full p-4 rounded-xl bg-white dark:bg-black/20 border shadow-sm ${agentColorInfo ? agentColorInfo.border : 'border-gray-200 dark:border-white/10'}`}>
+        <motion.div 
+            layout 
+            className={`w-full p-4 rounded-xl bg-white dark:bg-black/20 border shadow-sm ${agentColorInfo ? agentColorInfo.border : 'border-gray-200 dark:border-white/10'}`}
+            // Optimize layout animation
+            style={{ willChange: 'transform, opacity' }}
+        >
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="flex-shrink-0">{icon}</div>
@@ -245,3 +250,5 @@ export const WorkflowNode = ({ node, sendMessage, onRegenerate, messageId }: Wor
         </motion.div>
     );
 };
+
+export const WorkflowNode = memo(WorkflowNodeRaw);

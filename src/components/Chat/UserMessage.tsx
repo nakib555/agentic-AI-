@@ -28,6 +28,7 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
             <motion.div 
                 {...animationProps} 
                 className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-2xl shadow-md border border-gray-200 dark:border-slate-700/50 origin-bottom-right"
+                style={{ willChange: 'transform, opacity' }}
             >
                 {/* Content Section */}
                 <div className="p-4 flex flex-col gap-4">
@@ -42,7 +43,7 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
                         </div>
                     )}
                     {text && (
-                        <div className="markdown-content">
+                        <div className="markdown-content markdown-content-user">
                             <ManualCodeRenderer text={text} components={MarkdownComponents} isStreaming={false} />
                         </div>
                     )}

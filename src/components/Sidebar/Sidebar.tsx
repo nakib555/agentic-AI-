@@ -134,8 +134,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 transition={{
                     type: isResizing || animationDisabledForResize ? 'tween' : 'spring',
                     duration: isResizing || animationDisabledForResize ? 0 : 0.5,
-                    stiffness: 260, // Premium feel: softer spring
-                    damping: 25,    // Less friction for fluidity
+                    stiffness: 200, // Slightly reduced for better performance on low-end
+                    damping: 25,
                     mass: 1,
                 }}
                 style={{
@@ -145,6 +145,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     left: 0,
                     top: 0,
                     zIndex: isDesktop ? 'auto' : 30,
+                    // Optimize rendering for animation
+                    willChange: isResizing ? 'width' : 'width, transform',
                 }}
                 className="bg-layer-1 border-r border-border flex flex-col transform-gpu shadow-xl md:shadow-none"
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
