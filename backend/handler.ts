@@ -64,10 +64,15 @@ export const apiHandler = async (req: any, res: any) => {
     console.log(`[HANDLER] Received request for task: "${task}"`);
     
     const apiKey = await getApiKey();
-    if (!apiKey && !['tool_response', 'cancel'].includes(task)) {
-        console.error('[HANDLER] API key not configured on server.');
+
+    // Tasks that are allowed to run without an API key
+    const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree'];
+
+    if (!apiKey && !BYPASS_TASKS.includes(task)) {
+        console.error(`[HANDLER] API key not configured on server. Blocking task: "${task}"`);
         return res.status(401).json({ error: "API key not configured on the server." });
     }
+    
     const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
     try {

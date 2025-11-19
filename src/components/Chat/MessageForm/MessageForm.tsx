@@ -241,8 +241,41 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     whileTap={{ scale: 0.95 }}
                 >
                     {isGeneratingResponse ? ( 
-                       <div className="relative w-4 h-4">
-                         <span className="absolute inset-0 bg-current rounded-sm"></span>
+                       <div className="w-6 h-6">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-full h-full">
+                           <rect 
+                             x="18" y="18" 
+                             width="12" height="12" 
+                             rx="2" ry="2"
+                             fill="currentColor"
+                           />
+                           <circle 
+                             cx="24" cy="24" r="16" 
+                             fill="none" 
+                             strokeWidth="4.5" 
+                             strokeLinecap="round"
+                             strokeDasharray="80 100" 
+                             strokeDashoffset="0">
+                             <animateTransform 
+                               attributeName="transform" 
+                               type="rotate" 
+                               from="0 24 24" 
+                               to="360 24 24" 
+                               dur="2.5s" 
+                               repeatCount="indefinite"/>
+                             <animate 
+                               attributeName="stroke-dashoffset" 
+                               values="0; -180" 
+                               dur="2.5s" 
+                               repeatCount="indefinite"/>
+                             <animate 
+                               attributeName="stroke" 
+                               dur="10s" 
+                               repeatCount="indefinite"
+                               values="#f87171;#fb923c;#facc15;#4ade80;#22d3ee;#3b82f6;#818cf8;#e879f9;#f472b6;#f87171"
+                             />
+                           </circle>
+                         </svg>
                        </div>
                     ) : ( 
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 translate-x-0.5 translate-y-px">
