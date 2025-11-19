@@ -24,8 +24,8 @@ async function startServer() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Client-Version'],
   };
 
-  // Explicitly cast cors handler to any to resolve overload mismatch with app.options
-  app.options('*', cors(corsOptions) as any);
+  // Explicitly cast cors handler to express.RequestHandler to resolve overload mismatch
+  app.options('*', cors(corsOptions) as unknown as express.RequestHandler);
   app.use(cors(corsOptions));
   app.use(express.json({ limit: '50mb' }));
 
@@ -51,25 +51,27 @@ async function startServer() {
 
   // API routes
   app.get('/api/health', (req: any, res: any) => res.json({ status: 'ok' }));
-  app.get('/api/models', getAvailableModelsHandler);
+  
+  // Cast handlers to express.RequestHandler to avoid type incompatibility with 'req' parameter
+  app.get('/api/models', getAvailableModelsHandler as express.RequestHandler);
 
-  app.post('/api/handler', apiHandler);
-  app.get('/api/handler', apiHandler);
+  app.post('/api/handler', apiHandler as express.RequestHandler);
+  app.get('/api/handler', apiHandler as express.RequestHandler);
 
-  app.get('/api/history', crudHandler.getHistory);
-  app.delete('/api/history', crudHandler.deleteAllHistory);
-  app.get('/api/chats/:chatId', crudHandler.getChat);
-  app.post('/api/chats/new', crudHandler.createNewChat);
-  app.put('/api/chats/:chatId', crudHandler.updateChat);
-  app.delete('/api/chats/:chatId', crudHandler.deleteChat);
-  app.post('/api/import', crudHandler.importChat);
+  app.get('/api/history', crudHandler.getHistory as express.RequestHandler);
+  app.delete('/api/history', crudHandler.deleteAllHistory as express.RequestHandler);
+  app.get('/api/chats/:chatId', crudHandler.getChat as express.RequestHandler);
+  app.post('/api/chats/new', crudHandler.createNewChat as express.RequestHandler);
+  app.put('/api/chats/:chatId', crudHandler.updateChat as express.RequestHandler);
+  app.delete('/api/chats/:chatId', crudHandler.deleteChat as express.RequestHandler);
+  app.post('/api/import', crudHandler.importChat as express.RequestHandler);
 
-  app.get('/api/settings', getSettings);
-  app.put('/api/settings', updateSettings);
+  app.get('/api/settings', getSettings as express.RequestHandler);
+  app.put('/api/settings', updateSettings as express.RequestHandler);
 
-  app.get('/api/memory', getMemory);
-  app.put('/api/memory', updateMemory);
-  app.delete('/api/memory', clearMemory);
+  app.get('/api/memory', getMemory as express.RequestHandler);
+  app.put('/api/memory', updateMemory as express.RequestHandler);
+  app.delete('/api/memory', clearMemory as express.RequestHandler);
 
   // Serve static assets (Frontend)
   app.use(express.static(staticPath));
