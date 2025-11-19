@@ -49,7 +49,6 @@ export const App = () => {
         onNewChat={logic.startNewChat}
         onLoadChat={logic.loadChat}
         onDeleteChat={logic.handleDeleteChatRequest}
-        onClearAllChats={logic.handleRequestClearAll}
         onUpdateChatTitle={logic.updateChatTitle}
         theme={logic.theme}
         setTheme={logic.setTheme}

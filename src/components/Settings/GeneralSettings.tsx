@@ -41,9 +41,8 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
   };
   
   const handleClear = () => {
-    if (window.confirm('Are you sure you want to delete all conversations? This action cannot be undone.')) {
-      onClearAllChats();
-    }
+    // Trigger the global confirmation modal via the callback
+    onClearAllChats();
   };
 
   return (
@@ -68,6 +67,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
                 onChange={e => setLocalApiKey(e.target.value)}
                 placeholder="Enter your Gemini API key"
                 className="w-full pl-3 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-black/20 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+                style={{ borderRadius: '0.5rem' }}
                 />
                 <button
                 type="button"
@@ -97,7 +97,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
             </button>
           </div>
           
-          <div className="flex justify-start pl-0.5">
+          <div className="flex justify-start pl-0.5" style={{ paddingLeft: 0 }}>
             <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
               Get a Gemini API Key &rarr;
             </a>

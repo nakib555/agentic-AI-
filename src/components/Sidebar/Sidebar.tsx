@@ -30,7 +30,6 @@ type SidebarProps = {
     onNewChat: () => void;
     onLoadChat: (id: string) => void;
     onDeleteChat: (id: string) => void;
-    onClearAllChats: () => void;
     onUpdateChatTitle: (id: string, title: string) => void;
     theme: Theme;
     setTheme: (theme: Theme) => void;
@@ -46,7 +45,7 @@ const mobileVariants = {
 export const Sidebar: React.FC<SidebarProps> = ({ 
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
     isResizing, setIsResizing, history, isHistoryLoading, currentChatId, onNewChat, onLoadChat,
-    onDeleteChat, onClearAllChats, onUpdateChatTitle, theme, setTheme, onSettingsClick,
+    onDeleteChat, onUpdateChatTitle, theme, setTheme, onSettingsClick,
     isDesktop
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -194,7 +193,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         setTheme={setTheme}
                         isCollapsed={isCollapsed}
                         isDesktop={isDesktop}
-                        onClearAllChats={onClearAllChats}
                         onSettingsClick={onSettingsClick}
                     />
                 </div>
