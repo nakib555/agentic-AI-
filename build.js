@@ -4,6 +4,7 @@ import cpx from 'cpx';
 import { rm } from 'fs/promises';
 import 'dotenv/config';
 import { execSync } from 'child_process';
+import path from 'path';
 
 console.log('Starting production build process...');
 
@@ -26,7 +27,7 @@ try {
     entryPoints: ['src/index.tsx'],
     bundle: true,
     outfile: 'dist/index.js',
-    loader: { '.tsx': 'tsx' },
+    loader: { '.tsx': 'tsx', '.json': 'json' },
     define,
     minify: true,
     sourcemap: true,

@@ -1,10 +1,10 @@
 
-
 import esbuild from 'esbuild';
 import { spawn } from 'child_process';
 import cpx from 'cpx';
 import 'dotenv/config';
 import { rm } from 'fs/promises';
+import path from 'path';
 
 // --- Configuration ---
 const FRONTEND_DEV_PORT = 8000;
@@ -72,7 +72,7 @@ try {
     entryPoints: ['src/index.tsx'],
     bundle: true,
     outfile: 'dist/index.js',
-    loader: { '.tsx': 'tsx' },
+    loader: { '.tsx': 'tsx', '.ts': 'ts', '.json': 'json' },
     sourcemap: true,
     define: {
       'process.env.NODE_ENV': '"development"',

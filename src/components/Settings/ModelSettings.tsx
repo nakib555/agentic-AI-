@@ -53,7 +53,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
             </SettingItem>
 
             <SettingItem label="Image Model" layout="col">
-                <ModelSelector models={imageModels} selectedModel={imageModel} onImageModelChange={onImageModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
+                <ModelSelector models={imageModels} selectedModel={imageModel} onModelChange={onImageModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
             </SettingItem>
 
             <SettingItem label="Video Model" layout="col">
