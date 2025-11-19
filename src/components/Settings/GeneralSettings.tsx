@@ -24,7 +24,8 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
     setLocalApiKey(apiKey);
   }, [apiKey]);
 
-  const handleSave = async () => {
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setSaveStatus('saving');
     setSaveError(null);
     try {
@@ -52,22 +53,23 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
         description="Stored securely in your browser."
         layout="col"
       >
-        <div className="flex gap-2">
+        <form onSubmit={handleSave} className="flex gap-2">
           <input
             type="password"
+            autoComplete="off"
             value={localApiKey}
             onChange={e => setLocalApiKey(e.target.value)}
             placeholder="Enter your API key"
             className="flex-1 p-2 border border-border rounded-lg bg-layer-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-main text-content-primary"
           />
           <button
-            onClick={handleSave}
+            type="submit"
             disabled={saveStatus === 'saving'}
             className="px-4 py-2 text-sm font-semibold text-text-inverted bg-primary-main hover:bg-primary-hover rounded-lg transition-colors min-w-[80px] disabled:opacity-70"
           >
             {saveStatus === 'saving' ? '...' : saveStatus === 'saved' ? '✓' : 'Save'}
           </button>
-        </div>
+        </form>
         {saveStatus === 'error' && saveError && (
           <p className="text-sm text-status-error-text mt-2">{saveError}</p>
         )}

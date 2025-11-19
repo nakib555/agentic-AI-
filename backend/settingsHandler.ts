@@ -25,6 +25,20 @@ const defaultSettings = {
     isAgentMode: true,
 };
 
+const VALIDATION_TIMEOUT_MS = 10000; // 10 seconds timeout for validation
+
+// Helper for timeout
+const withTimeout = <T>(promise: Promise<T>, ms: number, errorMessage: string): Promise<T> => {
+    let timer: NodeJS.Timeout;
+    const timeoutPromise = new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(errorMessage)), ms);
+    });
+    return Promise.race([
+        promise.finally(() => clearTimeout(timer)),
+        timeoutPromise
+    ]);
+};
+
 const readSettings = async () => {
     try {
         const content = await fs.readFile(SETTINGS_PATH, 'utf-8');
@@ -61,10 +75,22 @@ export const updateSettings = async (req: any, res: any) => {
         if (req.body.apiKey && req.body.apiKey !== currentSettings.apiKey) {
             try {
                 const ai = new GoogleGenAI({ apiKey: req.body.apiKey });
-                // Make a lightweight, free call to validate the key.
-                await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: [{ parts: [{ text: ' ' }] }] });
-                // On success, fetch the available models to send back to the client.
-                modelData = await listAvailableModels(req.body.apiKey);
+                
+                // Verification Step with Timeout
+                // We make a lightweight call to ensure the key is valid and active.
+                await withTimeout(
+                    ai.models.generateContent({ model: 'gemini-2.5-flash', contents: [{ parts: [{ text: ' ' }] }] }),
+                    VALIDATION_TIMEOUT_MS,
+                    'API Key validation timed out. Please try again.'
+                );
+                
+                // Model Fetch Step with Timeout
+                // We try to fetch the models, but we also protect against this hanging.
+                modelData = await withTimeout(
+                     listAvailableModels(req.body.apiKey),
+                     VALIDATION_TIMEOUT_MS,
+                     'Fetching models timed out.'
+                );
             } catch (error: any) {
                 console.warn('API Key validation failed on save:', error.message);
                 

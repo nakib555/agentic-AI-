@@ -24,16 +24,15 @@ async function startServer() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Client-Version'],
   };
 
-  // Explicitly cast cors handler to express.RequestHandler to resolve overload mismatch
-  app.options('*', cors(corsOptions) as unknown as express.RequestHandler);
-  app.use(cors(corsOptions));
+  // Cast handlers to 'any' to avoid TypeScript overload mismatches with Express types
+  app.options('*', cors(corsOptions) as any);
+  app.use(cors(corsOptions) as any);
   app.use(express.json({ limit: '50mb' }));
 
   // Version Check Middleware
   const appVersion = process.env.APP_VERSION;
   if (appVersion) {
-    // Using 'any' types for req, res, next to avoid type conflicts between Express versions/definitions
-    app.use('/api', (req: any, res: any, next: any) => {
+    app.use('/api', ((req: any, res: any, next: any) => {
       const clientVersion = req.header('X-Client-Version');
       if (clientVersion && clientVersion !== appVersion) {
         console.warn(`[VERSION_MISMATCH] Client: ${clientVersion}, Server: ${appVersion}.`);
@@ -43,47 +42,45 @@ async function startServer() {
         });
       }
       next();
-    });
+    }) as any);
     console.log(`[SERVER] Running version: ${appVersion}`);
   }
 
   const staticPath = path.join((process as any).cwd(), 'dist');
 
   // API routes
-  app.get('/api/health', (req: any, res: any) => res.json({ status: 'ok' }));
+  // Using 'as any' for handlers to bypass strict RequestHandler type checks
+  app.get('/api/health', ((req: any, res: any) => res.json({ status: 'ok' })) as any);
   
-  // Cast handlers to express.RequestHandler to avoid type incompatibility with 'req' parameter
-  app.get('/api/models', getAvailableModelsHandler as express.RequestHandler);
+  app.get('/api/models', getAvailableModelsHandler as any);
 
-  app.post('/api/handler', apiHandler as express.RequestHandler);
-  app.get('/api/handler', apiHandler as express.RequestHandler);
+  app.post('/api/handler', apiHandler as any);
+  app.get('/api/handler', apiHandler as any);
 
-  app.get('/api/history', crudHandler.getHistory as express.RequestHandler);
-  app.delete('/api/history', crudHandler.deleteAllHistory as express.RequestHandler);
-  app.get('/api/chats/:chatId', crudHandler.getChat as express.RequestHandler);
-  app.post('/api/chats/new', crudHandler.createNewChat as express.RequestHandler);
-  app.put('/api/chats/:chatId', crudHandler.updateChat as express.RequestHandler);
-  app.delete('/api/chats/:chatId', crudHandler.deleteChat as express.RequestHandler);
-  app.post('/api/import', crudHandler.importChat as express.RequestHandler);
+  app.get('/api/history', crudHandler.getHistory as any);
+  app.delete('/api/history', crudHandler.deleteAllHistory as any);
+  app.get('/api/chats/:chatId', crudHandler.getChat as any);
+  app.post('/api/chats/new', crudHandler.createNewChat as any);
+  app.put('/api/chats/:chatId', crudHandler.updateChat as any);
+  app.delete('/api/chats/:chatId', crudHandler.deleteChat as any);
+  app.post('/api/import', crudHandler.importChat as any);
 
-  app.get('/api/settings', getSettings as express.RequestHandler);
-  app.put('/api/settings', updateSettings as express.RequestHandler);
+  app.get('/api/settings', getSettings as any);
+  app.put('/api/settings', updateSettings as any);
 
-  app.get('/api/memory', getMemory as express.RequestHandler);
-  app.put('/api/memory', updateMemory as express.RequestHandler);
-  app.delete('/api/memory', clearMemory as express.RequestHandler);
+  app.get('/api/memory', getMemory as any);
+  app.put('/api/memory', updateMemory as any);
+  app.delete('/api/memory', clearMemory as any);
 
   // Serve static assets (Frontend)
-  app.use(express.static(staticPath));
+  app.use(express.static(staticPath) as any);
   
   // Mount the HISTORY_PATH to /uploads so that files in data/history/{folder}/file/ are accessible.
-  // The structure is data/history/{FolderName}/file/{filename}
-  // The URL will be /uploads/{FolderName}/file/{filename}
-  app.use('/uploads', express.static(HISTORY_PATH));
+  app.use('/uploads', express.static(HISTORY_PATH) as any);
 
-  app.get('*', (req: any, res: any) => {
+  app.get('*', ((req: any, res: any) => {
     res.sendFile(path.join(staticPath, 'index.html'));
-  });
+  }) as any);
 
   app.listen(PORT, () => {
     console.log(`[SERVER] Backend server is running on http://localhost:${PORT}`);
