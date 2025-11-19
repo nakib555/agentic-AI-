@@ -1,5 +1,4 @@
-
-const CACHE_NAME = 'agentic-ai-cache-v4';
+const CACHE_NAME = 'agentic-ai-cache-v1';
 
 const PRECACHE_ASSETS = [
     '/',

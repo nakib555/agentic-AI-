@@ -1,11 +1,11 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ToolError } from '../utils/apiError.js';
-import { fileStore } from '../services/fileStore.js';
+import { ToolError } from '../utils/apiError';
+import { fileStore } from '../services/fileStore';
+import { MimeType } from 'playwright';
 
 export const executeListFiles = async (args: { path: string }, chatId: string): Promise<string> => {
     try {
@@ -22,12 +22,12 @@ export const executeListFiles = async (args: { path: string }, chatId: string): 
 
 export const executeDisplayFile = async (args: { path: string }, chatId: string): Promise<string> => {
     try {
-        // Verify existence locally
         const fileBuffer = await fileStore.getFile(chatId, args.path);
         if (!fileBuffer) {
             throw new Error(`File not found at path: ${args.path}`);
         }
 
+        // A simple way to infer mime type for common formats
         let mimeType = 'application/octet-stream';
         const extension = args.path.split('.').pop()?.toLowerCase() || '';
         if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(extension)) {
@@ -41,9 +41,7 @@ export const executeDisplayFile = async (args: { path: string }, chatId: string)
         }
 
         const filename = args.path.split('/').pop() || 'file';
-        
-        // Get the correct public URL based on the chat's folder name
-        const srcUrl = await fileStore.getPublicUrl(chatId, args.path);
+        const srcUrl = `/uploads/${chatId}/${filename}`;
 
         const fileData = { filename, srcUrl, mimeType };
 

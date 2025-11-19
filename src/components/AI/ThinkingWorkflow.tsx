@@ -48,9 +48,9 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
                     <div className="flex-1 min-w-0 pb-6">
                         <AnimatePresence>
                             <motion.div
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ type: "spring", stiffness: 500, damping: 30, delay: 0.05 }}
+                                transition={{ duration: 0.3, ease: "easeOut", delay: index * 0.1 }}
                             >
                                 <WorkflowNode node={node} sendMessage={sendMessage} onRegenerate={onRegenerate} messageId={messageId} />
                             </motion.div>

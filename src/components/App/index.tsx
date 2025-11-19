@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -49,6 +48,7 @@ export const App = () => {
         onNewChat={logic.startNewChat}
         onLoadChat={logic.loadChat}
         onDeleteChat={logic.handleDeleteChatRequest}
+        onClearAllChats={logic.handleRequestClearAll}
         onUpdateChatTitle={logic.updateChatTitle}
         theme={logic.theme}
         setTheme={logic.setTheme}
@@ -124,7 +124,6 @@ export const App = () => {
         handleFileUploadForImport={logic.handleFileUploadForImport}
         onRunTests={() => logic.setIsTestMode(true)}
         onDownloadLogs={logic.handleDownloadLogs}
-        onShowDataStructure={logic.handleShowDataStructure}
         availableModels={logic.availableModels}
         availableImageModels={logic.availableImageModels}
         availableVideoModels={logic.availableVideoModels}
@@ -152,10 +151,7 @@ export const App = () => {
         setIsMemoryEnabled={logic.setIsMemoryEnabled}
         onManageMemory={() => logic.setIsMemoryModalOpen(true)}
         memoryContent={logic.memoryContent}
-        memoryFiles={logic.memoryFiles}
         clearMemory={logic.clearMemory}
-        updateBackendMemory={logic.updateBackendMemory}
-        updateMemoryFiles={logic.updateMemoryFiles}
         isConfirmationOpen={logic.isConfirmationOpen}
         memorySuggestions={logic.memorySuggestions}
         confirmMemoryUpdate={logic.confirmMemoryUpdate}

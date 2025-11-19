@@ -1,13 +1,13 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { promises as fs } from 'fs';
 import { GoogleGenAI } from "@google/genai";
 import { parseApiError } from './utils/apiError.js';
-import { SETTINGS_FILE_PATH } from './data-store.js';
+import { SETTINGS_PATH } from './data-store.js';
 import { listAvailableModels } from './services/modelService.js';
 
 // Default settings structure
@@ -25,29 +25,15 @@ const defaultSettings = {
     isAgentMode: true,
 };
 
-const VALIDATION_TIMEOUT_MS = 10000; // 10 seconds timeout for validation
-
-// Helper for timeout
-const withTimeout = <T>(promise: Promise<T>, ms: number, errorMessage: string): Promise<T> => {
-    let timer: any;
-    const timeoutPromise = new Promise<T>((_, reject) => {
-        timer = setTimeout(() => reject(new Error(errorMessage)), ms);
-    });
-    return Promise.race([
-        promise.finally(() => clearTimeout(timer)),
-        timeoutPromise
-    ]);
-};
-
 const readSettings = async () => {
     try {
-        const content = await fs.readFile(SETTINGS_FILE_PATH, 'utf-8');
+        const content = await fs.readFile(SETTINGS_PATH, 'utf-8');
         return { ...defaultSettings, ...JSON.parse(content) };
     } catch (error: any) {
         if (error.code === 'ENOENT') {
             // The init script ensures the directory exists, but the file might not.
             // Create it with defaults if it doesn't.
-            await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(defaultSettings, null, 2), 'utf-8');
+            await fs.writeFile(SETTINGS_PATH, JSON.stringify(defaultSettings, null, 2), 'utf-8');
             return defaultSettings;
         }
         console.error('Failed to read settings:', error);
@@ -55,7 +41,7 @@ const readSettings = async () => {
     }
 };
 
-export const getSettings = async (req: any, res: any) => {
+export const getSettings = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const settings = await readSettings();
         res.status(200).json(settings);
@@ -65,7 +51,7 @@ export const getSettings = async (req: any, res: any) => {
     }
 };
 
-export const updateSettings = async (req: any, res: any) => {
+export const updateSettings = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
         const currentSettings = await readSettings();
         const newSettings = { ...currentSettings, ...req.body };
@@ -74,35 +60,11 @@ export const updateSettings = async (req: any, res: any) => {
         // If a new API key is being provided and it's different, verify it.
         if (req.body.apiKey && req.body.apiKey !== currentSettings.apiKey) {
             try {
-                // Trim the API key to prevent issues with whitespace
-                const cleanKey = req.body.apiKey.trim();
-                newSettings.apiKey = cleanKey;
-                
-                const ai = new GoogleGenAI({ apiKey: cleanKey });
-                
-                // Verification Step with Timeout
-                // We make a lightweight call to ensure the key is valid and active.
-                await withTimeout(
-                    ai.models.generateContent({ model: 'gemini-2.5-flash', contents: [{ parts: [{ text: ' ' }] }] }),
-                    VALIDATION_TIMEOUT_MS,
-                    'API Key validation timed out. Please try again.'
-                );
-                
-                // Model Fetch Step with Timeout
-                // We try to fetch the models, but we also protect against this hanging.
-                const fetchedModels = await withTimeout(
-                     listAvailableModels(cleanKey),
-                     VALIDATION_TIMEOUT_MS,
-                     'Fetching models timed out.'
-                );
-
-                // Map chatModels to models to match the frontend expectation (same as modelsHandler)
-                modelData = {
-                    models: fetchedModels.chatModels,
-                    imageModels: fetchedModels.imageModels,
-                    videoModels: fetchedModels.videoModels
-                };
-                
+                const ai = new GoogleGenAI({ apiKey: req.body.apiKey });
+                // Make a lightweight, free call to validate the key.
+                await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: [{ parts: [{ text: ' ' }] }] });
+                // On success, fetch the available models to send back to the client.
+                modelData = await listAvailableModels(req.body.apiKey);
             } catch (error: any) {
                 console.warn('API Key validation failed on save:', error.message);
                 
@@ -121,7 +83,7 @@ export const updateSettings = async (req: any, res: any) => {
             }
         }
 
-        await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(newSettings, null, 2), 'utf-8');
+        await fs.writeFile(SETTINGS_PATH, JSON.stringify(newSettings, null, 2), 'utf-8');
         res.status(200).json({ ...newSettings, ...modelData });
     } catch (error) {
         console.error('Failed to update settings:', error);

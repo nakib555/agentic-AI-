@@ -11,27 +11,28 @@
 /* Bubble style for AI-generated HTML */
 .bubble {
   display: inline-block;
-  background: var(--primary-main);
+  background: #2563eb; /* blue-600 */
   color: #ffffff;
   border-radius: 18px;
   padding: 10px 16px;
   margin: 6px 0;
   max-width: 85%;
-  line-height: 1.5;
+  line-height: 1.4;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   word-break: break-word;
-  overflow-wrap: break-word;
 }
 .dark .bubble {
-  background: var(--primary-hover);
+  background: #1d4ed8; /* blue-700 */
 }
 
 /* Custom Blockquote styles */
 .custom-blockquote {
   position: relative;
   padding-left: 1rem;
-  border-left: 3px solid var(--border-strong);
-  color: var(--text-secondary);
+  border-left: 3px solid #d1d5db; /* gray-300 */
+}
+.dark .custom-blockquote {
+  border-left-color: #4b5563; /* gray-600 */
 }
 
 /* Ensure paragraphs inside the blockquote don't add extra margins */
@@ -39,45 +40,11 @@
   margin-bottom: 0 !important;
 }
 .custom-blockquote p:not(:last-child) {
-  margin-bottom: 1rem !important;
+  margin-bottom: 1rem !important; /* Space between paragraphs inside a quote */
 }
 
 /* Compact version for workflow view */
 .custom-blockquote-workflow {
   padding-left: 0.75rem;
   border-left-width: 2px;
-}
-
-/* --- Robust Overflow Protection --- */
-
-/* Prevent images from blowing out container width */
-.markdown-content img,
-.workflow-markdown img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 0.5rem;
-}
-
-/* Prevent pre/code blocks from causing horizontal scroll on parent */
-.markdown-content pre,
-.workflow-markdown pre {
-  max-width: 100%;
-  overflow-x: auto;
-  white-space: pre-wrap; /* Wrap long lines by default for better mobile UX */
-  word-wrap: break-word;
-}
-
-/* Robust Table Styling */
-.markdown-content table,
-.workflow-markdown table {
-  display: block; /* Allows horizontal scroll on small screens */
-  width: 100%;
-  overflow-x: auto;
-  border-collapse: collapse;
-  -webkit-overflow-scrolling: touch;
-}
-
-.markdown-content td,
-.markdown-content th {
-  min-width: 100px; /* Prevent squished columns */
 }

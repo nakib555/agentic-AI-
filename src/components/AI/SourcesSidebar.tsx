@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -49,13 +48,7 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
             initial={false}
             animate={animateState}
             variants={variants}
-            transition={{ 
-                type: isResizing ? 'tween' : 'spring', 
-                duration: isResizing ? 0 : 0.5, 
-                stiffness: 260, 
-                damping: 25,
-                mass: 1
-            }}
+            transition={{ type: isResizing ? 'tween' : 'spring', duration: isResizing ? 0 : undefined, stiffness: 500, damping: 40 }}
             className={`flex-shrink-0 overflow-hidden bg-gray-100/70 dark:bg-[#1e1e1e]/70 backdrop-blur-md ${isDesktop ? 'relative border-l border-gray-200 dark:border-white/10' : 'fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 dark:border-white/10'}`}
             role="complementary"
             aria-labelledby="sources-sidebar-title"

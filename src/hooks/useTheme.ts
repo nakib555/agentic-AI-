@@ -4,10 +4,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { themeControlCenter, ThemeMode } from '../services/themeControlCenter';
 
-// Re-export type for compatibility
-export type Theme = ThemeMode;
+export type Theme = 'light' | 'dark' | 'system';
 
 export const useTheme = () => {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -18,17 +16,25 @@ export const useTheme = () => {
   });
 
   useEffect(() => {
-    // 1. Trigger the Control Center
-    themeControlCenter.activateTheme(theme);
-    
-    // 2. Persist choice
+    const root = window.document.documentElement;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const applyTheme = () => {
+      root.classList.remove('light', 'dark');
+
+      if (theme === 'system') {
+        const systemTheme = mediaQuery.matches ? 'dark' : 'light';
+        root.classList.add(systemTheme);
+      } else {
+        root.classList.add(theme);
+      }
+    };
+
+    applyTheme();
     localStorage.setItem('theme', theme);
 
-    // 3. Handle System Mode Dynamic Updates
     if (theme === 'system') {
-      const mediaQuery = themeControlCenter.getMediaQuery();
-      const handleChange = () => themeControlCenter.activateTheme('system');
-      
+      const handleChange = () => applyTheme();
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
     }

@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { memo } from 'react';
+import React from 'react';
 import type { Message, Source } from '../../types';
 import { UserMessage } from './UserMessage';
 import { AiMessage } from './AiMessage/index';
 import type { MessageFormHandle } from './MessageForm/index';
 
-const MessageComponentRaw: React.FC<{ 
+export const MessageComponent: React.FC<{ 
     msg: Message;
     isLoading: boolean;
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void; 
@@ -59,24 +59,8 @@ const MessageComponentRaw: React.FC<{
   };
 
   return (
-    <div id={`message-${msg.id}`} className="contain-content">
+    <div id={`message-${msg.id}`}>
         {messageContent()}
     </div>
   );
 };
-
-export const MessageComponent = memo(MessageComponentRaw, (prevProps, nextProps) => {
-    // Custom comparison for high performance
-    const msgChanged = 
-        prevProps.msg.text !== nextProps.msg.text ||
-        prevProps.msg.isThinking !== nextProps.msg.isThinking ||
-        prevProps.msg.activeResponseIndex !== nextProps.msg.activeResponseIndex ||
-        prevProps.msg.responses?.length !== nextProps.msg.responses?.length ||
-        prevProps.msg.executionState !== nextProps.msg.executionState;
-
-    // If the message content hasn't changed, and it's not the last message (which might be loading),
-    // we generally don't need to re-render. 
-    // However, we must check isLoading to handle the global loading state change.
-    
-    return !msgChanged && prevProps.isLoading === nextProps.isLoading && prevProps.ttsVoice === nextProps.ttsVoice;
-});

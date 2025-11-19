@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { ChatSession, Message, ModelResponse } from '../types';
 import { fetchFromApi } from '../utils/api';
 
@@ -24,18 +24,6 @@ export const useChatHistory = () => {
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
-
-  // Refs to hold latest state for optimistic rollbacks without triggering re-renders of callbacks
-  const chatHistoryRef = useRef(chatHistory);
-  const currentChatIdRef = useRef(currentChatId);
-
-  useEffect(() => {
-      chatHistoryRef.current = chatHistory;
-  }, [chatHistory]);
-
-  useEffect(() => {
-      currentChatIdRef.current = currentChatId;
-  }, [currentChatId]);
 
   // Load history from backend on initial mount
   useEffect(() => {
@@ -97,46 +85,24 @@ export const useChatHistory = () => {
   }, []);
   
   const deleteChat = useCallback(async (chatId: string) => {
-    // Snapshot for rollback
-    const previousHistory = chatHistoryRef.current;
-    const wasCurrent = currentChatIdRef.current === chatId;
-
-    // Optimistic Update
-    setChatHistory(prev => prev.filter(c => c.id !== chatId));
-    if (wasCurrent) {
-        setCurrentChatId(null);
-    }
-
     try {
         await fetchApi(`/api/chats/${chatId}`, { method: 'DELETE' });
+        setChatHistory(prev => prev.filter(c => c.id !== chatId));
+        if (currentChatId === chatId) {
+            setCurrentChatId(null);
+        }
     } catch (error) {
         console.error(`Failed to delete chat ${chatId}:`, error);
-        // Rollback
-        setChatHistory(previousHistory);
-        if (wasCurrent) {
-            setCurrentChatId(chatId);
-        }
-        alert("Failed to delete chat. Changes reverted.");
     }
-  }, []);
+  }, [currentChatId]);
 
   const clearAllChats = useCallback(async () => {
-    // Snapshot for rollback
-    const previousHistory = chatHistoryRef.current;
-    const previousId = currentChatIdRef.current;
-
-    // Optimistic Update
-    setChatHistory([]);
-    setCurrentChatId(null);
-
     try {
         await fetchApi('/api/history', { method: 'DELETE' });
+        setChatHistory([]);
+        setCurrentChatId(null);
     } catch (error) {
         console.error('Failed to clear all chats:', error);
-        // Rollback
-        setChatHistory(previousHistory);
-        setCurrentChatId(previousId);
-        alert("Failed to clear history. Changes reverted.");
     }
   }, []);
 
@@ -227,27 +193,15 @@ export const useChatHistory = () => {
   }, []);
 
   const updateChatProperty = useCallback(async (chatId: string, update: Partial<ChatSession>) => {
-      // Snapshot for rollback
-      const currentHistory = chatHistoryRef.current;
-      const chatToUpdate = currentHistory.find(c => c.id === chatId);
-      if (!chatToUpdate) return;
-      const previousChat = { ...chatToUpdate };
-
-      // Optimistic Update
-      setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, ...update } : s));
-
       try {
           await fetchApi(`/api/chats/${chatId}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(update),
           });
-          // Note: We don't need to do anything on success as local state is already updated
+          setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, ...update } : s));
       } catch (error) {
           console.error(`Failed to update chat ${chatId}:`, error);
-          // Rollback
-          setChatHistory(prev => prev.map(s => s.id === chatId ? previousChat : s));
-          // alert("Failed to update chat. Changes reverted."); // Optional: might be too noisy for auto-saves
       }
   }, []);
   

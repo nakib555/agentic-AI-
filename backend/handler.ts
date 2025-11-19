@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,8 +5,6 @@
 
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { GoogleGenAI } from "@google/genai";
-import { promises as fs } from 'fs';
-import path from 'path';
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
 import { parseApiError } from './utils/apiError.js';
@@ -25,55 +22,21 @@ const frontendToolRequests = new Map<string, (result: any) => void>();
 // Store abort controllers for ongoing agentic loops to allow cancellation
 const activeAgentLoops = new Map<string, AbortController>();
 
-// Using 'any' for res to bypass type definition mismatches in the environment
-const writeEvent = (res: any, type: string, payload: any) => {
+const writeEvent = (res: ExpressResponse, type: string, payload: any) => {
     res.write(JSON.stringify({ type, payload }) + '\n');
 };
 
 const generateId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-async function generateAsciiTree(dirPath: string, prefix: string = ''): Promise<string> {
-    let output = '';
-    let entries;
-    try {
-        entries = await fs.readdir(dirPath, { withFileTypes: true });
-    } catch (e) {
-        return `${prefix} [Error reading directory]\n`;
-    }
-
-    // Filter out hidden files/dirs if necessary, e.g. .DS_Store
-    entries = entries.filter(e => !e.name.startsWith('.'));
-
-    for (let i = 0; i < entries.length; i++) {
-        const entry = entries[i];
-        const isLast = i === entries.length - 1;
-        const connector = isLast ? '└── ' : '├── ';
-        output += `${prefix}${connector}${entry.name}\n`;
-
-        if (entry.isDirectory()) {
-            const childPrefix = prefix + (isLast ? '    ' : '│   ');
-            output += await generateAsciiTree(path.join(dirPath, entry.name), childPrefix);
-        }
-    }
-    return output;
-}
-
-// Using 'any' for req/res to bypass strict type checks that are failing due to missing properties in the inferred types
-export const apiHandler = async (req: any, res: any) => {
+export const apiHandler = async (req: ExpressRequest, res: ExpressResponse) => {
     const task = req.query.task as string;
     console.log(`[HANDLER] Received request for task: "${task}"`);
     
     const apiKey = await getApiKey();
-
-    // Tasks that are allowed to run without an API key
-    // 'debug_data_tree' must be here to allow checking file structure without a valid key setup
-    const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree'];
-
-    if (!apiKey && !BYPASS_TASKS.includes(task)) {
-        console.error(`[HANDLER] API key not configured on server. Blocking task: "${task}"`);
+    if (!apiKey && !['tool_response', 'cancel'].includes(task)) {
+        console.error('[HANDLER] API key not configured on server.');
         return res.status(401).json({ error: "API key not configured on the server." });
     }
-    
     const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
     try {
@@ -174,42 +137,6 @@ export const apiHandler = async (req: any, res: any) => {
                 break;
             }
 
-            case 'title': {
-                if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { messages } = req.body;
-                const historyText = messages.slice(0, 3).map((m: any) => `${m.role}: ${m.text}`).join('\n');
-                const prompt = `You are a helpful assistant. Generate a short, concise title (max 6 words) for this conversation. Do not use quotes or markdown. Just the title text.\n\nCONVERSATION:\n${historyText}\n\nTITLE:`;
-                
-                const response = await generateContentWithRetry(ai, {
-                    model: 'gemini-2.5-flash',
-                    contents: prompt,
-                });
-                res.status(200).json({ title: response.text.trim() });
-                break;
-            }
-
-            case 'suggestions': {
-                if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { conversation } = req.body;
-                const recentHistory = conversation.slice(-5).map((m: any) => `${m.role}: ${(m.text || '').substring(0, 200)}`).join('\n');
-                const prompt = `Based on the conversation below, suggest 3 short, relevant follow-up questions or actions the user might want to take next. Return ONLY a JSON array of strings. Example: ["Tell me more", "Explain the code", "Generate an image"].\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
-                
-                const response = await generateContentWithRetry(ai, {
-                    model: 'gemini-2.5-flash',
-                    contents: prompt,
-                    config: { responseMimeType: 'application/json' },
-                });
-                
-                let suggestions = [];
-                try {
-                    suggestions = JSON.parse(response.text);
-                } catch (e) {
-                    console.error("Failed to parse suggestions JSON:", e);
-                }
-                res.status(200).json({ suggestions });
-                break;
-            }
-
             case 'tts': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { text, voice } = req.body;
@@ -266,14 +193,6 @@ export const apiHandler = async (req: any, res: any) => {
                 const toolExecutor = createToolExecutor(ai, '', '', apiKey!, chatId, async () => ({error: 'Frontend execution not supported in this context'}));
                 const result = await toolExecutor(toolName, toolArgs);
                 res.status(200).json({ result });
-                break;
-            }
-
-            case 'debug_data_tree': {
-                const dataPath = path.join(process.cwd(), 'data');
-                let tree = `data/\n`;
-                tree += await generateAsciiTree(dataPath);
-                res.status(200).json({ tree });
                 break;
             }
 

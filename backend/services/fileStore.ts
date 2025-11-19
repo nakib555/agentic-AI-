@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -7,43 +6,48 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { Buffer } from 'buffer';
-import { ToolError } from '../utils/apiError.js';
-import { historyControl } from './historyControl.js';
+import { ToolError } from '../utils/apiError';
+import { UPLOADS_PATH } from '../data-store.js';
 
 const ensureDir = async (dirPath: string) => {
     try {
         await fs.mkdir(dirPath, { recursive: true });
+    // FIX: Explicitly type `error` as `any` for safe property access.
     } catch (error: any) {
+        // Ignore if it already exists, but log other errors
         if (error.code !== 'EEXIST') {
             console.error(`Error creating directory ${dirPath}:`, error);
         }
     }
 };
 
-// Helper to resolve path using HistoryControl
-// This ensures we are always looking inside data/history/{Title-ID}/file/
-const resolveChatFilePath = async (chatId: string, virtualPath: string): Promise<string> => {
-    const chatFolder = await historyControl.getChatFolderPath(chatId);
-    if (!chatFolder) {
-        throw new ToolError('fileStore', 'CHAT_NOT_FOUND', `Chat session ${chatId} does not exist.`);
+// Resolves a virtual path to a real, safe filesystem path within a chat's directory.
+const resolveVirtualPath = (chatId: string, virtualPath: string): string => {
+    // Sanitize chatId to prevent traversal
+    const safeChatId = path.normalize(chatId).replace(/^(\.\.(\/|\\|$))+/, '');
+    if (safeChatId.includes('/') || safeChatId.includes('\\')) {
+        throw new ToolError('fileStore', 'INVALID_CHAT_ID', 'Invalid chatId provided.');
     }
-    
-    const fileDir = path.join(chatFolder, 'file');
-    
-    // Sanitize virtual path to prevent traversal
-    const safeVirtualPath = path.normalize(virtualPath).replace(/^(\.\.(\/|\\|$))+/, '');
-    const finalPath = path.join(fileDir, safeVirtualPath);
+    const chatDirectory = path.join(UPLOADS_PATH, safeChatId);
 
-    if (!finalPath.startsWith(fileDir)) {
-        throw new ToolError('fileStore', 'PATH_TRAVERSAL', 'Access denied: Path is outside the allowed directory.');
+    // Sanitize and normalize the virtual path
+    const normalizedVirtualPath = path.normalize(virtualPath).replace(/^(\.\.(\/|\\|$))+/, '');
+    
+    // The virtual FS root is the chat-specific directory
+    const finalPath = path.join(chatDirectory, normalizedVirtualPath);
+
+    // Security check: ensure the final path is still within the chat's directory
+    if (!finalPath.startsWith(chatDirectory)) {
+        throw new ToolError('fileStore', 'PATH_TRAVERSAL_ATTEMPT', 'Access denied: Path is outside the allowed directory.');
     }
     
     return finalPath;
 };
 
+
 export const fileStore = {
     async saveFile(chatId: string, virtualPath: string, data: Buffer | string): Promise<void> {
-        const realPath = await resolveChatFilePath(chatId, virtualPath);
+        const realPath = resolveVirtualPath(chatId, virtualPath);
         const dir = path.dirname(realPath);
         await ensureDir(dir);
         await fs.writeFile(realPath, data);
@@ -51,48 +55,39 @@ export const fileStore = {
     },
 
     async getFile(chatId: string, virtualPath: string): Promise<Buffer | null> {
+        const realPath = resolveVirtualPath(chatId, virtualPath);
         try {
-            const realPath = await resolveChatFilePath(chatId, virtualPath);
             return await fs.readFile(realPath);
         } catch (error: any) {
-            if (error.code === 'ENOENT') return null;
+            if (error.code === 'ENOENT') {
+                return null;
+            }
             throw error;
         }
     },
 
     async listFiles(chatId: string, virtualPath: string): Promise<string[]> {
+        const dirPath = resolveVirtualPath(chatId, virtualPath);
         try {
-            const realPath = await resolveChatFilePath(chatId, virtualPath);
-            // Check if directory exists before reading
-            try {
-                await fs.access(realPath);
-            } catch {
-                return [];
-            }
-            
-            const entries = await fs.readdir(realPath, { withFileTypes: true });
+            const entries = await fs.readdir(dirPath, { withFileTypes: true });
             return entries.map(entry => entry.name + (entry.isDirectory() ? '/' : ''));
         } catch (error: any) {
-            if (error.code === 'ENOENT') return [];
+            if (error.code === 'ENOENT') {
+                await ensureDir(dirPath); // Create dir if it doesn't exist
+                return []; 
+            }
             throw error;
         }
     },
 
     async deleteFile(chatId: string, virtualPath: string): Promise<void> {
+        const realPath = resolveVirtualPath(chatId, virtualPath);
         try {
-            const realPath = await resolveChatFilePath(chatId, virtualPath);
             await fs.unlink(realPath);
         } catch (error: any) {
-            if (error.code !== 'ENOENT') throw error;
+            if (error.code !== 'ENOENT') {
+                throw error;
+            }
         }
     },
-    
-    async getPublicUrl(chatId: string, virtualPath: string): Promise<string> {
-        const baseUrl = await historyControl.getPublicUrlBase(chatId);
-        if (!baseUrl) {
-             throw new ToolError('fileStore', 'CHAT_NOT_FOUND', `Chat session ${chatId} does not exist.`);
-        }
-        const normalized = path.normalize(virtualPath).replace(/\\/g, '/');
-        return `${baseUrl}/${normalized}`;
-    }
 };
