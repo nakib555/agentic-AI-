@@ -3,8 +3,9 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import JSZip from 'jszip';
 import type { MemoryFile } from '../../hooks/useMemory';
 
 type MemoryModalProps = {
@@ -71,6 +72,8 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [editingFile, setEditingFile] = useState<MemoryFile | null | 'new'>(null);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
   
   // Initialize state when modal opens
   useEffect(() => {
@@ -79,8 +82,21 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
           setHasUnsavedChanges(false);
           setSearchQuery('');
           setEditingFile(null);
+          setIsExportMenuOpen(false);
       }
   }, [isOpen, memoryFiles]);
+
+  useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+          if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+              setIsExportMenuOpen(false);
+          }
+      };
+      if (isExportMenuOpen) {
+          document.addEventListener('mousedown', handleClickOutside);
+      }
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isExportMenuOpen]);
 
   const filteredFiles = useMemo(() => {
       if (!searchQuery) return localFiles;
@@ -120,17 +136,44 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
       }
   };
 
-  const handleExport = () => {
-      const exportData = { files: localFiles };
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const downloadBlob = (blob: Blob, filename: string) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `memory-export-${new Date().toISOString().slice(0, 10)}.json`;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+  };
+
+  const sanitizeFilename = (name: string) => {
+      return name.replace(/[^a-z0-9_\-]/gi, '_');
+  };
+
+  const handleExportJSON = () => {
+      const exportData = { files: localFiles };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, `memory-export-${new Date().toISOString().slice(0, 10)}.json`);
+      setIsExportMenuOpen(false);
+  };
+
+  const handleExportText = async () => {
+      if (localFiles.length === 0) return;
+      
+      if (localFiles.length === 1) {
+          const file = localFiles[0];
+          const blob = new Blob([file.content], { type: 'text/plain;charset=utf-8' });
+          downloadBlob(blob, `${sanitizeFilename(file.title)}.txt`);
+      } else {
+          const zip = new JSZip();
+          localFiles.forEach(file => {
+              zip.file(`${sanitizeFilename(file.title)}.txt`, file.content);
+          });
+          const content = await zip.generateAsync({ type: "blob" });
+          downloadBlob(content, `memory-files-${new Date().toISOString().slice(0, 10)}.zip`);
+      }
+      setIsExportMenuOpen(false);
   };
 
   return (
@@ -264,14 +307,35 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                 {/* Footer */}
                 <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#1e1e1e] flex items-center justify-between z-10">
                     <div className="flex gap-2">
-                        <button
-                            onClick={handleExport}
-                            className="px-3 py-2 flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-colors border border-slate-200 dark:border-white/10"
-                            title="Export to file"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
-                            Export
-                        </button>
+                        <div className="relative" ref={exportMenuRef}>
+                            <button
+                                onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                                className={`px-3 py-2 flex items-center gap-2 text-xs font-medium rounded-lg transition-colors border ${isExportMenuOpen ? 'bg-slate-100 dark:bg-white/10 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 border-slate-200 dark:border-white/10'}`}
+                                title="Export options"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                                Export
+                            </button>
+                            <AnimatePresence>
+                                {isExportMenuOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        transition={{ duration: 0.1 }}
+                                        className="absolute bottom-full left-0 mb-2 w-40 bg-white dark:bg-[#2D2D2D] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
+                                    >
+                                        <button onClick={handleExportJSON} className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-md text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/5">
+                                            <span className="font-mono">.json</span> JSON File
+                                        </button>
+                                        <button onClick={handleExportText} className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-md text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/5">
+                                            <span className="font-mono">{localFiles.length > 1 ? '.zip' : '.txt'}</span> {localFiles.length > 1 ? 'Text Files (ZIP)' : 'Text File'}
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
                         <button
                             onClick={() => {
                                 if (confirm("Are you sure you want to clear all memory files? This cannot be undone.")) {
