@@ -58,7 +58,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
         layout="col"
       >
         <form onSubmit={handleSave} className="space-y-3">
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center -ml-1">
             <div className="relative flex-1 flex items-center">
                 <input
                 type={showApiKey ? "text" : "password"}
@@ -97,7 +97,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
             </button>
           </div>
           
-          <div className="flex justify-start pl-0.5" style={{ paddingLeft: 0 }}>
+          <div className="flex justify-start">
             <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
               Get a Gemini API Key &rarr;
             </a>
