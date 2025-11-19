@@ -20,11 +20,11 @@ type SpeechMemorySettingsProps = {
 };
 
 const TTS_VOICES = [
-    { id: 'Kore', name: 'Kore' },
-    { id: 'Puck', name: 'Puck' },
-    { id: 'Charon', name: 'Charon' },
-    { id: 'Fenrir', name: 'Fenrir' },
-    { id: 'Zephyr', name: 'Zephyr' },
+    { id: 'Kore', name: 'Kore', desc: 'Calm & Soothing' },
+    { id: 'Puck', name: 'Puck', desc: 'Energetic & Clear' },
+    { id: 'Charon', name: 'Charon', desc: 'Deep & Authoritative' },
+    { id: 'Fenrir', name: 'Fenrir', desc: 'Strong & Resonant' },
+    { id: 'Zephyr', name: 'Zephyr', desc: 'Soft & Gentle' },
 ];
 
 export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
@@ -41,73 +41,84 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
     };
 
     return (
-        <div className="space-y-1">
-            <h3 className="text-xl font-bold text-content-primary mb-4 px-1">Speech & Memory</h3>
+        <div className="space-y-2">
+            <div className="mb-6">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">Speech & Memory</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Configure audio interactions and long-term memory.</p>
+            </div>
 
             <SettingItem 
                 label="Conversation Memory" 
-                description="Remember details across chats."
+                description="Allow the AI to remember details from previous conversations to provide better context over time."
             >
                 <ToggleSwitch checked={isMemoryEnabled} onChange={setIsMemoryEnabled} disabled={disabled} />
             </SettingItem>
 
             {isMemoryEnabled && (
-                <div className="py-3 border-b border-border">
-                    <button 
-                        onClick={onManageMemory} 
-                        disabled={disabled}
-                        className="w-full px-4 py-2 text-sm font-semibold text-primary-text bg-primary-subtle hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-lg transition-colors disabled:opacity-50"
-                    >
-                        Manage Stored Memory
-                    </button>
+                <div className="py-4 pl-4 border-l-2 border-indigo-200 dark:border-indigo-900 ml-1 mb-4">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-slate-600 dark:text-slate-300 font-medium">Stored Memory Data</p>
+                        <button 
+                            onClick={onManageMemory} 
+                            disabled={disabled}
+                            className="px-4 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                            View & Edit Memory
+                        </button>
+                    </div>
                 </div>
             )}
+            
+            <div className="h-px bg-slate-200 dark:bg-white/10 my-4"></div>
 
-            <SettingItem label="Voice">
-                <div className="flex items-center gap-3">
-                    <button 
-                        onClick={handlePlaySample}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-layer-2 hover:bg-layer-3 text-content-primary transition-colors text-sm font-medium"
-                        aria-label={isPlayingSample ? "Stop preview" : "Preview voice"}
-                    >
-                        {isPlayingSample ? (
-                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
-                                <rect x="6" y="5" width="3" height="10" rx="1" />
-                                <rect x="11" y="5" width="3" height="10" rx="1" />
-                             </svg>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 ml-0.5">
-                                <path d="M6.3 2.841A1.5 1.5 0 0 0 4 4.11V15.89a1.5 1.5 0 0 0 2.3 1.269l9.344-5.89a1.5 1.5 0 0 0 0-2.538L6.3 2.84Z" />
-                            </svg>
-                        )}
-                        <span>Play</span>
-                    </button>
-                    
-                    <div className="relative group">
+            <SettingItem label="Voice Selection" description="Choose the voice used for reading responses aloud.">
+                <div className="flex flex-col gap-3 w-full max-w-[280px]">
+                    <div className="relative">
                         <select 
                             value={ttsVoice}
                             onChange={(e) => setTtsVoice(e.target.value)}
                             disabled={disabled}
-                            className="appearance-none bg-transparent text-content-primary font-medium pr-7 pl-2 py-1 focus:outline-none cursor-pointer text-right hover:text-primary-main transition-colors"
+                            className="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-black/20 border border-slate-300 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none cursor-pointer"
                         >
                             {TTS_VOICES.map(v => (
-                                <option key={v.id} value={v.id} className="bg-layer-1 text-content-primary">
-                                    {v.name}
+                                <option key={v.id} value={v.id}>
+                                    {v.name} — {v.desc}
                                 </option>
                             ))}
                         </select>
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-content-tertiary group-hover:text-content-primary transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
                                 <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
                             </svg>
                         </div>
                     </div>
+                    
+                    <button 
+                        onClick={handlePlaySample}
+                        className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors text-xs font-semibold uppercase tracking-wider w-full"
+                    >
+                        {isPlayingSample ? (
+                             <div className="flex items-center gap-1">
+                                <span className="w-1 h-3 bg-indigo-500 animate-[pulse_0.6s_infinite]"></span>
+                                <span className="w-1 h-4 bg-indigo-500 animate-[pulse_0.8s_infinite]"></span>
+                                <span className="w-1 h-2 bg-indigo-500 animate-[pulse_1s_infinite]"></span>
+                                <span className="ml-1">Playing...</span>
+                             </div>
+                        ) : (
+                            <>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                                    <path d="M6.3 2.841A1.5 1.5 0 0 0 4 4.11V15.89a1.5 1.5 0 0 0 2.3 1.269l9.344-5.89a1.5 1.5 0 0 0 0-2.538L6.3 2.84Z" />
+                                </svg>
+                                <span>Preview Voice</span>
+                            </>
+                        )}
+                    </button>
                 </div>
             </SettingItem>
 
             <SettingItem 
                 label="Auto-Play Audio" 
-                description="Play responses automatically."
+                description="Automatically read aloud the AI's response when it finishes generating."
             >
                 <ToggleSwitch checked={isAutoPlayEnabled} onChange={setIsAutoPlayEnabled} disabled={disabled} />
             </SettingItem>
