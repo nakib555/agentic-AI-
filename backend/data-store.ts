@@ -8,25 +8,22 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 // --- Centralized Path Definitions ---
-// Use process.cwd() to create 'hidata' folder in the project root
-const ROOT_DIR = process.cwd();
-const DATA_PATH = path.join(ROOT_DIR, 'hidata');
+// Use process.cwd() to create 'data' folder in the project root
+const ROOT_DIR = (process as any).cwd();
+const DATA_PATH = path.join(ROOT_DIR, 'data');
 
 export const HISTORY_PATH = path.join(DATA_PATH, 'history');
-// Define specific subdirectories requested
-export const HISTORY_CHAT_DIR = path.join(HISTORY_PATH, 'chat');
-export const HISTORY_FILE_DIR = path.join(HISTORY_PATH, 'file');
 
-// Settings Structure: hidata/settings/
+// Settings Structure: data/settings/
 export const SETTINGS_DIR = path.join(DATA_PATH, 'settings');
 export const SETTINGS_FILE_PATH = path.join(SETTINGS_DIR, 'settings.json');
 
-// Memory Structure: hidata/settings/memory/
+// Memory Structure: data/settings/memory/
 export const MEMORY_DIR = path.join(SETTINGS_DIR, 'memory');
 export const MEMORY_CONTENT_PATH = path.join(MEMORY_DIR, 'core.txt');
 export const MEMORY_FILES_DIR = path.join(MEMORY_DIR, 'files');
 
-// Prompts Structure: hidata/settings/prompts/
+// Prompts Structure: data/settings/prompts/
 export const PROMPTS_DIR = path.join(SETTINGS_DIR, 'prompts');
 
 // Centralized Indices
@@ -37,7 +34,6 @@ export const TIME_GROUPS_PATH = path.join(HISTORY_PATH, 'timeGroups.json');
 const ensureDir = async (dirPath: string) => {
     try {
         await fs.mkdir(dirPath, { recursive: true });
-        // console.log(`[DATA_STORE] Ensured directory exists: ${dirPath}`);
     } catch (error: any) {
         if (error.code !== 'EEXIST') {
             console.error(`Error creating directory ${dirPath}:`, error);
@@ -52,11 +48,6 @@ export const initDataStore = async () => {
     // 1. Create Directory Structure
     await ensureDir(DATA_PATH);
     await ensureDir(HISTORY_PATH);
-    
-    // Ensure specific history subfolders exist as requested
-    await ensureDir(HISTORY_CHAT_DIR);
-    await ensureDir(HISTORY_FILE_DIR);
-
     await ensureDir(SETTINGS_DIR);
     
     // Explicitly create nested memory folders inside settings
