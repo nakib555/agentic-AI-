@@ -50,7 +50,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   // Determine button color and state
   let sendButtonStateClasses = 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-slate-600 cursor-not-allowed'; // Default disabled
   if (isGeneratingResponse) {
-    sendButtonStateClasses = 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-2 border-red-500/50 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 shadow-md'; // Stop state
+    sendButtonStateClasses = 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-2 border-red-500/50 hover:border-red-50 hover:bg-red-50 dark:hover:bg-red-900/20 shadow-md'; // Stop state
   } else if (!isSendDisabled) {
     sendButtonStateClasses = 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20 shadow-md transform hover:-translate-y-0.5'; // Active state
   }
@@ -63,7 +63,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
               relative flex flex-col p-3 rounded-[1.25rem] transition-colors duration-300 border
               ${logic.isFocused 
                 ? 'bg-white dark:bg-[#1a1a1a] border-gray-300 dark:border-white/20' 
-                : 'bg-gray-50/80 dark:bg-[#121212] border-gray-200 dark:border-white/5'
+                : 'bg-transparent border-gray-200 dark:border-white/5'
               }
             `}
             layout
