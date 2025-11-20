@@ -1,4 +1,3 @@
-
 import esbuild from 'esbuild';
 import cpx from 'cpx';
 import { rm, readFile, writeFile } from 'fs/promises';
@@ -46,8 +45,8 @@ try {
     entryPoints: ['backend/server.ts'],
     bundle: true,
     platform: 'node',
-    format: 'cjs',
-    outfile: 'dist/server.cjs',
+    format: 'esm',
+    outfile: 'dist/server.js',
     define,
     minify: true,
     sourcemap: true,
