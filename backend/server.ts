@@ -3,12 +3,16 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { apiHandler } from './handler.js';
 import * as crudHandler from './crudHandler.js';
 import { getSettings, updateSettings } from './settingsHandler.js';
 import { getMemory, updateMemory, clearMemory } from './memoryHandler.js';
 import { getAvailableModelsHandler } from './modelsHandler.js';
 import { initDataStore, HISTORY_PATH } from './data-store.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function startServer() {
   // --- Initialize Data Store ---
@@ -74,8 +78,6 @@ async function startServer() {
     console.log(`[SERVER] Running version: ${appVersion}`);
   }
 
-  const staticPath = path.join((process as any).cwd(), 'dist');
-
   // API routes
   // Using 'as any' for handlers to bypass strict RequestHandler type checks
   app.get('/api/health', ((req: any, res: any) => res.json({ status: 'ok' })) as any);
@@ -99,6 +101,13 @@ async function startServer() {
   app.get('/api/memory', getMemory as any);
   app.put('/api/memory', updateMemory as any);
   app.delete('/api/memory', clearMemory as any);
+  
+  // --- Static File Serving ---
+  // In prod, this file is executed from `dist/`, so `__dirname` is the dist folder.
+  // In dev, it's executed from `backend/`, so we need to go up one and into `dist/`.
+  const staticPath = path.basename(__dirname) === 'dist'
+    ? __dirname
+    : path.join(__dirname, '..', 'dist');
 
   // Serve static assets (Frontend)
   app.use(express.static(staticPath) as any);
@@ -106,7 +115,12 @@ async function startServer() {
   // Mount the HISTORY_PATH to /uploads so that files in data/history/{folder}/file/ are accessible.
   app.use('/uploads', express.static(HISTORY_PATH) as any);
 
-  app.get('*', ((req: any, res: any) => {
+  app.get('*', ((req: any, res: any, next: any) => {
+    // If request is for an API route that wasn't matched, let it 404 naturally.
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    // Otherwise, serve the main SPA file.
     res.sendFile(path.join(staticPath, 'index.html'));
   }) as any);
 
