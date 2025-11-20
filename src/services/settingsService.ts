@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -35,10 +36,18 @@ export const getSettings = async (): Promise<AppSettings> => {
 };
 
 export const updateSettings = async (settings: Partial<AppSettings>): Promise<UpdateSettingsResponse> => {
+    const body = JSON.stringify(settings);
+    
+    // keepalive has a 64KB limit. We use it for small payloads (like API keys) 
+    // to ensure saving persists even if the tab is closed.
+    // For larger payloads (like huge system prompts), we skip it to avoid network errors.
+    const useKeepalive = new Blob([body]).size < 60000;
+
     const response = await fetchFromApi('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: body,
+        keepalive: useKeepalive,
     });
     if (!response.ok) {
         const errorBody = await response.json().catch(() => ({ error: 'An unknown error occurred while saving settings.' }));

@@ -105,8 +105,9 @@ export const updateSettings = async (req: any, res: any) => {
             await fs.writeFile(ABOUT_RESPONSE_FILE, req.body.aboutResponse, 'utf-8');
         }
 
-        // If a new API key is being provided and it's different, verify it.
-        if (req.body.apiKey && req.body.apiKey !== currentSettings.apiKey) {
+        // If an API key is being provided, verify it.
+        // We verify whenever apiKey is present to ensure models are fetched and the key is valid.
+        if (req.body.apiKey) {
             try {
                 // Trim the API key to prevent issues with whitespace
                 const cleanKey = req.body.apiKey.trim();
