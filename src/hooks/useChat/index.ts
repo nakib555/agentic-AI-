@@ -96,6 +96,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
 
     const cancelGeneration = useCallback(() => {
+        console.log('[DEBUG] Canceling generation...');
         // Abort the frontend fetch immediately for responsiveness
         abortControllerRef.current?.abort();
         
@@ -117,6 +118,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     const { updateMessage } = chatHistoryHook;
     
     const approveExecution = useCallback((editedPlan: string) => {
+        console.log('[DEBUG] Execution approved.');
         const chatId = currentChatIdRef.current;
         if (chatId) {
             const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
@@ -129,6 +131,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     }, [updateMessage, handleFrontendToolExecution]);
   
     const denyExecution = useCallback(() => {
+        console.log('[DEBUG] Execution denied.');
         const chatId = currentChatIdRef.current;
         if (chatId) {
             const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
@@ -142,6 +145,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
 
     const processBackendStream = async (chatId: string, messageId: string, response: Response) => {
+        console.log('[DEBUG] Processing backend stream...'); // LOG
         const reader = response.body!.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -159,7 +163,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 try {
                     const event = JSON.parse(line);
                     if (event.type !== 'ping') { // Don't log pings to avoid clutter
-                        console.log('[FRONTEND] Received stream event:', event);
+                        console.log('[FRONTEND] Received stream event:', event); // LOG
                     }
                     switch (event.type) {
                         case 'start':
@@ -207,16 +211,16 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                             break;
                     }
                 } catch(e) {
-                    console.error("[FRONTEND] Failed to parse stream event:", line, e);
+                    console.error("[FRONTEND] Failed to parse stream event:", line, e); // LOG
                 }
             }
         }
     };
     
     const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean; isThinkingModeEnabled?: boolean } = {}) => {
-        console.log('[FRONTEND] sendMessage called.', { userMessage, files: files?.map(f => f.name), options });
+        console.log('[FRONTEND] sendMessage called.', { userMessage, files: files?.map(f => f.name), options }); // LOG
         if (isLoading) {
-            console.log('[FRONTEND] sendMessage ignored, a request is already in progress.');
+            console.log('[FRONTEND] sendMessage ignored, a request is already in progress.'); // LOG
             return;
         }
         
@@ -227,6 +231,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         let messagesForHistory = currentChat ? currentChat.messages : [];
 
         if (!activeChatId || !currentChat) {
+            console.log('[DEBUG] No active chat, creating new session...'); // LOG
             const newChatSession = await chatHistoryHook.startNewChat(initialModel, {
                 temperature: settings.temperature,
                 maxOutputTokens: settings.maxOutputTokens,
@@ -238,6 +243,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 return;
             }
             activeChatId = newChatSession.id;
+            console.log('[DEBUG] New chat created:', activeChatId); // LOG
         }
     
         const attachmentsData = files?.length ? await Promise.all(files.map(async f => ({ name: f.name, mimeType: f.type, data: await fileToBase64(f) }))) : undefined;
@@ -254,6 +260,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         
         const chatForSettings = currentChat || { model: initialModel, ...settings };
 
+        console.log('[DEBUG] Starting backend chat...', { activeChatId, modelPlaceholderId: modelPlaceholder.id }); // LOG
         await startBackendChat(activeChatId, modelPlaceholder.id, historyForApi, chatForSettings, { ...settings, isAgentMode: options.isThinkingModeEnabled ?? isAgentMode });
     };
 
@@ -302,7 +309,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         runtimeSettings: { isAgentMode: boolean } & ChatSettings
     ) => {
         abortControllerRef.current = new AbortController();
-        console.log('[FRONTEND] Starting backend chat stream...', { chatId, messageId, history, chatConfig, runtimeSettings });
+        console.log('[FRONTEND] Starting backend chat stream...', { chatId, messageId, historyLength: history.length, chatConfig, runtimeSettings }); // LOG
 
         try {
             const response = await fetchFromApi('/api/handler?task=chat', {
@@ -328,23 +335,23 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
             if (!response.ok || !response.body) throw new Error(await response.text() || `Request failed with status ${response.status}`);
             
-            console.log('[FRONTEND] Backend stream connected.');
+            console.log('[FRONTEND] Backend stream connected.'); // LOG
             await processBackendStream(chatId, messageId, response);
-            console.log('[FRONTEND] Backend stream finished processing.');
+            console.log('[FRONTEND] Backend stream finished processing.'); // LOG
 
         } catch (error) {
             if ((error as Error).message === 'Version mismatch') {
                 // Do not log or update message with error; let the global overlay handle it.
                 console.log('[FRONTEND] Aborting chat due to version mismatch.');
             } else if ((error as Error).name !== 'AbortError') {
-                console.error('[FRONTEND] Backend stream failed.', { error });
+                console.error('[FRONTEND] Backend stream failed.', { error }); // LOG
                 chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
             } else {
-                console.log('[FRONTEND] Backend stream aborted.');
+                console.log('[FRONTEND] Backend stream aborted.'); // LOG
             }
         } finally {
             if (!abortControllerRef.current?.signal.aborted) {
-                console.log('[FRONTEND] Finalizing chat turn.');
+                console.log('[FRONTEND] Finalizing chat turn.'); // LOG
                 chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
                 chatHistoryHook.completeChatLoading(chatId);
                 abortControllerRef.current = null;

@@ -549,6 +549,12 @@ export const useAppLogic = () => {
     return report;
   }, [chat, startNewChat]);
   
+  // Wrap the sendMessage from useChat to add logging
+  const wrappedSendMessage = useCallback((message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean }) => {
+      console.log('[DEBUG] useAppLogic: sendMessage called', { message, fileCount: files?.length, options });
+      chat.sendMessage(message, files, options);
+  }, [chat]);
+
   return {
     appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, ...memory,
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
@@ -586,6 +592,7 @@ export const useAppLogic = () => {
     setIsMemoryEnabled: handleSetIsMemoryEnabled,
     setIsAgentMode: handleSetIsAgentMode,
     ...chat, isChatActive, thinkingMessageForSidebar,
+    sendMessage: wrappedSendMessage, // Use the wrapped version
     startNewChat, isNewChatDisabled,
     handleDeleteChatRequest, handleRequestClearAll,
     handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,

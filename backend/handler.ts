@@ -61,7 +61,7 @@ async function generateAsciiTree(dirPath: string, prefix: string = ''): Promise<
 // Using 'any' for req/res to bypass strict type checks that are failing due to missing properties in the inferred types
 export const apiHandler = async (req: any, res: any) => {
     const task = req.query.task as string;
-    console.log(`[HANDLER] Received request for task: "${task}"`);
+    console.log(`[HANDLER] Received request for task: "${task}"`); // LOG
     
     const apiKey = await getApiKey();
 
@@ -81,8 +81,13 @@ export const apiHandler = async (req: any, res: any) => {
             case 'chat': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { chatId, model, history, settings } = req.body;
-                console.log(`[HANDLER] Starting chat task for chatId: ${chatId}`);
-                console.log('[HANDLER] Chat Request Body:', { model, history_length: history.length, settings });
+                console.log(`[HANDLER] Starting chat task for chatId: ${chatId}`); // LOG
+                console.log('[HANDLER] Chat Request Body (Summary):', { 
+                    model, 
+                    historyLength: history.length, 
+                    isAgentMode: settings.isAgentMode,
+                    apiKeyConfigured: !!apiKey 
+                });
 
 
                 res.setHeader('Content-Type', 'application/json');
@@ -90,6 +95,7 @@ export const apiHandler = async (req: any, res: any) => {
                 res.flushHeaders();
 
                 const requestId = generateId();
+                console.log(`[HANDLER] Generated requestId: ${requestId}`); // LOG
                 const abortController = new AbortController();
                 activeAgentLoops.set(requestId, abortController);
                 writeEvent(res, 'start', { requestId });
@@ -118,6 +124,8 @@ export const apiHandler = async (req: any, res: any) => {
                     tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }],
                 };
                 
+                console.log(`[HANDLER] Running agentic loop... Mode: ${settings.isAgentMode ? 'Agent' : 'Chat'}`); // LOG
+
                 await runAgenticLoop({
                     ai,
                     model,
@@ -141,6 +149,7 @@ export const apiHandler = async (req: any, res: any) => {
                     signal: abortController.signal,
                 });
 
+                console.log(`[HANDLER] Agentic loop completed for ${requestId}.`); // LOG
                 clearInterval(pingInterval);
                 activeAgentLoops.delete(requestId);
                 res.end();

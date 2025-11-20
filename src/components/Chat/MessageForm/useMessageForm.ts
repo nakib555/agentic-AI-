@@ -110,11 +110,29 @@ export const useMessageForm = (
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (enhancements.isRecording) enhancements.stopRecording();
+    console.log('[DEBUG] useMessageForm: handleSubmit called');
+
+    if (enhancements.isRecording) {
+        console.log('[DEBUG] useMessageForm: Stopping recording before submit');
+        enhancements.stopRecording();
+    }
     
     const isProcessingFiles = fileHandling.processedFiles.some(f => f.progress < 100 && !f.error);
-    if ((!inputValue.trim() && fileHandling.processedFiles.length === 0) || isLoading || enhancements.isEnhancing || isProcessingFiles) return;
+    
+    console.log('[DEBUG] useMessageForm State:', {
+        inputValueLength: inputValue.trim().length,
+        hasFiles: fileHandling.processedFiles.length > 0,
+        isLoading,
+        isEnhancing: enhancements.isEnhancing,
+        isProcessingFiles
+    });
 
+    if ((!inputValue.trim() && fileHandling.processedFiles.length === 0) || isLoading || enhancements.isEnhancing || isProcessingFiles) {
+        console.warn('[DEBUG] useMessageForm: Submission blocked due to validation state.');
+        return;
+    }
+
+    console.log('[DEBUG] useMessageForm: Calling onSubmit prop');
     onSubmit(inputValue, fileHandling.getFilesToSend());
     clearDraft();
   };

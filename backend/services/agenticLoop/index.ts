@@ -77,9 +77,12 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 
 export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void> => {
     const { ai, model, history, toolExecutor, callbacks, settings, signal } = params;
+    
+    console.log('[AGENT_LOOP] Initializing Agentic Loop'); // LOG
 
     // --- Node: Agent (Model Call) ---
     const agentNode = async (state: typeof AgentStateAnnotation.State) => {
+        console.log('[AGENT_LOOP] Entering agentNode. History length:', state.history.length); // LOG
         if (signal.aborted) throw new Error("AbortError");
 
         let fullTextResponse = '';
@@ -89,6 +92,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
         try {
             // Streaming call to Gemini
+            console.log('[AGENT_LOOP] Invoking Gemini Stream...'); // LOG
             const streamResult = await generateContentStreamWithRetry(ai, {
                 model,
                 contents: state.history,
@@ -112,10 +116,9 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 }
 
                 // Check for Plan Approval Interrupt
-                // This is a "Human-in-the-loop" pattern implemented via a blocking callback
-                // because the graph runs within a single HTTP request context.
                 const planMatch = fullTextResponse.includes('[USER_APPROVAL_REQUIRED]');
                 if (planMatch && !hasSentPlan) {
+                    console.log('[AGENT_LOOP] Plan approval required. Pausing...'); // LOG
                     hasSentPlan = true;
                     const planText = extractPlan(fullTextResponse);
                     
@@ -123,9 +126,11 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     const approval = await callbacks.onPlanReady(planText);
 
                     if (approval === false) {
+                        console.log('[AGENT_LOOP] User denied execution.'); // LOG
                         throw new Error("AbortError"); // User denied execution
                     }
                     if (typeof approval === 'string') {
+                        console.log('[AGENT_LOOP] User edited plan. Rewriting history.'); // LOG
                         // If user edited the plan, update the text stream essentially "rewriting" history
                         fullTextResponse = approval;
                         callbacks.onTextChunk(fullTextResponse);
@@ -136,6 +141,8 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             const response = await streamResult.response;
             toolCalls = response?.functionCalls || [];
             groundingMetadata = response?.candidates?.[0]?.groundingMetadata;
+
+            console.log('[AGENT_LOOP] Agent generation complete. Tool calls:', toolCalls.length); // LOG
 
             // Construct the model's contribution to history
             const newContentParts: Part[] = [];
@@ -152,19 +159,24 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             };
 
         } catch (error) {
+            console.error('[AGENT_LOOP] Error in agentNode:', error); // LOG
             throw error;
         }
     };
 
     // --- Node: Tools (Execution) ---
     const toolsNode = async (state: typeof AgentStateAnnotation.State) => {
+        console.log('[AGENT_LOOP] Entering toolsNode.'); // LOG
         if (signal.aborted) throw new Error("AbortError");
 
         const lastMessage = state.history[state.history.length - 1];
         // Extract function calls from the last message parts
         const toolCalls = lastMessage.parts?.filter(p => p.functionCall).map(p => p.functionCall!) || [];
 
-        if (toolCalls.length === 0) return {};
+        if (toolCalls.length === 0) {
+            console.log('[AGENT_LOOP] No tool calls found in toolsNode.'); // LOG
+            return {};
+        }
 
         // Notify frontend of start
         const newToolCallEvents: ToolCallEvent[] = toolCalls.map(fc => ({
@@ -173,6 +185,8 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             startTime: Date.now()
         }));
         callbacks.onNewToolCalls(newToolCallEvents);
+
+        console.log('[AGENT_LOOP] Executing tools:', toolCalls.map(tc => tc.name)); // LOG
 
         // Execute all tools in parallel
         const toolResponses = await Promise.all(
@@ -200,6 +214,8 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 }
             })
         );
+        
+        console.log('[AGENT_LOOP] Tools executed. Returning results to graph.'); // LOG
 
         // Return tool outputs to history
         return {
@@ -225,6 +241,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
     // --- Execution ---
 
     try {
+        console.log('[AGENT_LOOP] Starting Graph Invocation'); // LOG
         const finalState = await app.invoke({ history });
 
         // Extract final text for completion callback
@@ -232,14 +249,17 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         const finalText = lastMsg.parts?.find(p => p.text)?.text || "";
 
         if (!signal.aborted) {
+            console.log('[AGENT_LOOP] Loop Completed Successfully.'); // LOG
             callbacks.onComplete(finalText, finalState.groundingMetadata);
         }
 
     } catch (error: any) {
         // Handle explicit aborts vs actual errors
         if (error.message === 'AbortError' || error.name === 'AbortError') {
+            console.log('[AGENT_LOOP] Loop Cancelled.'); // LOG
             callbacks.onCancel();
         } else {
+            console.error('[AGENT_LOOP] Loop Error:', error); // LOG
             callbacks.onError(parseApiError(error));
         }
     }
