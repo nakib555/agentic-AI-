@@ -5,10 +5,12 @@
  */
 
 import { GoogleGenAI, Part, FunctionCall, FinishReason, Content } from "@google/genai";
-import { StateGraph, START, END } from "@langchain/langgraph";
+import { StateGraph, START, END, Annotation } from "@langchain/langgraph";
 import { parseApiError } from "../../utils/apiError.js";
 import { ToolCallEvent } from "./types.js";
 import { getText, generateContentStreamWithRetry } from "../../utils/geminiUtils.js";
+
+// --- Types & Interfaces ---
 
 type Callbacks = {
     onTextChunk: (text: string) => void;
@@ -23,17 +25,26 @@ type Callbacks = {
 type RunAgenticLoopParams = {
     ai: GoogleGenAI;
     model: string;
-    history: { role: 'user' | 'model', parts: Part[] }[];
+    history: Content[];
     toolExecutor: (name: string, args: any) => Promise<string>;
     callbacks: Callbacks;
     settings: any;
     signal: AbortSignal;
 };
 
-interface AgentState {
-    history: Content[];
-    groundingMetadata?: any;
-}
+// Define the graph state annotation
+const AgentStateAnnotation = Annotation.Root({
+    history: Annotation<Content[]>({
+        reducer: (x, y) => x.concat(y),
+        default: () => [],
+    }),
+    groundingMetadata: Annotation<any>({
+        reducer: (x, y) => y ?? x,
+        default: () => undefined,
+    }),
+});
+
+// --- Helper Functions ---
 
 const extractPlan = (rawText: string): string => {
     const planMarker = '[STEP] Strategic Plan:';
@@ -49,6 +60,7 @@ const extractPlan = (rawText: string): string => {
             planText = rawText.substring(planContentStartIndex);
         }
     } else {
+        // Fallback if marker isn't perfectly formed, grab everything before next step or end
         const firstStepIndex = rawText.indexOf('[STEP]');
         if (firstStepIndex !== -1) {
             planText = rawText.substring(0, firstStepIndex);
@@ -59,13 +71,15 @@ const extractPlan = (rawText: string): string => {
     return planText.replace(/\[AGENT:.*?\]\s*/, '').replace(/\[USER_APPROVAL_REQUIRED\]/, '').trim();
 };
 
+const generateId = () => Math.random().toString(36).substring(2, 9);
+
+// --- Main Loop Function ---
+
 export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void> => {
     const { ai, model, history, toolExecutor, callbacks, settings, signal } = params;
-    const generateId = () => Math.random().toString(36).substring(2, 9);
 
-    // --- Node Definitions ---
-
-    const callModel = async (state: AgentState): Promise<Partial<AgentState>> => {
+    // --- Node: Agent (Model Call) ---
+    const agentNode = async (state: typeof AgentStateAnnotation.State) => {
         if (signal.aborted) throw new Error("AbortError");
 
         let fullTextResponse = '';
@@ -74,6 +88,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         let groundingMetadata: any = undefined;
 
         try {
+            // Streaming call to Gemini
             const streamResult = await generateContentStreamWithRetry(ai, {
                 model,
                 contents: state.history,
@@ -96,17 +111,22 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     callbacks.onTextChunk(fullTextResponse);
                 }
 
-                // Handle Plan Approval Interruption
+                // Check for Plan Approval Interrupt
+                // This is a "Human-in-the-loop" pattern implemented via a blocking callback
+                // because the graph runs within a single HTTP request context.
                 const planMatch = fullTextResponse.includes('[USER_APPROVAL_REQUIRED]');
                 if (planMatch && !hasSentPlan) {
                     hasSentPlan = true;
                     const planText = extractPlan(fullTextResponse);
+                    
+                    // Pause execution here waiting for frontend approval via the callback promise
                     const approval = await callbacks.onPlanReady(planText);
 
                     if (approval === false) {
-                        throw new Error("AbortError"); // User denied
+                        throw new Error("AbortError"); // User denied execution
                     }
                     if (typeof approval === 'string') {
+                        // If user edited the plan, update the text stream essentially "rewriting" history
                         fullTextResponse = approval;
                         callbacks.onTextChunk(fullTextResponse);
                     }
@@ -117,7 +137,11 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             toolCalls = response?.functionCalls || [];
             groundingMetadata = response?.candidates?.[0]?.groundingMetadata;
 
-            const newContentParts: Part[] = [{ text: fullTextResponse }];
+            // Construct the model's contribution to history
+            const newContentParts: Part[] = [];
+            if (fullTextResponse) {
+                newContentParts.push({ text: fullTextResponse });
+            }
             if (toolCalls.length > 0) {
                 toolCalls.forEach(fc => newContentParts.push({ functionCall: fc }));
             }
@@ -132,14 +156,17 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         }
     };
 
-    const executeTools = async (state: AgentState): Promise<Partial<AgentState>> => {
+    // --- Node: Tools (Execution) ---
+    const toolsNode = async (state: typeof AgentStateAnnotation.State) => {
         if (signal.aborted) throw new Error("AbortError");
 
         const lastMessage = state.history[state.history.length - 1];
+        // Extract function calls from the last message parts
         const toolCalls = lastMessage.parts?.filter(p => p.functionCall).map(p => p.functionCall!) || [];
 
         if (toolCalls.length === 0) return {};
 
+        // Notify frontend of start
         const newToolCallEvents: ToolCallEvent[] = toolCalls.map(fc => ({
             id: `${fc.name}-${generateId()}`,
             call: fc,
@@ -147,6 +174,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         }));
         callbacks.onNewToolCalls(newToolCallEvents);
 
+        // Execute all tools in parallel
         const toolResponses = await Promise.all(
             toolCalls.map(async (call: FunctionCall) => {
                 const event = newToolCallEvents.find(e => e.call === call)!;
@@ -173,6 +201,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             })
         );
 
+        // Return tool outputs to history
         return {
             history: [{ role: 'user', parts: toolResponses.map(tr => ({ functionResponse: tr.functionResponse })) }]
         };
@@ -180,45 +209,34 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
     // --- Graph Definition ---
 
-    const workflow = new StateGraph<AgentState>({
-        channels: {
-            history: {
-                reducer: (x: Content[], y: Content[]) => x.concat(y),
-                default: () => [],
-            },
-            groundingMetadata: {
-                reducer: (x, y) => y ?? x,
-                default: () => undefined,
-            }
-        }
-    })
-    .addNode("agent", callModel)
-    .addNode("tools", executeTools)
-    .addEdge(START, "agent")
-    .addConditionalEdges("agent", (state) => {
-        const lastMsg = state.history[state.history.length - 1];
-        const hasToolCalls = lastMsg.parts?.some(p => p.functionCall);
-        return hasToolCalls ? "tools" : END;
-    })
-    .addEdge("tools", "agent");
+    const workflow = new StateGraph(AgentStateAnnotation)
+        .addNode("agent", agentNode)
+        .addNode("tools", toolsNode)
+        .addEdge(START, "agent")
+        .addConditionalEdges("agent", (state) => {
+            const lastMsg = state.history[state.history.length - 1];
+            const hasToolCalls = lastMsg.parts?.some(p => p.functionCall);
+            return hasToolCalls ? "tools" : END;
+        })
+        .addEdge("tools", "agent");
 
     const app = workflow.compile();
 
     // --- Execution ---
 
     try {
-        const finalState = await app.invoke({ history: history as Content[] });
-        
-        // Check if we finished successfully and have a final text response
+        const finalState = await app.invoke({ history });
+
+        // Extract final text for completion callback
         const lastMsg = finalState.history[finalState.history.length - 1];
         const finalText = lastMsg.parts?.find(p => p.text)?.text || "";
-        
-        // If we ended naturally (not aborted/errored), notify completion
+
         if (!signal.aborted) {
             callbacks.onComplete(finalText, finalState.groundingMetadata);
         }
 
     } catch (error: any) {
+        // Handle explicit aborts vs actual errors
         if (error.message === 'AbortError' || error.name === 'AbortError') {
             callbacks.onCancel();
         } else {
