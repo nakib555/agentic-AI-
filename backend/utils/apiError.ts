@@ -73,10 +73,14 @@ export const parseApiError = (error: any): MessageError => {
     if (typeof message === 'string' && message.startsWith('{') && message.endsWith('}')) {
         try {
             const nestedError = JSON.parse(message);
-            if (nestedError.error && nestedError.error.message) {
-                message = nestedError.error.message;
-                if (nestedError.error.status) {
-                    status = nestedError.error.status;
+            if (nestedError.error) {
+                if (typeof nestedError.error === 'string') {
+                    message = nestedError.error;
+                } else if (nestedError.error.message) {
+                    message = nestedError.error.message;
+                    if (nestedError.error.status) {
+                        status = nestedError.error.status;
+                    }
                 }
             }
         } catch (e) {
@@ -87,7 +91,7 @@ export const parseApiError = (error: any): MessageError => {
     const lowerCaseMessage = message.toLowerCase();
     const lowerCaseStatus = status.toLowerCase();
 
-    if (lowerCaseMessage.includes('api key not valid') || lowerCaseMessage.includes('api key not found') || lowerCaseStatus === 'permission_denied') {
+    if (lowerCaseMessage.includes('api key not valid') || lowerCaseMessage.includes('api key not found') || lowerCaseMessage.includes('api key not configured') || lowerCaseStatus === 'permission_denied') {
         return {
             code: 'INVALID_API_KEY',
             message: 'Invalid or Missing API Key',
