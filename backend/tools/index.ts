@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -34,7 +35,7 @@ const FRONTEND_TOOLS = new Set([
     'getCurrentLocation',
     'requestLocationPermission',
     'captureCodeOutputScreenshot',
-    'videoGenerator', // The frontend wrapper for API key check
+    'generateVideo', // Corrected from 'videoGenerator' to match declaration name
 ]);
 
 export const createToolExecutor = (

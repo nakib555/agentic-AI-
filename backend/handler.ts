@@ -27,7 +27,13 @@ const activeAgentLoops = new Map<string, AbortController>();
 
 // Using 'any' for res to bypass type definition mismatches in the environment
 const writeEvent = (res: any, type: string, payload: any) => {
-    res.write(JSON.stringify({ type, payload }) + '\n');
+    if (!res.writableEnded && !res.closed) {
+        try {
+            res.write(JSON.stringify({ type, payload }) + '\n');
+        } catch (e) {
+            console.error(`[HANDLER] Error writing '${type}' event to stream:`, e);
+        }
+    }
 };
 
 const generateId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -292,6 +298,8 @@ export const apiHandler = async (req: any, res: any) => {
     } catch (error) {
         console.error(`[HANDLER] Error processing task "${task}":`, error);
         const parsedError = parseApiError(error);
-        res.status(500).json({ error: parsedError });
+        if (!res.headersSent) {
+            res.status(500).json({ error: parsedError });
+        }
     }
 };

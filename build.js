@@ -48,8 +48,9 @@ try {
     platform: 'node',
     format: 'cjs',
     outfile: 'dist/server.cjs',
+    packages: 'external', // Do not bundle node_modules for the backend
     define,
-    minify: true,
+    minify: false, // Disable minification for better stack traces
     sourcemap: true,
     logLevel: 'info',
   });
