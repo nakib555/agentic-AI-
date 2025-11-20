@@ -85,11 +85,13 @@ export const deleteChat = async (req: any, res: any) => {
 };
 
 export const deleteAllHistory = async (req: any, res: any) => {
-    const allChats = await historyControl.getHistoryList();
-    for (const chat of allChats) {
-        await historyControl.deleteChat(chat.id);
+    try {
+        await historyControl.deleteAllChats();
+        res.status(204).send();
+    } catch (error) {
+        console.error("Failed to delete all history:", error);
+        res.status(500).json({ error: "Failed to delete all data." });
     }
-    res.status(204).send();
 };
 
 export const importChat = async (req: any, res: any) => {

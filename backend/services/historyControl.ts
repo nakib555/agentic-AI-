@@ -268,6 +268,37 @@ class HistoryControlService {
         await this.saveIndex(index);
     }
 
+    async deleteAllChats(): Promise<void> {
+        // 1. Clear In-Memory Cache
+        this.indexCache = [];
+
+        // 2. Physically Wipe the History Directory
+        try {
+            // Check if directory exists first
+            try {
+                await fs.access(HISTORY_PATH);
+            } catch {
+                // Directory doesn't exist, nothing to delete.
+                // Re-initialize empty index and return.
+                await this.saveIndex([]);
+                return;
+            }
+
+            const entries = await fs.readdir(HISTORY_PATH);
+            for (const entry of entries) {
+                const fullPath = path.join(HISTORY_PATH, entry);
+                // Forcefully remove everything in the history path
+                await fs.rm(fullPath, { recursive: true, force: true });
+            }
+        } catch (error) {
+            console.error("[HistoryControl] Failed to wipe history directory:", error);
+            throw error;
+        }
+
+        // 3. Re-initialize empty Index and TimeGroups files
+        await this.saveIndex([]);
+    }
+
     async getHistoryList(): Promise<Omit<ChatSession, 'messages'>[]> {
         const index = await this.loadIndex();
         // Return the cached index list. Messages are not loaded here for performance.
