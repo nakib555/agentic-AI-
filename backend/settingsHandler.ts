@@ -7,7 +7,12 @@
 import { promises as fs } from 'fs';
 import { GoogleGenAI } from "@google/genai";
 import { parseApiError } from './utils/apiError.js';
-import { SETTINGS_FILE_PATH } from './data-store.js';
+import { 
+    SETTINGS_FILE_PATH, 
+    ABOUT_USER_FILE, 
+    ABOUT_RESPONSE_FILE,
+    PROMPTS_DIR
+} from './data-store.js';
 import { listAvailableModels } from './services/modelService.js';
 
 // Default settings structure
@@ -40,19 +45,36 @@ const withTimeout = <T>(promise: Promise<T>, ms: number, errorMessage: string): 
 };
 
 const readSettings = async () => {
+    let settings = { ...defaultSettings };
+
+    // 1. Read JSON Configuration
     try {
         const content = await fs.readFile(SETTINGS_FILE_PATH, 'utf-8');
-        return { ...defaultSettings, ...JSON.parse(content) };
+        settings = { ...settings, ...JSON.parse(content) };
     } catch (error: any) {
         if (error.code === 'ENOENT') {
-            // The init script ensures the directory exists, but the file might not.
-            // Create it with defaults if it doesn't.
             await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(defaultSettings, null, 2), 'utf-8');
-            return defaultSettings;
+        } else {
+            console.error('Failed to read settings json:', error);
         }
-        console.error('Failed to read settings:', error);
-        return defaultSettings;
     }
+
+    // 2. Read Prompts from Text Files (These override JSON if present)
+    try {
+        const aboutUser = await fs.readFile(ABOUT_USER_FILE, 'utf-8');
+        settings.aboutUser = aboutUser;
+    } catch (e) {
+        // File might not exist yet, rely on JSON or default
+    }
+
+    try {
+        const aboutResponse = await fs.readFile(ABOUT_RESPONSE_FILE, 'utf-8');
+        settings.aboutResponse = aboutResponse;
+    } catch (e) {
+        // File might not exist yet, rely on JSON or default
+    }
+
+    return settings;
 };
 
 export const getSettings = async (req: any, res: any) => {
@@ -67,9 +89,21 @@ export const getSettings = async (req: any, res: any) => {
 
 export const updateSettings = async (req: any, res: any) => {
     try {
+        // Ensure prompts directory exists
+        await fs.mkdir(PROMPTS_DIR, { recursive: true });
+
         const currentSettings = await readSettings();
         const newSettings = { ...currentSettings, ...req.body };
         let modelData: any = null;
+
+        // Write Prompts to individual files if they are present in the request
+        if (typeof req.body.aboutUser === 'string') {
+            await fs.writeFile(ABOUT_USER_FILE, req.body.aboutUser, 'utf-8');
+        }
+        
+        if (typeof req.body.aboutResponse === 'string') {
+            await fs.writeFile(ABOUT_RESPONSE_FILE, req.body.aboutResponse, 'utf-8');
+        }
 
         // If a new API key is being provided and it's different, verify it.
         if (req.body.apiKey && req.body.apiKey !== currentSettings.apiKey) {
@@ -121,6 +155,9 @@ export const updateSettings = async (req: any, res: any) => {
             }
         }
 
+        // Save the main settings JSON. 
+        // Note: We include the prompts here too for redundancy/backwards compatibility, 
+        // but the text files are the source of truth on read.
         await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(newSettings, null, 2), 'utf-8');
         res.status(200).json({ ...newSettings, ...modelData });
     } catch (error) {

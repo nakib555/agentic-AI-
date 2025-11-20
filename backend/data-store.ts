@@ -25,6 +25,8 @@ export const MEMORY_FILES_DIR = path.join(MEMORY_DIR, 'files');
 
 // Prompts Structure: data/settings/prompts/
 export const PROMPTS_DIR = path.join(SETTINGS_DIR, 'prompts');
+export const ABOUT_USER_FILE = path.join(PROMPTS_DIR, 'about_user.txt');
+export const ABOUT_RESPONSE_FILE = path.join(PROMPTS_DIR, 'about_response.txt');
 
 // Centralized Indices
 export const HISTORY_INDEX_PATH = path.join(HISTORY_PATH, 'history.json');
@@ -99,6 +101,19 @@ export const initDataStore = async () => {
     } catch {
         console.log('[DATA_STORE] Initializing core memory file');
         await fs.writeFile(MEMORY_CONTENT_PATH, '', 'utf-8');
+    }
+
+    // Initialize Prompt Files if missing
+    try {
+        await fs.access(ABOUT_USER_FILE);
+    } catch {
+        await fs.writeFile(ABOUT_USER_FILE, '', 'utf-8');
+    }
+
+    try {
+        await fs.access(ABOUT_RESPONSE_FILE);
+    } catch {
+        await fs.writeFile(ABOUT_RESPONSE_FILE, '', 'utf-8');
     }
 
     console.log('[DATA_STORE] Data initialization complete.');
