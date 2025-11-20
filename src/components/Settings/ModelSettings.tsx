@@ -91,23 +91,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                      </span>
                 </div>
             </SettingItem>
-
-            <SettingItem label="Max Output Tokens" description="Limit response length. Set to 0 for the model's default maximum.">
-                <div className="relative">
-                     <input
-                        type="number"
-                        min="0"
-                        step="100"
-                        value={maxTokens}
-                        onChange={e => setMaxTokens(parseInt(e.target.value, 10) || 0)}
-                        className="w-32 pl-3 pr-12 py-2 bg-white dark:bg-black/20 border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-slate-900 dark:text-slate-100"
-                        disabled={disabled}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 pointer-events-none">
-                        tok
-                    </span>
-                </div>
-            </SettingItem>
         </div>
     );
 };

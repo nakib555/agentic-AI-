@@ -317,7 +317,8 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                         isAgentMode: runtimeSettings.isAgentMode,
                         systemPrompt: runtimeSettings.systemPrompt,
                         temperature: chatConfig.temperature,
-                        maxOutputTokens: chatConfig.maxOutputTokens,
+                        // Ensure maxOutputTokens is undefined if it's 0, as the API rejects 0.
+                        maxOutputTokens: chatConfig.maxOutputTokens || undefined,
                         imageModel: runtimeSettings.imageModel,
                         videoModel: runtimeSettings.videoModel,
                         memoryContent,
