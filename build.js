@@ -1,7 +1,7 @@
 
 import esbuild from 'esbuild';
 import cpx from 'cpx';
-import { rm } from 'fs/promises';
+import { rm, readFile, writeFile } from 'fs/promises';
 import 'dotenv/config';
 import { execSync } from 'child_process';
 import path from 'path';
@@ -10,7 +10,13 @@ console.log('Starting production build process...');
 
 try {
   // 0. Get build version from git hash
-  const version = execSync('git rev-parse --short HEAD').toString().trim();
+  let version;
+  try {
+    version = execSync('git rev-parse --short HEAD').toString().trim();
+  } catch (e) {
+    console.warn('Failed to get git hash, using timestamp as version.');
+    version = Date.now().toString();
+  }
   console.log(`Building version: ${version}`);
 
   const define = {
@@ -64,7 +70,15 @@ try {
 
   await copyFiles('index.html', 'dist');
   await copyFiles('src/styles/**', 'dist/styles');
-  await copyFiles('{manifest.json,sw.js,favicon.svg,_headers,_redirects}', 'dist');
+  // Exclude sw.js from bulk copy, handle it specifically below
+  await copyFiles('{manifest.json,favicon.svg,_headers,_redirects}', 'dist');
+
+  // 5. Process and Copy Service Worker
+  console.log('Processing Service Worker...');
+  let swContent = await readFile('sw.js', 'utf-8');
+  swContent = swContent.replace('{{VERSION}}', version);
+  await writeFile('dist/sw.js', swContent);
+  console.log('Service Worker injected with version and copied.');
   
   console.log('\nProduction build completed successfully!');
 

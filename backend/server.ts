@@ -17,11 +17,39 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3001;
 
-  // Middlewares
+  // --- CORS Configuration ---
+  // Define allowed origins for development and production
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:8000',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:8000'
+  ];
+
+  // Add environment-specific allowed origins (comma-separated)
+  if (process.env.ALLOWED_ORIGINS) {
+    process.env.ALLOWED_ORIGINS.split(',').forEach(origin => allowedOrigins.push(origin.trim()));
+  }
+  // Vercel deployment automatically adds its URL to the allowlist for production security
+  if (process.env.VERCEL_URL) {
+      allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+  }
+
   const corsOptions = {
-    origin: '*',
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Allow requests with no origin (like mobile apps, curl requests, or same-origin relative fetches)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`[CORS] Blocked unauthorized request from origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Client-Version'],
+    credentials: true,
   };
 
   // Cast handlers to 'any' to avoid TypeScript overload mismatches with Express types
@@ -84,6 +112,7 @@ async function startServer() {
 
   app.listen(PORT, () => {
     console.log(`[SERVER] Backend server is running on http://localhost:${PORT}`);
+    console.log(`[SERVER] CORS enabled for: ${allowedOrigins.join(', ') || 'Same-Origin Only'}`);
   });
 }
 

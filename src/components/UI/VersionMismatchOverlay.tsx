@@ -1,12 +1,33 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
 export const VersionMismatchOverlay: React.FC = () => {
+  const [isReloading, setIsReloading] = useState(false);
+
+  const handleReload = async () => {
+    setIsReloading(true);
+    try {
+        // Unregister all service workers to ensure a clean slate
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+                await registration.unregister();
+            }
+        }
+        // Force reload from server
+        window.location.reload();
+    } catch (e) {
+        console.error("Error clearing service worker:", e);
+        window.location.reload();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -35,10 +56,11 @@ export const VersionMismatchOverlay: React.FC = () => {
           A new version of the application is available. Please refresh the page to continue.
         </p>
         <button
-          onClick={() => window.location.reload()}
-          className="mt-6 w-full px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-800"
+          onClick={handleReload}
+          disabled={isReloading}
+          className="mt-6 w-full px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-800 disabled:opacity-70 flex items-center justify-center gap-2"
         >
-          Refresh Page
+          {isReloading ? 'Updating...' : 'Refresh Page'}
         </button>
       </motion.div>
     </motion.div>
