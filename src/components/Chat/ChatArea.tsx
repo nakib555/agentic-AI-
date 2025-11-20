@@ -91,7 +91,7 @@ export const ChatArea = ({
 
   return (
     <div 
-      className="flex-1 flex flex-col pb-4 min-h-0 relative"
+      className="flex-1 flex flex-col min-h-0 relative"
       onDragEnter={handleDragIn}
       onDragLeave={handleDragOut}
       onDragOver={handleDrag}
@@ -103,7 +103,7 @@ export const ChatArea = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-400/10 border-2 border-dashed border-indigo-500 dark:border-indigo-400 rounded-2xl z-10 flex items-center justify-center m-4"
+            className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-400/10 border-2 border-dashed border-indigo-500 dark:border-indigo-400 rounded-2xl z-30 flex items-center justify-center m-4"
           >
             <div className="text-center font-bold text-indigo-600 dark:text-indigo-300">
               <p className="text-lg">Drop files to attach</p>
@@ -131,7 +131,7 @@ export const ChatArea = ({
       />
       <AnimatePresence>
         {isScrolledUp && (
-          <div className="absolute bottom-28 inset-x-0 flex justify-center z-10 pointer-events-none">
+          <div className="absolute bottom-32 inset-x-0 flex justify-center z-10 pointer-events-none">
             <motion.button
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -171,7 +171,7 @@ export const ChatArea = ({
         )}
       </AnimatePresence>
       
-      <div className="flex-shrink-0 pt-4 px-4 sm:px-6 md:px-8">
+      <div className="flex-shrink-0 px-4 pt-2 pb-6 sm:px-6 md:px-8 bg-page z-20">
         <div className="relative w-full">
           <MessageForm 
             ref={messageFormRef}
