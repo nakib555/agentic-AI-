@@ -1,13 +1,16 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { ManualCodeRenderer } from './ManualCodeRenderer';
 import { MarkdownComponents } from './markdownComponents';
 import { FlowToken } from '../AI/FlowToken';
+
+const motion = motionTyped as any;
 
 type FormattedBlockProps = {
   content: string;

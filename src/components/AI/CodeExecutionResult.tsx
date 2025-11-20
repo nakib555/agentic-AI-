@@ -1,11 +1,14 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { TabButton } from '../UI/TabButton';
+
+const motion = motionTyped as any;
 
 type CodeExecutionResultProps = {
   outputId: string;

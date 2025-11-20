@@ -5,8 +5,10 @@
  */
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import type { MessageError } from '../../types';
+
+const motion = motionTyped as any;
 
 export const getErrorMessageSuggestion = (code?: string): string | null => {
     switch (code) {

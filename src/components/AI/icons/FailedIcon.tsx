@@ -1,10 +1,13 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion as motionTyped } from 'framer-motion';
+
+const motion = motionTyped as any;
 
 export const FailedIcon = () => (
   <motion.div

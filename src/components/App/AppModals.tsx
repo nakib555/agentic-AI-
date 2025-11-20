@@ -4,18 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// PART 2 of 4 from src/components/App.tsx
-// Lines 304-338
-
 import React from 'react';
 import { SettingsModal } from '../Settings/SettingsModal';
 import { MemoryModal } from '../Settings/MemoryModal';
 import { MemoryConfirmationModal } from '../Settings/MemoryConfirmationModal';
 import type { Model } from '../../services/modelService';
-import type { Message } from '../../types';
 import { ImportChatModal } from '../Settings/ImportChatModal';
 import { ConfirmationModal } from '../UI/ConfirmationModal';
 import type { MemoryFile } from '../../hooks/useMemory';
+import type { Theme } from '../../hooks/useTheme';
 
 type AppModalsProps = {
   isSettingsOpen: boolean;
@@ -27,7 +24,7 @@ type AppModalsProps = {
   handleFileUploadForImport: (file: File) => void;
   onRunTests: () => void;
   onDownloadLogs: () => void;
-  onShowDataStructure: () => void; // Added
+  onShowDataStructure: () => void;
   availableModels: Model[];
   availableImageModels: Model[];
   availableVideoModels: Model[];
@@ -59,10 +56,10 @@ type AppModalsProps = {
   setIsMemoryEnabled: (enabled: boolean) => void;
   onManageMemory: () => void;
   memoryContent: string;
-  memoryFiles: MemoryFile[]; // Added
+  memoryFiles: MemoryFile[];
   clearMemory: () => void;
   updateBackendMemory: (content: string) => Promise<void>; 
-  updateMemoryFiles: (files: MemoryFile[]) => Promise<void>; // Added
+  updateMemoryFiles: (files: MemoryFile[]) => Promise<void>;
   isConfirmationOpen: boolean;
   memorySuggestions: string[];
   confirmMemoryUpdate: () => void;
@@ -75,6 +72,9 @@ type AppModalsProps = {
   confirmation: { prompt: string; onConfirm: () => void; onCancel?: () => void; destructive?: boolean } | null;
   onConfirm: () => void;
   onCancel: () => void;
+  // Theme
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 };
 
 export const AppModals: React.FC<AppModalsProps> = (props) => {
@@ -89,7 +89,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
     setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, onManageMemory,
     apiKey, onSaveApiKey, isImportModalOpen, setIsImportModalOpen, handleFileUploadForImport,
-    onDownloadLogs, onShowDataStructure, confirmation, onConfirm, onCancel
+    onDownloadLogs, onShowDataStructure, confirmation, onConfirm, onCancel,
+    theme, setTheme
   } = props;
 
   return (
@@ -130,6 +131,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         setTtsVoice={setTtsVoice}
         isAutoPlayEnabled={isAutoPlayEnabled}
         setIsAutoPlayEnabled={setIsAutoPlayEnabled}
+        theme={theme}
+        setTheme={setTheme}
       />
       <MemoryModal
         isOpen={isMemoryModalOpen}

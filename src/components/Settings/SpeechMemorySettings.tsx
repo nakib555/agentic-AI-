@@ -5,9 +5,11 @@
  */
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { ToggleSwitch } from '../UI/ToggleSwitch';
 import { SettingItem } from './SettingItem';
+
+const motion = motionTyped as any;
 
 type SpeechMemorySettingsProps = {
   isMemoryEnabled: boolean;

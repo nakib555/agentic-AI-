@@ -1,14 +1,17 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { TtsButton } from './TtsButton';
 import type { Source } from '../../../types';
 import { SourcesPills } from '../../AI/SourcesPills';
 import { ResponsePaginator } from './ResponsePaginator';
+
+const motion = motionTyped as any;
 
 type MessageToolbarProps = {
     messageId: string;
@@ -40,14 +43,13 @@ const IconButton: React.FC<{
         disabled={disabled}
         className={`p-1.5 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             active
-            ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300'
-            : 'text-slate-800 hover:bg-slate-100 hover:text-slate-900 dark:text-white dark:hover:bg-slate-800'
+            ? 'bg-primary-subtle text-primary-text'
+            : 'text-content-secondary hover:bg-layer-2 hover:text-content-primary'
         }`}
     >
         {children}
     </button>
 );
-
 
 export const MessageToolbar: React.FC<MessageToolbarProps> = ({
     messageText, sources, onShowSources, ttsState, onTtsClick, onRegenerate,
@@ -62,20 +64,14 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
             setTimeout(() => setIsCopied(false), 2000);
         });
     };
-    
-    const handleShare = () => {
-        navigator.clipboard.writeText(messageText).then(() => {
-            alert('Message content copied to clipboard.');
-        });
-    };
 
     return (
-        <div className="w-full flex items-center justify-between mt-2">
+        <div className="w-full flex flex-wrap items-center justify-between mt-2 gap-y-2">
             <div className="flex items-center gap-1">
                 <IconButton title={isCopied ? 'Copied!' : 'Copy'} onClick={handleCopy}>
                     <AnimatePresence mode="wait" initial={false}>
                         {isCopied ? (
-                            <motion.div key="check" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} className="w-4 h-4 text-green-500">
+                            <motion.div key="check" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} className="w-4 h-4 text-status-success-text">
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4"><path d="M15.1883 5.10908C15.3699 4.96398 15.6346 4.96153 15.8202 5.11592C16.0056 5.27067 16.0504 5.53125 15.9403 5.73605L15.8836 5.82003L8.38354 14.8202C8.29361 14.9279 8.16242 14.9925 8.02221 14.9989C7.88203 15.0051 7.74545 14.9526 7.64622 14.8534L4.14617 11.3533L4.08172 11.2752C3.95384 11.0811 3.97542 10.817 4.14617 10.6463C4.31693 10.4755 4.58105 10.4539 4.77509 10.5818L4.85321 10.6463L7.96556 13.7586L15.1161 5.1794L15.1883 5.10908Z"></path></svg>
                             </motion.div>
                         ) : (
@@ -87,36 +83,35 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                 </IconButton>
 
                 <IconButton title="Good response" onClick={() => setFeedback('up')} active={feedback === 'up'}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M1 9.5a1.5 1.5 0 0 1 1.5-1.5h1.372a3.5 3.5 0 0 0 3.09-5.262L6.386 1.48a.75.75 0 0 1 1.228-.624l1.323.827a4.5 4.5 0 0 1 4.706 0l1.323-.827a.75.75 0 0 1 1.228.624l-.576 1.256A3.5 3.5 0 0 0 16.128 8H17.5A1.5 1.5 0 0 1 19 9.5v1.042a3.5 3.5 0 0 0-3.32-.888l-1.928.514a.75.75 0 0 1-.86-.43l-.7-1.75a.75.75 0 0 0-1.384 0l-.7 1.75a.75.75 0 0 1-.86.43l-1.928-.514A3.5 3.5 0 0 0 1 10.542V9.5Z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                        <path d="M7 11.333l5.223-5.223a1.125 1.125 0 011.59 0l.53.53a1.125 1.125 0 010 1.59l-2.25 2.25a.375.375 0 00.265.64h3.267a1.125 1.125 0 011.125 1.125v2.025a1.125 1.125 0 01-1.125 1.125h-3.267a.375.375 0 00-.265.64l2.25 2.25a1.125 1.125 0 010 1.59l-.53.53a1.125 1.125 0 01-1.59 0L7 20.167"/>
+                        <path d="M1 13a2 2 0 012-2h3a2 2 0 012 2v6a2 2 0 01-2 2H3a2 2 0 01-2-2v-6z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2 11.333l0 0" stroke="currentColor" strokeWidth="2"/>
+                        <path d="M10.8 2.6L12.4 1 14 2.6 12.4 4.2 10.8 2.6z" fill="currentColor"/>
+                    </svg>
                 </IconButton>
 
                 <IconButton title="Bad response" onClick={() => setFeedback('down')} active={feedback === 'down'}>
-                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M19 10.5a1.5 1.5 0 0 1-1.5 1.5h-1.372a3.5 3.5 0 0 0-3.09 5.262l.576 1.256a.75.75 0 0 1-1.228.624l-1.323-.827a4.5 4.5 0 0 1-4.706 0l-1.323.827a.75.75 0 0 1-1.228-.624l.576-1.256A3.5 3.5 0 0 0 3.872 12H2.5A1.5 1.5 0 0 1 1 10.5v-1.042a3.5 3.5 0 0 0 3.32.888l1.928-.514a.75.75 0 0 1 .86.43l.7 1.75a.75.75 0 0 0 1.384 0l.7-1.75a.75.75 0 0 1 .86-.43l1.928.514A3.5 3.5 0 0 0 19 9.458v1.042Z" /></svg>
-                </IconButton>
-                
-                <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
-
-                <TtsButton isPlaying={ttsState === 'playing'} isLoading={ttsState === 'loading'} onClick={onTtsClick} />
-                
-                <IconButton title="Share" onClick={handleShare}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M13 4.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM8.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5ZM12.5 6.5a.5.5 0 0 0-1 0v.518a4.5 4.5 0 0 0 0 5.964V13.5a.5.5 0 0 0 1 0v-.518a4.5 4.5 0 0 0 0-5.964V6.5Z" /><path d="M15.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /><path d="M4.5 6.5a.5.5 0 0 0-1 0v6.5a.5.5 0 0 0 1 0V6.5Z" /></svg>
-                </IconButton>
-            </div>
-
-            <div className="flex items-center gap-4">
-                <ResponsePaginator
-                    count={responseCount}
-                    activeIndex={activeResponseIndex}
-                    onChange={onResponseChange}
-                />
-                <IconButton title="Regenerate response" onClick={onRegenerate}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" fill="currentColor" className="w-5 h-5">
-                        <path d="M 15 3 C 12.031398 3 9.3028202 4.0834384 7.2070312 5.875 A 1.0001 1.0001 0 1 0 8.5058594 7.3945312 C 10.25407 5.9000929 12.516602 5 15 5 C 20.19656 5 24.450989 8.9379267 24.951172 14 L 22 14 L 26 20 L 30 14 L 26.949219 14 C 26.437925 7.8516588 21.277839 3 15 3 z M 4 10 L 0 16 L 3.0507812 16 C 3.562075 22.148341 8.7221607 27 15 27 C 17.968602 27 20.69718 25.916562 22.792969 24.125 A 1.0001 1.0001 0 1 0 21.494141 22.605469 C 19.74593 24.099907 17.483398 25 15 25 C 9.80344 25 5.5490109 21.062074 5.0488281 16 L 8 16 L 4 10 z"></path>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                         <path d="M13 8.667l-5.223 5.223a1.125 1.125 0 01-1.59 0l-.53-.53a1.125 1.125 0 010-1.59l2.25-2.25a.375.375 0 00-.265-.64H4.375a1.125 1.125 0 01-1.125-1.125V5.725a1.125 1.125 0 011.125-1.125h3.267a.375.375 0 00.265-.64l-2.25-2.25a1.125 1.125 0 010-1.59l.53-.53a1.125 1.125 0 011.59 0L13 -0.167"/>
+                         <path d="M19 7a2 2 0 01-2 2h-3a2 2 0 01-2-2V1a2 2 0 012-2h3a2 2 0 012 2v6z"/>
                     </svg>
                 </IconButton>
-                <div className="flex-shrink-0">
-                    <SourcesPills sources={sources} onShowSources={() => onShowSources(sources)} />
-                </div>
+
+                <div className="w-px h-4 bg-border-default mx-1"></div>
+                
+                <IconButton title="Regenerate response" onClick={onRegenerate}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                        <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.32 2.366l-1.12 1.12A.75.75 0 0 1 3.75 14V11.25a.75.75 0 0 1 .75-.75h2.75a.75.75 0 0 1 .53 1.28l-1.12 1.12a4 4 0 0 0 6.788-1.72.75.75 0 0 1 1.392.574ZM4.688 8.576a5.5 5.5 0 0 1 9.32-2.366l1.12-1.12A.75.75 0 0 1 16.25 6H13.5a.75.75 0 0 1-.75-.75V2.5a.75.75 0 0 1 1.28-.53l1.12 1.12a4 4 0 0 0-6.788 1.72.75.75 0 0 1-1.392-.574Z" clipRule="evenodd" />
+                    </svg>
+                </IconButton>
+
+                <TtsButton isPlaying={ttsState === 'playing'} isLoading={ttsState === 'loading'} onClick={onTtsClick} />
+            </div>
+            
+            <div className="flex items-center gap-3">
+                 <SourcesPills sources={sources} onShowSources={() => onShowSources(sources)} />
+                 <ResponsePaginator count={responseCount} activeIndex={activeResponseIndex} onChange={onResponseChange} />
             </div>
         </div>
     );

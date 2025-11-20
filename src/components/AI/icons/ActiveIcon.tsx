@@ -1,10 +1,13 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion as motionTyped } from 'framer-motion';
+
+const motion = motionTyped as any;
 
 export const ActiveIcon = () => (
   <motion.div key="active" className="relative w-5 h-5 flex items-center justify-center">

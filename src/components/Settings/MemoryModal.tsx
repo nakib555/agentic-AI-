@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import JSZip from 'jszip';
 import type { MemoryFile } from '../../hooks/useMemory';
+
+const motion = motionTyped as any;
 
 type MemoryModalProps = {
   isOpen: boolean;

@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// PART 4 of 4 from src/components/App.tsx
-// This is the new main component file.
-
 import React from 'react';
 import { Sidebar } from '../Sidebar/Sidebar';
 import { ChatHeader } from '../Chat/ChatHeader';
@@ -50,8 +47,6 @@ export const App = () => {
         onLoadChat={logic.loadChat}
         onDeleteChat={logic.handleDeleteChatRequest}
         onUpdateChatTitle={logic.updateChatTitle}
-        theme={logic.theme}
-        setTheme={logic.setTheme}
         onSettingsClick={() => logic.setIsSettingsOpen(true)}
       />
 
@@ -167,6 +162,8 @@ export const App = () => {
         confirmation={logic.confirmation}
         onConfirm={logic.handleConfirm}
         onCancel={logic.handleCancel}
+        theme={logic.theme}
+        setTheme={logic.setTheme}
       />
 
       {logic.isTestMode && (

@@ -1,16 +1,19 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion as motionTyped } from 'framer-motion';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { GoalAnalysisIcon, PlannerIcon, TodoListIcon, ToolsIcon } from './icons/index';
 // FIX: Changed type-only import to regular import.
 import { ParsedWorkflow } from '../../types';
 import { getAgentColor } from '../../utils/agentUtils';
+
+const motion = motionTyped as any;
 
 type ExecutionApprovalProps = {
     plan: ParsedWorkflow;

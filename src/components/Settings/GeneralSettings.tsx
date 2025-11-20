@@ -6,6 +6,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { SettingItem } from './SettingItem';
+import { ThemeToggle } from '../Sidebar/ThemeToggle';
+import type { Theme } from '../../hooks/useTheme';
 
 type GeneralSettingsProps = {
   onClearAllChats: () => void;
@@ -14,9 +16,14 @@ type GeneralSettingsProps = {
   onShowDataStructure: () => void;
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 };
 
-export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, apiKey, onSaveApiKey }) => {
+export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ 
+    onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, apiKey, onSaveApiKey,
+    theme, setTheme
+}) => {
   const [localApiKey, setLocalApiKey] = useState(apiKey);
   const [showApiKey, setShowApiKey] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -49,7 +56,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
     <div className="space-y-2">
       <div className="mb-6">
         <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">General Settings</h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Manage your API connection and data.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Manage your API connection, appearance, and data.</p>
       </div>
 
       <SettingItem 
@@ -108,6 +115,12 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ onClearAllChat
             </div>
           )}
         </form>
+      </SettingItem>
+
+      <SettingItem label="Appearance" description="Choose your preferred color theme.">
+        <div className="w-full max-w-[280px]">
+            <ThemeToggle theme={theme} setTheme={setTheme} isCollapsed={false} isDesktop={true} />
+        </div>
       </SettingItem>
 
       <div className="pt-4">

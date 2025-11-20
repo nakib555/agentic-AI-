@@ -5,8 +5,10 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import type { Model } from '../../types';
+
+const motion = motionTyped as any;
 
 type ModelSelectorProps = {
   models: Model[];

@@ -6,20 +6,16 @@
 
 import React from 'react';
 import { NavItem } from './NavItem';
-import { ThemeToggle } from './ThemeToggle';
-import type { Theme } from '../../hooks/useTheme';
 
 type SidebarFooterProps = {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
   isCollapsed: boolean;
   isDesktop: boolean;
   onSettingsClick: () => void;
 };
 
-export const SidebarFooter = ({ theme, setTheme, isCollapsed, isDesktop, onSettingsClick }: SidebarFooterProps) => {
+export const SidebarFooter = ({ isCollapsed, isDesktop, onSettingsClick }: SidebarFooterProps) => {
   return (
-    <div className="mt-auto pt-4 border-t border-gray-200/50 dark:border-white/10 space-y-2">
+    <div className="mt-auto pt-4 border-t border-gray-200/50 dark:border-white/10">
         <NavItem 
             icon={
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5">
@@ -34,7 +30,6 @@ export const SidebarFooter = ({ theme, setTheme, isCollapsed, isDesktop, onSetti
             isDesktop={isDesktop}
             onClick={onSettingsClick}
         />
-        <ThemeToggle theme={theme} setTheme={setTheme} isCollapsed={isCollapsed} isDesktop={isDesktop} />
     </div>
   );
 };

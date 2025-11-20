@@ -8,19 +8,25 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 // --- Centralized Path Definitions ---
-const DATA_PATH = path.join((process as any).cwd(), 'data');
-export const HISTORY_PATH = path.join(DATA_PATH, 'history');
+// Use process.cwd() to create 'hidata' folder in the project root
+const ROOT_DIR = process.cwd();
+const DATA_PATH = path.join(ROOT_DIR, 'hidata');
 
-// Settings Structure: data/settings/
+export const HISTORY_PATH = path.join(DATA_PATH, 'history');
+// Define specific subdirectories requested
+export const HISTORY_CHAT_DIR = path.join(HISTORY_PATH, 'chat');
+export const HISTORY_FILE_DIR = path.join(HISTORY_PATH, 'file');
+
+// Settings Structure: hidata/settings/
 export const SETTINGS_DIR = path.join(DATA_PATH, 'settings');
 export const SETTINGS_FILE_PATH = path.join(SETTINGS_DIR, 'settings.json');
 
-// Memory Structure: data/settings/memory/
+// Memory Structure: hidata/settings/memory/
 export const MEMORY_DIR = path.join(SETTINGS_DIR, 'memory');
 export const MEMORY_CONTENT_PATH = path.join(MEMORY_DIR, 'core.txt');
 export const MEMORY_FILES_DIR = path.join(MEMORY_DIR, 'files');
 
-// Prompts Structure: data/settings/prompts/
+// Prompts Structure: hidata/settings/prompts/
 export const PROMPTS_DIR = path.join(SETTINGS_DIR, 'prompts');
 
 // Centralized Indices
@@ -31,7 +37,7 @@ export const TIME_GROUPS_PATH = path.join(HISTORY_PATH, 'timeGroups.json');
 const ensureDir = async (dirPath: string) => {
     try {
         await fs.mkdir(dirPath, { recursive: true });
-        console.log(`[DATA_STORE] Ensured directory exists: ${dirPath}`);
+        // console.log(`[DATA_STORE] Ensured directory exists: ${dirPath}`);
     } catch (error: any) {
         if (error.code !== 'EEXIST') {
             console.error(`Error creating directory ${dirPath}:`, error);
@@ -41,11 +47,16 @@ const ensureDir = async (dirPath: string) => {
 };
 
 export const initDataStore = async () => {
-    console.log('[DATA_STORE] Initializing data store...');
+    console.log(`[DATA_STORE] Initializing data store at: ${DATA_PATH}`);
     
-    // Create Directory Structure
+    // 1. Create Directory Structure
     await ensureDir(DATA_PATH);
     await ensureDir(HISTORY_PATH);
+    
+    // Ensure specific history subfolders exist as requested
+    await ensureDir(HISTORY_CHAT_DIR);
+    await ensureDir(HISTORY_FILE_DIR);
+
     await ensureDir(SETTINGS_DIR);
     
     // Explicitly create nested memory folders inside settings
@@ -66,14 +77,14 @@ export const initDataStore = async () => {
             JSON.parse(content);
         } catch (error) {
             // If file doesn't exist, is empty, or invalid JSON, write default
-            console.log(`[DATA_STORE] Initializing or resetting ${path.basename(filePath)}`);
+            console.log(`[DATA_STORE] Initializing default file: ${path.basename(filePath)}`);
             await fs.writeFile(filePath, JSON.stringify(defaultValue, null, 2), 'utf-8');
         }
     };
 
     // Initialize History Indices
     await initJsonFile(HISTORY_INDEX_PATH, []);
-    await initJsonFile(TIME_GROUPS_PATH, {});
+    await initJsonFile(TIME_GROUPS_PATH, { 'Today': [], 'Yesterday': [], 'Previous 7 Days': [] });
     
     // Initialize Settings
     const defaultSettings = {

@@ -9,7 +9,8 @@ import type { Message, Source } from '../../types';
 import { MessageComponent } from './Message';
 import { WelcomeScreen } from './WelcomeScreen/index';
 import type { MessageFormHandle } from './MessageForm/index';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
+const motion = motionTyped as any;
 
 export type MessageListHandle = {
   scrollToBottom: () => void;

@@ -8,7 +8,7 @@
 // All logic is now handled by the `useMessageForm` hook.
 
 import React, { forwardRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { AttachedFilePreview } from './AttachedFilePreview';
 import { ProactiveAssistance } from './ProactiveAssistance';
 import { UploadMenu } from './UploadMenu';
@@ -17,6 +17,8 @@ import { type MessageFormHandle } from './types';
 import { ModeToggle } from '../../UI/ModeToggle';
 import { TextType } from '../../UI/TextType';
 import type { Message } from '../../../types';
+
+const motion = motionTyped as any;
 
 export const MessageForm = forwardRef<MessageFormHandle, {
   onSubmit: (message: string, files?: File[], options?: { isThinkingModeEnabled?: boolean }) => void;
@@ -36,7 +38,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   const isGeneratingResponse = isLoading;
   
   const isProcessingFiles = logic.processedFiles.some(f => f.progress < 100 && !f.error);
-  const hasInput = logic.inputValue.trim().length > 0 || logic.processedFiles.length > 0;
+  const hasInput = logic.inputValue.length > 0 || logic.processedFiles.length > 0; // Check length directly for speed
   const hasText = logic.inputValue.trim().length > 0 && logic.processedFiles.length === 0;
 
   // The button is disabled if the app isn't ready or there's nothing to send.
@@ -105,14 +107,17 @@ export const MessageForm = forwardRef<MessageFormHandle, {
             
             {/* Main Input Area */}
             <div className="relative flex-grow min-h-[56px] px-2">
-              <AnimatePresence>
+              <AnimatePresence mode="popLayout">
                 {!hasInput && !logic.isFocused && (
                     <motion.div
                         key="placeholder"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 py-3.5 text-gray-400 dark:text-slate-500 pointer-events-none select-none truncate font-medium"
+                        // CRITICAL OPTIMIZATION: duration: 0 ensures instant removal to prevent "ghost writing" overlay
+                        exit={{ opacity: 0, transition: { duration: 0 } }}
+                        // CRITICAL OPTIMIZATION: pointer-events-none ensures clicks pass through to textarea
+                        className="absolute inset-0 py-3.5 text-gray-400 dark:text-slate-500 pointer-events-none select-none truncate font-medium z-0"
+                        aria-hidden="true"
                     >
                         <TextType
                             text={logic.placeholder}

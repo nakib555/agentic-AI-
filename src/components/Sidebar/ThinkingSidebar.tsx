@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback, useMemo, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion as motionTyped } from 'framer-motion';
 import type { Message } from '../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { parseMessageText } from '../../utils/messageParser';
@@ -13,6 +13,8 @@ import { useViewport } from '../../hooks/useViewport';
 import { parseAgenticWorkflow } from '../../services/workflowParser';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
 import { FormattedBlock } from '../Markdown/FormattedBlock';
+
+const motion = motionTyped as any;
 
 type ThinkingSidebarProps = {
     isOpen: boolean;

@@ -4,13 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import React, { useState } from 'react';
-import { AnimatePresence, motion, LayoutGroup } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped, LayoutGroup } from 'framer-motion';
 import type { Model } from '../../types';
 import { SettingsCategoryButton } from './SettingsCategoryButton';
 import { GeneralSettings } from './GeneralSettings';
 import { ModelSettings } from './ModelSettings';
 import { CustomInstructionsSettings } from './CustomInstructionsSettings';
 import { SpeechMemorySettings } from './SpeechMemorySettings';
+import type { Theme } from '../../hooks/useTheme';
+
+const motion = motionTyped as any;
 
 type SettingsModalProps = {
   isOpen: boolean;
@@ -23,7 +26,7 @@ type SettingsModalProps = {
   onClearAllChats: () => void;
   onRunTests: () => void;
   onDownloadLogs: () => void;
-  onShowDataStructure: () => void; // Added
+  onShowDataStructure: () => void;
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
   aboutUser: string;
@@ -48,6 +51,8 @@ type SettingsModalProps = {
   isAutoPlayEnabled: boolean;
   setIsAutoPlayEnabled: (enabled: boolean) => void;
   disabled: boolean;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 };
 
 const CATEGORIES = [
@@ -180,7 +185,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 exit={{ opacity: 0, x: -10 }}
                                 transition={{ duration: 0.2, ease: "easeOut" }}
                             >
-                                {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} />}
+                                {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
                                 {activeCategory === 'model' && <ModelSettings {...props} />}
                                 {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
                                 {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}
