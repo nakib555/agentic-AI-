@@ -287,14 +287,32 @@ export const useAppLogic = () => {
   const startNewChat = useCallback(async () => {
     // Check if the most recent chat is already a new, empty chat.
     const mostRecentChat = chat.chatHistory[0];
+    
     if (mostRecentChat && mostRecentChat.title === 'New Chat' && mostRecentChat.messages.length === 0) {
-      // If so, just switch to it instead of creating a new one.
+      // If we are currently in it, do nothing (avoid duplicate empty chats)
+      if (chat.currentChatId === mostRecentChat.id) {
+          return;
+      }
+      // If we are in another chat, switch to the existing empty one instead of creating a new one.
       chat.loadChat(mostRecentChat.id);
       return;
     }
+    
     // Otherwise, create a new chat session.
     await chat.startNewChat(activeModel, chatSettings);
   }, [chat, activeModel, chatSettings]);
+  
+  // Calculate if the new chat button should be visually disabled
+  const isNewChatDisabled = useMemo(() => {
+      const mostRecentChat = chat.chatHistory[0];
+      if (!mostRecentChat) return false;
+      
+      const isMostRecentEmptyNewChat = mostRecentChat.title === 'New Chat' && mostRecentChat.messages.length === 0;
+      const isCurrentChat = chat.currentChatId === mostRecentChat.id;
+      
+      // Disable only if we are ALREADY sitting in the empty new chat.
+      return isMostRecentEmptyNewChat && isCurrentChat;
+  }, [chat.chatHistory, chat.currentChatId]);
 
   // --- Confirmation Modal Logic ---
   const requestConfirmation = useCallback((
@@ -568,7 +586,7 @@ export const useAppLogic = () => {
     setIsMemoryEnabled: handleSetIsMemoryEnabled,
     setIsAgentMode: handleSetIsAgentMode,
     ...chat, isChatActive, thinkingMessageForSidebar,
-    startNewChat,
+    startNewChat, isNewChatDisabled,
     handleDeleteChatRequest, handleRequestClearAll,
     handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,
     handleShowSources, handleCloseSourcesSidebar,

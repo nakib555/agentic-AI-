@@ -28,6 +28,7 @@ type SidebarProps = {
     isHistoryLoading: boolean;
     currentChatId: string | null;
     onNewChat: () => void;
+    isNewChatDisabled?: boolean;
     onLoadChat: (id: string) => void;
     onDeleteChat: (id: string) => void;
     onUpdateChatTitle: (id: string, title: string) => void;
@@ -42,7 +43,7 @@ const mobileVariants = {
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
-    isResizing, setIsResizing, history, isHistoryLoading, currentChatId, onNewChat, onLoadChat,
+    isResizing, setIsResizing, history, isHistoryLoading, currentChatId, onNewChat, isNewChatDisabled, onLoadChat,
     onDeleteChat, onUpdateChatTitle, onSettingsClick,
     isDesktop
 }) => {
@@ -170,6 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         isCollapsed={isCollapsed}
                         isDesktop={isDesktop}
                         onClick={handleNewChat}
+                        disabled={isNewChatDisabled}
                     />
                     
                     <motion.div 

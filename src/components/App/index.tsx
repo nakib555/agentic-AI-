@@ -44,6 +44,7 @@ export const App = () => {
         isHistoryLoading={logic.isHistoryLoading}
         currentChatId={logic.currentChatId}
         onNewChat={logic.startNewChat}
+        isNewChatDisabled={logic.isNewChatDisabled}
         onLoadChat={logic.loadChat}
         onDeleteChat={logic.handleDeleteChatRequest}
         onUpdateChatTitle={logic.updateChatTitle}
