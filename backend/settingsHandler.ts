@@ -59,6 +59,11 @@ const readSettings = async () => {
         }
     }
 
+    // Fallback: Check Environment Variables for API Key
+    if (!settings.apiKey) {
+        settings.apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
+    }
+
     // 2. Read Prompts from Text Files (These override JSON if present)
     try {
         const aboutUser = await fs.readFile(ABOUT_USER_FILE, 'utf-8');
@@ -141,24 +146,19 @@ export const updateSettings = async (req: any, res: any) => {
             } catch (error: any) {
                 console.warn('API Key validation failed on save:', error.message);
                 
-                // The error from the Gemini SDK is often descriptive enough for the user.
-                // Let's extract and pass that directly.
-                let errorMessage = 'Invalid API Key. Please check the key and try again.';
-                
-                // Example Gemini SDK error: "[GoogleGenerativeAI Error]: API key not valid. Please pass a valid API key."
-                if (error.message && error.message.includes('[GoogleGenerativeAI Error]:')) {
-                    errorMessage = error.message.split('[GoogleGenerativeAI Error]: ')[1];
-                } else if (error.message) {
-                    errorMessage = error.message;
-                }
-
-                return res.status(401).json({ error: errorMessage });
+                const parsedError = parseApiError(error);
+                // The parser handles extraction of message from JSON if present.
+                // We use the clean message.
+                return res.status(401).json({ error: parsedError.message });
             }
         }
 
         // Save the main settings JSON. 
         // Note: We include the prompts here too for redundancy/backwards compatibility, 
         // but the text files are the source of truth on read.
+        // IMPORTANT: Don't save the env var fallback back to the file if it wasn't explicitly set in the request
+        // We want the file to remain "clean" if possible, but `newSettings` merges current (which includes read env var) with body.
+        // This is actually fine; saving it to the file persists it for future restarts if env var is removed.
         await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(newSettings, null, 2), 'utf-8');
         res.status(200).json({ ...newSettings, ...modelData });
     } catch (error) {

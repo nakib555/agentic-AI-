@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -16,7 +17,7 @@ import { parseApiError } from './apiError';
 // FIX: The type for the result of a streaming content generation call is not exported.
 // This local type definition mirrors the expected structure: an async generator
 // of response chunks, with an added `response` property for the final aggregated response.
-type GenerateContentStreamResult = AsyncGenerator<GenerateContentResponse> & {
+export type GenerateContentStreamResult = AsyncGenerator<GenerateContentResponse> & {
   readonly response: Promise<GenerateContentResponse>;
 };
 
@@ -58,8 +59,8 @@ function applyModelFallback<T extends { model: string }>(request: T): T {
         return { ...request, model: newModel };
     }
     // Fallback for any other case to the base flash model
-    console.warn(`[FALLBACK] Model request failed for '${modelId}'. Falling back to 'gemini-flash'.`);
-    return { ...request, model: 'gemini-flash' };
+    console.warn(`[FALLBACK] Model request failed for '${modelId}'. Falling back to 'gemini-2.5-flash'.`);
+    return { ...request, model: 'gemini-2.5-flash' };
 }
 
 // FIX: Replaced GenerateContentRequest with GenerateContentParameters
@@ -77,14 +78,14 @@ export async function generateContentWithRetry(ai: GoogleGenAI, request: Generat
 
 // FIX: Replaced GenerateContentStreamRequest with GenerateContentParameters and updated return type
 export async function generateContentStreamWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<GenerateContentStreamResult> {
-  const operation = async () => ai.models.generateContentStream(request);
+  const operation = async () => (await ai.models.generateContentStream(request)) as unknown as GenerateContentStreamResult;
   try {
     return await retryOperation(operation);
   } catch (error) {
     console.warn(`[RETRY] All retries failed for streaming model ${request.model}. Attempting fallback...`);
     // After all retries fail, try one last time with a fallback model.
     const fallbackRequest = applyModelFallback(request);
-    return await ai.models.generateContentStream(fallbackRequest);
+    return (await ai.models.generateContentStream(fallbackRequest)) as unknown as GenerateContentStreamResult;
   }
 }
 

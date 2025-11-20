@@ -114,8 +114,8 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             }
 
             const response = await streamResult.response;
-            toolCalls = response.functionCalls || [];
-            groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+            toolCalls = response?.functionCalls || [];
+            groundingMetadata = response?.candidates?.[0]?.groundingMetadata;
 
             const newContentParts: Part[] = [{ text: fullTextResponse }];
             if (toolCalls.length > 0) {

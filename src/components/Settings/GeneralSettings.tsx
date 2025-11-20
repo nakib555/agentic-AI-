@@ -110,7 +110,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             </a>
           </div>
           {saveStatus === 'error' && saveError && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs rounded-lg border border-red-200 dark:border-red-800">
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs rounded-lg border border-red-200 dark:border-red-800 break-words">
               {saveError}
             </div>
           )}
