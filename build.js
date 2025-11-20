@@ -1,4 +1,3 @@
-
 import esbuild from 'esbuild';
 import cpx from 'cpx';
 import { rm, readFile, writeFile } from 'fs/promises';
