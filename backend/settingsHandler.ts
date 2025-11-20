@@ -147,9 +147,13 @@ export const updateSettings = async (req: any, res: any) => {
                 console.warn('API Key validation failed on save:', error.message);
                 
                 const parsedError = parseApiError(error);
-                // The parser handles extraction of message from JSON if present.
-                // We use the clean message.
-                return res.status(401).json({ error: parsedError.message });
+                
+                let status = 400; // Default to Bad Request for validation failures
+                if (parsedError.code === 'INVALID_API_KEY') status = 401;
+                else if (parsedError.code === 'RATE_LIMIT_EXCEEDED') status = 429;
+                else if (parsedError.code === 'UNAVAILABLE') status = 503;
+                
+                return res.status(status).json({ error: parsedError.message });
             }
         }
 
