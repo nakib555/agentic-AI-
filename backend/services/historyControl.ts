@@ -60,11 +60,16 @@ class HistoryControlService {
     }
 
     private sanitizeTitle(title: string): string {
-        // Replace non-alphanumeric characters with dashes, trim, and limit length
+        // Improved to support Unicode characters for international titles
+        // while maintaining filesystem safety.
+        // Allows letters (unicode), numbers, spaces, dashes, underscores.
         return title
-            .replace(/[^a-z0-9]+/gi, '-')
-            .replace(/^-+|-+$/g, '')
-            .substring(0, 50) || 'Untitled';
+            .replace(/[^\p{L}\p{N}\s\-_]/gu, '') 
+            .trim()
+            .replace(/\s+/g, '-')      // Space to dash
+            .replace(/-+/g, '-')       // Collapse dashes
+            .substring(0, 64)          // Reasonable limit
+            || 'Untitled';
     }
 
     private getFolderName(title: string, id: string): string {
@@ -197,15 +202,28 @@ class HistoryControlService {
 
             if (newFolderName !== entry.folderName) {
                 try {
-                    await fs.rename(originalFolderPath, newFolderPath);
+                    // Check for collision
+                    try {
+                        await fs.access(newFolderPath);
+                        // If exists (rare), keep old folder or append timestamp?
+                        // Appending timestamp to ensure uniqueness
+                        newFolderName = `${newFolderName}-${Date.now()}`;
+                        // Re-calculate path
+                        await fs.rename(originalFolderPath, path.join(HISTORY_PATH, newFolderName));
+                    } catch {
+                        // Destination does not exist, safe to rename
+                        await fs.rename(originalFolderPath, newFolderPath);
+                    }
+
                     entry.folderName = newFolderName;
-                    entry.title = updates.title;
                 } catch (error) {
                     console.error(`[HistoryControl] Failed to rename folder for chat ${id}:`, error);
-                    // Fallback: keep old folder name if rename fails, but update title in index
+                    // Fallback: keep old folder name if rename fails
                     newFolderName = entry.folderName; 
                 }
             }
+            // Always update index title if requested
+            entry.title = updates.title;
         }
 
         // Update File content in the (potentially new) location
@@ -223,7 +241,6 @@ class HistoryControlService {
         // Update Index metadata
         entry.updatedAt = Date.now();
         if (updates.model) entry.model = updates.model;
-        if (updates.title) entry.title = updates.title;
         
         // Move updated entry to top (Recency)
         index.splice(entryIndex, 1);

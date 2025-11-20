@@ -43,7 +43,7 @@ const ensureDir = async (dirPath: string) => {
 };
 
 export const initDataStore = async () => {
-    console.log(`[DATA_STORE] Initializing data store at: ${DATA_PATH}`);
+    console.log(`[DATA_STORE] Initializing data store at absolute path: ${DATA_PATH}`);
     
     // 1. Create Directory Structure
     await ensureDir(DATA_PATH);
