@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -79,12 +80,16 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 body: JSON.stringify({ callId, result }),
             });
         } catch (error) {
+            if ((error as Error).message === 'Version mismatch') return;
+
             const parsedError = parseApiError(error);
             console.error(`[FRONTEND] Tool '${toolName}' execution failed. Sending error to backend.`, { callId, error: parsedError });
             await fetchFromApi('/api/handler?task=tool_response', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ callId, error: parsedError.message }),
+            }).catch(e => {
+                 if ((e as Error).message !== 'Version mismatch') console.error("Failed to send tool error", e);
             });
         }
     }, []);
@@ -327,7 +332,10 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
             console.log('[FRONTEND] Backend stream finished processing.');
 
         } catch (error) {
-            if ((error as Error).name !== 'AbortError') {
+            if ((error as Error).message === 'Version mismatch') {
+                // Do not log or update message with error; let the global overlay handle it.
+                console.log('[FRONTEND] Aborting chat due to version mismatch.');
+            } else if ((error as Error).name !== 'AbortError') {
                 console.error('[FRONTEND] Backend stream failed.', { error });
                 chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
             } else {

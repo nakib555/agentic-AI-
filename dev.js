@@ -10,6 +10,10 @@ import path from 'path';
 const FRONTEND_DEV_PORT = 8000;
 const BACKEND_PORT = 3001;
 
+// --- Set Default Version for Dev Mode ---
+// This ensures that local frontend and backend always match, preventing version mismatch errors during development.
+process.env.APP_VERSION = process.env.APP_VERSION || 'dev';
+
 console.log('Starting development environment...');
 
 // --- API Key Check ---
@@ -76,6 +80,7 @@ try {
     sourcemap: true,
     define: {
       'process.env.NODE_ENV': '"development"',
+      'process.env.APP_VERSION': JSON.stringify(process.env.APP_VERSION),
     },
   });
   await frontendBuilder.watch();

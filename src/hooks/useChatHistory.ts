@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -18,6 +19,10 @@ const fetchApi = async (url: string, options?: RequestInit) => {
     }
     if (response.status === 204) return null; // No Content
     return response.json();
+};
+
+const isVersionMismatch = (error: unknown): boolean => {
+    return error instanceof Error && error.message === 'Version mismatch';
 };
 
 export const useChatHistory = () => {
@@ -46,7 +51,9 @@ export const useChatHistory = () => {
             // Always start with no chat selected to ensure backend is single source of truth.
             setCurrentChatId(null);
         } catch (error) {
-            console.error("Failed to load chat history from backend:", error);
+            if (!isVersionMismatch(error)) {
+                console.error("Failed to load chat history from backend:", error);
+            }
         } finally {
             setIsHistoryLoading(false);
         }
@@ -67,7 +74,9 @@ export const useChatHistory = () => {
                 const fullChat: ChatSession = await fetchApi(`/api/chats/${currentChatId}`);
                 setChatHistory(prev => prev.map(c => c.id === currentChatId ? fullChat : c));
             } catch (error) {
-                console.error(`Failed to load messages for chat ${currentChatId}:`, error);
+                if (!isVersionMismatch(error)) {
+                    console.error(`Failed to load messages for chat ${currentChatId}:`, error);
+                }
                 // Handle error, e.g., show a toast or revert selection
             }
         }
@@ -87,7 +96,9 @@ export const useChatHistory = () => {
         setCurrentChatId(newChat.id);
         return newChat;
     } catch (error) {
-        console.error("Failed to create new chat:", error);
+        if (!isVersionMismatch(error)) {
+            console.error("Failed to create new chat:", error);
+        }
         return null;
     }
   }, []);
@@ -110,6 +121,8 @@ export const useChatHistory = () => {
     try {
         await fetchApi(`/api/chats/${chatId}`, { method: 'DELETE' });
     } catch (error) {
+        if (isVersionMismatch(error)) return; // Do not rollback UI on version mismatch, let the overlay handle it
+
         console.error(`Failed to delete chat ${chatId}:`, error);
         // Rollback
         setChatHistory(previousHistory);
@@ -132,6 +145,8 @@ export const useChatHistory = () => {
     try {
         await fetchApi('/api/history', { method: 'DELETE' });
     } catch (error) {
+        if (isVersionMismatch(error)) return;
+
         console.error('Failed to clear all chats:', error);
         // Rollback
         setChatHistory(previousHistory);
@@ -150,6 +165,7 @@ export const useChatHistory = () => {
         setChatHistory(prev => [newChat, ...prev]);
         setCurrentChatId(newChat.id);
     } catch (error) {
+        if (isVersionMismatch(error)) return;
         console.error('Failed to import chat:', error);
         alert('Failed to import chat. Please check the file format.');
     }
@@ -244,6 +260,7 @@ export const useChatHistory = () => {
           });
           // Note: We don't need to do anything on success as local state is already updated
       } catch (error) {
+          if (isVersionMismatch(error)) return;
           console.error(`Failed to update chat ${chatId}:`, error);
           // Rollback
           setChatHistory(prev => prev.map(s => s.id === chatId ? previousChat : s));
