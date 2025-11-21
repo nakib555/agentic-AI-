@@ -24,7 +24,7 @@ export const NewChatButton = ({ isCollapsed, isDesktop, onClick, disabled }: New
             onClick={onClick}
             disabled={disabled}
             className={`
-                group relative w-full flex items-center transition-all duration-200
+                group relative w-full flex items-center transition-colors duration-200
                 ${disabled 
                     ? 'opacity-50 cursor-not-allowed bg-transparent' 
                     : 'hover:bg-gray-200/50 dark:hover:bg-white/5 cursor-pointer'
@@ -57,6 +57,7 @@ export const NewChatButton = ({ isCollapsed, isDesktop, onClick, disabled }: New
                     marginLeft: shouldCollapse ? 0 : 12,
                 }}
                 transition={{ duration: 0.2 }}
+                style={{ willChange: "width, margin-left, opacity" }}
             >
                 New chat
             </motion.span>
