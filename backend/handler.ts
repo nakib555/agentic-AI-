@@ -107,17 +107,32 @@ export const apiHandler = async (req: any, res: any) => {
                 writeEvent(res, 'start', { requestId });
 
                 const pingInterval = setInterval(() => writeEvent(res, 'ping', {}), 10000);
+                
+                // Track callIds associated with this request to clean them up on disconnect
+                const sessionCallIds = new Set<string>();
 
                 req.on('close', () => {
                     console.log(`[HANDLER] Client disconnected for request ${requestId}. Aborting loop.`);
                     abortController.abort();
                     activeAgentLoops.delete(requestId);
                     clearInterval(pingInterval);
+                    
+                    // Clean up any pending tool requests for this session by resolving them with an error.
+                    // This ensures the agentic loop doesn't hang indefinitely awaiting a promise.
+                    sessionCallIds.forEach(callId => {
+                        const resolver = frontendToolRequests.get(callId);
+                        if (resolver) {
+                            console.log(`[HANDLER] Resolving orphaned tool request ${callId} due to disconnect.`);
+                            resolver({ error: "Client disconnected during tool execution" });
+                            frontendToolRequests.delete(callId);
+                        }
+                    });
                 });
 
                 const requestFrontendExecution = (callId: string, toolName: string, toolArgs: any) => {
                     return new Promise<string | { error: string }>((resolve) => {
                         frontendToolRequests.set(callId, resolve);
+                        sessionCallIds.add(callId); // Track it
                         writeEvent(res, 'frontend-tool-request', { callId, toolName, toolArgs });
                     });
                 };
@@ -159,6 +174,7 @@ export const apiHandler = async (req: any, res: any) => {
                             return new Promise((resolve) => {
                                 const callId = `plan-approval-${generateId()}`;
                                 frontendToolRequests.set(callId, resolve);
+                                sessionCallIds.add(callId); // Track it
                                 writeEvent(res, 'plan-ready', { plan, callId });
                             });
                         },
@@ -186,7 +202,7 @@ export const apiHandler = async (req: any, res: any) => {
                     frontendToolRequests.delete(callId);
                     res.status(200).send();
                 } else {
-                    console.warn(`[HANDLER] No pending tool request found for callId: ${callId}`);
+                    console.warn(`[HANDLER] CallId mismatch or session expired: ${callId}`);
                     res.status(404).json({ error: `No pending tool request found for callId: ${callId}` });
                 }
                 break;
@@ -224,7 +240,7 @@ export const apiHandler = async (req: any, res: any) => {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { conversation } = req.body;
                 const recentHistory = conversation.slice(-5).map((m: any) => `${m.role}: ${(m.text || '').substring(0, 200)}`).join('\n');
-                const prompt = `Based on the conversation below, suggest 3 short, relevant follow-up questions or actions the user might want to take next. Return ONLY a JSON array of strings. Example: ["Tell me more", "Explain the code", "Generate an image"].\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
+                const prompt = `Based on the conversation below, suggest 3 short, relevant follow-up questions or actions the user might want to take next. Return ONLY a JSON array of strings. Example: ["Tell me a more", "Explain the code", "Generate an image"].\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
                 
                 const response = await generateContentWithRetry(ai, {
                     model: 'gemini-2.5-flash',

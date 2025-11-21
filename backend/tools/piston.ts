@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -15,10 +16,12 @@ const pistonLanguageMap: Record<string, string> = {
 export async function executeWithPiston(language: string, code: string): Promise<string> {
     const pistonLanguage = pistonLanguageMap[language.toLowerCase()];
     if (!pistonLanguage) {
+      console.error(`[Piston Error] Unsupported language: ${language}`);
       throw new ToolError('executeCode', 'UNSUPPORTED_LANGUAGE', `Language "${language}" is not supported by the fallback execution engine.`);
     }
   
     try {
+      console.log(`[Piston Request] Executing ${language} code...`);
       const response = await fetch('https://emkc.org/api/v2/piston/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -29,15 +32,25 @@ export async function executeWithPiston(language: string, code: string): Promise
         }),
       });
   
-      if (!response.ok) throw new Error(`Piston API request failed with status ${response.status}`);
+      if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`[Piston API Error] Status: ${response.status}, Cause: ${errorText}`);
+          throw new Error(`Piston API request failed with status ${response.status}: ${errorText}`);
+      }
       
       const result = await response.json();
+      console.log(`[Piston Success] Execution completed.`);
+      
       const output = result.run?.stdout || '';
       const error = result.run?.stderr || '';
   
-      if (error) return `Execution failed:\n${error}`;
+      if (error) {
+          console.warn(`[Piston Execution Stderr]`, error);
+          return `Execution failed:\n${error}`;
+      }
       return output.trim() || 'Code executed successfully with no output.';
     } catch (error) {
+      console.error(`[Piston Fatal] Execution failed for ${language}`, error);
       const originalError = error instanceof Error ? error : new Error(String(error));
       throw new ToolError('executeCode', 'PISTON_API_ERROR', originalError.message, originalError);
     }

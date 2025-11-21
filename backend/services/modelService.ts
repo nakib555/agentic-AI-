@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -46,10 +47,12 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
         modelCache.keyHash === currentKeyHash &&
         (now - modelCache.timestamp < CACHE_TTL)
     ) {
+        console.log('[ModelService] Returning cached models.');
         return modelCache.data;
     }
 
     try {
+        console.log('[ModelService] Fetching models from Google API...');
         // Using fetch with the REST API endpoint to get the list of models.
         // We pass the API key in the header for security.
         const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
@@ -60,11 +63,13 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
         
         if (!response.ok) {
             const errorBody = await response.text();
+            console.error(`[ModelService] API Request Failed. Status: ${response.status}, Cause: ${errorBody}`);
             throw new Error(`Failed to fetch models: ${response.status} ${response.statusText} - ${errorBody}`);
         }
 
         const data = await response.json();
         const modelList = data.models || [];
+        console.log(`[ModelService] Fetched ${modelList.length} models.`);
 
         const availableChatModels: AppModel[] = [];
         const availableImageModels: AppModel[] = [];
@@ -108,7 +113,7 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
 
         return result;
     } catch (error: any) {
-        console.warn('Model fetch failed:', error.message);
+        console.warn('[ModelService] Model fetch failed with error:', error.message);
         // Do not return empty arrays on verification error; throw so the caller knows the key failed.
         throw error;
     }
