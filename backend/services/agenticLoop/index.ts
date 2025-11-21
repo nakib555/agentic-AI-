@@ -22,7 +22,6 @@ type Callbacks = {
     onError: (error: any) => void;
 };
 
-// Updated type definition to include ID in toolExecutor
 type RunAgenticLoopParams = {
     ai: GoogleGenAI;
     model: string;
@@ -45,40 +44,23 @@ const AgentStateAnnotation = Annotation.Root({
         default: () => undefined,
     }),
     toolCalls: Annotation<FunctionCall[]>({
-        reducer: (x, y) => y, // Replace
+        reducer: (x, y) => y, // Replace current turn's calls
         default: () => [],
     }),
-    // Track the most recent text content from the agent to ensure we have it at the end
     latestAgentText: Annotation<string>({
-        reducer: (x, y) => y || x, // Prefer new non-empty text
+        reducer: (x, y) => y || x,
         default: () => "",
     }),
 });
 
-// --- Helper Functions ---
-
 const extractPlan = (rawText: string): string => {
     const planMarker = '[STEP] Strategic Plan:';
     const planMarkerIndex = rawText.indexOf(planMarker);
-    let planText = '';
+    if (planMarkerIndex === -1) return rawText; // Fallback
 
-    if (planMarkerIndex !== -1) {
-        const planContentStartIndex = planMarkerIndex + planMarker.length;
-        const nextStepIndex = rawText.indexOf('[STEP]', planContentStartIndex);
-        if (nextStepIndex !== -1) {
-            planText = rawText.substring(planContentStartIndex, nextStepIndex);
-        } else {
-            planText = rawText.substring(planContentStartIndex);
-        }
-    } else {
-        const firstStepIndex = rawText.indexOf('[STEP]');
-        if (firstStepIndex !== -1) {
-            planText = rawText.substring(0, firstStepIndex);
-        } else {
-            planText = rawText;
-        }
-    }
-    return planText.replace(/\[AGENT:.*?\]\s*/, '').replace(/\[USER_APPROVAL_REQUIRED\]/, '').trim();
+    // Heuristic: Plan is everything from the marker to the approval tag
+    const planStart = rawText.substring(planMarkerIndex);
+    return planStart.replace(/\[USER_APPROVAL_REQUIRED\][\s\S]*/, '').trim();
 };
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -130,8 +112,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     hasSentPlan = true;
                     const planText = extractPlan(fullTextResponse);
                     
-                    // Interrupt execution to wait for user approval
-                    // Note: In this implementation, we await the promise directly to maintain the stream connection
                     const approval = await callbacks.onPlanReady(planText);
 
                     if (approval === false) {
@@ -139,8 +119,9 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                         throw new Error("AbortError");
                     }
                     if (typeof approval === 'string') {
-                        console.log('[AGENT_LOOP] User edited plan. Updating context.');
-                        fullTextResponse = approval;
+                        console.log('[AGENT_LOOP] User edited plan. Injecting updated plan.');
+                        // Replace the generated text with the user's edited plan to keep context consistent
+                        fullTextResponse = approval + "\n\n[PLAN_APPROVED_BY_USER]"; 
                         callbacks.onTextChunk(fullTextResponse);
                     }
                 }
@@ -150,7 +131,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             toolCalls = response?.functionCalls || [];
             groundingMetadata = response?.candidates?.[0]?.groundingMetadata;
 
-            console.log('[AGENT_LOOP] Agent generation complete. Tool calls:', toolCalls.length);
+            console.log(`[AGENT_LOOP] Agent generation complete. Generated ${toolCalls.length} tool calls.`);
 
             const newContentParts: Part[] = [];
             if (fullTextResponse) {
@@ -162,11 +143,11 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
             const historyUpdate: Content[] = [{ role: 'model', parts: newContentParts }];
 
-            // If we just finished a plan approval sequence, inject a "Proceed" message to trigger the next turn
+            // Inject a "System/User" prompt to nudge the model into the next step after plan approval
             if (hasSentPlan) {
                  historyUpdate.push({ 
                      role: 'user', 
-                     parts: [{ text: "The plan is approved. Proceed with the execution." }] 
+                     parts: [{ text: "The plan is approved. Proceed immediately with the first step." }] 
                  });
             }
 
@@ -174,7 +155,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 history: historyUpdate,
                 groundingMetadata,
                 toolCalls,
-                latestAgentText: fullTextResponse || state.latestAgentText // Update if new text, else keep old
+                latestAgentText: fullTextResponse || state.latestAgentText
             };
 
         } catch (error) {
@@ -194,6 +175,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             return {};
         }
 
+        // Create events for UI
         const newToolCallEvents: ToolCallEvent[] = toolCalls.map(fc => ({
             id: `${fc.name}-${generateId()}`,
             call: fc,
@@ -201,13 +183,13 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         }));
         callbacks.onNewToolCalls(newToolCallEvents);
 
-        console.log('[AGENT_LOOP] Executing tools:', toolCalls.map(tc => tc.name));
+        console.log('[AGENT_LOOP] Executing tools in parallel:', toolCalls.map(tc => tc.name));
 
+        // Execute tools in parallel
         const toolResponses = await Promise.all(
             toolCalls.map(async (call: FunctionCall) => {
                 const event = newToolCallEvents.find(e => e.call === call)!;
                 try {
-                    // Pass event.id to the tool executor for targeting live updates
                     const result = await toolExecutor(call.name, call.args, event.id);
                     callbacks.onToolResult(event.id, result);
                     return {
@@ -232,13 +214,12 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         
         return {
             history: [{ role: 'user', parts: toolResponses.map(tr => ({ functionResponse: tr.functionResponse })) }],
-            toolCalls: [], // Clear tool calls after execution
+            toolCalls: [], // Clear tool calls so we don't loop back here immediately
         };
     };
 
     // --- Graph Definition ---
 
-    // Initialize In-Memory Checkpointer for this session
     const checkpointer = new MemorySaver();
 
     const workflow = new StateGraph(AgentStateAnnotation)
@@ -248,16 +229,14 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         .addConditionalEdges(
             "agent",
             (state) => {
-                // If there are tool calls, go to tools
-                if (state.toolCalls && state.toolCalls.length > 0) return "tools";
-                
-                // If the last message in history is a USER message (our injected "Proceed"),
-                // loop back to agent to let it start executing the plan.
+                if (state.toolCalls && state.toolCalls.length > 0) {
+                    return "tools";
+                }
+                // If we just injected the "Proceed" message (User role at end of history), loop back to agent
                 const lastMsg = state.history[state.history.length - 1];
                 if (lastMsg.role === 'user') {
                     return "agent";
                 }
-                
                 return END;
             }
         )
@@ -274,9 +253,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             { configurable: { thread_id: threadId } } as any
         );
 
-        // Use the latestAgentText we tracked in state, rather than trying to parse the last message in history.
-        // This ensures that even if the loop ends on a tool call turn (unlikely) or if the last message
-        // structure is complex, we have the actual text that was generated and streamed to the user.
         const finalText = finalState.latestAgentText;
 
         if (!signal.aborted) {
