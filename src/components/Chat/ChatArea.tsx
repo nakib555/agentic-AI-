@@ -31,6 +31,7 @@ type ChatAreaProps = {
   setIsAgentMode: (isAgent: boolean) => void;
   backendStatus: 'online' | 'offline' | 'checking';
   backendError: string | null;
+  hasApiKey: boolean;
 };
 
 export const ChatArea = ({ 
@@ -38,7 +39,7 @@ export const ChatArea = ({
     ttsVoice, isAutoPlayEnabled, currentChatId,
     onShowThinkingProcess, onShowSources, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
-    isAgentMode, setIsAgentMode, backendStatus, backendError
+    isAgentMode, setIsAgentMode, backendStatus, backendError, hasApiKey
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -161,6 +162,7 @@ export const ChatArea = ({
             isAgentMode={isAgentMode}
             setIsAgentMode={setIsAgentMode}
             messages={messages}
+            hasApiKey={hasApiKey}
           />
         </div>
       </div>

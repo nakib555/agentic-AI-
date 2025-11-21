@@ -24,6 +24,8 @@ import { useAiMessageLogic } from './useAiMessageLogic';
 import { MessageToolbar } from './MessageToolbar';
 import { FlowToken } from '../../AI/FlowToken';
 import { cleanTextForTts } from './utils';
+import { ThinkingWorkflow } from '../../AI/ThinkingWorkflow';
+import { FormattedBlock } from '../../Markdown/FormattedBlock';
 
 // Optimized spring physics for performance
 const animationProps = {
@@ -56,13 +58,23 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, isAutoPlayEnabled, ttsVoice, sendMessage, isLoading);
-  const { activeResponse, finalAnswerText, thinkingIsComplete, isStreamingFinalAnswer } = logic;
+  const { activeResponse, finalAnswerText, thinkingIsComplete, isStreamingFinalAnswer, agentPlan, executionLog } = logic;
   const [animationComplete, setAnimationComplete] = useState(false);
+  const [isWorkflowCollapsed, setIsWorkflowCollapsed] = useState(false);
 
   useEffect(() => {
     // Reset animation state when the message content changes (e.g., regeneration)
     setAnimationComplete(false);
   }, [finalAnswerText, msg.activeResponseIndex]);
+
+  // Auto-collapse workflow when thinking is complete if there is a final answer
+  useEffect(() => {
+      if (thinkingIsComplete && finalAnswerText) {
+          setIsWorkflowCollapsed(true);
+      } else {
+          setIsWorkflowCollapsed(false);
+      }
+  }, [thinkingIsComplete, !!finalAnswerText]);
 
   const showFinalContent = thinkingIsComplete || animationComplete;
 
@@ -130,19 +142,69 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
         className="w-full flex flex-col items-start gap-4 origin-bottom-left"
         style={{ willChange: 'transform, opacity' }}
     >
+      {/* Inline Thought Process Display */}
       {logic.hasThinkingProcess && (
-        <button
-            onClick={() => onShowThinkingProcess(id)}
-            className="w-full flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-black/30 transition-colors text-left"
-        >
-            <div className="flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-500 dark:text-slate-400"><path fillRule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v1.25a.75.75 0 0 1-1.5 0V2.75A.75.75 0 0 1 10 2ZM5.207 4.207a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0Zm9.586 0a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06a.75.75 0 0 1 0-1.06ZM10 15.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Zm0-1.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" clipRule="evenodd" /></svg>
-                <span className="font-semibold text-gray-700 dark:text-slate-200 text-sm">
-                    {logic.thinkingIsComplete ? `Thought took ${logic.displayDuration}s` : `Thinking for ${logic.displayDuration}s`}
-                </span>
-            </div>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-500 dark:text-slate-400"><path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L12.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
-        </button>
+        <div className="w-full border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden bg-gray-50/50 dark:bg-black/20">
+            <button
+                onClick={() => setIsWorkflowCollapsed(!isWorkflowCollapsed)}
+                className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-gray-100/50 dark:bg-white/5 hover:bg-gray-200/50 dark:hover:bg-white/10 transition-colors text-left"
+            >
+                <div className="flex items-center gap-3">
+                    {logic.thinkingIsComplete ? (
+                        <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
+                        </div>
+                    ) : (
+                        <div className="relative w-5 h-5 flex items-center justify-center">
+                            <div className="w-2.5 h-2.5 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-pulse" />
+                            <div className="absolute inset-0 w-full h-full bg-indigo-400/30 dark:bg-indigo-500/20 rounded-full animate-ping" />
+                        </div>
+                    )}
+                    <span className="font-semibold text-slate-700 dark:text-slate-200 text-sm">
+                        {logic.thinkingIsComplete ? `Finished in ${logic.displayDuration}s` : `Working... (${logic.displayDuration}s)`}
+                    </span>
+                </div>
+                <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 20 20" 
+                    fill="currentColor" 
+                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isWorkflowCollapsed ? '' : 'rotate-180'}`}
+                >
+                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                </svg>
+            </button>
+            
+            <AnimatePresence initial={false}>
+                {!isWorkflowCollapsed && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    >
+                        <div className="p-4 border-t border-gray-200 dark:border-white/5 space-y-6">
+                            {agentPlan && (
+                                <div>
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 ml-1">Mission Plan</h4>
+                                    <FormattedBlock content={agentPlan} isStreaming={msg.isThinking && executionLog.length === 0} />
+                                </div>
+                            )}
+                            {executionLog.length > 0 && (
+                                <div>
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 ml-1">Execution Log</h4>
+                                    <ThinkingWorkflow
+                                        nodes={executionLog}
+                                        sendMessage={sendMessage}
+                                        onRegenerate={() => onRegenerate(id)}
+                                        messageId={id}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
       )}
       
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer) && (

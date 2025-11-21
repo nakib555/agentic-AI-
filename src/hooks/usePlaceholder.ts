@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -205,22 +206,23 @@ const AGENT_FALLBACK_PLACEHOLDERS = [
  * @param isEnabled - Whether the placeholder functionality should be active.
  * @param conversationContext - The text of the last message to provide context.
  * @param isAgentMode - Whether the app is in Agent mode, to tailor suggestions.
+ * @param hasApiKey - Whether an API key is configured.
  * @returns An array of strings for the TextType component [previous, current].
  */
-export const usePlaceholder = (isEnabled: boolean, conversationContext: string, isAgentMode: boolean) => {
+export const usePlaceholder = (isEnabled: boolean, conversationContext: string, isAgentMode: boolean, hasApiKey: boolean) => {
     const [placeholder, setPlaceholder] = useState<string[]>(['Ask anything, or drop a file']);
     const isFetching = useRef(false);
-    const contextRef = useRef({ conversationContext, isAgentMode });
+    const contextRef = useRef({ conversationContext, isAgentMode, hasApiKey });
 
     // Keep the ref updated with the latest values without causing re-renders
     useEffect(() => {
-        contextRef.current = { conversationContext, isAgentMode };
-    }, [conversationContext, isAgentMode]);
+        contextRef.current = { conversationContext, isAgentMode, hasApiKey };
+    }, [conversationContext, isAgentMode, hasApiKey]);
 
     const fetchNewPlaceholder = useCallback(async () => {
         if (isFetching.current) return;
 
-        const { conversationContext: currentContext, isAgentMode: currentAgentMode } = contextRef.current;
+        const { conversationContext: currentContext, isAgentMode: currentAgentMode, hasApiKey: currentHasApiKey } = contextRef.current;
 
         const setRandomFallback = () => {
             const fallbacks = currentAgentMode ? AGENT_FALLBACK_PLACEHOLDERS : CHAT_FALLBACK_PLACEHOLDERS;
@@ -233,6 +235,12 @@ export const usePlaceholder = (isEnabled: boolean, conversationContext: string, 
                 return [current, next];
             });
         };
+
+        // Guard: If no API key, use fallback immediately without hitting the API
+        if (!currentHasApiKey) {
+            setRandomFallback();
+            return;
+        }
 
         if (!currentContext.trim()) {
             setRandomFallback();
@@ -257,12 +265,12 @@ export const usePlaceholder = (isEnabled: boolean, conversationContext: string, 
                 setRandomFallback();
             }
         } catch (error) {
-            console.warn("AI placeholder fetch failed, using fallback:", error);
+            // Silent failure on placeholder generation
             setRandomFallback();
         } finally {
             isFetching.current = false;
         }
-    }, []); // No dependencies, safe because it uses a ref for context
+    }, []);
 
     useEffect(() => {
         if (isEnabled) {

@@ -19,7 +19,8 @@ export const useMessageForm = (
   isLoading: boolean,
   ref: React.ForwardedRef<MessageFormHandle>,
   messages: Message[],
-  isAgentMode: boolean
+  isAgentMode: boolean,
+  hasApiKey: boolean
 ) => {
   const [inputValue, setInputValue] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -43,7 +44,7 @@ export const useMessageForm = (
     return lastVisibleMessage.text || '';
   }, [messages]);
 
-  const placeholder = usePlaceholder(!inputValue.trim() && !isFocused, lastMessageText, isAgentMode);
+  const placeholder = usePlaceholder(!inputValue.trim() && !isFocused, lastMessageText, isAgentMode, hasApiKey);
 
   useEffect(() => {
     // Restore text draft from local storage on initial load

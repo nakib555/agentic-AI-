@@ -23,7 +23,7 @@ type ChatSettings = {
     videoModel: string;
 };
 
-export const useChat = (initialModel: string, settings: ChatSettings, memoryContent: string, isAgentMode: boolean) => {
+export const useChat = (initialModel: string, settings: ChatSettings, memoryContent: string, isAgentMode: boolean, apiKey: string) => {
     const chatHistoryHook = useChatHistory();
     const { chatHistory, currentChatId, updateChatTitle } = chatHistoryHook;
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -358,7 +358,8 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 requestIdRef.current = null;
                 
                 const finalChatState = chatHistoryRef.current.find(c => c.id === chatId);
-                if (finalChatState) {
+                // Guard: Only request suggestions if API key is configured
+                if (finalChatState && apiKey) {
                     const suggestions = await generateFollowUpSuggestions(finalChatState.messages);
                      if (suggestions.length > 0) {
                         chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
@@ -378,6 +379,9 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     useEffect(() => {
         const currentChat = chatHistory.find(c => c.id === currentChatId);
         if (currentChat && currentChat.messages && currentChat.title === "New Chat" && currentChat.messages.length >= 2 && !currentChat.isLoading) {
+          // Guard: Don't attempt title generation without API key
+          if (!apiKey) return;
+
           updateChatTitle(currentChatId!, "Generating title...");
           generateChatTitle(currentChat.messages)
             .then(newTitle => {
@@ -389,7 +393,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 updateChatTitle(currentChatId!, "Chat"); 
             });
         }
-    }, [chatHistory, currentChatId, updateChatTitle]);
+    }, [chatHistory, currentChatId, updateChatTitle, apiKey]);
   
   return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse, sendMessageForTest };
 };

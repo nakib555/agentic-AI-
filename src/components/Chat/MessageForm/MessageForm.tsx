@@ -29,8 +29,9 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   isAgentMode: boolean;
   setIsAgentMode: (isAgent: boolean) => void;
   messages: Message[];
-}>(({ onSubmit, isLoading, onCancel, isAppLoading, backendStatus, isAgentMode, setIsAgentMode, messages }, ref) => {
-  const logic = useMessageForm(onSubmit, isLoading, ref, messages, isAgentMode);
+  hasApiKey: boolean;
+}>(({ onSubmit, isLoading, onCancel, isAppLoading, backendStatus, isAgentMode, setIsAgentMode, messages, hasApiKey }, ref) => {
+  const logic = useMessageForm(onSubmit, isLoading, ref, messages, isAgentMode, hasApiKey);
   
   const isBackendOffline = backendStatus !== 'online';
   const isBackendChecking = backendStatus === 'checking';
@@ -43,7 +44,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
 
   // The button is disabled if the app isn't ready or there's nothing to send.
   // It is NOT disabled when generating, because it becomes a cancel button.
-  const isSendDisabled = isBackendOffline || isAppLoading || isProcessingFiles || logic.isEnhancing || !hasInput;
+  const isSendDisabled = isBackendOffline || isAppLoading || isProcessingFiles || logic.isEnhancing || !hasInput || !hasApiKey;
   
   const sendButtonClasses = "flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ease-in-out shadow-sm";
 
@@ -52,7 +53,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   if (isGeneratingResponse) {
     sendButtonStateClasses = 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-2 border-red-500/50 hover:border-red-50 hover:bg-red-50 dark:hover:bg-red-900/20 shadow-md'; // Stop state
   } else if (!isSendDisabled) {
-    sendButtonStateClasses = 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20 shadow-md transform hover:-translate-y-0.5'; // Active state
+    sendButtonStateClasses = 'bg-indigo-600 text-white hover:bg-indigo-50 shadow-indigo-500/20 shadow-md transform hover:-translate-y-0.5'; // Active state
   }
 
   return (
@@ -139,6 +140,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 onFocus={() => logic.setIsFocused(true)}
                 onBlur={() => logic.setIsFocused(false)}
                 aria-label="Chat input"
+                disabled={!hasApiKey}
                 className={`w-full py-3.5 bg-transparent text-gray-900 dark:text-slate-100 focus:outline-none relative z-10 resize-none overflow-hidden leading-relaxed ${logic.isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 style={{ minHeight: '56px', maxHeight: '200px' }}
                 rows={1}
@@ -163,7 +165,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         type="button" 
                         onClick={() => logic.setIsUploadMenuOpen(p => !p)} 
                         aria-label="Attach files" 
-                        disabled={logic.isEnhancing || isAppLoading || isBackendOffline} 
+                        disabled={logic.isEnhancing || isAppLoading || isBackendOffline || !hasApiKey} 
                         className="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         whileTap={{ scale: 0.9 }}
                     >
@@ -183,7 +185,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         exit={{ opacity: 0, scale: 0.8, width: 0 }} 
                         type="button" 
                         onClick={logic.handleMicClick} 
-                        disabled={isLoading || logic.isEnhancing || isAppLoading || isBackendOffline} 
+                        disabled={isLoading || logic.isEnhancing || isAppLoading || isBackendOffline || !hasApiKey} 
                         className={`w-9 h-9 rounded-full flex items-center justify-center transition-all disabled:opacity-50 ${logic.isRecording ? 'bg-red-50 text-red-500 dark:bg-red-500/20' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/10'}`}
                         whileTap={{ scale: 0.9 }}
                         title={logic.isRecording ? "Stop recording" : "Voice input"}
@@ -211,7 +213,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         exit={{ opacity: 0, scale: 0.8, width: 0 }} 
                         type="button" 
                         onClick={logic.handleEnhancePrompt} 
-                        disabled={logic.isEnhancing || isAppLoading || isBackendOffline} 
+                        disabled={logic.isEnhancing || isAppLoading || isBackendOffline || !hasApiKey} 
                         className="w-9 h-9 rounded-full flex items-center justify-center text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 transition-all disabled:opacity-50"
                         title="Enhance prompt with AI"
                         whileTap={{ scale: 0.9 }}
@@ -242,6 +244,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         isAppLoading ? "Initializing..." :
                         isProcessingFiles ? "Processing files..." :
                         isGeneratingResponse ? "Stop generating" :
+                        !hasApiKey ? "API key missing. Check Settings." :
                         "Send message"
                     }
                     className={`${sendButtonClasses} ${sendButtonStateClasses}`}

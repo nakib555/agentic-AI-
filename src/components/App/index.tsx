@@ -8,7 +8,6 @@ import React from 'react';
 import { Sidebar } from '../Sidebar/Sidebar';
 import { ChatHeader } from '../Chat/ChatHeader';
 import { ChatArea } from '../Chat/ChatArea';
-import { ThinkingSidebar } from '../Sidebar/ThinkingSidebar';
 import { SourcesSidebar } from '../AI/SourcesSidebar';
 import { useAppLogic } from './useAppLogic';
 import { AppModals } from './AppModals';
@@ -27,7 +26,7 @@ export const App = () => {
   const chatTitle = currentChat ? currentChat.title : null;
 
   return (
-    <div ref={logic.appContainerRef} className={`flex h-full bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isResizing || logic.isThinkingResizing ? 'pointer-events-none' : ''}`}>
+    <div ref={logic.appContainerRef} className={`flex h-full bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isResizing ? 'pointer-events-none' : ''}`}>
       {logic.versionMismatch && <VersionMismatchOverlay />}
       <Sidebar
         key={logic.isDesktop ? 'desktop' : 'mobile'}
@@ -74,7 +73,7 @@ export const App = () => {
               ttsVoice={logic.ttsVoice}
               isAutoPlayEnabled={logic.isAutoPlayEnabled}
               currentChatId={logic.currentChatId}
-              onShowThinkingProcess={logic.handleShowThinkingProcess}
+              onShowThinkingProcess={() => {}} // No-op as thinking is now inline
               onShowSources={logic.handleShowSources}
               approveExecution={logic.approveExecution}
               denyExecution={logic.denyExecution}
@@ -84,21 +83,10 @@ export const App = () => {
               setIsAgentMode={logic.setIsAgentMode}
               backendStatus={logic.backendStatus}
               backendError={logic.backendError}
+              hasApiKey={!!logic.apiKey}
            />
         </div>
       </main>
-
-      <ThinkingSidebar
-        isOpen={logic.isThinkingSidebarOpen}
-        onClose={logic.handleCloseThinkingSidebar}
-        message={logic.thinkingMessageForSidebar}
-        sendMessage={logic.sendMessage}
-        width={logic.thinkingSidebarWidth}
-        setWidth={logic.handleSetThinkingSidebarWidth}
-        isResizing={logic.isThinkingResizing}
-        setIsResizing={logic.setIsThinkingResizing}
-        onRegenerate={logic.regenerateResponse}
-      />
 
       <SourcesSidebar
         isOpen={logic.isSourcesSidebarOpen}

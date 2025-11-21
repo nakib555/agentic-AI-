@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -47,8 +48,6 @@ export const useAppLogic = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isThinkingSidebarOpen, setIsThinkingSidebarOpen] = useState(false);
-  const [thinkingMessageId, setThinkingMessageId] = useState<string | null>(null);
   const [isSourcesSidebarOpen, setIsSourcesSidebarOpen] = useState(false);
   const [sourcesForSidebar, setSourcesForSidebar] = useState<Source[]>([]);
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
@@ -115,7 +114,7 @@ export const useAppLogic = () => {
     
     // Set default image model
     if (newImageModels.length > 0 && (!imageModel || !newImageModels.some(m => m.id === imageModel))) {
-        const defaultImg = newImageModels.find(m => m.id.includes('imagen')) || newImageModels[0];
+        const defaultImg = newImageModels.find(m => m.id.includes('imagen') || m.id.includes('flash-image')) || newImageModels[0];
         setImageModel(defaultImg.id);
     } else if (newImageModels.length === 0) {
         setImageModel('');
@@ -287,7 +286,8 @@ export const useAppLogic = () => {
     videoModel,
   }), [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel]);
 
-  const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode);
+  // Pass apiKey to useChat
+  const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, apiKey);
   const { updateChatModel, updateChatSettings } = chat;
 
   const startNewChat = useCallback(async () => {
@@ -363,12 +363,6 @@ export const useAppLogic = () => {
   // --- Derived State & Memos ---
   const isChatActive = !!chat.currentChatId && chat.messages.length > 0;
   
-  const thinkingMessageForSidebar = useMemo((): Message | null => {
-    if (!thinkingMessageId || !chat.currentChatId) return null;
-    const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
-    return currentChat?.messages.find(m => m.id === thinkingMessageId) || null;
-  }, [thinkingMessageId, chat.currentChatId, chat.chatHistory]);
-
   const handleModelChange = useCallback((modelId: string) => {
     setActiveModel(modelId);
     if (chat.currentChatId) {
@@ -401,21 +395,9 @@ export const useAppLogic = () => {
     }
   }, [isDesktop, sidebar]);
 
-  const handleShowThinkingProcess = (messageId: string) => {
-    setThinkingMessageId(messageId);
-    setIsThinkingSidebarOpen(true);
-    if (isSourcesSidebarOpen) setIsSourcesSidebarOpen(false);
-  };
-  
-  const handleCloseThinkingSidebar = () => {
-    setIsThinkingSidebarOpen(false);
-    setThinkingMessageId(null);
-  };
-
   const handleShowSources = (sources: Source[]) => {
     setSourcesForSidebar(sources);
     setIsSourcesSidebarOpen(true);
-    if (isThinkingSidebarOpen) setIsThinkingSidebarOpen(false);
   };
 
   const handleCloseSourcesSidebar = () => {
@@ -565,7 +547,6 @@ export const useAppLogic = () => {
     appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, ...memory,
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
     isImportModalOpen, setIsImportModalOpen,
-    isThinkingSidebarOpen, setIsThinkingSidebarOpen, thinkingMessageId, setThinkingMessageId,
     isSourcesSidebarOpen, sourcesForSidebar,
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading,
     versionMismatch,
@@ -597,11 +578,11 @@ export const useAppLogic = () => {
     isMemoryEnabled,
     setIsMemoryEnabled: handleSetIsMemoryEnabled,
     setIsAgentMode: handleSetIsAgentMode,
-    ...chat, isChatActive, thinkingMessageForSidebar,
+    ...chat, isChatActive,
     sendMessage: wrappedSendMessage, // Use the wrapped version
     startNewChat, isNewChatDisabled,
     handleDeleteChatRequest, handleRequestClearAll,
-    handleToggleSidebar, handleShowThinkingProcess, handleCloseThinkingSidebar,
+    handleToggleSidebar, 
     handleShowSources, handleCloseSourcesSidebar,
     handleExportChat, handleShareChat, handleImportChat, runDiagnosticTests,
     handleFileUploadForImport,

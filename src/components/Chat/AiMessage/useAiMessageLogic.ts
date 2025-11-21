@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -10,6 +11,7 @@ import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import type { Message, ModelResponse, Source } from '../../../types';
 import { parseMessageText } from '../../../utils/messageParser';
 import { useTts } from '../../../hooks/useTts';
+import { parseAgenticWorkflow } from '../../../services/workflowParser';
 
 export const useAiMessageLogic = (
     msg: Message,
@@ -69,7 +71,20 @@ export const useAiMessageLogic = (
     }, [activeResponse?.toolCallEvents, activeResponse?.groundingMetadata]);
 
     const thinkingIsComplete = !isThinking || !!activeResponse?.error;
-    const hasThinkingProcess = thinkingText && thinkingText.trim() !== '';
+    
+    // Parse Agentic Workflow for inline display
+    const { plan: agentPlan, executionLog } = useMemo(() => {
+        return parseAgenticWorkflow(
+            thinkingText,
+            activeResponse?.toolCallEvents || [],
+            thinkingIsComplete,
+            activeResponse?.error
+        );
+    }, [thinkingText, activeResponse?.toolCallEvents, thinkingIsComplete, activeResponse?.error]);
+
+    // We now consider "having thinking process" true if we have a plan OR execution steps
+    const hasThinkingProcess = !!agentPlan || executionLog.length > 0;
+    
     const hasFinalAnswer = finalAnswerText && finalAnswerText.trim() !== '';
     const duration = activeResponse?.startTime && activeResponse?.endTime ? (activeResponse.endTime - activeResponse.startTime) / 1000 : null;
     const autoPlayTriggered = useRef(false);
@@ -92,7 +107,8 @@ export const useAiMessageLogic = (
 
     const isInitialWait = !!isThinking && !hasThinkingProcess && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
     const isStreamingFinalAnswer = !!isThinking && hasFinalAnswer && !activeResponse?.error;
-    const isWaitingForFinalAnswer = !!isThinking && hasThinkingProcess && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
+    // We adjust waiting logic: if we have thinking process, we are NOT just waiting, we are showing the process.
+    const isWaitingForFinalAnswer = !!isThinking && !hasThinkingProcess && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
     const showApprovalUI = executionState === 'pending_approval' && activeResponse?.plan;
 
     const handleRunCode = useCallback((language: string, code: string) => {
@@ -104,5 +120,6 @@ export const useAiMessageLogic = (
         activeResponse, thinkingText, finalAnswerText, playOrStopAudio, audioState, isPlaying, searchSources,
         thinkingIsComplete, hasThinkingProcess, hasFinalAnswer, displayDuration, isInitialWait,
         isStreamingFinalAnswer, isWaitingForFinalAnswer, showApprovalUI, handleRunCode,
+        agentPlan, executionLog // Export parsed workflow data
     };
 };
