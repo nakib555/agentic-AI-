@@ -1,8 +1,4 @@
 
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { GoogleGenAI } from "@google/genai";

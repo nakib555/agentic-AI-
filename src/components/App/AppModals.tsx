@@ -1,4 +1,6 @@
 
+
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,7 +10,7 @@ import React from 'react';
 import { SettingsModal } from '../Settings/SettingsModal';
 import { MemoryModal } from '../Settings/MemoryModal';
 import { MemoryConfirmationModal } from '../Settings/MemoryConfirmationModal';
-import type { Model } from '../../services/modelService';
+import type { Model } from '../../types';
 import { ImportChatModal } from '../Settings/ImportChatModal';
 import { ConfirmationModal } from '../UI/ConfirmationModal';
 import type { MemoryFile } from '../../hooks/useMemory';
