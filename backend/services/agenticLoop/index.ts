@@ -1,10 +1,11 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { GoogleGenAI, Part, FunctionCall, FinishReason, Content } from "@google/genai";
-import { StateGraph, START, END, Annotation } from "@langchain/langgraph";
+import { StateGraph, START, END, Annotation, MemorySaver } from "@langchain/langgraph";
 import { parseApiError } from "../../utils/apiError.js";
 import { ToolCallEvent } from "./types.js";
 import { getText, generateContentStreamWithRetry } from "../../utils/geminiUtils.js";
@@ -29,6 +30,7 @@ type RunAgenticLoopParams = {
     callbacks: Callbacks;
     settings: any;
     signal: AbortSignal;
+    threadId: string;
 };
 
 // Define the graph state annotation with reducers
@@ -78,9 +80,9 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 // --- Main Loop Function ---
 
 export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void> => {
-    const { ai, model, history, toolExecutor, callbacks, settings, signal } = params;
+    const { ai, model, history, toolExecutor, callbacks, settings, signal, threadId } = params;
     
-    console.log('[AGENT_LOOP] Initializing LangGraph Workflow');
+    console.log(`[AGENT_LOOP] Initializing LangGraph Workflow for Thread ID: ${threadId}`);
 
     // --- Node: Agent (Model Generation) ---
     const agentNode = async (state: typeof AgentStateAnnotation.State) => {
@@ -152,8 +154,18 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 toolCalls.forEach(fc => newContentParts.push({ functionCall: fc }));
             }
 
+            const historyUpdate: Content[] = [{ role: 'model', parts: newContentParts }];
+
+            // If we just finished a plan approval sequence, inject a "Proceed" message to trigger the next turn
+            if (hasSentPlan) {
+                 historyUpdate.push({ 
+                     role: 'user', 
+                     parts: [{ text: "The plan is approved. Proceed with the execution." }] 
+                 });
+            }
+
             return {
-                history: [{ role: 'model', parts: newContentParts }],
+                history: historyUpdate,
                 groundingMetadata,
                 toolCalls,
             };
@@ -218,6 +230,9 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
     // --- Graph Definition ---
 
+    // Initialize In-Memory Checkpointer for this session
+    const checkpointer = new MemorySaver();
+
     const workflow = new StateGraph(AgentStateAnnotation)
         .addNode("agent", agentNode)
         .addNode("tools", toolsNode)
@@ -225,18 +240,31 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         .addConditionalEdges(
             "agent",
             (state) => {
-                return state.toolCalls && state.toolCalls.length > 0 ? "tools" : END;
+                // If there are tool calls, go to tools
+                if (state.toolCalls && state.toolCalls.length > 0) return "tools";
+                
+                // If the last message in history is a USER message (our injected "Proceed"),
+                // loop back to agent to let it start executing the plan.
+                const lastMsg = state.history[state.history.length - 1];
+                if (lastMsg.role === 'user') {
+                    return "agent";
+                }
+                
+                return END;
             }
         )
         .addEdge("tools", "agent");
 
-    const app = workflow.compile();
+    const app = workflow.compile({ checkpointer });
 
     // --- Execution ---
 
     try {
         console.log('[AGENT_LOOP] Starting Graph Invocation');
-        const finalState = await app.invoke({ history });
+        const finalState = await app.invoke(
+            { history },
+            { configurable: { thread_id: threadId } }
+        );
 
         const lastMsg = finalState.history[finalState.history.length - 1];
         const finalText = lastMsg.parts?.find(p => p.text)?.text || "";

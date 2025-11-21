@@ -47,6 +47,19 @@ export const duckduckgoSearchDeclaration: FunctionDeclaration = {
     },
 };
 
+export const browserDeclaration: FunctionDeclaration = {
+    name: 'browser',
+    description: 'A headless web browser that can visit websites to read their full content or take screenshots. Use this when you need detailed information from a specific URL found via search, or to visually verify a webpage.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        url: { type: Type.STRING, description: 'The specific URL to visit.' },
+        action: { type: Type.STRING, description: 'The action to perform. "read" extracts the text content. "screenshot" returns an image of the page. Defaults to "read".', enum: ['read', 'screenshot'] }
+      },
+      required: ['url'],
+    },
+};
+
 export const imageGeneratorDeclaration: FunctionDeclaration = {
     name: 'generateImage',
     description: 'Generates one or more images based on a textual description. Use for creating static visual content like photos, illustrations, and graphics.',
@@ -194,6 +207,7 @@ export const writeFileDeclaration: FunctionDeclaration = {
 // Export all tool declarations for the model in a single array
 export const toolDeclarations = [
     duckduckgoSearchDeclaration,
+    browserDeclaration, // Added
     getCurrentLocationDeclaration,
     imageGeneratorDeclaration,
     videoGeneratorDeclaration,

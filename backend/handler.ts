@@ -153,6 +153,7 @@ export const apiHandler = async (req: any, res: any) => {
                     },
                     settings: finalSettings,
                     signal: abortController.signal,
+                    threadId: requestId, // Pass unique thread ID for Checkpointer
                 });
 
                 console.log(`[HANDLER] Agentic loop completed for ${requestId}.`); // LOG

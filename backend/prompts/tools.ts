@@ -92,28 +92,40 @@ calculator(expression: "sqrt(144) + 5^2") → "37"
 
 ---
 
-## 🌐 Information Retrieval & Location Services
+## 🌐 Information Retrieval, Browsing & Location Services
 
 ### \`duckduckgoSearch(query: string)\`
 
-**Purpose:** Performs web searches and URL summarization
+**Purpose:** Performs web searches to find URLs and brief summaries.
 
 **Output Structure:**
 - Text summary of search results
 - List of source URIs for reference
 
-**Critical Requirement:** You **MUST** synthesize the search summary into your own comprehensive narrative. Do not simply repeat the tool's output verbatim. Integrate findings naturally into your response while citing sources appropriately.
-
 **Use Cases:**
-- Current events and breaking news
-- Fact verification and research
-- Understanding web content from URLs
-- Gathering context for creative projects
+- Finding WHERE information lives (URLs)
+- Getting quick answers to factual questions
+- Identifying credible sources
 
-**Best Practices:**
-- Use specific, targeted queries
-- Cross-reference multiple sources when accuracy is critical
-- Save important findings to files using \`writeFile()\` for complex research
+### \`browser(url: string, action?: 'read' | 'screenshot')\`
+
+**Purpose:** Acts as your deep research operator. Visits specific URLs found via search to read their full content.
+
+**Modes:**
+- **read:** Extracts the main text content of the page. Use this to read articles, documentation, or reports.
+- **screenshot:** Takes a visual snapshot of the page. Use this to understand layout, design, or when text extraction fails.
+
+**Deep Research Workflow (The "Operator" Pattern):**
+1. **Search:** Use \`duckduckgoSearch\` to find relevant URLs.
+2. **Select:** Pick the most promising URLs.
+3. **Browse:** Use \`browser(url: "...", action: "read")\` to visit them and get the *full* content.
+4. **Synthesize:** Combine the deep knowledge from the browser with your internal knowledge.
+
+**Example:**
+\`\`\`
+1. duckduckgoSearch("latest spacex launch results") -> Finds "spacex.com/launches/..."
+2. browser(url: "spacex.com/launches/...", action: "read") -> Returns full mission report
+\`\`\`
 
 ### Location Services
 
@@ -384,10 +396,11 @@ plt.show()
 
 ### Complex Research Workflow
 1. Use \`duckduckgoSearch()\` to gather information
-2. Use \`writeFile()\` to save findings to organized notes
-3. Use \`executeCode()\` to analyze or visualize data
-4. Validate visualizations with screenshot and analysis tools
-5. Use \`displayFile()\` to present final outputs
+2. Use \`browser()\` to visit key URLs and read detailed content
+3. Use \`writeFile()\` to save findings to organized notes
+4. Use \`executeCode()\` to analyze or visualize data
+5. Validate visualizations with screenshot and analysis tools
+6. Use \`displayFile()\` to present final outputs
 
 ### Iterative Image Creation
 1. Generate image with detailed prompt
@@ -404,7 +417,7 @@ plt.show()
 6. Present validated visualization
 
 ### Multi-Step Content Creation
-1. Research topic using search tools
+1. Research topic using search tools and browser
 2. Save research notes with \`writeFile()\`
 3. Generate supporting images
 4. Create code-based visualizations
@@ -428,7 +441,7 @@ plt.show()
 
 ### Chaining Tools for Complex Tasks
 Combine multiple tools to accomplish sophisticated workflows:
-- Search → Write notes → Execute code → Generate visualization → Display
+- Search → Browser → Write notes → Execute code → Generate visualization → Display
 - Get location → Display map → Analyze map → Search nearby → Present findings
 - Generate image → Analyze → Refine → Generate again → Display final
 
@@ -449,4 +462,3 @@ Combine multiple tools to accomplish sophisticated workflows:
 ---
 
 *This comprehensive toolkit empowers you to create, validate, and deliver high-quality content across multiple modalities while maintaining rigorous quality standards throughout the workflow.*
-`;
