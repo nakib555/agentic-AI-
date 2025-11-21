@@ -109,7 +109,7 @@ calculator(expression: "sqrt(144) + 5^2") → "37"
 
 ### \`browser(url: string, action?: 'read' | 'screenshot')\`
 
-**Purpose:** Acts as your deep research operator. Visits specific URLs found via search to read their full content.
+**Purpose:** Acts as your deep research operator. Visits specific URLs found via search to read their full content or see the page.
 
 **Modes:**
 - **read:** Extracts the main text content of the page. Use this to read articles, documentation, or reports.

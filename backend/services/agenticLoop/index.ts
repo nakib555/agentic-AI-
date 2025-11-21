@@ -22,11 +22,12 @@ type Callbacks = {
     onError: (error: any) => void;
 };
 
+// Updated type definition to include ID in toolExecutor
 type RunAgenticLoopParams = {
     ai: GoogleGenAI;
     model: string;
     history: Content[];
-    toolExecutor: (name: string, args: any) => Promise<string>;
+    toolExecutor: (name: string, args: any, id: string) => Promise<string>;
     callbacks: Callbacks;
     settings: any;
     signal: AbortSignal;
@@ -200,7 +201,8 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             toolCalls.map(async (call: FunctionCall) => {
                 const event = newToolCallEvents.find(e => e.call === call)!;
                 try {
-                    const result = await toolExecutor(call.name, call.args);
+                    // Pass event.id to the tool executor for targeting live updates
+                    const result = await toolExecutor(call.name, call.args, event.id);
                     callbacks.onToolResult(event.id, result);
                     return {
                         functionResponse: {
@@ -263,7 +265,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         console.log('[AGENT_LOOP] Starting Graph Invocation');
         const finalState = await app.invoke(
             { history },
-            { configurable: { thread_id: threadId } }
+            { configurable: { thread_id: threadId } } as any
         );
 
         const lastMsg = finalState.history[finalState.history.length - 1];

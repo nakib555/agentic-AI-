@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -26,6 +25,7 @@ import { FlowToken } from '../../AI/FlowToken';
 import { cleanTextForTts } from './utils';
 import { ThinkingWorkflow } from '../../AI/ThinkingWorkflow';
 import { FormattedBlock } from '../../Markdown/FormattedBlock';
+import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 
 // Optimized spring physics for performance
 const animationProps = {
@@ -78,7 +78,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const showFinalContent = thinkingIsComplete || animationComplete;
 
   const renderProgressiveAnswer = useCallback((txt: string) => {
-    const componentRegex = /(\[(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT)\].*?\[\/(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT)\])/s;
+    const componentRegex = /(\[(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\].*?\[\/(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\])/s;
     const parts = txt.split(componentRegex).filter(part => part);
 
     return parts.map((part, index) => {
@@ -115,11 +115,14 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
             const fileAttachmentMatch = part.match(/\[FILE_ATTACHMENT_COMPONENT\](\{.*?\})\[\/FILE_ATTACHMENT_COMPONENT\]/s);
             if (fileAttachmentMatch) return <FileAttachment key={key} {...JSON.parse(fileAttachmentMatch[1])} />;
 
+            const browserMatch = part.match(/\[BROWSER_COMPONENT\](\{.*?\})\[\/BROWSER_COMPONENT\]/s);
+            if (browserMatch) return <BrowserSessionDisplay key={key} {...JSON.parse(browserMatch[1])} />;
+
         } catch (e: any) {
             return renderError('component', e.message);
         }
         
-        const incompleteTagRegex = /\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT)\].*$/s;
+        const incompleteTagRegex = /\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\].*$/s;
         const cleanedPart = part.replace(incompleteTagRegex, '');
 
         if (cleanedPart) {

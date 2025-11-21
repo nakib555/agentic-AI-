@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useCallback, useRef, useEffect } from 'react';
-import { type Message, type ChatSession, ModelResponse } from '../../types';
+import { type Message, type ChatSession, ModelResponse, BrowserSession } from '../../types';
 import { fileToBase64 } from '../../utils/fileUtils';
 import { useChatHistory } from '../useChatHistory';
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
@@ -163,7 +163,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 try {
                     const event = JSON.parse(line);
                     if (event.type !== 'ping') { // Don't log pings to avoid clutter
-                        console.log('[FRONTEND] Received stream event:', event); // LOG
+                        // console.log('[FRONTEND] Received stream event:', event); // LOG - commented out to reduce noise from tool updates
                     }
                     switch (event.type) {
                         case 'start':
@@ -173,7 +173,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                             }
                             break;
                         case 'ping':
-                            // This is a heartbeat to keep the connection alive. Do nothing.
                             break;
                         case 'text-chunk':
                             chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text: event.payload }));
@@ -185,6 +184,26 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                                 startTime: Date.now() 
                             }));
                             chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({ toolCallEvents: [...(r.toolCallEvents || []), ...newToolCallEvents] }));
+                            break;
+                        case 'tool-update':
+                            // Handle real-time tool updates (browser logs, etc.)
+                            chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({
+                                toolCallEvents: r.toolCallEvents?.map(tc => {
+                                    if (tc.id === event.payload.id) {
+                                        const session = (tc.browserSession || { url: event.payload.url || '', logs: [], status: 'running' }) as BrowserSession;
+                                        
+                                        // Merge updates
+                                        if (event.payload.log) session.logs = [...session.logs, event.payload.log];
+                                        if (event.payload.screenshot) session.screenshot = event.payload.screenshot;
+                                        if (event.payload.title) session.title = event.payload.title;
+                                        if (event.payload.url) session.url = event.payload.url;
+                                        if (event.payload.status) session.status = event.payload.status;
+
+                                        return { ...tc, browserSession: { ...session } }; // Create new object reference
+                                    }
+                                    return tc;
+                                })
+                            }));
                             break;
                         case 'tool-call-end':
                              chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({

@@ -122,7 +122,21 @@ export const apiHandler = async (req: any, res: any) => {
                     });
                 };
                 
-                const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, apiKey!, chatId, requestFrontendExecution);
+                // New callback for real-time tool updates (e.g. browser logs, screenshots)
+                const onToolUpdate = (callId: string, data: any) => {
+                    writeEvent(res, 'tool-update', { id: callId, ...data });
+                };
+                
+                const toolExecutor = createToolExecutor(
+                    ai, 
+                    settings.imageModel, 
+                    settings.videoModel, 
+                    apiKey!, 
+                    chatId, 
+                    requestFrontendExecution, 
+                    false, 
+                    onToolUpdate // Pass the update callback
+                );
 
                 const finalSettings = {
                     ...settings,
@@ -290,7 +304,9 @@ export const apiHandler = async (req: any, res: any) => {
                     async () => ({error: 'Frontend execution not supported in this context'}), 
                     true // skipFrontendCheck
                 );
-                const result = await toolExecutor(toolName, toolArgs);
+                // Manually pass a dummy ID if needed, though for direct tool_exec it might not matter
+                // as long as the tool doesn't try to stream updates to a non-existent stream.
+                const result = await toolExecutor(toolName, toolArgs, 'manual-exec');
                 res.status(200).json({ result });
                 break;
             }

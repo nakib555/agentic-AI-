@@ -49,7 +49,7 @@ export const duckduckgoSearchDeclaration: FunctionDeclaration = {
 
 export const browserDeclaration: FunctionDeclaration = {
     name: 'browser',
-    description: 'A headless web browser that can visit websites to read their full content or take screenshots. Use this when you need detailed information from a specific URL found via search, or to visually verify a webpage.',
+    description: 'A headless web browser that can visit websites to read their full content or take screenshots. Use this when you need detailed information from a specific URL found via search, or to visually verify a webpage. This enables deep research capabilities.',
     parameters: {
       type: Type.OBJECT,
       properties: {

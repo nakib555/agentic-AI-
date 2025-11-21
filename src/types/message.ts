@@ -6,12 +6,21 @@ import type { FunctionCall } from '@google/genai';
 import type { MessageError } from './error';
 import type { ParsedWorkflow } from './workflow';
 
+export type BrowserSession = {
+    url: string;
+    title?: string;
+    screenshot?: string; // base64
+    logs: string[];
+    status: 'running' | 'completed' | 'failed';
+};
+
 export type ToolCallEvent = {
     id: string;
     call: FunctionCall;
     result?: string;
     startTime?: number;
     endTime?: number;
+    browserSession?: BrowserSession; // Live browser state
 };
 
 export type Attachment = {

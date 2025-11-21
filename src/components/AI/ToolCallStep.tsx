@@ -18,6 +18,7 @@ import { ErrorDisplay } from '../UI/ErrorDisplay';
 import { CodeExecutionResult } from './CodeExecutionResult';
 import { CodeBlock } from '../Markdown/CodeBlock';
 import { VeoApiKeyRequest } from './VeoApiKeyRequest';
+import { BrowserSessionDisplay } from './BrowserSessionDisplay';
 
 const LoadingDots = () => (
     <div className="flex gap-1 items-center">
@@ -46,6 +47,39 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
             return <ImageDisplay {...imageData} />;
         } catch (e) {
             return <ErrorDisplay error={{ message: 'Failed to render image component.', details: `Invalid JSON: ${e}` }} />;
+        }
+    }
+
+    const browserMatch = result.match(/\[BROWSER_COMPONENT\](\{.*?\})\[\/BROWSER_COMPONENT\]/s);
+    if (browserMatch && browserMatch[1]) {
+        try {
+            const browserData = JSON.parse(browserMatch[1]);
+            // Render the browser UI and potentially the text content below it if it's mixed
+            const restOfContent = result.replace(browserMatch[0], '').trim();
+            return (
+                <div className="w-full">
+                    <BrowserSessionDisplay {...browserData} />
+                    {restOfContent && (
+                         <motion.div
+                            className="overflow-hidden text-sm workflow-markdown mt-4 p-3 bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg"
+                            animate={{ height: 'auto' }}
+                        >
+                            <ManualCodeRenderer text={restOfContent.length > RESULT_TRUNCATE_LENGTH && !isExpanded ? `${restOfContent.substring(0, RESULT_TRUNCATE_LENGTH)}...` : restOfContent} components={WorkflowMarkdownComponents} isStreaming={false} />
+                             {restOfContent.length > RESULT_TRUNCATE_LENGTH && (
+                                <button
+                                    onClick={() => setIsExpanded(!isExpanded)}
+                                    className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 mt-2"
+                                    aria-expanded={isExpanded}
+                                >
+                                    {isExpanded ? 'Show Less' : 'Show More'}
+                                </button>
+                            )}
+                        </motion.div>
+                    )}
+                </div>
+            );
+        } catch (e) {
+            return <ErrorDisplay error={{ message: 'Failed to render browser component.', details: `Invalid JSON: ${e}` }} />;
         }
     }
 
@@ -132,7 +166,7 @@ type ToolCallStepProps = {
 };
 
 export const ToolCallStep = ({ event, sendMessage, onRegenerate, messageId }: ToolCallStepProps) => {
-    const { call, result } = event;
+    const { call, result, browserSession } = event;
     const { args } = call;
 
     const handleRegenerate = () => {
@@ -145,6 +179,26 @@ export const ToolCallStep = ({ event, sendMessage, onRegenerate, messageId }: To
     if (call.name === 'displayMap') {
         const { latitude, longitude, zoom, markerText } = args as { latitude: number, longitude: number, zoom?: number, markerText?: string };
         return <MapDisplay latitude={latitude} longitude={longitude} zoom={zoom ?? 13} markerText={markerText} />;
+    }
+    
+    // Special rendering for live browser session
+    if (call.name === 'browser' && browserSession) {
+        return (
+            <div className="w-full">
+               <BrowserSessionDisplay 
+                   url={browserSession.url}
+                   title={browserSession.title || 'Loading...'}
+                   screenshot={browserSession.screenshot || ''}
+                   logs={browserSession.logs}
+               />
+               {/* If completed and there is result text, show it too */}
+               {result && !result.startsWith('[BROWSER_COMPONENT]') && (
+                   <div className="mt-4">
+                       <ToolResultDisplay result={result} sendMessage={sendMessage} onRegenerate={handleRegenerate} />
+                   </div>
+               )}
+            </div>
+        );
     }
     
     // Special full-width rendering for code execution

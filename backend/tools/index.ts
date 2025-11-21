@@ -16,10 +16,13 @@ import { executeBrowser } from "./browser.js";
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-const BACKEND_TOOL_IMPLEMENTATIONS: Record<string, (ai: GoogleGenAI, args: any, apiKey: string, chatId: string) => Promise<string>> = {
+// We define a custom type for the tool executor to handle the optional onUpdate callback
+type ToolImplementation = (ai: GoogleGenAI, args: any, apiKey: string, chatId: string, onUpdate?: (data: any) => void) => Promise<string>;
+
+const BACKEND_TOOL_IMPLEMENTATIONS: Record<string, ToolImplementation> = {
     'generateImage': (ai, args, apiKey, chatId) => executeImageGenerator(ai, args, chatId),
     'duckduckgoSearch': (ai, args) => executeWebSearch(ai, args),
-    'browser': (ai, args) => executeBrowser(args), // Added
+    'browser': (ai, args, apiKey, chatId, onUpdate) => executeBrowser(args, onUpdate), // Pass onUpdate
     'analyzeMapVisually': (ai, args) => executeAnalyzeMapVisually(ai, args),
     'analyzeImageVisually': (ai, args, apiKey, chatId) => executeAnalyzeImageVisually(ai, args, chatId),
     'executeCode': (ai, args, apiKey, chatId) => executeCode(args, chatId),
@@ -36,7 +39,7 @@ const FRONTEND_TOOLS = new Set([
     'getCurrentLocation',
     'requestLocationPermission',
     'captureCodeOutputScreenshot',
-    'generateVideo', // Corrected from 'videoGenerator' to match declaration name
+    'generateVideo',
 ]);
 
 export const createToolExecutor = (
@@ -46,14 +49,16 @@ export const createToolExecutor = (
     apiKey: string,
     chatId: string,
     requestFrontendExecution: (callId: string, toolName: string, toolArgs: any) => Promise<string | { error: string }>,
-    skipFrontendCheck: boolean = false // NEW: Allow bypassing frontend check for internal calls
+    skipFrontendCheck: boolean = false,
+    onToolUpdate?: (id: string, data: any) => void // New callback
 ) => {
-    return async (name: string, args: any): Promise<string> => {
-        console.log(`[TOOL_EXECUTOR] Received request to execute tool: "${name}"`, { args, chatId, skipFrontendCheck });
+    // The returned function now accepts an ID
+    return async (name: string, args: any, id: string): Promise<string> => {
+        console.log(`[TOOL_EXECUTOR] Received request to execute tool: "${name}"`, { args, chatId, id });
         
-        // Only delegate to frontend if we are NOT skipping the check
         if (!skipFrontendCheck && FRONTEND_TOOLS.has(name)) {
-            const callId = `${name}-${generateId()}`;
+            // Use the provided ID if available, otherwise generate one
+            const callId = id || `${name}-${generateId()}`;
             const result = await requestFrontendExecution(callId, name, args);
             if (typeof result === 'object' && result.error) {
                 throw new ToolError(name, 'FRONTEND_EXECUTION_FAILED', result.error);
@@ -69,13 +74,15 @@ export const createToolExecutor = (
 
         try {
             let finalArgs = { ...args };
-            // Only overwrite model if a specific configuration is provided.
-            // This prevents overwriting a valid model from args with an empty string.
             if (name === 'generateImage' && imageModel) finalArgs.model = imageModel;
             if (name === 'generateVideo' && videoModel) finalArgs.model = videoModel;
 
             console.log(`[TOOL_EXECUTOR] Executing backend tool "${name}"...`);
-            const result = await toolImplementation(ai, finalArgs, apiKey, chatId);
+            
+            // Pass a wrapped update function that binds the ID
+            const boundUpdate = onToolUpdate ? (data: any) => onToolUpdate(id, data) : undefined;
+            
+            const result = await toolImplementation(ai, finalArgs, apiKey, chatId, boundUpdate);
             console.log(`[TOOL_EXECUTOR] Backend tool "${name}" finished successfully.`);
             return result;
         } catch (err) {
