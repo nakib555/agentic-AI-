@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -43,12 +44,14 @@ export const createToolExecutor = (
     videoModel: string,
     apiKey: string,
     chatId: string,
-    requestFrontendExecution: (callId: string, toolName: string, toolArgs: any) => Promise<string | { error: string }>
+    requestFrontendExecution: (callId: string, toolName: string, toolArgs: any) => Promise<string | { error: string }>,
+    skipFrontendCheck: boolean = false // NEW: Allow bypassing frontend check for internal calls
 ) => {
     return async (name: string, args: any): Promise<string> => {
-        console.log(`[TOOL_EXECUTOR] Received request to execute tool: "${name}"`, { args, chatId });
+        console.log(`[TOOL_EXECUTOR] Received request to execute tool: "${name}"`, { args, chatId, skipFrontendCheck });
         
-        if (FRONTEND_TOOLS.has(name)) {
+        // Only delegate to frontend if we are NOT skipping the check
+        if (!skipFrontendCheck && FRONTEND_TOOLS.has(name)) {
             const callId = `${name}-${generateId()}`;
             const result = await requestFrontendExecution(callId, name, args);
             if (typeof result === 'object' && result.error) {
@@ -65,8 +68,10 @@ export const createToolExecutor = (
 
         try {
             let finalArgs = { ...args };
-            if (name === 'generateImage') finalArgs.model = imageModel;
-            if (name === 'generateVideo') finalArgs.model = videoModel;
+            // Only overwrite model if a specific configuration is provided.
+            // This prevents overwriting a valid model from args with an empty string.
+            if (name === 'generateImage' && imageModel) finalArgs.model = imageModel;
+            if (name === 'generateVideo' && videoModel) finalArgs.model = videoModel;
 
             console.log(`[TOOL_EXECUTOR] Executing backend tool "${name}"...`);
             const result = await toolImplementation(ai, finalArgs, apiKey, chatId);

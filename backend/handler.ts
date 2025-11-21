@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -277,7 +278,17 @@ export const apiHandler = async (req: any, res: any) => {
             case 'tool_exec': {
                  if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { toolName, toolArgs, chatId } = req.body;
-                const toolExecutor = createToolExecutor(ai, '', '', apiKey!, chatId, async () => ({error: 'Frontend execution not supported in this context'}));
+                // Pass empty strings for optional models, and TRUE for skipFrontendCheck
+                // This forces the backend implementation to run, breaking the frontend delegation loop
+                const toolExecutor = createToolExecutor(
+                    ai, 
+                    '', 
+                    '', 
+                    apiKey!, 
+                    chatId, 
+                    async () => ({error: 'Frontend execution not supported in this context'}), 
+                    true // skipFrontendCheck
+                );
                 const result = await toolExecutor(toolName, toolArgs);
                 res.status(200).json({ result });
                 break;
