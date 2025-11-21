@@ -73,7 +73,17 @@ try {
   // Exclude sw.js from bulk copy, handle it specifically below
   await copyFiles('{manifest.json,favicon.svg,_headers,_redirects}', 'dist');
 
-  // 5. Process and Copy Service Worker
+  // 5. Compile Tailwind CSS
+  console.log('Compiling Tailwind CSS...');
+  try {
+    execSync('npx tailwindcss -i ./src/styles/main.css -o ./dist/styles/main.css --minify', { stdio: 'inherit' });
+    console.log('Tailwind CSS compiled successfully.');
+  } catch (err) {
+    console.error('Tailwind CSS compilation failed:', err);
+    process.exit(1);
+  }
+
+  // 6. Process and Copy Service Worker
   console.log('Processing Service Worker...');
   let swContent = await readFile('sw.js', 'utf-8');
   swContent = swContent.replace('{{VERSION}}', version);

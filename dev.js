@@ -1,4 +1,3 @@
-
 import esbuild from 'esbuild';
 import { spawn } from 'child_process';
 import cpx from 'cpx';
@@ -69,6 +68,17 @@ copyAndWatch('index.html', 'dist');
 copyAndWatch('src/styles/**', 'dist/styles');
 copyAndWatch('{manifest.json,sw.js,favicon.svg}', 'dist');
 console.log('Static assets are being watched.');
+
+// --- Start Tailwind CSS Watcher ---
+console.log('Starting Tailwind CSS watcher...');
+const tailwindProcess = spawn('npx', ['tailwindcss', '-i', './src/styles/main.css', '-o', './dist/styles/main.css', '--watch'], {
+    stdio: 'inherit',
+    shell: true
+});
+
+tailwindProcess.on('error', (err) => {
+    console.error('\x1b[31m[Tailwind Error]\x1b[0m Failed to start Tailwind watcher:', err);
+});
 
 // --- Serve & Watch Frontend ---
 try {
