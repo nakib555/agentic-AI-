@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -59,12 +58,14 @@ const readSettings = async () => {
         }
     }
 
-    // Fallback: Check Environment Variables for API Key
-    if (!settings.apiKey) {
-        settings.apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
+    // 2. Environment Variable Override
+    // If the stored key is empty/missing, ALWAYS prefer the environment variable.
+    const envKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+    if (envKey && (!settings.apiKey || settings.apiKey.trim() === '')) {
+        settings.apiKey = envKey;
     }
 
-    // 2. Read Prompts from Text Files (These override JSON if present)
+    // 3. Read Prompts from Text Files (These override JSON if present)
     try {
         const aboutUser = await fs.readFile(ABOUT_USER_FILE, 'utf-8');
         settings.aboutUser = aboutUser;
@@ -111,17 +112,14 @@ export const updateSettings = async (req: any, res: any) => {
         }
 
         // If an API key is being provided, verify it.
-        // We verify whenever apiKey is present to ensure models are fetched and the key is valid.
         if (req.body.apiKey) {
             try {
-                // Trim the API key to prevent issues with whitespace
                 const cleanKey = req.body.apiKey.trim();
                 newSettings.apiKey = cleanKey;
                 
                 const ai = new GoogleGenAI({ apiKey: cleanKey });
                 
                 // Verification Step with Timeout
-                // We make a lightweight call to ensure the key is valid and active.
                 await withTimeout(
                     ai.models.generateContent({ model: 'gemini-2.5-flash', contents: [{ parts: [{ text: ' ' }] }] }),
                     VALIDATION_TIMEOUT_MS,
@@ -129,14 +127,12 @@ export const updateSettings = async (req: any, res: any) => {
                 );
                 
                 // Model Fetch Step with Timeout
-                // We try to fetch the models, but we also protect against this hanging.
                 const fetchedModels = await withTimeout(
                      listAvailableModels(cleanKey),
                      VALIDATION_TIMEOUT_MS,
                      'Fetching models timed out.'
                 );
 
-                // Map chatModels to models to match the frontend expectation (same as modelsHandler)
                 modelData = {
                     models: fetchedModels.chatModels,
                     imageModels: fetchedModels.imageModels,
@@ -148,7 +144,7 @@ export const updateSettings = async (req: any, res: any) => {
                 
                 const parsedError = parseApiError(error);
                 
-                let status = 400; // Default to Bad Request for validation failures
+                let status = 400; 
                 if (parsedError.code === 'INVALID_API_KEY') status = 401;
                 else if (parsedError.code === 'RATE_LIMIT_EXCEEDED') status = 429;
                 else if (parsedError.code === 'UNAVAILABLE') status = 503;
@@ -157,12 +153,6 @@ export const updateSettings = async (req: any, res: any) => {
             }
         }
 
-        // Save the main settings JSON. 
-        // Note: We include the prompts here too for redundancy/backwards compatibility, 
-        // but the text files are the source of truth on read.
-        // IMPORTANT: Don't save the env var fallback back to the file if it wasn't explicitly set in the request
-        // We want the file to remain "clean" if possible, but `newSettings` merges current (which includes read env var) with body.
-        // This is actually fine; saving it to the file persists it for future restarts if env var is removed.
         await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(newSettings, null, 2), 'utf-8');
         res.status(200).json({ ...newSettings, ...modelData });
     } catch (error) {

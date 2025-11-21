@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -32,7 +31,7 @@ type RunAgenticLoopParams = {
     signal: AbortSignal;
 };
 
-// Define the graph state annotation
+// Define the graph state annotation with reducers
 const AgentStateAnnotation = Annotation.Root({
     history: Annotation<Content[]>({
         reducer: (x, y) => x.concat(y),
@@ -41,6 +40,10 @@ const AgentStateAnnotation = Annotation.Root({
     groundingMetadata: Annotation<any>({
         reducer: (x, y) => y ?? x,
         default: () => undefined,
+    }),
+    toolCalls: Annotation<FunctionCall[]>({
+        reducer: (x, y) => y, // Replace
+        default: () => [],
     }),
 });
 
@@ -60,7 +63,6 @@ const extractPlan = (rawText: string): string => {
             planText = rawText.substring(planContentStartIndex);
         }
     } else {
-        // Fallback if marker isn't perfectly formed, grab everything before next step or end
         const firstStepIndex = rawText.indexOf('[STEP]');
         if (firstStepIndex !== -1) {
             planText = rawText.substring(0, firstStepIndex);
@@ -78,11 +80,11 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void> => {
     const { ai, model, history, toolExecutor, callbacks, settings, signal } = params;
     
-    console.log('[AGENT_LOOP] Initializing Agentic Loop'); // LOG
+    console.log('[AGENT_LOOP] Initializing LangGraph Workflow');
 
-    // --- Node: Agent (Model Call) ---
+    // --- Node: Agent (Model Generation) ---
     const agentNode = async (state: typeof AgentStateAnnotation.State) => {
-        console.log('[AGENT_LOOP] Entering agentNode. History length:', state.history.length); // LOG
+        console.log('[AGENT_LOOP] Entering agentNode. History length:', state.history.length);
         if (signal.aborted) throw new Error("AbortError");
 
         let fullTextResponse = '';
@@ -91,8 +93,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         let groundingMetadata: any = undefined;
 
         try {
-            // Streaming call to Gemini
-            console.log('[AGENT_LOOP] Invoking Gemini Stream...'); // LOG
+            console.log('[AGENT_LOOP] Invoking Gemini Stream...');
             const streamResult = await generateContentStreamWithRetry(ai, {
                 model,
                 contents: state.history,
@@ -115,23 +116,22 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     callbacks.onTextChunk(fullTextResponse);
                 }
 
-                // Check for Plan Approval Interrupt
                 const planMatch = fullTextResponse.includes('[USER_APPROVAL_REQUIRED]');
                 if (planMatch && !hasSentPlan) {
-                    console.log('[AGENT_LOOP] Plan approval required. Pausing...'); // LOG
+                    console.log('[AGENT_LOOP] Plan approval required. Pausing for user input...');
                     hasSentPlan = true;
                     const planText = extractPlan(fullTextResponse);
                     
-                    // Pause execution here waiting for frontend approval via the callback promise
+                    // Interrupt execution to wait for user approval
+                    // Note: In this implementation, we await the promise directly to maintain the stream connection
                     const approval = await callbacks.onPlanReady(planText);
 
                     if (approval === false) {
-                        console.log('[AGENT_LOOP] User denied execution.'); // LOG
-                        throw new Error("AbortError"); // User denied execution
+                        console.log('[AGENT_LOOP] User denied execution.');
+                        throw new Error("AbortError");
                     }
                     if (typeof approval === 'string') {
-                        console.log('[AGENT_LOOP] User edited plan. Rewriting history.'); // LOG
-                        // If user edited the plan, update the text stream essentially "rewriting" history
+                        console.log('[AGENT_LOOP] User edited plan. Updating context.');
                         fullTextResponse = approval;
                         callbacks.onTextChunk(fullTextResponse);
                     }
@@ -142,9 +142,8 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             toolCalls = response?.functionCalls || [];
             groundingMetadata = response?.candidates?.[0]?.groundingMetadata;
 
-            console.log('[AGENT_LOOP] Agent generation complete. Tool calls:', toolCalls.length); // LOG
+            console.log('[AGENT_LOOP] Agent generation complete. Tool calls:', toolCalls.length);
 
-            // Construct the model's contribution to history
             const newContentParts: Part[] = [];
             if (fullTextResponse) {
                 newContentParts.push({ text: fullTextResponse });
@@ -155,30 +154,27 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
             return {
                 history: [{ role: 'model', parts: newContentParts }],
-                groundingMetadata
+                groundingMetadata,
+                toolCalls,
             };
 
         } catch (error) {
-            console.error('[AGENT_LOOP] Error in agentNode:', error); // LOG
+            console.error('[AGENT_LOOP] Error in agentNode:', error);
             throw error;
         }
     };
 
     // --- Node: Tools (Execution) ---
     const toolsNode = async (state: typeof AgentStateAnnotation.State) => {
-        console.log('[AGENT_LOOP] Entering toolsNode.'); // LOG
+        console.log('[AGENT_LOOP] Entering toolsNode.');
         if (signal.aborted) throw new Error("AbortError");
 
-        const lastMessage = state.history[state.history.length - 1];
-        // Extract function calls from the last message parts
-        const toolCalls = lastMessage.parts?.filter(p => p.functionCall).map(p => p.functionCall!) || [];
+        const toolCalls = state.toolCalls;
 
-        if (toolCalls.length === 0) {
-            console.log('[AGENT_LOOP] No tool calls found in toolsNode.'); // LOG
+        if (!toolCalls || toolCalls.length === 0) {
             return {};
         }
 
-        // Notify frontend of start
         const newToolCallEvents: ToolCallEvent[] = toolCalls.map(fc => ({
             id: `${fc.name}-${generateId()}`,
             call: fc,
@@ -186,9 +182,8 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         }));
         callbacks.onNewToolCalls(newToolCallEvents);
 
-        console.log('[AGENT_LOOP] Executing tools:', toolCalls.map(tc => tc.name)); // LOG
+        console.log('[AGENT_LOOP] Executing tools:', toolCalls.map(tc => tc.name));
 
-        // Execute all tools in parallel
         const toolResponses = await Promise.all(
             toolCalls.map(async (call: FunctionCall) => {
                 const event = newToolCallEvents.find(e => e.call === call)!;
@@ -215,11 +210,9 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             })
         );
         
-        console.log('[AGENT_LOOP] Tools executed. Returning results to graph.'); // LOG
-
-        // Return tool outputs to history
         return {
-            history: [{ role: 'user', parts: toolResponses.map(tr => ({ functionResponse: tr.functionResponse })) }]
+            history: [{ role: 'user', parts: toolResponses.map(tr => ({ functionResponse: tr.functionResponse })) }],
+            toolCalls: [], // Clear tool calls after execution
         };
     };
 
@@ -229,11 +222,12 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         .addNode("agent", agentNode)
         .addNode("tools", toolsNode)
         .addEdge(START, "agent")
-        .addConditionalEdges("agent", (state) => {
-            const lastMsg = state.history[state.history.length - 1];
-            const hasToolCalls = lastMsg.parts?.some(p => p.functionCall);
-            return hasToolCalls ? "tools" : END;
-        })
+        .addConditionalEdges(
+            "agent",
+            (state) => {
+                return state.toolCalls && state.toolCalls.length > 0 ? "tools" : END;
+            }
+        )
         .addEdge("tools", "agent");
 
     const app = workflow.compile();
@@ -241,25 +235,23 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
     // --- Execution ---
 
     try {
-        console.log('[AGENT_LOOP] Starting Graph Invocation'); // LOG
+        console.log('[AGENT_LOOP] Starting Graph Invocation');
         const finalState = await app.invoke({ history });
 
-        // Extract final text for completion callback
         const lastMsg = finalState.history[finalState.history.length - 1];
         const finalText = lastMsg.parts?.find(p => p.text)?.text || "";
 
         if (!signal.aborted) {
-            console.log('[AGENT_LOOP] Loop Completed Successfully.'); // LOG
+            console.log('[AGENT_LOOP] Loop Completed Successfully.');
             callbacks.onComplete(finalText, finalState.groundingMetadata);
         }
 
     } catch (error: any) {
-        // Handle explicit aborts vs actual errors
         if (error.message === 'AbortError' || error.name === 'AbortError') {
-            console.log('[AGENT_LOOP] Loop Cancelled.'); // LOG
+            console.log('[AGENT_LOOP] Loop Cancelled.');
             callbacks.onCancel();
         } else {
-            console.error('[AGENT_LOOP] Loop Error:', error); // LOG
+            console.error('[AGENT_LOOP] Loop Error:', error);
             callbacks.onError(parseApiError(error));
         }
     }

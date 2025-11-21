@@ -26,7 +26,6 @@ type MessageListProps = {
   currentChatId: string | null;
   onShowThinkingProcess: (messageId: string) => void;
   onShowSources: (sources: Source[]) => void;
-  onScrolledUpChange: (isScrolledUp: boolean) => void;
   approveExecution: (editedPlan: string) => void;
   denyExecution: () => void;
   messageFormRef: React.RefObject<MessageFormHandle>;
@@ -37,29 +36,34 @@ type MessageListProps = {
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
     messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled, currentChatId, 
-    onShowThinkingProcess, onShowSources, onScrolledUpChange, approveExecution, 
+    onShowThinkingProcess, onShowSources, approveExecution, 
     denyExecution, messageFormRef, onRegenerate, onSetActiveResponseIndex,
     isAgentMode
 }, ref) => {
-  const messageListRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   
-  const lastMessage = messages[messages.length - 1];
-  const lastMessageContent = lastMessage?.role === 'model' 
-    ? lastMessage.responses?.[lastMessage.activeResponseIndex]?.text 
-    : lastMessage?.text;
-  
-  const [isAutoScrollPaused, setIsAutoScrollPaused] = useState(false);
+  // We use a ref for this state to access it immediately inside event handlers/observers without stale closures
+  const userHasScrolledUpRef = useRef(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const throttleTimeout = useRef<number | null>(null);
   
+  // Threshold (px) to consider the user "at the bottom"
+  const BOTTOM_THRESHOLD = 100;
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ 
+        top: scrollContainerRef.current.scrollHeight, 
+        behavior 
+      });
+      // Reset manual scroll tracking when we force a scroll
+      userHasScrolledUpRef.current = false;
+      setShowScrollButton(false);
+    }
+  }, []);
+
   useImperativeHandle(ref, () => ({
-    scrollToBottom: () => {
-      if (messageListRef.current) {
-        messageListRef.current.scrollTo({ top: messageListRef.current.scrollHeight, behavior: 'smooth' });
-      }
-      setIsAutoScrollPaused(false);
-    },
+    scrollToBottom: () => scrollToBottom('smooth'),
     scrollToMessage: (messageId: string) => {
         const element = document.getElementById(`message-${messageId}`);
         if (element) {
@@ -68,59 +72,85 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
             setTimeout(() => {
                 element.classList.remove('highlight-jump');
             }, 2000);
+            // Determine if this action moved us away from bottom
+            // We give a small delay to let the scroll happen before checking
+            setTimeout(handleScroll, 500); 
         }
     }
   }));
 
-  useEffect(() => {
-    if (isLoading && !isAutoScrollPaused) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Handle scroll events to detect if user is moving away from bottom
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    
+    const isAtBottom = distanceFromBottom < BOTTOM_THRESHOLD;
+
+    if (isAtBottom) {
+        if (userHasScrolledUpRef.current) {
+            userHasScrolledUpRef.current = false;
+            setShowScrollButton(false);
+        }
+    } else {
+        if (!userHasScrolledUpRef.current) {
+            userHasScrolledUpRef.current = true;
+            // Only show button if there's actually somewhere to scroll to
+            if (scrollHeight > clientHeight) {
+                setShowScrollButton(true);
+            }
+        }
     }
-    if (!isLoading) {
-      setIsAutoScrollPaused(false);
-    }
-  }, [messages.length, lastMessageContent, isLoading, isAutoScrollPaused]);
-  
-  useEffect(() => {
-      return () => {
-          if (throttleTimeout.current) {
-              window.clearTimeout(throttleTimeout.current);
-          }
-      };
   }, []);
 
-  const handleScroll = useCallback(() => {
-    if (throttleTimeout.current) return;
+  // ResizeObserver handles streaming content pushing the scroll down
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const content = contentRef.current;
+    
+    if (!container || !content) return;
 
-    throttleTimeout.current = window.setTimeout(() => {
-        const element = messageListRef.current;
-        if (!element) {
-            throttleTimeout.current = null;
-            return;
-        };
-        
-        const SCROLL_THRESHOLD = 200;
-        const { scrollTop, scrollHeight, clientHeight } = element;
-        
-        const isCurrentlyScrolledUp = scrollHeight - scrollTop - clientHeight > SCROLL_THRESHOLD;
-        setShowScrollButton(isCurrentlyScrolledUp);
-        onScrolledUpChange(isCurrentlyScrolledUp);
-
-        if (isLoading) {
-            const isAtBottom = scrollHeight - scrollTop - clientHeight < 20;
-            setIsAutoScrollPaused(!isAtBottom);
+    const observer = new ResizeObserver(() => {
+        // Only auto-scroll if the user hasn't manually scrolled up
+        if (!userHasScrolledUpRef.current) {
+            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
         }
+    });
 
-        throttleTimeout.current = null;
-    }, 100);
-  }, [isLoading, onScrolledUpChange]);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
 
+  // Force scroll to bottom on new message addition (user or AI start)
+  useEffect(() => {
+      // If a new message is added, we generally want to snap to it unless the user is deep in history.
+      // However, for the very start of a generation (isLoading becomes true), we always snap.
+      if (isLoading) {
+          userHasScrolledUpRef.current = false;
+          scrollToBottom();
+      } else if (!userHasScrolledUpRef.current) {
+          scrollToBottom();
+      }
+  }, [messages.length, isLoading, scrollToBottom]);
+
+  // Initial scroll on mount
+  useEffect(() => {
+      scrollToBottom('auto');
+  }, []); 
 
   const visibleMessages = messages.filter(msg => !msg.isHidden);
 
   return (
-    <div className="flex-1 overflow-y-auto scroll-smooth relative" ref={messageListRef} onScroll={handleScroll}>
-      <div className={`min-h-full flex w-full justify-center px-4 sm:px-6 md:px-8 ${visibleMessages.length > 0 ? 'items-end' : 'items-center'}`}>
+    <div 
+        className="flex-1 overflow-y-auto scroll-smooth relative custom-scrollbar overscroll-contain" 
+        ref={scrollContainerRef} 
+        onScroll={handleScroll}
+    >
+      <div 
+        ref={contentRef}
+        className={`min-h-full flex w-full justify-center px-4 sm:px-6 md:px-8 ${visibleMessages.length > 0 ? 'items-end' : 'items-center'}`}
+      >
         {visibleMessages.length === 0 ? (
           <WelcomeScreen sendMessage={sendMessage} />
         ) : (
@@ -144,34 +174,37 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                   isAgentMode={isAgentMode}
               />
             ))}
-            <div ref={bottomRef} />
+            {/* Padding element to ensure the last message isn't hidden behind the input area or scroll button */}
+            <div className="h-4" />
           </div>
         )}
       </div>
 
       {/* Floating Scroll Button */}
-      <AnimatePresence initial={false}>
+      <AnimatePresence>
         {showScrollButton && (
           <motion.div
              initial={{ opacity: 0, y: 20, scale: 0.9 }}
              animate={{ opacity: 1, y: 0, scale: 1 }}
              exit={{ opacity: 0, y: 20, scale: 0.9 }}
-             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-             className="sticky bottom-4 left-0 right-0 flex justify-center pointer-events-none z-20"
+             transition={{ type: "spring", stiffness: 400, damping: 30 }}
+             className="sticky bottom-6 inset-x-0 flex justify-center pointer-events-none z-30 pb-2"
           >
             <button
-                onClick={() => {
-                    if (messageListRef.current) {
-                        messageListRef.current.scrollTo({ top: messageListRef.current.scrollHeight, behavior: 'smooth' });
-                    }
-                    setIsAutoScrollPaused(false);
-                }}
-                className="pointer-events-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-white/10 px-4 py-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                onClick={() => scrollToBottom('smooth')}
+                className="pointer-events-auto group flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md text-sm font-medium text-gray-700 dark:text-gray-200 shadow-lg hover:shadow-xl border border-gray-200/50 dark:border-white/10 rounded-full transition-all transform hover:-translate-y-0.5 active:scale-95 ring-1 ring-black/5 dark:ring-white/5"
+                aria-label="Scroll to latest messages"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                  <path fillRule="evenodd" d="M8 12.25a.75.75 0 0 1-.53-.22l-4.25-4.25a.75.75 0 1 1 1.06-1.06L8 10.44l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-.53.22Z" clipRule="evenodd" />
+                {isLoading && (
+                    <span className="relative flex h-2 w-2 mr-1">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                    </span>
+                )}
+                <span>Latest Messages</span>
+                <svg className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                 </svg>
-                <span>Scroll to latest</span>
             </button>
           </motion.div>
         )}

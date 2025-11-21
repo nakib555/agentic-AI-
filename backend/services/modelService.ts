@@ -1,10 +1,22 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import type { Model as AppModel } from '../../src/types';
+
+// Cache structure
+type ModelCache = {
+    data: {
+        chatModels: AppModel[];
+        imageModels: AppModel[];
+        videoModels: AppModel[];
+    };
+    timestamp: number;
+};
+
+let modelCache: ModelCache | null = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Helper function to sort models alphabetically by display name for a consistent UI.
 const sortModelsByName = (models: AppModel[]): AppModel[] => {
@@ -21,6 +33,12 @@ export async function listAvailableModels(apiKey: string): Promise<{
     imageModels: AppModel[];
     videoModels: AppModel[];
 }> {
+    // Check cache first
+    const now = Date.now();
+    if (modelCache && (now - modelCache.timestamp < CACHE_TTL)) {
+        return modelCache.data;
+    }
+
     try {
         // Using fetch with the REST API endpoint to get the list of models.
         // We pass the API key in the header for security.
@@ -43,8 +61,6 @@ export async function listAvailableModels(apiKey: string): Promise<{
         const availableVideoModels: AppModel[] = [];
 
         for (const model of modelList) {
-            // Model names in REST API are like "models/gemini-1.5-flash"
-            // We strip the prefix to get the ID used for generation requests.
             const modelId = model.name.replace('models/', '');
             const modelInfo: AppModel = {
                 id: modelId,
@@ -67,14 +83,22 @@ export async function listAvailableModels(apiKey: string): Promise<{
             }
         }
 
-        return {
+        const result = {
             chatModels: sortModelsByName(availableChatModels),
             imageModels: sortModelsByName(availableImageModels),
             videoModels: sortModelsByName(availableVideoModels),
         };
+
+        // Update cache
+        modelCache = {
+            data: result,
+            timestamp: now
+        };
+
+        return result;
     } catch (error: any) {
         console.warn('API Key validation or model fetch failed:', error.message);
-        // On failure (e.g., invalid key), return empty arrays gracefully.
+        // On failure, return empty arrays gracefully, do not cache failure
         return { chatModels: [], imageModels: [], videoModels: [] };
     }
 }

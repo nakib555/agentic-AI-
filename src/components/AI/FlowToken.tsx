@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
+import { motion } from 'framer-motion';
 
 type FlowTokenProps = {
   children: string;
@@ -13,44 +14,49 @@ type FlowTokenProps = {
 
 export const FlowToken: React.FC<FlowTokenProps> = ({
   children,
-  tps = 10,
+  tps = 20, // Increased default speed for smoother feel
   onComplete,
 }) => {
   // Split by words and punctuation, but keep spaces attached to the preceding word
-  // This helps maintain correct spacing during animation.
   const parts = useMemo(() => children.match(/(\S+\s*)/g) || [], [children]);
 
-  useEffect(() => {
-    if (!onComplete) return;
-    
-    // Calculate total animation duration based on token count and speed.
-    // Add a small buffer to ensure onComplete fires after the last animation.
-    const animationDuration = 600; // 0.6s from CSS
-    const totalDuration = (parts.length / tps) * 1000 + animationDuration;
+  // Calculate dynamic duration based on content length
+  // Shorter content = slightly slower per token for visibility
+  // Longer content = faster per token to avoid dragging
+  const dynamicTps = useMemo(() => {
+      if (parts.length > 50) return tps * 1.5;
+      if (parts.length < 10) return tps * 0.8;
+      return tps;
+  }, [parts.length, tps]);
 
-    const timer = setTimeout(() => {
-      onComplete();
-    }, totalDuration);
-
-    return () => clearTimeout(timer);
-  }, [parts, tps, onComplete]);
-
-  // The delay for each word is staggered based on its index.
-  // This creates the word-by-word typing effect.
-  const interval = 1000 / tps;
+  const staggerDuration = 1 / dynamicTps;
 
   return (
-    <span className="flow-token-container">
+    <motion.span 
+        className="flow-token-container inline"
+        initial="hidden"
+        animate="visible"
+        variants={{
+            visible: {
+                transition: {
+                    staggerChildren: staggerDuration,
+                }
+            }
+        }}
+        onAnimationComplete={onComplete}
+    >
       {parts.map((part, i) => (
-        <span className="flow-token-word-container" key={i}>
-          <span
-            className="flow-token-word"
-            style={{ animationDelay: `${i * interval}ms` }}
-          >
+        <motion.span
+            key={i}
+            variants={{
+                hidden: { opacity: 0, y: 5 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" } }
+            }}
+            className="inline-block whitespace-pre-wrap"
+        >
             {part}
-          </span>
-        </span>
+        </motion.span>
       ))}
-    </span>
+    </motion.span>
   );
 };
