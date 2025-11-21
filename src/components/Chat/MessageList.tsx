@@ -143,7 +143,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
 
   return (
     <div 
-        className="flex-1 overflow-y-auto scroll-smooth relative custom-scrollbar overscroll-contain" 
+        className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth relative custom-scrollbar overscroll-contain" 
         ref={scrollContainerRef} 
         onScroll={handleScroll}
     >

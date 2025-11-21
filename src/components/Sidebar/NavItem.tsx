@@ -21,7 +21,8 @@ type NavItemProps = {
 export const NavItem = ({ icon, text, active, isCollapsed, isDesktop, onClick, disabled }: NavItemProps) => {
     const shouldCollapse = isDesktop && isCollapsed;
     
-    const baseClasses = `w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left text-sm transition-all duration-200`;
+    // Removed 'gap-3' from baseClasses
+    const baseClasses = `w-full flex items-center px-3 py-2 rounded-lg text-left text-sm transition-all duration-200`;
     
     const activeClasses = `bg-gray-200/60 dark:bg-violet-900/60 shadow-inner text-slate-900 font-semibold dark:text-slate-50`;
     const inactiveClasses = `bg-gray-100/30 dark:bg-violet-900/20 text-slate-600 dark:text-slate-300 shadow-sm border border-gray-200/50 dark:border-white/10`;
@@ -45,7 +46,12 @@ export const NavItem = ({ icon, text, active, isCollapsed, isDesktop, onClick, d
                 <motion.span 
                     className="overflow-hidden"
                     initial={false}
-                    animate={{ width: shouldCollapse ? 0 : 'auto', opacity: shouldCollapse ? 0 : 1, x: shouldCollapse ? -5 : 0 }}
+                    animate={{ 
+                        width: shouldCollapse ? 0 : 'auto', 
+                        opacity: shouldCollapse ? 0 : 1, 
+                        x: shouldCollapse ? -5 : 0,
+                        marginLeft: shouldCollapse ? 0 : 12 // Simulate gap-3
+                    }}
                     transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 >
                     {text}

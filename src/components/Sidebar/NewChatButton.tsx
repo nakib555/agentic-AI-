@@ -24,7 +24,7 @@ export const NewChatButton = ({ isCollapsed, isDesktop, onClick, disabled }: New
             onClick={onClick}
             disabled={disabled}
             className={`
-                group relative w-full flex items-center gap-3 transition-all duration-200
+                group relative w-full flex items-center transition-all duration-200
                 ${disabled 
                     ? 'opacity-50 cursor-not-allowed bg-transparent' 
                     : 'hover:bg-gray-200/50 dark:hover:bg-white/5 cursor-pointer'
@@ -54,6 +54,7 @@ export const NewChatButton = ({ isCollapsed, isDesktop, onClick, disabled }: New
                 animate={{ 
                     width: shouldCollapse ? 0 : 'auto', 
                     opacity: shouldCollapse ? 0 : 1,
+                    marginLeft: shouldCollapse ? 0 : 12,
                 }}
                 transition={{ duration: 0.2 }}
             >
