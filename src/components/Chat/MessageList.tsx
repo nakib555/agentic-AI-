@@ -24,7 +24,6 @@ type MessageListProps = {
   ttsVoice: string;
   isAutoPlayEnabled: boolean;
   currentChatId: string | null;
-  onShowThinkingProcess: (messageId: string) => void;
   onShowSources: (sources: Source[]) => void;
   approveExecution: (editedPlan: string) => void;
   denyExecution: () => void;
@@ -36,7 +35,7 @@ type MessageListProps = {
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
     messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled, currentChatId, 
-    onShowThinkingProcess, onShowSources, approveExecution, 
+    onShowSources, approveExecution, 
     denyExecution, messageFormRef, onRegenerate, onSetActiveResponseIndex,
     isAgentMode
 }, ref) => {
@@ -164,7 +163,6 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                   ttsVoice={ttsVoice} 
                   isAutoPlayEnabled={isAutoPlayEnabled}
                   currentChatId={currentChatId}
-                  onShowThinkingProcess={onShowThinkingProcess}
                   onShowSources={onShowSources}
                   approveExecution={approveExecution}
                   denyExecution={denyExecution}

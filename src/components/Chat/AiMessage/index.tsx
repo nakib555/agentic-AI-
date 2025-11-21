@@ -41,7 +41,6 @@ type AiMessageProps = {
     ttsVoice: string; 
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
-    onShowThinkingProcess: (messageId: string) => void;
     onShowSources: (sources: Source[]) => void;
     approveExecution: (editedPlan: string) => void;
     denyExecution: () => void;
@@ -53,7 +52,7 @@ type AiMessageProps = {
 
 const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
-          onShowThinkingProcess, onShowSources, approveExecution, denyExecution, messageFormRef, onRegenerate,
+          onShowSources, approveExecution, denyExecution, messageFormRef, onRegenerate,
           onSetActiveResponseIndex, isAgentMode } = props;
   const { id } = msg;
 

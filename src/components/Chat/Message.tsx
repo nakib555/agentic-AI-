@@ -17,7 +17,6 @@ const MessageComponentRaw: React.FC<{
     ttsVoice: string; 
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
-    onShowThinkingProcess: (messageId: string) => void;
     onShowSources: (sources: Source[]) => void;
     approveExecution: (editedPlan: string) => void;
     denyExecution: () => void;
@@ -27,7 +26,7 @@ const MessageComponentRaw: React.FC<{
     isAgentMode: boolean;
 }> = ({ 
     msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
-    onShowThinkingProcess, onShowSources, approveExecution, denyExecution, messageFormRef,
+    onShowSources, approveExecution, denyExecution, messageFormRef,
     onRegenerate, onSetActiveResponseIndex, isAgentMode
 }) => {
   const messageContent = () => {
@@ -44,7 +43,6 @@ const MessageComponentRaw: React.FC<{
                 ttsVoice={ttsVoice} 
                 isAutoPlayEnabled={isAutoPlayEnabled} 
                 currentChatId={currentChatId} 
-                onShowThinkingProcess={onShowThinkingProcess}
                 onShowSources={onShowSources}
                 approveExecution={approveExecution}
                 denyExecution={denyExecution}

@@ -20,7 +20,6 @@ type ChatAreaProps = {
   ttsVoice: string;
   isAutoPlayEnabled: boolean;
   currentChatId: string | null;
-  onShowThinkingProcess: (messageId: string) => void;
   onShowSources: (sources: Source[]) => void;
   approveExecution: (editedPlan: string) => void;
   denyExecution: () => void;
@@ -37,7 +36,7 @@ type ChatAreaProps = {
 export const ChatArea = ({ 
     messages, isLoading, isAppLoading, sendMessage, onCancel, 
     ttsVoice, isAutoPlayEnabled, currentChatId,
-    onShowThinkingProcess, onShowSources, approveExecution, denyExecution,
+    onShowSources, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
     isAgentMode, setIsAgentMode, backendStatus, backendError, hasApiKey
 }: ChatAreaProps) => {
@@ -119,7 +118,6 @@ export const ChatArea = ({
           ttsVoice={ttsVoice} 
           isAutoPlayEnabled={isAutoPlayEnabled}
           currentChatId={currentChatId}
-          onShowThinkingProcess={onShowThinkingProcess}
           onShowSources={onShowSources}
           approveExecution={approveExecution}
           denyExecution={denyExecution}

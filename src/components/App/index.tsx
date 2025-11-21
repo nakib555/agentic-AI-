@@ -73,7 +73,6 @@ export const App = () => {
               ttsVoice={logic.ttsVoice}
               isAutoPlayEnabled={logic.isAutoPlayEnabled}
               currentChatId={logic.currentChatId}
-              onShowThinkingProcess={() => {}} // No-op as thinking is now inline
               onShowSources={logic.handleShowSources}
               approveExecution={logic.approveExecution}
               denyExecution={logic.denyExecution}
