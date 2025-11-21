@@ -7,6 +7,7 @@ import type { Model as AppModel } from '../../src/types';
 
 // Cache structure
 type ModelCache = {
+    keyHash: string; // Store a simple identifier for the key to invalidate cache on key change
     data: {
         chatModels: AppModel[];
         imageModels: AppModel[];
@@ -18,7 +19,7 @@ type ModelCache = {
 let modelCache: ModelCache | null = null;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-// Helper function to sort models alphabetically by display name for a consistent UI.
+// Helper to sort models alphabetically by display name for a consistent UI.
 const sortModelsByName = (models: AppModel[]): AppModel[] => {
     return models.sort((a, b) => a.name.localeCompare(b.name));
 };
@@ -26,16 +27,25 @@ const sortModelsByName = (models: AppModel[]): AppModel[] => {
 /**
  * Fetches the list of available Gemini models using the REST API directly.
  * @param apiKey The Gemini API key.
+ * @param forceRefresh If true, bypasses cache and hits the API.
  * @returns An object containing categorized lists of available models.
  */
-export async function listAvailableModels(apiKey: string): Promise<{
+export async function listAvailableModels(apiKey: string, forceRefresh = false): Promise<{
     chatModels: AppModel[];
     imageModels: AppModel[];
     videoModels: AppModel[];
 }> {
-    // Check cache first
+    // Simple hash check (using last 8 chars is usually enough to detect a change in the session context)
+    const currentKeyHash = apiKey.trim().slice(-8);
     const now = Date.now();
-    if (modelCache && (now - modelCache.timestamp < CACHE_TTL)) {
+
+    // Check cache first
+    if (
+        !forceRefresh &&
+        modelCache && 
+        modelCache.keyHash === currentKeyHash &&
+        (now - modelCache.timestamp < CACHE_TTL)
+    ) {
         return modelCache.data;
     }
 
@@ -91,14 +101,15 @@ export async function listAvailableModels(apiKey: string): Promise<{
 
         // Update cache
         modelCache = {
+            keyHash: currentKeyHash,
             data: result,
             timestamp: now
         };
 
         return result;
     } catch (error: any) {
-        console.warn('API Key validation or model fetch failed:', error.message);
-        // On failure, return empty arrays gracefully, do not cache failure
-        return { chatModels: [], imageModels: [], videoModels: [] };
+        console.warn('Model fetch failed:', error.message);
+        // Do not return empty arrays on verification error; throw so the caller knows the key failed.
+        throw error;
     }
 }

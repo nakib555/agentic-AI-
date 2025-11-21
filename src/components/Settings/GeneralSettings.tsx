@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -35,8 +34,12 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    
+    if (saveStatus === 'saving') return; // Prevent double submission
+
     setSaveStatus('saving');
     setSaveError(null);
+    
     try {
         await onSaveApiKey(localApiKey);
         setSaveStatus('saved');
@@ -61,7 +64,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
 
       <SettingItem 
         label="Gemini API Key" 
-        description="Your key is stored securely in your browser's local storage."
+        description="Your key is verified securely by the server."
         layout="col"
       >
         <form onSubmit={handleSave} className="space-y-3">
@@ -100,7 +103,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             >
                 {saveStatus === 'saving' && <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
                 {saveStatus === 'saved' && <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>}
-                <span>{saveStatus === 'saving' ? 'Verifying...' : saveStatus === 'saved' ? 'Saved' : 'Save Key'}</span>
+                <span>{saveStatus === 'saving' ? 'Verifying...' : saveStatus === 'saved' ? 'Verified & Saved' : 'Verify & Save'}</span>
             </button>
           </div>
           
@@ -110,8 +113,9 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             </a>
           </div>
           {saveStatus === 'error' && saveError && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs rounded-lg border border-red-200 dark:border-red-800 break-words">
-              {saveError}
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs rounded-lg border border-red-200 dark:border-red-800 break-words flex items-start gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0 mt-0.5"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clipRule="evenodd" /></svg>
+                <span>{saveError}</span>
             </div>
           )}
         </form>

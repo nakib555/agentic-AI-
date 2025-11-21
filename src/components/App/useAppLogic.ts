@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -205,11 +204,18 @@ export const useAppLogic = () => {
     setApiKey(newApiKey);
     try {
         const response: UpdateSettingsResponse = await updateSettings({ apiKey: newApiKey });
-        processModelData({
-            models: response.models,
-            imageModels: response.imageModels,
-            videoModels: response.videoModels
-        });
+        
+        // If backend returned models (verification success), update state immediately
+        if (response.models && response.models.length > 0) {
+            processModelData({
+                models: response.models,
+                imageModels: response.imageModels,
+                videoModels: response.videoModels
+            });
+        } else {
+            // Fallback if backend didn't return models but key saved OK (unlikely with new logic)
+            fetchModels(); 
+        }
     } catch (error) {
         // If save fails, the key is invalid. Clear the available models.
         setAvailableModels([]);
@@ -218,7 +224,7 @@ export const useAppLogic = () => {
         console.error("API Key save/verify failed:", error);
         throw error; // Re-throw to be caught by the UI
     }
-  }, [processModelData]);
+  }, [processModelData, fetchModels]);
 
   const handleSetAboutUser = createSettingUpdater(setAboutUser, 'aboutUser');
   const handleSetAboutResponse = createSettingUpdater(setAboutResponse, 'aboutResponse');

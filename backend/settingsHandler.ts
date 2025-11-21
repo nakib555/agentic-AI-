@@ -29,7 +29,9 @@ const defaultSettings = {
     isAgentMode: true,
 };
 
-const VALIDATION_TIMEOUT_MS = 10000; // 10 seconds timeout for validation
+// Rate limiting map: Key (last 8 chars) -> Timestamp
+const verificationThrottle = new Map<string, number>();
+const THROTTLE_WINDOW_MS = 2000; // 2 seconds between verifications for the same key
 
 // Helper for timeout
 const withTimeout = <T>(promise: Promise<T>, ms: number, errorMessage: string): Promise<T> => {
@@ -115,24 +117,33 @@ export const updateSettings = async (req: any, res: any) => {
         if (req.body.apiKey) {
             try {
                 const cleanKey = req.body.apiKey.trim();
+                
+                // --- Rate Limiting ---
+                const keyHash = cleanKey.slice(-8); // Simple check logic
+                const lastAttempt = verificationThrottle.get(keyHash) || 0;
+                const now = Date.now();
+                
+                if (now - lastAttempt < THROTTLE_WINDOW_MS) {
+                    console.warn(`[SETTINGS] Rate limit exceeded for key verification.`);
+                    return res.status(429).json({ error: "Please wait a moment before verifying the API key again." });
+                }
+                verificationThrottle.set(keyHash, now);
+
                 newSettings.apiKey = cleanKey;
                 
-                const ai = new GoogleGenAI({ apiKey: cleanKey });
-                
-                // Verification Step with Timeout
-                await withTimeout(
-                    ai.models.generateContent({ model: 'gemini-2.5-flash', contents: [{ parts: [{ text: ' ' }] }] }),
-                    VALIDATION_TIMEOUT_MS,
-                    'API Key validation timed out. Please try again.'
-                );
-                
-                // Model Fetch Step with Timeout
+                console.log(`[SETTINGS] Verifying API key via model list fetch...`);
+
+                // Verification Step: Try to fetch models.
+                // We use `true` for forceRefresh to ensure the key is valid right now.
                 const fetchedModels = await withTimeout(
-                     listAvailableModels(cleanKey),
-                     VALIDATION_TIMEOUT_MS,
-                     'Fetching models timed out.'
+                     listAvailableModels(cleanKey, true),
+                     10000, // 10s timeout
+                     'API Key verification timed out. The Google API might be slow or blocked.'
                 );
 
+                console.log(`[SETTINGS] API Key verified. Found ${fetchedModels.chatModels.length} chat models.`);
+
+                // If successful, attach models to response so frontend updates immediately
                 modelData = {
                     models: fetchedModels.chatModels,
                     imageModels: fetchedModels.imageModels,
@@ -140,19 +151,21 @@ export const updateSettings = async (req: any, res: any) => {
                 };
                 
             } catch (error: any) {
-                console.warn('API Key validation failed on save:', error.message);
+                console.warn('API Key verification failed:', error.message);
                 
                 const parsedError = parseApiError(error);
                 
                 let status = 400; 
-                if (parsedError.code === 'INVALID_API_KEY') status = 401;
+                if (parsedError.code === 'INVALID_API_KEY' || error.message.includes('400')) status = 401;
                 else if (parsedError.code === 'RATE_LIMIT_EXCEEDED') status = 429;
                 else if (parsedError.code === 'UNAVAILABLE') status = 503;
                 
+                // Return error immediately, do not save invalid key (or client handles it)
                 return res.status(status).json({ error: parsedError.message });
             }
         }
 
+        // Only write to file if everything succeeded
         await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(newSettings, null, 2), 'utf-8');
         res.status(200).json({ ...newSettings, ...modelData });
     } catch (error) {
