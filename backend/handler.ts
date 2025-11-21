@@ -157,8 +157,9 @@ export const apiHandler = async (req: any, res: any) => {
                         onToolResult: (id, result) => writeEvent(res, 'tool-call-end', { id, result }),
                         onPlanReady: (plan) => {
                             return new Promise((resolve) => {
-                                frontendToolRequests.set('plan-approval', resolve);
-                                writeEvent(res, 'plan-ready', { plan });
+                                const callId = `plan-approval-${generateId()}`;
+                                frontendToolRequests.set(callId, resolve);
+                                writeEvent(res, 'plan-ready', { plan, callId });
                             });
                         },
                         onComplete: (finalText, groundingMetadata) => writeEvent(res, 'complete', { finalText, groundingMetadata }),
@@ -185,6 +186,7 @@ export const apiHandler = async (req: any, res: any) => {
                     frontendToolRequests.delete(callId);
                     res.status(200).send();
                 } else {
+                    console.warn(`[HANDLER] No pending tool request found for callId: ${callId}`);
                     res.status(404).json({ error: `No pending tool request found for callId: ${callId}` });
                 }
                 break;

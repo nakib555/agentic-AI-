@@ -111,8 +111,19 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
             requestIdRef.current = null;
         }
         
-        // Fallback for plan approval state
-        handleFrontendToolExecution('plan-approval', 'denyExecution', false);
+        // Fallback for plan approval state cancellation if we are stuck there
+        const chatId = currentChatIdRef.current;
+        if (chatId) {
+            const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+            if (currentChat?.messages.length) {
+                const lastMessage = currentChat.messages[currentChat.messages.length - 1];
+                if (lastMessage.executionState === 'pending_approval') {
+                     const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
+                     const callId = activeResponse?.plan?.callId || 'plan-approval';
+                     handleFrontendToolExecution(callId, 'denyExecution', false);
+                }
+            }
+        }
     }, [handleFrontendToolExecution]);
     
     const { updateMessage } = chatHistoryHook;
@@ -124,8 +135,11 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
             const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
             if (currentChat?.messages.length) {
                 const lastMessage = currentChat.messages[currentChat.messages.length - 1];
+                const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
+                const callId = activeResponse?.plan?.callId || 'plan-approval';
+
                 updateMessage(chatId, lastMessage.id, { executionState: 'approved' });
-                handleFrontendToolExecution('plan-approval', 'approveExecution', editedPlan);
+                handleFrontendToolExecution(callId, 'approveExecution', editedPlan);
             }
         }
     }, [updateMessage, handleFrontendToolExecution]);
@@ -137,8 +151,11 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
             const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
             if (currentChat?.messages.length) {
                 const lastMessage = currentChat.messages[currentChat.messages.length - 1];
+                const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
+                const callId = activeResponse?.plan?.callId || 'plan-approval';
+
                 updateMessage(chatId, lastMessage.id, { executionState: 'denied' });
-                handleFrontendToolExecution('plan-approval', 'denyExecution', false);
+                handleFrontendToolExecution(callId, 'denyExecution', false);
             }
         }
     }, [updateMessage, handleFrontendToolExecution]);
@@ -211,6 +228,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                             }));
                             break;
                         case 'plan-ready':
+                            // Payload is { plan: string, callId: string }
                             chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: event.payload }));
                             chatHistoryHook.updateMessage(chatId, messageId, { executionState: 'pending_approval' });
                             break;

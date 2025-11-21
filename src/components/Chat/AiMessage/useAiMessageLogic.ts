@@ -109,7 +109,12 @@ export const useAiMessageLogic = (
     const isStreamingFinalAnswer = !!isThinking && hasFinalAnswer && !activeResponse?.error;
     // We adjust waiting logic: if we have thinking process, we are NOT just waiting, we are showing the process.
     const isWaitingForFinalAnswer = !!isThinking && !hasThinkingProcess && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
-    const showApprovalUI = executionState === 'pending_approval' && activeResponse?.plan;
+    
+    // IMPORTANT: showApprovalUI logic must trigger if the message state is pending_approval
+    // AND we have the plan data available in the response object from the 'plan-ready' event.
+    // Note: 'agentPlan' comes from text parsing which might be incomplete during stream pause.
+    // 'activeResponse.plan' comes directly from the backend event payload.
+    const showApprovalUI = executionState === 'pending_approval' && !!activeResponse?.plan;
 
     const handleRunCode = useCallback((language: string, code: string) => {
         const userPrompt = `Please execute the following ${language} code block:\n\n\`\`\`${language}\n${code}\n\`\`\``;

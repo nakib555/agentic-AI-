@@ -9,14 +9,12 @@ import { motion as motionTyped } from 'framer-motion';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { GoalAnalysisIcon, PlannerIcon, TodoListIcon, ToolsIcon } from './icons/index';
-// FIX: Changed type-only import to regular import.
-import { ParsedWorkflow } from '../../types';
 import { getAgentColor } from '../../utils/agentUtils';
 
 const motion = motionTyped as any;
 
 type ExecutionApprovalProps = {
-    plan: ParsedWorkflow;
+    plan: { plan: string }; // Relaxed type to handle plan object from backend
     onApprove: (editedPlan: string) => void;
     onDeny: () => void;
 };

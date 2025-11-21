@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -41,7 +42,7 @@ export type ModelResponse = {
   startTime: number;
   endTime?: number;
   suggestedActions?: string[];
-  plan?: ParsedWorkflow;
+  plan?: { plan: string; callId?: string }; // Updated to support callId
   groundingMetadata?: any;
 };
 
