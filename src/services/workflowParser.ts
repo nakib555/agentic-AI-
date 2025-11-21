@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -64,7 +65,11 @@ export const parseAgenticWorkflow = (
   
   // 1. Parse all text-based steps from the execution log
   const textNodes: WorkflowNodeData[] = [];
-  const stepRegex = /\[STEP\]\s*(.*?):\s*([\s\S]*?)(?=\[STEP\]|$)/gs;
+  
+  // Improved Regex: Matches [STEP] only at the start of the string or following a newline.
+  // This prevents "[STEP]" inside code blocks from breaking the parser.
+  const stepRegex = /(?:^|\n)\[STEP\]\s*(.*?):\s*([\s\S]*?)(?=(?:^|\n)\[STEP\]|$)/g;
+  
   let match;
   let stepIndex = 0;
   while ((match = stepRegex.exec(executionText)) !== null) {

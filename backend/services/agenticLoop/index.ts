@@ -48,6 +48,11 @@ const AgentStateAnnotation = Annotation.Root({
         reducer: (x, y) => y, // Replace
         default: () => [],
     }),
+    // Track the most recent text content from the agent to ensure we have it at the end
+    latestAgentText: Annotation<string>({
+        reducer: (x, y) => y || x, // Prefer new non-empty text
+        default: () => "",
+    }),
 });
 
 // --- Helper Functions ---
@@ -169,6 +174,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 history: historyUpdate,
                 groundingMetadata,
                 toolCalls,
+                latestAgentText: fullTextResponse || state.latestAgentText // Update if new text, else keep old
             };
 
         } catch (error) {
@@ -268,8 +274,10 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             { configurable: { thread_id: threadId } } as any
         );
 
-        const lastMsg = finalState.history[finalState.history.length - 1];
-        const finalText = lastMsg.parts?.find(p => p.text)?.text || "";
+        // Use the latestAgentText we tracked in state, rather than trying to parse the last message in history.
+        // This ensures that even if the loop ends on a tool call turn (unlikely) or if the last message
+        // structure is complex, we have the actual text that was generated and streamed to the user.
+        const finalText = finalState.latestAgentText;
 
         if (!signal.aborted) {
             console.log('[AGENT_LOOP] Loop Completed Successfully.');
