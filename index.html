@@ -19,9 +19,77 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-    <!-- Custom App Styles -->
+    <!-- Custom App Styles (Library / Local Fallback) -->
+    <!-- This is the "Library" fallback. It is loaded first to ensure styles are present if CDN fails. -->
     <link rel="stylesheet" href="./styles/main.css">
     <link rel="stylesheet" href="./styles/markdown.css">
+
+    <!-- Tailwind CSS CDN (URL) -->
+    <!-- Tries to load Tailwind from URL. If it fails, the local library (main.css) above is already loaded. -->
+    <script src="https://cdn.tailwindcss.com" onerror="console.warn('Tailwind CDN (URL) failed to load. Falling back to local library (styles/main.css).')"></script>
+    <script>
+      // Match the configuration in tailwind.config.ts to ensure consistency between CDN and Library
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              // Background Layers
+              'page': 'var(--bg-page)',
+              'layer-1': 'var(--bg-layer-1)',
+              'layer-2': 'var(--bg-layer-2)',
+              'layer-3': 'var(--bg-layer-3)',
+              'glass': 'var(--bg-glass)',
+              
+              // Semantic Text
+              'content-primary': 'var(--text-primary)',
+              'content-secondary': 'var(--text-secondary)',
+              'content-tertiary': 'var(--text-tertiary)',
+              'text-inverted': 'var(--text-inverted)',
+              
+              // Semantic Borders
+              'border-subtle': 'var(--border-subtle)',
+              'border-default': 'var(--border-default)',
+              'border-strong': 'var(--border-strong)',
+              'border-focus': 'var(--border-focus)',
+              
+              // Alias standard border
+              'border': 'var(--border-default)',
+
+              // Primary Brand Colors
+              'primary-main': 'var(--primary-main)',
+              'primary-hover': 'var(--primary-hover)',
+              'primary-subtle': 'var(--primary-subtle)',
+              'primary-text': 'var(--primary-text)',
+
+              // Status Indicators
+              'status-error-bg': 'var(--status-error-bg)',
+              'status-error-text': 'var(--status-error-text)',
+              'status-success-bg': 'var(--status-success-bg)',
+              'status-success-text': 'var(--status-success-text)',
+              'status-warning-bg': 'var(--status-warning-bg)',
+              'status-warning-text': 'var(--status-warning-text)',
+
+              // UI Specifics
+              'theme-bg-light': 'var(--bg-page)',
+              'message-user': 'var(--bg-message-user)',
+              'message-ai': 'var(--bg-message-ai)',
+              'input-main': 'var(--bg-input)',
+              'input-sub': 'var(--bg-input-secondary)',
+              'code-surface': 'var(--bg-code)',
+              'code-text': 'var(--text-code)',
+              'sidebar-surface': 'var(--bg-sidebar)',
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['Fira Code', 'monospace'],
+              display: ['Space Grotesk', 'sans-serif'],
+            },
+          }
+        }
+      }
+    </script>
+
 <script type="importmap">
 {
   "imports": {
