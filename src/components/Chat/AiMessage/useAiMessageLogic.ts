@@ -1,9 +1,3 @@
-
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 // PART 1 of 2 from src/components/Chat/AiMessage.tsx
 // This hook contains the logic for the AiMessage component.
 
@@ -98,14 +92,6 @@ export const useAiMessageLogic = (
 
     const displayDuration = thinkingIsComplete && duration !== null ? duration.toFixed(1) : elapsed.toFixed(1);
 
-    useEffect(() => {
-        if (isAutoPlayEnabled && !autoPlayTriggered.current && thinkingIsComplete && hasFinalAnswer) {
-            autoPlayTriggered.current = true;
-            playOrStopAudio();
-        }
-    }, [isAutoPlayEnabled, thinkingIsComplete, hasFinalAnswer, playOrStopAudio]);
-
-    const isInitialWait = !!isThinking && !hasThinkingProcess && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
     const isStreamingFinalAnswer = !!isThinking && hasFinalAnswer && !activeResponse?.error;
     // We adjust waiting logic: if we have thinking process, we are NOT just waiting, we are showing the process.
     const isWaitingForFinalAnswer = !!isThinking && !hasThinkingProcess && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
@@ -123,7 +109,7 @@ export const useAiMessageLogic = (
 
     return {
         activeResponse, thinkingText, finalAnswerText, playOrStopAudio, audioState, isPlaying, searchSources,
-        thinkingIsComplete, hasThinkingProcess, hasFinalAnswer, displayDuration, isInitialWait,
+        thinkingIsComplete, hasThinkingProcess, hasFinalAnswer, displayDuration, isInitialWait: !hasThinkingProcess && isWaitingForFinalAnswer,
         isStreamingFinalAnswer, isWaitingForFinalAnswer, showApprovalUI, handleRunCode,
         agentPlan, executionLog // Export parsed workflow data
     };

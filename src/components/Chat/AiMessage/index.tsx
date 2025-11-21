@@ -58,13 +58,8 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
 
   const logic = useAiMessageLogic(msg, isAutoPlayEnabled, ttsVoice, sendMessage, isLoading);
   const { activeResponse, finalAnswerText, thinkingIsComplete, isStreamingFinalAnswer, agentPlan, executionLog } = logic;
-  const [animationComplete, setAnimationComplete] = useState(false);
+  // Removed animationComplete state and its useEffect, as its behavior was causing premature rendering switches.
   const [isWorkflowCollapsed, setIsWorkflowCollapsed] = useState(false);
-
-  useEffect(() => {
-    // Reset animation state when the message content changes (e.g., regeneration)
-    setAnimationComplete(false);
-  }, [finalAnswerText, msg.activeResponseIndex]);
 
   // Auto-collapse workflow when thinking is complete if there is a final answer
   useEffect(() => {
@@ -74,8 +69,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           setIsWorkflowCollapsed(false);
       }
   }, [thinkingIsComplete, !!finalAnswerText]);
-
-  const showFinalContent = thinkingIsComplete || animationComplete;
 
   const renderProgressiveAnswer = useCallback((txt: string) => {
     const componentRegex = /(\[(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\].*?\[\/(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\])/s;
@@ -215,12 +208,14 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
           
           <div className="markdown-content max-w-none w-full">
-            {isStreamingFinalAnswer && !showFinalContent && (
-              <FlowToken tps={10} onComplete={() => setAnimationComplete(true)}>
+            {/* Renders streaming final answer using FlowToken */}
+            {isStreamingFinalAnswer && (
+              <FlowToken tps={10}>
                   {cleanTextForTts(finalAnswerText)}
               </FlowToken>
             )}
-            {showFinalContent && logic.hasFinalAnswer && !activeResponse.error && (
+            {/* Renders complete, static final answer using ManualCodeRenderer */}
+            {thinkingIsComplete && logic.hasFinalAnswer && !activeResponse.error && (
               renderProgressiveAnswer(finalAnswerText)
             )}
           </div>
