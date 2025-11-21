@@ -49,3 +49,12 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
+// Fix for "Unchecked runtime.lastError: The message port closed before a response was received"
+// This listener ensures the SW keeps the message channel open long enough to acknowledge events,
+// preventing browser-level timeouts when extensions or devtools probe the worker.
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
