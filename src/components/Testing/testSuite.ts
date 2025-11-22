@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -238,10 +239,10 @@ export const testSuite: TestCase[] = [
         }
     },
     {
-        description: 'Markdown Rendering: KaTeX Math Formulas',
+        description: 'Markdown Rendering: MathJax Math Formulas',
         prompt: 'What is the quadratic formula?',
         validate: async (message): Promise<TestResult> => {
-            const description = 'Markdown Rendering: KaTeX Math Formulas';
+            const description = 'Markdown Rendering: MathJax Math Formulas';
             const result = validateResponse(message);
             if ('details' in result) return { description, pass: false, details: result.details };
             
@@ -250,7 +251,7 @@ export const testSuite: TestCase[] = [
             const hasFormula = result.response.text.includes('\\frac');
 
             if (hasDisplayMath && hasFormula) {
-                return { description, pass: true, details: 'Response includes valid display-style KaTeX math syntax.' };
+                return { description, pass: true, details: 'Response includes valid display-style math syntax.' };
             }
             return { description, pass: false, details: `Validation failed. Display Math: ${hasDisplayMath}, Formula Content: ${hasFormula}` };
         }

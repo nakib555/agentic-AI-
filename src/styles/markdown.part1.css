@@ -70,12 +70,6 @@
   margin-top: 0 !important;
 }
 
-/* 4. Adjust KaTeX alignment inside lists */
-.markdown-content li .katex {
-  font-size: 1.1em;
-  vertical-align: baseline; 
-}
-
 /* --- Robust Overflow Protection --- */
 
 /* Prevent images from blowing out container width */

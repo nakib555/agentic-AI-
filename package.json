@@ -1,3 +1,4 @@
+
 {
   "name": "agentic-ai-chat",
   "version": "1.0.0",
@@ -39,8 +40,6 @@
     "remark-math": "6.0.0",
 
     "playwright": "^1.49.0",
-
-    "react-markdown": "9.0.1",
 
     "unified": "^11.0.4",
     "remark-parse": "^11.0.0",
