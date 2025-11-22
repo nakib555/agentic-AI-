@@ -48,8 +48,9 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, compon
       rehypePlugins={[rehypeRaw, rehypeKatex]}
       components={{
         ...components,
-        // Override 'code' to handle both inline and block code
-        code({ node, inline, className, children, ...props }: any) {
+        // Override 'code' to handle both inline (single backtick) and block (triple backtick) code
+        code(props: any) {
+          const { node, inline, className, children } = props;
           const match = /language-(\w+)/.exec(className || '');
           const language = match ? match[1] : '';
           
@@ -63,8 +64,8 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, compon
           }
           codeContent = codeContent.replace(/\n$/, '');
 
-          if (!inline && match) {
-             // Block code with specific language
+          // "Three quotes" (Block Code)
+          if (!inline) {
              return (
                 <CodeBlock 
                     language={language} 
@@ -77,21 +78,10 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, compon
                     {codeContent}
                 </CodeBlock>
              );
-          } else if (!inline) {
-              // Block code without language (or just triple backticks)
-              return (
-                <CodeBlock 
-                    isStreaming={false}
-                    onRunCode={onRunCode}
-                    isDisabled={isRunDisabled}
-                >
-                    {codeContent}
-                </CodeBlock>
-             );
-          } else {
-              // Inline code
-              return <InlineCode>{children}</InlineCode>;
-          }
+          } 
+          
+          // "One quote" (Inline Highlight/Code)
+          return <InlineCode>{children}</InlineCode>;
         },
         // Override pre to unwrap the code block (since CodeBlock provides its own container)
         // This prevents double-padding or double-borders.
