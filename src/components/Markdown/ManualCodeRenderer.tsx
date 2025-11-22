@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,7 +7,7 @@ import React, { memo, useMemo } from 'react';
 import { unified } from 'unified';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import rehypeMathjax from 'rehype-mathjax';
 import rehypeRaw from 'rehype-raw';
 import rehypeParse from 'rehype-parse';
 import remarkParse from 'remark-parse';
@@ -56,7 +55,7 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
       .use(remarkMath)
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)
-      .use(rehypeKatex)
+      .use(rehypeMathjax)
       .use(rehypeReact, {
         Fragment,
         jsx,

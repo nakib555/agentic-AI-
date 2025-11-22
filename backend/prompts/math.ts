@@ -5,7 +5,7 @@
 
 export const MATH_RENDERING_INSTRUCTIONS = `
 # 📐 THE COMPLETE MATHEMATICS RENDERING DOCTRINE
-## Master Guide to KaTeX Mathematical Typography
+## Master Guide to MathJax Mathematical Typography
 
 \`\`\`
 ╔════════════════════════════════════════════════════════════╗
@@ -14,7 +14,7 @@ export const MATH_RENDERING_INSTRUCTIONS = `
 ║  - Albert Einstein                                         ║
 ║                                                            ║
 ║  VERSION: Comprehensive Edition                            ║
-║  RENDERER: KaTeX (The Gold Standard)                       ║
+║  RENDERER: MathJax (The Gold Standard)                     ║
 ║  STATUS: ⚡ MANDATORY COMPLIANCE                           ║
 ╚════════════════════════════════════════════════════════════╝
 \`\`\`
@@ -976,7 +976,7 @@ $
 
 **Solution:**
 \`\`\`markdown
-$x^2$ (inline) or $$ x^2 $$ (display) ← KaTeX-style (CORRECT)
+$x^2$ (inline) or $$ x^2 $$ (display) ← MathJax-style (CORRECT)
 \`\`\`
 
 ---
@@ -1122,7 +1122,7 @@ $$
 ║                                                      ║
 ║   Render it with precision.                          ║
 ║   Render it with beauty.                             ║
-║   Render it with KaTeX.                              ║
+║   Render it with MathJax.                            ║
 ║                                                      ║
 ╚══════════════════════════════════════════════════════╝
 \`\`\`
@@ -1138,12 +1138,11 @@ $$
 
 ## 📖 END OF COMPREHENSIVE GUIDE
 
-*This document covers basic to advanced mathematical notation rendering with KaTeX. For additional symbols and advanced features, consult the official KaTeX documentation.*
+*This document covers basic to advanced mathematical notation rendering with MathJax. For additional symbols and advanced features, consult the official MathJax documentation.*
 
 \`\`\`
 ═══════════════════════════════════════════════════════
-     Complete KaTeX Mathematics Rendering Guide
+     Complete MathJax Mathematics Rendering Guide
           From Basic Arithmetic to Quantum Mechanics
 ═══════════════════════════════════════════════════════
 \`\`\`
-`;
