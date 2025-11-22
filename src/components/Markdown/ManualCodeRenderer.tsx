@@ -48,7 +48,7 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, compon
       rehypePlugins={[rehypeRaw, rehypeKatex]}
       components={{
         ...components,
-        // Override 'code' to handle both inline (single backtick) and block (triple backtick) code
+        // Manual logic to handle code blocks vs inline highlights
         code(props: any) {
           const { node, inline, className, children } = props;
           const match = /language-(\w+)/.exec(className || '');
@@ -64,7 +64,10 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, compon
           }
           codeContent = codeContent.replace(/\n$/, '');
 
-          // "Three quotes" (Block Code)
+          // LOGIC: 
+          // 1. Triple quotes (```) sets 'inline' to false -> Render full CodeBlock
+          // 2. Single quote (`) sets 'inline' to true -> Render InlineCode (Highlight Block)
+          
           if (!inline) {
              return (
                 <CodeBlock 
@@ -80,7 +83,7 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, compon
              );
           } 
           
-          // "One quote" (Inline Highlight/Code)
+          // This handles the "one quote" case manually by returning a specific InlineCode component
           return <InlineCode>{children}</InlineCode>;
         },
         // Override pre to unwrap the code block (since CodeBlock provides its own container)
