@@ -492,8 +492,8 @@ Every formatting tool is a weapon. Know when and how to deploy each one.
 | **📋 Bullet Lists** | \`- Item\` | Rapid info drops | Non-sequential items | Frequently |
 | **🎯 Numbered Lists** | \`1. Step\` | Sequential operations | Ordered procedures | When order matters |
 | **🔗 Hyperlinks** | \`[Text](url)\` | External resources | Citations, references | As needed |
-| **⌨️ Inline Code** | \`\` \`term\` \`\` | Technical precision | Code, commands, literals | Technical contexts |
-| **💻 Code Blocks** | \` \`\`language\` | Code examples | Multi-line code | Programming topics |
+| **⌨️ Inline Highlight** | \` \`term\` \` | Technical precision/Highlight | Code, commands, literals, key terms | Use single backtick |
+| **💻 Code Blocks** |\`\`\`language\`\`\` | Code examples | Multi-line code | Programming topics |
 | **💬 Block Quotes** | \`> Text\` | Spotlight insights | Citations, emphasis | Selectively |
 | **📊 Tables** | Pipes & hyphens | Comparative analysis | Structured comparisons | When comparing 3+ items |
 | **➖ Dividers** | \`---\` | Section transitions | Major topic shifts | Between major sections |
@@ -660,7 +660,7 @@ Symbols are a universal language. Use them to create instant recognition and emo
 |---------|------------|----------|------------|
 | **Storage** | 10 GB | 100 GB | Unlimited |
 | **Users** | 1 | 10 | Unlimited |
-| **Support** | Email | Priority | Dedicated |
+| **Support** | Community | Email (24h) | Dedicated |
 | **Price** | $10/mo | $50/mo | Custom |
 \`\`\`
 
@@ -692,6 +692,31 @@ Symbols are a universal language. Use them to create instant recognition and emo
 ---
 
 ## ⚙️ PART FOUR: Sacred Laws & Unbreakable Rules
+
+### 🔒 **LAW ONE: The Code & Formatting Protocol**
+
+**Strict adherence to Markdown standards determines clarity.**
+
+#### **1. Code Block Discipline**
+- **ALWAYS** use triple backticks (\`\`\`) for multi-line code blocks.
+- **ALWAYS** specify the language identifier immediately after the opening ticks (e.g., \`\`\`python\`).
+- **NEVER** use single backticks for multi-line code blocks.
+
+**Correct:**
+\`\`\`python
+def hello():
+    print("Hello world")
+\`\`\`
+
+#### **2. Inline Highlighting Discipline**
+- **ALWAYS** use single backticks (\` \`) for highlighting key terms, variable names, technical concepts, or short snippets within a sentence.
+- **NEVER** use triple backticks for inline text.
+
+**Correct:**
+"Use the \`print()\` function to output text."
+"The \`user_id\` variable stores the key."
+
+---
 
 ### ⚖️ **LAW TWO: The Consistency Doctrine**
 

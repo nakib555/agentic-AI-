@@ -294,7 +294,9 @@ export const useAppLogic = () => {
     // Check if the most recent chat is already a new, empty chat.
     const mostRecentChat = chat.chatHistory[0];
     
-    if (mostRecentChat && mostRecentChat.title === 'New Chat' && mostRecentChat.messages.length === 0) {
+    // CRITICAL FIX: Check if messages array exists before accessing length.
+    // Chat history summaries from the backend do not include the messages array.
+    if (mostRecentChat && mostRecentChat.title === 'New Chat' && mostRecentChat.messages?.length === 0) {
       // If we are currently in it, do nothing (avoid duplicate empty chats)
       if (chat.currentChatId === mostRecentChat.id) {
           return;
@@ -313,7 +315,8 @@ export const useAppLogic = () => {
       const mostRecentChat = chat.chatHistory[0];
       if (!mostRecentChat) return false;
       
-      const isMostRecentEmptyNewChat = mostRecentChat.title === 'New Chat' && mostRecentChat.messages.length === 0;
+      // CRITICAL FIX: Check if messages array exists before accessing length.
+      const isMostRecentEmptyNewChat = mostRecentChat.title === 'New Chat' && mostRecentChat.messages?.length === 0;
       const isCurrentChat = chat.currentChatId === mostRecentChat.id;
       
       // Disable only if we are ALREADY sitting in the empty new chat.
