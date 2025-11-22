@@ -34,8 +34,9 @@ self.addEventListener('fetch', event => {
 
   // CRITICAL FIX: Do not cache API requests or browser extensions. 
   // Always let these go to the network.
+  // We use .includes('/api/') to be safe against potential path variations.
   if (event.request.method !== 'GET' || 
-      url.pathname.startsWith('/api/') || 
+      url.pathname.includes('/api/') || 
       url.protocol === 'chrome-extension:') {
     return;
   }

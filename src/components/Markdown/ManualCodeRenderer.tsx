@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -51,8 +52,16 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, compon
         code({ node, inline, className, children, ...props }: any) {
           const match = /language-(\w+)/.exec(className || '');
           const language = match ? match[1] : '';
-          // Ensure children is treated safely to avoid "undefined" text
-          const codeContent = String(children || '').replace(/\n$/, '');
+          
+          // Ensure children is treated safely to avoid "undefined" text.
+          // React Markdown can pass an array if text contains mixed nodes, so we handle both.
+          let codeContent = '';
+          if (Array.isArray(children)) {
+              codeContent = children.map(child => String(child ?? '')).join('');
+          } else {
+              codeContent = String(children ?? '');
+          }
+          codeContent = codeContent.replace(/\n$/, '');
 
           if (!inline && match) {
              // Block code with specific language

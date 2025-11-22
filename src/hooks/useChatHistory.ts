@@ -9,7 +9,15 @@ import type { ChatSession, Message, ModelResponse } from '../types';
 import { fetchFromApi } from '../utils/api';
 
 const fetchApi = async (url: string, options?: RequestInit) => {
-    const response = await fetchFromApi(url, options);
+    // Cache busting: Add timestamp to GET requests to prevent serving stale data
+    // from Service Worker or Browser Cache.
+    let finalUrl = url;
+    if (!options || options.method === 'GET' || !options.method) {
+        const separator = finalUrl.includes('?') ? '&' : '?';
+        finalUrl = `${finalUrl}${separator}_t=${Date.now()}`;
+    }
+
+    const response = await fetchFromApi(finalUrl, options);
     if (!response.ok) {
         const error = await response.json().catch(() => ({ message: response.statusText }));
         // Pass through status for handling 404s in caller
@@ -98,7 +106,7 @@ export const useChatHistory = () => {
                         setCurrentChatId(null);
                     }
                 } else {
-                    // On other errors, just unset loading state
+                    // On other errors, just unset loading state so user can try again
                     setChatHistory(prev => prev.map(c => c.id === currentChatId ? { ...c, isLoading: false } : c));
                 }
             }
