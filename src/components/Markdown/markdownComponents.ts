@@ -77,11 +77,13 @@ export const MarkdownComponents = {
     },
     blockquote: BlockquoteRouter,
     a: StyledLink,
-    table: (props: any) => React.createElement('div', { className: "my-4 overflow-x-auto" }, React.createElement('div', { className: "inline-block min-w-full" }, React.createElement('div', { className: "rounded-lg border border-slate-200 dark:border-slate-200/10" }, React.createElement('table', { className: "text-sm", ...props })))),
-    thead: (props: any) => React.createElement('thead', { className: "bg-slate-100 dark:bg-black/20", ...props }),
-    tr: (props: any) => React.createElement('tr', { className: "border-b border-slate-200 dark:border-slate-200/10 last:border-b-0", ...props }),
-    th: (props: any) => React.createElement('th', { className: "px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200", ...props }),
-    td: (props: any) => React.createElement('td', { className: "px-4 py-3 text-slate-600 dark:text-slate-300 break-words", ...props }),
+    // Responsive Table Structure
+    table: (props: any) => React.createElement('div', { className: "my-4 w-full overflow-x-auto rounded-lg border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/20 shadow-sm" }, React.createElement('table', { className: "w-full text-sm text-left border-collapse", ...props })),
+    thead: (props: any) => React.createElement('thead', { className: "bg-slate-50 dark:bg-white/5", ...props }),
+    tbody: (props: any) => React.createElement('tbody', { className: "divide-y divide-slate-200 dark:divide-white/5", ...props }),
+    tr: (props: any) => React.createElement('tr', { className: "transition-colors hover:bg-slate-50/50 dark:hover:bg-white/5", ...props }),
+    th: (props: any) => React.createElement('th', { className: "px-4 py-3 font-semibold text-slate-900 dark:text-slate-100 align-bottom", ...props }),
+    td: (props: any) => React.createElement('td', { className: "px-4 py-3 text-slate-700 dark:text-slate-300 align-top", ...props }),
     hr: (props: any) => React.createElement('hr', { className: "my-6 border-slate-200 dark:border-white/10", ...props }),
     del: (props: any) => React.createElement('del', { className: "text-slate-500 dark:text-slate-400", ...props }),
     s: (props: any) => React.createElement('s', { className: "text-slate-500 dark:text-slate-400", ...props }),
@@ -104,7 +106,10 @@ export const WorkflowMarkdownComponents = {
         return React.createElement('li', { className: "pl-1", ...props });
     },
     blockquote: (props: any) => React.createElement('blockquote', { className: "custom-blockquote custom-blockquote-workflow my-2 text-slate-700 dark:text-slate-300", ...props }),
-    table: (props: any) => React.createElement('div', { className: "overflow-x-auto" }, React.createElement('table', { className: "table-auto w-full my-2 border-collapse border border-slate-300 dark:border-slate-600", ...props })),
-    th: (props: any) => React.createElement('th', { className: "border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-700 dark:text-slate-200", ...props }),
-    td: (props: any) => React.createElement('td', { className: "border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-600 dark:text-slate-300", ...props }),
+    // Compact Table for Workflow
+    table: (props: any) => React.createElement('div', { className: "my-2 w-full overflow-x-auto rounded border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/20" }, React.createElement('table', { className: "w-full text-xs text-left border-collapse", ...props })),
+    thead: (props: any) => React.createElement('thead', { className: "bg-slate-50 dark:bg-white/5", ...props }),
+    tr: (props: any) => React.createElement('tr', { className: "border-b border-slate-100 dark:border-white/5 last:border-0", ...props }),
+    th: (props: any) => React.createElement('th', { className: "px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 align-bottom", ...props }),
+    td: (props: any) => React.createElement('td', { className: "px-3 py-2 text-slate-600 dark:text-slate-300 align-top", ...props }),
 };

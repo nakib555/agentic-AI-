@@ -12,10 +12,14 @@ const fetchApi = async (url: string, options?: RequestInit) => {
     const response = await fetchFromApi(url, options);
     if (!response.ok) {
         const error = await response.json().catch(() => ({ message: response.statusText }));
+        // Pass through status for handling 404s in caller
+        const enrichedError = new Error(error.message || 'API request failed');
+        (enrichedError as any).status = response.status;
+        
         if (response.status === 401) {
             throw new Error('API key is invalid. Please check it in Settings.');
         }
-        throw new Error(error.message || 'API request failed');
+        throw enrichedError;
     }
     if (response.status === 204) return null; // No Content
     return response.json();
@@ -67,9 +71,13 @@ export const useChatHistory = () => {
 
     const loadFullChat = async () => {
         const chat = chatHistory.find(c => c.id === currentChatId);
-        // Check if messages array is missing. An empty array is a valid state (new chat),
-        // but `undefined` means it's a stub from the history list.
-        if (chat && chat.messages === undefined) {
+        
+        // Check if messages array is missing (undefined) OR if it's a "None" state (empty array but not a new chat)
+        // The backend now sends `messages: undefined` for summaries, ensuring this check passes.
+        // We also handle the case where it might be `[]` if the summary logic didn't strip it, provided it's not the "New Chat" placeholder.
+        const needsLoading = chat && (!chat.messages || (chat.messages.length === 0 && chat.title !== 'New Chat'));
+
+        if (needsLoading) {
             try {
                 const fullChat: ChatSession = await fetchApi(`/api/chats/${currentChatId}`);
                 setChatHistory(prev => prev.map(c => c.id === currentChatId ? fullChat : c));
@@ -77,7 +85,11 @@ export const useChatHistory = () => {
                 if (!isVersionMismatch(error)) {
                     console.error(`Failed to load messages for chat ${currentChatId}:`, error);
                 }
-                // Handle error, e.g., show a toast or revert selection
+                // If loading fails (e.g. deleted on server), we should probably remove it or deselect
+                if ((error as any).status === 404) {
+                    setChatHistory(prev => prev.filter(c => c.id !== currentChatId));
+                    setCurrentChatId(null);
+                }
             }
         }
     };
@@ -112,7 +124,7 @@ export const useChatHistory = () => {
     const previousHistory = chatHistoryRef.current;
     const wasCurrent = currentChatIdRef.current === chatId;
 
-    // Optimistic Update
+    // Optimistic Update: Remove immediately from UI
     setChatHistory(prev => prev.filter(c => c.id !== chatId));
     if (wasCurrent) {
         setCurrentChatId(null);
@@ -120,11 +132,18 @@ export const useChatHistory = () => {
 
     try {
         await fetchApi(`/api/chats/${chatId}`, { method: 'DELETE' });
-    } catch (error) {
-        if (isVersionMismatch(error)) return; // Do not rollback UI on version mismatch, let the overlay handle it
+    } catch (error: any) {
+        if (isVersionMismatch(error)) return; 
+
+        // If error is 404, the chat is already gone on server, so our optimistic delete is actually correct.
+        // Do not rollback.
+        if (error.status === 404) {
+            console.warn(`Chat ${chatId} was already deleted on server.`);
+            return;
+        }
 
         console.error(`Failed to delete chat ${chatId}:`, error);
-        // Rollback
+        // Rollback only on actual failures (500, network)
         setChatHistory(previousHistory);
         if (wasCurrent) {
             setCurrentChatId(chatId);
@@ -249,7 +268,7 @@ export const useChatHistory = () => {
       if (!chatToUpdate) return;
       const previousChat = { ...chatToUpdate };
 
-      // Optimistic Update
+      // Optimistic Update: Update local state immediately
       setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, ...update } : s));
 
       try {
@@ -262,9 +281,8 @@ export const useChatHistory = () => {
       } catch (error) {
           if (isVersionMismatch(error)) return;
           console.error(`Failed to update chat ${chatId}:`, error);
-          // Rollback
+          // Rollback on error
           setChatHistory(prev => prev.map(s => s.id === chatId ? previousChat : s));
-          // alert("Failed to update chat. Changes reverted."); // Optional: might be too noisy for auto-saves
       }
   }, []);
   

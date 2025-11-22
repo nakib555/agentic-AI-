@@ -1,3 +1,4 @@
+
 /* PART 1 of 2 of markdown.css (Lines 1-68) */
 
 /* Vertical spacing for AI-generated custom DIVs */
@@ -70,14 +71,27 @@
 /* Robust Table Styling */
 .markdown-content table,
 .workflow-markdown table {
-  display: block; /* Allows horizontal scroll on small screens */
   width: 100%;
-  overflow-x: auto;
   border-collapse: collapse;
-  -webkit-overflow-scrolling: touch;
 }
 
+/* Ensure wrapper handles scroll, but table tries to fit and wrap text */
+.markdown-content th,
 .markdown-content td,
-.markdown-content th {
-  min-width: 100px; /* Prevent squished columns */
+.workflow-markdown th,
+.workflow-markdown td {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Prevent extremely narrow columns, forcing scroll if content is dense */
+.markdown-content th,
+.markdown-content td {
+  min-width: 100px;
+}
+
+.workflow-markdown th,
+.workflow-markdown td {
+  min-width: 80px;
 }

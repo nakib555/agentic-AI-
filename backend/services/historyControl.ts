@@ -301,13 +301,15 @@ class HistoryControlService {
 
     async getHistoryList(): Promise<Omit<ChatSession, 'messages'>[]> {
         const index = await this.loadIndex();
-        // Return the cached index list. Messages are not loaded here for performance.
+        // Return the cached index list. 
+        // CRITICAL: We explicitly set messages to undefined so the frontend knows 
+        // this is a summary and needs to fetch full details.
         return index.map(e => ({
             id: e.id,
             title: e.title,
             createdAt: e.createdAt,
             model: e.model,
-            messages: [] 
+            messages: undefined as any // Type cast to satisfy TS but send "undefined" in logic (JSON.stringify will omit it)
         }));
     }
 
