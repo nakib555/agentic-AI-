@@ -3,21 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { memo, useMemo, useEffect } from 'react';
-import { BlockMath, InlineMath } from 'react-katex';
-import 'katex/dist/katex.min.css';
-import { getMarkdownComponents } from './markdownComponents';
-import rehypeMathjax from 'rehype-mathjax';
+import React, { memo, useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
-
-declare global {
-  interface Window {
-    MathJax?: {
-      typesetPromise: () => Promise<void>;
-      tex2chtml: (tex: string) => { outerHTML: string };
-    };
-  }
-}
+import remarkGfm from 'remark-gfm';
+import rehypeMathjax from 'rehype-mathjax';
+import rehypeRaw from 'rehype-raw';
+import { getMarkdownComponents } from './markdownComponents';
+import 'katex/dist/katex.min.css';
 
 type ManualCodeRendererProps = {
   text: string;
@@ -26,37 +19,6 @@ type ManualCodeRendererProps = {
   onRunCode?: (language: string, code: string) => void;
   isRunDisabled?: boolean;
 };
-
-/**
- * Render a math expression using KaTeX first,
- * fallback to MathJax if KaTeX cannot render it.
- */
-function renderMathHybrid(content: string) {
-  try {
-    // Inline Math
-    if (content.startsWith('$') && content.endsWith('$') && !content.startsWith('$$')) {
-      return <InlineMath>{content.slice(1, -1)}</InlineMath>;
-    }
-
-    // Block Math
-    if (content.startsWith('$$') && content.endsWith('$$')) {
-      return <BlockMath>{content.slice(2, -2)}</BlockMath>;
-    }
-
-    // Not math → return raw content
-    return content;
-  } catch (err) {
-    // Fallback: render using MathJax
-    // Note: MathJax must be loaded globally in your app
-    return (
-      <span
-        dangerouslySetInnerHTML={{
-          __html: window.MathJax?.tex2chtml(content)?.outerHTML || content,
-        }}
-      />
-    );
-  }
-}
 
 const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
   text,
@@ -72,7 +34,9 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
     [baseComponents, onRunCode, isRunDisabled]
   );
 
-  // Preprocess highlights
+  // Preprocess highlights to HTML <mark> tags
+  // Markdown parsers usually ignore custom syntax like ==text==, so we pre-convert to HTML
+  // and use rehype-raw to parse the HTML.
   const processedText = useMemo(() => {
     if (!text) return '';
     return text
@@ -80,30 +44,17 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
       .replace(/==(.*?)==/g, '<mark>$1</mark>');
   }, [text]);
 
-  // Split text into math and non-math segments
-  const rendered = useMemo(() => {
-    // Regex splits inline $…$ and block $$…$$
-    const segments = processedText.split(/(\${1,2}[^$]+\${1,2})/g);
-
-    return (
-      <div className="markdown-root">
-        {segments.map((seg, i) => (
-          <span key={i}>
-            {/\${1,2}.*\${1,2}/.test(seg) ? renderMathHybrid(seg) : seg}
-          </span>
-        ))}
-      </div>
-    );
-  }, [processedText]);
-
-  // Optional: trigger MathJax typesetting for fallback expressions
-  useEffect(() => {
-    if (window.MathJax) {
-      window.MathJax.typesetPromise();
-    }
-  }, [rendered]);
-
-  return <div className="markdown-root">{rendered}</div>;
+  return (
+    <div className="markdown-root">
+        <ReactMarkdown
+            remarkPlugins={[remarkMath, remarkGfm]}
+            rehypePlugins={[rehypeRaw, rehypeMathjax]}
+            components={mergedComponents}
+        >
+            {processedText}
+        </ReactMarkdown>
+    </div>
+  );
 };
 
 export const ManualCodeRenderer = memo(ManualCodeRendererRaw);

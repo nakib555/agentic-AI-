@@ -5,7 +5,6 @@
  */
 import type { FunctionCall } from '@google/genai';
 import type { MessageError } from './error';
-import type { ParsedWorkflow } from './workflow';
 
 export type BrowserSession = {
     url: string;

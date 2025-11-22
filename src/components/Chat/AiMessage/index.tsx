@@ -21,8 +21,6 @@ import { ExecutionApproval } from '../../AI/ExecutionApproval';
 import type { MessageFormHandle } from '../MessageForm/index';
 import { useAiMessageLogic } from './useAiMessageLogic';
 import { MessageToolbar } from './MessageToolbar';
-import { FlowToken } from '../../AI/FlowToken';
-import { cleanTextForTts } from './utils';
 import { ThinkingWorkflow } from '../../AI/ThinkingWorkflow';
 import { FormattedBlock } from '../../Markdown/FormattedBlock';
 import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
@@ -159,14 +157,18 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
           
           <div className="markdown-content max-w-none w-full">
-            {/* Renders streaming final answer using FlowToken for smooth typing effect */}
+            {/* Streaming Answer: Now using ManualCodeRenderer for proper styling during generation */}
             {isStreamingFinalAnswer && (
-              <FlowToken tps={10}>
-                  {cleanTextForTts(finalAnswerText)}
-              </FlowToken>
+               <ManualCodeRenderer 
+                  text={finalAnswerText} 
+                  components={MarkdownComponents} 
+                  isStreaming={true} 
+                  onRunCode={isAgentMode ? logic.handleRunCode : undefined}
+                  isRunDisabled={true}
+               />
             )}
             
-            {/* Renders complete, static final answer by iterating parsed segments */}
+            {/* Complete Answer: Renders static parsed segments */}
             {thinkingIsComplete && logic.hasFinalAnswer && !activeResponse.error && (
                 parsedFinalAnswer.map((segment, index) => {
                     const key = `${id}-${index}`;

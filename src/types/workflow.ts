@@ -1,9 +1,11 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageError, ToolCallEvent } from './index';
+import type { MessageError } from './error';
+import type { ToolCallEvent } from './message';
 
 // Types moved from src/components/AI/WorkflowNode.tsx
 export type WorkflowNodeStatus = 'pending' | 'active' | 'done' | 'failed';
