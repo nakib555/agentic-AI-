@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -24,79 +24,75 @@ type ManualCodeRendererProps = {
 const supportedColors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
 
 const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, components, isStreaming, onRunCode, isRunDisabled }) => {
-  // Split the text by the code block delimiter to handle streaming correctly.
-  const parts = text.split('```');
+  
+  // Pre-process text for custom syntax (highlights)
+  // We do this globally on the text string before markdown parsing
+  const processedText = useMemo(() => {
+      if (!text) return '';
+      return text.replace(/==(.*?)==/gs, (match, content) => {
+        const colorMatch = content.match(/^\[([a-zA-Z]+)\]/);
+        if (colorMatch && colorMatch[1]) {
+            const colorName = colorMatch[1].toLowerCase();
+            if (supportedColors.includes(colorName)) {
+                const textContent = content.substring(colorMatch[0].length);
+                return `<mark class="mark-highlight mark-highlight-${colorName}">${textContent}</mark>`;
+            }
+        }
+        return `<mark class="mark-highlight mark-highlight-default">${content}</mark>`;
+      });
+  }, [text]);
 
   return (
-    <>
-      {parts.map((part, index) => {
-        // Even-indexed parts (0, 2, 4...) are regular markdown text.
-        if (index % 2 === 0) {
-          if (part === '') return null; // Avoid rendering empty markdown sections.
-          
-          const processedPart = part.replace(/==(.*?)==/gs, (match, content) => {
-            const colorMatch = content.match(/^\[([a-zA-Z]+)\]/);
-            
-            if (colorMatch && colorMatch[1]) {
-                const colorName = colorMatch[1].toLowerCase();
-                if (supportedColors.includes(colorName)) {
-                    const textContent = content.substring(colorMatch[0].length);
-                    return `<mark class="mark-highlight mark-highlight-${colorName}">${textContent}</mark>`;
-                }
-            }
-            // Default behavior for standard ==highlight== or unsupported colors
-            return `<mark class="mark-highlight mark-highlight-default">${content}</mark>`;
-          });
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeRaw, rehypeKatex]}
+      components={{
+        ...components,
+        // Override 'code' to handle both inline and block code
+        code({ node, inline, className, children, ...props }: any) {
+          const match = /language-(\w+)/.exec(className || '');
+          const language = match ? match[1] : '';
+          const codeContent = String(children).replace(/\n$/, '');
 
-          return (
-            <ReactMarkdown
-              key={index}
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeRaw, rehypeKatex]}
-              components={{
-                ...components,
-                // Override 'code' to handle inline code snippets within markdown sections.
-                code: ({ children }) => <InlineCode children={children ?? ''} />,
-              }}
-            >
-              {processedPart}
-            </ReactMarkdown>
-          );
-        }
-
-        // Odd-indexed parts (1, 3, 5...) are code blocks.
-        const firstNewlineIndex = part.indexOf('\n');
-        let language = '';
-        let code = '';
-
-        // During streaming, a part with no newline might just be the language specifier.
-        if (firstNewlineIndex === -1 && !part.includes(' ')) {
-          language = part.trim();
-          code = '';
-        } else {
-          // If there is a newline, the first line is potentially the language.
-          const firstLine = part.substring(0, firstNewlineIndex).trim();
-          // A valid language specifier is a single word with no spaces.
-          if (firstNewlineIndex !== -1 && !firstLine.includes(' ')) {
-            language = firstLine;
-            code = part.substring(firstNewlineIndex + 1);
+          if (!inline && match) {
+             // Block code with specific language
+             return (
+                <CodeBlock 
+                    language={language} 
+                    // We disable isStreaming for blocks inside the full renderer to prevent layout jumping
+                    // as react-markdown re-renders the tree.
+                    isStreaming={false} 
+                    onRunCode={onRunCode}
+                    isDisabled={isRunDisabled}
+                >
+                    {codeContent}
+                </CodeBlock>
+             );
+          } else if (!inline) {
+              // Block code without language (or just triple backticks)
+              return (
+                <CodeBlock 
+                    isStreaming={false}
+                    onRunCode={onRunCode}
+                    isDisabled={isRunDisabled}
+                >
+                    {codeContent}
+                </CodeBlock>
+             );
           } else {
-            // No valid language specifier found, so the whole part is treated as code.
-            language = '';
-            code = part;
+              // Inline code
+              return <InlineCode>{children}</InlineCode>;
           }
+        },
+        // Override pre to unwrap the code block (since CodeBlock provides its own container)
+        // This prevents double-padding or double-borders.
+        pre({ children }) {
+            return <div className="not-prose my-4">{children}</div>;
         }
-        
-        // Animate only the last code block when streaming
-        return <CodeBlock 
-            key={index} 
-            language={language} 
-            isStreaming={isStreaming && index === parts.length - 1}
-            onRunCode={onRunCode}
-            isDisabled={isRunDisabled}
-        >{code}</CodeBlock>;
-      })}
-    </>
+      }}
+    >
+      {processedText}
+    </ReactMarkdown>
   );
 };
 
