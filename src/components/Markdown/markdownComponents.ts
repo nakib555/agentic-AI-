@@ -7,6 +7,8 @@
 import React from 'react';
 import { Bubble } from './Bubble';
 import { StyledLink } from './StyledLink';
+import { CodeBlock } from './CodeBlock';
+import { InlineCode } from './InlineCode';
 
 // Custom Blockquote component that acts as a router for Callouts and Bubbles
 const BlockquoteRouter = (props: any) => {
@@ -62,13 +64,18 @@ const isLiEmpty = (props: any): boolean => {
     return content.trim() === '';
 };
 
-// Main component map for standard markdown rendering in the chat.
-export const MarkdownComponents = {
+type MarkdownOptions = {
+    onRunCode?: (language: string, code: string) => void;
+    isRunDisabled?: boolean;
+};
+
+export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
     h1: (props: any) => React.createElement('h1', { className: "text-2xl font-bold my-5 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
     h2: (props: any) => React.createElement('h2', { className: "text-xl font-bold my-4 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
     h3: (props: any) => React.createElement('h3', { className: "text-lg font-bold my-3 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
     h4: (props: any) => React.createElement('h4', { className: "text-sm font-bold my-2 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
     p: (props: any) => React.createElement('p', { className: "text-sm mb-4 leading-relaxed text-slate-700 dark:text-slate-300 break-words", ...props }),
+    
     // Lists: Use padding (pl-6) with list-outside to ensure markers sit in the padding area, aligned correctly.
     ul: (props: any) => React.createElement('ul', { className: "text-sm list-disc list-outside pl-6 mb-4 space-y-1 text-slate-700 dark:text-slate-300 marker:text-slate-400", ...props }),
     ol: (props: any) => React.createElement('ol', { className: "text-sm list-decimal list-outside pl-6 mb-4 space-y-1 text-slate-700 dark:text-slate-300 marker:text-slate-400", ...props }),
@@ -76,8 +83,46 @@ export const MarkdownComponents = {
         if (isLiEmpty(props)) return null;
         return React.createElement('li', { className: "pl-1 break-words", ...props });
     },
+    
     blockquote: BlockquoteRouter,
     a: StyledLink,
+    
+    // New styles
+    strong: (props: any) => React.createElement('strong', { className: "font-bold text-slate-900 dark:text-slate-100", ...props }),
+    em: (props: any) => React.createElement('em', { className: "italic text-slate-800 dark:text-slate-200", ...props }),
+    img: (props: any) => React.createElement('img', { className: "max-w-full h-auto rounded-lg my-4 border border-gray-200 dark:border-gray-700", loading: "lazy", ...props }),
+
+    // Code handling moved here
+    code: ({ inline, className, children, ...props }: any) => {
+        if (inline) {
+             return React.createElement(InlineCode, null, children);
+        }
+
+        const match = /language-(\w+)/.exec(className || '');
+        const language = match ? match[1] : '';
+        
+        // Extract text content safely for the code block
+        let codeContent = '';
+        if (Array.isArray(children)) {
+            codeContent = children.map(child => 
+              (typeof child === 'string' || typeof child === 'number') ? String(child) : ''
+            ).join('');
+        } else {
+            codeContent = String(children ?? '');
+        }
+        codeContent = codeContent.replace(/\n$/, '');
+
+        return React.createElement(CodeBlock, { 
+            language, 
+            // Disable streaming animation for static blocks inside full render to prevent layout shifts
+            isStreaming: false, 
+            onRunCode: options.onRunCode,
+            isDisabled: options.isRunDisabled,
+            children: codeContent
+        });
+    },
+    pre: ({ children }: any) => React.createElement('div', { className: "not-prose my-4" }, children),
+
     // Responsive Table Structure
     table: (props: any) => React.createElement('div', { className: "my-4 w-full overflow-x-auto rounded-lg border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/20 shadow-sm" }, React.createElement('table', { className: "w-full text-sm text-left border-collapse", ...props })),
     thead: (props: any) => React.createElement('thead', { className: "bg-slate-50 dark:bg-white/5", ...props }),
@@ -90,7 +135,10 @@ export const MarkdownComponents = {
     s: (props: any) => React.createElement('s', { className: "text-slate-500 dark:text-slate-400", ...props }),
     sub: (props: any) => React.createElement('sub', { className: "align-sub text-xs mx-0.5", ...props }),
     sup: (props: any) => React.createElement('sup', { className: "align-super text-xs mx-0.5", ...props }),
-};
+});
+
+// Main component map for standard markdown rendering in the chat.
+export const MarkdownComponents = getMarkdownComponents();
 
 // A more compact set of components for rendering markdown within workflow nodes.
 export const WorkflowMarkdownComponents = {
@@ -114,4 +162,14 @@ export const WorkflowMarkdownComponents = {
     tr: (props: any) => React.createElement('tr', { className: "border-b border-slate-100 dark:border-white/5 last:border-0", ...props }),
     th: (props: any) => React.createElement('th', { className: "px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 align-bottom", ...props }),
     td: (props: any) => React.createElement('td', { className: "px-3 py-2 text-slate-600 dark:text-slate-300 align-top", ...props }),
+    // No code running in workflow summary
+    code: ({ inline, className, children, ...props }: any) => {
+        if (inline) return React.createElement(InlineCode, null, children);
+        const match = /language-(\w+)/.exec(className || '');
+        let content = String(children ?? '').replace(/\n$/, '');
+        if (Array.isArray(children)) content = children.join('');
+        
+        return React.createElement(CodeBlock, { language: match ? match[1] : '', isStreaming: false, children: content });
+    },
+    pre: ({ children }: any) => React.createElement('div', { className: "not-prose my-2" }, children),
 };

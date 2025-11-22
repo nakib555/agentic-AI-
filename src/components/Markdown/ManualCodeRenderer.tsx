@@ -10,8 +10,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
-import { CodeBlock } from './CodeBlock';
-import { InlineCode } from './InlineCode';
+import { getMarkdownComponents } from './markdownComponents';
 
 type ManualCodeRendererProps = {
   text: string;
@@ -42,59 +41,24 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, compon
       });
   }, [text]);
 
+  // Create a custom components map that includes the run code handlers
+  const customComponents = useMemo(() => {
+      // We merge the passed components (which might be base MarkdownComponents) 
+      // with our dynamic ones that need the run callbacks.
+      // getMarkdownComponents handles the creation of the robust 'code' and 'pre' blocks.
+      const dynamicComponents = getMarkdownComponents({ onRunCode, isRunDisabled });
+      
+      return {
+          ...components,
+          ...dynamicComponents
+      };
+  }, [components, onRunCode, isRunDisabled]);
+
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
       rehypePlugins={[rehypeRaw, rehypeKatex]}
-      components={{
-        ...components,
-        // Strict condition for code rendering:
-        // 1. Triple backticks (```) are rendered as 'block' code using CodeBlock.
-        // 2. Single backticks (`) are rendered as 'inline' code using InlineCode (highlight style).
-        code(props: any) {
-          const { inline, className, children } = props;
-          
-          // If 'inline' is true, it comes from single backticks `code`.
-          // We render this manually with a highlight block style.
-          if (inline) {
-             return <InlineCode>{children}</InlineCode>;
-          }
-
-          // If 'inline' is false, it comes from triple backticks ```code``` (or indented blocks).
-          // We render this using the full CodeBlock component.
-          const match = /language-(\w+)/.exec(className || '');
-          const language = match ? match[1] : '';
-          
-          // Extract text content safely for the code block
-          let codeContent = '';
-          if (Array.isArray(children)) {
-              codeContent = children.map(child => 
-                (typeof child === 'string' || typeof child === 'number') ? String(child) : ''
-              ).join('');
-          } else {
-              codeContent = String(children ?? '');
-          }
-          codeContent = codeContent.replace(/\n$/, '');
-
-          return (
-            <CodeBlock 
-                language={language} 
-                // We disable isStreaming for blocks inside the full renderer to prevent layout jumping
-                // as react-markdown re-renders the tree.
-                isStreaming={false} 
-                onRunCode={onRunCode}
-                isDisabled={isRunDisabled}
-            >
-                {codeContent}
-            </CodeBlock>
-          );
-        },
-        // Override pre to unwrap the code block (since CodeBlock provides its own container)
-        // This prevents double-padding or double-borders around the CodeBlock.
-        pre({ children }) {
-            return <div className="not-prose my-4">{children}</div>;
-        }
-      }}
+      components={customComponents}
     >
       {processedText}
     </ReactMarkdown>
