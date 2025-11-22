@@ -10,6 +10,15 @@ import { getMarkdownComponents } from './markdownComponents';
 import rehypeMathjax from 'rehype-mathjax';
 import remarkMath from 'remark-math';
 
+declare global {
+  interface Window {
+    MathJax?: {
+      typesetPromise: () => Promise<void>;
+      tex2chtml: (tex: string) => { outerHTML: string };
+    };
+  }
+}
+
 type ManualCodeRendererProps = {
   text: string;
   components: any;
