@@ -69,11 +69,12 @@ export const MarkdownComponents = {
     h3: (props: any) => React.createElement('h3', { className: "text-lg font-bold my-3 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
     h4: (props: any) => React.createElement('h4', { className: "text-sm font-bold my-2 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
     p: (props: any) => React.createElement('p', { className: "text-sm mb-4 leading-relaxed text-slate-700 dark:text-slate-300 break-words", ...props }),
-    ul: (props: any) => React.createElement('ul', { className: "text-sm list-disc list-inside mb-4 space-y-2 text-slate-700 dark:text-slate-300", ...props }),
-    ol: (props: any) => React.createElement('ol', { className: "text-sm list-decimal list-inside mb-4 space-y-2 text-slate-700 dark:text-slate-300", ...props }),
+    // Lists: Use padding (pl-6) with list-outside to ensure markers sit in the padding area, aligned correctly.
+    ul: (props: any) => React.createElement('ul', { className: "text-sm list-disc list-outside pl-6 mb-4 space-y-1 text-slate-700 dark:text-slate-300 marker:text-slate-400", ...props }),
+    ol: (props: any) => React.createElement('ol', { className: "text-sm list-decimal list-outside pl-6 mb-4 space-y-1 text-slate-700 dark:text-slate-300 marker:text-slate-400", ...props }),
     li: (props: any) => {
         if (isLiEmpty(props)) return null;
-        return React.createElement('li', { className: "pl-2 break-words", ...props });
+        return React.createElement('li', { className: "pl-1 break-words", ...props });
     },
     blockquote: BlockquoteRouter,
     a: StyledLink,
@@ -99,8 +100,9 @@ export const WorkflowMarkdownComponents = {
     h3: (props: any) => React.createElement('h3', { className: "text-sm font-semibold mb-1 text-slate-700 dark:text-slate-200", ...props }),
     h4: (props: any) => React.createElement('h4', { className: "text-sm font-semibold my-1 text-slate-600 dark:text-slate-300", ...props }),
     p: (props: any) => React.createElement('p', { className: "text-sm leading-relaxed text-slate-700 dark:text-slate-300 mb-2", ...props }),
-    ul: (props: any) => React.createElement('ul', { className: "text-sm list-disc pl-5 mb-2 space-y-1.5 text-slate-700 dark:text-slate-300", ...props }),
-    ol: (props: any) => React.createElement('ol', { className: "text-sm list-decimal pl-5 mb-2 space-y-1.5 text-slate-700 dark:text-slate-300", ...props }),
+    // Compact lists for workflow
+    ul: (props: any) => React.createElement('ul', { className: "text-sm list-disc list-outside pl-5 mb-2 space-y-1 text-slate-700 dark:text-slate-300", ...props }),
+    ol: (props: any) => React.createElement('ol', { className: "text-sm list-decimal list-outside pl-5 mb-2 space-y-1 text-slate-700 dark:text-slate-300", ...props }),
     li: (props: any) => {
         if (isLiEmpty(props)) return null;
         return React.createElement('li', { className: "pl-1", ...props });

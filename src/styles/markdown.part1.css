@@ -49,6 +49,33 @@
   border-left-width: 2px;
 }
 
+/* --- Robust List Alignment Fixes --- */
+
+/* 1. Base List Item Styling */
+.markdown-content li {
+  margin-bottom: 0.25rem;
+  line-height: 1.6;
+  position: relative; /* Context for positioning if needed */
+}
+
+/* 2. Paragraphs inside lists: Block display for proper wrapping */
+.markdown-content li > p {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  display: block;
+}
+
+/* 3. Ensure the first element inside an LI aligns with the bullet */
+.markdown-content li > *:first-child {
+  margin-top: 0 !important;
+}
+
+/* 4. Adjust KaTeX alignment inside lists */
+.markdown-content li .katex {
+  font-size: 1.1em;
+  vertical-align: baseline; 
+}
+
 /* --- Robust Overflow Protection --- */
 
 /* Prevent images from blowing out container width */
