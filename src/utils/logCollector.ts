@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -55,6 +56,9 @@ class LogCollector {
   }
 
   private formatMessage(message: any): string {
+    if (message instanceof Error) {
+        return `${message.name}: ${message.message}\n${message.stack}`;
+    }
     if (typeof message === 'object' && message !== null) {
       try {
         return JSON.stringify(message, null, 2);
@@ -68,7 +72,7 @@ class LogCollector {
   public formatLogs(): string {
     return this.logs.map(entry => {
       const timestamp = entry.timestamp.toISOString();
-      const messages = entry.messages.map(this.formatMessage).join(' ');
+      const messages = entry.messages.map(m => this.formatMessage(m)).join(' ');
       return `[${timestamp}] [${entry.level}] ${messages}`;
     }).join('\n');
   }

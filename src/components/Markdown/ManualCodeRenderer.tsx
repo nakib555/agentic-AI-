@@ -14,6 +14,7 @@ import rehypeParse from 'rehype-parse';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import rehypeReact from 'rehype-react';
+import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 
 import { getMarkdownComponents } from './markdownComponents';
 
@@ -57,10 +58,11 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
       .use(rehypeRaw)
       .use(rehypeKatex)
       .use(rehypeReact, {
-        createElement: React.createElement,
-        Fragment: React.Fragment,
+        Fragment,
+        jsx,
+        jsxs,
         components: mergedComponents
-      })
+      } as any) // Cast to any to avoid potential strict type conflicts with rehype-react versions
       .processSync(processedText);
 
     return file.result;
