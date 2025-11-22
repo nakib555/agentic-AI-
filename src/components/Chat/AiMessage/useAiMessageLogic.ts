@@ -1,11 +1,20 @@
-// PART 1 of 2 from src/components/Chat/AiMessage.tsx
-// This hook contains the logic for the AiMessage component.
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import type { Message, ModelResponse, Source } from '../../../types';
 import { parseMessageText } from '../../../utils/messageParser';
 import { useTts } from '../../../hooks/useTts';
 import { parseAgenticWorkflow } from '../../../services/workflowParser';
+
+export type RenderSegment = {
+    type: 'text' | 'component';
+    content?: string;
+    componentType?: 'VIDEO' | 'ONLINE_VIDEO' | 'IMAGE' | 'ONLINE_IMAGE' | 'MCQ' | 'MAP' | 'FILE' | 'BROWSER';
+    data?: any;
+};
 
 export const useAiMessageLogic = (
     msg: Message,
@@ -29,6 +38,7 @@ export const useAiMessageLogic = (
 
     const { playOrStopAudio, audioState, isPlaying } = useTts(finalAnswerText, ttsVoice);
 
+    // Extract sources from both tool calls and grounding metadata
     const searchSources = useMemo((): Source[] => {
         const allSources: Source[] = [];
         
@@ -76,13 +86,64 @@ export const useAiMessageLogic = (
         );
     }, [thinkingText, activeResponse?.toolCallEvents, thinkingIsComplete, activeResponse?.error]);
 
+    // Parse final answer into renderable segments (text vs components)
+    const parsedFinalAnswer = useMemo((): RenderSegment[] => {
+        if (!finalAnswerText) return [];
+
+        const componentRegex = /(\[(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\].*?\[\/(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\])/s;
+        const parts = finalAnswerText.split(componentRegex).filter(part => part);
+
+        return parts.map(part => {
+            const componentMatch = part.match(/^\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\](\{.*?\})\[\/\1\]$/s);
+            
+            if (componentMatch) {
+                try {
+                    const typeMap: Record<string, string> = {
+                        'VIDEO_COMPONENT': 'VIDEO',
+                        'ONLINE_VIDEO_COMPONENT': 'ONLINE_VIDEO',
+                        'IMAGE_COMPONENT': 'IMAGE',
+                        'ONLINE_IMAGE_COMPONENT': 'ONLINE_IMAGE',
+                        'MCQ_COMPONENT': 'MCQ',
+                        'MAP_COMPONENT': 'MAP',
+                        'FILE_ATTACHMENT_COMPONENT': 'FILE',
+                        'BROWSER_COMPONENT': 'BROWSER'
+                    };
+                    return {
+                        type: 'component',
+                        componentType: typeMap[componentMatch[1]] as any,
+                        data: JSON.parse(componentMatch[2])
+                    };
+                } catch (e) {
+                    // Fallback if JSON parse fails
+                    return { type: 'text', content: part };
+                }
+            }
+            
+            // Handle any incomplete tags at the end of the stream or plain text
+            const incompleteTagRegex = /\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\].*$/s;
+            const cleanedPart = part.replace(incompleteTagRegex, '');
+            
+            return { type: 'text', content: cleanedPart };
+        }).filter(segment => segment.type === 'component' || (segment.content && segment.content.trim() !== ''));
+
+    }, [finalAnswerText]);
+
     // We now consider "having thinking process" true if we have a plan OR execution steps
     const hasThinkingProcess = !!agentPlan || executionLog.length > 0;
     
     const hasFinalAnswer = finalAnswerText && finalAnswerText.trim() !== '';
     const duration = activeResponse?.startTime && activeResponse?.endTime ? (activeResponse.endTime - activeResponse.startTime) / 1000 : null;
+    
+    // Auto-play audio handling
     const autoPlayTriggered = useRef(false);
+    useEffect(() => {
+        if (isAutoPlayEnabled && thinkingIsComplete && !activeResponse?.error && hasFinalAnswer && !autoPlayTriggered.current && !isPlaying) {
+            autoPlayTriggered.current = true;
+            playOrStopAudio();
+        }
+    }, [isAutoPlayEnabled, thinkingIsComplete, activeResponse, hasFinalAnswer, isPlaying, playOrStopAudio]);
 
+    // Duration timer
     useEffect(() => {
         if (isThinking && activeResponse?.startTime) {
             const intervalId = setInterval(() => setElapsed((Date.now() - activeResponse.startTime!) / 1000), 100);
@@ -96,10 +157,7 @@ export const useAiMessageLogic = (
     // We adjust waiting logic: if we have thinking process, we are NOT just waiting, we are showing the process.
     const isWaitingForFinalAnswer = !!isThinking && !hasThinkingProcess && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
     
-    // IMPORTANT: showApprovalUI logic must trigger if the message state is pending_approval
-    // AND we have the plan data available in the response object from the 'plan-ready' event.
-    // Note: 'agentPlan' comes from text parsing which might be incomplete during stream pause.
-    // 'activeResponse.plan' comes directly from the backend event payload.
+    // showApprovalUI logic
     const showApprovalUI = executionState === 'pending_approval' && !!activeResponse?.plan;
 
     const handleRunCode = useCallback((language: string, code: string) => {
@@ -111,6 +169,6 @@ export const useAiMessageLogic = (
         activeResponse, thinkingText, finalAnswerText, playOrStopAudio, audioState, isPlaying, searchSources,
         thinkingIsComplete, hasThinkingProcess, hasFinalAnswer, displayDuration, isInitialWait: !hasThinkingProcess && isWaitingForFinalAnswer,
         isStreamingFinalAnswer, isWaitingForFinalAnswer, showApprovalUI, handleRunCode,
-        agentPlan, executionLog // Export parsed workflow data
+        agentPlan, executionLog, parsedFinalAnswer
     };
 };

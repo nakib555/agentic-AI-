@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import type { Message, Source } from '../../../types';
@@ -57,8 +57,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, isAutoPlayEnabled, ttsVoice, sendMessage, isLoading);
-  const { activeResponse, finalAnswerText, thinkingIsComplete, isStreamingFinalAnswer, agentPlan, executionLog } = logic;
-  // Removed animationComplete state and its useEffect, as its behavior was causing premature rendering switches.
+  const { activeResponse, finalAnswerText, thinkingIsComplete, isStreamingFinalAnswer, agentPlan, executionLog, parsedFinalAnswer } = logic;
   const [isWorkflowCollapsed, setIsWorkflowCollapsed] = useState(false);
 
   // Auto-collapse workflow when thinking is complete if there is a final answer
@@ -70,60 +69,12 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       }
   }, [thinkingIsComplete, !!finalAnswerText]);
 
-  const renderProgressiveAnswer = useCallback((txt: string) => {
-    const componentRegex = /(\[(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\].*?\[\/(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\])/s;
-    const parts = txt.split(componentRegex).filter(part => part);
-
-    return parts.map((part, index) => {
-        const key = `${id}-${index}`;
-        const renderError = (comp: string, details: string) => <ErrorDisplay key={key} error={{ message: `Failed to render ${comp}`, details }} />;
-        const handleEdit = (blob: Blob, editKey: string) => {
-            const file = new File([blob], "image-to-edit.png", { type: blob.type });
-            (file as any)._editKey = editKey;
-            messageFormRef.current?.attachFiles([file]);
-        };
-        
-        try {
-            const videoMatch = part.match(/\[VIDEO_COMPONENT\](\{.*?\})\[\/VIDEO_COMPONENT\]/s);
-            if (videoMatch) return <VideoDisplay key={key} {...JSON.parse(videoMatch[1])} />;
-            
-            const onlineVideoMatch = part.match(/\[ONLINE_VIDEO_COMPONENT\](\{.*?\})\[\/ONLINE_VIDEO_COMPONENT\]/s);
-            if (onlineVideoMatch) {
-                const data = JSON.parse(onlineVideoMatch[1]);
-                return <VideoDisplay key={key} srcUrl={data.url} prompt={data.title} />;
-            }
-
-            const imageMatch = part.match(/\[IMAGE_COMPONENT\](\{.*?\})\[\/IMAGE_COMPONENT\]/s);
-            if (imageMatch) return <ImageDisplay key={key} onEdit={handleEdit} {...JSON.parse(imageMatch[1])} />;
-
-            const onlineImageMatch = part.match(/\[ONLINE_IMAGE_COMPONENT\](\{.*?\})\[\/ONLINE_IMAGE_COMPONENT\]/s);
-            if (onlineImageMatch) return <ImageDisplay key={key} onEdit={handleEdit} {...JSON.parse(onlineImageMatch[1])} />;
-
-            const mcqMatch = part.match(/\[MCQ_COMPONENT\](\{.*?\})\[\/MCQ_COMPONENT\]/s);
-            if (mcqMatch) return <McqComponent key={key} {...JSON.parse(mcqMatch[1])} />;
-
-            const mapMatch = part.match(/\[MAP_COMPONENT\](\{.*?\})\[\/MAP_COMPONENT\]/s);
-            if (mapMatch) return <motion.div key={key} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}><MapDisplay {...JSON.parse(mapMatch[1])} /></motion.div>;
-            
-            const fileAttachmentMatch = part.match(/\[FILE_ATTACHMENT_COMPONENT\](\{.*?\})\[\/FILE_ATTACHMENT_COMPONENT\]/s);
-            if (fileAttachmentMatch) return <FileAttachment key={key} {...JSON.parse(fileAttachmentMatch[1])} />;
-
-            const browserMatch = part.match(/\[BROWSER_COMPONENT\](\{.*?\})\[\/BROWSER_COMPONENT\]/s);
-            if (browserMatch) return <BrowserSessionDisplay key={key} {...JSON.parse(browserMatch[1])} />;
-
-        } catch (e: any) {
-            return renderError('component', e.message);
-        }
-        
-        const incompleteTagRegex = /\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\].*$/s;
-        const cleanedPart = part.replace(incompleteTagRegex, '');
-
-        if (cleanedPart) {
-            return <ManualCodeRenderer key={key} text={cleanedPart} components={MarkdownComponents} isStreaming={false} onRunCode={isAgentMode ? logic.handleRunCode : undefined} isRunDisabled={isLoading} />;
-        }
-        return null;
-    });
-  }, [id, logic.handleRunCode, isLoading, messageFormRef, isAgentMode]);
+  // Handler for editing images, used by ImageDisplay components
+  const handleEditImage = (blob: Blob, editKey: string) => {
+      const file = new File([blob], "image-to-edit.png", { type: blob.type });
+      (file as any)._editKey = editKey;
+      messageFormRef.current?.attachFiles([file]);
+  };
 
   if (logic.isInitialWait) return <TypingIndicator />;
 
@@ -208,15 +159,56 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
           
           <div className="markdown-content max-w-none w-full">
-            {/* Renders streaming final answer using FlowToken */}
+            {/* Renders streaming final answer using FlowToken for smooth typing effect */}
             {isStreamingFinalAnswer && (
               <FlowToken tps={10}>
                   {cleanTextForTts(finalAnswerText)}
               </FlowToken>
             )}
-            {/* Renders complete, static final answer using ManualCodeRenderer */}
+            
+            {/* Renders complete, static final answer by iterating parsed segments */}
             {thinkingIsComplete && logic.hasFinalAnswer && !activeResponse.error && (
-              renderProgressiveAnswer(finalAnswerText)
+                parsedFinalAnswer.map((segment, index) => {
+                    const key = `${id}-${index}`;
+                    if (segment.type === 'component') {
+                        const { componentType, data } = segment;
+                        switch (componentType) {
+                            case 'VIDEO':
+                                return <VideoDisplay key={key} {...data} />;
+                            case 'ONLINE_VIDEO':
+                                return <VideoDisplay key={key} srcUrl={data.url} prompt={data.title} />;
+                            case 'IMAGE':
+                            case 'ONLINE_IMAGE':
+                                return <ImageDisplay key={key} onEdit={handleEditImage} {...data} />;
+                            case 'MCQ':
+                                return <McqComponent key={key} {...data} />;
+                            case 'MAP':
+                                return (
+                                    <motion.div key={key} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                                        <MapDisplay {...data} />
+                                    </motion.div>
+                                );
+                            case 'FILE':
+                                return <FileAttachment key={key} {...data} />;
+                            case 'BROWSER':
+                                return <BrowserSessionDisplay key={key} {...data} />;
+                            default:
+                                return <ErrorDisplay key={key} error={{ message: `Unknown component type: ${componentType}`, details: JSON.stringify(data) }} />;
+                        }
+                    } else {
+                        // Text segment
+                        return (
+                            <ManualCodeRenderer 
+                                key={key} 
+                                text={segment.content!} 
+                                components={MarkdownComponents} 
+                                isStreaming={false} 
+                                onRunCode={isAgentMode ? logic.handleRunCode : undefined} 
+                                isRunDisabled={isLoading} 
+                            />
+                        );
+                    }
+                })
             )}
           </div>
         </div>
