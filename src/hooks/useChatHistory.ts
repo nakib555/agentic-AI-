@@ -70,32 +70,43 @@ export const useChatHistory = () => {
     if (!currentChatId || isHistoryLoading) return;
 
     const loadFullChat = async () => {
-        const chat = chatHistory.find(c => c.id === currentChatId);
+        const chatIndex = chatHistory.findIndex(c => c.id === currentChatId);
+        const chat = chatHistory[chatIndex];
         
-        // Check if messages array is missing (undefined) OR if it's a "None" state (empty array but not a new chat)
-        // The backend now sends `messages: undefined` for summaries, ensuring this check passes.
-        // We also handle the case where it might be `[]` if the summary logic didn't strip it, provided it's not the "New Chat" placeholder.
+        // Check if messages array is missing (undefined) which indicates a summary object
+        // OR if it's a "None" state (empty array but not a new chat)
         const needsLoading = chat && (!chat.messages || (chat.messages.length === 0 && chat.title !== 'New Chat'));
 
         if (needsLoading) {
+            // Optimistic: Mark as loading immediately to prevent UI flicker or double-fetch
+            setChatHistory(prev => prev.map(c => c.id === currentChatId ? { ...c, isLoading: true } : c));
+
             try {
                 const fullChat: ChatSession = await fetchApi(`/api/chats/${currentChatId}`);
-                setChatHistory(prev => prev.map(c => c.id === currentChatId ? fullChat : c));
+                
+                // Update state with full chat data
+                setChatHistory(prev => prev.map(c => c.id === currentChatId ? { ...fullChat, isLoading: false } : c));
             } catch (error) {
                 if (!isVersionMismatch(error)) {
                     console.error(`Failed to load messages for chat ${currentChatId}:`, error);
                 }
-                // If loading fails (e.g. deleted on server), we should probably remove it or deselect
+                
+                // If loading fails (e.g. deleted on server), remove it from list and deselect
                 if ((error as any).status === 404) {
                     setChatHistory(prev => prev.filter(c => c.id !== currentChatId));
-                    setCurrentChatId(null);
+                    if (currentChatIdRef.current === currentChatId) {
+                        setCurrentChatId(null);
+                    }
+                } else {
+                    // On other errors, just unset loading state
+                    setChatHistory(prev => prev.map(c => c.id === currentChatId ? { ...c, isLoading: false } : c));
                 }
             }
         }
     };
 
     loadFullChat();
-  }, [currentChatId, chatHistory, isHistoryLoading]);
+  }, [currentChatId, isHistoryLoading]); // Removed chatHistory from deps to prevent loops, index lookup is enough
 
   const startNewChat = useCallback(async (model: string, settings: any): Promise<ChatSession | null> => {
     try {
@@ -136,7 +147,6 @@ export const useChatHistory = () => {
         if (isVersionMismatch(error)) return; 
 
         // If error is 404, the chat is already gone on server, so our optimistic delete is actually correct.
-        // Do not rollback.
         if (error.status === 404) {
             console.warn(`Chat ${chatId} was already deleted on server.`);
             return;
@@ -192,14 +202,18 @@ export const useChatHistory = () => {
   
   // Local state updates for real-time UI changes during a chat session
   const addMessagesToChat = useCallback((chatId: string, messages: Message[]) => {
-    setChatHistory(prev => prev.map(s => s.id !== chatId ? s : { ...s, messages: [...s.messages, ...messages] }));
+    setChatHistory(prev => prev.map(s => s.id !== chatId ? s : { ...s, messages: [...(s.messages || []), ...messages] }));
   }, []);
 
   const addModelResponse = useCallback((chatId: string, messageId: string, newResponse: ModelResponse) => {
     setChatHistory(prev => prev.map(chat => {
       if (chat.id !== chatId) return chat;
+      // Ensure messages exists
+      if (!chat.messages) return chat;
+      
       const messageIndex = chat.messages.findIndex(m => m.id === messageId);
       if (messageIndex === -1) return chat;
+      
       const updatedMessages = [...chat.messages];
       const targetMessage = { ...updatedMessages[messageIndex] };
       targetMessage.responses = [...(targetMessage.responses || []), newResponse];
@@ -212,13 +226,18 @@ export const useChatHistory = () => {
   const updateActiveResponseOnMessage = useCallback((chatId: string, messageId: string, updateFn: (response: ModelResponse) => Partial<ModelResponse>) => {
     setChatHistory(prev => prev.map(chat => {
       if (chat.id !== chatId) return chat;
+      if (!chat.messages) return chat;
+
       const messageIndex = chat.messages.findIndex(m => m.id === messageId);
       if (messageIndex === -1 || chat.messages[messageIndex].role !== 'model') return chat;
+      
       const updatedMessages = [...chat.messages];
       const messageToUpdate = { ...updatedMessages[messageIndex] };
       if (!messageToUpdate.responses) return chat;
+      
       const activeIdx = messageToUpdate.activeResponseIndex;
       if (activeIdx < 0 || activeIdx >= messageToUpdate.responses.length) return chat;
+      
       const updatedResponses = [...messageToUpdate.responses];
       const currentResponse = updatedResponses[activeIdx];
       updatedResponses[activeIdx] = { ...currentResponse, ...updateFn(currentResponse) };
@@ -231,8 +250,11 @@ export const useChatHistory = () => {
   const setActiveResponseIndex = useCallback((chatId: string, messageId: string, index: number) => {
     setChatHistory(prev => prev.map(chat => {
       if (chat.id !== chatId) return chat;
+      if (!chat.messages) return chat;
+
       const messageIndex = chat.messages.findIndex(m => m.id === messageId);
       if (messageIndex === -1) return chat;
+      
       const updatedMessages = [...chat.messages];
       const currentMessage = updatedMessages[messageIndex];
       if (index >= 0 && index < (currentMessage.responses?.length || 0)) {
@@ -253,8 +275,11 @@ export const useChatHistory = () => {
   const updateMessage = useCallback((chatId: string, messageId: string, update: Partial<Message>) => {
     setChatHistory(prev => prev.map(chat => {
         if (chat.id !== chatId) return chat;
+        if (!chat.messages) return chat;
+
         const messageIndex = chat.messages.findIndex(m => m.id === messageId);
         if (messageIndex === -1) return chat;
+        
         const updatedMessages = [...chat.messages];
         updatedMessages[messageIndex] = { ...updatedMessages[messageIndex], ...update };
         return { ...chat, messages: updatedMessages };
@@ -277,7 +302,6 @@ export const useChatHistory = () => {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(update),
           });
-          // Note: We don't need to do anything on success as local state is already updated
       } catch (error) {
           if (isVersionMismatch(error)) return;
           console.error(`Failed to update chat ${chatId}:`, error);

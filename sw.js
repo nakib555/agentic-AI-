@@ -30,29 +30,37 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET' || event.request.url.startsWith('chrome-extension://')) {
+  const url = new URL(event.request.url);
+
+  // CRITICAL FIX: Do not cache API requests or browser extensions. 
+  // Always let these go to the network.
+  if (event.request.method !== 'GET' || 
+      url.pathname.startsWith('/api/') || 
+      url.protocol === 'chrome-extension:') {
     return;
   }
 
   event.respondWith(
     caches.open(CACHE_NAME).then(cache => {
       return cache.match(event.request).then(response => {
-        const fetchPromise = fetch(event.request).then(networkResponse => {
-          if (networkResponse.ok) {
+        // Return cached response if found
+        if (response) {
+            return response;
+        }
+
+        // Otherwise fetch from network
+        return fetch(event.request).then(networkResponse => {
+          // Only cache valid responses
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
             cache.put(event.request, networkResponse.clone());
           }
           return networkResponse;
         });
-
-        return response || fetchPromise;
       });
     })
   );
 });
 
-// Fix for "Unchecked runtime.lastError: The message port closed before a response was received"
-// This listener ensures the SW keeps the message channel open long enough to acknowledge events,
-// preventing browser-level timeouts when extensions or devtools probe the worker.
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();

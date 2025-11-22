@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -52,7 +51,8 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, compon
         code({ node, inline, className, children, ...props }: any) {
           const match = /language-(\w+)/.exec(className || '');
           const language = match ? match[1] : '';
-          const codeContent = String(children).replace(/\n$/, '');
+          // Ensure children is treated safely to avoid "undefined" text
+          const codeContent = String(children || '').replace(/\n$/, '');
 
           if (!inline && match) {
              // Block code with specific language
