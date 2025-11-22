@@ -49,26 +49,27 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, compon
       components={{
         ...components,
         // Manual logic to handle code blocks vs inline highlights
+        // This logic ensures differentiation between:
+        // 1. Triple backticks (```) -> CodeBlock component
+        // 2. Single backtick (`) -> InlineCode (Highlight Block) component
         code(props: any) {
-          const { node, inline, className, children } = props;
+          const { inline, className, children } = props;
           const match = /language-(\w+)/.exec(className || '');
           const language = match ? match[1] : '';
           
-          // Ensure children is treated safely to avoid "undefined" text.
-          // React Markdown can pass an array if text contains mixed nodes, so we handle both.
-          let codeContent = '';
-          if (Array.isArray(children)) {
-              codeContent = children.map(child => String(child ?? '')).join('');
-          } else {
-              codeContent = String(children ?? '');
-          }
-          codeContent = codeContent.replace(/\n$/, '');
-
-          // LOGIC: 
-          // 1. Triple quotes (```) sets 'inline' to false -> Render full CodeBlock
-          // 2. Single quote (`) sets 'inline' to true -> Render InlineCode (Highlight Block)
-          
+          // Handle Code Blocks (Triple backticks)
           if (!inline) {
+             // Extract text content safely for the code block
+             let codeContent = '';
+             if (Array.isArray(children)) {
+                 codeContent = children.map(child => 
+                    (typeof child === 'string' || typeof child === 'number') ? String(child) : ''
+                 ).join('');
+             } else {
+                 codeContent = String(children ?? '');
+             }
+             codeContent = codeContent.replace(/\n$/, '');
+
              return (
                 <CodeBlock 
                     language={language} 
@@ -83,7 +84,7 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, compon
              );
           } 
           
-          // This handles the "one quote" case manually by returning a specific InlineCode component
+          // Handle Inline Code (Single backtick) -> Use InlineCode component for "highlight block" look
           return <InlineCode>{children}</InlineCode>;
         },
         // Override pre to unwrap the code block (since CodeBlock provides its own container)
