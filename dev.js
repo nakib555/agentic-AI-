@@ -86,7 +86,15 @@ try {
     entryPoints: ['src/index.tsx'],
     bundle: true,
     outfile: 'dist/index.js',
-    loader: { '.tsx': 'tsx', '.ts': 'ts', '.json': 'json' },
+    loader: { 
+      '.tsx': 'tsx', 
+      '.ts': 'ts', 
+      '.json': 'json',
+      '.woff': 'file',
+      '.woff2': 'file',
+      '.ttf': 'file',
+      '.eot': 'file'
+    },
     sourcemap: true,
     define: {
       'process.env.NODE_ENV': '"development"',

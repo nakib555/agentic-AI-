@@ -32,7 +32,15 @@ try {
     entryPoints: ['src/index.tsx'],
     bundle: true,
     outfile: 'dist/index.js',
-    loader: { '.tsx': 'tsx', '.json': 'json' },
+    loader: { 
+      '.tsx': 'tsx', 
+      '.ts': 'ts',
+      '.json': 'json',
+      '.woff': 'file',
+      '.woff2': 'file',
+      '.ttf': 'file',
+      '.eot': 'file'
+    },
     define,
     minify: true,
     sourcemap: true,
