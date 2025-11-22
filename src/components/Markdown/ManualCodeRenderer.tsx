@@ -1,15 +1,19 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { memo, useMemo } from 'react';
-
+import { unified } from 'unified';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
+import rehypeParse from 'rehype-parse';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
+import rehypeReact from 'rehype-react';
+
 import { getMarkdownComponents } from './markdownComponents';
 
 type ManualCodeRendererProps = {
@@ -20,36 +24,47 @@ type ManualCodeRendererProps = {
   isRunDisabled?: boolean;
 };
 
-const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, components: baseComponents, onRunCode, isRunDisabled }) => {
-  
-  // Merge dynamic components (for code running) with base styling components
-  const components = useMemo(() => ({
+const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
+  text,
+  components: baseComponents,
+  onRunCode,
+  isRunDisabled
+}) => {
+
+  const mergedComponents = useMemo(
+    () => ({
       ...baseComponents,
       ...getMarkdownComponents({ onRunCode, isRunDisabled })
-  }), [baseComponents, onRunCode, isRunDisabled]);
+    }),
+    [baseComponents, onRunCode, isRunDisabled]
+  );
 
-  // Pre-process text to handle custom syntax that standard Markdown doesn't support,
-  // specifically the highlight syntax ==text== and ==[color]text==.
-  // We convert these to HTML <mark> tags, which rehype-raw will parse,
-  // and then our custom 'mark' component in markdownComponents.ts will handle the rendering.
   const processedText = useMemo(() => {
-      if (!text) return '';
-      return text
-        .replace(/==\[([a-zA-Z]+)\](.*?)==/g, '<mark>[$1]$2</mark>')
-        .replace(/==(.*?)==/g, '<mark>$1</mark>');
+    if (!text) return '';
+
+    return text
+      .replace(/==\[([a-zA-Z]+)\](.*?)==/g, '<mark>[$1]$2</mark>')
+      .replace(/==(.*?)==/g, '<mark>$1</mark>');
   }, [text]);
 
-  return (
-    <div className="markdown-root">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeRaw, rehypeKatex]}
-        components={components}
-      >
-        {processedText}
-      </ReactMarkdown>
-    </div>
-  );
+  const rendered = useMemo(() => {
+    const file = unified()
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkMath)
+      .use(remarkRehype, { allowDangerousHtml: true })
+      .use(rehypeRaw)
+      .use(rehypeKatex)
+      .use(rehypeReact, {
+        createElement: React.createElement,
+        components: mergedComponents
+      })
+      .processSync(processedText);
+
+    return file.result;
+  }, [processedText, mergedComponents]);
+
+  return <div className="markdown-root">{rendered}</div>;
 };
 
 export const ManualCodeRenderer = memo(ManualCodeRendererRaw);
