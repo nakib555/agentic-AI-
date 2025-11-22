@@ -1,9 +1,10 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type BrowserSessionDisplayProps = {
@@ -27,6 +28,14 @@ export const BrowserSessionDisplay: React.FC<BrowserSessionDisplayProps> = ({ ur
     const lastLog = logs[logs.length - 1] || '';
     const isFinished = lastLog.includes('Session finished') || lastLog.includes('Extracted');
     const isLoading = !isFinished;
+
+    // Optimization: Limit visible logs to last 100 to prevent excessive DOM nodes
+    const displayedLogs = useMemo(() => {
+        if (logs.length > 100) {
+            return logs.slice(logs.length - 100);
+        }
+        return logs;
+    }, [logs]);
 
     return (
         <motion.div 
@@ -135,17 +144,14 @@ export const BrowserSessionDisplay: React.FC<BrowserSessionDisplayProps> = ({ ur
                             className="overflow-hidden"
                         >
                             <div className="px-4 pb-3 pt-1 space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
-                                {logs.map((log, index) => (
-                                    <motion.div 
+                                {displayedLogs.map((log, index) => (
+                                    <div 
                                         key={index}
-                                        initial={{ x: -10, opacity: 0 }}
-                                        animate={{ x: 0, opacity: 1 }}
-                                        transition={{ delay: 0.05 }}
-                                        className={`flex items-start gap-2 text-[11px] font-mono ${index === logs.length - 1 ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-600 dark:text-slate-400'}`}
+                                        className={`flex items-start gap-2 text-[11px] font-mono ${index === displayedLogs.length - 1 ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-600 dark:text-slate-400'}`}
                                     >
                                         <span className="opacity-60 mt-0.5">➜</span>
                                         <span className="break-all">{log}</span>
-                                    </motion.div>
+                                    </div>
                                 ))}
                                 {isLoading && (
                                      <motion.div 

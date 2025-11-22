@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -57,6 +58,7 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
       .use(rehypeKatex)
       .use(rehypeReact, {
         createElement: React.createElement,
+        Fragment: React.Fragment,
         components: mergedComponents
       })
       .processSync(processedText);

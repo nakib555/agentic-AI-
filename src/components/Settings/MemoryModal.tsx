@@ -72,6 +72,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
   const [localFiles, setLocalFiles] = useState<MemoryFile[]>(memoryFiles);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [editingFile, setEditingFile] = useState<MemoryFile | null | 'new'>(null);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
@@ -85,6 +86,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
           setSearchQuery('');
           setEditingFile(null);
           setIsExportMenuOpen(false);
+          setIsExporting(false);
       }
   }, [isOpen, memoryFiles]);
 
@@ -154,39 +156,59 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
   };
 
   const handleExportJSON = () => {
-      const exportData = { files: localFiles };
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      downloadBlob(blob, `memory-export-${new Date().toISOString().slice(0, 10)}.json`);
+      setIsExporting(true);
       setIsExportMenuOpen(false);
+      
+      // Use timeout to allow UI update (closing menu/showing spinner)
+      setTimeout(() => {
+          try {
+            const exportData = { files: localFiles };
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            downloadBlob(blob, `memory-export-${new Date().toISOString().slice(0, 10)}.json`);
+          } catch (e) {
+            console.error("JSON Export failed", e);
+            alert("Failed to export JSON");
+          } finally {
+            setIsExporting(false);
+          }
+      }, 50);
   };
 
-  const handleExportText = async () => {
+  const handleExportText = () => {
       if (localFiles.length === 0) return;
       
-      // Close the menu immediately to unblock the UI
+      // Close the menu immediately
       setIsExportMenuOpen(false);
+      setIsExporting(true);
       
-      // Yield to the event loop to allow the UI update (menu closing) to render 
-      // before starting the potentially heavy zip generation.
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      try {
-        if (localFiles.length === 1) {
-            const file = localFiles[0];
-            const blob = new Blob([file.content], { type: 'text/plain;charset=utf-8' });
-            downloadBlob(blob, `${sanitizeFilename(file.title)}.txt`);
-        } else {
-            const zip = new JSZip();
-            localFiles.forEach(file => {
-                zip.file(`${sanitizeFilename(file.title)}.txt`, file.content);
-            });
-            const content = await zip.generateAsync({ type: "blob" });
-            downloadBlob(content, `memory-files-${new Date().toISOString().slice(0, 10)}.zip`);
-        }
-      } catch (error) {
-        console.error("Export failed:", error);
-        alert("Failed to export files.");
-      }
+      // Yield to the event loop to allow the UI update to render
+      setTimeout(async () => {
+          try {
+            if (localFiles.length === 1) {
+                const file = localFiles[0];
+                const blob = new Blob([file.content], { type: 'text/plain;charset=utf-8' });
+                downloadBlob(blob, `${sanitizeFilename(file.title)}.txt`);
+            } else {
+                const zip = new JSZip();
+                // Add files synchronously but efficiently
+                localFiles.forEach(file => {
+                    zip.file(`${sanitizeFilename(file.title)}.txt`, file.content);
+                });
+                // Generate async
+                const content = await zip.generateAsync({ 
+                    type: "blob",
+                    compression: "DEFLATE",
+                    compressionOptions: { level: 5 } // Balance speed/size
+                });
+                downloadBlob(content, `memory-files-${new Date().toISOString().slice(0, 10)}.zip`);
+            }
+          } catch (error) {
+            console.error("Export failed:", error);
+            alert("Failed to export files.");
+          } finally {
+            setIsExporting(false);
+          }
+      }, 100); // Slightly longer delay to ensure spinner renders
   };
 
   return (
@@ -323,14 +345,19 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                         <div className="relative" ref={exportMenuRef}>
                             <button
                                 onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-                                className={`px-3 py-2 flex items-center gap-2 text-xs font-medium rounded-lg transition-colors border ${isExportMenuOpen ? 'bg-slate-100 dark:bg-white/10 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 border-slate-200 dark:border-white/10'}`}
+                                disabled={isExporting}
+                                className={`px-3 py-2 flex items-center gap-2 text-xs font-medium rounded-lg transition-colors border ${isExportMenuOpen ? 'bg-slate-100 dark:bg-white/10 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 border-slate-200 dark:border-white/10 disabled:opacity-50'}`}
                                 title="Export options"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
-                                Export
+                                {isExporting ? (
+                                    <svg className="animate-spin h-4 w-4 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
+                                )}
+                                {isExporting ? 'Exporting...' : 'Export'}
                             </button>
                             <AnimatePresence>
-                                {isExportMenuOpen && (
+                                {isExportMenuOpen && !isExporting && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -366,7 +393,8 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                     <div className="flex gap-3">
                         <button 
                             onClick={onClose}
-                            className="px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+                            disabled={isSaving}
+                            className="px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors disabled:opacity-50"
                         >
                             {hasUnsavedChanges ? 'Cancel' : 'Close'}
                         </button>
