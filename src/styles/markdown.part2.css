@@ -3,17 +3,21 @@
 
 /* KaTeX Math Formula Styling */
 
+/* Make all KaTeX elements bigger */
+.katex {
+  font-size: 1.25em !important;
+}
+
 .katex-display {
   display: block;
   overflow-x: auto;
   overflow-y: hidden;
   margin: 1em 0;
-  padding: 1.25em;
-  border-radius: 0.75rem;
+  padding: 0.5em 0;
   
-  /* Use semantic tokens */
-  background-color: var(--bg-layer-2);
-  border: 1px solid var(--border-default);
+  /* Transparent background and no border as requested */
+  background-color: transparent;
+  border: none;
   
   scrollbar-width: thin;
   scrollbar-color: var(--text-tertiary) transparent;
