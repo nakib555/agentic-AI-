@@ -1,19 +1,14 @@
 
 /* PART 2 of 2 of markdown.css */
 
-/* MathJax Formula Styling */
+/* KaTeX Formula Styling */
 
-/* Ensure MathJax containers scroll horizontally if they overflow */
-mjx-container {
+/* Ensure KaTeX containers scroll horizontally if they overflow */
+.katex-display {
   overflow-x: auto;
   overflow-y: hidden;
   max-width: 100%;
   vertical-align: middle;
-}
-
-/* Display math (block level) */
-mjx-container[display="true"] {
-  display: block;
   margin: 1em 0;
   padding: 0.5em 0;
   
@@ -25,29 +20,29 @@ mjx-container[display="true"] {
   scrollbar-color: var(--text-tertiary) transparent;
 }
 
-mjx-container[display="true"]::-webkit-scrollbar {
+.katex-display::-webkit-scrollbar {
   height: 8px;
 }
 
-mjx-container[display="true"]::-webkit-scrollbar-track {
+.katex-display::-webkit-scrollbar-track {
   background: transparent;
 }
 
-mjx-container[display="true"]::-webkit-scrollbar-thumb {
+.katex-display::-webkit-scrollbar-thumb {
   background-color: var(--text-tertiary);
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
-mjx-container[display="true"]::-webkit-scrollbar-thumb:hover {
+.katex-display::-webkit-scrollbar-thumb:hover {
   background-color: var(--text-secondary);
 }
 
 /* Adjust coloring to match theme */
-mjx-container svg {
+.katex {
   color: var(--text-primary);
-  fill: currentColor;
+  font-size: 1.1em;
 }
 
 /* Styles for bullet points inside workflow */

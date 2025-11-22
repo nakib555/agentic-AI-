@@ -7,7 +7,7 @@ import React, { memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
-import rehypeMathjax from 'rehype-mathjax';
+import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import { getMarkdownComponents } from './markdownComponents';
 import 'katex/dist/katex.min.css';
@@ -48,7 +48,7 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
     <div className="markdown-root">
         <ReactMarkdown
             remarkPlugins={[remarkMath, remarkGfm]}
-            rehypePlugins={[rehypeRaw, rehypeMathjax]}
+            rehypePlugins={[rehypeRaw, rehypeKatex]}
             components={mergedComponents}
         >
             {processedText}
