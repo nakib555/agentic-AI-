@@ -48,47 +48,49 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, compon
       rehypePlugins={[rehypeRaw, rehypeKatex]}
       components={{
         ...components,
-        // Manual logic to handle code blocks vs inline highlights
-        // This logic ensures differentiation between:
-        // 1. Triple backticks (```) -> CodeBlock component
-        // 2. Single backtick (`) -> InlineCode (Highlight Block) component
+        // Strict condition for code rendering:
+        // 1. Triple backticks (```) are rendered as 'block' code using CodeBlock.
+        // 2. Single backticks (`) are rendered as 'inline' code using InlineCode (highlight style).
         code(props: any) {
           const { inline, className, children } = props;
+          
+          // If 'inline' is true, it comes from single backticks `code`.
+          // We render this manually with a highlight block style.
+          if (inline) {
+             return <InlineCode>{children}</InlineCode>;
+          }
+
+          // If 'inline' is false, it comes from triple backticks ```code``` (or indented blocks).
+          // We render this using the full CodeBlock component.
           const match = /language-(\w+)/.exec(className || '');
           const language = match ? match[1] : '';
           
-          // Handle Code Blocks (Triple backticks)
-          if (!inline) {
-             // Extract text content safely for the code block
-             let codeContent = '';
-             if (Array.isArray(children)) {
-                 codeContent = children.map(child => 
-                    (typeof child === 'string' || typeof child === 'number') ? String(child) : ''
-                 ).join('');
-             } else {
-                 codeContent = String(children ?? '');
-             }
-             codeContent = codeContent.replace(/\n$/, '');
+          // Extract text content safely for the code block
+          let codeContent = '';
+          if (Array.isArray(children)) {
+              codeContent = children.map(child => 
+                (typeof child === 'string' || typeof child === 'number') ? String(child) : ''
+              ).join('');
+          } else {
+              codeContent = String(children ?? '');
+          }
+          codeContent = codeContent.replace(/\n$/, '');
 
-             return (
-                <CodeBlock 
-                    language={language} 
-                    // We disable isStreaming for blocks inside the full renderer to prevent layout jumping
-                    // as react-markdown re-renders the tree.
-                    isStreaming={false} 
-                    onRunCode={onRunCode}
-                    isDisabled={isRunDisabled}
-                >
-                    {codeContent}
-                </CodeBlock>
-             );
-          } 
-          
-          // Handle Inline Code (Single backtick) -> Use InlineCode component for "highlight block" look
-          return <InlineCode>{children}</InlineCode>;
+          return (
+            <CodeBlock 
+                language={language} 
+                // We disable isStreaming for blocks inside the full renderer to prevent layout jumping
+                // as react-markdown re-renders the tree.
+                isStreaming={false} 
+                onRunCode={onRunCode}
+                isDisabled={isRunDisabled}
+            >
+                {codeContent}
+            </CodeBlock>
+          );
         },
         // Override pre to unwrap the code block (since CodeBlock provides its own container)
-        // This prevents double-padding or double-borders.
+        // This prevents double-padding or double-borders around the CodeBlock.
         pre({ children }) {
             return <div className="not-prose my-4">{children}</div>;
         }
