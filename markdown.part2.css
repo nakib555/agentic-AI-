@@ -1,0 +1,117 @@
+
+/* PART 2 of 2 of markdown.css */
+
+/* KaTeX Formula Styling */
+
+/* Ensure KaTeX containers scroll horizontally if they overflow */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  vertical-align: middle;
+  margin: 1em 0;
+  padding: 0.5em 0;
+  
+  /* Transparent background and no border */
+  background-color: transparent;
+  border: none;
+  
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+
+.katex-display::-webkit-scrollbar {
+  height: 8px;
+}
+
+.katex-display::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.katex-display::-webkit-scrollbar-thumb {
+  background-color: var(--text-tertiary);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.katex-display::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-secondary);
+}
+
+/* Adjust coloring to match theme */
+.katex {
+  color: var(--text-primary);
+  font-size: 1.1em;
+}
+
+/* Styles for bullet points inside workflow */
+.workflow-markdown ul {
+    list-style-type: disc;
+    padding-left: 1.25rem;
+}
+
+.workflow-markdown li {
+    margin-bottom: 0.25rem;
+}
+
+/* Highlight / Mark Tag Styling */
+.mark-highlight {
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  font-weight: bold;
+}
+
+.mark-highlight-default { color: var(--primary-main); }
+.mark-highlight-red { color: var(--status-error-text); }
+.mark-highlight-blue { color: var(--primary-main); }
+.mark-highlight-green { color: var(--status-success-text); }
+.mark-highlight-yellow { color: var(--status-warning-text); }
+.mark-highlight-purple { color: #9333ea; }
+.mark-highlight-orange { color: #ea580c; }
+
+.markdown-content-user mark {
+  background-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  padding: 0.1em 0.3em;
+  margin: 0 0.1em;
+  border-radius: 0.25rem;
+}
+
+/* Inline math code styling - for math expressions wrapped in backticks */
+.inline-math-code {
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+}
+
+/* Hide duplicate math delimiters that may appear alongside rendered KaTeX */
+.markdown-root .katex-display::before,
+.markdown-root .katex-display::after {
+  display: none;
+}
+
+.markdown-root .katex::before,
+.markdown-root .katex::after {
+  display: none;
+}
+
+/* Ensure KaTeX inline math doesn't show raw delimiters */
+.markdown-root span.katex {
+  display: inline;
+  white-space: normal;
+}
+
+/* Prevent math expressions from being treated as code */
+.markdown-root code:has(.katex) {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+}
