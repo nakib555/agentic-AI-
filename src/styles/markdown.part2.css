@@ -78,3 +78,40 @@
   margin: 0 0.1em;
   border-radius: 0.25rem;
 }
+
+/* Inline math code styling - for math expressions wrapped in backticks */
+.inline-math-code {
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+}
+
+/* Hide duplicate math delimiters that may appear alongside rendered KaTeX */
+.markdown-root .katex-display::before,
+.markdown-root .katex-display::after {
+  display: none;
+}
+
+.markdown-root .katex::before,
+.markdown-root .katex::after {
+  display: none;
+}
+
+/* Ensure KaTeX inline math doesn't show raw delimiters */
+.markdown-root span.katex {
+  display: inline;
+  white-space: normal;
+}
+
+/* Prevent math expressions from being treated as code */
+.markdown-root code:has(.katex) {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+}
