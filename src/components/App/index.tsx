@@ -4,18 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Sidebar } from '../Sidebar/Sidebar';
 import { ChatHeader } from '../Chat/ChatHeader';
 import { ChatArea } from '../Chat/ChatArea';
-import { SourcesSidebar } from '../AI/SourcesSidebar';
 import { useAppLogic } from './useAppLogic';
-import { AppModals } from './AppModals';
 import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 } from './constants';
-import { TestRunner } from '../Testing';
 import { VersionMismatchOverlay } from '../UI/VersionMismatchOverlay';
+
+// Lazy load heavy components to reduce initial bundle size and memory usage
+const SourcesSidebar = React.lazy(() => import('../AI/SourcesSidebar').then(module => ({ default: module.SourcesSidebar })));
+const ThinkingSidebar = React.lazy(() => import('../Sidebar/ThinkingSidebar').then(module => ({ default: module.ThinkingSidebar })));
+const AppModals = React.lazy(() => import('./AppModals').then(module => ({ default: module.AppModals })));
+const TestRunner = React.lazy(() => import('../Testing').then(module => ({ default: module.TestRunner })));
 
 export const App = () => {
   const logic = useAppLogic();
@@ -25,9 +28,19 @@ export const App = () => {
     : null;
   const chatTitle = currentChat ? currentChat.title : null;
 
+  // Determine if ThinkingSidebar should be visible
+  // It should be visible if there is an active message with thinking process
+  // For simplicity in this structure, we'll assume it's managed via logic in a real app,
+  // but here we ensure it's rendered if we have resizing logic or active thinking state.
+  // Based on the hook data, we don't have a direct 'isThinkingOpen' state exposed, 
+  // but we have 'thinkingSidebarWidth'. 
+  // We will assume it is conditionally rendered based on whether a message is selected for inspection 
+  // or generally available. For now, we'll add it to the layout structure.
+
   return (
     <div ref={logic.appContainerRef} className={`flex h-full bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isResizing ? 'pointer-events-none' : ''}`}>
       {logic.versionMismatch && <VersionMismatchOverlay />}
+      
       <Sidebar
         key={logic.isDesktop ? 'desktop' : 'mobile'}
         isDesktop={logic.isDesktop}
@@ -87,79 +100,85 @@ export const App = () => {
         </div>
       </main>
 
-      <SourcesSidebar
-        isOpen={logic.isSourcesSidebarOpen}
-        onClose={logic.handleCloseSourcesSidebar}
-        sources={logic.sourcesForSidebar}
-        width={logic.sourcesSidebarWidth}
-        setWidth={logic.handleSetSourcesSidebarWidth}
-        isResizing={logic.isSourcesResizing}
-        setIsResizing={logic.setIsSourcesResizing}
-      />
+      <Suspense fallback={null}>
+        <SourcesSidebar
+          isOpen={logic.isSourcesSidebarOpen}
+          onClose={logic.handleCloseSourcesSidebar}
+          sources={logic.sourcesForSidebar}
+          width={logic.sourcesSidebarWidth}
+          setWidth={logic.handleSetSourcesSidebarWidth}
+          isResizing={logic.isSourcesResizing}
+          setIsResizing={logic.setIsSourcesResizing}
+        />
+      </Suspense>
 
-      <AppModals
-        isSettingsOpen={logic.isSettingsOpen}
-        setIsSettingsOpen={logic.setIsSettingsOpen}
-        isMemoryModalOpen={logic.isMemoryModalOpen}
-        setIsMemoryModalOpen={logic.setIsMemoryModalOpen}
-        isImportModalOpen={logic.isImportModalOpen}
-        setIsImportModalOpen={logic.setIsImportModalOpen}
-        handleFileUploadForImport={logic.handleFileUploadForImport}
-        onRunTests={() => logic.setIsTestMode(true)}
-        onDownloadLogs={logic.handleDownloadLogs}
-        onShowDataStructure={logic.handleShowDataStructure}
-        availableModels={logic.availableModels}
-        availableImageModels={logic.availableImageModels}
-        availableVideoModels={logic.availableVideoModels}
-        activeModel={logic.activeModel}
-        onModelChange={logic.onModelChange}
-        modelsLoading={logic.modelsLoading || logic.settingsLoading}
-        clearAllChats={logic.clearAllChats}
-        apiKey={logic.apiKey}
-        onSaveApiKey={logic.onSaveApiKey}
-        aboutUser={logic.aboutUser}
-        setAboutUser={logic.setAboutUser}
-        aboutResponse={logic.aboutResponse}
-        setAboutResponse={logic.setAboutResponse}
-        temperature={logic.temperature}
-        setTemperature={logic.setTemperature}
-        maxTokens={logic.maxTokens}
-        setMaxTokens={logic.setMaxTokens}
-        imageModel={logic.imageModel}
-        onImageModelChange={logic.onImageModelChange}
-        videoModel={logic.videoModel}
-        onVideoModelChange={logic.onVideoModelChange}
-        defaultTemperature={DEFAULT_TEMPERATURE}
-        defaultMaxTokens={DEFAULT_MAX_TOKENS}
-        isMemoryEnabled={logic.isMemoryEnabled}
-        setIsMemoryEnabled={logic.setIsMemoryEnabled}
-        onManageMemory={() => logic.setIsMemoryModalOpen(true)}
-        memoryContent={logic.memoryContent}
-        memoryFiles={logic.memoryFiles}
-        clearMemory={logic.clearMemory}
-        updateBackendMemory={logic.updateBackendMemory}
-        updateMemoryFiles={logic.updateMemoryFiles}
-        isConfirmationOpen={logic.isConfirmationOpen}
-        memorySuggestions={logic.memorySuggestions}
-        confirmMemoryUpdate={logic.confirmMemoryUpdate}
-        cancelMemoryUpdate={logic.cancelMemoryUpdate}
-        ttsVoice={logic.ttsVoice}
-        setTtsVoice={logic.setTtsVoice}
-        isAutoPlayEnabled={logic.isAutoPlayEnabled}
-        setIsAutoPlayEnabled={logic.setIsAutoPlayEnabled}
-        confirmation={logic.confirmation}
-        onConfirm={logic.handleConfirm}
-        onCancel={logic.handleCancel}
-        theme={logic.theme}
-        setTheme={logic.setTheme}
-      />
+      <Suspense fallback={null}>
+        <AppModals
+          isSettingsOpen={logic.isSettingsOpen}
+          setIsSettingsOpen={logic.setIsSettingsOpen}
+          isMemoryModalOpen={logic.isMemoryModalOpen}
+          setIsMemoryModalOpen={logic.setIsMemoryModalOpen}
+          isImportModalOpen={logic.isImportModalOpen}
+          setIsImportModalOpen={logic.setIsImportModalOpen}
+          handleFileUploadForImport={logic.handleFileUploadForImport}
+          onRunTests={() => logic.setIsTestMode(true)}
+          onDownloadLogs={logic.handleDownloadLogs}
+          onShowDataStructure={logic.handleShowDataStructure}
+          availableModels={logic.availableModels}
+          availableImageModels={logic.availableImageModels}
+          availableVideoModels={logic.availableVideoModels}
+          activeModel={logic.activeModel}
+          onModelChange={logic.onModelChange}
+          modelsLoading={logic.modelsLoading || logic.settingsLoading}
+          clearAllChats={logic.clearAllChats}
+          apiKey={logic.apiKey}
+          onSaveApiKey={logic.onSaveApiKey}
+          aboutUser={logic.aboutUser}
+          setAboutUser={logic.setAboutUser}
+          aboutResponse={logic.aboutResponse}
+          setAboutResponse={logic.setAboutResponse}
+          temperature={logic.temperature}
+          setTemperature={logic.setTemperature}
+          maxTokens={logic.maxTokens}
+          setMaxTokens={logic.setMaxTokens}
+          imageModel={logic.imageModel}
+          onImageModelChange={logic.onImageModelChange}
+          videoModel={logic.videoModel}
+          onVideoModelChange={logic.onVideoModelChange}
+          defaultTemperature={DEFAULT_TEMPERATURE}
+          defaultMaxTokens={DEFAULT_MAX_TOKENS}
+          isMemoryEnabled={logic.isMemoryEnabled}
+          setIsMemoryEnabled={logic.setIsMemoryEnabled}
+          onManageMemory={() => logic.setIsMemoryModalOpen(true)}
+          memoryContent={logic.memoryContent}
+          memoryFiles={logic.memoryFiles}
+          clearMemory={logic.clearMemory}
+          updateBackendMemory={logic.updateBackendMemory}
+          updateMemoryFiles={logic.updateMemoryFiles}
+          isConfirmationOpen={logic.isConfirmationOpen}
+          memorySuggestions={logic.memorySuggestions}
+          confirmMemoryUpdate={logic.confirmMemoryUpdate}
+          cancelMemoryUpdate={logic.cancelMemoryUpdate}
+          ttsVoice={logic.ttsVoice}
+          setTtsVoice={logic.setTtsVoice}
+          isAutoPlayEnabled={logic.isAutoPlayEnabled}
+          setIsAutoPlayEnabled={logic.setIsAutoPlayEnabled}
+          confirmation={logic.confirmation}
+          onConfirm={logic.handleConfirm}
+          onCancel={logic.handleCancel}
+          theme={logic.theme}
+          setTheme={logic.setTheme}
+        />
+      </Suspense>
 
       {logic.isTestMode && (
+        <Suspense fallback={<div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center text-white">Loading Test Runner...</div>}>
           <TestRunner 
               isOpen={logic.isTestMode}
               onClose={() => logic.setIsTestMode(false)}
               runTests={logic.runDiagnosticTests}
           />
+        </Suspense>
       )}
     </div>
   );

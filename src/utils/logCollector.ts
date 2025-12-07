@@ -15,6 +15,8 @@ interface LogEntry {
 // FIX: Define a type for the specific console methods we are patching to avoid type conflicts.
 type LoggableConsoleMethod = 'log' | 'info' | 'warn' | 'error' | 'debug';
 
+const MAX_LOGS = 1000; // Prevent memory leaks by capping retained logs
+
 class LogCollector {
   private logs: LogEntry[] = [];
   private originalConsole: Partial<Console> = {};
@@ -44,11 +46,19 @@ class LogCollector {
       const m = method as LoggableConsoleMethod;
       this.originalConsole[m] = console[m];
       (console as any)[m] = (...args: any[]) => {
-        this.logs.push({
+        const entry: LogEntry = {
           timestamp: new Date(),
           level: level as LogLevel,
           messages: args,
-        });
+        };
+        
+        this.logs.push(entry);
+        
+        // Memory Optimization: Keep log array within bounds
+        if (this.logs.length > MAX_LOGS) {
+            this.logs.splice(0, this.logs.length - MAX_LOGS);
+        }
+
         // We know `this.originalConsole[m]` is a function with the correct signature.
         this.originalConsole[m]?.apply(console, args);
       };

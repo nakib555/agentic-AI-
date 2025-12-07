@@ -3,19 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, Suspense } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import type { Message, Source } from '../../../types';
 import { MarkdownComponents } from '../../Markdown/markdownComponents';
 import { ErrorDisplay } from '../../UI/ErrorDisplay';
-import { ImageDisplay } from '../../AI/ImageDisplay';
-import { VideoDisplay } from '../../AI/VideoDisplay';
 import { ManualCodeRenderer } from '../../Markdown/ManualCodeRenderer';
 import { TypingIndicator } from '../TypingIndicator';
-import { McqComponent } from '../../AI/McqComponent';
-import { MapDisplay } from '../../AI/MapDisplay';
-import { FileAttachment } from '../../AI/FileAttachment';
 import { SuggestedActions } from '../SuggestedActions';
 import { ExecutionApproval } from '../../AI/ExecutionApproval';
 import type { MessageFormHandle } from '../MessageForm/index';
@@ -23,7 +18,14 @@ import { useAiMessageLogic } from './useAiMessageLogic';
 import { MessageToolbar } from './MessageToolbar';
 import { ThinkingWorkflow } from '../../AI/ThinkingWorkflow';
 import { FormattedBlock } from '../../Markdown/FormattedBlock';
-import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
+
+// Lazy load heavy media and interactive components
+const ImageDisplay = React.lazy(() => import('../../AI/ImageDisplay').then(m => ({ default: m.ImageDisplay })));
+const VideoDisplay = React.lazy(() => import('../../AI/VideoDisplay').then(m => ({ default: m.VideoDisplay })));
+const McqComponent = React.lazy(() => import('../../AI/McqComponent').then(m => ({ default: m.McqComponent })));
+const MapDisplay = React.lazy(() => import('../../AI/MapDisplay').then(m => ({ default: m.MapDisplay })));
+const FileAttachment = React.lazy(() => import('../../AI/FileAttachment').then(m => ({ default: m.FileAttachment })));
+const BrowserSessionDisplay = React.lazy(() => import('../../AI/BrowserSessionDisplay').then(m => ({ default: m.BrowserSessionDisplay })));
 
 // Optimized spring physics for performance
 const animationProps = {
@@ -47,6 +49,12 @@ type AiMessageProps = {
     onSetActiveResponseIndex: (messageId: string, index: number) => void;
     isAgentMode: boolean;
 };
+
+const LoadingPlaceholder = () => (
+    <div className="w-full h-48 bg-gray-100 dark:bg-white/5 rounded-xl animate-pulse flex items-center justify-center">
+        <span className="text-gray-400 dark:text-gray-600 text-sm">Loading component...</span>
+    </div>
+);
 
 const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
@@ -174,29 +182,35 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                     const key = `${id}-${index}`;
                     if (segment.type === 'component') {
                         const { componentType, data } = segment;
-                        switch (componentType) {
-                            case 'VIDEO':
-                                return <VideoDisplay key={key} {...data} />;
-                            case 'ONLINE_VIDEO':
-                                return <VideoDisplay key={key} srcUrl={data.url} prompt={data.title} />;
-                            case 'IMAGE':
-                            case 'ONLINE_IMAGE':
-                                return <ImageDisplay key={key} onEdit={handleEditImage} {...data} />;
-                            case 'MCQ':
-                                return <McqComponent key={key} {...data} />;
-                            case 'MAP':
-                                return (
-                                    <motion.div key={key} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                                        <MapDisplay {...data} />
-                                    </motion.div>
-                                );
-                            case 'FILE':
-                                return <FileAttachment key={key} {...data} />;
-                            case 'BROWSER':
-                                return <BrowserSessionDisplay key={key} {...data} />;
-                            default:
-                                return <ErrorDisplay key={key} error={{ message: `Unknown component type: ${componentType}`, details: JSON.stringify(data) }} />;
-                        }
+                        return (
+                            <Suspense key={key} fallback={<LoadingPlaceholder />}>
+                                {(() => {
+                                    switch (componentType) {
+                                        case 'VIDEO':
+                                            return <VideoDisplay {...data} />;
+                                        case 'ONLINE_VIDEO':
+                                            return <VideoDisplay srcUrl={data.url} prompt={data.title} />;
+                                        case 'IMAGE':
+                                        case 'ONLINE_IMAGE':
+                                            return <ImageDisplay onEdit={handleEditImage} {...data} />;
+                                        case 'MCQ':
+                                            return <McqComponent {...data} />;
+                                        case 'MAP':
+                                            return (
+                                                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                                                    <MapDisplay {...data} />
+                                                </motion.div>
+                                            );
+                                        case 'FILE':
+                                            return <FileAttachment {...data} />;
+                                        case 'BROWSER':
+                                            return <BrowserSessionDisplay {...data} />;
+                                        default:
+                                            return <ErrorDisplay error={{ message: `Unknown component type: ${componentType}`, details: JSON.stringify(data) }} />;
+                                    }
+                                })()}
+                            </Suspense>
+                        );
                     } else {
                         // Text segment
                         return (

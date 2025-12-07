@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FixedSizeList as List } from 'react-window';
 
 type BrowserSessionDisplayProps = {
     url: string;
@@ -14,9 +15,12 @@ type BrowserSessionDisplayProps = {
     logs: string[];
 };
 
+const LOG_ITEM_HEIGHT = 20; // Approx height for a single line of log text in the configured font size
+
 export const BrowserSessionDisplay: React.FC<BrowserSessionDisplayProps> = ({ url, title, screenshot, logs }) => {
     const [isLogsOpen, setIsLogsOpen] = useState(true); // Auto-open logs if live
     const [hostname, setHostname] = useState(url);
+    const listRef = useRef<List>(null);
 
     useEffect(() => {
         try {
@@ -29,13 +33,25 @@ export const BrowserSessionDisplay: React.FC<BrowserSessionDisplayProps> = ({ ur
     const isFinished = lastLog.includes('Session finished') || lastLog.includes('Extracted');
     const isLoading = !isFinished;
 
-    // Optimization: Limit visible logs to last 100 to prevent excessive DOM nodes
-    const displayedLogs = useMemo(() => {
-        if (logs.length > 100) {
-            return logs.slice(logs.length - 100);
+    // Auto-scroll to bottom of log list when new logs arrive and list is open
+    useEffect(() => {
+        if (isLogsOpen && listRef.current) {
+            listRef.current.scrollToItem(logs.length - 1, 'end');
         }
-        return logs;
-    }, [logs]);
+    }, [logs.length, isLogsOpen]);
+
+    const LogRow = ({ index, style }: { index: number, style: React.CSSProperties }) => {
+        const log = logs[index];
+        return (
+            <div 
+                style={style} 
+                className={`flex items-start gap-2 text-[11px] font-mono whitespace-nowrap overflow-hidden text-ellipsis px-4 ${index === logs.length - 1 ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-600 dark:text-slate-400'}`}
+            >
+                <span className="opacity-60 mt-0.5 flex-shrink-0">➜</span>
+                <span className="truncate">{log}</span>
+            </div>
+        );
+    };
 
     return (
         <motion.div 
@@ -143,21 +159,24 @@ export const BrowserSessionDisplay: React.FC<BrowserSessionDisplayProps> = ({ ur
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                         >
-                            <div className="px-4 pb-3 pt-1 space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
-                                {displayedLogs.map((log, index) => (
-                                    <div 
-                                        key={index}
-                                        className={`flex items-start gap-2 text-[11px] font-mono ${index === displayedLogs.length - 1 ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-600 dark:text-slate-400'}`}
-                                    >
-                                        <span className="opacity-60 mt-0.5">➜</span>
-                                        <span className="break-all">{log}</span>
-                                    </div>
-                                ))}
+                            <div className="w-full bg-gray-50 dark:bg-[#252525]">
+                                {/* Use react-window List for virtualization */}
+                                <List
+                                    ref={listRef}
+                                    height={128} // Fixed max-height approx 32 * 4 (Tailwind h-32 is 8rem = 128px)
+                                    itemCount={logs.length}
+                                    itemSize={LOG_ITEM_HEIGHT}
+                                    width="100%"
+                                    className="custom-scrollbar"
+                                >
+                                    {LogRow}
+                                </List>
+                                
                                 {isLoading && (
                                      <motion.div 
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
-                                        className="flex items-center gap-1 pl-4 pt-1"
+                                        className="flex items-center gap-1 pl-4 py-1 border-t border-gray-100 dark:border-white/5"
                                      >
                                          <span className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
                                          <span className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>

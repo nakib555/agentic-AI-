@@ -111,8 +111,11 @@ html, body, #root {
 /* --- Robust Rendering Utilities --- */
 
 /* Isolates layout calculations for heavy components (like message bubbles) */
+/* content-visibility: auto allows the browser to skip rendering work for off-screen content */
 .contain-content {
   contain: content;
+  content-visibility: auto;
+  contain-intrinsic-size: 100px; /* Approximation to prevent scrollbar jumping */
 }
 
 /* Prevents horizontal overflow blowouts in flex containers */

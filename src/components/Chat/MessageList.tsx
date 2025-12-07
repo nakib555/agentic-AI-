@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import type { Message, Source } from '../../types';
 import { MessageComponent } from './Message';
 import { WelcomeScreen } from './WelcomeScreen/index';
@@ -45,6 +45,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   // We use a ref for this state to access it immediately inside event handlers/observers without stale closures
   const userHasScrolledUpRef = useRef(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const rafIdRef = useRef<number | null>(null);
   
   // Threshold (px) to consider the user "at the bottom"
   const BOTTOM_THRESHOLD = 100;
@@ -78,29 +79,43 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
     }
   }));
 
-  // Handle scroll events to detect if user is moving away from bottom
+  // PERFORMANCE: Optimized scroll handler using requestAnimationFrame
   const handleScroll = useCallback(() => {
     if (!scrollContainerRef.current) return;
     
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    
-    const isAtBottom = distanceFromBottom < BOTTOM_THRESHOLD;
+    if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+    }
 
-    if (isAtBottom) {
-        if (userHasScrolledUpRef.current) {
-            userHasScrolledUpRef.current = false;
-            setShowScrollButton(false);
-        }
-    } else {
-        if (!userHasScrolledUpRef.current) {
-            userHasScrolledUpRef.current = true;
-            // Only show button if there's actually somewhere to scroll to
-            if (scrollHeight > clientHeight) {
-                setShowScrollButton(true);
+    rafIdRef.current = requestAnimationFrame(() => {
+        if (!scrollContainerRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+        const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+        
+        const isAtBottom = distanceFromBottom < BOTTOM_THRESHOLD;
+
+        if (isAtBottom) {
+            if (userHasScrolledUpRef.current) {
+                userHasScrolledUpRef.current = false;
+                setShowScrollButton(false);
+            }
+        } else {
+            if (!userHasScrolledUpRef.current) {
+                userHasScrolledUpRef.current = true;
+                // Only show button if there's actually somewhere to scroll to
+                if (scrollHeight > clientHeight) {
+                    setShowScrollButton(true);
+                }
             }
         }
-    }
+    });
+  }, []);
+
+  // Cleanup RAF on unmount
+  useEffect(() => {
+      return () => {
+          if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      };
   }, []);
 
   // ResizeObserver handles streaming content pushing the scroll down
@@ -138,7 +153,8 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
       scrollToBottom('auto');
   }, []); 
 
-  const visibleMessages = messages.filter(msg => !msg.isHidden);
+  // Memoize visible messages to avoid recalculating on every render if messages haven't changed
+  const visibleMessages = useMemo(() => messages.filter(msg => !msg.isHidden), [messages]);
 
   return (
     <div 

@@ -93,7 +93,20 @@ export const useChatHistory = () => {
                 const fullChat: ChatSession = await fetchApi(`/api/chats/${currentChatId}`);
                 
                 // Update state with full chat data
-                setChatHistory(prev => prev.map(c => c.id === currentChatId ? { ...fullChat, isLoading: false } : c));
+                // MEMORY OPTIMIZATION: Unload messages from other chats to save memory
+                setChatHistory(prev => prev.map(c => {
+                    if (c.id === currentChatId) {
+                        return { ...fullChat, isLoading: false };
+                    }
+                    // If we have full message data for a non-active chat, clear it to free memory.
+                    // We keep basic metadata. Setting messages to empty array or undefined signals it needs reload.
+                    if (c.messages && c.messages.length > 0) {
+                        // We use empty array to signify "unloaded" but maintain type safety somewhat.
+                        // The `needsLoading` check above handles empty arrays for non-new chats.
+                        return { ...c, messages: [] };
+                    }
+                    return c;
+                }));
             } catch (error) {
                 if (!isVersionMismatch(error)) {
                     console.error(`Failed to load messages for chat ${currentChatId}:`, error);
@@ -123,6 +136,7 @@ export const useChatHistory = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ model, ...settings }),
         });
+        // Add new chat and ensure others are unloaded if possible (optional here, main effect handles switching)
         setChatHistory(prev => [newChat, ...prev]);
         setCurrentChatId(newChat.id);
         return newChat;
@@ -237,10 +251,13 @@ export const useChatHistory = () => {
       if (!chat.messages) return chat;
 
       const messageIndex = chat.messages.findIndex(m => m.id === messageId);
-      if (messageIndex === -1 || chat.messages[messageIndex].role !== 'model') return chat;
+      if (messageIndex === -1) return chat;
       
       const updatedMessages = [...chat.messages];
       const messageToUpdate = { ...updatedMessages[messageIndex] };
+      // Safety check: ensure role is model before updating response
+      if (messageToUpdate.role !== 'model') return chat;
+      
       if (!messageToUpdate.responses) return chat;
       
       const activeIdx = messageToUpdate.activeResponseIndex;

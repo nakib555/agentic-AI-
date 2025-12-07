@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -54,6 +55,11 @@ class AudioManager {
       if (this.onEndCallback) {
         this.onEndCallback();
       }
+      // Ensure we clean up connections even on natural end
+      try {
+        source.disconnect();
+      } catch (e) { /* ignore */ }
+      
       this.currentSource = null;
       this.onEndCallback = null;
     };
@@ -69,7 +75,14 @@ class AudioManager {
     if (this.currentSource) {
       // Unset the onended callback before stopping to prevent it from firing on manual stop.
       this.currentSource.onended = null;
-      this.currentSource.stop();
+      
+      try {
+        this.currentSource.stop();
+        this.currentSource.disconnect();
+      } catch (error) {
+        // Ignore errors if already stopped or invalid state
+      }
+      
       this.currentSource = null;
       // Also invoke the onEnd callback immediately to reset UI state.
       if (this.onEndCallback) {

@@ -21,6 +21,7 @@ type MapDisplayProps = {
 
 export const MapDisplay = ({ latitude, longitude, zoom, markerText }: MapDisplayProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null); // Keep track of the map instance
   const isMapInitialized = useRef(false);
 
   const isValidCoords = typeof latitude === 'number' && isFinite(latitude) && typeof longitude === 'number' && isFinite(longitude);
@@ -38,6 +39,7 @@ export const MapDisplay = ({ latitude, longitude, zoom, markerText }: MapDisplay
 
     // Initialize the map with a wide, zoomed-out world view
     const map = window.L.map(mapRef.current).setView([20, 0], 2);
+    mapInstanceRef.current = map;
 
     // Add a tile layer to the map (OpenStreetMap is a free option)
     window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -45,7 +47,7 @@ export const MapDisplay = ({ latitude, longitude, zoom, markerText }: MapDisplay
     }).addTo(map);
 
     // After a short delay to allow the map to render, animate to the target location.
-    setTimeout(() => {
+    const animTimer = setTimeout(() => {
       map.flyTo([latitude, longitude], validZoom, {
         animate: true,
         duration: 4 // Animation duration in seconds for a slower, smoother effect
@@ -53,6 +55,7 @@ export const MapDisplay = ({ latitude, longitude, zoom, markerText }: MapDisplay
 
       // Add the marker as the animation is nearing its end for a polished feel.
       setTimeout(() => {
+          if (!mapInstanceRef.current) return; // Guard against unmount
           const marker = window.L.marker([latitude, longitude]).addTo(map);
           if (markerText) {
               marker.bindPopup(markerText).openPopup();
@@ -60,6 +63,16 @@ export const MapDisplay = ({ latitude, longitude, zoom, markerText }: MapDisplay
       }, 3500); // 3.5-second delay to sync with the fly-to animation
 
     }, 500); // Start the fly-to animation 500ms after the component mounts
+
+    // Cleanup function to prevent memory leaks
+    return () => {
+        clearTimeout(animTimer);
+        if (mapInstanceRef.current) {
+            mapInstanceRef.current.remove();
+            mapInstanceRef.current = null;
+        }
+        isMapInitialized.current = false;
+    };
   }, [latitude, longitude, validZoom, markerText, isValidCoords]);
 
   if (!isValidCoords) {

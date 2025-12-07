@@ -1,9 +1,11 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useRef, CSSProperties } from 'react';
+import { VariableSizeList as List } from 'react-window';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import type { ChatSession } from '../../types';
@@ -21,14 +23,17 @@ type HistoryListProps = {
   onUpdateChatTitle: (id: string, title: string) => void;
 };
 
+// Flattened Item Types for Virtualization
+type HeaderItem = { type: 'header'; name: string; collapsed: boolean };
+type ChatItem = { type: 'chat'; chat: ChatSession };
+type ListItem = HeaderItem | ChatItem;
+
 const groupChatsByMonth = (chats: ChatSession[]): { [key: string]: ChatSession[] } => {
     const groups: { [key: string]: ChatSession[] } = {};
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const yesterdayStart = todayStart - 86400000;
 
-    // The `history` prop is already sorted newest to oldest from the parent hook.
-    // Iterating and pushing will maintain this order within groups.
     chats.forEach(chat => {
         const chatDate = new Date(chat.createdAt);
         let groupKey: string;
@@ -48,7 +53,6 @@ const groupChatsByMonth = (chats: ChatSession[]): { [key: string]: ChatSession[]
     });
     return groups;
 };
-
 
 const NoItems = ({ message }: { message: string }) => (
     <motion.div 
@@ -76,30 +80,77 @@ const ChevronIcon = () => (
     </svg>
 );
 
-export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, isDesktop, isHistoryLoading, onLoadChat, onDeleteChat, onUpdateChatTitle }: HistoryListProps) => {
-    const filteredHistory = history.filter(item =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+// Helper hook to get dimensions of the container for virtual list
+const useResizeObserver = (ref: React.RefObject<HTMLElement>) => {
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    if (!ref.current) return;
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (!entries || entries.length === 0) return;
+      const { width, height } = entries[0].contentRect;
+      setDimensions({ width, height });
+    });
+    resizeObserver.observe(ref.current);
+    return () => resizeObserver.disconnect();
+  }, [ref]);
+  return dimensions;
+};
 
-    const groupedHistory = groupChatsByMonth(filteredHistory);
-    // Establish a chronological sort order for the group titles.
-    const groupOrder = ['Today', 'Yesterday', ...Object.keys(groupedHistory).filter(k => k !== 'Today' && k !== 'Yesterday').sort((a, b) => new Date(b).getTime() - new Date(a).getTime())];
-    
+export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, isDesktop, isHistoryLoading, onLoadChat, onDeleteChat, onUpdateChatTitle }: HistoryListProps) => {
     const shouldCollapse = isDesktop && isCollapsed;
+    const containerRef = useRef<HTMLDivElement>(null);
+    const { width, height } = useResizeObserver(containerRef);
+    const listRef = useRef<List>(null);
 
     const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
         try {
             const savedState = localStorage.getItem('chatHistoryGroups');
             return savedState ? JSON.parse(savedState) : {};
         } catch (e) {
-            console.error("Failed to parse chat history groups from localStorage", e);
             return {};
         }
     });
 
     useEffect(() => {
         localStorage.setItem('chatHistoryGroups', JSON.stringify(collapsedGroups));
+        // Reset list cache when group collapse state changes
+        if (listRef.current) {
+            listRef.current.resetAfterIndex(0);
+        }
     }, [collapsedGroups]);
+
+    // Derived State: Flattened list for virtualization
+    const flattenedData = useMemo(() => {
+        const filteredHistory = history.filter(item =>
+            item.title.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        const groupedHistory = groupChatsByMonth(filteredHistory);
+        const groupOrder = ['Today', 'Yesterday', ...Object.keys(groupedHistory).filter(k => k !== 'Today' && k !== 'Yesterday').sort((a, b) => new Date(b).getTime() - new Date(a).getTime())];
+        
+        const items: ListItem[] = [];
+        
+        // If searching, we flatten everything without headers to show matches directly
+        if (searchQuery) {
+             filteredHistory.forEach(chat => items.push({ type: 'chat', chat }));
+             return items;
+        }
+
+        groupOrder.forEach(groupName => {
+            const chats = groupedHistory[groupName];
+            if (!chats || chats.length === 0) return;
+
+            const isGroupCollapsed = collapsedGroups[groupName] ?? false;
+            items.push({ type: 'header', name: groupName, collapsed: isGroupCollapsed });
+
+            if (!isGroupCollapsed) {
+                chats.forEach(chat => {
+                    items.push({ type: 'chat', chat });
+                });
+            }
+        });
+
+        return items;
+    }, [history, searchQuery, collapsedGroups]);
 
     const toggleGroup = (groupName: string) => {
         setCollapsedGroups(prev => ({
@@ -108,98 +159,86 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
         }));
     };
 
+    // Item Renderer for Virtual List
+    const Row = ({ index, style }: { index: number; style: CSSProperties }) => {
+        const item = flattenedData[index];
+
+        if (item.type === 'header') {
+            return (
+                <div style={style} className="px-2">
+                    <button
+                        onClick={() => !shouldCollapse && toggleGroup(item.name)}
+                        disabled={shouldCollapse}
+                        className="w-full flex items-center justify-between px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:bg-gray-100/60 dark:hover:bg-violet-900/30 rounded py-2 transition-colors disabled:cursor-default disabled:bg-transparent"
+                    >
+                        <span className="block overflow-hidden whitespace-nowrap text-left truncate">
+                            {shouldCollapse ? '' : item.name}
+                        </span>
+                        {!shouldCollapse && (
+                            <div
+                                style={{ transform: item.collapsed ? 'rotate(0deg)' : 'rotate(90deg)', transition: 'transform 0.2s' }}
+                            >
+                                <ChevronIcon />
+                            </div>
+                        )}
+                    </button>
+                </div>
+            );
+        }
+
+        return (
+            <div style={style} className="px-2">
+                <HistoryItem 
+                    text={item.chat.title} 
+                    isCollapsed={isCollapsed}
+                    isDesktop={isDesktop}
+                    searchQuery={searchQuery}
+                    active={item.chat.id === currentChatId}
+                    onClick={() => onLoadChat(item.chat.id)}
+                    onDelete={() => onDeleteChat(item.chat.id)}
+                    onUpdateTitle={(newTitle) => onUpdateChatTitle(item.chat.id, newTitle)}
+                    isLoading={item.chat.isLoading ?? false}
+                />
+            </div>
+        );
+    };
+
+    // Calculate dynamic height based on item type
+    const getItemSize = (index: number) => {
+        const item = flattenedData[index];
+        if (item.type === 'header') return 32; // Header height
+        return 36; // Chat item height (approx 2rem + padding)
+    };
+
     if (isHistoryLoading) {
         return (
-            <div className={`flex-1 min-h-0 text-sm ${!shouldCollapse ? 'overflow-y-auto' : ''}`}>
+            <div className={`flex-1 min-h-0 text-sm`}>
                 <HistorySkeleton />
             </div>
         );
     }
 
+    if (flattenedData.length === 0) {
+        return (
+            <div className={`flex-1 min-h-0 text-sm`}>
+                {!shouldCollapse && <NoItems message={searchQuery ? 'No conversations found' : 'No conversations yet'} />}
+            </div>
+        );
+    }
+
     return (
-        <div className={`flex-1 min-h-0 text-sm ${!shouldCollapse ? 'overflow-y-auto' : ''}`}>
-            {Object.keys(groupedHistory).length > 0 ? (
-                <div className="space-y-2">
-                    {groupOrder.map(groupName => {
-                        const chatsInGroup = groupedHistory[groupName];
-                        if (!chatsInGroup || chatsInGroup.length === 0) return null;
-
-                        const isGroupCollapsed = collapsedGroups[groupName] ?? false;
-
-                        return (
-                            <div key={groupName}>
-                                <button
-                                    onClick={() => !shouldCollapse && toggleGroup(groupName)}
-                                    disabled={shouldCollapse}
-                                    className="w-full flex items-center justify-between px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 hover:bg-gray-100/60 dark:hover:bg-violet-900/30 rounded py-1 transition-colors disabled:cursor-default disabled:bg-transparent dark:disabled:bg-transparent"
-                                    aria-expanded={!isGroupCollapsed}
-                                    aria-controls={`group-content-${groupName}`}
-                                >
-                                    <motion.span
-                                        className="block overflow-hidden whitespace-nowrap"
-                                        initial={false}
-                                        animate={{ width: shouldCollapse ? 0 : 'auto', opacity: shouldCollapse ? 0 : 1, x: shouldCollapse ? -5 : 0 }}
-                                        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                                    >
-                                        {groupName}
-                                    </motion.span>
-                                    <motion.div
-                                        className={shouldCollapse ? 'hidden' : 'block'}
-                                        animate={{ rotate: isGroupCollapsed ? 0 : 90 }}
-                                        transition={{ duration: 0.2, ease: 'easeOut' }}
-                                    >
-                                        <ChevronIcon />
-                                    </motion.div>
-                                </button>
-                                <AnimatePresence initial={false}>
-                                    {!isGroupCollapsed && !shouldCollapse && (
-                                        <motion.div
-                                            id={`group-content-${groupName}`}
-                                            key="content"
-                                            initial="collapsed"
-                                            animate="open"
-                                            exit="collapsed"
-                                            variants={{
-                                                open: { opacity: 1, height: 'auto' },
-                                                collapsed: { opacity: 0, height: 0 }
-                                            }}
-                                            transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                        >
-                                            <div className="space-y-0.5">
-                                                <AnimatePresence initial={false}>
-                                                    {chatsInGroup.map((item) => (
-                                                        <motion.div
-                                                            key={item.id}
-                                                            layout
-                                                            initial={{ opacity: 0, height: 0 }}
-                                                            animate={{ opacity: 1, height: 'auto' }}
-                                                            exit={{ opacity: 0, height: 0, transition: { duration: 0.2 } }}
-                                                            transition={{ duration: 0.2 }}
-                                                        >
-                                                            <HistoryItem 
-                                                                text={item.title} 
-                                                                isCollapsed={isCollapsed}
-                                                                isDesktop={isDesktop}
-                                                                searchQuery={searchQuery}
-                                                                active={item.id === currentChatId}
-                                                                onClick={() => onLoadChat(item.id)}
-                                                                onDelete={() => onDeleteChat(item.id)}
-                                                                onUpdateTitle={(newTitle) => onUpdateChatTitle(item.id, newTitle)}
-                                                                isLoading={item.isLoading ?? false}
-                                                            />
-                                                        </motion.div>
-                                                    ))}
-                                                </AnimatePresence>
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        )
-                    })}
-                </div>
-            ) : (
-                !shouldCollapse && <NoItems message={searchQuery ? 'No conversations found' : 'No conversations yet'} />
+        <div className="flex-1 min-h-0 text-sm w-full" ref={containerRef}>
+            {height > 0 && (
+                <List
+                    ref={listRef}
+                    height={height}
+                    itemCount={flattenedData.length}
+                    itemSize={getItemSize}
+                    width={width}
+                    className="custom-scrollbar"
+                >
+                    {Row}
+                </List>
             )}
         </div>
     );
