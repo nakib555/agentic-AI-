@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Suspense } from 'react';
+import React from 'react';
 import type { Model } from '../../services/modelService';
 import type { MemoryFile } from '../../hooks/useMemory';
 import type { Theme } from '../../hooks/useTheme';
 
-// Lazy load modals
-const SettingsModal = React.lazy(() => import('../Settings/SettingsModal').then(module => ({ default: module.SettingsModal })));
-const MemoryModal = React.lazy(() => import('../Settings/MemoryModal').then(module => ({ default: module.MemoryModal })));
-const MemoryConfirmationModal = React.lazy(() => import('../Settings/MemoryConfirmationModal').then(module => ({ default: module.MemoryConfirmationModal })));
-const ImportChatModal = React.lazy(() => import('../Settings/ImportChatModal').then(module => ({ default: module.ImportChatModal })));
-const ConfirmationModal = React.lazy(() => import('../UI/ConfirmationModal').then(module => ({ default: module.ConfirmationModal })));
+// Static imports to ensure bundling works correctly in all environments
+import { SettingsModal } from '../Settings/SettingsModal';
+import { MemoryModal } from '../Settings/MemoryModal';
+import { MemoryConfirmationModal } from '../Settings/MemoryConfirmationModal';
+import { ImportChatModal } from '../Settings/ImportChatModal';
+import { ConfirmationModal } from '../UI/ConfirmationModal';
 
 type AppModalsProps = {
   isSettingsOpen: boolean;
@@ -96,7 +96,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
   } = props;
 
   return (
-    <Suspense fallback={null}>
+    <>
       {isSettingsOpen && (
         <SettingsModal
           isOpen={isSettingsOpen}
@@ -174,6 +174,6 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           destructive={confirmation?.destructive}
         />
       )}
-    </Suspense>
+    </>
   );
 };

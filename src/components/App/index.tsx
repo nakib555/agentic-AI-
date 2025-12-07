@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Suspense } from 'react';
+import React from 'react';
 import { Sidebar } from '../Sidebar/Sidebar';
 import { ChatHeader } from '../Chat/ChatHeader';
 import { ChatArea } from '../Chat/ChatArea';
@@ -14,10 +14,10 @@ import {
 } from './constants';
 import { VersionMismatchOverlay } from '../UI/VersionMismatchOverlay';
 
-// Lazy load heavy components to reduce initial bundle size and memory usage
-const SourcesSidebar = React.lazy(() => import('../AI/SourcesSidebar').then(module => ({ default: module.SourcesSidebar })));
-const AppModals = React.lazy(() => import('./AppModals').then(module => ({ default: module.AppModals })));
-const TestRunner = React.lazy(() => import('../Testing').then(module => ({ default: module.TestRunner })));
+// Static imports to prevent bundling issues with React.lazy in single-file builds
+import { SourcesSidebar } from '../AI/SourcesSidebar';
+import { AppModals } from './AppModals';
+import { TestRunner } from '../Testing';
 
 export const App = () => {
   const logic = useAppLogic();
@@ -90,85 +90,79 @@ export const App = () => {
         </div>
       </main>
 
-      <Suspense fallback={null}>
-        <SourcesSidebar
-          isOpen={logic.isSourcesSidebarOpen}
-          onClose={logic.handleCloseSourcesSidebar}
-          sources={logic.sourcesForSidebar}
-          width={logic.sourcesSidebarWidth}
-          setWidth={logic.handleSetSourcesSidebarWidth}
-          isResizing={logic.isSourcesResizing}
-          setIsResizing={logic.setIsSourcesResizing}
-        />
-      </Suspense>
+      <SourcesSidebar
+        isOpen={logic.isSourcesSidebarOpen}
+        onClose={logic.handleCloseSourcesSidebar}
+        sources={logic.sourcesForSidebar}
+        width={logic.sourcesSidebarWidth}
+        setWidth={logic.handleSetSourcesSidebarWidth}
+        isResizing={logic.isSourcesResizing}
+        setIsResizing={logic.setIsSourcesResizing}
+      />
 
-      <Suspense fallback={null}>
-        <AppModals
-          isSettingsOpen={logic.isSettingsOpen}
-          setIsSettingsOpen={logic.setIsSettingsOpen}
-          isMemoryModalOpen={logic.isMemoryModalOpen}
-          setIsMemoryModalOpen={logic.setIsMemoryModalOpen}
-          isImportModalOpen={logic.isImportModalOpen}
-          setIsImportModalOpen={logic.setIsImportModalOpen}
-          handleFileUploadForImport={logic.handleFileUploadForImport}
-          onRunTests={() => logic.setIsTestMode(true)}
-          onDownloadLogs={logic.handleDownloadLogs}
-          onShowDataStructure={logic.handleShowDataStructure}
-          availableModels={logic.availableModels}
-          availableImageModels={logic.availableImageModels}
-          availableVideoModels={logic.availableVideoModels}
-          activeModel={logic.activeModel}
-          onModelChange={logic.onModelChange}
-          modelsLoading={logic.modelsLoading || logic.settingsLoading}
-          clearAllChats={logic.clearAllChats}
-          apiKey={logic.apiKey}
-          onSaveApiKey={logic.onSaveApiKey}
-          aboutUser={logic.aboutUser}
-          setAboutUser={logic.setAboutUser}
-          aboutResponse={logic.aboutResponse}
-          setAboutResponse={logic.setAboutResponse}
-          temperature={logic.temperature}
-          setTemperature={logic.setTemperature}
-          maxTokens={logic.maxTokens}
-          setMaxTokens={logic.setMaxTokens}
-          imageModel={logic.imageModel}
-          onImageModelChange={logic.onImageModelChange}
-          videoModel={logic.videoModel}
-          onVideoModelChange={logic.onVideoModelChange}
-          defaultTemperature={DEFAULT_TEMPERATURE}
-          defaultMaxTokens={DEFAULT_MAX_TOKENS}
-          isMemoryEnabled={logic.isMemoryEnabled}
-          setIsMemoryEnabled={logic.setIsMemoryEnabled}
-          onManageMemory={() => logic.setIsMemoryModalOpen(true)}
-          memoryContent={logic.memoryContent}
-          memoryFiles={logic.memoryFiles}
-          clearMemory={logic.clearMemory}
-          updateBackendMemory={logic.updateBackendMemory}
-          updateMemoryFiles={logic.updateMemoryFiles}
-          isConfirmationOpen={logic.isConfirmationOpen}
-          memorySuggestions={logic.memorySuggestions}
-          confirmMemoryUpdate={logic.confirmMemoryUpdate}
-          cancelMemoryUpdate={logic.cancelMemoryUpdate}
-          ttsVoice={logic.ttsVoice}
-          setTtsVoice={logic.setTtsVoice}
-          isAutoPlayEnabled={logic.isAutoPlayEnabled}
-          setIsAutoPlayEnabled={logic.setIsAutoPlayEnabled}
-          confirmation={logic.confirmation}
-          onConfirm={logic.handleConfirm}
-          onCancel={logic.handleCancel}
-          theme={logic.theme}
-          setTheme={logic.setTheme}
-        />
-      </Suspense>
+      <AppModals
+        isSettingsOpen={logic.isSettingsOpen}
+        setIsSettingsOpen={logic.setIsSettingsOpen}
+        isMemoryModalOpen={logic.isMemoryModalOpen}
+        setIsMemoryModalOpen={logic.setIsMemoryModalOpen}
+        isImportModalOpen={logic.isImportModalOpen}
+        setIsImportModalOpen={logic.setIsImportModalOpen}
+        handleFileUploadForImport={logic.handleFileUploadForImport}
+        onRunTests={() => logic.setIsTestMode(true)}
+        onDownloadLogs={logic.handleDownloadLogs}
+        onShowDataStructure={logic.handleShowDataStructure}
+        availableModels={logic.availableModels}
+        availableImageModels={logic.availableImageModels}
+        availableVideoModels={logic.availableVideoModels}
+        activeModel={logic.activeModel}
+        onModelChange={logic.onModelChange}
+        modelsLoading={logic.modelsLoading || logic.settingsLoading}
+        clearAllChats={logic.clearAllChats}
+        apiKey={logic.apiKey}
+        onSaveApiKey={logic.onSaveApiKey}
+        aboutUser={logic.aboutUser}
+        setAboutUser={logic.setAboutUser}
+        aboutResponse={logic.aboutResponse}
+        setAboutResponse={logic.setAboutResponse}
+        temperature={logic.temperature}
+        setTemperature={logic.setTemperature}
+        maxTokens={logic.maxTokens}
+        setMaxTokens={logic.setMaxTokens}
+        imageModel={logic.imageModel}
+        onImageModelChange={logic.onImageModelChange}
+        videoModel={logic.videoModel}
+        onVideoModelChange={logic.onVideoModelChange}
+        defaultTemperature={DEFAULT_TEMPERATURE}
+        defaultMaxTokens={DEFAULT_MAX_TOKENS}
+        isMemoryEnabled={logic.isMemoryEnabled}
+        setIsMemoryEnabled={logic.setIsMemoryEnabled}
+        onManageMemory={() => logic.setIsMemoryModalOpen(true)}
+        memoryContent={logic.memoryContent}
+        memoryFiles={logic.memoryFiles}
+        clearMemory={logic.clearMemory}
+        updateBackendMemory={logic.updateBackendMemory}
+        updateMemoryFiles={logic.updateMemoryFiles}
+        isConfirmationOpen={logic.isConfirmationOpen}
+        memorySuggestions={logic.memorySuggestions}
+        confirmMemoryUpdate={logic.confirmMemoryUpdate}
+        cancelMemoryUpdate={logic.cancelMemoryUpdate}
+        ttsVoice={logic.ttsVoice}
+        setTtsVoice={logic.setTtsVoice}
+        isAutoPlayEnabled={logic.isAutoPlayEnabled}
+        setIsAutoPlayEnabled={logic.setIsAutoPlayEnabled}
+        confirmation={logic.confirmation}
+        onConfirm={logic.handleConfirm}
+        onCancel={logic.handleCancel}
+        theme={logic.theme}
+        setTheme={logic.setTheme}
+      />
 
       {logic.isTestMode && (
-        <Suspense fallback={<div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center text-white">Loading Test Runner...</div>}>
-          <TestRunner 
-              isOpen={logic.isTestMode}
-              onClose={() => logic.setIsTestMode(false)}
-              runTests={logic.runDiagnosticTests}
-          />
-        </Suspense>
+        <TestRunner 
+            isOpen={logic.isTestMode}
+            onClose={() => logic.setIsTestMode(false)}
+            runTests={logic.runDiagnosticTests}
+        />
       )}
     </div>
   );
