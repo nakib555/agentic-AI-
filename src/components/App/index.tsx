@@ -16,7 +16,6 @@ import { VersionMismatchOverlay } from '../UI/VersionMismatchOverlay';
 
 // Lazy load heavy components to reduce initial bundle size and memory usage
 const SourcesSidebar = React.lazy(() => import('../AI/SourcesSidebar').then(module => ({ default: module.SourcesSidebar })));
-const ThinkingSidebar = React.lazy(() => import('../Sidebar/ThinkingSidebar').then(module => ({ default: module.ThinkingSidebar })));
 const AppModals = React.lazy(() => import('./AppModals').then(module => ({ default: module.AppModals })));
 const TestRunner = React.lazy(() => import('../Testing').then(module => ({ default: module.TestRunner })));
 
@@ -27,15 +26,6 @@ export const App = () => {
     ? logic.chatHistory.find(c => c.id === logic.currentChatId)
     : null;
   const chatTitle = currentChat ? currentChat.title : null;
-
-  // Determine if ThinkingSidebar should be visible
-  // It should be visible if there is an active message with thinking process
-  // For simplicity in this structure, we'll assume it's managed via logic in a real app,
-  // but here we ensure it's rendered if we have resizing logic or active thinking state.
-  // Based on the hook data, we don't have a direct 'isThinkingOpen' state exposed, 
-  // but we have 'thinkingSidebarWidth'. 
-  // We will assume it is conditionally rendered based on whether a message is selected for inspection 
-  // or generally available. For now, we'll add it to the layout structure.
 
   return (
     <div ref={logic.appContainerRef} className={`flex h-full bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isResizing ? 'pointer-events-none' : ''}`}>
