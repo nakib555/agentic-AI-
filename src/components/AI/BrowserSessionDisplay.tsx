@@ -5,8 +5,10 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { FixedSizeList as List } from 'react-window';
+
+const motion = motionTyped as any;
 
 type BrowserSessionDisplayProps = {
     url: string;

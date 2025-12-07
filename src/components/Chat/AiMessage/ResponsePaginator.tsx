@@ -1,10 +1,13 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
+
+const motion = motionTyped as any;
 
 type ResponsePaginatorProps = {
   count: number;
