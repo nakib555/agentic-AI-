@@ -4,15 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useEffect, Suspense } from 'react';
 import { motion as motionTyped } from 'framer-motion';
 import type { Message } from '../../types';
-import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { parseMessageText } from '../../utils/messageParser';
 import { useViewport } from '../../hooks/useViewport';
 import { parseAgenticWorkflow } from '../../services/workflowParser';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
-import { FormattedBlock } from '../Markdown/FormattedBlock';
+
+// Lazy components
+const ThinkingWorkflow = React.lazy(() => import('../AI/ThinkingWorkflow').then(m => ({ default: m.ThinkingWorkflow })));
+const FormattedBlock = React.lazy(() => import('../Markdown/FormattedBlock').then(m => ({ default: m.FormattedBlock })));
 
 const motion = motionTyped as any;
 
@@ -135,7 +137,9 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                         <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                             Mission Briefing
                         </h3>
-                        <FormattedBlock content={plan} isStreaming={message.isThinking && executionLog.length === 0} />
+                        <Suspense fallback={<div className="h-20 bg-gray-100 dark:bg-white/5 animate-pulse rounded-lg" />}>
+                            <FormattedBlock content={plan} isStreaming={message.isThinking && executionLog.length === 0} />
+                        </Suspense>
                     </div>
                 )}
                 {executionLog.length > 0 && (
@@ -143,12 +147,14 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                         <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                             Execution Log
                         </h3>
-                        <ThinkingWorkflow
-                            nodes={executionLog}
-                            sendMessage={sendMessage}
-                            onRegenerate={onRegenerate}
-                            messageId={message.id}
-                        />
+                        <Suspense fallback={<div className="h-40 bg-gray-100 dark:bg-white/5 animate-pulse rounded-lg" />}>
+                            <ThinkingWorkflow
+                                nodes={executionLog}
+                                sendMessage={sendMessage}
+                                onRegenerate={onRegenerate}
+                                messageId={message.id}
+                            />
+                        </Suspense>
                     </div>
                 )}
             </div>
