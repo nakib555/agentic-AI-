@@ -150,15 +150,18 @@ const SidebarRaw: React.FC<SidebarProps> = ({
                 }}
                 className={`
                     flex flex-col transform-gpu
-                    bg-sidebar/95 dark:bg-layer-1/95
-                    backdrop-blur-xl
-                    border-r border-border-subtle
+                    bg-gradient-to-br from-[#f8fafc] via-[#f1f5f9] to-[#e0e7ff]
+                    dark:from-[#020617] dark:via-[#0f172a] dark:to-[#1e1b4b]
+                    border-r border-white/20 dark:border-white/5
                     shadow-2xl
                 `}
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
+                {/* Colorful Top Accent Line */}
+                <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 opacity-90" />
+
                 <div 
-                    className="p-4 flex flex-col h-full"
+                    className="p-4 flex flex-col h-full relative z-10"
                     style={{ userSelect: isResizing ? 'none' : 'auto' }}
                 >
                     <SidebarHeader 
@@ -185,7 +188,7 @@ const SidebarRaw: React.FC<SidebarProps> = ({
                     </div>
                     
                     <motion.div 
-                        className="mb-2 h-px bg-gradient-to-r from-transparent via-border-default to-transparent"
+                        className="mb-2 h-px bg-gradient-to-r from-transparent via-indigo-200 dark:via-indigo-900/50 to-transparent"
                         initial={false}
                         animate={{ opacity: isCollapsed ? 0 : 1 }}
                     />
@@ -215,7 +218,7 @@ const SidebarRaw: React.FC<SidebarProps> = ({
                         className="group absolute top-0 right-0 h-full z-50 flex justify-center w-4 cursor-col-resize translate-x-1/2"
                         onMouseDown={startResizing}
                     >
-                        <div className={`w-[1px] h-full transition-colors duration-200 bg-transparent group-hover:bg-primary-main/30 ${isResizing ? 'bg-primary-main' : ''}`}></div>
+                        <div className={`w-[1px] h-full transition-colors duration-200 bg-transparent group-hover:bg-indigo-500/30 ${isResizing ? 'bg-indigo-500' : ''}`}></div>
                     </div>
                 )}
             </motion.div>
