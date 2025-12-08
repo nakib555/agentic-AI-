@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -19,7 +18,7 @@ type BrowserSessionDisplayProps = {
 
 const LOG_ITEM_HEIGHT = 20; // Approx height for a single line of log text in the configured font size
 
-// Static Row Component
+// Static Row Component - Memoized to prevent re-renders of individual rows when list container updates
 const LogRow = memo(({ index, style, data }: { index: number, style: React.CSSProperties, data: string[] }) => {
     const log = data[index];
     const isLast = index === data.length - 1;

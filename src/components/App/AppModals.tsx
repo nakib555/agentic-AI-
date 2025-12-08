@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -9,7 +8,7 @@ import type { Model } from '../../services/modelService';
 import type { MemoryFile } from '../../hooks/useMemory';
 import type { Theme } from '../../hooks/useTheme';
 
-// Lazy import for modals
+// Lazy import for heavy modals to optimize initial load
 const SettingsModal = React.lazy(() => import('../Settings/SettingsModal').then(module => ({ default: module.SettingsModal })));
 const MemoryModal = React.lazy(() => import('../Settings/MemoryModal').then(module => ({ default: module.MemoryModal })));
 const MemoryConfirmationModal = React.lazy(() => import('../Settings/MemoryConfirmationModal').then(module => ({ default: module.MemoryConfirmationModal })));

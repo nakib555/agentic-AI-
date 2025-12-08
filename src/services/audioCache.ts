@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -44,9 +43,9 @@ export const audioCache = {
    */
   set(key: string, buffer: AudioBuffer): void {
     if (cache.size >= MAX_CACHE_SIZE) {
-      // The first item in a Map is the least recently used
+      // The first item in a Map is the least recently used (insertion order)
       const firstKey = cache.keys().next().value;
-      if (firstKey) {
+      if (firstKey !== undefined) {
         cache.delete(firstKey);
       }
     }
