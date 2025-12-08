@@ -28,22 +28,31 @@ type HeaderItem = { type: 'header'; name: string; collapsed: boolean };
 type ChatItem = { type: 'chat'; chat: ChatSession };
 type ListItem = HeaderItem | ChatItem;
 
-const groupChatsByMonth = (chats: ChatSession[]): { [key: string]: ChatSession[] } => {
+const groupChatsByDate = (chats: ChatSession[]): { [key: string]: ChatSession[] } => {
     const groups: { [key: string]: ChatSession[] } = {};
     const now = new Date();
+    
+    // Normalize to start of day for comparison
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const yesterdayStart = todayStart - 86400000;
+    const weekStart = todayStart - (86400000 * 7);
+    const thirtyDaysStart = todayStart - (86400000 * 30);
 
     chats.forEach(chat => {
-        const chatDate = new Date(chat.createdAt);
+        const chatTime = chat.createdAt;
         let groupKey: string;
 
-        if (chat.createdAt >= todayStart) {
+        if (chatTime >= todayStart) {
             groupKey = 'Today';
-        } else if (chat.createdAt >= yesterdayStart) {
+        } else if (chatTime >= yesterdayStart) {
             groupKey = 'Yesterday';
+        } else if (chatTime >= weekStart) {
+            groupKey = 'Previous 7 Days';
+        } else if (chatTime >= thirtyDaysStart) {
+            groupKey = 'Previous 30 Days';
         } else {
-            groupKey = chatDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            const date = new Date(chatTime);
+            groupKey = date.toLocaleString('default', { month: 'long', year: 'numeric' });
         }
 
         if (!groups[groupKey]) {
@@ -124,20 +133,31 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
         const filteredHistory = history.filter(item =>
             item.title.toLowerCase().includes(searchQuery.toLowerCase())
         );
-        const groupedHistory = groupChatsByMonth(filteredHistory);
-        const groupOrder = ['Today', 'Yesterday', ...Object.keys(groupedHistory).filter(k => k !== 'Today' && k !== 'Yesterday').sort((a, b) => new Date(b).getTime() - new Date(a).getTime())];
-        
-        const items: ListItem[] = [];
         
         // If searching, we flatten everything without headers to show matches directly
         if (searchQuery) {
-             filteredHistory.forEach(chat => items.push({ type: 'chat', chat }));
+             const items: ListItem[] = [];
+             [...filteredHistory].sort((a, b) => b.createdAt - a.createdAt).forEach(chat => items.push({ type: 'chat', chat }));
              return items;
         }
+
+        const groupedHistory = groupChatsByDate(filteredHistory);
+        
+        const fixedGroups = ['Today', 'Yesterday', 'Previous 7 Days', 'Previous 30 Days'];
+        const monthGroups = Object.keys(groupedHistory)
+            .filter(k => !fixedGroups.includes(k))
+            .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+        
+        const groupOrder = [...fixedGroups, ...monthGroups];
+        
+        const items: ListItem[] = [];
 
         groupOrder.forEach(groupName => {
             const chats = groupedHistory[groupName];
             if (!chats || chats.length === 0) return;
+
+            // Sort chats within the group by most recent first
+            chats.sort((a, b) => b.createdAt - a.createdAt);
 
             const isGroupCollapsed = collapsedGroups[groupName] ?? false;
             items.push({ type: 'header', name: groupName, collapsed: isGroupCollapsed });
