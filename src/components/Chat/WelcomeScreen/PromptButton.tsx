@@ -27,10 +27,11 @@ export const PromptButton = ({ icon, text, onClick }: PromptButtonProps) => (
         type="button"
         onClick={onClick}
         className="
-            group flex items-center justify-center gap-3 px-5 py-3 
+            group flex items-center justify-center gap-2 md:gap-3 
+            px-3 py-2 md:px-5 md:py-3 
             bg-white dark:bg-white/5 
             border border-border-default hover:border-primary-main/30
-            rounded-2xl 
+            rounded-xl md:rounded-2xl 
             shadow-sm hover:shadow-lg hover:shadow-primary-main/5
             transition-all duration-300
         "
@@ -38,7 +39,7 @@ export const PromptButton = ({ icon, text, onClick }: PromptButtonProps) => (
         whileHover={{ y: -4, scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
     >
-        <span className="text-xl filter grayscale group-hover:grayscale-0 transition-all duration-300">{icon}</span>
-        <span className="text-sm font-medium text-content-primary group-hover:text-primary-main transition-colors">{text}</span>
+        <span className="text-lg md:text-xl filter grayscale group-hover:grayscale-0 transition-all duration-300">{icon}</span>
+        <span className="text-xs md:text-sm font-medium text-content-primary group-hover:text-primary-main transition-colors whitespace-nowrap">{text}</span>
     </motion.button>
 );

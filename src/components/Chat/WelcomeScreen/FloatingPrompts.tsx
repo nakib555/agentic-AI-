@@ -30,7 +30,7 @@ export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
     initial="hidden"
     animate="visible"
     exit="hidden"
-    className="flex flex-wrap justify-center gap-3 w-full max-w-3xl mx-auto"
+    className="flex flex-wrap justify-center gap-2 md:gap-3 w-full max-w-3xl mx-auto px-1"
   >
     <PromptButton icon="🧠" text="Reasoning" onClick={() => onPromptClick("What is the capital of France?")} />
     <PromptButton icon="🎬" text="Video" onClick={() => onPromptClick("Generate a video of a cat playing a piano.")} />
