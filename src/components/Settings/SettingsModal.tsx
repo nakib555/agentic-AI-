@@ -3,17 +3,16 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useState, Suspense } from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence, motion as motionTyped, LayoutGroup } from 'framer-motion';
 import type { Model } from '../../types';
 import { SettingsCategoryButton } from './SettingsCategoryButton';
 import type { Theme } from '../../hooks/useTheme';
 
-// Lazy load individual settings tabs
-const GeneralSettings = React.lazy(() => import('./GeneralSettings').then(module => ({ default: module.GeneralSettings })));
-const ModelSettings = React.lazy(() => import('./ModelSettings').then(module => ({ default: module.ModelSettings })));
-const CustomInstructionsSettings = React.lazy(() => import('./CustomInstructionsSettings').then(module => ({ default: module.CustomInstructionsSettings })));
-const SpeechMemorySettings = React.lazy(() => import('./SpeechMemorySettings').then(module => ({ default: module.SpeechMemorySettings })));
+import { GeneralSettings } from './GeneralSettings';
+import { ModelSettings } from './ModelSettings';
+import { CustomInstructionsSettings } from './CustomInstructionsSettings';
+import { SpeechMemorySettings } from './SpeechMemorySettings';
 
 const motion = motionTyped as any;
 
@@ -114,24 +113,6 @@ const CATEGORIES = [
   },
 ];
 
-const SettingsSkeleton = () => (
-  <div className="space-y-6 animate-pulse">
-    <div className="space-y-2">
-      <div className="h-6 w-1/3 bg-slate-200 dark:bg-white/5 rounded"></div>
-      <div className="h-4 w-1/2 bg-slate-200 dark:bg-white/5 rounded opacity-60"></div>
-    </div>
-    <div className="h-px bg-slate-200 dark:bg-white/5"></div>
-    <div className="space-y-4">
-      {[1, 2, 3].map(i => (
-        <div key={i} className="py-2">
-          <div className="h-5 w-1/4 bg-slate-200 dark:bg-white/5 rounded mb-2"></div>
-          <div className="h-10 w-full bg-slate-100 dark:bg-white/5 rounded-lg"></div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
 export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
     const { isOpen, onClose } = props;
     const [activeCategory, setActiveCategory] = useState('general');
@@ -197,22 +178,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative">
                     <div className="p-6 md:p-8 max-w-2xl mx-auto">
-                        <Suspense fallback={<SettingsSkeleton />}>
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={activeCategory}
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    transition={{ duration: 0.2, ease: "easeOut" }}
-                                >
-                                    {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
-                                    {activeCategory === 'model' && <ModelSettings {...props} />}
-                                    {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
-                                    {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}
-                                </motion.div>
-                            </AnimatePresence>
-                        </Suspense>
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeCategory}
+                                initial={{ opacity: 0, x: 10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -10 }}
+                                transition={{ duration: 0.15, ease: "easeOut" }}
+                            >
+                                {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
+                                {activeCategory === 'model' && <ModelSettings {...props} />}
+                                {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
+                                {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}
+                            </motion.div>
+                        </AnimatePresence>
                     </div>
                 </div>
             </div>
