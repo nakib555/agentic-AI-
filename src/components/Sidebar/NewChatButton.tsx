@@ -41,10 +41,9 @@ export const NewChatButton = ({ isCollapsed, isDesktop, onClick, disabled }: New
             aria-disabled={disabled}
         >
             <div className={`relative flex items-center justify-center flex-shrink-0 text-slate-500 dark:text-slate-400 transition-colors ${!disabled && 'group-hover:text-slate-800 dark:group-hover:text-slate-100'}`}>
-                {/* Square with Pencil Icon */}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                    <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" />
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                 </svg>
             </div>
             

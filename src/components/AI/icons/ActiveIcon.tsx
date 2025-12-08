@@ -10,16 +10,12 @@ import { motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
 
 export const ActiveIcon = () => (
-  <motion.div key="active" className="relative w-5 h-5 flex items-center justify-center">
-    <motion.div
-      className="w-2.5 h-2.5 bg-blue-500 dark:bg-blue-400 rounded-full"
-      animate={{ scale: [1, 1.2, 1] }}
-      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+  <div className="relative w-5 h-5 flex items-center justify-center">
+    <motion.span
+      className="absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"
+      animate={{ scale: [1, 1.5, 1], opacity: [0.7, 0, 0.7] }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
     />
-    <motion.div
-      className="absolute inset-0 w-full h-full bg-blue-400/50 dark:bg-blue-500/30 rounded-full"
-      animate={{ scale: [0.8, 1.8], opacity: [0.8, 0] }}
-      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
-    />
-  </motion.div>
+    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+  </div>
 );
