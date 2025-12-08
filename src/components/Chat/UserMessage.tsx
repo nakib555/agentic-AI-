@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -24,27 +23,27 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
   const { text, attachments } = msg;
   
   return (
-    <div className="w-full flex justify-end">
-        <div className="w-fit max-w-[75%] flex flex-col items-end">
+    <div className="w-full flex justify-end mb-6">
+        <div className="w-fit max-w-[85%] sm:max-w-[75%] flex flex-col items-end">
             <motion.div 
                 {...animationProps} 
-                className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-2xl shadow-md border border-gray-200 dark:border-slate-700/50 origin-bottom-right"
+                className="bg-layer-2 dark:bg-zinc-800 text-content-primary rounded-[20px] shadow-sm border border-border-subtle origin-bottom-right overflow-hidden"
                 style={{ willChange: 'transform, opacity' }}
             >
                 {/* Content Section */}
-                <div className="p-4 flex flex-col gap-4">
+                <div className="px-5 py-3.5 flex flex-col gap-3">
                     {attachments && attachments.length > 0 && (
-                        <div className="flex flex-col gap-2 p-3 bg-gray-50 dark:bg-black/20 rounded-lg border border-gray-200 dark:border-slate-700/50">
+                        <div className="flex flex-col gap-2 mb-1">
                             {attachments.map((attachment, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                    <FileIcon filename={attachment.name} className="flex-shrink-0 w-5 h-5 text-gray-500 dark:text-slate-400" />
-                                    <span className="truncate text-sm font-medium text-gray-700 dark:text-slate-300" title={attachment.name}>{attachment.name}</span>
+                                <div key={index} className="flex items-center gap-3 p-2 bg-black/5 dark:bg-white/10 rounded-lg">
+                                    <FileIcon filename={attachment.name} className="flex-shrink-0 w-8 h-8 text-content-secondary" />
+                                    <span className="truncate text-sm font-medium opacity-90" title={attachment.name}>{attachment.name}</span>
                                 </div>
                             ))}
                         </div>
                     )}
                     {text && (
-                        <div className="markdown-content markdown-content-user">
+                        <div className="markdown-content markdown-content-user text-[15px] leading-relaxed">
                             <ManualCodeRenderer text={text} components={MarkdownComponents} isStreaming={false} />
                         </div>
                     )}
