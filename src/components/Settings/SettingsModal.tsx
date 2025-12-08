@@ -3,17 +3,19 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { AnimatePresence, motion as motionTyped, LayoutGroup } from 'framer-motion';
 import type { Model } from '../../types';
 import { SettingsCategoryButton } from './SettingsCategoryButton';
-import { GeneralSettings } from './GeneralSettings';
-import { ModelSettings } from './ModelSettings';
-import { CustomInstructionsSettings } from './CustomInstructionsSettings';
-import { SpeechMemorySettings } from './SpeechMemorySettings';
 import type { Theme } from '../../hooks/useTheme';
 
 const motion = motionTyped as any;
+
+// Lazy load settings tabs to optimize memory and initial load
+const GeneralSettings = React.lazy(() => import('./GeneralSettings').then(m => ({ default: m.GeneralSettings })));
+const ModelSettings = React.lazy(() => import('./ModelSettings').then(m => ({ default: m.ModelSettings })));
+const CustomInstructionsSettings = React.lazy(() => import('./CustomInstructionsSettings').then(m => ({ default: m.CustomInstructionsSettings })));
+const SpeechMemorySettings = React.lazy(() => import('./SpeechMemorySettings').then(m => ({ default: m.SpeechMemorySettings })));
 
 type SettingsModalProps = {
   isOpen: boolean;
@@ -112,6 +114,18 @@ const CATEGORIES = [
   },
 ];
 
+const TabLoadingSkeleton = () => (
+    <div className="w-full h-full p-4 space-y-6 animate-pulse">
+        <div className="h-8 bg-slate-200 dark:bg-white/10 rounded-lg w-1/4"></div>
+        <div className="h-4 bg-slate-200 dark:bg-white/5 rounded w-1/2"></div>
+        <div className="space-y-4 pt-4">
+            <div className="h-24 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/5"></div>
+            <div className="h-24 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/5"></div>
+            <div className="h-24 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/5"></div>
+        </div>
+    </div>
+);
+
 export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
     const { isOpen, onClose } = props;
     const [activeCategory, setActiveCategory] = useState('general');
@@ -185,10 +199,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 exit={{ opacity: 0, x: -10 }}
                                 transition={{ duration: 0.2, ease: "easeOut" }}
                             >
-                                {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
-                                {activeCategory === 'model' && <ModelSettings {...props} />}
-                                {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
-                                {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}
+                                <Suspense fallback={<TabLoadingSkeleton />}>
+                                    {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
+                                    {activeCategory === 'model' && <ModelSettings {...props} />}
+                                    {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
+                                    {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}
+                                </Suspense>
                             </motion.div>
                         </AnimatePresence>
                     </div>
