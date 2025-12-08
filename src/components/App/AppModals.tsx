@@ -30,6 +30,7 @@ type AppModalsProps = {
   availableModels: Model[];
   availableImageModels: Model[];
   availableVideoModels: Model[];
+  availableTtsModels: Model[];
   activeModel: string;
   onModelChange: (modelId: string) => void;
   modelsLoading: boolean;
@@ -51,6 +52,8 @@ type AppModalsProps = {
   onImageModelChange: (modelId: string) => void;
   videoModel: string;
   onVideoModelChange: (modelId: string) => void;
+  ttsModel: string;
+  onTtsModelChange: (modelId: string) => void;
   defaultTemperature: number;
   defaultMaxTokens: number;
   // Speech & Memory
@@ -82,10 +85,10 @@ type AppModalsProps = {
 export const AppModals: React.FC<AppModalsProps> = (props) => {
   const {
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen, onRunTests,
-    availableModels, availableImageModels, availableVideoModels, activeModel,
+    availableModels, availableImageModels, availableVideoModels, availableTtsModels, activeModel,
     onModelChange, modelsLoading, clearAllChats, aboutUser, setAboutUser,
     aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens,
-    setMaxTokens, imageModel, onImageModelChange, videoModel, onVideoModelChange,
+    setMaxTokens, imageModel, onImageModelChange, videoModel, onVideoModelChange, ttsModel, onTtsModelChange,
     defaultTemperature, defaultMaxTokens, isMemoryEnabled,
     setIsMemoryEnabled, memoryContent, memoryFiles, clearMemory, updateBackendMemory, updateMemoryFiles, isConfirmationOpen,
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
@@ -109,6 +112,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           models={availableModels}
           imageModels={availableImageModels}
           videoModels={availableVideoModels}
+          ttsModels={availableTtsModels}
           selectedModel={activeModel}
           onModelChange={onModelChange}
           disabled={modelsLoading}
@@ -130,6 +134,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           onImageModelChange={onImageModelChange}
           videoModel={videoModel}
           onVideoModelChange={onVideoModelChange}
+          ttsModel={ttsModel}
+          onTtsModelChange={onTtsModelChange}
           defaultTemperature={defaultTemperature}
           defaultMaxTokens={defaultMaxTokens}
           isMemoryEnabled={isMemoryEnabled}

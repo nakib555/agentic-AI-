@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -20,6 +21,7 @@ export const useAiMessageLogic = (
     msg: Message,
     isAutoPlayEnabled: boolean,
     ttsVoice: string,
+    ttsModel: string,
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void,
     isLoading: boolean
 ) => {
@@ -36,7 +38,7 @@ export const useAiMessageLogic = (
         [activeResponse, isThinking]
     );
 
-    const { playOrStopAudio, audioState, isPlaying } = useTts(finalAnswerText, ttsVoice);
+    const { playOrStopAudio, audioState, isPlaying } = useTts(finalAnswerText, ttsVoice, ttsModel);
 
     // Extract sources from both tool calls and grounding metadata
     const searchSources = useMemo((): Source[] => {

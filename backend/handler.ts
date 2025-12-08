@@ -260,8 +260,8 @@ export const apiHandler = async (req: any, res: any) => {
 
             case 'tts': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { text, voice } = req.body;
-                const audio = await executeTextToSpeech(ai, text, voice);
+                const { text, voice, model } = req.body;
+                const audio = await executeTextToSpeech(ai, text, voice, model);
                 res.status(200).json({ audio });
                 break;
             }

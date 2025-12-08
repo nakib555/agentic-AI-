@@ -17,6 +17,7 @@ type ModelSettingsProps = {
   models: Model[];
   imageModels: Model[];
   videoModels: Model[];
+  ttsModels: Model[];
   selectedModel: string;
   onModelChange: (modelId: string) => void;
   temperature: number;
@@ -27,6 +28,8 @@ type ModelSettingsProps = {
   onImageModelChange: (modelId: string) => void;
   videoModel: string;
   onVideoModelChange: (modelId: string) => void;
+  ttsModel: string;
+  onTtsModelChange: (modelId: string) => void;
   defaultTemperature: number;
   defaultMaxTokens: number;
   disabled: boolean;
@@ -66,9 +69,9 @@ const StopIcon = () => (
 );
 
 export const ModelSettings: React.FC<ModelSettingsProps> = ({
-    models, imageModels, videoModels, selectedModel, onModelChange,
+    models, imageModels, videoModels, ttsModels, selectedModel, onModelChange,
     temperature, setTemperature, maxTokens, setMaxTokens,
-    imageModel, onImageModelChange, videoModel, onVideoModelChange,
+    imageModel, onImageModelChange, videoModel, onVideoModelChange, ttsModel, onTtsModelChange,
     disabled, ttsVoice, setTtsVoice
 }) => {
     const noModelsAvailable = models.length === 0;
@@ -120,6 +123,10 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     <ModelSelector models={videoModels} selectedModel={videoModel} onModelChange={onVideoModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
                 </SettingItem>
             </div>
+
+            <SettingItem label="TTS Model" description="Model for text-to-speech generation." layout="col">
+                <ModelSelector models={ttsModels} selectedModel={ttsModel} onModelChange={onTtsModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
+            </SettingItem>
             
             <div className="h-px bg-slate-200 dark:bg-white/10 my-4"></div>
 

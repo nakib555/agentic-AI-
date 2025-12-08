@@ -17,6 +17,7 @@ export type AppSettings = {
     videoModel: string;
     isMemoryEnabled: boolean;
     ttsVoice: string;
+    ttsModel: string; // Add this
     isAutoPlayEnabled: boolean;
     isAgentMode: boolean;
 };
@@ -25,6 +26,7 @@ export type UpdateSettingsResponse = AppSettings & {
     models?: Model[];
     imageModels?: Model[];
     videoModels?: Model[];
+    ttsModels?: Model[]; // Add this
 };
 
 export const getSettings = async (): Promise<AppSettings> => {

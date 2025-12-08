@@ -13,6 +13,7 @@ type ModelCache = {
         chatModels: AppModel[];
         imageModels: AppModel[];
         videoModels: AppModel[];
+        ttsModels: AppModel[];
     };
     timestamp: number;
 };
@@ -35,6 +36,7 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
     chatModels: AppModel[];
     imageModels: AppModel[];
     videoModels: AppModel[];
+    ttsModels: AppModel[];
 }> {
     // Simple hash check (using last 8 chars is usually enough to detect a change in the session context)
     const currentKeyHash = apiKey.trim().slice(-8);
@@ -74,6 +76,7 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
         const availableChatModels: AppModel[] = [];
         const availableImageModels: AppModel[] = [];
         const availableVideoModels: AppModel[] = [];
+        const availableTtsModels: AppModel[] = [];
 
         for (const model of modelList) {
             const modelId = model.name.replace('models/', '');
@@ -92,7 +95,9 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
             } else if (methods.includes('generateContent')) {
                 if (modelId.includes('image')) {
                     availableImageModels.push(modelInfo);
-                } else if (!modelId.includes('tts') && !modelId.includes('audio')) {
+                } else if (modelId.includes('tts') || modelId.includes('audio')) {
+                    availableTtsModels.push(modelInfo);
+                } else {
                     availableChatModels.push(modelInfo);
                 }
             }
@@ -102,6 +107,7 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
             chatModels: sortModelsByName(availableChatModels),
             imageModels: sortModelsByName(availableImageModels),
             videoModels: sortModelsByName(availableVideoModels),
+            ttsModels: sortModelsByName(availableTtsModels),
         };
 
         // Update cache

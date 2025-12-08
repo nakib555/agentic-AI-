@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -37,6 +38,7 @@ type AiMessageProps = {
     isLoading: boolean;
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void; 
     ttsVoice: string; 
+    ttsModel: string;
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
     onShowSources: (sources: Source[]) => void;
@@ -49,12 +51,12 @@ type AiMessageProps = {
 };
 
 const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
-  const { msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
+  const { msg, isLoading, sendMessage, ttsVoice, ttsModel, isAutoPlayEnabled, currentChatId, 
           onShowSources, approveExecution, denyExecution, messageFormRef, onRegenerate,
           onSetActiveResponseIndex, isAgentMode } = props;
   const { id } = msg;
 
-  const logic = useAiMessageLogic(msg, isAutoPlayEnabled, ttsVoice, sendMessage, isLoading);
+  const logic = useAiMessageLogic(msg, isAutoPlayEnabled, ttsVoice, ttsModel, sendMessage, isLoading);
   const { activeResponse, finalAnswerText, thinkingIsComplete, isStreamingFinalAnswer, agentPlan, executionLog, parsedFinalAnswer } = logic;
   const [isWorkflowCollapsed, setIsWorkflowCollapsed] = useState(false);
 

@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -11,11 +12,11 @@ export const audioCache = {
    * Generates a unique key for the cache.
    * @param text The text content of the audio.
    * @param voice The voice used for TTS.
+   * @param model The model used for TTS.
    * @returns A unique cache key string.
    */
-  createKey(text: string, voice: string): string {
-    // A simple concatenation is sufficient for this use case.
-    return `${voice}::${text}`;
+  createKey(text: string, voice: string, model: string): string {
+    return `${model}::${voice}::${text}`;
   },
 
   /**

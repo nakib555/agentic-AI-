@@ -15,6 +15,7 @@ const MessageComponentRaw: React.FC<{
     isLoading: boolean;
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void; 
     ttsVoice: string; 
+    ttsModel: string;
     isAutoPlayEnabled: boolean;
     currentChatId: string | null;
     onShowSources: (sources: Source[]) => void;
@@ -25,7 +26,7 @@ const MessageComponentRaw: React.FC<{
     onSetActiveResponseIndex: (messageId: string, index: number) => void;
     isAgentMode: boolean;
 }> = ({ 
-    msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
+    msg, isLoading, sendMessage, ttsVoice, ttsModel, isAutoPlayEnabled, currentChatId, 
     onShowSources, approveExecution, denyExecution, messageFormRef,
     onRegenerate, onSetActiveResponseIndex, isAgentMode
 }) => {
@@ -40,7 +41,8 @@ const MessageComponentRaw: React.FC<{
                 msg={msg} 
                 isLoading={isLoading}
                 sendMessage={sendMessage} 
-                ttsVoice={ttsVoice} 
+                ttsVoice={ttsVoice}
+                ttsModel={ttsModel} 
                 isAutoPlayEnabled={isAutoPlayEnabled} 
                 currentChatId={currentChatId} 
                 onShowSources={onShowSources}
@@ -76,5 +78,5 @@ export const MessageComponent = memo(MessageComponentRaw, (prevProps, nextProps)
     // we generally don't need to re-render. 
     // However, we must check isLoading to handle the global loading state change.
     
-    return !msgChanged && prevProps.isLoading === nextProps.isLoading && prevProps.ttsVoice === nextProps.ttsVoice;
+    return !msgChanged && prevProps.isLoading === nextProps.isLoading && prevProps.ttsVoice === nextProps.ttsVoice && prevProps.ttsModel === nextProps.ttsModel;
 });

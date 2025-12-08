@@ -90,6 +90,7 @@ export const initDataStore = async () => {
         videoModel: 'veo-3.1-fast-generate-preview',
         isMemoryEnabled: false,
         ttsVoice: 'Kore',
+        ttsModel: 'gemini-2.5-flash-preview-tts', // Add default
         isAutoPlayEnabled: false,
         isAgentMode: true,
     };

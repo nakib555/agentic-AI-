@@ -18,6 +18,7 @@ type ChatAreaProps = {
   sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
   onCancel: () => void;
   ttsVoice: string;
+  ttsModel: string;
   setTtsVoice: (voice: string) => void;
   isAutoPlayEnabled: boolean;
   currentChatId: string | null;
@@ -36,7 +37,7 @@ type ChatAreaProps = {
 
 export const ChatArea = ({ 
     messages, isLoading, isAppLoading, sendMessage, onCancel, 
-    ttsVoice, setTtsVoice, isAutoPlayEnabled, currentChatId,
+    ttsVoice, ttsModel, setTtsVoice, isAutoPlayEnabled, currentChatId,
     onShowSources, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
     isAgentMode, setIsAgentMode, backendStatus, backendError, hasApiKey
@@ -117,6 +118,7 @@ export const ChatArea = ({
           sendMessage={sendMessage} 
           isLoading={isLoading} 
           ttsVoice={ttsVoice} 
+          ttsModel={ttsModel}
           isAutoPlayEnabled={isAutoPlayEnabled}
           currentChatId={currentChatId}
           onShowSources={onShowSources}

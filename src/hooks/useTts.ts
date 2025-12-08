@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -12,7 +13,7 @@ import { fetchFromApi } from '../utils/api';
 
 type AudioState = 'idle' | 'loading' | 'error' | 'playing';
 
-export const useTts = (text: string, voice: string) => {
+export const useTts = (text: string, voice: string, model: string) => {
   const [audioState, setAudioState] = useState<AudioState>('idle');
   const isPlaying = audioState === 'playing';
 
@@ -33,7 +34,7 @@ export const useTts = (text: string, voice: string) => {
         return;
     }
       
-    const cacheKey = audioCache.createKey(textToSpeak, voice);
+    const cacheKey = audioCache.createKey(textToSpeak, voice, model);
     const cachedBuffer = audioCache.get(cacheKey);
 
     const doPlay = async (buffer: AudioBuffer) => {
@@ -50,7 +51,7 @@ export const useTts = (text: string, voice: string) => {
         const response = await fetchFromApi('/api/handler?task=tts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: textToSpeak, voice }),
+            body: JSON.stringify({ text: textToSpeak, voice, model }),
         });
 
         if (!response.ok) throw new Error(`TTS request failed with status ${response.status}`);
@@ -68,7 +69,7 @@ export const useTts = (text: string, voice: string) => {
         console.error("TTS failed:", err);
         setAudioState('error');
     }
-  }, [text, voice, audioState]);
+  }, [text, voice, model, audioState]);
 
   return { playOrStopAudio, audioState, isPlaying };
 };

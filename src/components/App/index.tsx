@@ -71,6 +71,7 @@ export const App = () => {
               sendMessage={logic.sendMessage}
               onCancel={logic.cancelGeneration}
               ttsVoice={logic.ttsVoice}
+              ttsModel={logic.ttsModel}
               setTtsVoice={logic.setTtsVoice}
               isAutoPlayEnabled={logic.isAutoPlayEnabled}
               currentChatId={logic.currentChatId}
@@ -112,6 +113,7 @@ export const App = () => {
         availableModels={logic.availableModels}
         availableImageModels={logic.availableImageModels}
         availableVideoModels={logic.availableVideoModels}
+        availableTtsModels={logic.availableTtsModels}
         activeModel={logic.activeModel}
         onModelChange={logic.onModelChange}
         modelsLoading={logic.modelsLoading || logic.settingsLoading}
@@ -130,6 +132,8 @@ export const App = () => {
         onImageModelChange={logic.onImageModelChange}
         videoModel={logic.videoModel}
         onVideoModelChange={logic.onVideoModelChange}
+        ttsModel={logic.ttsModel}
+        onTtsModelChange={logic.onTtsModelChange}
         defaultTemperature={DEFAULT_TEMPERATURE}
         defaultMaxTokens={DEFAULT_MAX_TOKENS}
         isMemoryEnabled={logic.isMemoryEnabled}

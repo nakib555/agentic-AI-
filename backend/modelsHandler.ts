@@ -11,16 +11,17 @@ export const getAvailableModelsHandler = async (req: any, res: any) => {
     const apiKey = await getApiKey();
     if (!apiKey) {
         // If no key is configured, return empty lists without hitting the API.
-        return res.status(200).json({ models: [], imageModels: [], videoModels: [] });
+        return res.status(200).json({ models: [], imageModels: [], videoModels: [], ttsModels: [] });
     }
 
     try {
-        const { chatModels, imageModels, videoModels } = await listAvailableModels(apiKey);
+        const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(apiKey);
         
         res.status(200).json({
             models: chatModels,
             imageModels,
             videoModels,
+            ttsModels,
         });
 
     } catch (error: any) {
@@ -31,7 +32,8 @@ export const getAvailableModelsHandler = async (req: any, res: any) => {
             error: "An error occurred while fetching models.",
             models: [], 
             imageModels: [], 
-            videoModels: [] 
+            videoModels: [],
+            ttsModels: []
         });
     }
 };

@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -25,6 +26,7 @@ const defaultSettings = {
     videoModel: 'veo-3.1-fast-generate-preview',
     isMemoryEnabled: false,
     ttsVoice: 'Kore',
+    ttsModel: 'gemini-2.5-flash-preview-tts', // Add default
     isAutoPlayEnabled: false,
     isAgentMode: true,
 };
@@ -147,7 +149,8 @@ export const updateSettings = async (req: any, res: any) => {
                 modelData = {
                     models: fetchedModels.chatModels,
                     imageModels: fetchedModels.imageModels,
-                    videoModels: fetchedModels.videoModels
+                    videoModels: fetchedModels.videoModels,
+                    ttsModels: fetchedModels.ttsModels // Add this
                 };
                 
             } catch (error: any) {

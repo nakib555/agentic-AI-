@@ -67,6 +67,7 @@ export const useAppLogic = () => {
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
   const [availableImageModels, setAvailableImageModels] = useState<Model[]>([]);
   const [availableVideoModels, setAvailableVideoModels] = useState<Model[]>([]);
+  const [availableTtsModels, setAvailableTtsModels] = useState<Model[]>([]);
   const [modelsLoading, setModelsLoading] = useState(true);
   const [activeModel, setActiveModel] = useState('gemini-2.5-pro');
 
@@ -78,6 +79,7 @@ export const useAppLogic = () => {
   const [maxTokens, setMaxTokens] = useState(DEFAULT_MAX_TOKENS);
   const [imageModel, setImageModel] = useState('');
   const [videoModel, setVideoModel] = useState('');
+  const [ttsModel, setTtsModel] = useState('');
   const [ttsVoice, setTtsVoice] = useState(DEFAULT_TTS_VOICE);
   const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState(DEFAULT_AUTO_PLAY_AUDIO);
   const [isAgentMode, setIsAgentModeState] = useState(true);
@@ -95,14 +97,16 @@ export const useAppLogic = () => {
   
   // --- Settings and Model Management ---
 
-  const processModelData = useCallback((data: { models?: Model[], imageModels?: Model[], videoModels?: Model[] }) => {
+  const processModelData = useCallback((data: { models?: Model[], imageModels?: Model[], videoModels?: Model[], ttsModels?: Model[] }) => {
     const newModels = data.models || [];
     const newImageModels = data.imageModels || [];
     const newVideoModels = data.videoModels || [];
+    const newTtsModels = data.ttsModels || [];
 
     setAvailableModels(newModels);
     setAvailableImageModels(newImageModels);
     setAvailableVideoModels(newVideoModels);
+    setAvailableTtsModels(newTtsModels);
     
     // Set default chat model if none is selected or the selected one is no longer available
     if (newModels.length > 0 && (!activeModel || !newModels.some((m: Model) => m.id === activeModel))) {
@@ -127,7 +131,15 @@ export const useAppLogic = () => {
     } else if (newVideoModels.length === 0) {
         setVideoModel('');
     }
-  }, [activeModel, imageModel, videoModel]);
+
+    // Set default tts model
+    if (newTtsModels.length > 0 && (!ttsModel || !newTtsModels.some(m => m.id === ttsModel))) {
+        const defaultTts = newTtsModels.find(m => m.id.includes('gemini-2.5-flash-preview-tts')) || newTtsModels[0];
+        setTtsModel(defaultTts.id);
+    } else if (newTtsModels.length === 0) {
+        setTtsModel('');
+    }
+  }, [activeModel, imageModel, videoModel, ttsModel]);
 
   const fetchModels = useCallback(async () => {
     try {
@@ -144,6 +156,7 @@ export const useAppLogic = () => {
         setAvailableModels([]);
         setAvailableImageModels([]);
         setAvailableVideoModels([]);
+        setAvailableTtsModels([]);
     } finally {
         setModelsLoading(false);
     }
@@ -164,6 +177,7 @@ export const useAppLogic = () => {
             setMaxTokens(settings.maxTokens);
             setImageModel(settings.imageModel);
             setVideoModel(settings.videoModel);
+            setTtsModel(settings.ttsModel || 'gemini-2.5-flash-preview-tts');
             setIsMemoryEnabledState(settings.isMemoryEnabled);
             setTtsVoice(settings.ttsVoice);
             setIsAutoPlayEnabled(settings.isAutoPlayEnabled);
@@ -209,7 +223,8 @@ export const useAppLogic = () => {
             processModelData({
                 models: response.models,
                 imageModels: response.imageModels,
-                videoModels: response.videoModels
+                videoModels: response.videoModels,
+                ttsModels: response.ttsModels,
             });
         } else {
             // Fallback if backend didn't return models but key saved OK (unlikely with new logic)
@@ -220,6 +235,7 @@ export const useAppLogic = () => {
         setAvailableModels([]);
         setAvailableImageModels([]);
         setAvailableVideoModels([]);
+        setAvailableTtsModels([]);
         console.error("API Key save/verify failed:", error);
         throw error; // Re-throw to be caught by the UI
     }
@@ -231,6 +247,7 @@ export const useAppLogic = () => {
   const handleSetMaxTokens = createSettingUpdater(setMaxTokens, 'maxTokens');
   const handleSetImageModel = createSettingUpdater(setImageModel, 'imageModel');
   const handleSetVideoModel = createSettingUpdater(setVideoModel, 'videoModel');
+  const handleSetTtsModel = createSettingUpdater(setTtsModel, 'ttsModel');
   const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
   const handleSetIsAutoPlayEnabled = createSettingUpdater(setIsAutoPlayEnabled, 'isAutoPlayEnabled');
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
@@ -557,6 +574,7 @@ export const useAppLogic = () => {
     availableModels,
     availableImageModels,
     availableVideoModels,
+    availableTtsModels,
     modelsLoading,
     activeModel,
     onModelChange: handleModelChange,
@@ -574,6 +592,8 @@ export const useAppLogic = () => {
     onImageModelChange: handleSetImageModel,
     videoModel,
     onVideoModelChange: handleSetVideoModel,
+    ttsModel,
+    onTtsModelChange: handleSetTtsModel,
     ttsVoice,
     setTtsVoice: handleSetTtsVoice,
     isAutoPlayEnabled,

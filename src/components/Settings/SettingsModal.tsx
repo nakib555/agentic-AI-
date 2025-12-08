@@ -22,6 +22,7 @@ type SettingsModalProps = {
   models: Model[];
   imageModels: Model[];
   videoModels: Model[];
+  ttsModels: Model[];
   selectedModel: string;
   onModelChange: (modelId: string) => void;
   onClearAllChats: () => void;
@@ -42,6 +43,8 @@ type SettingsModalProps = {
   onImageModelChange: (modelId: string) => void;
   videoModel: string;
   onVideoModelChange: (modelId: string) => void;
+  ttsModel: string;
+  onTtsModelChange: (modelId: string) => void;
   defaultTemperature: number;
   defaultMaxTokens: number;
   isMemoryEnabled: boolean;
