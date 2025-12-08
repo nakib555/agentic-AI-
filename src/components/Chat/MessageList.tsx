@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -101,7 +100,6 @@ const MessageListRaw = forwardRef<MessageListHandle, MessageListProps>(({
             }
         } else {
             if (!userHasScrolledUpRef.current) {
-                userHasScrolledUpRef.current = true;
                 // Only show button if there's actually somewhere to scroll to
                 if (scrollHeight > clientHeight) {
                     setShowScrollButton(true);
@@ -189,7 +187,7 @@ const MessageListRaw = forwardRef<MessageListHandle, MessageListProps>(({
               />
             ))}
             {/* Padding element to ensure the last message isn't hidden behind the input area or scroll button */}
-            <div className="h-4" />
+            <div className="h-32" />
           </div>
         )}
       </div>

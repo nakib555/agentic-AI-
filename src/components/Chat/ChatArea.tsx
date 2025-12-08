@@ -9,10 +9,10 @@ const motion = motionTyped as any;
 import type { MessageListHandle } from './MessageList';
 import { MessageForm, type MessageFormHandle } from './MessageForm/index';
 import type { Message, Source } from '../../types';
+import { WelcomeScreen } from './WelcomeScreen/index';
 
 // Lazy Load heavy sub-components
 const MessageList = React.lazy(() => import('./MessageList').then(m => ({ default: m.MessageList })));
-const WelcomeScreen = React.lazy(() => import('./WelcomeScreen/index').then(m => ({ default: m.WelcomeScreen })));
 
 type ChatAreaProps = {
   messages: Message[];
@@ -123,28 +123,28 @@ const ChatAreaRaw = ({
         )}
       </AnimatePresence>
       
-      <Suspense fallback={<LoadingPlaceholder />}>
-          {messages.length === 0 ? (
-             <WelcomeScreen sendMessage={sendMessage} />
-          ) : (
-             <MessageList
-                ref={messageListRef}
-                messages={messages} 
-                sendMessage={sendMessage} 
-                isLoading={isLoading} 
-                ttsVoice={ttsVoice} 
-                isAutoPlayEnabled={isAutoPlayEnabled}
-                currentChatId={currentChatId}
-                onShowSources={onShowSources}
-                approveExecution={approveExecution}
-                denyExecution={denyExecution}
-                messageFormRef={messageFormRef}
-                onRegenerate={onRegenerate}
-                onSetActiveResponseIndex={handleSetActiveResponseIndex}
-                isAgentMode={isAgentMode}
-            />
-          )}
-      </Suspense>
+      {messages.length === 0 ? (
+         <WelcomeScreen sendMessage={sendMessage} />
+      ) : (
+        <Suspense fallback={<LoadingPlaceholder />}>
+           <MessageList
+              ref={messageListRef}
+              messages={messages} 
+              sendMessage={sendMessage} 
+              isLoading={isLoading} 
+              ttsVoice={ttsVoice} 
+              isAutoPlayEnabled={isAutoPlayEnabled}
+              currentChatId={currentChatId}
+              onShowSources={onShowSources}
+              approveExecution={approveExecution}
+              denyExecution={denyExecution}
+              messageFormRef={messageFormRef}
+              onRegenerate={onRegenerate}
+              onSetActiveResponseIndex={handleSetActiveResponseIndex}
+              isAgentMode={isAgentMode}
+          />
+        </Suspense>
+      )}
 
       <AnimatePresence>
         {backendStatus === 'offline' && (
@@ -167,8 +167,8 @@ const ChatAreaRaw = ({
         )}
       </AnimatePresence>
       
-      <div className="flex-shrink-0 px-4 pt-2 pb-4 sm:px-6 md:px-8 z-20">
-        <div className="relative w-full">
+      <div className="absolute bottom-0 left-0 right-0 px-4 pt-2 pb-4 sm:px-6 md:px-8 z-20 pointer-events-none">
+        <div className="relative w-full pointer-events-auto">
           <MessageForm 
             ref={messageFormRef}
             onSubmit={sendMessage} 
