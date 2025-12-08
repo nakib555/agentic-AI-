@@ -5,7 +5,6 @@
  */
 import React, { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
-import JSZip from 'jszip';
 import { FixedSizeList as List, areEqual } from 'react-window';
 import type { MemoryFile } from '../../hooks/useMemory';
 
@@ -248,6 +247,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                 const blob = new Blob([file.content], { type: 'text/plain;charset=utf-8' });
                 downloadBlob(blob, `${sanitizeFilename(file.title)}.txt`);
             } else {
+                const JSZip = (await import('jszip')).default; // Lazy load JSZip
                 const zip = new JSZip();
                 // Add files synchronously but efficiently
                 localFiles.forEach(file => {

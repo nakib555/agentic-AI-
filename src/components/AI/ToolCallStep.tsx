@@ -12,7 +12,6 @@ import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { LocationPermissionRequest } from './LocationPermissionRequest';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
-import { CodeBlock } from '../Markdown/CodeBlock';
 
 // Lazy load heavy components for tool results to save memory
 const MapDisplay = React.lazy(() => import('./MapDisplay').then(m => ({ default: m.MapDisplay })));
@@ -21,6 +20,7 @@ const VideoDisplay = React.lazy(() => import('./VideoDisplay').then(m => ({ defa
 const CodeExecutionResult = React.lazy(() => import('./CodeExecutionResult').then(m => ({ default: m.CodeExecutionResult })));
 const VeoApiKeyRequest = React.lazy(() => import('./VeoApiKeyRequest').then(m => ({ default: m.VeoApiKeyRequest })));
 const BrowserSessionDisplay = React.lazy(() => import('./BrowserSessionDisplay').then(m => ({ default: m.BrowserSessionDisplay })));
+const CodeBlock = React.lazy(() => import('../Markdown/CodeBlock').then(m => ({ default: m.CodeBlock })));
 
 const LoadingDots = () => (
     <div className="flex gap-1 items-center">
@@ -238,7 +238,9 @@ export const ToolCallStep = ({ event, sendMessage, onRegenerate, messageId }: To
         const packages = (args.packages as string[] | undefined) || [];
         return (
             <div className="space-y-3 text-sm">
-                <CodeBlock language={args.language as string || 'plaintext'} isStreaming={false}>{args.code as string}</CodeBlock>
+                <Suspense fallback={<div className="h-24 bg-gray-100 dark:bg-white/5 animate-pulse rounded-lg" />}>
+                    <CodeBlock language={args.language as string || 'plaintext'} isStreaming={false}>{args.code as string}</CodeBlock>
+                </Suspense>
                 {packages.length > 0 && (
                      <div className="flex items-center gap-2 text-sm">
                         <span className="font-semibold text-gray-500 dark:text-slate-400">Dependencies:</span>
