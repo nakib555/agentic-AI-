@@ -28,20 +28,21 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
                 {...animationProps} 
                 className="
                     relative
-                    bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600
+                    bg-gradient-to-br from-indigo-500 to-indigo-700 dark:from-indigo-600 dark:to-indigo-800
                     text-white
                     rounded-[24px] rounded-tr-md
-                    shadow-lg shadow-indigo-500/20
+                    shadow-md shadow-indigo-500/20 dark:shadow-black/30
                     border border-white/10
                     overflow-hidden
                 "
                 style={{ willChange: 'transform, opacity' }}
             >
-                {/* Subtle internal shine */}
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+                {/* Subtle highlight effect */}
+                <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
+                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
 
                 {/* Content Section */}
-                <div className="p-4 md:p-5 flex flex-col gap-3">
+                <div className="relative p-4 md:p-5 flex flex-col gap-3">
                     {attachments && attachments.length > 0 && (
                         <div className="flex flex-col gap-2 p-2 bg-black/20 rounded-xl border border-white/10 backdrop-blur-sm">
                             {attachments.map((attachment, index) => (

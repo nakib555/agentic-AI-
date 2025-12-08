@@ -150,15 +150,14 @@ const SidebarRaw: React.FC<SidebarProps> = ({
                 }}
                 className={`
                     flex flex-col transform-gpu
-                    bg-gradient-to-br from-[#f8fafc] via-[#f1f5f9] to-[#e0e7ff]
-                    dark:from-[#020617] dark:via-[#0f172a] dark:to-[#1e1b4b]
-                    border-r border-white/20 dark:border-white/5
+                    bg-[#f8fafc] dark:bg-[#0f172a]
+                    border-r border-slate-200 dark:border-white/5
                     shadow-2xl
                 `}
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
-                {/* Colorful Top Accent Line */}
-                <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 opacity-90" />
+                {/* Subtle top accent */}
+                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80" />
 
                 <div 
                     className="p-4 flex flex-col h-full relative z-10"
@@ -188,7 +187,7 @@ const SidebarRaw: React.FC<SidebarProps> = ({
                     </div>
                     
                     <motion.div 
-                        className="mb-2 h-px bg-gradient-to-r from-transparent via-indigo-200 dark:via-indigo-900/50 to-transparent"
+                        className="mb-2 h-px bg-slate-200/60 dark:bg-white/5"
                         initial={false}
                         animate={{ opacity: isCollapsed ? 0 : 1 }}
                     />
