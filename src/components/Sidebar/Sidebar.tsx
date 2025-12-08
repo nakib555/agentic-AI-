@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, memo, Suspense } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import { NavItem } from './NavItem';
@@ -12,8 +12,10 @@ import type { ChatSession } from '../../types';
 import { SidebarHeader } from './SidebarHeader';
 import { SearchInput } from './SearchInput';
 import { NewChatButton } from './NewChatButton';
-import { HistoryList } from './HistoryList';
 import { SidebarFooter } from './SidebarFooter';
+
+// Lazy load HistoryList
+const HistoryList = React.lazy(() => import('./HistoryList').then(m => ({ default: m.HistoryList })));
 
 type SidebarProps = {
     isOpen: boolean;
@@ -40,6 +42,14 @@ const mobileVariants = {
     open: { translateX: '0%' },
     closed: { translateX: '-100%' },
 };
+
+const HistorySkeleton = () => (
+    <div className="space-y-1 animate-pulse px-2 flex-1 overflow-hidden">
+        {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-9 w-full bg-gray-100/60 dark:bg-white/5 rounded-lg" style={{ opacity: 1 - (i * 0.1) }}></div>
+        ))}
+    </div>
+);
 
 const SidebarRaw: React.FC<SidebarProps> = ({ 
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
@@ -153,6 +163,7 @@ const SidebarRaw: React.FC<SidebarProps> = ({
                     bg-[#f8fafc] dark:bg-[#0f172a]
                     border-r border-slate-200 dark:border-white/5
                     shadow-2xl
+                    memory-optimized-container
                 `}
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
@@ -192,17 +203,19 @@ const SidebarRaw: React.FC<SidebarProps> = ({
                         animate={{ opacity: isCollapsed ? 0 : 1 }}
                     />
 
-                    <HistoryList 
-                        history={history}
-                        isHistoryLoading={isHistoryLoading}
-                        currentChatId={currentChatId}
-                        searchQuery={searchQuery}
-                        isCollapsed={isCollapsed}
-                        isDesktop={isDesktop}
-                        onLoadChat={handleLoadChat}
-                        onDeleteChat={onDeleteChat}
-                        onUpdateChatTitle={onUpdateChatTitle}
-                    />
+                    <Suspense fallback={<HistorySkeleton />}>
+                        <HistoryList 
+                            history={history}
+                            isHistoryLoading={isHistoryLoading}
+                            currentChatId={currentChatId}
+                            searchQuery={searchQuery}
+                            isCollapsed={isCollapsed}
+                            isDesktop={isDesktop}
+                            onLoadChat={handleLoadChat}
+                            onDeleteChat={onDeleteChat}
+                            onUpdateChatTitle={onUpdateChatTitle}
+                        />
+                    </Suspense>
                     
                     <SidebarFooter 
                         isCollapsed={isCollapsed}

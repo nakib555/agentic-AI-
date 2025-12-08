@@ -5,19 +5,31 @@
  */
 
 import React, { Suspense } from 'react';
-import { Sidebar } from '../Sidebar/Sidebar';
 import { ChatHeader } from '../Chat/ChatHeader';
-import { ChatArea } from '../Chat/ChatArea';
 import { useAppLogic } from './useAppLogic';
 import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 } from './constants';
 import { VersionMismatchOverlay } from '../UI/VersionMismatchOverlay';
 
-// Lazy load secondary components to reduce initial bundle size
+// Heavy components are now Lazy Loaded to split the bundle
+const Sidebar = React.lazy(() => import('../Sidebar/Sidebar').then(module => ({ default: module.Sidebar })));
+const ChatArea = React.lazy(() => import('../Chat/ChatArea').then(module => ({ default: module.ChatArea })));
 const SourcesSidebar = React.lazy(() => import('../AI/SourcesSidebar').then(module => ({ default: module.SourcesSidebar })));
 const AppModals = React.lazy(() => import('./AppModals').then(module => ({ default: module.AppModals })));
 const TestRunner = React.lazy(() => import('../Testing').then(module => ({ default: module.TestRunner })));
+
+// Lightweight Loading Skeletons for structural stability during lazy load
+const SidebarSkeleton = () => (
+  <div className="h-full w-[280px] bg-[#f8fafc] dark:bg-[#0f172a] border-r border-slate-200 dark:border-white/5 animate-pulse hidden md:block" />
+);
+
+const ChatAreaSkeleton = () => (
+  <div className="flex-1 flex flex-col h-full bg-transparent animate-pulse opacity-50">
+      <div className="flex-1" />
+      <div className="h-20 bg-white/50 dark:bg-black/10 m-4 rounded-2xl" />
+  </div>
+);
 
 export const App = () => {
   const logic = useAppLogic();
@@ -31,29 +43,31 @@ export const App = () => {
     <div ref={logic.appContainerRef} className={`flex h-full w-full bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isResizing ? 'pointer-events-none' : ''}`}>
       {logic.versionMismatch && <VersionMismatchOverlay />}
       
-      <Sidebar
-        key={logic.isDesktop ? 'desktop' : 'mobile'}
-        isDesktop={logic.isDesktop}
-        isOpen={logic.isSidebarOpen} 
-        setIsOpen={logic.setIsSidebarOpen}
-        isCollapsed={logic.isSidebarCollapsed}
-        setIsCollapsed={logic.handleSetSidebarCollapsed}
-        width={logic.sidebarWidth}
-        setWidth={logic.handleSetSidebarWidth}
-        isResizing={logic.isResizing}
-        setIsResizing={logic.setIsResizing}
-        history={logic.chatHistory}
-        isHistoryLoading={logic.isHistoryLoading}
-        currentChatId={logic.currentChatId}
-        onNewChat={logic.startNewChat}
-        isNewChatDisabled={logic.isNewChatDisabled}
-        onLoadChat={logic.loadChat}
-        onDeleteChat={logic.handleDeleteChatRequest}
-        onUpdateChatTitle={logic.updateChatTitle}
-        onSettingsClick={() => logic.setIsSettingsOpen(true)}
-      />
+      <Suspense fallback={<SidebarSkeleton />}>
+        <Sidebar
+          key={logic.isDesktop ? 'desktop' : 'mobile'}
+          isDesktop={logic.isDesktop}
+          isOpen={logic.isSidebarOpen} 
+          setIsOpen={logic.setIsSidebarOpen}
+          isCollapsed={logic.isSidebarCollapsed}
+          setIsCollapsed={logic.handleSetSidebarCollapsed}
+          width={logic.sidebarWidth}
+          setWidth={logic.handleSetSidebarWidth}
+          isResizing={logic.isResizing}
+          setIsResizing={logic.setIsResizing}
+          history={logic.chatHistory}
+          isHistoryLoading={logic.isHistoryLoading}
+          currentChatId={logic.currentChatId}
+          onNewChat={logic.startNewChat}
+          isNewChatDisabled={logic.isNewChatDisabled}
+          onLoadChat={logic.loadChat}
+          onDeleteChat={logic.handleDeleteChatRequest}
+          onUpdateChatTitle={logic.updateChatTitle}
+          onSettingsClick={() => logic.setIsSettingsOpen(true)}
+        />
+      </Suspense>
 
-      <main className="relative z-10 flex-1 flex flex-col overflow-hidden chat-background min-w-0">
+      <main className="relative z-10 flex-1 flex flex-col overflow-hidden chat-background min-w-0 memory-optimized-container">
         <div className="flex-1 flex flex-col w-full max-w-5xl mx-auto min-h-0">
            <ChatHeader 
               isDesktop={logic.isDesktop}
@@ -66,27 +80,29 @@ export const App = () => {
               isChatActive={logic.isChatActive}
               chatTitle={chatTitle}
            />
-           <ChatArea 
-              messageListRef={logic.messageListRef}
-              messages={logic.messages}
-              isLoading={logic.isLoading}
-              isAppLoading={logic.modelsLoading || logic.settingsLoading}
-              sendMessage={logic.sendMessage}
-              onCancel={logic.cancelGeneration}
-              ttsVoice={logic.ttsVoice}
-              isAutoPlayEnabled={logic.isAutoPlayEnabled}
-              currentChatId={logic.currentChatId}
-              onShowSources={logic.handleShowSources}
-              approveExecution={logic.approveExecution}
-              denyExecution={logic.denyExecution}
-              onRegenerate={logic.regenerateResponse}
-              onSetActiveResponseIndex={logic.setActiveResponseIndex}
-              isAgentMode={logic.isAgentMode}
-              setIsAgentMode={logic.setIsAgentMode}
-              backendStatus={logic.backendStatus}
-              backendError={logic.backendError}
-              hasApiKey={!!logic.apiKey}
-           />
+           <Suspense fallback={<ChatAreaSkeleton />}>
+             <ChatArea 
+                messageListRef={logic.messageListRef}
+                messages={logic.messages}
+                isLoading={logic.isLoading}
+                isAppLoading={logic.modelsLoading || logic.settingsLoading}
+                sendMessage={logic.sendMessage}
+                onCancel={logic.cancelGeneration}
+                ttsVoice={logic.ttsVoice}
+                isAutoPlayEnabled={logic.isAutoPlayEnabled}
+                currentChatId={logic.currentChatId}
+                onShowSources={logic.handleShowSources}
+                approveExecution={logic.approveExecution}
+                denyExecution={logic.denyExecution}
+                onRegenerate={logic.regenerateResponse}
+                onSetActiveResponseIndex={logic.setActiveResponseIndex}
+                isAgentMode={logic.isAgentMode}
+                setIsAgentMode={logic.setIsAgentMode}
+                backendStatus={logic.backendStatus}
+                backendError={logic.backendError}
+                hasApiKey={!!logic.apiKey}
+             />
+           </Suspense>
         </div>
       </main>
 
