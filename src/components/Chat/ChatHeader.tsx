@@ -110,7 +110,7 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
     const buttonInactive = "bg-layer-1 text-content-secondary border-border hover:bg-layer-2 hover:text-content-primary";
 
     return (
-        <header className="absolute top-0 left-0 right-0 z-20 px-4 py-3 pointer-events-none">
+        <header className="relative z-20 px-4 py-3 flex-shrink-0">
             <div className="flex items-center justify-between gap-4 pointer-events-auto">
             
                 {/* Toggle Sidebar */}
