@@ -197,22 +197,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative">
                     <div className="p-6 md:p-8 max-w-2xl mx-auto">
-                        <Suspense fallback={<SettingsSkeleton />}>
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={activeCategory}
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    transition={{ duration: 0.2, ease: "easeOut" }}
-                                >
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeCategory}
+                                initial={{ opacity: 0, x: 10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -10 }}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
+                            >
+                                <Suspense fallback={<SettingsSkeleton />}>
                                     {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
                                     {activeCategory === 'model' && <ModelSettings {...props} />}
                                     {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
                                     {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}
-                                </motion.div>
-                            </AnimatePresence>
-                        </Suspense>
+                                </Suspense>
+                            </motion.div>
+                        </AnimatePresence>
                     </div>
                 </div>
             </div>
