@@ -9,17 +9,11 @@ import type { Model } from '../../types';
 import { SettingsCategoryButton } from './SettingsCategoryButton';
 import type { Theme } from '../../hooks/useTheme';
 
-// Import factories for prefetching
-const importGeneral = () => import('./GeneralSettings').then(module => ({ default: module.GeneralSettings }));
-const importModel = () => import('./ModelSettings').then(module => ({ default: module.ModelSettings }));
-const importInstructions = () => import('./CustomInstructionsSettings').then(module => ({ default: module.CustomInstructionsSettings }));
-const importSpeech = () => import('./SpeechMemorySettings').then(module => ({ default: module.SpeechMemorySettings }));
-
-// Lazy load individual settings tabs using the factories
-const GeneralSettings = React.lazy(importGeneral);
-const ModelSettings = React.lazy(importModel);
-const CustomInstructionsSettings = React.lazy(importInstructions);
-const SpeechMemorySettings = React.lazy(importSpeech);
+// Lazy load individual settings tabs
+const GeneralSettings = React.lazy(() => import('./GeneralSettings').then(module => ({ default: module.GeneralSettings })));
+const ModelSettings = React.lazy(() => import('./ModelSettings').then(module => ({ default: module.ModelSettings })));
+const CustomInstructionsSettings = React.lazy(() => import('./CustomInstructionsSettings').then(module => ({ default: module.CustomInstructionsSettings })));
+const SpeechMemorySettings = React.lazy(() => import('./SpeechMemorySettings').then(module => ({ default: module.SpeechMemorySettings })));
 
 const motion = motionTyped as any;
 
@@ -142,15 +136,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
     const { isOpen, onClose } = props;
     const [activeCategory, setActiveCategory] = useState('general');
 
-    const handlePrefetch = (id: string) => {
-      switch (id) {
-        case 'general': importGeneral(); break;
-        case 'model': importModel(); break;
-        case 'instructions': importInstructions(); break;
-        case 'speech': importSpeech(); break;
-      }
-    };
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -196,12 +181,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                     <LayoutGroup id="settings-nav">
                         <ul className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar">
                             {CATEGORIES.map(cat => (
-                                <li 
-                                  key={cat.id} 
-                                  className="flex-shrink-0"
-                                  onMouseEnter={() => handlePrefetch(cat.id)}
-                                  onFocus={() => handlePrefetch(cat.id)}
-                                >
+                                <li key={cat.id} className="flex-shrink-0">
                                     <SettingsCategoryButton
                                         icon={cat.icon}
                                         label={cat.label}
@@ -217,22 +197,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative">
                     <div className="p-6 md:p-8 max-w-2xl mx-auto">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={activeCategory}
-                                initial={{ opacity: 0, x: 10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -10 }}
-                                transition={{ duration: 0.2, ease: "easeOut" }}
-                            >
-                                <Suspense fallback={<SettingsSkeleton />}>
+                        <Suspense fallback={<SettingsSkeleton />}>
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={activeCategory}
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                >
                                     {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
                                     {activeCategory === 'model' && <ModelSettings {...props} />}
                                     {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
                                     {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}
-                                </Suspense>
-                            </motion.div>
-                        </AnimatePresence>
+                                </motion.div>
+                            </AnimatePresence>
+                        </Suspense>
                     </div>
                 </div>
             </div>
