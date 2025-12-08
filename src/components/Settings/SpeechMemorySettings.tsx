@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { ToggleSwitch } from '../UI/ToggleSwitch';
 import { SettingItem } from './SettingItem';
@@ -61,17 +61,28 @@ const StopIcon = () => (
     </svg>
 );
 
-export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
+const SpeechMemorySettingsRaw: React.FC<SpeechMemorySettingsProps> = ({
     isMemoryEnabled, setIsMemoryEnabled, onManageMemory,
     ttsVoice, setTtsVoice,
     isAutoPlayEnabled, setIsAutoPlayEnabled,
     disabled
 }) => {
     const [previewVoiceId, setPreviewVoiceId] = useState<string | null>(null);
+    const timeoutRef = useRef<number | null>(null);
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+    }, []);
 
     const handlePlayPreview = (e: React.MouseEvent, voiceId: string) => {
         e.stopPropagation();
         
+        // Clear any existing timer
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
         if (previewVoiceId === voiceId) {
             setPreviewVoiceId(null);
             return;
@@ -79,7 +90,7 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
 
         setPreviewVoiceId(voiceId);
         // Simulate playback duration
-        setTimeout(() => {
+        timeoutRef.current = window.setTimeout(() => {
             setPreviewVoiceId((current) => current === voiceId ? null : current);
         }, 3000);
     };
@@ -236,3 +247,5 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
         </div>
     );
 };
+
+export const SpeechMemorySettings = memo(SpeechMemorySettingsRaw);

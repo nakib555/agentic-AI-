@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 
 type CustomInstructionsSettingsProps = {
   aboutUser: string;
@@ -44,7 +44,7 @@ const InstructionField: React.FC<{
 );
 
 
-export const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProps> = ({
+const CustomInstructionsSettingsRaw: React.FC<CustomInstructionsSettingsProps> = ({
     aboutUser,
     setAboutUser,
     aboutResponse,
@@ -82,3 +82,5 @@ export const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProp
         </div>
     );
 };
+
+export const CustomInstructionsSettings = memo(CustomInstructionsSettingsRaw);

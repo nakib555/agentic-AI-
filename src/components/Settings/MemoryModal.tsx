@@ -121,7 +121,11 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
   const [editingFile, setEditingFile] = useState<MemoryFile | null | 'new'>(null);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
   
+  // Cleanup refs for timers
+  const exportTimeoutRef = useRef<number | null>(null);
+
   // Initialize state when modal opens
   useEffect(() => {
       if (isOpen) {
@@ -145,6 +149,13 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
       }
       return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isExportMenuOpen]);
+
+  // Cleanup export timers on unmount
+  useEffect(() => {
+      return () => {
+          if (exportTimeoutRef.current) clearTimeout(exportTimeoutRef.current);
+      };
+  }, []);
 
   const filteredFiles = useMemo(() => {
       if (!searchQuery) return localFiles;
@@ -203,8 +214,10 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
       setIsExporting(true);
       setIsExportMenuOpen(false);
       
+      if (exportTimeoutRef.current) clearTimeout(exportTimeoutRef.current);
+      
       // Use timeout to allow UI update (closing menu/showing spinner)
-      setTimeout(() => {
+      exportTimeoutRef.current = window.setTimeout(() => {
           try {
             const exportData = { files: localFiles };
             const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -225,8 +238,10 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
       setIsExportMenuOpen(false);
       setIsExporting(true);
       
+      if (exportTimeoutRef.current) clearTimeout(exportTimeoutRef.current);
+
       // Yield to the event loop to allow the UI update to render
-      setTimeout(async () => {
+      exportTimeoutRef.current = window.setTimeout(async () => {
           try {
             if (localFiles.length === 1) {
                 const file = localFiles[0];
@@ -281,7 +296,6 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
     return size;
   };
 
-  const listContainerRef = useRef<HTMLDivElement>(null);
   const { width: listWidth, height: listHeight } = useContainerSize(listContainerRef);
 
   return (

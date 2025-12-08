@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Model } from '../../services/modelService';
 import { ModelSelector } from '../UI/ModelSelector';
 import { SettingItem } from './SettingItem';
@@ -28,7 +28,7 @@ type ModelSettingsProps = {
   disabled: boolean;
 };
 
-export const ModelSettings: React.FC<ModelSettingsProps> = ({
+const ModelSettingsRaw: React.FC<ModelSettingsProps> = ({
     models, imageModels, videoModels, selectedModel, onModelChange,
     temperature, setTemperature, maxTokens, setMaxTokens,
     imageModel, onImageModelChange, videoModel, onVideoModelChange,
@@ -94,3 +94,5 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
         </div>
     );
 };
+
+export const ModelSettings = memo(ModelSettingsRaw);

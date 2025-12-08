@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { SettingItem } from './SettingItem';
 import { ThemeToggle } from '../Sidebar/ThemeToggle';
 import type { Theme } from '../../hooks/useTheme';
@@ -20,7 +20,7 @@ type GeneralSettingsProps = {
   setTheme: (theme: Theme) => void;
 };
 
-export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ 
+const GeneralSettingsRaw: React.FC<GeneralSettingsProps> = ({ 
     onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, apiKey, onSaveApiKey,
     theme, setTheme
 }) => {
@@ -28,10 +28,20 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   const [showApiKey, setShowApiKey] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
+  
+  // Ref for cleanup of timers
+  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     setLocalApiKey(apiKey);
   }, [apiKey]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -44,7 +54,9 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
     try {
         await onSaveApiKey(localApiKey);
         setSaveStatus('saved');
-        setTimeout(() => setSaveStatus('idle'), 2000);
+        
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = window.setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (error: any) {
         setSaveStatus('error');
         setSaveError(error.message || 'Failed to verify API Key.');
@@ -179,3 +191,5 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
     </div>
   );
 };
+
+export const GeneralSettings = memo(GeneralSettingsRaw);
