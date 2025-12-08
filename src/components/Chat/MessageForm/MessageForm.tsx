@@ -15,6 +15,7 @@ import { UploadMenu } from './UploadMenu';
 import { useMessageForm } from './useMessageForm';
 import { type MessageFormHandle } from './types';
 import { ModeToggle } from '../../UI/ModeToggle';
+import { VoiceSelector } from '../../UI/VoiceSelector';
 import { TextType } from '../../UI/TextType';
 import type { Message } from '../../../types';
 
@@ -30,7 +31,9 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   setIsAgentMode: (isAgent: boolean) => void;
   messages: Message[];
   hasApiKey: boolean;
-}>(({ onSubmit, isLoading, onCancel, isAppLoading, backendStatus, isAgentMode, setIsAgentMode, messages, hasApiKey }, ref) => {
+  ttsVoice: string;
+  setTtsVoice: (voice: string) => void;
+}>(({ onSubmit, isLoading, onCancel, isAppLoading, backendStatus, isAgentMode, setIsAgentMode, messages, hasApiKey, ttsVoice, setTtsVoice }, ref) => {
   const logic = useMessageForm(onSubmit, isLoading, ref, messages, isAgentMode, hasApiKey);
   
   const isBackendOffline = backendStatus !== 'online';
@@ -153,6 +156,11 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 <ModeToggle 
                     isAgentMode={isAgentMode} 
                     onToggle={setIsAgentMode}
+                    disabled={isLoading || isAppLoading || isBackendOffline}
+                />
+                <VoiceSelector
+                    selectedVoice={ttsVoice}
+                    onVoiceChange={setTtsVoice}
                     disabled={isLoading || isAppLoading || isBackendOffline}
                 />
               </div>

@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { ToggleSwitch } from '../UI/ToggleSwitch';
 import { SettingItem } from './SettingItem';
+import { TTS_VOICES } from '../UI/VoiceSelector';
 
 const motion = motionTyped as any;
 
@@ -21,14 +22,6 @@ type SpeechMemorySettingsProps = {
   setIsAutoPlayEnabled: (enabled: boolean) => void;
   disabled: boolean;
 };
-
-const TTS_VOICES = [
-    { id: 'Kore', name: 'Kore', desc: 'Calm & Soothing' },
-    { id: 'Puck', name: 'Puck', desc: 'Energetic & Clear' },
-    { id: 'Charon', name: 'Charon', desc: 'Deep & Authoritative' },
-    { id: 'Fenrir', name: 'Fenrir', desc: 'Strong & Resonant' },
-    { id: 'Zephyr', name: 'Zephyr', desc: 'Soft & Gentle' },
-];
 
 const AudioWave = () => (
     <div className="flex items-center gap-0.5 h-4 mx-1">

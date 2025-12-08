@@ -71,6 +71,7 @@ export const App = () => {
               sendMessage={logic.sendMessage}
               onCancel={logic.cancelGeneration}
               ttsVoice={logic.ttsVoice}
+              setTtsVoice={logic.setTtsVoice}
               isAutoPlayEnabled={logic.isAutoPlayEnabled}
               currentChatId={logic.currentChatId}
               onShowSources={logic.handleShowSources}
