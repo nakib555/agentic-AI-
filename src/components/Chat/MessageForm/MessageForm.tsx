@@ -37,14 +37,14 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   
   // Submit button styling
   let submitButtonClasses = `
-    flex-shrink-0 w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center 
-    transition-all duration-300 ease-out shadow-sm
+    flex-shrink-0 w-10 h-10 md:w-11 md:h-11 rounded-lg flex items-center justify-center 
+    transition-all duration-300 ease-out
   `;
   
   if (isLoading) {
-    submitButtonClasses += ` bg-white dark:bg-layer-2 text-primary-main border-2 border-primary-main/20 hover:border-red-500/30 hover:text-red-500`;
+    submitButtonClasses += ` bg-layer-2 text-primary-main border border-primary-main/20 hover:border-red-500/30 hover:text-red-500`;
   } else if (!isSendDisabled) {
-    submitButtonClasses += ` bg-gradient-to-br from-violet-600 to-indigo-600 text-white hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5`;
+    submitButtonClasses += ` bg-primary-main text-white hover:bg-primary-hover shadow-sm hover:shadow-md hover:-translate-y-0.5`;
   } else {
     submitButtonClasses += ` bg-layer-2 text-content-tertiary cursor-not-allowed opacity-60`;
   }
@@ -53,20 +53,10 @@ export const MessageForm = forwardRef<MessageFormHandle, {
     <div className="w-full max-w-4xl mx-auto">
       <form onSubmit={logic.handleSubmit} className="relative group">
         
-        {/* Animated Glow Effect - Visible on focus/hover */}
-        <div 
-            className={`
-                absolute -inset-[2px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 
-                rounded-[26px] blur-md opacity-0 transition duration-500
-                ${logic.isFocused ? 'opacity-40' : 'group-hover:opacity-20'}
-            `} 
-        />
-
         <motion.div 
             className={`
-              relative flex flex-col p-2 md:p-3 rounded-[24px] transition-all duration-300
-              bg-white/80 dark:bg-layer-1/80 backdrop-blur-xl border border-white/40 dark:border-white/10
-              shadow-2xl ring-1 ring-black/5 dark:ring-white/5
+              relative flex flex-col p-1.5 md:p-2 rounded-xl transition-all duration-300
+              bg-page border border-border-default
             `}
             layout
         >
@@ -103,16 +93,16 @@ export const MessageForm = forwardRef<MessageFormHandle, {
             <input type="file" ref={logic.folderInputRef} onChange={logic.handleFileChange} className="hidden" {...{ webkitdirectory: "", directory: "" }} multiple />
             
             {/* Main Input Row */}
-            <div className="flex items-end gap-2 md:gap-3 p-1">
+            <div className="flex items-end gap-2 p-1">
                 
                 {/* Attachment Menu */}
-                <div className="relative pb-1.5 md:pb-2">
+                <div className="relative pb-1.5">
                     <motion.button 
                         ref={logic.attachButtonRef} 
                         type="button" 
                         onClick={() => logic.setIsUploadMenuOpen(p => !p)} 
                         disabled={logic.isEnhancing || isAppLoading || isBackendOffline || !hasApiKey} 
-                        className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center text-content-secondary hover:bg-layer-2 hover:text-primary-main transition-colors disabled:opacity-50"
+                        className="w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center text-content-secondary hover:bg-layer-2 hover:text-primary-main transition-colors disabled:opacity-50"
                         whileTap={{ scale: 0.9 }}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 md:w-6 md:h-6"><path d="M12 5v14M5 12h14"/></svg>
@@ -154,14 +144,14 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 </div>
 
                 {/* Right Actions */}
-                <div className="flex items-center gap-2 pb-1 md:pb-1.5">
+                <div className="flex items-center gap-2 pb-1.5">
                     {/* Voice / Enhance */}
                     <AnimatePresence>
                         {!hasInput && logic.isSupported && (
                             <motion.button 
                                 initial={{ scale: 0, width: 0 }} animate={{ scale: 1, width: 'auto' }} exit={{ scale: 0, width: 0 }}
                                 type="button" onClick={logic.handleMicClick} disabled={isLoading}
-                                className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center transition-all ${logic.isRecording ? 'bg-status-error-bg text-status-error-text animate-pulse' : 'text-content-secondary hover:bg-layer-2 hover:text-content-primary'}`}
+                                className={`w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center transition-all ${logic.isRecording ? 'bg-status-error-bg text-status-error-text animate-pulse' : 'text-content-secondary hover:bg-layer-2 hover:text-content-primary'}`}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 md:w-6 md:h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m12 0v-1.5a6 6 0 0 0-6-6v0a6 6 0 0 0-6 6v1.5m6 7.5v3.75m-3.75 0h7.5" /></svg>
                             </motion.button>
@@ -170,7 +160,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                              <motion.button 
                                 initial={{ scale: 0, width: 0 }} animate={{ scale: 1, width: 'auto' }} exit={{ scale: 0, width: 0 }}
                                 type="button" onClick={logic.handleEnhancePrompt} disabled={logic.isEnhancing}
-                                className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center text-primary-main hover:bg-primary-subtle transition-all"
+                                className="w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center text-primary-main hover:bg-primary-subtle transition-all"
                                 title="Enhance prompt"
                             >
                                 {logic.isEnhancing ? (
