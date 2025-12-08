@@ -1,9 +1,10 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { audioCache } from '../services/audioCache';
 import { audioManager } from '../services/audioService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
@@ -15,6 +16,15 @@ type AudioState = 'idle' | 'loading' | 'error' | 'playing';
 export const useTts = (text: string, voice: string) => {
   const [audioState, setAudioState] = useState<AudioState>('idle');
   const isPlaying = audioState === 'playing';
+
+  // Cleanup: Stop audio if component unmounts while playing
+  useEffect(() => {
+    return () => {
+      if (audioState === 'playing') {
+        audioManager.stop();
+      }
+    };
+  }, [audioState]);
 
   const playOrStopAudio = useCallback(async () => {
     if (audioState === 'playing') {

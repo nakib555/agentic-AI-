@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
-import { FixedSizeList as List } from 'react-window';
+import { FixedSizeList as List, areEqual } from 'react-window';
 
 const motion = motionTyped as any;
 
@@ -18,6 +18,21 @@ type BrowserSessionDisplayProps = {
 };
 
 const LOG_ITEM_HEIGHT = 20; // Approx height for a single line of log text in the configured font size
+
+// Static Row Component
+const LogRow = memo(({ index, style, data }: { index: number, style: React.CSSProperties, data: string[] }) => {
+    const log = data[index];
+    const isLast = index === data.length - 1;
+    return (
+        <div 
+            style={style} 
+            className={`flex items-start gap-2 text-[11px] font-mono whitespace-nowrap overflow-hidden text-ellipsis px-4 ${isLast ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-600 dark:text-slate-400'}`}
+        >
+            <span className="opacity-60 mt-0.5 flex-shrink-0">➜</span>
+            <span className="truncate">{log}</span>
+        </div>
+    );
+}, areEqual);
 
 export const BrowserSessionDisplay: React.FC<BrowserSessionDisplayProps> = ({ url, title, screenshot, logs }) => {
     const [isLogsOpen, setIsLogsOpen] = useState(true); // Auto-open logs if live
@@ -41,19 +56,6 @@ export const BrowserSessionDisplay: React.FC<BrowserSessionDisplayProps> = ({ ur
             listRef.current.scrollToItem(logs.length - 1, 'end');
         }
     }, [logs.length, isLogsOpen]);
-
-    const LogRow = ({ index, style }: { index: number, style: React.CSSProperties }) => {
-        const log = logs[index];
-        return (
-            <div 
-                style={style} 
-                className={`flex items-start gap-2 text-[11px] font-mono whitespace-nowrap overflow-hidden text-ellipsis px-4 ${index === logs.length - 1 ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-600 dark:text-slate-400'}`}
-            >
-                <span className="opacity-60 mt-0.5 flex-shrink-0">➜</span>
-                <span className="truncate">{log}</span>
-            </div>
-        );
-    };
 
     return (
         <motion.div 
@@ -169,6 +171,7 @@ export const BrowserSessionDisplay: React.FC<BrowserSessionDisplayProps> = ({ ur
                                     itemCount={logs.length}
                                     itemSize={LOG_ITEM_HEIGHT}
                                     width="100%"
+                                    itemData={logs}
                                     className="custom-scrollbar"
                                 >
                                     {LogRow}

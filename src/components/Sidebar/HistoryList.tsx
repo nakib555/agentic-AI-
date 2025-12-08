@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState, useMemo, useRef, CSSProperties } from 'react';
-import { VariableSizeList as List } from 'react-window';
+import React, { useEffect, useState, useMemo, useRef, CSSProperties, memo } from 'react';
+import { VariableSizeList as List, areEqual } from 'react-window';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import type { ChatSession } from '../../types';
@@ -105,6 +105,65 @@ const useResizeObserver = (ref: React.RefObject<HTMLElement>) => {
   return dimensions;
 };
 
+// Data interface for the Item Renderer
+type ListData = {
+    items: ListItem[];
+    currentChatId: string | null;
+    searchQuery: string;
+    isCollapsed: boolean;
+    isDesktop: boolean;
+    toggleGroup: (groupName: string) => void;
+    onLoadChat: (id: string) => void;
+    onDeleteChat: (id: string) => void;
+    onUpdateChatTitle: (id: string, newTitle: string) => void;
+};
+
+// Optimized Row Component
+const HistoryRow = memo(({ index, style, data }: { index: number; style: CSSProperties; data: ListData }) => {
+    const { items, currentChatId, searchQuery, isCollapsed, isDesktop, toggleGroup, onLoadChat, onDeleteChat, onUpdateChatTitle } = data;
+    const item = items[index];
+    const shouldCollapse = isDesktop && isCollapsed;
+
+    if (item.type === 'header') {
+        return (
+            <div style={style} className="px-2">
+                <button
+                    onClick={() => !shouldCollapse && toggleGroup(item.name)}
+                    disabled={shouldCollapse}
+                    className="w-full flex items-center justify-between px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:bg-gray-100/60 dark:hover:bg-violet-900/30 rounded py-2 transition-colors disabled:cursor-default disabled:bg-transparent"
+                >
+                    <span className="block overflow-hidden whitespace-nowrap text-left truncate">
+                        {shouldCollapse ? '' : item.name}
+                    </span>
+                    {!shouldCollapse && (
+                        <div
+                            style={{ transform: item.collapsed ? 'rotate(0deg)' : 'rotate(90deg)', transition: 'transform 0.2s' }}
+                        >
+                            <ChevronIcon />
+                        </div>
+                    )}
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <div style={style} className="px-2">
+            <HistoryItem 
+                text={item.chat.title} 
+                isCollapsed={isCollapsed}
+                isDesktop={isDesktop}
+                searchQuery={searchQuery}
+                active={item.chat.id === currentChatId}
+                onClick={() => onLoadChat(item.chat.id)}
+                onDelete={() => onDeleteChat(item.chat.id)}
+                onUpdateTitle={(newTitle) => onUpdateChatTitle(item.chat.id, newTitle)}
+                isLoading={item.chat.isLoading ?? false}
+            />
+        </div>
+    );
+}, areEqual);
+
 export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, isDesktop, isHistoryLoading, onLoadChat, onDeleteChat, onUpdateChatTitle }: HistoryListProps) => {
     const shouldCollapse = isDesktop && isCollapsed;
     const containerRef = useRef<HTMLDivElement>(null);
@@ -179,49 +238,18 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
         }));
     };
 
-    // Item Renderer for Virtual List
-    const Row = ({ index, style }: { index: number; style: CSSProperties }) => {
-        const item = flattenedData[index];
-
-        if (item.type === 'header') {
-            return (
-                <div style={style} className="px-2">
-                    <button
-                        onClick={() => !shouldCollapse && toggleGroup(item.name)}
-                        disabled={shouldCollapse}
-                        className="w-full flex items-center justify-between px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:bg-gray-100/60 dark:hover:bg-violet-900/30 rounded py-2 transition-colors disabled:cursor-default disabled:bg-transparent"
-                    >
-                        <span className="block overflow-hidden whitespace-nowrap text-left truncate">
-                            {shouldCollapse ? '' : item.name}
-                        </span>
-                        {!shouldCollapse && (
-                            <div
-                                style={{ transform: item.collapsed ? 'rotate(0deg)' : 'rotate(90deg)', transition: 'transform 0.2s' }}
-                            >
-                                <ChevronIcon />
-                            </div>
-                        )}
-                    </button>
-                </div>
-            );
-        }
-
-        return (
-            <div style={style} className="px-2">
-                <HistoryItem 
-                    text={item.chat.title} 
-                    isCollapsed={isCollapsed}
-                    isDesktop={isDesktop}
-                    searchQuery={searchQuery}
-                    active={item.chat.id === currentChatId}
-                    onClick={() => onLoadChat(item.chat.id)}
-                    onDelete={() => onDeleteChat(item.chat.id)}
-                    onUpdateTitle={(newTitle) => onUpdateChatTitle(item.chat.id, newTitle)}
-                    isLoading={item.chat.isLoading ?? false}
-                />
-            </div>
-        );
-    };
+    // Construct the data object for the list
+    const itemData = useMemo(() => ({
+        items: flattenedData,
+        currentChatId,
+        searchQuery,
+        isCollapsed,
+        isDesktop,
+        toggleGroup,
+        onLoadChat,
+        onDeleteChat,
+        onUpdateChatTitle
+    }), [flattenedData, currentChatId, searchQuery, isCollapsed, isDesktop, toggleGroup, onLoadChat, onDeleteChat, onUpdateChatTitle]);
 
     // Calculate dynamic height based on item type
     const getItemSize = (index: number) => {
@@ -255,9 +283,10 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                     itemCount={flattenedData.length}
                     itemSize={getItemSize}
                     width={width}
+                    itemData={itemData}
                     className="custom-scrollbar"
                 >
-                    {Row}
+                    {HistoryRow}
                 </List>
             )}
         </div>

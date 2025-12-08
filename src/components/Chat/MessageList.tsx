@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, useCallback, useMemo, memo } from 'react';
 import type { Message, Source } from '../../types';
 import { MessageComponent } from './Message';
 import { WelcomeScreen } from './WelcomeScreen/index';
@@ -33,7 +33,7 @@ type MessageListProps = {
   isAgentMode: boolean;
 };
 
-export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
+const MessageListRaw = forwardRef<MessageListHandle, MessageListProps>(({ 
     messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled, currentChatId, 
     onShowSources, approveExecution, 
     denyExecution, messageFormRef, onRegenerate, onSetActiveResponseIndex,
@@ -226,3 +226,5 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
     </div>
   );
 });
+
+export const MessageList = memo(MessageListRaw);
