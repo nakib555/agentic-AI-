@@ -30,8 +30,8 @@ type ThinkingSidebarProps = {
 
 // Mobile variants for bottom-up animation
 const mobileVariants = {
-  open: { height: '50vh', y: 0 },
-  closed: { height: 0, y: '100%' },
+  open: { y: 0 },
+  closed: { y: '100%' },
 };
 
 export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClose, message, sendMessage, width, setWidth, isResizing, setIsResizing, onRegenerate }) => {
@@ -164,20 +164,21 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             transition={{
                 type: isResizing ? 'tween' : 'spring',
                 duration: isResizing ? 0 : 0.5,
-                stiffness: 180, // Smoother physics
-                damping: 24,
-                mass: 1,
+                stiffness: 250,
+                damping: 30,
+                mass: 0.8,
             }}
             className={`
                 flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-[#1e1e1e]
                 ${isDesktop 
                     ? 'relative border-l border-gray-200 dark:border-white/10' // Desktop styling
-                    : 'fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 dark:border-white/10' // Mobile styling
+                    : 'fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 dark:border-white/10 rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]' // Mobile styling
                 }
             `}
             role="complementary"
             aria-labelledby="thinking-sidebar-title"
             style={{ 
+                height: isDesktop ? '100%' : '60vh', // Increased height for mobile sheet
                 userSelect: isResizing ? 'none' : 'auto',
                 willChange: isResizing ? 'width' : 'width, transform' // GPU hint
             }}
@@ -187,13 +188,14 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                 style={{ width: isDesktop ? `${width}px` : '100%' }}
             >
                 {/* Drag handle for mobile (decorative) */}
-                {!isDesktop && isOpen && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-2.5 h-1.5 w-16 bg-gray-300 dark:bg-slate-600 rounded-full cursor-grab"
-                         aria-hidden="true" // Decorative, not interactive
-                    ></div>
+                {!isDesktop && (
+                    <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
+                        <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-600 rounded-full"></div>
+                    </div>
                 )}
+                
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
+                <div className={`flex items-center justify-between px-4 pb-3 ${isDesktop ? 'pt-4' : 'pt-2'} border-b border-gray-200 dark:border-white/10 flex-shrink-0`}>
                     <div className="flex items-center gap-3">
                         <h2 id="thinking-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Thought Process</h2>
                         <span className={`px-2 py-1 text-xs font-semibold text-white rounded-full ${statusColor}`}>
@@ -202,7 +204,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-1 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-black/20"
+                        className="p-1.5 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-black/20 transition-colors"
                         aria-label="Close thought process"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">

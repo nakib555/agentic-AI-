@@ -111,16 +111,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
 
     return (
-        <aside className={`h-full z-20 ${isDesktop ? 'flex-shrink-0' : 'w-0'}`}>
+        <aside className={`h-full ${isDesktop ? 'flex-shrink-0 z-20' : 'fixed inset-0 z-40 pointer-events-none'}`}>
             <AnimatePresence>
                 {!isDesktop && isOpen && (
                     <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        transition={{ duration: 0.2, ease: "linear" }}
                         onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 bg-black/50 z-10 backdrop-blur-sm" 
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto" 
                         style={{ willChange: 'opacity' }}
                     />
                 )}
@@ -132,21 +132,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 variants={isDesktop ? undefined : mobileVariants}
                 transition={{
                     type: isResizing || animationDisabledForResize ? 'tween' : 'spring',
-                    duration: isResizing || animationDisabledForResize ? 0 : 0.5,
-                    stiffness: 180,
-                    damping: 24,
-                    mass: 1,
+                    duration: isResizing || animationDisabledForResize ? 0 : 0.4,
+                    stiffness: 300,
+                    damping: 30,
+                    mass: 0.8,
                 }}
                 style={{
                     height: '100%',
-                    position: isDesktop ? 'relative' : 'fixed',
-                    width: !isDesktop ? 288 : 'auto',
+                    position: isDesktop ? 'relative' : 'absolute', // Absolute within the fixed aside
+                    width: !isDesktop ? 288 : 'auto', // 288px = w-72
                     left: 0,
                     top: 0,
-                    zIndex: isDesktop ? 'auto' : 30,
-                    willChange: isResizing ? 'width' : 'width, transform',
+                    pointerEvents: 'auto',
+                    willChange: isResizing ? 'width' : 'transform, width',
                 }}
-                className="bg-layer-1 border-r border-border flex flex-col transform-gpu shadow-xl md:shadow-none"
+                className="bg-layer-1 border-r border-border flex flex-col transform-gpu shadow-2xl md:shadow-none"
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 

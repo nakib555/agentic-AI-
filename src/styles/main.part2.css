@@ -11,10 +11,13 @@
 /* Constrain the main application layout */
 html, body, #root {
     height: 100%;
+    height: 100dvh; /* Dynamic viewport height for mobile browsers */
     width: 100%;
     overflow: hidden; /* Prevent body scroll, app handles its own scrolling */
     background-color: var(--bg-page);
     color: var(--text-primary);
+    touch-action: manipulation; /* Improves tap responsiveness */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
 }
 
 /* Placeholder styling */

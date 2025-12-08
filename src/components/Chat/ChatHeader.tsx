@@ -152,7 +152,7 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const baseButtonClasses = "w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 backdrop-blur-md border shadow-sm hover:scale-105 active:scale-95";
+    const baseButtonClasses = "w-11 h-11 flex items-center justify-center rounded-full transition-all duration-200 backdrop-blur-md border shadow-sm hover:scale-105 active:scale-95 touch-manipulation"; // Increased size to w-11 h-11
     const activeClasses = "bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/40";
     const inactiveClasses = "bg-white/60 text-slate-700 border-slate-200/80 hover:bg-white/90 dark:bg-black/20 dark:text-slate-200 dark:border-white/10 dark:hover:bg-black/40";
     
