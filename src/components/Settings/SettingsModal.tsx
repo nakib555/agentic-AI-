@@ -185,7 +185,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
                                 {activeCategory === 'model' && <ModelSettings {...props} />}
                                 {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
-                                {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}
+                                {activeCategory === 'speech' && <SpeechMemorySettings isMemoryEnabled={props.isMemoryEnabled} setIsMemoryEnabled={props.setIsMemoryEnabled} onManageMemory={props.onManageMemory} isAutoPlayEnabled={props.isAutoPlayEnabled} setIsAutoPlayEnabled={props.setIsAutoPlayEnabled} disabled={props.disabled} />}
                             </motion.div>
                         </AnimatePresence>
                     </div>
