@@ -62,7 +62,7 @@ const FileEditor: React.FC<{
                     value={content}
                     onChange={e => setContent(e.target.value)}
                     placeholder="Enter content..."
-                    className="flex-1 w-full p-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-mono text-sm custom-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600 leading-relaxed"
+                    className="flex-1 w-full p-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-mono text-base md:text-sm custom-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600 leading-relaxed"
                 />
             </div>
         </div>
@@ -304,7 +304,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
             <>
                 {/* Header */}
                 <div className="flex flex-col border-b border-slate-200 dark:border-white/5 bg-white dark:bg-[#1e1e1e] z-10">
-                    <div className="flex items-center justify-between px-6 py-5">
+                    <div className="flex items-center justify-between px-4 py-4 md:px-6 md:py-5">
                         <div className="flex-1">
                             <h2 className="text-xl font-bold text-slate-800 dark:text-white">Manage Memory</h2>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
@@ -327,14 +327,14 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                 <div className="flex-1 overflow-hidden relative flex flex-col">
                         <>
                              {/* Toolbar: Search + New File */}
-                             <div className="px-6 py-4 bg-slate-50/80 dark:bg-[#1a1a1a]/90 backdrop-blur-sm border-b border-slate-200 dark:border-white/5 z-10 flex items-center gap-4">
+                             <div className="px-4 py-3 md:px-6 md:py-4 bg-slate-50/80 dark:bg-[#1a1a1a]/90 backdrop-blur-sm border-b border-slate-200 dark:border-white/5 z-10 flex items-center gap-4">
                                 <div className="flex-1 relative group">
                                     <input
                                         type="text"
                                         placeholder="Search files..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all shadow-sm"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-base md:text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all shadow-sm"
                                     />
                                     <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                         <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0 -11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
@@ -350,7 +350,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                             </div>
 
                             {/* File List - Virtualized */}
-                            <div className="flex-1 p-6 bg-slate-50/50 dark:bg-transparent" ref={listContainerRef}>
+                            <div className="flex-1 p-4 md:p-6 bg-slate-50/50 dark:bg-transparent" ref={listContainerRef}>
                                 {filteredFiles.length > 0 ? (
                                     <List
                                         height={listHeight}

@@ -176,7 +176,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-                    <div className="p-6 md:p-8 max-w-2xl mx-auto">
+                    <div className="p-4 md:p-8 max-w-2xl mx-auto">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={activeCategory}

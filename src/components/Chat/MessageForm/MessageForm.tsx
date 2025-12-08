@@ -127,7 +127,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0, transition: { duration: 0 } }}
-                                className="absolute inset-0 py-3 px-1 text-content-tertiary pointer-events-none select-none truncate text-[15px] font-medium"
+                                className="absolute inset-0 py-3 px-1 text-content-tertiary pointer-events-none select-none truncate text-base md:text-[15px] font-medium"
                             >
                                 <TextType text={logic.placeholder} loop={true} typingSpeed={65} deletingSpeed={50} pauseDuration={2000} showCursor={false} />
                             </motion.div>
@@ -143,7 +143,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         onBlur={() => logic.setIsFocused(false)}
                         rows={1}
                         disabled={!hasApiKey}
-                        className="w-full py-3 px-1 bg-transparent text-content-primary placeholder-transparent focus:outline-none resize-none max-h-[200px] leading-relaxed text-[15px]"
+                        className="w-full py-3 px-1 bg-transparent text-content-primary placeholder-transparent focus:outline-none resize-none max-h-[200px] leading-relaxed text-base md:text-[15px]"
                         style={{ minHeight: '44px' }}
                     />
                 </div>

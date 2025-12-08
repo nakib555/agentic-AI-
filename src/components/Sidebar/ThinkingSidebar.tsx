@@ -32,7 +32,7 @@ type ThinkingSidebarProps = {
 
 // Mobile variants for bottom-up animation
 const mobileVariants = {
-  open: { height: '50vh', y: 0 },
+  open: { height: '85vh', y: 0 },
   closed: { height: 0, y: '100%' },
 };
 
@@ -178,7 +178,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                 flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-[#1e1e1e]
                 ${isDesktop 
                     ? 'relative border-l border-gray-200 dark:border-white/10' // Desktop styling
-                    : 'fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 dark:border-white/10' // Mobile styling
+                    : 'fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 dark:border-white/10 shadow-2xl rounded-t-2xl' // Mobile styling
                 }
             `}
             role="complementary"
@@ -194,12 +194,12 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             >
                 {/* Drag handle for mobile (decorative) */}
                 {!isDesktop && isOpen && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-2.5 h-1.5 w-16 bg-gray-300 dark:bg-slate-600 rounded-full cursor-grab"
-                         aria-hidden="true" // Decorative, not interactive
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 mt-3 h-1.5 w-16 bg-gray-300 dark:bg-slate-600 rounded-full cursor-grab pointer-events-none z-50"
+                         aria-hidden="true" 
                     ></div>
                 )}
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
+                <div className={`flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0 ${!isDesktop ? 'pt-8' : ''}`}>
                     <div className="flex items-center gap-3">
                         <h2 id="thinking-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Thought Process</h2>
                         <span className={`px-2 py-1 text-xs font-semibold text-white rounded-full ${statusColor}`}>
@@ -212,7 +212,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                         aria-label="Close thought process"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-2.72 2.72a.75.75 0 1 0 1.06 1.06L10 11.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L11.06 10l2.72-2.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-2.72 2.72a.75.75 0 1 0 1.06 1.06L10 11.06l2.72 2.72a.75.75 0 0 0 1.06-1.06L10 8.94 6.28 5.22Z" />
                         </svg>
                     </button>
                 </div>
