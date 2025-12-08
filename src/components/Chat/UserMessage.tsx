@@ -12,39 +12,47 @@ import type { Message } from '../../types';
 import { FileIcon } from '../UI/FileIcon';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 
-// Optimized spring physics for performance
 const animationProps = {
-  initial: { opacity: 0, y: 15, scale: 0.98 },
+  initial: { opacity: 0, y: 20, scale: 0.95 },
   animate: { opacity: 1, y: 0, scale: 1 },
-  transition: { type: "spring", stiffness: 200, damping: 25 },
+  transition: { type: "spring", stiffness: 260, damping: 20 },
 };
-
 
 export const UserMessage = ({ msg }: { msg: Message }) => {
   const { text, attachments } = msg;
   
   return (
-    <div className="w-full flex justify-end">
-        <div className="w-fit max-w-[75%] flex flex-col items-end">
+    <div className="w-full flex justify-end pl-8 sm:pl-16">
+        <div className="flex flex-col items-end max-w-full">
             <motion.div 
                 {...animationProps} 
-                className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-2xl shadow-md border border-gray-200 dark:border-slate-700/50 origin-bottom-right"
+                className="
+                    relative
+                    bg-gradient-to-br from-primary-main to-primary-hover
+                    text-white
+                    rounded-2xl rounded-tr-md
+                    shadow-md
+                    border border-white/10
+                    overflow-hidden
+                "
                 style={{ willChange: 'transform, opacity' }}
             >
                 {/* Content Section */}
-                <div className="p-4 flex flex-col gap-4">
+                <div className="p-4 flex flex-col gap-3">
                     {attachments && attachments.length > 0 && (
-                        <div className="flex flex-col gap-2 p-3 bg-gray-50 dark:bg-black/20 rounded-lg border border-gray-200 dark:border-slate-700/50">
+                        <div className="flex flex-col gap-2 p-2 bg-black/10 rounded-xl border border-white/10">
                             {attachments.map((attachment, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                    <FileIcon filename={attachment.name} className="flex-shrink-0 w-5 h-5 text-gray-500 dark:text-slate-400" />
-                                    <span className="truncate text-sm font-medium text-gray-700 dark:text-slate-300" title={attachment.name}>{attachment.name}</span>
+                                <div key={index} className="flex items-center gap-3 p-1">
+                                    <div className="p-1.5 bg-white/20 rounded-lg">
+                                        <FileIcon filename={attachment.name} className="w-4 h-4 text-white" />
+                                    </div>
+                                    <span className="truncate text-xs font-medium text-white/90" title={attachment.name}>{attachment.name}</span>
                                 </div>
                             ))}
                         </div>
                     )}
                     {text && (
-                        <div className="markdown-content markdown-content-user">
+                        <div className="markdown-content markdown-content-user text-[15px] leading-relaxed selection:bg-white/30">
                             <ManualCodeRenderer text={text} components={MarkdownComponents} isStreaming={false} />
                         </div>
                     )}

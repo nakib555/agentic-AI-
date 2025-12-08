@@ -120,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 bg-black/50 z-10 backdrop-blur-sm" 
+                        className="fixed inset-0 bg-black/40 z-10 backdrop-blur-sm" 
                         style={{ willChange: 'opacity' }}
                     />
                 )}
@@ -128,7 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             
             <motion.div
                 initial={false}
-                animate={isDesktop ? { width: isCollapsed ? 72 : width } : (isOpen ? 'open' : 'closed')}
+                animate={isDesktop ? { width: isCollapsed ? 80 : width } : (isOpen ? 'open' : 'closed')}
                 variants={isDesktop ? undefined : mobileVariants}
                 transition={{
                     type: isResizing || animationDisabledForResize ? 'tween' : 'spring',
@@ -146,11 +146,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     zIndex: isDesktop ? 'auto' : 30,
                     willChange: isResizing ? 'width' : 'width, transform',
                 }}
-                className="bg-layer-1 border-r border-border flex flex-col transform-gpu shadow-xl md:shadow-none"
+                // Modern Glassmorphism Styling
+                className={`
+                    flex flex-col transform-gpu
+                    bg-sidebar/80 dark:bg-sidebar/80 
+                    backdrop-blur-xl
+                    border-r border-border-subtle
+                    ${!isDesktop ? 'shadow-2xl' : ''}
+                `}
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
-                    className="p-3 flex flex-col h-full"
+                    className="p-4 flex flex-col h-full"
                     style={{ userSelect: isResizing ? 'none' : 'auto' }}
                 >
                     <SidebarHeader 
@@ -159,26 +166,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         setIsOpen={setIsOpen} 
                     />
 
-                    <SearchInput 
-                        ref={searchInputRef}
-                        isCollapsed={isCollapsed}
-                        isDesktop={isDesktop}
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
-                    />
+                    <div className="space-y-4 flex-shrink-0 mb-4">
+                        <SearchInput 
+                            ref={searchInputRef}
+                            isCollapsed={isCollapsed}
+                            isDesktop={isDesktop}
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                        />
 
-                    <NewChatButton
-                        isCollapsed={isCollapsed}
-                        isDesktop={isDesktop}
-                        onClick={handleNewChat}
-                        disabled={isNewChatDisabled}
-                    />
+                        <NewChatButton
+                            isCollapsed={isCollapsed}
+                            isDesktop={isDesktop}
+                            onClick={handleNewChat}
+                            disabled={isNewChatDisabled}
+                        />
+                    </div>
                     
                     <motion.div 
-                        className="mb-2 border-t border-border"
+                        className="mb-2 h-px bg-gradient-to-r from-transparent via-border-default to-transparent"
                         initial={false}
-                        animate={{ opacity: isCollapsed ? 0 : 1, height: isCollapsed ? 0 : 'auto' }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        animate={{ opacity: isCollapsed ? 0 : 1 }}
                     />
 
                     <HistoryList 
@@ -203,11 +211,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {/* Resize Handle */}
                 {isDesktop && !isCollapsed && (
                     <div
-                        className="group absolute top-0 right-0 h-full z-50"
-                        style={{ width: '16px', transform: 'translateX(50%)', cursor: 'col-resize' }}
+                        className="group absolute top-0 right-0 h-full z-50 flex justify-center w-4 cursor-col-resize translate-x-1/2"
                         onMouseDown={startResizing}
                     >
-                        <div className={`w-[1.5px] h-full mx-auto transition-colors duration-200 ${isResizing ? 'bg-blue-500' : 'bg-transparent group-hover:bg-blue-400/50'}`}></div>
+                        <div className={`w-[1px] h-full transition-colors duration-200 bg-transparent group-hover:bg-primary-main/30 ${isResizing ? 'bg-primary-main' : ''}`}></div>
                     </div>
                 )}
             </motion.div>

@@ -16,51 +16,52 @@ type WelcomeScreenProps = {
 };
 
 export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
-    <div className="flex flex-col items-center justify-center h-full text-center pb-12 px-4">
+    <div className="flex flex-col items-center justify-center h-full text-center pb-24 px-6 relative overflow-hidden">
+        
+        {/* Background Gradients */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-main/5 rounded-full blur-[128px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[128px] pointer-events-none" />
+
         <motion.div 
-            className="relative mb-10"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+            className="relative mb-12"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
-            {/* Ambient glow behind the logo */}
-            <div className="absolute -inset-12 rounded-full bg-indigo-500/20 blur-3xl dark:bg-indigo-500/10 animate-pulse"></div>
-            
-            {/* The Main Logo */}
-            <div className="relative drop-shadow-2xl">
-                <WelcomeLogo size={140} className="filter drop-shadow-[0_0_20px_rgba(99,102,241,0.3)]" />
+            <div className="relative z-10 drop-shadow-2xl">
+                <WelcomeLogo size={120} className="filter drop-shadow-[0_20px_40px_rgba(99,102,241,0.2)]" />
             </div>
         </motion.div>
 
         <motion.h1 
-            className="text-4xl sm:text-5xl md:text-6xl font-bold font-['Space_Grotesk'] tracking-tight mb-5 leading-tight"
+            className="text-4xl sm:text-5xl md:text-6xl font-bold font-display tracking-tight mb-6 leading-[1.1]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
         >
-            <span className="text-slate-800 dark:text-slate-100">How can </span>
+            <span className="text-content-primary">Unlock your </span>
             <span className="block sm:inline">
                 <motion.span
-                    className="brand-gradient pb-1" // pb-1 to prevent descenders clipping
+                    className="text-transparent bg-clip-text bg-gradient-to-r from-primary-main via-purple-500 to-primary-main bg-[length:200%_auto]"
                     animate={{ backgroundPosition: ["0% center", "200% center"] }}
                     transition={{
-                        duration: 8,
+                        duration: 6,
                         repeat: Infinity,
                         ease: "linear",
                     }}
                 >
-                    I help you today?
+                    potential.
                 </motion.span>
             </span>
         </motion.h1>
         
         <motion.p
-            className="text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto mb-12 leading-relaxed"
+            className="text-lg text-content-secondary max-w-lg mx-auto mb-16 leading-relaxed font-light"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
         >
-            Your autonomous agent for reasoning, coding, and creation.
+            Your autonomous agent for complex reasoning, creative coding, and deep analysis.
         </motion.p>
         
         <FloatingPrompts onPromptClick={sendMessage} />

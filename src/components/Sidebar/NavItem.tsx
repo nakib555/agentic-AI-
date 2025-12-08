@@ -21,45 +21,56 @@ type NavItemProps = {
 export const NavItem = ({ icon, text, active, isCollapsed, isDesktop, onClick, disabled }: NavItemProps) => {
     const shouldCollapse = isDesktop && isCollapsed;
     
-    // Removed 'transition-all' to prevent layout thrashing with framer-motion
-    const baseClasses = `w-full flex items-center px-3 py-2 rounded-lg text-left text-sm transition-colors duration-200`;
+    // Modern button styles
+    const baseClasses = `w-full flex items-center px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200 group relative overflow-hidden`;
     
-    const activeClasses = `bg-gray-200/60 dark:bg-violet-900/60 shadow-inner text-slate-900 font-semibold dark:text-slate-50`;
-    const inactiveClasses = `bg-gray-100/30 dark:bg-violet-900/20 text-slate-600 dark:text-slate-300 shadow-sm border border-gray-200/50 dark:border-white/10`;
-    const hoverClasses = `hover:shadow-md hover:border-gray-300/80 dark:hover:border-white/20 hover:bg-gray-100/80 dark:hover:bg-violet-900/40`;
+    // Active state with subtle gradient background and emphasized text
+    const activeClasses = `bg-gradient-to-br from-primary-main/10 to-primary-main/5 text-primary-main font-semibold shadow-sm border border-primary-main/10`;
+    
+    // Inactive state with hover effect
+    const inactiveClasses = `text-content-secondary hover:bg-layer-2 hover:text-content-primary`;
 
     const disabledClasses = `opacity-50 cursor-not-allowed`;
     const layoutClasses = shouldCollapse ? 'justify-center' : '';
 
     return (
-        <div className="relative group" style={{ perspective: '800px' }}>
+        <div className="relative">
             <motion.button 
                 onClick={onClick} 
                 disabled={disabled}
-                className={`${baseClasses} ${active ? activeClasses : inactiveClasses} ${layoutClasses} ${disabled ? disabledClasses : hoverClasses}`}
-                whileHover={!disabled ? { scale: 1.03, y: -2, z: 5 } : {}}
-                whileTap={!disabled ? { scale: 0.97, y: 1, z: -5 } : {}}
-                transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                style={{ transformStyle: 'preserve-3d' }}
+                className={`${baseClasses} ${active ? activeClasses : inactiveClasses} ${layoutClasses} ${disabled ? disabledClasses : ''}`}
+                whileHover={!disabled ? { scale: 1.02 } : {}}
+                whileTap={!disabled ? { scale: 0.98 } : {}}
             >
-                <div className="flex-shrink-0 w-5 h-5">{icon}</div>
+                <div className={`flex-shrink-0 w-5 h-5 transition-colors ${active ? 'text-primary-main' : 'text-content-tertiary group-hover:text-content-primary'}`}>
+                    {icon}
+                </div>
+                
                 <motion.span 
                     className="overflow-hidden"
                     initial={false}
                     animate={{ 
                         width: shouldCollapse ? 0 : 'auto', 
                         opacity: shouldCollapse ? 0 : 1, 
-                        x: shouldCollapse ? -5 : 0,
-                        marginLeft: shouldCollapse ? 0 : 12 // Simulate gap-3
+                        x: shouldCollapse ? -10 : 0,
+                        marginLeft: shouldCollapse ? 0 : 12 
                     }}
-                    transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                    style={{ willChange: "width, margin-left, opacity, transform" }}
+                    transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1.0] }}
                 >
                     {text}
                 </motion.span>
+                
+                {active && !shouldCollapse && (
+                    <motion.div 
+                        layoutId="nav-indicator"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-main rounded-l-full"
+                    />
+                )}
             </motion.button>
+            
+            {/* Tooltip for collapsed state */}
             {shouldCollapse && !disabled && (
-                <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-white dark:bg-[#2D2D2D] text-slate-800 dark:text-slate-100 text-sm font-semibold rounded-md shadow-lg border border-gray-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-layer-2 text-content-primary text-xs font-semibold rounded-lg shadow-xl border border-border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 transform translate-x-[-10px] group-hover:translate-x-0 duration-200">
                     {text}
                 </div>
             )}
