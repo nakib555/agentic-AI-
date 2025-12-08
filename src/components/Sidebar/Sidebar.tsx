@@ -111,7 +111,7 @@ const SidebarRaw: React.FC<SidebarProps> = ({
 
 
     return (
-        <aside className={`h-full z-20 ${isDesktop ? 'flex-shrink-0' : 'w-0'}`}>
+        <aside className={`h-full z-30 ${isDesktop ? 'flex-shrink-0' : 'fixed inset-0 pointer-events-none'}`}>
             <AnimatePresence>
                 {!isDesktop && isOpen && (
                     <motion.div 
@@ -120,7 +120,7 @@ const SidebarRaw: React.FC<SidebarProps> = ({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 bg-black/40 z-10 backdrop-blur-sm" 
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 pointer-events-auto" 
                         style={{ willChange: 'opacity' }}
                     />
                 )}
@@ -139,20 +139,21 @@ const SidebarRaw: React.FC<SidebarProps> = ({
                 }}
                 style={{
                     height: '100%',
-                    position: isDesktop ? 'relative' : 'fixed',
-                    width: !isDesktop ? 288 : 'auto',
+                    position: isDesktop ? 'relative' : 'absolute',
+                    width: !isDesktop ? '85%' : 'auto',
+                    maxWidth: !isDesktop ? '320px' : 'none',
                     left: 0,
                     top: 0,
-                    zIndex: isDesktop ? 'auto' : 30,
+                    zIndex: 40,
                     willChange: isResizing ? 'width' : 'width, transform',
+                    pointerEvents: 'auto'
                 }}
-                // Optimized Blur: backdrop-blur-md is cheaper than xl
                 className={`
                     flex flex-col transform-gpu
-                    bg-sidebar/80 dark:bg-sidebar/90 
-                    backdrop-blur-md
+                    bg-sidebar/95 dark:bg-layer-1/95
+                    backdrop-blur-xl
                     border-r border-border-subtle
-                    ${!isDesktop ? 'shadow-2xl' : ''}
+                    shadow-2xl
                 `}
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >

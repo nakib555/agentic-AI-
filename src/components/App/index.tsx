@@ -28,7 +28,7 @@ export const App = () => {
   const chatTitle = currentChat ? currentChat.title : null;
 
   return (
-    <div ref={logic.appContainerRef} className={`flex h-full bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isResizing ? 'pointer-events-none' : ''}`}>
+    <div ref={logic.appContainerRef} className={`flex h-full w-full bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isResizing ? 'pointer-events-none' : ''}`}>
       {logic.versionMismatch && <VersionMismatchOverlay />}
       
       <Sidebar
@@ -54,7 +54,7 @@ export const App = () => {
       />
 
       <main className="relative z-10 flex-1 flex flex-col overflow-hidden chat-background min-w-0">
-        <div className="flex-1 flex flex-col w-full max-w-4xl mx-auto min-h-0">
+        <div className="flex-1 flex flex-col w-full max-w-5xl mx-auto min-h-0">
            <ChatHeader 
               isDesktop={logic.isDesktop}
               handleToggleSidebar={logic.handleToggleSidebar}

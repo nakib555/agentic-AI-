@@ -125,7 +125,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="settings-title"
@@ -135,11 +135,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3, type: "spring", bounce: 0.3 }}
-            className="bg-white dark:bg-[#1e1e1e] w-full shadow-2xl rounded-2xl max-w-4xl h-[85vh] max-h-[800px] flex flex-col overflow-hidden border border-slate-200 dark:border-white/10"
+            className="bg-white dark:bg-[#1e1e1e] w-full h-full sm:h-[85vh] sm:max-h-[800px] sm:max-w-4xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden sm:border border-slate-200 dark:border-white/10"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-sm z-10">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-sm z-10 shrink-0">
               <h2 id="settings-title" className="text-lg font-bold text-slate-800 dark:text-slate-100">
                 Settings
               </h2>
@@ -157,9 +157,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
             
             <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-slate-50/50 dark:bg-black/20">
                 {/* Navigation Sidebar */}
-                <nav className="flex-shrink-0 p-4 md:border-r border-slate-200 dark:border-white/10 md:w-64 bg-white dark:bg-[#1e1e1e] z-10">
+                <nav className="flex-shrink-0 border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/10 md:w-64 bg-white dark:bg-[#1e1e1e] z-10">
                     <LayoutGroup id="settings-nav">
-                        <ul className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar">
+                        <ul className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible p-2 md:p-4 hide-scrollbar">
                             {CATEGORIES.map(cat => (
                                 <li key={cat.id} className="flex-shrink-0">
                                     <SettingsCategoryButton
@@ -176,7 +176,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-                    <div className="p-4 md:p-8 max-w-2xl mx-auto">
+                    <div className="p-4 md:p-8 max-w-2xl mx-auto pb-20 md:pb-8">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={activeCategory}

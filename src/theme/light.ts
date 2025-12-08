@@ -6,46 +6,46 @@
 
 const lightTheme = {
   // --- Base Layers ---
-  "--bg-page": "#F8FAFC", // Slate-50 - softer than pure white
-  "--bg-layer-1": "rgba(255, 255, 255, 0.8)", // Glassy white
-  "--bg-layer-2": "#F1F5F9", // Slate-100
-  "--bg-layer-3": "#E2E8F0", // Slate-200
-  "--bg-glass": "rgba(255, 255, 255, 0.7)",
+  "--bg-page": "#F0F4F8", // Cool gray-blue tint for depth
+  "--bg-layer-1": "rgba(255, 255, 255, 0.85)", // High opacity glass
+  "--bg-layer-2": "#E2E8F0", // Slate-200
+  "--bg-layer-3": "#CBD5E1", // Slate-300
+  "--bg-glass": "rgba(255, 255, 255, 0.6)",
 
   // --- Text Colors ---
-  "--text-primary": "#0F172A", // Slate-900
+  "--text-primary": "#1E293B", // Slate-800
   "--text-secondary": "#475569", // Slate-600
   "--text-tertiary": "#94A3B8", // Slate-400
   "--text-inverted": "#FFFFFF",
 
   // --- Borders ---
-  "--border-subtle": "rgba(148, 163, 184, 0.1)",
-  "--border-default": "rgba(148, 163, 184, 0.2)",
-  "--border-strong": "rgba(148, 163, 184, 0.4)",
-  "--border-focus": "#6366f1",
+  "--border-subtle": "rgba(99, 102, 241, 0.1)", // Indigo tint
+  "--border-default": "rgba(99, 102, 241, 0.15)",
+  "--border-strong": "rgba(99, 102, 241, 0.25)",
+  "--border-focus": "#8B5CF6", // Violet
 
-  // --- Brand Colors ---
-  "--primary-main": "#4F46E5", // Indigo-600
-  "--primary-hover": "#4338CA", // Indigo-700
+  // --- Brand Colors (Vibrant Gradient Bases) ---
+  "--primary-main": "#6366F1", // Indigo-500
+  "--primary-hover": "#4F46E5", // Indigo-600
   "--primary-subtle": "#EEF2FF", // Indigo-50
   "--primary-text": "#312E81", // Indigo-900
 
   // --- Status Indicators ---
   "--status-error-bg": "#FEF2F2",
-  "--status-error-text": "#DC2626",
+  "--status-error-text": "#EF4444",
   "--status-success-bg": "#F0FDF4",
-  "--status-success-text": "#16A34A",
+  "--status-success-text": "#10B981",
   "--status-warning-bg": "#FEFCE8",
-  "--status-warning-text": "#CA8A04",
+  "--status-warning-text": "#F59E0B",
 
   // --- Component Specifics ---
-  "--bg-message-user": "#4F46E5", // Brand color for user bubbles
+  "--bg-message-user": "#6366F1", // Used as fallback or base for gradients
   "--bg-message-ai": "transparent",
-  "--bg-input": "rgba(255, 255, 255, 0.8)",
+  "--bg-input": "rgba(255, 255, 255, 0.9)",
   "--bg-input-secondary": "#F8FAFC",
   "--bg-code": "#F1F5F9",
-  "--text-code": "#1E293B",
-  "--bg-sidebar": "rgba(248, 250, 252, 0.8)" // Translucent sidebar
+  "--text-code": "#0F172A",
+  "--bg-sidebar": "rgba(241, 245, 249, 0.85)"
 };
 
 export default lightTheme;
