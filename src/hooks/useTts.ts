@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { audioCache } from '../services/audioCache';
 import { audioManager } from '../services/audioService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
@@ -14,34 +14,22 @@ type AudioState = 'idle' | 'loading' | 'error' | 'playing';
 
 export const useTts = (text: string, voice: string) => {
   const [audioState, setAudioState] = useState<AudioState>('idle');
-  const isMounted = useRef(false);
   const isPlaying = audioState === 'playing';
-
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-      // Cleanup: Stop audio if component unmounts while playing
-      if (audioState === 'playing') {
-        audioManager.stop();
-      }
-    };
-  }, [audioState]);
 
   const playOrStopAudio = useCallback(async () => {
     if (audioState === 'playing') {
       audioManager.stop();
-      if (isMounted.current) setAudioState('idle');
+      setAudioState('idle');
       return;
     }
     if (audioState === 'loading' || !text) return;
     
-    if (isMounted.current) setAudioState('loading');
+    setAudioState('loading');
     
     const textToSpeak = cleanTextForTts(text);
     if (!textToSpeak) {
         console.error("TTS failed: No text to speak after cleaning.");
-        if (isMounted.current) setAudioState('error');
+        setAudioState('error');
         return;
     }
       
@@ -49,10 +37,8 @@ export const useTts = (text: string, voice: string) => {
     const cachedBuffer = audioCache.get(cacheKey);
 
     const doPlay = async (buffer: AudioBuffer) => {
-        if (isMounted.current) setAudioState('playing');
-        await audioManager.play(buffer, () => {
-            if (isMounted.current) setAudioState('idle');
-        });
+        setAudioState('playing');
+        await audioManager.play(buffer, () => setAudioState('idle'));
     };
 
     if (cachedBuffer) {
@@ -74,13 +60,13 @@ export const useTts = (text: string, voice: string) => {
         if (base64Audio) {
             const audioBuffer = await decodeAudioData(decode(base64Audio), audioManager.context, 24000, 1);
             audioCache.set(cacheKey, audioBuffer);
-            if (isMounted.current) await doPlay(audioBuffer);
+            await doPlay(audioBuffer);
         } else {
             throw new Error("No audio data returned from backend.");
         }
     } catch (err) {
         console.error("TTS failed:", err);
-        if (isMounted.current) setAudioState('error');
+        setAudioState('error');
     }
   }, [text, voice, audioState]);
 

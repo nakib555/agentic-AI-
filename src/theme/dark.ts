@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,46 +5,46 @@
 
 const darkTheme = {
   // --- Base Layers ---
-  "--bg-page": "#020617", // Slate-950 - deeper, richer black
-  "--bg-layer-1": "rgba(30, 41, 59, 0.7)", // Slate-800 glass
-  "--bg-layer-2": "#1E293B", // Slate-800
-  "--bg-layer-3": "#334155", // Slate-700
-  "--bg-glass": "rgba(15, 23, 42, 0.6)",
+  "--bg-page": "#121212",
+  "--bg-layer-1": "#1e1e1e",
+  "--bg-layer-2": "#2d2d2d",
+  "--bg-layer-3": "#3f3f46",
+  "--bg-glass": "rgba(30, 30, 30, 0.8)",
 
   // --- Text Colors ---
-  "--text-primary": "#F8FAFC", // Slate-50
-  "--text-secondary": "#94A3B8", // Slate-400
-  "--text-tertiary": "#64748B", // Slate-500
-  "--text-inverted": "#000000",
+  "--text-primary": "#f3f4f6",
+  "--text-secondary": "#9ca3af",
+  "--text-tertiary": "#6b7280",
+  "--text-inverted": "#ffffff",
 
   // --- Borders ---
-  "--border-subtle": "rgba(129, 140, 248, 0.1)", // Indigo tint
-  "--border-default": "rgba(129, 140, 248, 0.15)",
-  "--border-strong": "rgba(129, 140, 248, 0.25)",
-  "--border-focus": "#A78BFA", // Violet-400
+  "--border-subtle": "rgba(255, 255, 255, 0.05)",
+  "--border-default": "rgba(255, 255, 255, 0.1)",
+  "--border-strong": "rgba(255, 255, 255, 0.2)",
+  "--border-focus": "#818cf8",
 
-  // --- Brand Colors (Neon Vibes) ---
-  "--primary-main": "#818CF8", // Indigo-400
-  "--primary-hover": "#6366F1", // Indigo-500
+  // --- Brand Colors ---
+  "--primary-main": "#6366f1",
+  "--primary-hover": "#818cf8",
   "--primary-subtle": "rgba(99, 102, 241, 0.15)",
-  "--primary-text": "#E0E7FF", // Indigo-100
+  "--primary-text": "#e0e7ff",
 
   // --- Status Indicators ---
   "--status-error-bg": "rgba(127, 29, 29, 0.3)",
-  "--status-error-text": "#F87171",
+  "--status-error-text": "#fca5a5",
   "--status-success-bg": "rgba(20, 83, 45, 0.3)",
-  "--status-success-text": "#34D399",
-  "--status-warning-bg": "rgba(120, 53, 15, 0.3)",
-  "--status-warning-text": "#FBBF24",
+  "--status-success-text": "#86efac",
+  "--status-warning-bg": "rgba(113, 63, 18, 0.3)",
+  "--status-warning-text": "#fde047",
 
   // --- Component Specifics ---
-  "--bg-message-user": "#6366F1",
-  "--bg-message-ai": "transparent",
-  "--bg-input": "rgba(30, 41, 59, 0.7)",
-  "--bg-input-secondary": "#0F172A",
-  "--bg-code": "#0F172A",
-  "--text-code": "#E2E8F0",
-  "--bg-sidebar": "rgba(15, 23, 42, 0.85)"
+  "--bg-message-user": "#1e293b",
+  "--bg-message-ai": "rgba(0, 0, 0, 0.2)",
+  "--bg-input": "#1a1a1a",
+  "--bg-input-secondary": "#121212",
+  "--bg-code": "#0d1117",
+  "--text-code": "#c9d1d9",
+  "--bg-sidebar": "#1e1e1e"
 };
 
 export default darkTheme;

@@ -5,9 +5,7 @@
  */
 
 import React from 'react';
-import { motion as motionTyped } from 'framer-motion';
-
-const motion = motionTyped as any;
+import { motion } from 'framer-motion';
 
 type ModeToggleProps = {
   isAgentMode: boolean;

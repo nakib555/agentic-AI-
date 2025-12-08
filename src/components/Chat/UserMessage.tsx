@@ -12,51 +12,39 @@ import type { Message } from '../../types';
 import { FileIcon } from '../UI/FileIcon';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 
+// Optimized spring physics for performance
 const animationProps = {
-  initial: { opacity: 0, y: 20, scale: 0.95 },
+  initial: { opacity: 0, y: 15, scale: 0.98 },
   animate: { opacity: 1, y: 0, scale: 1 },
-  transition: { type: "spring", stiffness: 260, damping: 20 },
+  transition: { type: "spring", stiffness: 200, damping: 25 },
 };
+
 
 export const UserMessage = ({ msg }: { msg: Message }) => {
   const { text, attachments } = msg;
   
   return (
-    <div className="w-full flex justify-end pl-8 sm:pl-16">
-        <div className="flex flex-col items-end max-w-full">
+    <div className="w-full flex justify-end">
+        <div className="w-fit max-w-[75%] flex flex-col items-end">
             <motion.div 
                 {...animationProps} 
-                className="
-                    relative
-                    bg-gradient-to-br from-indigo-500 to-indigo-700 dark:from-indigo-600 dark:to-indigo-800
-                    text-white
-                    rounded-[24px] rounded-tr-md
-                    shadow-md shadow-indigo-500/20 dark:shadow-black/30
-                    border border-white/10
-                    overflow-hidden
-                "
+                className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-2xl shadow-md border border-gray-200 dark:border-slate-700/50 origin-bottom-right"
                 style={{ willChange: 'transform, opacity' }}
             >
-                {/* Subtle highlight effect */}
-                <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-
                 {/* Content Section */}
-                <div className="relative p-4 md:p-5 flex flex-col gap-3">
+                <div className="p-4 flex flex-col gap-4">
                     {attachments && attachments.length > 0 && (
-                        <div className="flex flex-col gap-2 p-2 bg-black/20 rounded-xl border border-white/10 backdrop-blur-sm">
+                        <div className="flex flex-col gap-2 p-3 bg-gray-50 dark:bg-black/20 rounded-lg border border-gray-200 dark:border-slate-700/50">
                             {attachments.map((attachment, index) => (
-                                <div key={index} className="flex items-center gap-3 p-1.5">
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <FileIcon filename={attachment.name} className="w-5 h-5 text-white" />
-                                    </div>
-                                    <span className="truncate text-xs font-medium text-white/90" title={attachment.name}>{attachment.name}</span>
+                                <div key={index} className="flex items-center gap-2">
+                                    <FileIcon filename={attachment.name} className="flex-shrink-0 w-5 h-5 text-gray-500 dark:text-slate-400" />
+                                    <span className="truncate text-sm font-medium text-gray-700 dark:text-slate-300" title={attachment.name}>{attachment.name}</span>
                                 </div>
                             ))}
                         </div>
                     )}
                     {text && (
-                        <div className="markdown-content markdown-content-user text-[15px] md:text-[16px] leading-relaxed selection:bg-white/30 font-medium">
+                        <div className="markdown-content markdown-content-user">
                             <ManualCodeRenderer text={text} components={MarkdownComponents} isStreaming={false} />
                         </div>
                     )}

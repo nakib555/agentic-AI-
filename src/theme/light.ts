@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,46 +5,46 @@
 
 const lightTheme = {
   // --- Base Layers ---
-  "--bg-page": "#F0F4F8", // Cool gray-blue tint for depth
-  "--bg-layer-1": "rgba(255, 255, 255, 0.85)", // High opacity glass
-  "--bg-layer-2": "#E2E8F0", // Slate-200
-  "--bg-layer-3": "#CBD5E1", // Slate-300
-  "--bg-glass": "rgba(255, 255, 255, 0.6)",
+  "--bg-page": "#F5F5F0",
+  "--bg-layer-1": "#ffffff",
+  "--bg-layer-2": "#f3f4f6",
+  "--bg-layer-3": "#e5e7eb",
+  "--bg-glass": "rgba(255, 255, 255, 0.8)",
 
   // --- Text Colors ---
-  "--text-primary": "#1E293B", // Slate-800
-  "--text-secondary": "#475569", // Slate-600
-  "--text-tertiary": "#94A3B8", // Slate-400
-  "--text-inverted": "#FFFFFF",
+  "--text-primary": "#111827",
+  "--text-secondary": "#4b5563",
+  "--text-tertiary": "#9ca3af",
+  "--text-inverted": "#ffffff",
 
   // --- Borders ---
-  "--border-subtle": "rgba(99, 102, 241, 0.1)", // Indigo tint
-  "--border-default": "rgba(99, 102, 241, 0.15)",
-  "--border-strong": "rgba(99, 102, 241, 0.25)",
-  "--border-focus": "#8B5CF6", // Violet
+  "--border-subtle": "rgba(0, 0, 0, 0.05)",
+  "--border-default": "#e5e7eb",
+  "--border-strong": "#d1d5db",
+  "--border-focus": "#6366f1",
 
-  // --- Brand Colors (Vibrant Gradient Bases) ---
-  "--primary-main": "#6366F1", // Indigo-500
-  "--primary-hover": "#4F46E5", // Indigo-600
-  "--primary-subtle": "#EEF2FF", // Indigo-50
-  "--primary-text": "#312E81", // Indigo-900
+  // --- Brand Colors ---
+  "--primary-main": "#4f46e5",
+  "--primary-hover": "#4338ca",
+  "--primary-subtle": "#e0e7ff",
+  "--primary-text": "#3730a3",
 
   // --- Status Indicators ---
-  "--status-error-bg": "#FEF2F2",
-  "--status-error-text": "#EF4444",
-  "--status-success-bg": "#F0FDF4",
-  "--status-success-text": "#10B981",
-  "--status-warning-bg": "#FEFCE8",
-  "--status-warning-text": "#F59E0B",
+  "--status-error-bg": "#fef2f2",
+  "--status-error-text": "#b91c1c",
+  "--status-success-bg": "#f0fdf4",
+  "--status-success-text": "#15803d",
+  "--status-warning-bg": "#fefce8",
+  "--status-warning-text": "#a16207",
 
   // --- Component Specifics ---
-  "--bg-message-user": "#6366F1", // Used as fallback or base for gradients
-  "--bg-message-ai": "transparent",
-  "--bg-input": "rgba(255, 255, 255, 0.9)",
-  "--bg-input-secondary": "#F8FAFC",
-  "--bg-code": "#F1F5F9",
-  "--text-code": "#0F172A",
-  "--bg-sidebar": "rgba(241, 245, 249, 0.85)"
+  "--bg-message-user": "#ffffff",
+  "--bg-message-ai": "rgba(255, 255, 255, 0.6)",
+  "--bg-input": "#ffffff",
+  "--bg-input-secondary": "#f9fafb",
+  "--bg-code": "#f6f8fa",
+  "--text-code": "#24292e",
+  "--bg-sidebar": "#ffffff"
 };
 
 export default lightTheme;

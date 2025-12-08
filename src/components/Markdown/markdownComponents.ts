@@ -4,14 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Suspense } from 'react';
+import React from 'react';
 import { Bubble } from './Bubble';
 import { StyledLink } from './StyledLink';
+import { CodeBlock } from './CodeBlock';
 import { InlineCode } from './InlineCode';
 import { StyledMark } from './StyledMark';
-
-// Lazy load CodeBlock to avoid bundling react-syntax-highlighter in the main bundle
-const CodeBlock = React.lazy(() => import('./CodeBlock').then(m => ({ default: m.CodeBlock })));
 
 // Custom Blockquote component that acts as a router for Callouts and Bubbles
 const BlockquoteRouter = (props: any) => {
@@ -92,17 +90,13 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
         }
         codeContent = codeContent.replace(/\n$/, '');
 
-        return React.createElement(
-            Suspense,
-            { fallback: React.createElement('div', { className: "p-4 animate-pulse bg-gray-100 dark:bg-white/5 rounded-lg my-4 h-24" }) },
-            React.createElement(CodeBlock, { 
-                language, 
-                isStreaming: false, 
-                onRunCode: options.onRunCode,
-                isDisabled: options.isRunDisabled,
-                children: codeContent
-            })
-        );
+        return React.createElement(CodeBlock, { 
+            language, 
+            isStreaming: false, 
+            onRunCode: options.onRunCode,
+            isDisabled: options.isRunDisabled,
+            children: codeContent
+        });
     },
     pre: ({ children }: any) => React.createElement('div', { className: "not-prose my-4" }, children),
 
@@ -142,11 +136,7 @@ export const WorkflowMarkdownComponents = {
         let content = String(children ?? '').replace(/\n$/, '');
         if (Array.isArray(children)) content = children.join('');
         
-        return React.createElement(
-            Suspense,
-            { fallback: React.createElement('div', { className: "p-2 animate-pulse bg-gray-100 dark:bg-white/5 rounded my-2 h-16" }) },
-            React.createElement(CodeBlock, { language: match ? match[1] : '', isStreaming: false, children: content })
-        );
+        return React.createElement(CodeBlock, { language: match ? match[1] : '', isStreaming: false, children: content });
     },
     pre: ({ children }: any) => React.createElement('div', { className: "not-prose my-2" }, children),
 };

@@ -3,30 +3,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, memo, Suspense } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import type { Message, Source } from '../../../types';
 import { MarkdownComponents } from '../../Markdown/markdownComponents';
 import { ErrorDisplay } from '../../UI/ErrorDisplay';
+import { ImageDisplay } from '../../AI/ImageDisplay';
+import { VideoDisplay } from '../../AI/VideoDisplay';
 import { ManualCodeRenderer } from '../../Markdown/ManualCodeRenderer';
 import { TypingIndicator } from '../TypingIndicator';
+import { McqComponent } from '../../AI/McqComponent';
+import { MapDisplay } from '../../AI/MapDisplay';
+import { FileAttachment } from '../../AI/FileAttachment';
 import { SuggestedActions } from '../SuggestedActions';
+import { ExecutionApproval } from '../../AI/ExecutionApproval';
 import type { MessageFormHandle } from '../MessageForm/index';
 import { useAiMessageLogic } from './useAiMessageLogic';
 import { MessageToolbar } from './MessageToolbar';
+import { ThinkingWorkflow } from '../../AI/ThinkingWorkflow';
+import { FormattedBlock } from '../../Markdown/FormattedBlock';
+import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 
-// Lazy load heavy components
-const ThinkingWorkflow = React.lazy(() => import('../../AI/ThinkingWorkflow').then(m => ({ default: m.ThinkingWorkflow })));
-const FormattedBlock = React.lazy(() => import('../../Markdown/FormattedBlock').then(m => ({ default: m.FormattedBlock })));
-const ExecutionApproval = React.lazy(() => import('../../AI/ExecutionApproval').then(m => ({ default: m.ExecutionApproval })));
-const ImageDisplay = React.lazy(() => import('../../AI/ImageDisplay').then(m => ({ default: m.ImageDisplay })));
-const VideoDisplay = React.lazy(() => import('../../AI/VideoDisplay').then(m => ({ default: m.VideoDisplay })));
-const McqComponent = React.lazy(() => import('../../AI/McqComponent').then(m => ({ default: m.McqComponent })));
-const MapDisplay = React.lazy(() => import('../../AI/MapDisplay').then(m => ({ default: m.MapDisplay })));
-const FileAttachment = React.lazy(() => import('../../AI/FileAttachment').then(m => ({ default: m.FileAttachment })));
-const BrowserSessionDisplay = React.lazy(() => import('../../AI/BrowserSessionDisplay').then(m => ({ default: m.BrowserSessionDisplay })));
-
+// Optimized spring physics for performance
 const animationProps = {
   initial: { opacity: 0, y: 15, scale: 0.98 },
   animate: { opacity: 1, y: 0, scale: 1 },
@@ -49,12 +48,6 @@ type AiMessageProps = {
     isAgentMode: boolean;
 };
 
-const ComponentLoader = () => (
-    <div className="w-full h-24 bg-layer-2 rounded-xl animate-pulse flex items-center justify-center text-sm text-content-tertiary">
-        Loading content...
-    </div>
-);
-
 const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, isAutoPlayEnabled, currentChatId, 
           onShowSources, approveExecution, denyExecution, messageFormRef, onRegenerate,
@@ -65,6 +58,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { activeResponse, finalAnswerText, thinkingIsComplete, isStreamingFinalAnswer, agentPlan, executionLog, parsedFinalAnswer } = logic;
   const [isWorkflowCollapsed, setIsWorkflowCollapsed] = useState(false);
 
+  // Auto-collapse workflow when thinking is complete if there is a final answer
   useEffect(() => {
       if (thinkingIsComplete && finalAnswerText) {
           setIsWorkflowCollapsed(true);
@@ -73,6 +67,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       }
   }, [thinkingIsComplete, !!finalAnswerText]);
 
+  // Handler for editing images, used by ImageDisplay components
   const handleEditImage = (blob: Blob, editKey: string) => {
       const file = new File([blob], "image-to-edit.png", { type: blob.type });
       (file as any)._editKey = editKey;
@@ -82,46 +77,42 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   if (logic.isInitialWait) return <TypingIndicator />;
 
   if (logic.showApprovalUI && activeResponse?.plan) {
-    return (
-        <Suspense fallback={<ComponentLoader />}>
-            <ExecutionApproval plan={activeResponse.plan} onApprove={approveExecution} onDeny={denyExecution} />
-        </Suspense>
-    );
+    return <ExecutionApproval plan={activeResponse.plan} onApprove={approveExecution} onDeny={denyExecution} />;
   }
 
   return (
     <motion.div 
         {...animationProps} 
-        className="w-full flex flex-col items-start gap-4"
+        className="w-full flex flex-col items-start gap-4 origin-bottom-left"
         style={{ willChange: 'transform, opacity' }}
     >
       {/* Inline Thought Process Display */}
       {logic.hasThinkingProcess && (
-        <div className="w-full max-w-3xl rounded-xl overflow-hidden bg-layer-2/50 border border-border-default">
+        <div className="w-full border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden bg-gray-50/50 dark:bg-black/20">
             <button
                 onClick={() => setIsWorkflowCollapsed(!isWorkflowCollapsed)}
-                className="w-full flex items-center justify-between gap-2 px-4 py-3 hover:bg-layer-2 transition-colors text-left group"
+                className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-gray-100/50 dark:bg-white/5 hover:bg-gray-200/50 dark:hover:bg-white/10 transition-colors text-left"
             >
                 <div className="flex items-center gap-3">
                     {logic.thinkingIsComplete ? (
-                        <div className="w-5 h-5 rounded-full bg-status-success-bg flex items-center justify-center text-status-success-text">
+                        <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
                         </div>
                     ) : (
                         <div className="relative w-5 h-5 flex items-center justify-center">
-                            <div className="w-2.5 h-2.5 bg-primary-main rounded-full animate-pulse" />
-                            <div className="absolute inset-0 w-full h-full bg-primary-main/20 rounded-full animate-ping" />
+                            <div className="w-2.5 h-2.5 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-pulse" />
+                            <div className="absolute inset-0 w-full h-full bg-indigo-400/30 dark:bg-indigo-500/20 rounded-full animate-ping" />
                         </div>
                     )}
-                    <span className="font-semibold text-content-secondary group-hover:text-content-primary text-sm transition-colors">
-                        {logic.thinkingIsComplete ? `Reasoning complete (${logic.displayDuration}s)` : `Working... (${logic.displayDuration}s)`}
+                    <span className="font-semibold text-slate-700 dark:text-slate-200 text-sm">
+                        {logic.thinkingIsComplete ? `Finished in ${logic.displayDuration}s` : `Working... (${logic.displayDuration}s)`}
                     </span>
                 </div>
                 <svg 
                     xmlns="http://www.w3.org/2000/svg" 
                     viewBox="0 0 20 20" 
                     fill="currentColor" 
-                    className={`w-5 h-5 text-content-tertiary transition-transform duration-200 ${isWorkflowCollapsed ? '' : 'rotate-180'}`}
+                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isWorkflowCollapsed ? '' : 'rotate-180'}`}
                 >
                     <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
                 </svg>
@@ -135,26 +126,22 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
                     >
-                        <div className="p-4 border-t border-border-default space-y-6">
+                        <div className="p-4 border-t border-gray-200 dark:border-white/5 space-y-6">
                             {agentPlan && (
                                 <div>
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-content-tertiary mb-3 ml-1">Mission Plan</h4>
-                                    <Suspense fallback={<div className="h-20 animate-pulse bg-layer-2 rounded-lg" />}>
-                                        <FormattedBlock content={agentPlan} isStreaming={msg.isThinking && executionLog.length === 0} />
-                                    </Suspense>
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 ml-1">Mission Plan</h4>
+                                    <FormattedBlock content={agentPlan} isStreaming={msg.isThinking && executionLog.length === 0} />
                                 </div>
                             )}
                             {executionLog.length > 0 && (
                                 <div>
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-content-tertiary mb-3 ml-1">Execution Log</h4>
-                                    <Suspense fallback={<div className="h-40 animate-pulse bg-layer-2 rounded-lg" />}>
-                                        <ThinkingWorkflow
-                                            nodes={executionLog}
-                                            sendMessage={sendMessage}
-                                            onRegenerate={() => onRegenerate(id)}
-                                            messageId={id}
-                                        />
-                                    </Suspense>
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 ml-1">Execution Log</h4>
+                                    <ThinkingWorkflow
+                                        nodes={executionLog}
+                                        sendMessage={sendMessage}
+                                        onRegenerate={() => onRegenerate(id)}
+                                        messageId={id}
+                                    />
                                 </div>
                             )}
                         </div>
@@ -169,7 +156,8 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
           
-          <div className="markdown-content max-w-none w-full text-[15px] leading-relaxed">
+          <div className="markdown-content max-w-none w-full">
+            {/* Streaming Answer: Now using ManualCodeRenderer for proper styling during generation */}
             {isStreamingFinalAnswer && (
                <ManualCodeRenderer 
                   text={finalAnswerText} 
@@ -180,43 +168,37 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                />
             )}
             
+            {/* Complete Answer: Renders static parsed segments */}
             {thinkingIsComplete && logic.hasFinalAnswer && !activeResponse.error && (
                 parsedFinalAnswer.map((segment, index) => {
                     const key = `${id}-${index}`;
                     if (segment.type === 'component') {
                         const { componentType, data } = segment;
-                        return (
-                            <React.Fragment key={key}>
-                                <Suspense fallback={<ComponentLoader />}>
-                                    {(() => {
-                                        switch (componentType) {
-                                            case 'VIDEO':
-                                                return <VideoDisplay {...data} />;
-                                            case 'ONLINE_VIDEO':
-                                                return <VideoDisplay srcUrl={data.url} prompt={data.title} />;
-                                            case 'IMAGE':
-                                            case 'ONLINE_IMAGE':
-                                                return <ImageDisplay onEdit={handleEditImage} {...data} />;
-                                            case 'MCQ':
-                                                return <McqComponent {...data} />;
-                                            case 'MAP':
-                                                return (
-                                                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                                                        <MapDisplay {...data} />
-                                                    </motion.div>
-                                                );
-                                            case 'FILE':
-                                                return <FileAttachment {...data} />;
-                                            case 'BROWSER':
-                                                return <BrowserSessionDisplay {...data} />;
-                                            default:
-                                                return <ErrorDisplay error={{ message: `Unknown component type: ${componentType}`, details: JSON.stringify(data) }} />;
-                                        }
-                                    })()}
-                                </Suspense>
-                            </React.Fragment>
-                        );
+                        switch (componentType) {
+                            case 'VIDEO':
+                                return <VideoDisplay key={key} {...data} />;
+                            case 'ONLINE_VIDEO':
+                                return <VideoDisplay key={key} srcUrl={data.url} prompt={data.title} />;
+                            case 'IMAGE':
+                            case 'ONLINE_IMAGE':
+                                return <ImageDisplay key={key} onEdit={handleEditImage} {...data} />;
+                            case 'MCQ':
+                                return <McqComponent key={key} {...data} />;
+                            case 'MAP':
+                                return (
+                                    <motion.div key={key} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                                        <MapDisplay {...data} />
+                                    </motion.div>
+                                );
+                            case 'FILE':
+                                return <FileAttachment key={key} {...data} />;
+                            case 'BROWSER':
+                                return <BrowserSessionDisplay key={key} {...data} />;
+                            default:
+                                return <ErrorDisplay key={key} error={{ message: `Unknown component type: ${componentType}`, details: JSON.stringify(data) }} />;
+                        }
                     } else {
+                        // Text segment
                         return (
                             <ManualCodeRenderer 
                                 key={key} 

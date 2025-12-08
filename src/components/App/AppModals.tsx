@@ -1,19 +1,18 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Suspense } from 'react';
+import React from 'react';
+import { SettingsModal } from '../Settings/SettingsModal';
+import { MemoryModal } from '../Settings/MemoryModal';
+import { MemoryConfirmationModal } from '../Settings/MemoryConfirmationModal';
 import type { Model } from '../../services/modelService';
+import { ImportChatModal } from '../Settings/ImportChatModal';
+import { ConfirmationModal } from '../UI/ConfirmationModal';
 import type { MemoryFile } from '../../hooks/useMemory';
 import type { Theme } from '../../hooks/useTheme';
-
-// Lazy import for heavy modals to optimize initial load
-const SettingsModal = React.lazy(() => import('../Settings/SettingsModal').then(module => ({ default: module.SettingsModal })));
-const MemoryModal = React.lazy(() => import('../Settings/MemoryModal').then(module => ({ default: module.MemoryModal })));
-const MemoryConfirmationModal = React.lazy(() => import('../Settings/MemoryConfirmationModal').then(module => ({ default: module.MemoryConfirmationModal })));
-const ImportChatModal = React.lazy(() => import('../Settings/ImportChatModal').then(module => ({ default: module.ImportChatModal })));
-const ConfirmationModal = React.lazy(() => import('../UI/ConfirmationModal').then(module => ({ default: module.ConfirmationModal })));
 
 type AppModalsProps = {
   isSettingsOpen: boolean;
@@ -95,84 +94,70 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
   } = props;
 
   return (
-    <Suspense fallback={null}>
-      {isSettingsOpen && (
-        <SettingsModal
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          models={availableModels}
-          imageModels={availableImageModels}
-          videoModels={availableVideoModels}
-          selectedModel={activeModel}
-          onModelChange={onModelChange}
-          disabled={modelsLoading}
-          onClearAllChats={clearAllChats}
-          onRunTests={onRunTests}
-          onDownloadLogs={onDownloadLogs}
-          onShowDataStructure={onShowDataStructure}
-          apiKey={apiKey}
-          onSaveApiKey={onSaveApiKey}
-          aboutUser={aboutUser}
-          setAboutUser={setAboutUser}
-          aboutResponse={aboutResponse}
-          setAboutResponse={setAboutResponse}
-          temperature={temperature}
-          setTemperature={setTemperature}
-          maxTokens={maxTokens}
-          setMaxTokens={setMaxTokens}
-          imageModel={imageModel}
-          onImageModelChange={onImageModelChange}
-          videoModel={videoModel}
-          onVideoModelChange={onVideoModelChange}
-          defaultTemperature={defaultTemperature}
-          defaultMaxTokens={defaultMaxTokens}
-          isMemoryEnabled={isMemoryEnabled}
-          setIsMemoryEnabled={setIsMemoryEnabled}
-          onManageMemory={onManageMemory}
-          ttsVoice={ttsVoice}
-          setTtsVoice={setTtsVoice}
-          isAutoPlayEnabled={isAutoPlayEnabled}
-          setIsAutoPlayEnabled={setIsAutoPlayEnabled}
-          theme={theme}
-          setTheme={setTheme}
-        />
-      )}
-      
-      {isMemoryModalOpen && (
-        <MemoryModal
-          isOpen={isMemoryModalOpen}
-          onClose={() => setIsMemoryModalOpen(false)}
-          memoryFiles={memoryFiles}
-          onUpdateMemoryFiles={updateMemoryFiles}
-        />
-      )}
-
-      {isConfirmationOpen && (
-        <MemoryConfirmationModal
-          isOpen={isConfirmationOpen}
-          suggestions={memorySuggestions}
-          onConfirm={confirmMemoryUpdate}
-          onCancel={cancelMemoryUpdate}
-        />
-      )}
-
-      {isImportModalOpen && (
-        <ImportChatModal
-          isOpen={isImportModalOpen}
-          onClose={() => setIsImportModalOpen(false)}
-          onFileUpload={handleFileUploadForImport}
-        />
-      )}
-
-      {!!confirmation && (
-        <ConfirmationModal
-          isOpen={!!confirmation}
-          prompt={confirmation?.prompt || ''}
-          onConfirm={onConfirm}
-          onCancel={onCancel}
-          destructive={confirmation?.destructive}
-        />
-      )}
-    </Suspense>
+    <>
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        models={availableModels}
+        imageModels={availableImageModels}
+        videoModels={availableVideoModels}
+        selectedModel={activeModel}
+        onModelChange={onModelChange}
+        disabled={modelsLoading}
+        onClearAllChats={clearAllChats}
+        onRunTests={onRunTests}
+        onDownloadLogs={onDownloadLogs}
+        onShowDataStructure={onShowDataStructure}
+        apiKey={apiKey}
+        onSaveApiKey={onSaveApiKey}
+        aboutUser={aboutUser}
+        setAboutUser={setAboutUser}
+        aboutResponse={aboutResponse}
+        setAboutResponse={setAboutResponse}
+        temperature={temperature}
+        setTemperature={setTemperature}
+        maxTokens={maxTokens}
+        setMaxTokens={setMaxTokens}
+        imageModel={imageModel}
+        onImageModelChange={onImageModelChange}
+        videoModel={videoModel}
+        onVideoModelChange={onVideoModelChange}
+        defaultTemperature={defaultTemperature}
+        defaultMaxTokens={defaultMaxTokens}
+        isMemoryEnabled={isMemoryEnabled}
+        setIsMemoryEnabled={setIsMemoryEnabled}
+        onManageMemory={onManageMemory}
+        ttsVoice={ttsVoice}
+        setTtsVoice={setTtsVoice}
+        isAutoPlayEnabled={isAutoPlayEnabled}
+        setIsAutoPlayEnabled={setIsAutoPlayEnabled}
+        theme={theme}
+        setTheme={setTheme}
+      />
+      <MemoryModal
+        isOpen={isMemoryModalOpen}
+        onClose={() => setIsMemoryModalOpen(false)}
+        memoryFiles={memoryFiles}
+        onUpdateMemoryFiles={updateMemoryFiles}
+      />
+      <MemoryConfirmationModal
+        isOpen={isConfirmationOpen}
+        suggestions={memorySuggestions}
+        onConfirm={confirmMemoryUpdate}
+        onCancel={cancelMemoryUpdate}
+      />
+      <ImportChatModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onFileUpload={handleFileUploadForImport}
+      />
+      <ConfirmationModal
+        isOpen={!!confirmation}
+        prompt={confirmation?.prompt || ''}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+        destructive={confirmation?.destructive}
+      />
+    </>
   );
 };

@@ -1,9 +1,10 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, useCallback, useMemo, memo } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
 import type { Message, Source } from '../../types';
 import { MessageComponent } from './Message';
 import { WelcomeScreen } from './WelcomeScreen/index';
@@ -32,7 +33,7 @@ type MessageListProps = {
   isAgentMode: boolean;
 };
 
-const MessageListRaw = forwardRef<MessageListHandle, MessageListProps>(({ 
+export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
     messages, sendMessage, isLoading, ttsVoice, isAutoPlayEnabled, currentChatId, 
     onShowSources, approveExecution, 
     denyExecution, messageFormRef, onRegenerate, onSetActiveResponseIndex,
@@ -44,7 +45,6 @@ const MessageListRaw = forwardRef<MessageListHandle, MessageListProps>(({
   // We use a ref for this state to access it immediately inside event handlers/observers without stale closures
   const userHasScrolledUpRef = useRef(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const rafIdRef = useRef<number | null>(null);
   
   // Threshold (px) to consider the user "at the bottom"
   const BOTTOM_THRESHOLD = 100;
@@ -78,42 +78,29 @@ const MessageListRaw = forwardRef<MessageListHandle, MessageListProps>(({
     }
   }));
 
-  // PERFORMANCE: Optimized scroll handler using requestAnimationFrame
+  // Handle scroll events to detect if user is moving away from bottom
   const handleScroll = useCallback(() => {
     if (!scrollContainerRef.current) return;
     
-    if (rafIdRef.current) {
-        cancelAnimationFrame(rafIdRef.current);
-    }
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    
+    const isAtBottom = distanceFromBottom < BOTTOM_THRESHOLD;
 
-    rafIdRef.current = requestAnimationFrame(() => {
-        if (!scrollContainerRef.current) return;
-        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-        const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-        
-        const isAtBottom = distanceFromBottom < BOTTOM_THRESHOLD;
-
-        if (isAtBottom) {
-            if (userHasScrolledUpRef.current) {
-                userHasScrolledUpRef.current = false;
-                setShowScrollButton(false);
-            }
-        } else {
-            if (!userHasScrolledUpRef.current) {
-                // Only show button if there's actually somewhere to scroll to
-                if (scrollHeight > clientHeight) {
-                    setShowScrollButton(true);
-                }
+    if (isAtBottom) {
+        if (userHasScrolledUpRef.current) {
+            userHasScrolledUpRef.current = false;
+            setShowScrollButton(false);
+        }
+    } else {
+        if (!userHasScrolledUpRef.current) {
+            userHasScrolledUpRef.current = true;
+            // Only show button if there's actually somewhere to scroll to
+            if (scrollHeight > clientHeight) {
+                setShowScrollButton(true);
             }
         }
-    });
-  }, []);
-
-  // Cleanup RAF on unmount
-  useEffect(() => {
-      return () => {
-          if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-      };
+    }
   }, []);
 
   // ResizeObserver handles streaming content pushing the scroll down
@@ -151,8 +138,7 @@ const MessageListRaw = forwardRef<MessageListHandle, MessageListProps>(({
       scrollToBottom('auto');
   }, []); 
 
-  // Memoize visible messages to avoid recalculating on every render if messages haven't changed
-  const visibleMessages = useMemo(() => messages.filter(msg => !msg.isHidden), [messages]);
+  const visibleMessages = messages.filter(msg => !msg.isHidden);
 
   return (
     <div 
@@ -187,7 +173,7 @@ const MessageListRaw = forwardRef<MessageListHandle, MessageListProps>(({
               />
             ))}
             {/* Padding element to ensure the last message isn't hidden behind the input area or scroll button */}
-            <div className="h-32" />
+            <div className="h-4" />
           </div>
         )}
       </div>
@@ -224,5 +210,3 @@ const MessageListRaw = forwardRef<MessageListHandle, MessageListProps>(({
     </div>
   );
 });
-
-export const MessageList = memo(MessageListRaw);

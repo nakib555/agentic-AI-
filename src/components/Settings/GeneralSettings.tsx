@@ -1,10 +1,9 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, memo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SettingItem } from './SettingItem';
 import { ThemeToggle } from '../Sidebar/ThemeToggle';
 import type { Theme } from '../../hooks/useTheme';
@@ -20,7 +19,7 @@ type GeneralSettingsProps = {
   setTheme: (theme: Theme) => void;
 };
 
-const GeneralSettingsRaw: React.FC<GeneralSettingsProps> = ({ 
+export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ 
     onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, apiKey, onSaveApiKey,
     theme, setTheme
 }) => {
@@ -28,20 +27,10 @@ const GeneralSettingsRaw: React.FC<GeneralSettingsProps> = ({
   const [showApiKey, setShowApiKey] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
-  
-  // Ref for cleanup of timers
-  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     setLocalApiKey(apiKey);
   }, [apiKey]);
-
-  // Cleanup timers on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -54,9 +43,7 @@ const GeneralSettingsRaw: React.FC<GeneralSettingsProps> = ({
     try {
         await onSaveApiKey(localApiKey);
         setSaveStatus('saved');
-        
-        if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = window.setTimeout(() => setSaveStatus('idle'), 2000);
+        setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (error: any) {
         setSaveStatus('error');
         setSaveError(error.message || 'Failed to verify API Key.');
@@ -89,7 +76,7 @@ const GeneralSettingsRaw: React.FC<GeneralSettingsProps> = ({
                 value={localApiKey}
                 onChange={e => setLocalApiKey(e.target.value)}
                 placeholder="Enter your Gemini API key"
-                className="w-full pl-3 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-black/20 text-base md:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+                className="w-full pl-3 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-black/20 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400"
                 style={{ borderRadius: '0.5rem' }}
                 />
                 <button
@@ -191,5 +178,3 @@ const GeneralSettingsRaw: React.FC<GeneralSettingsProps> = ({
     </div>
   );
 };
-
-export const GeneralSettings = memo(GeneralSettingsRaw);

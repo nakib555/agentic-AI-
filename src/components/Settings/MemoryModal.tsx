@@ -3,9 +3,9 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useState, useEffect, useMemo, useRef, memo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
-import { FixedSizeList as List, areEqual } from 'react-window';
+import JSZip from 'jszip';
 import type { MemoryFile } from '../../hooks/useMemory';
 
 const motion = motionTyped as any;
@@ -61,55 +61,12 @@ const FileEditor: React.FC<{
                     value={content}
                     onChange={e => setContent(e.target.value)}
                     placeholder="Enter content..."
-                    className="flex-1 w-full p-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-mono text-base md:text-sm custom-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600 leading-relaxed"
+                    className="flex-1 w-full p-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-mono text-sm custom-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600 leading-relaxed"
                 />
             </div>
         </div>
     );
 }
-
-// Optimized Virtual Row
-const FileRow = memo(({ index, style, data }: { index: number; style: React.CSSProperties; data: { files: MemoryFile[], onEdit: (f: MemoryFile) => void, onDelete: (id: string) => void } }) => {
-    const file = data.files[index];
-    
-    // Pass styles but add internal padding
-    return (
-        <div style={{...style, padding: '6px' }}>
-            <div 
-                onClick={() => data.onEdit(file)}
-                className="group cursor-pointer relative flex items-start gap-4 p-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-200 h-full"
-            >
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/30">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z" clipRule="evenodd" /></svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-slate-800 dark:text-slate-100 truncate">{file.title}</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">{file.content}</p>
-                    <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h2.25a.75.75 0 0 0 0-1.5h-1.5V5Z" clipRule="evenodd" /></svg>
-                        {new Date(file.lastUpdated).toLocaleDateString()} {new Date(file.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); data.onEdit(file); }}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
-                        title="Edit / Rename"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M5.433 13.917l1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" /><path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" /></svg>
-                    </button>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); data.onDelete(file.id); }}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-                        title="Delete File"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" /></svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}, areEqual);
 
 export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memoryFiles, onUpdateMemoryFiles }) => {
   const [localFiles, setLocalFiles] = useState<MemoryFile[]>(memoryFiles);
@@ -120,11 +77,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
   const [editingFile, setEditingFile] = useState<MemoryFile | null | 'new'>(null);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
-  const listContainerRef = useRef<HTMLDivElement>(null);
   
-  // Cleanup refs for timers
-  const exportTimeoutRef = useRef<number | null>(null);
-
   // Initialize state when modal opens
   useEffect(() => {
       if (isOpen) {
@@ -148,13 +101,6 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
       }
       return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isExportMenuOpen]);
-
-  // Cleanup export timers on unmount
-  useEffect(() => {
-      return () => {
-          if (exportTimeoutRef.current) clearTimeout(exportTimeoutRef.current);
-      };
-  }, []);
 
   const filteredFiles = useMemo(() => {
       if (!searchQuery) return localFiles;
@@ -213,10 +159,8 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
       setIsExporting(true);
       setIsExportMenuOpen(false);
       
-      if (exportTimeoutRef.current) clearTimeout(exportTimeoutRef.current);
-      
       // Use timeout to allow UI update (closing menu/showing spinner)
-      exportTimeoutRef.current = window.setTimeout(() => {
+      setTimeout(() => {
           try {
             const exportData = { files: localFiles };
             const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -237,17 +181,14 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
       setIsExportMenuOpen(false);
       setIsExporting(true);
       
-      if (exportTimeoutRef.current) clearTimeout(exportTimeoutRef.current);
-
       // Yield to the event loop to allow the UI update to render
-      exportTimeoutRef.current = window.setTimeout(async () => {
+      setTimeout(async () => {
           try {
             if (localFiles.length === 1) {
                 const file = localFiles[0];
                 const blob = new Blob([file.content], { type: 'text/plain;charset=utf-8' });
                 downloadBlob(blob, `${sanitizeFilename(file.title)}.txt`);
             } else {
-                const JSZip = (await import('jszip')).default; // Lazy load JSZip
                 const zip = new JSZip();
                 // Add files synchronously but efficiently
                 localFiles.forEach(file => {
@@ -269,34 +210,6 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
           }
       }, 100); // Slightly longer delay to ensure spinner renders
   };
-
-  // Prepare data for virtual list
-  const itemData = useMemo(() => ({
-      files: filteredFiles,
-      onEdit: setEditingFile,
-      onDelete: handleFileDelete
-  }), [filteredFiles]);
-
-  // We use a custom hook to get container size for the virtual list
-  const useContainerSize = (ref: React.RefObject<HTMLDivElement>) => {
-    const [size, setSize] = useState({ width: 0, height: 0 });
-    useEffect(() => {
-        if (!ref.current) return;
-        const resizeObserver = new ResizeObserver(entries => {
-            for (let entry of entries) {
-                setSize({
-                    width: entry.contentRect.width,
-                    height: entry.contentRect.height
-                });
-            }
-        });
-        resizeObserver.observe(ref.current);
-        return () => resizeObserver.disconnect();
-    }, [ref]);
-    return size;
-  };
-
-  const { width: listWidth, height: listHeight } = useContainerSize(listContainerRef);
 
   return (
     <AnimatePresence>
@@ -325,7 +238,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
             <>
                 {/* Header */}
                 <div className="flex flex-col border-b border-slate-200 dark:border-white/5 bg-white dark:bg-[#1e1e1e] z-10">
-                    <div className="flex items-center justify-between px-4 py-4 md:px-6 md:py-5">
+                    <div className="flex items-center justify-between px-6 py-5">
                         <div className="flex-1">
                             <h2 className="text-xl font-bold text-slate-800 dark:text-white">Manage Memory</h2>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
@@ -348,14 +261,14 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                 <div className="flex-1 overflow-hidden relative flex flex-col">
                         <>
                              {/* Toolbar: Search + New File */}
-                             <div className="px-4 py-3 md:px-6 md:py-4 bg-slate-50/80 dark:bg-[#1a1a1a]/90 backdrop-blur-sm border-b border-slate-200 dark:border-white/5 z-10 flex items-center gap-4">
+                             <div className="px-6 py-4 bg-slate-50/80 dark:bg-[#1a1a1a]/90 backdrop-blur-sm border-b border-slate-200 dark:border-white/5 z-10 flex items-center gap-4">
                                 <div className="flex-1 relative group">
                                     <input
                                         type="text"
                                         placeholder="Search files..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-base md:text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all shadow-sm"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all shadow-sm"
                                     />
                                     <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                         <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0 -11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
@@ -370,28 +283,58 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                                 </button>
                             </div>
 
-                            {/* File List - Virtualized */}
-                            <div className="flex-1 p-4 md:p-6 bg-slate-50/50 dark:bg-transparent" ref={listContainerRef}>
-                                {filteredFiles.length > 0 ? (
-                                    <List
-                                        height={listHeight}
-                                        itemCount={filteredFiles.length}
-                                        itemSize={130} // Height of each card + padding
-                                        width={listWidth}
-                                        itemData={itemData}
-                                        className="custom-scrollbar"
-                                    >
-                                        {FileRow}
-                                    </List>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center h-full text-center opacity-50">
-                                        <div className="w-16 h-16 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-8 h-8 text-slate-400"><path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z" clipRule="evenodd" /></svg>
+                            {/* File List */}
+                            <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar bg-slate-50/50 dark:bg-transparent">
+                                <AnimatePresence initial={false}>
+                                    {filteredFiles.map(file => (
+                                        <motion.div 
+                                            key={file.id}
+                                            layout
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            onClick={() => setEditingFile(file)}
+                                            className="group cursor-pointer relative flex items-start gap-4 p-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-200"
+                                        >
+                                            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/30">
+                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z" clipRule="evenodd" /></svg>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-slate-800 dark:text-slate-100 truncate">{file.title}</h4>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">{file.content}</p>
+                                                <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h2.25a.75.75 0 0 0 0-1.5h-1.5V5Z" clipRule="evenodd" /></svg>
+                                                    {new Date(file.lastUpdated).toLocaleDateString()} {new Date(file.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setEditingFile(file); }}
+                                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
+                                                    title="Edit / Rename"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M5.433 13.917l1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" /><path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" /></svg>
+                                                </button>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); handleFileDelete(file.id); }}
+                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                                                    title="Delete File"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" /></svg>
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                    {filteredFiles.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center h-full text-center opacity-50 py-12">
+                                            <div className="w-16 h-16 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-8 h-8 text-slate-400"><path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z" clipRule="evenodd" /></svg>
+                                            </div>
+                                            <p className="text-slate-600 dark:text-slate-400 font-medium">No files found.</p>
+                                            <p className="text-slate-500 dark:text-slate-500 text-sm mt-1">Create a new file to get started.</p>
                                         </div>
-                                        <p className="text-slate-600 dark:text-slate-400 font-medium">No files found.</p>
-                                        <p className="text-slate-500 dark:text-slate-500 text-sm mt-1">Create a new file to get started.</p>
-                                    </div>
-                                )}
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </>
                 </div>

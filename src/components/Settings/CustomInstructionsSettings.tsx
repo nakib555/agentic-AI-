@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { memo } from 'react';
+import React from 'react';
 
 type CustomInstructionsSettingsProps = {
   aboutUser: string;
@@ -33,7 +33,7 @@ const InstructionField: React.FC<{
                 onChange={e => onChange(e.target.value)}
                 disabled={disabled}
                 placeholder={placeholder}
-                className="w-full min-h-[140px] p-4 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-black/20 text-base md:text-sm text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 resize-y leading-relaxed"
+                className="w-full min-h-[140px] p-4 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-black/20 text-sm text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 resize-y leading-relaxed"
                 aria-disabled={disabled}
             />
             <div className="absolute bottom-3 right-3 pointer-events-none">
@@ -44,7 +44,7 @@ const InstructionField: React.FC<{
 );
 
 
-const CustomInstructionsSettingsRaw: React.FC<CustomInstructionsSettingsProps> = ({
+export const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProps> = ({
     aboutUser,
     setAboutUser,
     aboutResponse,
@@ -82,5 +82,3 @@ const CustomInstructionsSettingsRaw: React.FC<CustomInstructionsSettingsProps> =
         </div>
     );
 };
-
-export const CustomInstructionsSettings = memo(CustomInstructionsSettingsRaw);

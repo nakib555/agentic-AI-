@@ -4,35 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, Suspense } from 'react';
+import React, { useState } from 'react';
 import { motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
 import type { ToolCallEvent } from '../../types';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
 import { LocationPermissionRequest } from './LocationPermissionRequest';
+import { MapDisplay } from './MapDisplay';
+import { ImageDisplay } from './ImageDisplay';
+import { VideoDisplay } from './VideoDisplay';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
-
-// Lazy load heavy components for tool results to save memory
-const MapDisplay = React.lazy(() => import('./MapDisplay').then(m => ({ default: m.MapDisplay })));
-const ImageDisplay = React.lazy(() => import('./ImageDisplay').then(m => ({ default: m.ImageDisplay })));
-const VideoDisplay = React.lazy(() => import('./VideoDisplay').then(m => ({ default: m.VideoDisplay })));
-const CodeExecutionResult = React.lazy(() => import('./CodeExecutionResult').then(m => ({ default: m.CodeExecutionResult })));
-const VeoApiKeyRequest = React.lazy(() => import('./VeoApiKeyRequest').then(m => ({ default: m.VeoApiKeyRequest })));
-const BrowserSessionDisplay = React.lazy(() => import('./BrowserSessionDisplay').then(m => ({ default: m.BrowserSessionDisplay })));
-const CodeBlock = React.lazy(() => import('../Markdown/CodeBlock').then(m => ({ default: m.CodeBlock })));
+import { CodeExecutionResult } from './CodeExecutionResult';
+import { CodeBlock } from '../Markdown/CodeBlock';
+import { VeoApiKeyRequest } from './VeoApiKeyRequest';
+import { BrowserSessionDisplay } from './BrowserSessionDisplay';
 
 const LoadingDots = () => (
     <div className="flex gap-1 items-center">
         <motion.div className="w-1.5 h-1.5 bg-gray-500 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0 }} />
         <motion.div className="w-1.5 h-1.5 bg-gray-500 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }} />
         <motion.div className="w-1.5 h-1.5 bg-gray-500 dark:bg-slate-500 rounded-full" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }} />
-    </div>
-);
-
-const ComponentSkeleton = () => (
-    <div className="w-full h-32 bg-gray-100 dark:bg-white/5 animate-pulse rounded-lg flex items-center justify-center text-xs text-gray-400">
-        Loading component...
     </div>
 );
 
@@ -52,11 +44,7 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
     if (imageMatch && imageMatch[1]) {
         try {
             const imageData = JSON.parse(imageMatch[1]);
-            return (
-                <Suspense fallback={<ComponentSkeleton />}>
-                    <ImageDisplay {...imageData} />
-                </Suspense>
-            );
+            return <ImageDisplay {...imageData} />;
         } catch (e) {
             return <ErrorDisplay error={{ message: 'Failed to render image component.', details: `Invalid JSON: ${e}` }} />;
         }
@@ -70,9 +58,7 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
             const restOfContent = result.replace(browserMatch[0], '').trim();
             return (
                 <div className="w-full">
-                    <Suspense fallback={<ComponentSkeleton />}>
-                        <BrowserSessionDisplay {...browserData} />
-                    </Suspense>
+                    <BrowserSessionDisplay {...browserData} />
                     {restOfContent && (
                          <motion.div
                             className="overflow-hidden text-sm workflow-markdown mt-4 p-3 bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg"
@@ -101,11 +87,7 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
     if (videoMatch && videoMatch[1]) {
         try {
             const videoData = JSON.parse(videoMatch[1]);
-            return (
-                <Suspense fallback={<ComponentSkeleton />}>
-                    <VideoDisplay {...videoData} />
-                </Suspense>
-            );
+            return <VideoDisplay {...videoData} />;
         } catch (e) {
             return <ErrorDisplay error={{ message: 'Failed to render video component.', details: `Invalid JSON: ${e}` }} />;
         }
@@ -115,11 +97,7 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
     if (codeOutputMatch && codeOutputMatch[1]) {
         try {
             const codeOutputData = JSON.parse(codeOutputMatch[1]);
-            return (
-                <Suspense fallback={<ComponentSkeleton />}>
-                    <CodeExecutionResult {...codeOutputData} />
-                </Suspense>
-            );
+            return <CodeExecutionResult {...codeOutputData} />;
         } catch (e) {
             return <ErrorDisplay error={{ message: 'Failed to render code output component.', details: `Invalid JSON: ${e}` }} />;
         }
@@ -129,11 +107,7 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
     const veoKeyRequestMatch = result.match(/\[VEO_API_KEY_SELECTION_COMPONENT\](.*?)\[\/VEO_API_KEY_SELECTION_COMPONENT\]/s);
     if (veoKeyRequestMatch) {
         const text = veoKeyRequestMatch[1];
-        return (
-            <Suspense fallback={<ComponentSkeleton />}>
-                <VeoApiKeyRequest text={text} onRegenerate={onRegenerate} />
-            </Suspense>
-        );
+        return <VeoApiKeyRequest text={text} onRegenerate={onRegenerate} />;
     }
 
     // Check for the special location permission request tag
@@ -204,25 +178,19 @@ export const ToolCallStep = ({ event, sendMessage, onRegenerate, messageId }: To
     // Special rendering for the 'displayMap' tool call to embed the map directly.
     if (call.name === 'displayMap') {
         const { latitude, longitude, zoom, markerText } = args as { latitude: number, longitude: number, zoom?: number, markerText?: string };
-        return (
-            <Suspense fallback={<ComponentSkeleton />}>
-                <MapDisplay latitude={latitude} longitude={longitude} zoom={zoom ?? 13} markerText={markerText} />
-            </Suspense>
-        );
+        return <MapDisplay latitude={latitude} longitude={longitude} zoom={zoom ?? 13} markerText={markerText} />;
     }
     
     // Special rendering for live browser session
     if (call.name === 'browser' && browserSession) {
         return (
             <div className="w-full">
-               <Suspense fallback={<ComponentSkeleton />}>
-                   <BrowserSessionDisplay 
-                       url={browserSession.url}
-                       title={browserSession.title || 'Loading...'}
-                       screenshot={browserSession.screenshot || ''}
-                       logs={browserSession.logs}
-                   />
-               </Suspense>
+               <BrowserSessionDisplay 
+                   url={browserSession.url}
+                   title={browserSession.title || 'Loading...'}
+                   screenshot={browserSession.screenshot || ''}
+                   logs={browserSession.logs}
+               />
                {/* If completed and there is result text, show it too */}
                {result && !result.startsWith('[BROWSER_COMPONENT]') && (
                    <div className="mt-4">
@@ -238,9 +206,7 @@ export const ToolCallStep = ({ event, sendMessage, onRegenerate, messageId }: To
         const packages = (args.packages as string[] | undefined) || [];
         return (
             <div className="space-y-3 text-sm">
-                <Suspense fallback={<div className="h-24 bg-gray-100 dark:bg-white/5 animate-pulse rounded-lg" />}>
-                    <CodeBlock language={args.language as string || 'plaintext'} isStreaming={false}>{args.code as string}</CodeBlock>
-                </Suspense>
+                <CodeBlock language={args.language as string || 'plaintext'} isStreaming={false}>{args.code as string}</CodeBlock>
                 {packages.length > 0 && (
                      <div className="flex items-center gap-2 text-sm">
                         <span className="font-semibold text-gray-500 dark:text-slate-400">Dependencies:</span>

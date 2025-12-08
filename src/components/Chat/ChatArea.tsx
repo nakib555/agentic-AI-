@@ -1,18 +1,15 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useState, useCallback, memo, Suspense } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
-import type { MessageListHandle } from './MessageList';
+import { MessageList, type MessageListHandle } from './MessageList';
 import { MessageForm, type MessageFormHandle } from './MessageForm/index';
 import type { Message, Source } from '../../types';
-import { WelcomeScreen } from './WelcomeScreen/index';
-
-// Lazy Load heavy sub-components
-const MessageList = React.lazy(() => import('./MessageList').then(m => ({ default: m.MessageList })));
 
 type ChatAreaProps = {
   messages: Message[];
@@ -36,16 +33,7 @@ type ChatAreaProps = {
   hasApiKey: boolean;
 };
 
-const LoadingPlaceholder = () => (
-    <div className="flex-1 flex items-center justify-center p-8">
-        <div className="flex flex-col items-center gap-4">
-            <div className="w-8 h-8 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-            <p className="text-sm text-slate-400">Loading chat...</p>
-        </div>
-    </div>
-);
-
-const ChatAreaRaw = ({ 
+export const ChatArea = ({ 
     messages, isLoading, isAppLoading, sendMessage, onCancel, 
     ttsVoice, isAutoPlayEnabled, currentChatId,
     onShowSources, approveExecution, denyExecution,
@@ -102,7 +90,7 @@ const ChatAreaRaw = ({
 
   return (
     <div 
-      className="flex-1 flex flex-col min-h-0 relative memory-optimized-container"
+      className="flex-1 flex flex-col min-h-0 relative"
       onDragEnter={handleDragIn}
       onDragLeave={handleDragOut}
       onDragOver={handleDrag}
@@ -114,7 +102,7 @@ const ChatAreaRaw = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-400/10 border-2 border-dashed border-indigo-500 dark:border-indigo-400 rounded-2xl z-30 flex items-center justify-center m-4 backdrop-blur-sm"
+            className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-400/10 border-2 border-dashed border-indigo-500 dark:border-indigo-400 rounded-2xl z-30 flex items-center justify-center m-4"
           >
             <div className="text-center font-bold text-indigo-600 dark:text-indigo-300">
               <p className="text-lg">Drop files to attach</p>
@@ -122,29 +110,22 @@ const ChatAreaRaw = ({
           </motion.div>
         )}
       </AnimatePresence>
-      
-      {messages.length === 0 ? (
-         <WelcomeScreen sendMessage={sendMessage} />
-      ) : (
-        <Suspense fallback={<LoadingPlaceholder />}>
-           <MessageList
-              ref={messageListRef}
-              messages={messages} 
-              sendMessage={sendMessage} 
-              isLoading={isLoading} 
-              ttsVoice={ttsVoice} 
-              isAutoPlayEnabled={isAutoPlayEnabled}
-              currentChatId={currentChatId}
-              onShowSources={onShowSources}
-              approveExecution={approveExecution}
-              denyExecution={denyExecution}
-              messageFormRef={messageFormRef}
-              onRegenerate={onRegenerate}
-              onSetActiveResponseIndex={handleSetActiveResponseIndex}
-              isAgentMode={isAgentMode}
-          />
-        </Suspense>
-      )}
+      <MessageList
+          ref={messageListRef}
+          messages={messages} 
+          sendMessage={sendMessage} 
+          isLoading={isLoading} 
+          ttsVoice={ttsVoice} 
+          isAutoPlayEnabled={isAutoPlayEnabled}
+          currentChatId={currentChatId}
+          onShowSources={onShowSources}
+          approveExecution={approveExecution}
+          denyExecution={denyExecution}
+          messageFormRef={messageFormRef}
+          onRegenerate={onRegenerate}
+          onSetActiveResponseIndex={handleSetActiveResponseIndex}
+          isAgentMode={isAgentMode}
+      />
 
       <AnimatePresence>
         {backendStatus === 'offline' && (
@@ -167,8 +148,8 @@ const ChatAreaRaw = ({
         )}
       </AnimatePresence>
       
-      <div className="absolute bottom-0 left-0 right-0 px-4 pt-2 pb-4 sm:px-6 md:px-8 z-20 pointer-events-none">
-        <div className="relative w-full pointer-events-auto">
+      <div className="flex-shrink-0 px-4 pt-2 pb-6 sm:px-6 md:px-8 z-20">
+        <div className="relative w-full">
           <MessageForm 
             ref={messageFormRef}
             onSubmit={sendMessage} 
@@ -186,5 +167,3 @@ const ChatAreaRaw = ({
     </div>
   );
 };
-
-export const ChatArea = memo(ChatAreaRaw);

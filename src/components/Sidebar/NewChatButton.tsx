@@ -24,23 +24,23 @@ export const NewChatButton = ({ isCollapsed, isDesktop, onClick, disabled }: New
             onClick={onClick}
             disabled={disabled}
             className={`
-                group relative w-full flex items-center transition-all duration-300
+                group relative w-full flex items-center transition-colors duration-200
                 ${disabled 
                     ? 'opacity-50 cursor-not-allowed bg-transparent' 
-                    : 'bg-white/50 dark:bg-white/5 hover:bg-gradient-to-r hover:from-violet-500 hover:to-indigo-500 hover:text-white shadow-sm hover:shadow-md cursor-pointer border border-indigo-100/50 dark:border-white/10 hover:border-transparent'
+                    : 'hover:bg-gray-200/50 dark:hover:bg-white/5 cursor-pointer'
                 }
-                rounded-xl
+                rounded-lg
                 text-slate-700 dark:text-slate-200
                 ${shouldCollapse 
                     ? 'justify-center p-2' 
-                    : 'px-3 py-2.5'
+                    : 'px-3 py-2'
                 }
             `}
             title={disabled ? "Already in a new chat" : "New chat"}
             aria-label="New chat"
             aria-disabled={disabled}
         >
-            <div className={`relative flex items-center justify-center flex-shrink-0 transition-colors ${!disabled ? 'text-indigo-500 dark:text-indigo-400 group-hover:text-white' : 'text-slate-400'}`}>
+            <div className={`relative flex items-center justify-center flex-shrink-0 text-slate-500 dark:text-slate-400 transition-colors ${!disabled && 'group-hover:text-slate-800 dark:group-hover:text-slate-100'}`}>
                 {/* Square with Pencil Icon */}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                     <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -49,7 +49,7 @@ export const NewChatButton = ({ isCollapsed, isDesktop, onClick, disabled }: New
             </div>
             
             <motion.span
-                className="font-semibold text-sm whitespace-nowrap overflow-hidden"
+                className="font-medium text-sm whitespace-nowrap overflow-hidden"
                 initial={false}
                 animate={{ 
                     width: shouldCollapse ? 0 : 'auto', 

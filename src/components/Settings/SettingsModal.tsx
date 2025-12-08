@@ -1,20 +1,19 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useState, Suspense } from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence, motion as motionTyped, LayoutGroup } from 'framer-motion';
 import type { Model } from '../../types';
 import { SettingsCategoryButton } from './SettingsCategoryButton';
+import { GeneralSettings } from './GeneralSettings';
+import { ModelSettings } from './ModelSettings';
+import { CustomInstructionsSettings } from './CustomInstructionsSettings';
+import { SpeechMemorySettings } from './SpeechMemorySettings';
 import type { Theme } from '../../hooks/useTheme';
 
 const motion = motionTyped as any;
-
-// Lazy load settings tabs to optimize memory and initial load
-const GeneralSettings = React.lazy(() => import('./GeneralSettings').then(m => ({ default: m.GeneralSettings })));
-const ModelSettings = React.lazy(() => import('./ModelSettings').then(m => ({ default: m.ModelSettings })));
-const CustomInstructionsSettings = React.lazy(() => import('./CustomInstructionsSettings').then(m => ({ default: m.CustomInstructionsSettings })));
-const SpeechMemorySettings = React.lazy(() => import('./SpeechMemorySettings').then(m => ({ default: m.SpeechMemorySettings })));
 
 type SettingsModalProps = {
   isOpen: boolean;
@@ -113,18 +112,6 @@ const CATEGORIES = [
   },
 ];
 
-const TabLoadingSkeleton = () => (
-    <div className="w-full h-full p-4 space-y-6 animate-pulse">
-        <div className="h-8 bg-slate-200 dark:bg-white/10 rounded-lg w-1/4"></div>
-        <div className="h-4 bg-slate-200 dark:bg-white/5 rounded w-1/2"></div>
-        <div className="space-y-4 pt-4">
-            <div className="h-24 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/5"></div>
-            <div className="h-24 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/5"></div>
-            <div className="h-24 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/5"></div>
-        </div>
-    </div>
-);
-
 export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
     const { isOpen, onClose } = props;
     const [activeCategory, setActiveCategory] = useState('general');
@@ -138,7 +125,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center sm:p-6"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="settings-title"
@@ -148,11 +135,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3, type: "spring", bounce: 0.3 }}
-            className="bg-white dark:bg-[#1e1e1e] w-full h-full sm:h-[85vh] sm:max-h-[800px] sm:max-w-4xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden sm:border border-slate-200 dark:border-white/10"
+            className="bg-white dark:bg-[#1e1e1e] w-full shadow-2xl rounded-2xl max-w-4xl h-[85vh] max-h-[800px] flex flex-col overflow-hidden border border-slate-200 dark:border-white/10"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-sm z-10 shrink-0">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-sm z-10">
               <h2 id="settings-title" className="text-lg font-bold text-slate-800 dark:text-slate-100">
                 Settings
               </h2>
@@ -170,9 +157,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
             
             <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-slate-50/50 dark:bg-black/20">
                 {/* Navigation Sidebar */}
-                <nav className="flex-shrink-0 border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/10 md:w-64 bg-white dark:bg-[#1e1e1e] z-10">
+                <nav className="flex-shrink-0 p-4 md:border-r border-slate-200 dark:border-white/10 md:w-64 bg-white dark:bg-[#1e1e1e] z-10">
                     <LayoutGroup id="settings-nav">
-                        <ul className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible p-2 md:p-4 hide-scrollbar">
+                        <ul className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar">
                             {CATEGORIES.map(cat => (
                                 <li key={cat.id} className="flex-shrink-0">
                                     <SettingsCategoryButton
@@ -189,7 +176,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-                    <div className="p-4 md:p-8 max-w-2xl mx-auto pb-20 md:pb-8">
+                    <div className="p-6 md:p-8 max-w-2xl mx-auto">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={activeCategory}
@@ -198,12 +185,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 exit={{ opacity: 0, x: -10 }}
                                 transition={{ duration: 0.2, ease: "easeOut" }}
                             >
-                                <Suspense fallback={<TabLoadingSkeleton />}>
-                                    {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
-                                    {activeCategory === 'model' && <ModelSettings {...props} />}
-                                    {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
-                                    {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}
-                                </Suspense>
+                                {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
+                                {activeCategory === 'model' && <ModelSettings {...props} />}
+                                {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
+                                {activeCategory === 'speech' && <SpeechMemorySettings {...props} />}
                             </motion.div>
                         </AnimatePresence>
                     </div>

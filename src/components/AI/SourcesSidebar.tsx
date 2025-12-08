@@ -5,12 +5,10 @@
  */
 
 import React, { useCallback } from 'react';
-import { motion as motionTyped } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { Source } from '../../types';
 import { useViewport } from '../../hooks/useViewport';
 import { SourceItem } from './SourceItem';
-
-const motion = motionTyped as any;
 
 type SourcesSidebarProps = {
     isOpen: boolean;
@@ -42,7 +40,7 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
     }, [setWidth, setIsResizing]);
 
     const desktopVariants = { open: { width }, closed: { width: 0 } };
-    const mobileVariants = { open: { height: '85vh', y: 0 }, closed: { height: 0, y: '100%' } };
+    const mobileVariants = { open: { height: '50vh', y: 0 }, closed: { height: 0, y: '100%' } };
     const variants = isDesktop ? desktopVariants : mobileVariants;
     const animateState = isOpen ? 'open' : 'closed';
 
@@ -58,21 +56,16 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
                 damping: 25,
                 mass: 1
             }}
-            className={`flex-shrink-0 overflow-hidden bg-gray-100/70 dark:bg-[#1e1e1e]/70 backdrop-blur-md ${isDesktop ? 'relative border-l border-gray-200 dark:border-white/10' : 'fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 dark:border-white/10 rounded-t-2xl shadow-2xl'}`}
+            className={`flex-shrink-0 overflow-hidden bg-gray-100/70 dark:bg-[#1e1e1e]/70 backdrop-blur-md ${isDesktop ? 'relative border-l border-gray-200 dark:border-white/10' : 'fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 dark:border-white/10'}`}
             role="complementary"
             aria-labelledby="sources-sidebar-title"
             style={{ userSelect: isResizing ? 'none' : 'auto' }}
         >
             <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%' }}>
-                {/* Mobile Handle */}
-                {!isDesktop && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 mt-3 h-1.5 w-16 bg-gray-300 dark:bg-slate-600 rounded-full cursor-grab pointer-events-none z-50"></div>
-                )}
-                
-                <div className={`flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0 ${!isDesktop ? 'pt-8' : ''}`}>
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
                     <h2 id="sources-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Sources</h2>
                     <button onClick={onClose} className="p-1 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-black/20" aria-label="Close sources">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-2.72 2.72a.75.75 0 1 0 1.06 1.06L10 11.06l2.72 2.72a.75.75 0 0 0 1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-2.72 2.72a.75.75 0 1 0 1.06 1.06L10 11.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L11.06 10l2.72-2.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
                     </button>
                 </div>
 
