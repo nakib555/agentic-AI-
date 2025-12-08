@@ -39,7 +39,7 @@ const FileEditor: React.FC<{
 
     return (
         <div className="flex flex-col h-full bg-slate-50 dark:bg-[#151515]">
-            <div className="p-4 border-b border-slate-200 dark:border-white/10 flex justify-between items-center bg-white dark:bg-[#1e1e1e]">
+            <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-white/10 flex justify-between items-center bg-white dark:bg-[#1e1e1e]">
                  <button onClick={onCancel} className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clipRule="evenodd" /></svg>
                     Back
@@ -49,19 +49,19 @@ const FileEditor: React.FC<{
                     Save
                 </button>
             </div>
-            <div className="p-6 flex-1 flex flex-col gap-4 overflow-hidden">
+            <div className="p-4 sm:p-6 flex-1 flex flex-col gap-4 overflow-hidden">
                 <input
                     type="text"
                     value={title}
                     onChange={e => setTitle(e.target.value)}
                     placeholder="File Title (e.g., Project Specs)"
-                    className="w-full px-4 py-3 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-lg font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                    className="w-full px-4 py-3 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-base sm:text-lg font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
                 <textarea
                     value={content}
                     onChange={e => setContent(e.target.value)}
                     placeholder="Enter content..."
-                    className="flex-1 w-full p-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-mono text-sm custom-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600 leading-relaxed"
+                    className="flex-1 w-full p-3 sm:p-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-mono text-sm custom-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600 leading-relaxed"
                 />
             </div>
         </div>
@@ -226,7 +226,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-slate-50 dark:bg-[#1a1a1a] rounded-2xl shadow-2xl w-full max-w-3xl h-[85vh] border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
+            className="bg-slate-50 dark:bg-[#1a1a1a] rounded-xl sm:rounded-2xl shadow-2xl w-[95vw] sm:w-full max-w-3xl h-[90vh] sm:h-[85vh] border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
           >
             {editingFile ? (
                 <FileEditor 
@@ -238,17 +238,17 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
             <>
                 {/* Header */}
                 <div className="flex flex-col border-b border-slate-200 dark:border-white/5 bg-white dark:bg-[#1e1e1e] z-10">
-                    <div className="flex items-center justify-between px-6 py-5">
+                    <div className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
                         <div className="flex-1">
-                            <h2 className="text-xl font-bold text-slate-800 dark:text-white">Manage Memory</h2>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                            <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">Manage Memory</h2>
+                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                                 View and edit the persistent files the AI has created.
                             </p>
                         </div>
                         <div>
                             <button 
                                 onClick={onClose} 
-                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                 aria-label="Close"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-2.72 2.72a.75.75 0 1 0 1.06 1.06L10 11.06l2.72 2.72a.75.75 0 0 0 1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
@@ -261,7 +261,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                 <div className="flex-1 overflow-hidden relative flex flex-col">
                         <>
                              {/* Toolbar: Search + New File */}
-                             <div className="px-6 py-4 bg-slate-50/80 dark:bg-[#1a1a1a]/90 backdrop-blur-sm border-b border-slate-200 dark:border-white/5 z-10 flex items-center gap-4">
+                             <div className="px-4 py-3 sm:px-6 sm:py-4 bg-slate-50/80 dark:bg-[#1a1a1a]/90 backdrop-blur-sm border-b border-slate-200 dark:border-white/5 z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                                 <div className="flex-1 relative group">
                                     <input
                                         type="text"
@@ -276,7 +276,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                                 </div>
                                 <button 
                                     onClick={() => setEditingFile('new')}
-                                    className="flex-shrink-0 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2 text-sm"
+                                    className="flex-shrink-0 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
                                     New File
@@ -284,7 +284,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                             </div>
 
                             {/* File List */}
-                            <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar bg-slate-50/50 dark:bg-transparent">
+                            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 custom-scrollbar bg-slate-50/50 dark:bg-transparent">
                                 <AnimatePresence initial={false}>
                                     {filteredFiles.map(file => (
                                         <motion.div 
@@ -294,7 +294,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, scale: 0.95 }}
                                             onClick={() => setEditingFile(file)}
-                                            className="group cursor-pointer relative flex items-start gap-4 p-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-200"
+                                            className="group cursor-pointer relative flex items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-200"
                                         >
                                             <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/30">
                                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z" clipRule="evenodd" /></svg>
@@ -307,7 +307,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                                                     {new Date(file.lastUpdated).toLocaleDateString()} {new Date(file.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </p>
                                             </div>
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity absolute top-3 right-3 sm:static">
                                                 <button 
                                                     onClick={(e) => { e.stopPropagation(); setEditingFile(file); }}
                                                     className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
@@ -340,13 +340,13 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#1e1e1e] flex items-center justify-between z-10">
-                    <div className="flex gap-2">
-                        <div className="relative" ref={exportMenuRef}>
+                <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#1e1e1e] flex flex-col-reverse sm:flex-row items-center justify-between gap-3 z-10">
+                    <div className="flex gap-2 w-full sm:w-auto">
+                        <div className="relative flex-1 sm:flex-initial" ref={exportMenuRef}>
                             <button
                                 onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
                                 disabled={isExporting}
-                                className={`px-3 py-2 flex items-center gap-2 text-xs font-medium rounded-lg transition-colors border ${isExportMenuOpen ? 'bg-slate-100 dark:bg-white/10 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 border-slate-200 dark:border-white/10 disabled:opacity-50'}`}
+                                className={`w-full sm:w-auto justify-center px-3 py-2 flex items-center gap-2 text-xs font-medium rounded-lg transition-colors border ${isExportMenuOpen ? 'bg-slate-100 dark:bg-white/10 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 border-slate-200 dark:border-white/10 disabled:opacity-50'}`}
                                 title="Export options"
                             >
                                 {isExporting ? (
@@ -363,7 +363,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                         transition={{ duration: 0.1 }}
-                                        className="absolute bottom-full left-0 mb-2 w-40 bg-white dark:bg-[#2D2D2D] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
+                                        className="absolute bottom-full left-0 mb-2 w-full sm:w-40 bg-white dark:bg-[#2D2D2D] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
                                     >
                                         <button onClick={handleExportJSON} className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-md text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/5">
                                             <span className="font-mono">.json</span> JSON File
@@ -383,18 +383,18 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                                     setHasUnsavedChanges(true);
                                 }
                             }}
-                            className="px-3 py-2 flex items-center gap-2 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800"
+                            className="flex-1 sm:flex-initial justify-center px-3 py-2 flex items-center gap-2 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" /></svg>
                             Clear All
                         </button>
                     </div>
                     
-                    <div className="flex gap-3">
+                    <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
                         <button 
                             onClick={onClose}
                             disabled={isSaving}
-                            className="px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors disabled:opacity-50"
+                            className="flex-1 sm:flex-initial px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors disabled:opacity-50"
                         >
                             {hasUnsavedChanges ? 'Cancel' : 'Close'}
                         </button>
@@ -402,7 +402,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                             onClick={handleSave}
                             disabled={!hasUnsavedChanges || isSaving}
                             className={`
-                                px-6 py-2 text-sm font-semibold text-white rounded-xl transition-all flex items-center gap-2 shadow-md
+                                flex-1 sm:flex-initial px-6 py-2 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md
                                 ${!hasUnsavedChanges || isSaving 
                                     ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed shadow-none text-slate-500 dark:text-slate-400' 
                                     : 'bg-indigo-600 hover:bg-indigo-500 hover:shadow-lg hover:-translate-y-0.5'
