@@ -50,7 +50,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-2 md:px-4 pb-2 md:pb-4">
+    <div className="w-full max-w-4xl mx-auto">
       <form onSubmit={logic.handleSubmit} className="relative group">
         
         {/* Animated Glow Effect - Visible on focus/hover */}
