@@ -61,7 +61,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
         <motion.div 
             className={`
               relative flex flex-col p-2 rounded-[22px] transition-all duration-300
-              bg-layer-1/80 backdrop-blur-xl border border-white/20 dark:border-white/5
+              bg-layer-1/80 backdrop-blur-md border border-white/20 dark:border-white/5
               shadow-xl ring-1 ring-black/5
             `}
             layout

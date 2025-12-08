@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, memo } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import { MessageList, type MessageListHandle } from './MessageList';
@@ -33,7 +33,7 @@ type ChatAreaProps = {
   hasApiKey: boolean;
 };
 
-export const ChatArea = ({ 
+const ChatAreaRaw = ({ 
     messages, isLoading, isAppLoading, sendMessage, onCancel, 
     ttsVoice, isAutoPlayEnabled, currentChatId,
     onShowSources, approveExecution, denyExecution,
@@ -167,3 +167,5 @@ export const ChatArea = ({
     </div>
   );
 };
+
+export const ChatArea = memo(ChatAreaRaw);

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import { NavItem } from './NavItem';
@@ -41,7 +41,7 @@ const mobileVariants = {
     closed: { translateX: '-100%' },
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ 
+const SidebarRaw: React.FC<SidebarProps> = ({ 
     isOpen, setIsOpen, isCollapsed, setIsCollapsed, width, setWidth,
     isResizing, setIsResizing, history, isHistoryLoading, currentChatId, onNewChat, isNewChatDisabled, onLoadChat,
     onDeleteChat, onUpdateChatTitle, onSettingsClick,
@@ -146,11 +146,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     zIndex: isDesktop ? 'auto' : 30,
                     willChange: isResizing ? 'width' : 'width, transform',
                 }}
-                // Modern Glassmorphism Styling
+                // Optimized Blur: backdrop-blur-md is cheaper than xl
                 className={`
                     flex flex-col transform-gpu
-                    bg-sidebar/80 dark:bg-sidebar/80 
-                    backdrop-blur-xl
+                    bg-sidebar/80 dark:bg-sidebar/90 
+                    backdrop-blur-md
                     border-r border-border-subtle
                     ${!isDesktop ? 'shadow-2xl' : ''}
                 `}
@@ -221,3 +221,5 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </aside>
     );
 };
+
+export const Sidebar = memo(SidebarRaw);
