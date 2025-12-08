@@ -9,11 +9,17 @@ import type { Model } from '../../types';
 import { SettingsCategoryButton } from './SettingsCategoryButton';
 import type { Theme } from '../../hooks/useTheme';
 
-// Lazy load individual settings tabs
-const GeneralSettings = React.lazy(() => import('./GeneralSettings').then(module => ({ default: module.GeneralSettings })));
-const ModelSettings = React.lazy(() => import('./ModelSettings').then(module => ({ default: module.ModelSettings })));
-const CustomInstructionsSettings = React.lazy(() => import('./CustomInstructionsSettings').then(module => ({ default: module.CustomInstructionsSettings })));
-const SpeechMemorySettings = React.lazy(() => import('./SpeechMemorySettings').then(module => ({ default: module.SpeechMemorySettings })));
+// Import factories for prefetching
+const importGeneral = () => import('./GeneralSettings').then(module => ({ default: module.GeneralSettings }));
+const importModel = () => import('./ModelSettings').then(module => ({ default: module.ModelSettings }));
+const importInstructions = () => import('./CustomInstructionsSettings').then(module => ({ default: module.CustomInstructionsSettings }));
+const importSpeech = () => import('./SpeechMemorySettings').then(module => ({ default: module.SpeechMemorySettings }));
+
+// Lazy load individual settings tabs using the factories
+const GeneralSettings = React.lazy(importGeneral);
+const ModelSettings = React.lazy(importModel);
+const CustomInstructionsSettings = React.lazy(importInstructions);
+const SpeechMemorySettings = React.lazy(importSpeech);
 
 const motion = motionTyped as any;
 
@@ -136,6 +142,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
     const { isOpen, onClose } = props;
     const [activeCategory, setActiveCategory] = useState('general');
 
+    const handlePrefetch = (id: string) => {
+      switch (id) {
+        case 'general': importGeneral(); break;
+        case 'model': importModel(); break;
+        case 'instructions': importInstructions(); break;
+        case 'speech': importSpeech(); break;
+      }
+    };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -181,7 +196,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                     <LayoutGroup id="settings-nav">
                         <ul className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar">
                             {CATEGORIES.map(cat => (
-                                <li key={cat.id} className="flex-shrink-0">
+                                <li 
+                                  key={cat.id} 
+                                  className="flex-shrink-0"
+                                  onMouseEnter={() => handlePrefetch(cat.id)}
+                                  onFocus={() => handlePrefetch(cat.id)}
+                                >
                                     <SettingsCategoryButton
                                         icon={cat.icon}
                                         label={cat.label}
