@@ -1,5 +1,5 @@
 
-/* PART 2 of 2 of main.css */
+/* PART 2 of 2 of main.css (Lines 71-139) */
 
 /* Theme-aware CSS Variables for non-Tailwind usage */
 :root {
@@ -12,14 +12,14 @@
 html, body, #root {
     height: 100%;
     width: 100%;
-    overflow: hidden;
+    overflow: hidden; /* Prevent body scroll, app handles its own scrolling */
     background-color: var(--bg-page);
     color: var(--text-primary);
 }
 
 /* Placeholder styling */
 .content-editable-input {
-  font-size: 0.9375rem; /* 15px */
+  font-size: 0.875rem;
   caret-color: var(--primary-main);
 }
 
@@ -34,57 +34,52 @@ html, body, #root {
   grid-area: 1 / 1 / 2 / 2;
 }
 
-/* --- Cinematic Chat Background (Aurora) --- */
+/* --- Optimized GPU Chat Background --- */
 .chat-background {
   position: relative;
   background-color: var(--bg-page);
-  isolation: isolate;
+  isolation: isolate; /* Create new stacking context */
   overflow: hidden;
 }
 
-/* Ambient glow blobs */
-.chat-background::before,
-.chat-background::after {
+.chat-background::before {
   content: '';
   position: absolute;
-  width: 140vw;
-  height: 140vw;
-  top: 50%;
-  left: 50%;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
+  /* Oversize the gradient container to allow movement without gaps */
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: 
+    radial-gradient(circle at 50% 50%, var(--bg-layer-1) 0%, transparent 50%),
+    radial-gradient(circle at 10% 20%, var(--bg-layer-2) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, var(--bg-layer-1) 0%, transparent 40%);
+  background-size: 100% 100%;
   z-index: -1;
   pointer-events: none;
-  mix-blend-mode: soft-light;
-  opacity: 0.15;
-  filter: blur(80px);
+  opacity: 0.8;
+  
+  /* GPU Acceleration Hooks */
+  will-change: transform;
+  transform: translateZ(0);
+  animation: bg-float 60s linear infinite alternate;
 }
 
-.dark .chat-background::before,
-.dark .chat-background::after {
-  opacity: 0.08; /* Subtler in dark mode */
+@keyframes bg-float {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(-10%, -10%) rotate(3deg); }
 }
 
-/* Primary Orb */
-.chat-background::before {
-  background: radial-gradient(circle, var(--primary-main), transparent 70%);
-  animation: float-1 20s ease-in-out infinite alternate;
+/* --- Jump-to-Message Highlight --- */
+@keyframes highlight-animation {
+  0% { background-color: transparent; }
+  25% { background-color: var(--primary-subtle); }
+  100% { background-color: transparent; }
 }
 
-/* Secondary Orb */
-.chat-background::after {
-  background: radial-gradient(circle, #a855f7, transparent 70%); /* Purple */
-  animation: float-2 25s ease-in-out infinite alternate;
-}
-
-@keyframes float-1 {
-  0% { transform: translate(-60%, -60%) rotate(0deg); }
-  100% { transform: translate(-40%, -40%) rotate(10deg); }
-}
-
-@keyframes float-2 {
-  0% { transform: translate(-40%, -40%) rotate(0deg); }
-  100% { transform: translate(-60%, -60%) rotate(-10deg); }
+.highlight-jump {
+  animation: highlight-animation 2s ease-in-out;
+  border-radius: 1.5rem;
 }
 
 /* --- Editor & Token Styles --- */
@@ -93,49 +88,37 @@ html, body, #root {
 .monaco-editor .monaco-mouse-cursor-text { cursor: default !important; }
 .monaco-editor textarea:focus { outline: none !important; }
 
-/* Enhanced Gradient Text */
 .brand-gradient {
-  background-image: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  background-image: linear-gradient(to right, #818cf8, #6366f1, #8b5cf6, #d946ef);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  font-weight: 800;
-  letter-spacing: -0.02em;
 }
 
 .flow-token-container span { white-space: pre-wrap; }
 .flow-token-word-container { display: inline-block; overflow: hidden; vertical-align: bottom; }
-.flow-token-word { display: inline-block; opacity: 0; transform: translateY(110%); animation: flow-token-slide-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.flow-token-word { display: inline-block; opacity: 0; transform: translateY(110%); animation: flow-token-slide-up 0.6s ease-in forwards; }
 
 @keyframes flow-token-slide-up { to { opacity: 1; transform: translateY(0%); } }
 
 .source-item:hover {
-  background-color: var(--bg-layer-2);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  border-color: var(--border-focus);
 }
 
 /* --- Robust Rendering Utilities --- */
+
+/* Isolates layout calculations for heavy components (like message bubbles) */
+/* content-visibility: auto allows the browser to skip rendering work for off-screen content */
 .contain-content {
   contain: content;
   content-visibility: auto;
-  contain-intrinsic-size: 100px;
+  contain-intrinsic-size: 100px; /* Approximation to prevent scrollbar jumping */
 }
 
+/* Prevents horizontal overflow blowouts in flex containers */
 .min-w-0 {
   min-width: 0;
-}
-
-/* Custom Scrollbar for sidebars only */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: var(--border-strong);
-  border-radius: 20px;
 }

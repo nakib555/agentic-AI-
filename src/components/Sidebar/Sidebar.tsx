@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -119,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 bg-black/60 z-10 backdrop-blur-sm" 
+                        className="fixed inset-0 bg-black/50 z-10 backdrop-blur-sm" 
                         style={{ willChange: 'opacity' }}
                     />
                 )}
@@ -145,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     zIndex: isDesktop ? 'auto' : 30,
                     willChange: isResizing ? 'width' : 'width, transform',
                 }}
-                className="bg-sidebar/95 backdrop-blur-xl border-r border-border-subtle flex flex-col transform-gpu shadow-2xl md:shadow-none"
+                className="bg-layer-1 border-r border-border flex flex-col transform-gpu shadow-xl md:shadow-none"
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
@@ -174,13 +175,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     />
                     
                     <motion.div 
-                        className="mb-2"
+                        className="mb-2 border-t border-border"
                         initial={false}
-                        animate={{ opacity: isCollapsed ? 0 : 1, height: isCollapsed ? 0 : 1 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        <div className="h-px w-full bg-gradient-to-r from-transparent via-border-default to-transparent my-2"></div>
-                    </motion.div>
+                        animate={{ opacity: isCollapsed ? 0 : 1, height: isCollapsed ? 0 : 'auto' }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    />
 
                     <HistoryList 
                         history={history}
@@ -205,10 +204,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {isDesktop && !isCollapsed && (
                     <div
                         className="group absolute top-0 right-0 h-full z-50"
-                        style={{ width: '12px', transform: 'translateX(50%)', cursor: 'col-resize' }}
+                        style={{ width: '16px', transform: 'translateX(50%)', cursor: 'col-resize' }}
                         onMouseDown={startResizing}
                     >
-                        <div className={`w-[2px] h-full mx-auto transition-colors duration-200 ${isResizing ? 'bg-primary-main' : 'bg-transparent group-hover:bg-primary-main/30'}`}></div>
+                        <div className={`w-[1.5px] h-full mx-auto transition-colors duration-200 ${isResizing ? 'bg-blue-500' : 'bg-transparent group-hover:bg-blue-400/50'}`}></div>
                     </div>
                 )}
             </motion.div>
