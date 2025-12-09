@@ -20,9 +20,9 @@ export const CodeExecutionResult: React.FC<CodeExecutionResultProps> = ({ output
   const [activeTab, setActiveTab] = useState<'visual' | 'text'>('visual');
 
   return (
-    <div className="my-6 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 shadow-lg bg-white dark:bg-[#1e1e1e]">
+    <div className="my-6 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d0d]">
       {/* Tab Navigation */}
-      <div className="flex items-center border-b border-gray-200 dark:border-slate-700 px-2 bg-gray-50 dark:bg-black/20">
+      <div className="flex items-center border-b border-gray-200 dark:border-white/5 px-2 bg-gray-50/50 dark:bg-black/20">
         <TabButton label="Visual Output" isActive={activeTab === 'visual'} onClick={() => setActiveTab('visual')} />
         <TabButton label="Text Logs" isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
       </div>
@@ -36,7 +36,7 @@ export const CodeExecutionResult: React.FC<CodeExecutionResultProps> = ({ output
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="p-2"
+            className="p-0"
           >
             {activeTab === 'visual' ? (
               <div id={outputId} className="w-full bg-white dark:bg-[#121212]">
@@ -48,9 +48,11 @@ export const CodeExecutionResult: React.FC<CodeExecutionResultProps> = ({ output
                 />
               </div>
             ) : (
-              <pre className="p-4 bg-gray-100 dark:bg-black/30 rounded-lg text-xs font-mono text-gray-700 dark:text-slate-300 whitespace-pre-wrap break-all max-h-96 overflow-y-auto">
-                <code>{textOutput || 'No text output was generated.'}</code>
-              </pre>
+              <div className="max-h-96 overflow-y-auto custom-scrollbar">
+                <pre className="p-4 bg-transparent text-xs font-mono text-gray-700 dark:text-slate-300 whitespace-pre-wrap break-all">
+                    <code>{textOutput || 'No text output was generated.'}</code>
+                </pre>
+              </div>
             )}
           </motion.div>
         </AnimatePresence>
