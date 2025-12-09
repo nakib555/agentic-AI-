@@ -8,32 +8,20 @@ import { GoogleGenAI } from "@google/genai";
 import { ToolError } from "../utils/apiError.js";
 import { generateContentWithRetry } from "../utils/geminiUtils.js";
 
-/**
- * Cleans text for Text-to-Speech by removing markdown, component tags, and excess whitespace.
- * The TTS model works best with plain, clean text.
- */
 const cleanTextForTts = (text: string): string => {
-    // Remove all component tags like [IMAGE_COMPONENT]...[/IMAGE_COMPONENT]
     let cleanedText = text.replace(/\[[A-Z_]+_COMPONENT\].*?\[\/\1_COMPONENT\]/gs, '');
-  
-    // Remove code blocks
     cleanedText = cleanedText.replace(/```[\s\S]*?```/g, '');
-  
-    // Simple markdown removal
     cleanedText = cleanedText
-      .replace(/^#{1,6}\s/gm, '') // Headers
-      .replace(/(\*\*|__|\*|_|==|~~)(.*?)\1/g, '$2') // Bold, italic, highlight, strikethrough
-      .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Links
-      .replace(/!\[(.*?)\]\(.*?\)/g, '$1') // Images
-      .replace(/`([^`]+)`/g, '$1') // Inline code
-      .replace(/^>\s/gm, '') // Blockquotes
-      .replace(/^-{3,}\s*$/gm, '') // Horizontal rules
-      .replace(/^\s*[-*+]\s/gm, '') // List items
-      .replace(/^\s*\d+\.\s/gm, ''); // Numbered list items
-  
-    // Collapse multiple newlines/spaces to a single space and trim
+      .replace(/^#{1,6}\s/gm, '')
+      .replace(/(\*\*|__|\*|_|==|~~)(.*?)\1/g, '$2')
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+      .replace(/!\[(.*?)\]\(.*?\)/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/^>\s/gm, '')
+      .replace(/^-{3,}\s*$/gm, '')
+      .replace(/^\s*[-*+]\s/gm, '')
+      .replace(/^\s*\d+\.\s/gm, '');
     cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
-    
     return cleanedText;
 };
 
@@ -44,9 +32,10 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
             throw new Error("No text to speak after cleaning.");
         }
 
-        // Use the model provided by the frontend request, or fallback to the standard TTS model
+        // Use the user-selected model, or fallback ONLY if not provided
         const targetModel = model || "gemini-2.5-flash-preview-tts";
 
+        // Strictly use the SDK `generateContent` method with AUDIO modality
         const response = await generateContentWithRetry(ai, {
             model: targetModel,
             contents: [{ parts: [{ text: cleanedText }] }],

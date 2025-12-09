@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -11,12 +12,15 @@ import { generateContentWithRetry, generateImagesWithRetry } from "../utils/gemi
 
 export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: string, numberOfImages?: number, model: string, aspectRatio?: string }, chatId: string): Promise<string> => {
   const defaultAspectRatio = '1:1';
+  // Use the user-selected model passed in args.model
   const { prompt, numberOfImages = 1, model, aspectRatio = defaultAspectRatio } = args;
 
   try {
     let base64ImageBytesArray: string[] = [];
 
+    // The logic below strictly uses the Google GenAI library methods
     if (model.includes('flash-image')) {
+        // For Gemini Flash Image models, we use the generateContent method from the library
         const response = await generateContentWithRetry(ai, {
             model: model,
             contents: { parts: [{ text: prompt }] },
@@ -31,7 +35,8 @@ export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: str
         for (const part of parts) {
             if (part.inlineData) base64ImageBytesArray.push(part.inlineData.data);
         }
-    } else { // Assume Imagen model
+    } else {
+        // For Imagen models, we use the generateImages method from the library
         const count = Math.max(1, Math.min(4, Math.floor(numberOfImages)));
         const validAspectRatios = ["1:1", "3:4", "4:3", "9:16", "16:9"];
         const response = await generateImagesWithRetry(ai, {
@@ -58,13 +63,13 @@ export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: str
     for (let i = 0; i < base64ImageBytesArray.length; i++) {
         const base64 = base64ImageBytesArray[i];
         const filename = `image_${Date.now()}_${i}.png`;
-        const virtualPath = `${filename}`; // Save at the root of the chat's folder
+        const virtualPath = `${filename}`; 
         const buffer = Buffer.from(base64, 'base64');
         await fileStore.saveFile(chatId, virtualPath, buffer);
         savedFilePaths.push(virtualPath);
     }
     
-    return `Successfully generated ${savedFilePaths.length} image(s) and saved to the following paths:\n- ${savedFilePaths.join('\n- ')}\n\nYou should now use the 'displayFile' tool to show the user the image(s).`;
+    return `Successfully generated ${savedFilePaths.length} image(s) using model ${model} and saved to:\n- ${savedFilePaths.join('\n- ')}\n\n(Use 'displayFile' to show them).`;
 
   } catch (err) {
     console.error("Image generation tool failed:", err);
