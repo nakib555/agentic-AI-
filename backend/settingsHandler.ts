@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { promises as fs } from 'fs';
 import { Context } from 'hono';
 import { parseApiError } from './utils/apiError.js';
 import { 
@@ -14,9 +13,7 @@ import {
     PROMPTS_DIR
 } from './data-store.js';
 import { listAvailableModels } from './services/modelService.js';
-
-// Environment safe helper
-const getEnv = (key: string) => typeof process !== 'undefined' ? process.env[key] : undefined;
+import { getFs } from './utils/platform.js';
 
 const defaultSettings = {
     apiKey: '',
@@ -32,42 +29,55 @@ const defaultSettings = {
     isAgentMode: true,
 };
 
+let memorySettings = { ...defaultSettings };
 const verificationThrottle = new Map<string, number>();
 const THROTTLE_WINDOW_MS = 2000;
 
 // Helper to handle reading settings safely in different runtimes
-const readSettings = async () => {
+const readSettings = async (c?: Context) => {
     let settings = { ...defaultSettings };
+    const fs = await getFs();
 
-    try {
-        if (typeof process !== 'undefined') {
+    // 1. Try to load from disk if Node
+    if (fs) {
+        try {
             const content = await fs.readFile(SETTINGS_FILE_PATH, 'utf-8');
             settings = { ...settings, ...JSON.parse(content) };
+        } catch (error: any) {
+            if (error.code === 'ENOENT') {
+                await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(defaultSettings, null, 2), 'utf-8').catch(() => {});
+            }
         }
-    } catch (error: any) {
-        if (typeof process !== 'undefined' && error.code === 'ENOENT') {
-            await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(defaultSettings, null, 2), 'utf-8').catch(() => {});
-        }
+        
+        try {
+            settings.aboutUser = await fs.readFile(ABOUT_USER_FILE, 'utf-8').catch(() => settings.aboutUser);
+            settings.aboutResponse = await fs.readFile(ABOUT_RESPONSE_FILE, 'utf-8').catch(() => settings.aboutResponse);
+        } catch {}
+    } else {
+        // 2. Fallback to in-memory for Edge
+        settings = { ...settings, ...memorySettings };
     }
 
-    const envKey = getEnv('API_KEY') || getEnv('GEMINI_API_KEY');
+    // 3. Environment Variable Override (Node process.env OR Cloudflare c.env)
+    let envKey: string | undefined;
+    if (typeof process !== 'undefined') {
+        envKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+    }
+    if (c && c.env) {
+        // @ts-ignore
+        envKey = c.env.API_KEY || c.env.GEMINI_API_KEY;
+    }
+
     if (envKey && (!settings.apiKey || settings.apiKey.trim() === '')) {
         settings.apiKey = envKey;
     }
-
-    try {
-        if (typeof process !== 'undefined') {
-            settings.aboutUser = await fs.readFile(ABOUT_USER_FILE, 'utf-8').catch(() => settings.aboutUser);
-            settings.aboutResponse = await fs.readFile(ABOUT_RESPONSE_FILE, 'utf-8').catch(() => settings.aboutResponse);
-        }
-    } catch {}
 
     return settings;
 };
 
 export const getSettings = async (c: Context) => {
     try {
-        const settings = await readSettings();
+        const settings = await readSettings(c);
         return c.json(settings);
     } catch (error) {
         return c.json({ error: 'Failed to retrieve settings.' }, 500);
@@ -77,16 +87,17 @@ export const getSettings = async (c: Context) => {
 export const updateSettings = async (c: Context) => {
     try {
         const body = await c.req.json();
+        const fs = await getFs();
         
-        if (typeof process !== 'undefined') {
+        if (fs) {
             await fs.mkdir(PROMPTS_DIR, { recursive: true }).catch(() => {});
         }
 
-        const currentSettings = await readSettings();
+        const currentSettings = await readSettings(c);
         const newSettings = { ...currentSettings, ...body };
         let modelData: any = null;
 
-        if (typeof process !== 'undefined') {
+        if (fs) {
             if (typeof body.aboutUser === 'string') await fs.writeFile(ABOUT_USER_FILE, body.aboutUser, 'utf-8');
             if (typeof body.aboutResponse === 'string') await fs.writeFile(ABOUT_RESPONSE_FILE, body.aboutResponse, 'utf-8');
         }
@@ -123,16 +134,19 @@ export const updateSettings = async (c: Context) => {
             }
         }
 
-        if (typeof process !== 'undefined') {
+        if (fs) {
             await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(newSettings, null, 2), 'utf-8');
+        } else {
+            memorySettings = newSettings; // Update in-memory
         }
+        
         return c.json({ ...newSettings, ...modelData });
     } catch (error) {
         return c.json({ error: 'Failed to save settings.' }, 500);
     }
 };
 
-export const getApiKey = async (): Promise<string | null> => {
-    const settings = await readSettings();
+export const getApiKey = async (c?: Context): Promise<string | null> => {
+    const settings = await readSettings(c);
     return settings.apiKey || null;
 };

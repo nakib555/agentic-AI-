@@ -7,7 +7,6 @@
 import { Context } from 'hono';
 import { stream } from 'hono/streaming';
 import { GoogleGenAI } from "@google/genai";
-import { promises as fs } from 'fs';
 import path from 'path';
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -19,18 +18,16 @@ import { createToolExecutor } from './tools/index.js';
 import { toolDeclarations } from './tools/declarations.js';
 import { getApiKey } from './settingsHandler.js';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils.js';
+import { isNode, getFs } from './utils/platform.js';
 
-// Store promises for frontend tool requests
 const frontendToolRequests = new Map<string, (result: any) => void>();
 const activeAgentLoops = new Map<string, AbortController>();
 
 const generateId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-// Helper: Check if we are in a Node environment to use FS
-const isNode = typeof process !== 'undefined' && (process as any).versions != null && (process as any).versions.node != null;
-
 async function generateAsciiTree(dirPath: string, prefix: string = ''): Promise<string> {
-    if (!isNode) return "FileSystem debug not supported in this environment.";
+    const fs = await getFs();
+    if (!fs) return "FileSystem debug not supported in this environment.";
     
     let output = '';
     let entries;
@@ -39,7 +36,7 @@ async function generateAsciiTree(dirPath: string, prefix: string = ''): Promise<
     } catch (e) {
         return `${prefix} [Error reading directory]\n`;
     }
-    entries = entries.filter(e => !e.name.startsWith('.'));
+    entries = entries.filter((e: any) => !e.name.startsWith('.'));
 
     for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
@@ -59,7 +56,8 @@ export const apiHandler = async (c: Context) => {
     const task = c.req.query('task');
     console.log(`[HANDLER] Received request for task: "${task}"`);
 
-    const apiKey = await getApiKey();
+    // Pass context 'c' to getApiKey so it can check c.env
+    const apiKey = await getApiKey(c);
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree'];
 
     if (!apiKey && !BYPASS_TASKS.includes(task || '')) {
@@ -75,13 +73,11 @@ export const apiHandler = async (c: Context) => {
                 const body = await c.req.json();
                 const { chatId, model, history, settings } = body;
 
-                // Streaming response using Hono
                 return stream(c, async (stream) => {
                     const requestId = generateId();
                     const abortController = new AbortController();
                     activeAgentLoops.set(requestId, abortController);
 
-                    // Helper to write SSE-style chunks
                     const writeEvent = async (type: string, payload: any) => {
                         await stream.write(JSON.stringify({ type, payload }) + '\n');
                     };
@@ -89,7 +85,6 @@ export const apiHandler = async (c: Context) => {
                     await writeEvent('start', { requestId });
                     const pingInterval = setInterval(() => writeEvent('ping', {}), 10000);
 
-                    // Handle cleanup on abort
                     stream.onAbort(() => {
                         console.log(`[HANDLER] Client disconnected for request ${requestId}.`);
                         abortController.abort();

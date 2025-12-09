@@ -1,3 +1,4 @@
+
 {
   "name": "agentic-ai-chat",
   "version": "1.0.0",
@@ -9,7 +10,9 @@
     "build": "node build.js",
     "vercel-build": "npm run build",
     "start": "node dist/server.cjs",
-    "dev": "node dev.js"
+    "dev": "node dev.js",
+    "deploy:worker": "wrangler deploy",
+    "build:frontend": "vite build"
   },
   "dependencies": {
     "@google/genai": "1.29.1",
@@ -51,6 +54,8 @@
     "tailwindcss": "^3.4.8",
     "postcss": "^8.4.30",
     "autoprefixer": "^10.4.14",
-    "wrangler": "^3.101.0"
+    "wrangler": "^3.101.0",
+    "vite": "^5.0.0",
+    "@vitejs/plugin-react": "^4.2.0"
   }
 }

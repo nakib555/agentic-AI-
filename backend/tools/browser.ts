@@ -5,12 +5,14 @@
  */
 
 import { ToolError } from '../utils/apiError.js';
+import { isNode } from '../utils/platform.js';
 
 // Define the type for the browser instance implicitly
 let browserInstance: any | null = null;
 
 // Dynamic import helper
 const getPlaywright = async () => {
+    if (!isNode) return null;
     try {
         // @ts-ignore
         const { chromium } = await import('playwright');
@@ -54,7 +56,7 @@ export const executeBrowser = async (
     onUpdate?: BrowserUpdateCallback
 ): Promise<string> => {
     // Platform check
-    if (typeof process === 'undefined' || !(process as any).versions || !(process as any).versions.node) {
+    if (!isNode) {
         throw new ToolError('browser', 'ENV_NOT_SUPPORTED', 'Browser tool requires a Node.js environment (Render). It does not work on Cloudflare Workers.');
     }
 
@@ -77,13 +79,6 @@ export const executeBrowser = async (
         });
         page = await context.newPage();
         
-        // Capture console logs (optional)
-        page.on('console', (msg: any) => {
-            if (msg.type() === 'log' || msg.type() === 'info') {
-               // emit({ log: `[Page] ${msg.text().substring(0, 50)}...` });
-            }
-        });
-
         console.log(`[BrowserTool] Visiting: ${url}`);
         emit({ log: `Navigating to ${new URL(url).hostname}...` });
 

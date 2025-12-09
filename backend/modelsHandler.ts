@@ -9,7 +9,7 @@ import { getApiKey } from './settingsHandler.js';
 import { listAvailableModels } from './services/modelService.js';
 
 export const getAvailableModelsHandler = async (c: Context) => {
-    const apiKey = await getApiKey();
+    const apiKey = await getApiKey(c);
     if (!apiKey) {
         return c.json({ models: [], imageModels: [], videoModels: [], ttsModels: [] });
     }

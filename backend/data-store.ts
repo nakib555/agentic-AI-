@@ -4,13 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { promises as fs } from 'fs';
 import path from 'path';
+import { isNode, getFs } from './utils/platform.js';
 
 // --- Centralized Path Definitions ---
-// Check environment
-const isNode = typeof process !== 'undefined' && (process as any).cwd;
-const ROOT_DIR = isNode ? (process as any).cwd() : '/tmp'; // Fallback for edge
+const ROOT_DIR = isNode && (process as any).cwd ? (process as any).cwd() : '/tmp'; 
 const DATA_PATH = (isNode && process.env.DATA_DIR) || path.join(ROOT_DIR, 'data');
 
 export const HISTORY_PATH = path.join(DATA_PATH, 'history');
@@ -26,7 +24,8 @@ export const HISTORY_INDEX_PATH = path.join(HISTORY_PATH, 'history.json');
 export const TIME_GROUPS_PATH = path.join(HISTORY_PATH, 'timeGroups.json');
 
 const ensureDir = async (dirPath: string) => {
-    if (!isNode) return;
+    const fs = await getFs();
+    if (!fs) return;
     try {
         await fs.mkdir(dirPath, { recursive: true });
     } catch (error: any) {
@@ -35,8 +34,10 @@ const ensureDir = async (dirPath: string) => {
 };
 
 export const initDataStore = async () => {
-    if (!isNode) {
-        console.log('[DATA_STORE] Running in non-Node environment (Cloudflare). Persistence limited to runtime memory unless KV is bound.');
+    const fs = await getFs();
+    
+    if (!fs) {
+        console.log('[DATA_STORE] Running in non-Node environment (Cloudflare). Persistence limited to runtime memory.');
         return;
     }
 

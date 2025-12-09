@@ -4,20 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { promises as fs } from 'fs';
 import path from 'path';
 import { Context } from 'hono';
 import { MEMORY_CONTENT_PATH, MEMORY_FILES_DIR } from './data-store.js';
-
-const isNode = typeof process !== 'undefined';
-
-const generateFilename = (title: string, id: string) => {
-    const safeTitle = title.replace(/[^a-z0-9\-_ ]/gi, '_').trim().replace(/\s+/g, '-').substring(0, 50) || 'untitled';
-    return `${safeTitle}-${id.substring(0, 6)}.json`;
-};
+import { getFs } from './utils/platform.js';
 
 const readMemory = async (): Promise<{ content: string, files: any[] }> => {
-    if (!isNode) return { content: '', files: [] };
+    const fs = await getFs();
+    if (!fs) return { content: '', files: [] };
     
     try {
         let content = '';
@@ -43,13 +37,19 @@ const readMemory = async (): Promise<{ content: string, files: any[] }> => {
     }
 };
 
+const generateFilename = (title: string, id: string) => {
+    const safeTitle = title.replace(/[^a-z0-9\-_ ]/gi, '_').trim().replace(/\s+/g, '-').substring(0, 50) || 'untitled';
+    return `${safeTitle}-${id.substring(0, 6)}.json`;
+};
+
 export const getMemory = async (c: Context) => {
     const memory = await readMemory();
     return c.json(memory);
 };
 
 export const updateMemory = async (c: Context) => {
-    if (!isNode) return c.json({ error: "Not supported in this environment" }, 501);
+    const fs = await getFs();
+    if (!fs) return c.json({ error: "Memory persistence not available in this environment." }, 501);
 
     try {
         const { content, files } = await c.req.json();
@@ -96,7 +96,8 @@ export const updateMemory = async (c: Context) => {
 };
 
 export const clearMemory = async (c: Context) => {
-    if (!isNode) return c.body(null, 204);
+    const fs = await getFs();
+    if (!fs) return c.body(null, 204);
     
     try {
         await fs.writeFile(MEMORY_CONTENT_PATH, '', 'utf-8');
