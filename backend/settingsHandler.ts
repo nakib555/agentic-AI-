@@ -11,7 +11,9 @@ import {
     SETTINGS_FILE_PATH, 
     ABOUT_USER_FILE, 
     ABOUT_RESPONSE_FILE,
-    PROMPTS_DIR
+    PROMPTS_DIR,
+    readData,
+    writeData
 } from './data-store.js';
 import { listAvailableModels } from './services/modelService.js';
 
@@ -49,15 +51,15 @@ const withTimeout = <T>(promise: Promise<T>, ms: number, errorMessage: string): 
 const readSettings = async () => {
     let settings = { ...defaultSettings };
 
-    // 1. Read JSON Configuration
+    // 1. Read TSX Configuration
     try {
-        const content = await fs.readFile(SETTINGS_FILE_PATH, 'utf-8');
-        settings = { ...settings, ...JSON.parse(content) };
+        const loadedSettings = await readData(SETTINGS_FILE_PATH);
+        settings = { ...settings, ...loadedSettings };
     } catch (error: any) {
         if (error.code === 'ENOENT') {
-            await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(defaultSettings, null, 2), 'utf-8');
+            await writeData(SETTINGS_FILE_PATH, defaultSettings);
         } else {
-            console.error('Failed to read settings json:', error);
+            console.error('Failed to read settings file:', error);
         }
     }
 
@@ -73,14 +75,14 @@ const readSettings = async () => {
         const aboutUser = await fs.readFile(ABOUT_USER_FILE, 'utf-8');
         settings.aboutUser = aboutUser;
     } catch (e) {
-        // File might not exist yet, rely on JSON or default
+        // File might not exist yet, rely on stored settings or default
     }
 
     try {
         const aboutResponse = await fs.readFile(ABOUT_RESPONSE_FILE, 'utf-8');
         settings.aboutResponse = aboutResponse;
     } catch (e) {
-        // File might not exist yet, rely on JSON or default
+        // File might not exist yet, rely on stored settings or default
     }
 
     return settings;
@@ -168,7 +170,7 @@ export const updateSettings = async (req: any, res: any) => {
         }
 
         // Only write to file if everything succeeded
-        await fs.writeFile(SETTINGS_FILE_PATH, JSON.stringify(newSettings, null, 2), 'utf-8');
+        await writeData(SETTINGS_FILE_PATH, newSettings);
         res.status(200).json({ ...newSettings, ...modelData });
     } catch (error) {
         console.error('Failed to update settings:', error);

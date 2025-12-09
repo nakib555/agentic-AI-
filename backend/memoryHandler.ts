@@ -6,10 +6,10 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { MEMORY_CONTENT_PATH, MEMORY_FILES_DIR } from './data-store.js';
+import { MEMORY_CONTENT_PATH, MEMORY_FILES_DIR, readData, writeData } from './data-store.js';
 
 // Helper to generate human-readable filenames
-// Format: {Sanitized-Title}-{ShortID}.json
+// Format: {Sanitized-Title}-{ShortID}.tsx
 const generateFilename = (title: string, id: string) => {
     const safeTitle = title
         .replace(/[^a-z0-9\-_ ]/gi, '_') // Replace invalid chars with underscore
@@ -18,12 +18,12 @@ const generateFilename = (title: string, id: string) => {
         .substring(0, 50) || 'untitled'; // Limit length
     
     const shortId = id.substring(0, 6);
-    return `${safeTitle}-${shortId}.json`;
+    return `${safeTitle}-${shortId}.tsx`;
 };
 
 const readMemory = async (): Promise<{ content: string, files: any[] }> => {
     try {
-        // 1. Read Core Content
+        // 1. Read Core Content (remains txt)
         let content = '';
         try {
             content = await fs.readFile(MEMORY_CONTENT_PATH, 'utf-8');
@@ -31,16 +31,16 @@ const readMemory = async (): Promise<{ content: string, files: any[] }> => {
             if (error.code !== 'ENOENT') throw error;
         }
 
-        // 2. Read Files
+        // 2. Read Files (now tsx)
         let files: any[] = [];
         try {
             const dirEntries = await fs.readdir(MEMORY_FILES_DIR);
             for (const filename of dirEntries) {
-                if (filename.endsWith('.json')) {
+                if (filename.endsWith('.tsx')) {
                     const filePath = path.join(MEMORY_FILES_DIR, filename);
                     try {
-                        const fileData = await fs.readFile(filePath, 'utf-8');
-                        files.push(JSON.parse(fileData));
+                        const fileData = await readData(filePath);
+                        files.push(fileData);
                     } catch (e) {
                         console.warn(`Skipping invalid memory file: ${filename}`);
                     }
@@ -83,17 +83,15 @@ export const updateMemory = async (req: any, res: any) => {
             const existingFileMap = new Map<string, string>(); // Map<ID, Filename>
 
             for (const entry of existingEntries) {
-                if (entry.isFile() && entry.name.endsWith('.json')) {
+                if (entry.isFile() && entry.name.endsWith('.tsx')) {
                     try {
                         const filePath = path.join(MEMORY_FILES_DIR, entry.name);
-                        const fileData = await fs.readFile(filePath, 'utf-8');
-                        const json = JSON.parse(fileData);
+                        const json = await readData(filePath);
                         if (json.id) {
                             existingFileMap.set(json.id, entry.name);
                         }
                     } catch (e) {
-                        // Ignore corrupt files, they won't be mapped and thus won't be deleted by ID logic,
-                        // but might remain as orphans.
+                        // Ignore corrupt files
                     }
                 }
             }
@@ -122,7 +120,7 @@ export const updateMemory = async (req: any, res: any) => {
                 }
 
                 const filePath = path.join(MEMORY_FILES_DIR, newFilename);
-                await fs.writeFile(filePath, JSON.stringify(file, null, 2), 'utf-8');
+                await writeData(filePath, file);
             }
         }
         

@@ -6,7 +6,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { HISTORY_PATH, HISTORY_INDEX_PATH, TIME_GROUPS_PATH } from '../data-store.js';
+import { HISTORY_PATH, HISTORY_INDEX_PATH, TIME_GROUPS_PATH, readData, writeData } from '../data-store.js';
 import type { ChatSession } from '../../src/types';
 
 // Minimal metadata stored in the master index for fast listing
@@ -37,8 +37,7 @@ class HistoryControlService {
     private async loadIndex(): Promise<ChatIndexEntry[]> {
         if (this.indexCache) return this.indexCache;
         try {
-            const data = await fs.readFile(HISTORY_INDEX_PATH, 'utf-8');
-            this.indexCache = JSON.parse(data);
+            this.indexCache = await readData(HISTORY_INDEX_PATH);
             return this.indexCache!;
         } catch (error) {
             return [];
@@ -55,7 +54,7 @@ class HistoryControlService {
             if (error.code !== 'EEXIST') console.error("Failed to ensure history directory:", error);
         }
 
-        await fs.writeFile(HISTORY_INDEX_PATH, JSON.stringify(index, null, 2), 'utf-8');
+        await writeData(HISTORY_INDEX_PATH, index);
         await this.updateTimeGroups(index);
     }
 
@@ -117,7 +116,7 @@ class HistoryControlService {
              if (error.code !== 'EEXIST') console.error("Failed to ensure history directory:", error);
         }
 
-        await fs.writeFile(TIME_GROUPS_PATH, JSON.stringify(groups, null, 2), 'utf-8');
+        await writeData(TIME_GROUPS_PATH, groups);
     }
 
     // --- CRUD Operations ---
@@ -133,17 +132,13 @@ class HistoryControlService {
         await fs.mkdir(chatSubDir, { recursive: true });
         await fs.mkdir(fileSubDir, { recursive: true });
 
-        // 2. Save Conversation Data (conversation.json inside chat/)
+        // 2. Save Conversation Data (conversation.tsx inside chat/)
         const chatData: ChatDataFile = {
             ...session,
             version: 1,
             pagination: { currentPage: 1, totalPages: 1, pageSize: 100 }
         };
-        await fs.writeFile(
-            path.join(chatSubDir, 'conversation.json'), 
-            JSON.stringify(chatData, null, 2), 
-            'utf-8'
-        );
+        await writeData(path.join(chatSubDir, 'conversation.tsx'), chatData);
 
         // 3. Update Index
         const index = await this.loadIndex();
@@ -166,10 +161,9 @@ class HistoryControlService {
         const entry = index.find(e => e.id === id);
         if (!entry) return null;
 
-        const filePath = path.join(HISTORY_PATH, entry.folderName, 'chat', 'conversation.json');
+        const filePath = path.join(HISTORY_PATH, entry.folderName, 'chat', 'conversation.tsx');
         try {
-            const content = await fs.readFile(filePath, 'utf-8');
-            return JSON.parse(content) as ChatSession;
+            return await readData(filePath);
         } catch (error) {
             console.error(`[HistoryControl] Failed to read chat ${id}:`, error);
             return null;
@@ -232,11 +226,7 @@ class HistoryControlService {
         // Ensure directory exists (in case of manual deletion or corruption)
         await fs.mkdir(chatSubDir, { recursive: true });
         
-        await fs.writeFile(
-            path.join(chatSubDir, 'conversation.json'),
-            JSON.stringify(updatedChat, null, 2),
-            'utf-8'
-        );
+        await writeData(path.join(chatSubDir, 'conversation.tsx'), updatedChat);
 
         // Update Index metadata
         entry.updatedAt = Date.now();

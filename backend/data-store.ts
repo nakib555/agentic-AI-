@@ -16,11 +16,11 @@ export const HISTORY_PATH = path.join(DATA_PATH, 'history');
 
 // Settings Structure: data/settings/
 export const SETTINGS_DIR = path.join(DATA_PATH, 'settings');
-export const SETTINGS_FILE_PATH = path.join(SETTINGS_DIR, 'settings.json');
+export const SETTINGS_FILE_PATH = path.join(SETTINGS_DIR, 'settings.tsx');
 
 // Memory Structure: data/settings/memory/
 export const MEMORY_DIR = path.join(SETTINGS_DIR, 'memory');
-export const MEMORY_CONTENT_PATH = path.join(MEMORY_DIR, 'core.txt');
+export const MEMORY_CONTENT_PATH = path.join(MEMORY_DIR, 'core.txt'); // Content remains txt
 export const MEMORY_FILES_DIR = path.join(MEMORY_DIR, 'files');
 
 // Prompts Structure: data/settings/prompts/
@@ -29,8 +29,33 @@ export const ABOUT_USER_FILE = path.join(PROMPTS_DIR, 'about_user.txt');
 export const ABOUT_RESPONSE_FILE = path.join(PROMPTS_DIR, 'about_response.txt');
 
 // Centralized Indices
-export const HISTORY_INDEX_PATH = path.join(HISTORY_PATH, 'history.json');
-export const TIME_GROUPS_PATH = path.join(HISTORY_PATH, 'timeGroups.json');
+export const HISTORY_INDEX_PATH = path.join(HISTORY_PATH, 'history.tsx');
+export const TIME_GROUPS_PATH = path.join(HISTORY_PATH, 'timeGroups.tsx');
+
+// --- Helper Functions for TSX Data Store ---
+
+export const serializeData = (data: any) => {
+    return `export const data = ${JSON.stringify(data, null, 2)};`;
+};
+
+export const deserializeData = (content: string) => {
+    // Robust cleanup: remove the export statement and trailing semicolon
+    // Matches "export const data =" at start, handling potential whitespace
+    const jsonString = content
+        .replace(/^\s*export\s+const\s+data\s*=\s*/, '')
+        .replace(/;[\s\r\n]*$/, '')
+        .trim();
+    return JSON.parse(jsonString);
+};
+
+export const writeData = async (filePath: string, data: any) => {
+    await fs.writeFile(filePath, serializeData(data), 'utf-8');
+};
+
+export const readData = async (filePath: string) => {
+    const content = await fs.readFile(filePath, 'utf-8');
+    return deserializeData(content);
+};
 
 // --- Initialization Logic ---
 const ensureDir = async (dirPath: string) => {
@@ -59,25 +84,20 @@ export const initDataStore = async () => {
     // Create prompts folder inside settings
     await ensureDir(PROMPTS_DIR);
     
-    // Helper to initialize or validate JSON file
-    const initJsonFile = async (filePath: string, defaultValue: any) => {
+    // Helper to initialize or validate TSX Data file
+    const initDataFile = async (filePath: string, defaultValue: any) => {
         try {
-            const content = await fs.readFile(filePath, 'utf-8');
-            // Check if empty or invalid JSON
-            if (!content.trim()) {
-                 throw new Error('Empty file');
-            }
-            JSON.parse(content);
+            await readData(filePath);
         } catch (error) {
-            // If file doesn't exist, is empty, or invalid JSON, write default
+            // If file doesn't exist, is empty, or invalid, write default
             console.log(`[DATA_STORE] Initializing default file: ${path.basename(filePath)}`);
-            await fs.writeFile(filePath, JSON.stringify(defaultValue, null, 2), 'utf-8');
+            await writeData(filePath, defaultValue);
         }
     };
 
     // Initialize History Indices
-    await initJsonFile(HISTORY_INDEX_PATH, []);
-    await initJsonFile(TIME_GROUPS_PATH, { 'Today': [], 'Yesterday': [], 'Previous 7 Days': [] });
+    await initDataFile(HISTORY_INDEX_PATH, []);
+    await initDataFile(TIME_GROUPS_PATH, { 'Today': [], 'Yesterday': [], 'Previous 7 Days': [] });
     
     // Initialize Settings
     const defaultSettings = {
@@ -93,7 +113,7 @@ export const initDataStore = async () => {
         ttsModel: 'gemini-2.5-flash-preview-tts', // Add default
         isAgentMode: true,
     };
-    await initJsonFile(SETTINGS_FILE_PATH, defaultSettings);
+    await initDataFile(SETTINGS_FILE_PATH, defaultSettings);
     
     // Initialize Core Memory File if missing
     try {
