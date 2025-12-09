@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,6 +9,8 @@ import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { ToggleSwitch } from '../UI/ToggleSwitch';
 import { SettingItem } from './SettingItem';
 import { VoiceSelector } from '../UI/VoiceSelector';
+import { ModelSelector } from '../UI/ModelSelector';
+import type { Model } from '../../types';
 
 const motion = motionTyped as any;
 
@@ -18,6 +21,9 @@ type SpeechMemorySettingsProps = {
   disabled: boolean;
   ttsVoice: string;
   setTtsVoice: (voice: string) => void;
+  ttsModels: Model[];
+  ttsModel: string;
+  onTtsModelChange: (modelId: string) => void;
 };
 
 const AudioWave = () => (
@@ -53,7 +59,7 @@ const StopIcon = () => (
 
 const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
     isMemoryEnabled, setIsMemoryEnabled, onManageMemory,
-    disabled, ttsVoice, setTtsVoice
+    disabled, ttsVoice, setTtsVoice, ttsModels, ttsModel, onTtsModelChange
 }) => {
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
 
@@ -78,6 +84,10 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">Speech & Memory</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400">Configure audio interactions and long-term memory.</p>
             </div>
+
+            <SettingItem label="TTS Model" description="Select the underlying model used for speech generation." layout="col">
+                <ModelSelector models={ttsModels} selectedModel={ttsModel} onModelChange={onTtsModelChange} disabled={disabled} className="w-full" />
+            </SettingItem>
 
             {/* Voice Selection Section */}
             <SettingItem label="Voice Selection" description="Choose the voice persona for reading responses aloud.">

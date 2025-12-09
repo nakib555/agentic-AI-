@@ -5,7 +5,7 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { ToolError } from "../utils/apiError";
+import { ToolError } from "../utils/apiError.js";
 import { generateContentWithRetry } from "../utils/geminiUtils.js";
 
 /**
@@ -14,7 +14,7 @@ import { generateContentWithRetry } from "../utils/geminiUtils.js";
  */
 const cleanTextForTts = (text: string): string => {
     // Remove all component tags like [IMAGE_COMPONENT]...[/IMAGE_COMPONENT]
-    let cleanedText = text.replace(/\[[A-Z_]+_COMPONENT\].*?\[\/[A-Z_]+_COMPONENT\]/gs, '');
+    let cleanedText = text.replace(/\[[A-Z_]+_COMPONENT\].*?\[\/\1_COMPONENT\]/gs, '');
   
     // Remove code blocks
     cleanedText = cleanedText.replace(/```[\s\S]*?```/g, '');
@@ -44,8 +44,11 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
             throw new Error("No text to speak after cleaning.");
         }
 
+        // Use the model provided by the frontend request, or fallback to the standard TTS model
+        const targetModel = model || "gemini-2.5-flash-preview-tts";
+
         const response = await generateContentWithRetry(ai, {
-            model: model || "gemini-2.5-flash-preview-tts",
+            model: targetModel,
             contents: [{ parts: [{ text: cleanedText }] }],
             config: {
                 responseModalities: ['AUDIO'],

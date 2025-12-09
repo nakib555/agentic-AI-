@@ -102,27 +102,42 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
         const availableTtsModels: AppModel[] = [];
 
         for (const model of modelList) {
+            // The API returns names like "models/gemini-1.5-pro". We strip the prefix for the SDK.
             const modelId = model.name.replace('models/', '');
             const modelInfo: AppModel = {
                 id: modelId,
-                name: model.displayName,
-                description: model.description,
+                name: model.displayName || modelId,
+                description: model.description || '',
             };
 
             const methods = model.supportedGenerationMethods || [];
+            const lowerId = modelId.toLowerCase();
 
-            if (methods.includes('generateVideos')) {
+            // 1. Video Models
+            if (methods.includes('generateVideos') || lowerId.includes('veo')) {
                 availableVideoModels.push(modelInfo);
-            } else if (methods.includes('generateImages')) {
-                availableImageModels.push(modelInfo);
-            } else if (methods.includes('generateContent')) {
-                if (modelId.includes('image')) {
+                continue;
+            }
+
+            // 2. Image Models (Imagen or Gemini Image variations)
+            if (methods.includes('generateImages') || lowerId.includes('image') || lowerId.includes('vision')) {
+                // Some text models have 'vision' in name but are multimodal chat. 
+                // We strictly look for image generation capabilities or specific naming conventions.
+                if (methods.includes('generateImages') || lowerId.includes('flash-image')) {
                     availableImageModels.push(modelInfo);
-                } else if (modelId.includes('tts') || modelId.includes('audio')) {
-                    availableTtsModels.push(modelInfo);
-                } else {
-                    availableChatModels.push(modelInfo);
                 }
+            }
+
+            // 3. Audio/TTS Models
+            if (lowerId.includes('tts') || lowerId.includes('speech')) {
+                availableTtsModels.push(modelInfo);
+                continue; 
+            }
+
+            // 4. Chat/Text Models (Default bucket for generateContent)
+            if (methods.includes('generateContent') && !lowerId.includes('tts') && !lowerId.includes('embedding') && !lowerId.includes('aqa')) {
+                // Exclude specialized models that shouldn't be in the main chat dropdown
+                availableChatModels.push(modelInfo);
             }
         }
 

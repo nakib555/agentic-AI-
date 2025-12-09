@@ -65,7 +65,7 @@ export const useAppLogic = () => {
   const [availableVideoModels, setAvailableVideoModels] = useState<Model[]>([]);
   const [availableTtsModels, setAvailableTtsModels] = useState<Model[]>([]);
   const [modelsLoading, setModelsLoading] = useState(true);
-  const [activeModel, setActiveModel] = useState('gemini-2.5-pro');
+  const [activeModel, setActiveModel] = useState('');
 
   // --- Settings State ---
   const [apiKey, setApiKey] = useState('');
@@ -93,21 +93,44 @@ export const useAppLogic = () => {
   const processModelData = useCallback((data: { models?: Model[], imageModels?: Model[], videoModels?: Model[], ttsModels?: Model[] }) => {
     // Backend sends pre-sorted and filtered lists
     const newModels = data.models || [];
+    const newImageModels = data.imageModels || [];
+    const newVideoModels = data.videoModels || [];
+    const newTtsModels = data.ttsModels || [];
+
     setAvailableModels(newModels);
-    setAvailableImageModels(data.imageModels || []);
-    setAvailableVideoModels(data.videoModels || []);
-    setAvailableTtsModels(data.ttsModels || []);
+    setAvailableImageModels(newImageModels);
+    setAvailableVideoModels(newVideoModels);
+    setAvailableTtsModels(newTtsModels);
     
-    // Smart Defaults Logic
-    if (newModels.length > 0 && (!activeModel || !newModels.some((m: Model) => m.id === activeModel))) {
-      setActiveModel(newModels[0].id); // Backend puts preferred model first
-    } else if (newModels.length === 0) {
-      setActiveModel('');
+    // Smart Defaults Logic: Validate current selection against available list
+    // If the currently selected model is NOT in the new list (e.g. deprecated, or key changed),
+    // automatically fall back to the first available model in that category.
+
+    if (newModels.length > 0) {
+        if (!activeModel || !newModels.some((m: Model) => m.id === activeModel)) {
+            setActiveModel(newModels[0].id);
+        }
+    } else {
+        setActiveModel('');
     }
     
-    if (data.imageModels?.length && !imageModel) setImageModel(data.imageModels[0].id);
-    if (data.videoModels?.length && !videoModel) setVideoModel(data.videoModels[0].id);
-    if (data.ttsModels?.length && !ttsModel) setTtsModel(data.ttsModels[0].id);
+    if (newImageModels.length > 0) {
+        if (!imageModel || !newImageModels.some((m: Model) => m.id === imageModel)) {
+            setImageModel(newImageModels[0].id);
+        }
+    }
+
+    if (newVideoModels.length > 0) {
+        if (!videoModel || !newVideoModels.some((m: Model) => m.id === videoModel)) {
+            setVideoModel(newVideoModels[0].id);
+        }
+    }
+
+    if (newTtsModels.length > 0) {
+        if (!ttsModel || !newTtsModels.some((m: Model) => m.id === ttsModel)) {
+            setTtsModel(newTtsModels[0].id);
+        }
+    }
 
   }, [activeModel, imageModel, videoModel, ttsModel]);
 
@@ -136,9 +159,13 @@ export const useAppLogic = () => {
             setAboutResponse(settings.aboutResponse);
             setTemperature(settings.temperature);
             setMaxTokens(settings.maxTokens);
+            
+            // Set initial state from settings, but these might be overridden by fetchModels
+            // if they are invalid for the current API key
             setImageModel(settings.imageModel);
             setVideoModel(settings.videoModel);
             setTtsModel(settings.ttsModel);
+            
             setIsMemoryEnabledState(settings.isMemoryEnabled);
             setTtsVoice(settings.ttsVoice);
             setIsAgentModeState(settings.isAgentMode);

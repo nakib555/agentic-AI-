@@ -229,6 +229,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                             disabled={props.disabled}
                                             ttsVoice={props.ttsVoice}
                                             setTtsVoice={props.setTtsVoice}
+                                            ttsModels={props.ttsModels}
+                                            ttsModel={props.ttsModel}
+                                            onTtsModelChange={props.onTtsModelChange}
                                         />
                                     )}
                                 </motion.div>
