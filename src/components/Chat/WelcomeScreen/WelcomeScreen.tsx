@@ -47,52 +47,8 @@ export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
             </p>
         </motion.div>
         
-        <div className="mb-12 w-full max-w-3xl">
+        <div className="w-full max-w-3xl">
              <FloatingPrompts onPromptClick={sendMessage} />
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-5xl px-2">
-            <CapabilityCard 
-                icon="💡"
-                title="Reason"
-                description="Solve complex problems."
-                delay={0.4}
-                color="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-500/20"
-            />
-            <CapabilityCard 
-                icon="🎨"
-                title="Create"
-                description="Generate images & videos."
-                delay={0.5}
-                color="bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-200/50 dark:border-pink-500/20"
-            />
-            <CapabilityCard 
-                icon="💻"
-                title="Code"
-                description="Execute Python & JS."
-                delay={0.6}
-                color="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-500/20"
-            />
-            <CapabilityCard 
-                icon="🌐"
-                title="Search"
-                description="Access real-time info."
-                delay={0.7}
-                color="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-500/20"
-            />
-        </div>
     </div>
-);
-
-const CapabilityCard = ({ icon, title, description, delay, color }: { icon: React.ReactNode, title: string, description: string, delay: number, color: string }) => (
-    <motion.div 
-        className={`glass-panel p-5 rounded-2xl flex flex-col items-center text-center transition-transform hover:-translate-y-1 duration-300 ${color} border bg-opacity-50 dark:bg-opacity-10 backdrop-blur-md`}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut", delay }}
-    >
-        <div className="text-2xl mb-3">{icon}</div>
-        <h3 className="font-bold text-base mb-1">{title}</h3>
-        <p className="text-sm opacity-80">{description}</p>
-    </motion.div>
 );
