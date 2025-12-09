@@ -26,6 +26,29 @@ const sortModelsByName = (models: AppModel[]): AppModel[] => {
     return models.sort((a, b) => a.name.localeCompare(b.name));
 };
 
+// Helper for fetching with retry on 429
+const fetchWithRetry = async (url: string, options: any, retries = 5, backoff = 1000): Promise<Response> => {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(url, options);
+            if (response.status === 429) {
+                const delay = backoff * Math.pow(2, i) + (Math.random() * 500);
+                console.warn(`[ModelService] Rate limit hit fetching models. Retrying in ${delay.toFixed(0)}ms...`);
+                await new Promise(r => setTimeout(r, delay));
+                continue;
+            }
+            return response;
+        } catch (e) {
+            // If it's a network error (not a status code error), retry as well
+            if (i === retries - 1) throw e;
+            const delay = backoff * Math.pow(2, i);
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+    // Final attempt
+    return await fetch(url, options);
+};
+
 /**
  * Fetches the list of available Gemini models using the REST API directly.
  * @param apiKey The Gemini API key.
@@ -57,7 +80,7 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
         console.log('[ModelService] Fetching models from Google API...');
         // Using fetch with the REST API endpoint to get the list of models.
         // We pass the API key in the header for security.
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+        const response = await fetchWithRetry('https://generativelanguage.googleapis.com/v1beta/models', {
             headers: {
                 'x-goog-api-key': apiKey
             }

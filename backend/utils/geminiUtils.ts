@@ -12,7 +12,7 @@ import {
   // FIX: GenerateContentStreamResult is not an exported member of @google/genai.
   // It has been removed from imports.
 } from "@google/genai";
-import { parseApiError } from './apiError';
+import { parseApiError } from './apiError.js';
 
 // FIX: The type for the result of a streaming content generation call is not exported.
 // This local type definition mirrors the expected structure: an async generator
@@ -21,9 +21,10 @@ export type GenerateContentStreamResult = AsyncGenerator<GenerateContentResponse
   readonly response: Promise<GenerateContentResponse>;
 };
 
-const RETRYABLE_ERRORS = ['UNAVAILABLE', 'RATE_LIMIT_EXCEEDED'];
-const MAX_RETRIES = 3;
-const INITIAL_BACKOFF_MS = 1000;
+const RETRYABLE_ERRORS = ['UNAVAILABLE', 'RATE_LIMIT_EXCEEDED', 'RESOURCE_EXHAUSTED', 'TIMEOUT'];
+// Drastically increased retries to handle strict rate limits on free tier
+const MAX_RETRIES = 10; 
+const INITIAL_BACKOFF_MS = 2000;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -36,9 +37,15 @@ async function retryOperation<T>(operation: () => Promise<T>): Promise<T> {
     } catch (error) {
       lastError = error;
       const parsedError = parseApiError(error);
+      
+      // Check if error is retryable
       if (RETRYABLE_ERRORS.includes(parsedError.code || '')) {
+        // Exponential backoff with jitter: 2s, 4s, 8s, 16s, 32s...
+        // This allows recovering from 1-minute quota resets.
         const backoffTime = INITIAL_BACKOFF_MS * Math.pow(2, i) + Math.random() * 1000;
+        
         console.warn(`[RETRY] Retrying operation due to ${parsedError.code}. Attempt ${i + 1}/${MAX_RETRIES}. Waiting ${backoffTime.toFixed(0)}ms...`);
+        
         await sleep(backoffTime);
       } else {
         // Not a retryable error, fail fast.
