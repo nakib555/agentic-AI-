@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -52,7 +51,7 @@ const StopIcon = () => (
     </svg>
 );
 
-export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = React.memo(({
+const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
     isMemoryEnabled, setIsMemoryEnabled, onManageMemory,
     disabled, ttsVoice, setTtsVoice
 }) => {
@@ -173,4 +172,6 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = React.m
             </div>
         </div>
     );
-});
+};
+
+export default React.memo(SpeechMemorySettings);

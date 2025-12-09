@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -13,10 +12,10 @@ const motion = motionTyped as any;
 
 // Lazy load the settings tabs to optimize bundle size and startup time
 // This ensures the main modal opens instantly, while content loads in background
-const GeneralSettings = React.lazy(() => import('./GeneralSettings').then(module => ({ default: module.GeneralSettings })));
-const ModelSettings = React.lazy(() => import('./ModelSettings').then(module => ({ default: module.ModelSettings })));
-const CustomInstructionsSettings = React.lazy(() => import('./CustomInstructionsSettings').then(module => ({ default: module.CustomInstructionsSettings })));
-const SpeechMemorySettings = React.lazy(() => import('./SpeechMemorySettings').then(module => ({ default: module.SpeechMemorySettings })));
+const GeneralSettings = React.lazy(() => import('./GeneralSettings'));
+const ModelSettings = React.lazy(() => import('./ModelSettings'));
+const CustomInstructionsSettings = React.lazy(() => import('./CustomInstructionsSettings'));
+const SpeechMemorySettings = React.lazy(() => import('./SpeechMemorySettings'));
 
 type SettingsModalProps = {
   isOpen: boolean;

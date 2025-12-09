@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -20,7 +19,7 @@ type GeneralSettingsProps = {
   setTheme: (theme: Theme) => void;
 };
 
-export const GeneralSettings: React.FC<GeneralSettingsProps> = React.memo(({ 
+const GeneralSettings: React.FC<GeneralSettingsProps> = ({ 
     onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, apiKey, onSaveApiKey,
     theme, setTheme
 }) => {
@@ -111,4 +110,6 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = React.memo(({
       </div>
     </div>
   );
-});
+};
+
+export default React.memo(GeneralSettings);

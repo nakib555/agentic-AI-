@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -31,7 +30,7 @@ type ModelSettingsProps = {
   disabled: boolean;
 };
 
-export const ModelSettings: React.FC<ModelSettingsProps> = React.memo(({
+const ModelSettings: React.FC<ModelSettingsProps> = ({
     models, imageModels, videoModels, ttsModels, selectedModel, onModelChange,
     temperature, setTemperature, maxTokens, setMaxTokens,
     imageModel, onImageModelChange, videoModel, onVideoModelChange, ttsModel, onTtsModelChange,
@@ -64,10 +63,10 @@ export const ModelSettings: React.FC<ModelSettingsProps> = React.memo(({
 
             <div className="grid md:grid-cols-2 gap-6">
                 <SettingItem label="Image Model" description="Model for image generation." layout="col" className="!border-0 pb-0">
-                    <ModelSelector models={imageModels} selectedModel={imageModel} onModelChange={onImageModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
+                    <ModelSelector models={imageModels} selectedModel={imageModel} onImageModelChange={onImageModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
                 </SettingItem>
                 <SettingItem label="Video Model" description="Model for video generation." layout="col" className="!border-0 pb-0">
-                    <ModelSelector models={videoModels} selectedModel={videoModel} onModelChange={onVideoModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
+                    <ModelSelector models={videoModels} selectedModel={videoModel} onVideoModelChange={onVideoModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
                 </SettingItem>
             </div>
 
@@ -101,4 +100,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = React.memo(({
             </SettingItem>
         </div>
     );
-});
+};
+
+export default React.memo(ModelSettings);

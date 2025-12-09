@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -44,7 +43,7 @@ const InstructionField: React.FC<{
 );
 
 
-export const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProps> = React.memo(({
+const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProps> = ({
     aboutUser,
     setAboutUser,
     aboutResponse,
@@ -81,4 +80,6 @@ export const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProp
             />
         </div>
     );
-});
+};
+
+export default React.memo(CustomInstructionsSettings);
