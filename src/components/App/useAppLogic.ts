@@ -478,16 +478,24 @@ export const useAppLogic = () => {
         });
         if (!response.ok) throw new Error('Failed to fetch data tree');
         const data = await response.json();
-        const { tree } = data;
         
-        console.log('--- Server Data Structure ---\n' + tree);
+        // Extract ascii for console logging, but use the structured json for file export
+        const { ascii, json } = data;
+        
+        if (ascii) {
+            console.log('--- Server Data Structure ---\n' + ascii);
+        }
+        
+        // If the backend sent a 'json' field (the new structure), use it. 
+        // Fallback to full data if not (compatibility).
+        const exportData = json || data;
         
         const tsContent = `/**
  * Server Data Structure Snapshot
  * Generated: ${new Date().toISOString()}
  */
 
-export const serverData = ${JSON.stringify(data, null, 2)};
+export const serverData = ${JSON.stringify(exportData, null, 2)};
 `;
 
         const blob = new Blob([tsContent], { type: 'text/typescript;charset=utf-8' });

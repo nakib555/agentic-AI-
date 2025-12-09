@@ -64,6 +64,45 @@ async function generateAsciiTree(dirPath: string, prefix: string = ''): Promise<
     return output;
 }
 
+async function generateDirectoryStructure(dirPath: string): Promise<any> {
+    const name = path.basename(dirPath);
+    let stats;
+    try {
+        stats = await fs.stat(dirPath);
+    } catch {
+        return null;
+    }
+
+    if (stats.isDirectory()) {
+        let entries;
+        try {
+            entries = await fs.readdir(dirPath, { withFileTypes: true });
+        } catch {
+            return null;
+        }
+        
+        // Filter hidden
+        const children = [];
+        for (const entry of entries) {
+            if (entry.name.startsWith('.')) continue;
+            const childPath = path.join(dirPath, entry.name);
+            const childNode = await generateDirectoryStructure(childPath);
+            if (childNode) children.push(childNode);
+        }
+        
+        return {
+            name,
+            type: 'directory',
+            children
+        };
+    } else {
+        return {
+            name,
+            type: 'file'
+        };
+    }
+}
+
 // Using 'any' for req/res to bypass strict type checks that are failing due to missing properties in the inferred types
 export const apiHandler = async (req: any, res: any) => {
     const task = req.query.task as string;
@@ -331,9 +370,9 @@ export const apiHandler = async (req: any, res: any) => {
 
             case 'debug_data_tree': {
                 const dataPath = path.join((process as any).cwd(), 'data');
-                let tree = `data/\n`;
-                tree += await generateAsciiTree(dataPath);
-                res.status(200).json({ tree });
+                const ascii = `data/\n` + await generateAsciiTree(dataPath);
+                const structure = await generateDirectoryStructure(dataPath);
+                res.status(200).json({ ascii, json: structure });
                 break;
             }
 
