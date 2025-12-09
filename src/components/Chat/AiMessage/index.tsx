@@ -177,7 +177,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer) && (
         <div className="w-full flex flex-col gap-4 pl-1">
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
-          {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
+          {activeResponse?.error && <ErrorDisplay error={activeResponse.error} onRetry={() => onRegenerate(id)} />}
           
           <div className="markdown-content max-w-none w-full text-slate-800 dark:text-white">
             {displaySegments.map((segment, index) => {

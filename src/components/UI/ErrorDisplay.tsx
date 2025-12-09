@@ -36,6 +36,7 @@ export const getErrorMessageSuggestion = (code?: string): string | null => {
 
 type ErrorDisplayProps = {
   error: MessageError;
+  onRetry?: () => void;
 };
 
 // Define variants for different error categories
@@ -72,7 +73,7 @@ const getErrorVariant = (code?: string): ErrorVariant => {
 };
 
 
-export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error }) => {
+export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const suggestion = error.suggestion || getErrorMessageSuggestion(error.code);
     const variant = getErrorVariant(error.code);
@@ -167,6 +168,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error }) => {
     };
 
     const styles = variantStyles[variant];
+    const hasActions = error.details || onRetry;
 
     return (
       <motion.div 
@@ -197,50 +199,69 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error }) => {
                 </p>
             )}
 
-            {error.details && (
+            {hasActions && (
               <div className="mt-3">
-                <div className="flex items-center gap-3">
-                    <button
-                    onClick={() => setIsDetailsOpen(!isDetailsOpen)}
-                    className={`text-xs font-semibold flex items-center gap-1.5 px-2 py-1.5 -ml-2 rounded-md transition-colors ${styles.detailsBtn}`}
-                    >
-                        <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            viewBox="0 0 16 16" 
-                            fill="currentColor" 
-                            className={`w-4 h-4 transition-transform duration-200 ${isDetailsOpen ? 'rotate-90' : ''}`}
+                <div className="flex items-center gap-3 flex-wrap">
+                    {error.details && (
+                        <button
+                        onClick={() => setIsDetailsOpen(!isDetailsOpen)}
+                        className={`text-xs font-semibold flex items-center gap-1.5 px-2 py-1.5 -ml-2 rounded-md transition-colors ${styles.detailsBtn}`}
                         >
-                            <path fillRule="evenodd" d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-                        </svg>
-                        <span>{isDetailsOpen ? 'Hide Details' : 'View Details'}</span>
-                    </button>
+                            <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                viewBox="0 0 16 16" 
+                                fill="currentColor" 
+                                className={`w-4 h-4 transition-transform duration-200 ${isDetailsOpen ? 'rotate-90' : ''}`}
+                            >
+                                <path fillRule="evenodd" d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                            </svg>
+                            <span>{isDetailsOpen ? 'Hide Details' : 'View Details'}</span>
+                        </button>
+                    )}
                     
-                    <button
-                        onClick={() => navigator.clipboard.writeText(JSON.stringify(error, null, 2))}
-                        className={`text-xs font-semibold flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 ${styles.detailsBtn}`}
-                        title="Copy error details to clipboard"
-                    >
-                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                             <path d="M4.75 2A1.75 1.75 0 0 0 3 3.75v8.5A1.75 1.75 0 0 0 4.75 14h6.5A1.75 1.75 0 0 0 13 12.25v-6.5L9.25 2H4.75ZM8.5 2.75V6H12v6.25a.25.25 0 0 1-.25.25h-6.5a.25.25 0 0 1-.25-.25v-8.5a.25.25 0 0 1 .25-.25H8.5Z" />
-                         </svg>
-                         Copy
-                    </button>
+                    {error.details && (
+                        <button
+                            onClick={() => navigator.clipboard.writeText(JSON.stringify(error, null, 2))}
+                            className={`text-xs font-semibold flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 ${styles.detailsBtn}`}
+                            title="Copy error details to clipboard"
+                        >
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                                 <path d="M4.75 2A1.75 1.75 0 0 0 3 3.75v8.5A1.75 1.75 0 0 0 4.75 14h6.5A1.75 1.75 0 0 0 13 12.25v-6.5L9.25 2H4.75ZM8.5 2.75V6H12v6.25a.25.25 0 0 1-.25.25h-6.5a.25.25 0 0 1-.25-.25v-8.5a.25.25 0 0 1 .25-.25H8.5Z" />
+                             </svg>
+                             Copy
+                        </button>
+                    )}
+
+                    {onRetry && (
+                        <button
+                            onClick={onRetry}
+                            className={`text-xs font-semibold flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors ${styles.detailsBtn} border border-current/20 hover:bg-current/10`}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                                <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                            </svg>
+                            Regenerate
+                        </button>
+                    )}
                 </div>
                 
-                <AnimatePresence>
-                  {isDetailsOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                      animate={{ opacity: 1, height: 'auto', marginTop: '0.75rem' }}
-                      exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className={`p-4 rounded-xl border text-xs whitespace-pre-wrap font-['Fira_Code',_monospace] overflow-x-auto shadow-inner ${styles.detailsBox}`}>
-                        {error.details}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {error.details && (
+                    <AnimatePresence>
+                      {isDetailsOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                          animate={{ opacity: 1, height: 'auto', marginTop: '0.75rem' }}
+                          exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className={`p-4 rounded-xl border text-xs whitespace-pre-wrap font-['Fira_Code',_monospace] overflow-x-auto shadow-inner ${styles.detailsBox}`}>
+                            {error.details}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                )}
               </div>
             )}
           </div>

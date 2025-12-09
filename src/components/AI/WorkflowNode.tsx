@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -290,6 +291,15 @@ const renderNodeContent = (
             <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50">
                 <p className="text-sm font-semibold text-red-700 dark:text-red-300">Step Failed</p>
                 <p className="text-xs text-red-600 dark:text-red-400 mt-1">{error.message}</p>
+                {onRegenerate && messageId && (
+                    <button
+                        onClick={() => onRegenerate(messageId)}
+                        className="mt-2 text-xs font-medium text-red-700 dark:text-red-300 hover:underline flex items-center gap-1"
+                    >
+                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                       Regenerate
+                    </button>
+                )}
             </div>
         );
     }

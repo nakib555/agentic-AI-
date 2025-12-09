@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -124,6 +125,13 @@ const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({ result, sendMessa
              <div className="p-3 bg-red-500/10 dark:bg-red-900/20 border border-red-500/20 rounded-lg">
                 <p className="text-sm font-semibold text-red-600 dark:text-red-400 mb-1">Error</p>
                 <p className="text-sm text-red-700 dark:text-red-300 font-mono text-sm whitespace-pre-wrap">{result}</p>
+                <button 
+                    onClick={onRegenerate}
+                    className="mt-2 text-xs font-semibold text-red-700 dark:text-red-300 hover:text-red-800 dark:hover:text-red-200 flex items-center gap-1 transition-colors"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                    Regenerate Step
+                </button>
             </div>
         )
     }
