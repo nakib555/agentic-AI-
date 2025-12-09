@@ -49,7 +49,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   `;
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-0 sm:px-4">
+    <div className="w-full mx-auto px-0 sm:px-4">
       <form onSubmit={logic.handleSubmit} className="relative">
         <motion.div 
             className={`
@@ -204,8 +204,8 @@ export const MessageForm = forwardRef<MessageFormHandle, {
 
                     {/* Send Button */}
                     <motion.button
-                        type={isGeneratingResponse ? 'button' : 'submit'}
-                        onClick={isGeneratingResponse ? onCancel : undefined}
+                        type="button"
+                        onClick={isGeneratingResponse ? onCancel : logic.handleSubmit} // FIX: Call handleSubmit correctly
                         disabled={!isGeneratingResponse && isSendDisabled}
                         aria-label={isGeneratingResponse ? "Stop generating" : "Send message"}
                         className={`

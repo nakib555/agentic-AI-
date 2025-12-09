@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -93,7 +94,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                 atBottomThreshold={60}
                 className="custom-scrollbar"
                 itemContent={(index, msg) => (
-                    <div className="px-4 sm:px-6 md:px-8 max-w-5xl mx-auto w-full py-4">
+                    <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-4">
                         <MessageComponent 
                             key={msg.id} 
                             msg={msg} 

@@ -25,7 +25,7 @@ export const ThinkingWorkflow: React.FC<ThinkingWorkflowProps> = ({
   messageId,
 }) => {
   return (
-    <div className="font-['Inter',_sans-serif] w-full max-w-5xl mx-auto">
+    <div className="font-['Inter',_sans-serif] w-full max-w-4xl mx-auto">
         <div className="relative pl-4 sm:pl-0">
             {nodes.map((node, index) => {
                 const isLast = index === nodes.length - 1;
