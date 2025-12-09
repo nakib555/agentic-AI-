@@ -78,18 +78,6 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   
-  // Initialize state when modal opens
-  useEffect(() => {
-      if (isOpen) {
-          setLocalFiles(memoryFiles);
-          setHasUnsavedChanges(false);
-          setSearchQuery('');
-          setEditingFile(null);
-          setIsExportMenuOpen(false);
-          setIsExporting(false);
-      }
-  }, [isOpen, memoryFiles]);
-
   useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
           if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
