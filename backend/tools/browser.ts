@@ -5,21 +5,36 @@
  */
 
 import { ToolError } from '../utils/apiError.js';
-import { chromium, Browser } from 'playwright';
 
-let browserInstance: Browser | null = null;
+// Define the type for the browser instance implicitly
+let browserInstance: any | null = null;
+
+// Dynamic import helper
+const getPlaywright = async () => {
+    try {
+        // @ts-ignore
+        const { chromium } = await import('playwright');
+        return chromium;
+    } catch (e) {
+        console.error("Playwright import failed. It might not be available in this environment.");
+        return null;
+    }
+};
 
 const getBrowser = async () => {
     if (!browserInstance) {
         try {
             console.log('[BrowserTool] Launching Chromium instance...');
+            const chromium = await getPlaywright();
+            if (!chromium) throw new Error("Playwright not found");
+            
             browserInstance = await chromium.launch({ 
                 headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox'] // Required for some container envs
+                args: ['--no-sandbox', '--disable-setuid-sandbox'] 
             });
             console.log('[BrowserTool] Chromium launched successfully.');
         } catch (e) {
-            console.error("[BrowserTool] Failed to launch browser. Ensure playwright is installed.", e);
+            console.error("[BrowserTool] Failed to launch browser.", e);
             throw new Error("Browser initialization failed. Server checks required.");
         }
     }
@@ -38,24 +53,23 @@ export const executeBrowser = async (
     args: { url: string, action?: 'read' | 'screenshot' }, 
     onUpdate?: BrowserUpdateCallback
 ): Promise<string> => {
+    // Platform check
+    if (typeof process === 'undefined' || !(process as any).versions || !(process as any).versions.node) {
+        throw new ToolError('browser', 'ENV_NOT_SUPPORTED', 'Browser tool requires a Node.js environment (Render). It does not work on Cloudflare Workers.');
+    }
+
     const { url, action = 'read' } = args;
     console.log(`[BrowserTool] Execution started. URL: "${url}", Action: "${action}"`);
 
     if (!url) {
-        console.error('[BrowserTool] Error: Missing "url" argument.');
         throw new ToolError('browser', 'MISSING_URL', 'A URL is required.');
     }
 
-    // Helper to safely emit updates
-    const emit = (data: any) => {
-        if (onUpdate) onUpdate(data);
-    };
-
+    const emit = (data: any) => { if (onUpdate) onUpdate(data); };
     emit({ url, status: 'running', log: `Initializing browser session for ${url}...` });
 
     let page = null;
     try {
-        console.log('[BrowserTool] Acquiring browser context...');
         const browser = await getBrowser();
         const context = await browser.newContext({
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -63,32 +77,27 @@ export const executeBrowser = async (
         });
         page = await context.newPage();
         
-        // Capture console logs from the page
-        page.on('console', msg => {
+        // Capture console logs (optional)
+        page.on('console', (msg: any) => {
             if (msg.type() === 'log' || msg.type() === 'info') {
-               // Optional: emit({ log: `[Page] ${msg.text().substring(0, 50)}...` });
+               // emit({ log: `[Page] ${msg.text().substring(0, 50)}...` });
             }
         });
 
         console.log(`[BrowserTool] Visiting: ${url}`);
         emit({ log: `Navigating to ${new URL(url).hostname}...` });
 
-        // 15s timeout to prevent hanging
         try {
             await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
-            console.log('[BrowserTool] Navigation event "domcontentloaded" fired.');
         } catch (e: any) {
-            console.warn(`[BrowserTool] Navigation warning (timeout or partial load): ${e.message}`);
+            console.warn(`[BrowserTool] Navigation warning: ${e.message}`);
             emit({ log: `Navigation timeout or partial load. Proceeding...` });
         }
 
         const title = await page.title();
-        console.log(`[BrowserTool] Page title retrieved: "${title}"`);
         emit({ title, log: `Page loaded: "${title}"` });
 
-        // Take an initial screenshot to show the user what we found
-        console.log('[BrowserTool] Taking initial screenshot...');
-        emit({ log: 'Capturing page view...' });
+        console.log('[BrowserTool] Taking screenshot...');
         const buffer = await page.screenshot({ fullPage: false, type: 'jpeg', quality: 60 });
         const base64 = buffer.toString('base64');
         emit({ screenshot: `data:image/jpeg;base64,${base64}`, log: 'View captured.' });
@@ -103,92 +112,52 @@ export const executeBrowser = async (
         const uiComponent = `[BROWSER_COMPONENT]${JSON.stringify(browserData)}[/BROWSER_COMPONENT]`;
 
         if (action === 'screenshot') {
-            console.log('[BrowserTool] Action "screenshot" completed successfully.');
             emit({ status: 'completed', log: 'Session finished.' });
             return uiComponent;
         }
 
-        // Default: Read Text (Optimized Markdown Conversion)
-        console.log('[BrowserTool] Action "read": Converting content to Markdown...');
-        emit({ log: 'Processing content into structured Markdown...' });
+        console.log('[BrowserTool] Converting content to Markdown...');
+        emit({ log: 'Processing content...' });
         
         const markdown = await page.evaluate(() => {
-            // Helper to remove noise
             const removeTags = (selector: string) => document.querySelectorAll(selector).forEach(el => el.remove());
-            removeTags('script');
-            removeTags('style');
-            removeTags('noscript');
-            removeTags('iframe');
-            removeTags('svg');
-            removeTags('nav');
-            removeTags('footer');
-            removeTags('.ad');
-            removeTags('.ads');
-            removeTags('[role="alert"]');
-            removeTags('[role="banner"]');
-            removeTags('[role="dialog"]');
+            removeTags('script'); removeTags('style'); removeTags('noscript'); removeTags('iframe');
+            removeTags('nav'); removeTags('footer');
 
-            // Simple TURNDOWN-like logic (HTML -> Markdown)
             function htmlToMarkdown(element: Element): string {
                 let text = "";
-                
-                // Handle specific tags
-                const tagName = element.tagName.toLowerCase();
-                
-                // Process children first
                 let childrenText = "";
                 element.childNodes.forEach(child => {
-                    if (child.nodeType === 3) { // Text node
-                        childrenText += child.textContent?.trim() + " ";
-                    } else if (child.nodeType === 1) { // Element node
-                        childrenText += htmlToMarkdown(child as Element);
-                    }
+                    if (child.nodeType === 3) childrenText += child.textContent?.trim() + " ";
+                    else if (child.nodeType === 1) childrenText += htmlToMarkdown(child as Element);
                 });
-                
-                childrenText = childrenText.replace(/\s+/g, " "); // Normalize spaces
+                childrenText = childrenText.replace(/\s+/g, " ");
 
-                switch (tagName) {
+                switch (element.tagName.toLowerCase()) {
                     case "h1": return `\n# ${childrenText}\n`;
                     case "h2": return `\n## ${childrenText}\n`;
                     case "h3": return `\n### ${childrenText}\n`;
                     case "p": return `\n${childrenText}\n`;
-                    case "ul": return `\n${childrenText}\n`;
-                    case "ol": return `\n${childrenText}\n`;
                     case "li": return `\n- ${childrenText}`;
-                    case "a": 
-                        const href = element.getAttribute("href");
-                        return href ? `[${childrenText.trim()}](${href}) ` : childrenText;
-                    case "b":
-                    case "strong": return `**${childrenText.trim()}** `;
+                    case "a": return element.getAttribute("href") ? `[${childrenText.trim()}](${element.getAttribute("href")}) ` : childrenText;
+                    case "b": case "strong": return `**${childrenText.trim()}** `;
                     case "code": return `\`${childrenText.trim()}\` `;
-                    case "pre": return `\n\`\`\`\n${element.textContent}\n\`\`\`\n`;
-                    case "br": return "\n";
-                    case "div": return `\n${childrenText}\n`;
                     default: return childrenText;
                 }
             }
-
-            // Target main content if possible, else body
             const main = document.querySelector('main') || document.querySelector('article') || document.body;
             return htmlToMarkdown(main);
         });
 
-        // Further cleanup of the markdown string
-        const cleanMarkdown = markdown
-            .replace(/\n\s*\n/g, '\n\n') // Remove excessive newlines
-            .trim()
-            .substring(0, 12000); // Safety cap
-
-        console.log(`[BrowserTool] Content converted. Length: ${cleanMarkdown.length} characters.`);
-        emit({ status: 'completed', log: `Extracted ${cleanMarkdown.length} chars of structured content.` });
+        const cleanMarkdown = markdown.replace(/\n\s*\n/g, '\n\n').trim().substring(0, 12000);
+        emit({ status: 'completed', log: `Extracted ${cleanMarkdown.length} chars.` });
         
         return `${uiComponent}\n\n### Extracted Content from ${url}\n\n${cleanMarkdown}`;
 
-    } catch (error) {
-        const originalError = error instanceof Error ? error : new Error(String(error));
-        console.error(`[BrowserTool] FATAL ERROR: ${originalError.message}`);
-        emit({ status: 'failed', log: `Error: ${originalError.message}` });
-        throw new ToolError('browser', 'NAVIGATION_FAILED', `Failed to visit ${url}. ${originalError.message}`);
+    } catch (error: any) {
+        console.error(`[BrowserTool] ERROR: ${error.message}`);
+        emit({ status: 'failed', log: `Error: ${error.message}` });
+        throw new ToolError('browser', 'NAVIGATION_FAILED', `Failed to visit ${url}. ${error.message}`);
     } finally {
         if (page) await page.close();
     }

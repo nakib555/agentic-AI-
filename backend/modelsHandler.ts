@@ -4,36 +4,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { Context } from 'hono';
 import { getApiKey } from './settingsHandler.js';
 import { listAvailableModels } from './services/modelService.js';
 
-export const getAvailableModelsHandler = async (req: any, res: any) => {
+export const getAvailableModelsHandler = async (c: Context) => {
     const apiKey = await getApiKey();
     if (!apiKey) {
-        // If no key is configured, return empty lists without hitting the API.
-        return res.status(200).json({ models: [], imageModels: [], videoModels: [], ttsModels: [] });
+        return c.json({ models: [], imageModels: [], videoModels: [], ttsModels: [] });
     }
 
     try {
         const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(apiKey);
-        
-        res.status(200).json({
+        return c.json({
             models: chatModels,
             imageModels,
             videoModels,
             ttsModels,
         });
-
     } catch (error: any) {
-        // The service layer logs the specific error.
-        // We return a generic server error to the client.
         console.error("Error in getAvailableModelsHandler:", error.message);
-        res.status(500).json({ 
+        return c.json({ 
             error: "An error occurred while fetching models.",
             models: [], 
             imageModels: [], 
             videoModels: [],
             ttsModels: []
-        });
+        }, 500);
     }
 };

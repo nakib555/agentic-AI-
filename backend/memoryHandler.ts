@@ -6,32 +6,23 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
+import { Context } from 'hono';
 import { MEMORY_CONTENT_PATH, MEMORY_FILES_DIR } from './data-store.js';
 
-// Helper to generate human-readable filenames
-// Format: {Sanitized-Title}-{ShortID}.json
+const isNode = typeof process !== 'undefined';
+
 const generateFilename = (title: string, id: string) => {
-    const safeTitle = title
-        .replace(/[^a-z0-9\-_ ]/gi, '_') // Replace invalid chars with underscore
-        .trim()
-        .replace(/\s+/g, '-')            // Replace spaces with dashes
-        .substring(0, 50) || 'untitled'; // Limit length
-    
-    const shortId = id.substring(0, 6);
-    return `${safeTitle}-${shortId}.json`;
+    const safeTitle = title.replace(/[^a-z0-9\-_ ]/gi, '_').trim().replace(/\s+/g, '-').substring(0, 50) || 'untitled';
+    return `${safeTitle}-${id.substring(0, 6)}.json`;
 };
 
 const readMemory = async (): Promise<{ content: string, files: any[] }> => {
+    if (!isNode) return { content: '', files: [] };
+    
     try {
-        // 1. Read Core Content
         let content = '';
-        try {
-            content = await fs.readFile(MEMORY_CONTENT_PATH, 'utf-8');
-        } catch (error: any) {
-            if (error.code !== 'ENOENT') throw error;
-        }
+        try { content = await fs.readFile(MEMORY_CONTENT_PATH, 'utf-8'); } catch {}
 
-        // 2. Read Files
         let files: any[] = [];
         try {
             const dirEntries = await fs.readdir(MEMORY_FILES_DIR);
@@ -41,46 +32,33 @@ const readMemory = async (): Promise<{ content: string, files: any[] }> => {
                     try {
                         const fileData = await fs.readFile(filePath, 'utf-8');
                         files.push(JSON.parse(fileData));
-                    } catch (e) {
-                        console.warn(`Skipping invalid memory file: ${filename}`);
-                    }
+                    } catch {}
                 }
             }
-        } catch (error: any) {
-            if (error.code !== 'ENOENT') throw error;
-        }
+        } catch {}
 
         return { content, files };
-
-    } catch (error: any) {
-        console.error('Failed to read memory:', error);
+    } catch {
         return { content: '', files: [] };
     }
 };
 
-export const getMemory = async (req: any, res: any) => {
-    try {
-        const memory = await readMemory();
-        res.status(200).json(memory);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to retrieve memory.' });
-    }
+export const getMemory = async (c: Context) => {
+    const memory = await readMemory();
+    return c.json(memory);
 };
 
-export const updateMemory = async (req: any, res: any) => {
-    try {
-        const { content, files } = req.body;
-        
-        // Update Core Content if provided
-        if (content !== undefined) {
-            await fs.writeFile(MEMORY_CONTENT_PATH, content, 'utf-8');
-        }
+export const updateMemory = async (c: Context) => {
+    if (!isNode) return c.json({ error: "Not supported in this environment" }, 501);
 
-        // Update Files if provided (Full sync strategy)
+    try {
+        const { content, files } = await c.req.json();
+        
+        if (content !== undefined) await fs.writeFile(MEMORY_CONTENT_PATH, content, 'utf-8');
+
         if (files !== undefined && Array.isArray(files)) {
-            // 1. Map existing files on disk to their IDs to handle renames/deletions
             const existingEntries = await fs.readdir(MEMORY_FILES_DIR, { withFileTypes: true });
-            const existingFileMap = new Map<string, string>(); // Map<ID, Filename>
+            const existingFileMap = new Map<string, string>();
 
             for (const entry of existingEntries) {
                 if (entry.isFile() && entry.name.endsWith('.json')) {
@@ -88,68 +66,46 @@ export const updateMemory = async (req: any, res: any) => {
                         const filePath = path.join(MEMORY_FILES_DIR, entry.name);
                         const fileData = await fs.readFile(filePath, 'utf-8');
                         const json = JSON.parse(fileData);
-                        if (json.id) {
-                            existingFileMap.set(json.id, entry.name);
-                        }
-                    } catch (e) {
-                        // Ignore corrupt files, they won't be mapped and thus won't be deleted by ID logic,
-                        // but might remain as orphans.
-                    }
+                        if (json.id) existingFileMap.set(json.id, entry.name);
+                    } catch {}
                 }
             }
 
             const newIds = new Set(files.map((f: any) => f.id));
 
-            // 2. Delete files that were removed in the UI
             for (const [id, filename] of existingFileMap) {
-                if (!newIds.has(id)) {
-                    await fs.unlink(path.join(MEMORY_FILES_DIR, filename));
-                }
+                if (!newIds.has(id)) await fs.unlink(path.join(MEMORY_FILES_DIR, filename));
             }
 
-            // 3. Write/Update new files with correct naming
             for (const file of files) {
                 const newFilename = generateFilename(file.title, file.id);
                 const oldFilename = existingFileMap.get(file.id);
-                
-                // If the file exists but the title changed (resulting in new filename), delete the old one
                 if (oldFilename && oldFilename !== newFilename) {
-                    try {
-                        await fs.unlink(path.join(MEMORY_FILES_DIR, oldFilename));
-                    } catch (e) {
-                        // Ignore error if file was already gone
-                    }
+                    try { await fs.unlink(path.join(MEMORY_FILES_DIR, oldFilename)); } catch {}
                 }
-
                 const filePath = path.join(MEMORY_FILES_DIR, newFilename);
                 await fs.writeFile(filePath, JSON.stringify(file, null, 2), 'utf-8');
             }
         }
         
-        // Return full updated state
         const updatedMemory = await readMemory();
-        res.status(200).json(updatedMemory);
-
-    } catch (error) {
-        console.error('Failed to update memory:', error);
-        res.status(500).json({ error: 'Failed to update memory.' });
+        return c.json(updatedMemory);
+    } catch {
+        return c.json({ error: 'Failed to update memory.' }, 500);
     }
 };
 
-export const clearMemory = async (req: any, res: any) => {
+export const clearMemory = async (c: Context) => {
+    if (!isNode) return c.body(null, 204);
+    
     try {
-        // Clear Content
         await fs.writeFile(MEMORY_CONTENT_PATH, '', 'utf-8');
-
-        // Clear Files
         const files = await fs.readdir(MEMORY_FILES_DIR);
         for (const file of files) {
             await fs.unlink(path.join(MEMORY_FILES_DIR, file));
         }
-
-        res.status(204).send();
-    } catch (error) {
-        console.error('Failed to clear memory:', error);
-        res.status(500).json({ error: 'Failed to clear memory.' });
+        return c.body(null, 204);
+    } catch {
+        return c.json({ error: 'Failed to clear memory.' }, 500);
     }
 };
