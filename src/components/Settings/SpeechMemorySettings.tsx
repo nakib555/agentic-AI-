@@ -47,13 +47,13 @@ const AudioWave = () => (
 
 const PlayIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
+        <path d="M5 3.869v16.262c0 .982 1.096 1.58 1.914 1.053l13.009-8.13a1.23 1.23 0 0 0 0-2.108L6.914 2.816C6.096 2.29 5 2.887 5 3.869Z" />
     </svg>
 );
 
 const StopIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path fillRule="evenodd" d="M4.5 7.5a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3v-9Z" clipRule="evenodd" />
+        <rect width="14" height="14" x="5" y="5" rx="2" />
     </svg>
 );
 
@@ -98,7 +98,7 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                             onModelChange={onTtsModelChange} 
                             disabled={disabled} 
                             placeholder="Select a TTS model"
-                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 0 0 1.5 12c0 2.485.735 4.816 2.035 6.775.341 1.23 1.518 1.895 2.66 1.895h1.933l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06ZM18.584 5.106a.75.75 0 0 1 1.06 0c3.808 3.807 3.808 9.98 0 13.788a.75.75 0 1 1-1.06-1.06 8.25 8.25 0 0 0 0-11.668.75.75 0 0 1 0-1.06Z" /></svg>}
+                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M12 6v14" /><path d="M8 10v6" /><path d="M16 10v6" /><path d="M4 12v2" /><path d="M20 12v2" /></svg>}
                         />
                     </div>
                 </SettingItem>
@@ -170,9 +170,15 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                             <div className="mt-2 p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-500/10 flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                                            <path d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625ZM7.5 15a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 7.5 15Zm.75 2.25a.75.75 0 0 0 0 1.5H12a.75.75 0 0 0 0-1.5H8.25Z" />
-                                            <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                                            <path d="M12 13v-2" />
+                                            <path d="M19 13v-2" />
+                                            <path d="M5 13v-2" />
+                                            <path d="M2 13h20" />
+                                            <path d="M2 17h20" />
+                                            <path d="M2 21h20" />
+                                            <path d="M4 13V8a8 8 0 0 1 16 0v5" />
+                                            <path d="M12 13v-2" />
                                         </svg>
                                     </div>
                                     <div>
