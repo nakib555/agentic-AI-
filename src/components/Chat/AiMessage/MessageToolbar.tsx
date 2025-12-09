@@ -42,7 +42,7 @@ const IconButton: React.FC<{
         onClick={onClick}
         disabled={disabled}
         className={`
-            flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg transition-colors 
+            flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200 
             ${active 
                 ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' 
                 : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/5 dark:hover:text-slate-300'
@@ -69,8 +69,8 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
     };
 
     return (
-        <div className="w-full flex flex-wrap items-center justify-between mt-3 gap-y-3 pt-2 border-t border-transparent hover:border-slate-100 dark:hover:border-white/5 transition-colors">
-            <div className="flex items-center gap-1">
+        <div className="w-full flex flex-wrap items-center justify-between gap-y-3 pt-4 border-t border-slate-100 dark:border-white/5 mt-2">
+            <div className="flex items-center gap-1.5">
                 <IconButton title={isCopied ? 'Copied!' : 'Copy'} onClick={handleCopy}>
                     <AnimatePresence mode="wait" initial={false}>
                         {isCopied ? (
@@ -111,6 +111,8 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                         <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
                     </svg>
                 </IconButton>
+
+                <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-1"></div>
 
                 <TtsButton isPlaying={ttsState === 'playing'} isLoading={ttsState === 'loading'} onClick={onTtsClick} />
             </div>

@@ -3,59 +3,49 @@
 
 /* Vertical spacing for AI-generated custom DIVs */
 .markdown-content > div {
-  margin-top: 1.25rem;
-  margin-bottom: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 .markdown-content > div:first-child { margin-top: 0; }
 .markdown-content > div:last-child { margin-bottom: 0; }
 
-/* Bubble style for AI-generated HTML */
-.bubble {
-  display: inline-block;
-  background: var(--primary-main);
-  color: #ffffff;
-  border-radius: 18px;
-  padding: 10px 16px;
-  margin: 6px 0;
-  max-width: 85%;
-  line-height: 1.5;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-.dark .bubble {
-  background: var(--primary-hover);
-}
-
 /* Custom Blockquote styles */
 .custom-blockquote {
   position: relative;
-  padding-left: 1rem;
-  border-left: 3px solid var(--border-strong);
+  padding: 0.75rem 1rem 0.75rem 1.25rem;
+  border-left: 4px solid var(--primary-main);
+  background-color: var(--bg-layer-2);
   color: var(--text-secondary);
+  border-radius: 0 0.5rem 0.5rem 0;
+  margin: 1.5rem 0;
+  font-style: italic;
 }
 
 /* Ensure paragraphs inside the blockquote don't add extra margins */
 .custom-blockquote p {
   margin-bottom: 0 !important;
+  color: inherit;
 }
 .custom-blockquote p:not(:last-child) {
-  margin-bottom: 1rem !important;
+  margin-bottom: 0.75rem !important;
 }
 
 /* Compact version for workflow view */
 .custom-blockquote-workflow {
   padding-left: 0.75rem;
   border-left-width: 2px;
+  background-color: transparent;
+  margin: 0.5rem 0;
 }
 
 /* --- Robust List Alignment Fixes --- */
 
 /* 1. Base List Item Styling */
 .markdown-content li {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem; /* Increased for readability */
   line-height: 1.6;
-  position: relative; /* Context for positioning if needed */
+  position: relative;
+  padding-left: 0.25rem;
 }
 
 /* 2. Paragraphs inside lists: Block display for proper wrapping */
@@ -77,7 +67,8 @@
 .workflow-markdown img {
   max-width: 100%;
   height: auto;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 /* Prevent pre/code blocks from causing horizontal scroll on parent */
@@ -87,13 +78,18 @@
   overflow-x: auto;
   white-space: pre-wrap; /* Wrap long lines by default for better mobile UX */
   word-wrap: break-word;
+  border-radius: 0.75rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
 }
 
 /* Robust Table Styling */
 .markdown-content table,
 .workflow-markdown table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.5rem 0;
 }
 
 /* Ensure wrapper handles scroll, but table tries to fit and wrap text */
@@ -104,12 +100,27 @@
   white-space: normal;
   word-break: break-word;
   overflow-wrap: break-word;
+  padding: 0.75rem 1rem;
+}
+
+.markdown-content th {
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-default);
+  text-align: left;
+}
+
+.markdown-content td {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.markdown-content tr:last-child td {
+  border-bottom: none;
 }
 
 /* Prevent extremely narrow columns, forcing scroll if content is dense */
 .markdown-content th,
 .markdown-content td {
-  min-width: 100px;
+  min-width: 120px;
 }
 
 .workflow-markdown th,

@@ -83,7 +83,7 @@ const DetailsRenderer: React.FC<{ node: WorkflowNodeData }> = ({ node }) => {
     const showFinalContent = !isStreaming || animationComplete;
 
     return (
-        <div className="text-sm text-gray-600 dark:text-slate-300 workflow-markdown leading-relaxed">
+        <div className="text-sm text-slate-600 dark:text-slate-300 workflow-markdown leading-relaxed">
             {isStreaming && !showFinalContent && (
                 <FlowToken tps={15} onComplete={() => setAnimationComplete(true)}>
                     {detailsText}
@@ -162,7 +162,7 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
         }
 
         return (
-            <div className={`group border rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? 'bg-white dark:bg-black/20 shadow-md' : 'bg-white/60 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10'} ${agentColorInfo.border}`}>
+            <div className={`group border rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? 'bg-white dark:bg-white/5 shadow-sm' : 'bg-transparent hover:bg-white/50 dark:hover:bg-white/5'} border-slate-200 dark:border-white/10`}>
                 {/* Header */}
                 <div 
                     className="flex items-center justify-between p-3 cursor-pointer"
@@ -174,9 +174,9 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
                         </div>
                         <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Research</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Research</span>
                                 {node.agentName && (
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${agentColorInfo.bg} ${agentColorInfo.text}`}>
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium border border-transparent ${agentColorInfo.bg} ${agentColorInfo.text} bg-opacity-20`}>
                                         {node.agentName}
                                     </span>
                                 )}
@@ -219,7 +219,7 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
     const hasDetails = !!node.details;
 
     return (
-        <div className={`group border rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? 'bg-white dark:bg-black/20 shadow-md ring-1 ring-slate-200 dark:ring-white/10' : 'bg-white/60 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10'} ${agentColorInfo.border}`}>
+        <div className={`group border rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? 'bg-white dark:bg-white/5 shadow-sm' : 'bg-transparent hover:bg-white/50 dark:hover:bg-white/5'} border-slate-200 dark:border-white/10`}>
             {/* Header */}
             <div 
                 className="flex items-center justify-between p-3 cursor-pointer"
@@ -231,9 +231,9 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
                     </div>
                     <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{typeLabel}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{typeLabel}</span>
                             {node.agentName && (
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${agentColorInfo.bg} ${agentColorInfo.text}`}>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium border border-transparent ${agentColorInfo.bg} ${agentColorInfo.text} bg-opacity-20`}>
                                     {node.agentName}
                                 </span>
                             )}

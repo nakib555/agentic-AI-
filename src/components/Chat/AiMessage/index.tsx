@@ -28,7 +28,7 @@ import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 
 // Optimized spring physics for performance
 const animationProps = {
-  initial: { opacity: 0, y: 15, scale: 0.98 },
+  initial: { opacity: 0, y: 10, scale: 0.99 },
   animate: { opacity: 1, y: 0, scale: 1 },
   transition: { type: "spring", stiffness: 200, damping: 25 },
 };
@@ -84,39 +84,46 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   return (
     <motion.div 
         {...animationProps} 
-        className="w-full flex flex-col items-start gap-4 origin-bottom-left"
+        className="w-full flex flex-col items-start gap-3 origin-bottom-left"
         style={{ willChange: 'transform, opacity' }}
     >
       {/* Inline Thought Process Display */}
       {logic.hasThinkingProcess && (
-        <div className="w-full border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden bg-gray-50/50 dark:bg-black/20">
+        <div className="w-full max-w-3xl border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden bg-slate-50 dark:bg-[#121212]/50 shadow-sm transition-all duration-300">
             <button
                 onClick={() => setIsWorkflowCollapsed(!isWorkflowCollapsed)}
-                className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-gray-100/50 dark:bg-white/5 hover:bg-gray-200/50 dark:hover:bg-white/10 transition-colors text-left"
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left group"
             >
                 <div className="flex items-center gap-3">
                     {logic.thinkingIsComplete ? (
-                        <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
+                        <div className="w-6 h-6 rounded-full bg-emerald-100/80 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-200/50 dark:ring-emerald-500/20">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
                         </div>
                     ) : (
-                        <div className="relative w-5 h-5 flex items-center justify-center">
-                            <div className="w-2.5 h-2.5 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-pulse" />
-                            <div className="absolute inset-0 w-full h-full bg-indigo-400/30 dark:bg-indigo-500/20 rounded-full animate-ping" />
+                        <div className="relative w-6 h-6 flex items-center justify-center">
+                            <div className="w-2.5 h-2.5 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+                            <div className="absolute inset-0 w-full h-full bg-indigo-400/20 dark:bg-indigo-500/10 rounded-full animate-ping" />
                         </div>
                     )}
-                    <span className="font-semibold text-slate-700 dark:text-slate-200 text-sm">
-                        {logic.thinkingIsComplete ? `Finished in ${logic.displayDuration}s` : `Working... (${logic.displayDuration}s)`}
-                    </span>
+                    <div className="flex flex-col">
+                        <span className="font-semibold text-slate-700 dark:text-slate-200 text-sm">
+                            {logic.thinkingIsComplete ? 'Reasoning complete' : 'Reasoning...'}
+                        </span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                            {logic.thinkingIsComplete ? `${logic.displayDuration}s` : 'Processing task'}
+                        </span>
+                    </div>
                 </div>
-                <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    viewBox="0 0 20 20" 
-                    fill="currentColor" 
-                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isWorkflowCollapsed ? '' : 'rotate-180'}`}
-                >
-                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-                </svg>
+                <div className="p-1.5 rounded-lg text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
+                    <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        viewBox="0 0 20 20" 
+                        fill="currentColor" 
+                        className={`w-4 h-4 transition-transform duration-300 ${isWorkflowCollapsed ? '' : 'rotate-180'}`}
+                    >
+                        <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                    </svg>
+                </div>
             </button>
             
             <AnimatePresence initial={false}>
@@ -125,18 +132,18 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                     >
-                        <div className="p-4 border-t border-gray-200 dark:border-white/5 space-y-6">
+                        <div className="p-4 border-t border-slate-200 dark:border-white/5 space-y-6 bg-white dark:bg-[#151515]">
                             {agentPlan && (
                                 <div>
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 ml-1">Mission Plan</h4>
+                                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 ml-1 select-none">Mission Plan</h4>
                                     <FormattedBlock content={agentPlan} isStreaming={msg.isThinking && executionLog.length === 0} />
                                 </div>
                             )}
                             {executionLog.length > 0 && (
                                 <div>
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 ml-1">Execution Log</h4>
+                                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 ml-1 select-none">Execution Log</h4>
                                     <ThinkingWorkflow
                                         nodes={executionLog}
                                         sendMessage={sendMessage}
@@ -157,7 +164,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
           
-          <div className="markdown-content max-w-none w-full">
+          <div className="markdown-content max-w-none w-full text-slate-800 dark:text-slate-100">
             {/* Streaming Answer: Now using ManualCodeRenderer for proper styling during generation */}
             {isStreamingFinalAnswer && (
                <ManualCodeRenderer 
@@ -195,6 +202,8 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                                 return <FileAttachment key={key} {...data} />;
                             case 'BROWSER':
                                 return <BrowserSessionDisplay key={key} {...data} />;
+                            case 'CODE_OUTPUT':
+                                return null; // Handled by tool call history usually, but can be added here if needed in final answer
                             default:
                                 return <ErrorDisplay key={key} error={{ message: `Unknown component type: ${componentType}`, details: JSON.stringify(data) }} />;
                         }
@@ -218,19 +227,21 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
       
       {logic.thinkingIsComplete && logic.hasFinalAnswer && !activeResponse?.error && (
-          <MessageToolbar
-            messageId={id}
-            messageText={logic.finalAnswerText}
-            rawText={activeResponse?.text || ''}
-            sources={logic.searchSources}
-            onShowSources={onShowSources}
-            ttsState={logic.audioState}
-            onTtsClick={logic.playOrStopAudio}
-            onRegenerate={() => onRegenerate(id)}
-            responseCount={msg.responses?.length || 0}
-            activeResponseIndex={msg.activeResponseIndex}
-            onResponseChange={(index) => onSetActiveResponseIndex(id, index)}
-          />
+          <div className="w-full pl-1">
+            <MessageToolbar
+                messageId={id}
+                messageText={logic.finalAnswerText}
+                rawText={activeResponse?.text || ''}
+                sources={logic.searchSources}
+                onShowSources={onShowSources}
+                ttsState={logic.audioState}
+                onTtsClick={logic.playOrStopAudio}
+                onRegenerate={() => onRegenerate(id)}
+                responseCount={msg.responses?.length || 0}
+                activeResponseIndex={msg.activeResponseIndex}
+                onResponseChange={(index) => onSetActiveResponseIndex(id, index)}
+            />
+          </div>
       )}
 
       {logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
