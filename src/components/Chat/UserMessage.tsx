@@ -28,7 +28,7 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
         <div className="w-fit max-w-[80%] flex flex-col items-end">
             <motion.div 
                 {...animationProps} 
-                className="bg-[#f3f4f6] dark:bg-[#27272a] text-slate-900 dark:text-slate-100 rounded-2xl rounded-tr-sm shadow-sm border border-transparent dark:border-white/5 origin-bottom-right overflow-hidden"
+                className="bg-[#f3f4f6] dark:bg-[#27272a] text-slate-900 dark:text-white rounded-2xl rounded-tr-sm shadow-sm border border-transparent dark:border-white/5 origin-bottom-right overflow-hidden"
                 style={{ willChange: 'transform, opacity' }}
             >
                 {/* Content Section */}
@@ -38,7 +38,7 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
                             {attachments.map((attachment, index) => (
                                 <div key={index} className="flex items-center gap-3">
                                     <FileIcon filename={attachment.name} className="flex-shrink-0 w-8 h-8 text-indigo-500 dark:text-indigo-400" />
-                                    <span className="truncate text-sm font-medium text-slate-700 dark:text-slate-200" title={attachment.name}>{attachment.name}</span>
+                                    <span className="truncate text-sm font-medium text-slate-700 dark:text-white" title={attachment.name}>{attachment.name}</span>
                                 </div>
                             ))}
                         </div>

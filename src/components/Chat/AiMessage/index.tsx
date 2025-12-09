@@ -106,7 +106,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                         </div>
                     )}
                     <div className="flex flex-col">
-                        <span className="font-semibold text-sm text-slate-700 dark:text-slate-200">
+                        <span className="font-semibold text-sm text-slate-700 dark:text-white">
                             {logic.thinkingIsComplete ? 'Reasoning complete' : 'Thinking...'}
                         </span>
                     </div>
@@ -166,7 +166,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
           
-          <div className="markdown-content max-w-none w-full text-slate-800 dark:text-slate-100">
+          <div className="markdown-content max-w-none w-full text-slate-800 dark:text-white">
             {/* Streaming Answer */}
             {isStreamingFinalAnswer && (
                <ManualCodeRenderer 

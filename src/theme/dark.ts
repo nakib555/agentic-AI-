@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -12,9 +13,9 @@ const darkTheme = {
   "--bg-glass": "rgba(23, 23, 23, 0.8)",
 
   // --- Text Colors ---
-  "--text-primary": "#ededed", // High contrast white-ish
-  "--text-secondary": "#a1a1aa", // Muted gray
-  "--text-tertiary": "#71717a", // Darker gray
+  "--text-primary": "#ffffff", // Pure white for maximum clarity
+  "--text-secondary": "#e5e5e5", // Very light gray (almost white)
+  "--text-tertiary": "#a3a3a3", // Light gray
   "--text-inverted": "#000000",
 
   // --- Borders ---
@@ -43,7 +44,7 @@ const darkTheme = {
   "--bg-input": "#171717",
   "--bg-input-secondary": "#262626",
   "--bg-code": "#111111", // darker code blocks
-  "--text-code": "#e4e4e7",
+  "--text-code": "#ffffff", // code text white
   "--bg-sidebar": "#0a0a0a"
 };
 
