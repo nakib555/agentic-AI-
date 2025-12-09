@@ -77,18 +77,24 @@ export const useChatHistory = () => {
   useEffect(() => {
     if (!currentChatId || isHistoryLoading) return;
 
-    const loadFullChat = async () => {
-        const chatIndex = chatHistory.findIndex(c => c.id === currentChatId);
-        const chat = chatHistory[chatIndex];
-        
-        // Check if messages array is missing (undefined) which indicates a summary object
-        // OR if it's a "None" state (empty array but not a new chat)
-        const needsLoading = chat && (!chat.messages || (chat.messages.length === 0 && chat.title !== 'New Chat'));
+    const chatIndex = chatHistory.findIndex(c => c.id === currentChatId);
+    if (chatIndex === -1) return;
 
-        if (needsLoading) {
-            // Optimistic: Mark as loading immediately to prevent UI flicker or double-fetch
-            setChatHistory(prev => prev.map(c => c.id === currentChatId ? { ...c, isLoading: true } : c));
+    const chat = chatHistory[chatIndex];
+    
+    // Guard: If already loading this specific chat, don't trigger again to avoid loops
+    if (chat.isLoading) return;
 
+    // Check if messages array is missing (undefined) which indicates a summary object.
+    // We rely on 'undefined' vs '[]' to distinguish "not loaded" from "empty chat".
+    // (chat.messages is typed as mandatory but the backend sends summary objects without it)
+    const needsLoading = !chat.messages;
+
+    if (needsLoading) {
+        // Optimistic: Mark as loading immediately to prevent UI flicker or double-fetch
+        setChatHistory(prev => prev.map(c => c.id === currentChatId ? { ...c, isLoading: true } : c));
+
+        const loadFullChat = async () => {
             try {
                 const fullChat: ChatSession = await fetchApi(`/api/chats/${currentChatId}`);
                 
@@ -110,11 +116,10 @@ export const useChatHistory = () => {
                     setChatHistory(prev => prev.map(c => c.id === currentChatId ? { ...c, isLoading: false } : c));
                 }
             }
-        }
-    };
-
-    loadFullChat();
-  }, [currentChatId, isHistoryLoading]); // Removed chatHistory from deps to prevent loops, index lookup is enough
+        };
+        loadFullChat();
+    }
+  }, [currentChatId, isHistoryLoading, chatHistory]);
 
   const startNewChat = useCallback(async (model: string, settings: any): Promise<ChatSession | null> => {
     try {
