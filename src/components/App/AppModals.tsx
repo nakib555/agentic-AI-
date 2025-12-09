@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,9 +7,7 @@ import React, { Suspense } from 'react';
 import type { Model } from '../../types';
 import type { MemoryFile } from '../../hooks/useMemory';
 import type { Theme } from '../../hooks/useTheme';
-
-// Lazy load SettingsModal to optimize main bundle, but ensure instant feel on mobile via skeleton
-const SettingsModal = React.lazy(() => import('../Settings/SettingsModal').then(module => ({ default: module.SettingsModal })));
+import { SettingsModal } from '../Settings/SettingsModal';
 
 // Lazy load other modals
 const MemoryModal = React.lazy(() => import('../Settings/MemoryModal').then(module => ({ default: module.MemoryModal })));
@@ -83,53 +80,23 @@ type AppModalsProps = {
   setTheme: (theme: Theme) => void;
 };
 
-// A lightweight skeleton that mimics the structure of SettingsModal.
-// This ensures the user sees the "shell" of the settings UI immediately on mobile,
-// preventing a feeling of sluggishness while the JS chunks load.
-const SettingsSkeleton = () => (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 sm:p-6">
-    <div className="bg-white dark:bg-[#1e1e1e] w-full shadow-2xl rounded-2xl max-w-4xl h-[85vh] max-h-[800px] flex flex-col overflow-hidden border border-slate-200 dark:border-white/10 animate-pulse">
-        {/* Header Skeleton */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5">
-            <div className="h-6 w-24 bg-slate-200 dark:bg-white/10 rounded"></div>
-            <div className="h-8 w-8 bg-slate-200 dark:bg-white/10 rounded-full"></div>
-        </div>
-        <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-slate-50/50 dark:bg-black/20">
-             {/* Nav Skeleton */}
-             <div className="flex-shrink-0 p-4 md:border-r border-slate-200 dark:border-white/10 md:w-64 bg-white dark:bg-[#1e1e1e]">
-                <div className="flex flex-row md:flex-col gap-2 overflow-x-auto pb-2 md:pb-0">
-                    {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="h-10 w-24 md:w-full bg-slate-200 dark:bg-white/10 rounded-xl flex-shrink-0"></div>
-                    ))}
-                </div>
-             </div>
-             {/* Content Skeleton */}
-             <div className="flex-1 p-6 md:p-8">
-                 <div className="h-8 w-48 bg-slate-200 dark:bg-white/10 rounded mb-4"></div>
-                 <div className="space-y-6">
-                     <div className="h-24 w-full bg-slate-200 dark:bg-white/10 rounded-xl"></div>
-                     <div className="h-24 w-full bg-slate-200 dark:bg-white/10 rounded-xl"></div>
-                 </div>
-             </div>
-        </div>
-    </div>
-  </div>
-);
-
 export const AppModals: React.FC<AppModalsProps> = (props) => {
   const {
-    isDesktop, isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen, onRunTests,
-    availableModels, availableImageModels, availableVideoModels, availableTtsModels, activeModel,
-    onModelChange, modelsLoading, clearAllChats, aboutUser, setAboutUser,
-    aboutResponse, setAboutResponse, temperature, setTemperature, maxTokens,
-    setMaxTokens, imageModel, onImageModelChange, videoModel, onVideoModelChange, ttsModel, onTtsModelChange,
-    defaultTemperature, defaultMaxTokens, isMemoryEnabled,
-    setIsMemoryEnabled, memoryContent, memoryFiles, clearMemory, updateBackendMemory, updateMemoryFiles, isConfirmationOpen,
-    memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
-    setTtsVoice, onManageMemory,
-    apiKey, onSaveApiKey, isImportModalOpen, setIsImportModalOpen, handleFileUploadForImport,
-    onDownloadLogs, onShowDataStructure, confirmation, onConfirm, onCancel,
-    theme, setTheme
+    isSettingsOpen,
+    isMemoryModalOpen,
+    setIsMemoryModalOpen,
+    isImportModalOpen,
+    setIsImportModalOpen,
+    handleFileUploadForImport,
+    memoryFiles,
+    updateMemoryFiles,
+    isConfirmationOpen,
+    memorySuggestions,
+    confirmMemoryUpdate,
+    cancelMemoryUpdate,
+    confirmation,
+    onConfirm,
+    onCancel,
   } = props;
 
   // Nothing to render if no modal is active
@@ -139,50 +106,48 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
 
   return (
     <>
-      <Suspense fallback={!isDesktop ? <SettingsSkeleton /> : null}>
-        {isSettingsOpen && (
-            <SettingsModal
-            isOpen={isSettingsOpen}
-            onClose={() => setIsSettingsOpen(false)}
-            models={availableModels}
-            imageModels={availableImageModels}
-            videoModels={availableVideoModels}
-            ttsModels={availableTtsModels}
-            selectedModel={activeModel}
-            onModelChange={onModelChange}
-            disabled={modelsLoading}
-            onClearAllChats={clearAllChats}
-            onRunTests={onRunTests}
-            onDownloadLogs={onDownloadLogs}
-            onShowDataStructure={onShowDataStructure}
-            apiKey={apiKey}
-            onSaveApiKey={onSaveApiKey}
-            aboutUser={aboutUser}
-            setAboutUser={setAboutUser}
-            aboutResponse={aboutResponse}
-            setAboutResponse={setAboutResponse}
-            temperature={temperature}
-            setTemperature={setTemperature}
-            maxTokens={maxTokens}
-            setMaxTokens={setMaxTokens}
-            imageModel={imageModel}
-            onImageModelChange={onImageModelChange}
-            videoModel={videoModel}
-            onVideoModelChange={onVideoModelChange}
-            ttsModel={ttsModel}
-            onTtsModelChange={onTtsModelChange}
-            defaultTemperature={defaultTemperature}
-            defaultMaxTokens={defaultMaxTokens}
-            isMemoryEnabled={isMemoryEnabled}
-            setIsMemoryEnabled={setIsMemoryEnabled}
-            onManageMemory={onManageMemory}
-            ttsVoice={ttsVoice}
-            setTtsVoice={setTtsVoice}
-            theme={theme}
-            setTheme={setTheme}
-            />
-        )}
-      </Suspense>
+      {isSettingsOpen && (
+        <SettingsModal
+          isOpen={props.isSettingsOpen}
+          onClose={() => props.setIsSettingsOpen(false)}
+          models={props.availableModels}
+          imageModels={props.availableImageModels}
+          videoModels={props.availableVideoModels}
+          ttsModels={props.availableTtsModels}
+          selectedModel={props.activeModel}
+          onModelChange={props.onModelChange}
+          disabled={props.modelsLoading}
+          onClearAllChats={props.clearAllChats}
+          onRunTests={props.onRunTests}
+          onDownloadLogs={props.onDownloadLogs}
+          onShowDataStructure={props.onShowDataStructure}
+          apiKey={props.apiKey}
+          onSaveApiKey={props.onSaveApiKey}
+          aboutUser={props.aboutUser}
+          setAboutUser={props.setAboutUser}
+          aboutResponse={props.aboutResponse}
+          setAboutResponse={props.setAboutResponse}
+          temperature={props.temperature}
+          setTemperature={props.setTemperature}
+          maxTokens={props.maxTokens}
+          setMaxTokens={props.setMaxTokens}
+          imageModel={props.imageModel}
+          onImageModelChange={props.onImageModelChange}
+          videoModel={props.videoModel}
+          onVideoModelChange={props.onVideoModelChange}
+          ttsModel={props.ttsModel}
+          onTtsModelChange={props.onTtsModelChange}
+          defaultTemperature={props.defaultTemperature}
+          defaultMaxTokens={props.defaultMaxTokens}
+          isMemoryEnabled={props.isMemoryEnabled}
+          setIsMemoryEnabled={props.setIsMemoryEnabled}
+          onManageMemory={props.onManageMemory}
+          ttsVoice={props.ttsVoice}
+          setTtsVoice={props.setTtsVoice}
+          theme={props.theme}
+          setTheme={props.setTheme}
+        />
+      )}
 
       <Suspense fallback={null}>
         {isMemoryModalOpen && (
