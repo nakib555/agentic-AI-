@@ -72,6 +72,11 @@ export const useMemory = (isMemoryEnabled: boolean) => {
 
     const updateMemory = useCallback(async (completedChat: ChatSession) => {
         if (!isMemoryEnabled || !completedChat.messages || completedChat.messages.length < 2) return;
+        
+        // OPTIMIZATION: Only check for memory updates every 4th message to save API quota.
+        // Checking every message on the free tier often leads to RATE_LIMIT_EXCEEDED errors.
+        if (completedChat.messages.length % 4 !== 0) return;
+
         try {
             const response = await fetchFromApi('/api/handler?task=memory_suggest', {
                 method: 'POST',

@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -80,10 +81,10 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                 // followOutput="auto" ensures the list sticks to the bottom when new items are added
                 // or existing items grow (streaming), ONLY if the user was already at the bottom.
                 followOutput="auto"
-                // Increase overscan to ensure smooth scrolling during rapid height changes
-                // 'increaseViewportBy' helps significantly on mobile where address bars resize the viewport
-                increaseViewportBy={400}
-                overscan={400} 
+                // Reduced overscan for better performance on slower devices/connections.
+                // 200px is sufficient buffer without rendering too many heavy Markdown components.
+                increaseViewportBy={200}
+                overscan={200} 
                 initialTopMostItemIndex={visibleMessages.length - 1}
                 atBottomStateChange={(isAtBottom) => {
                     setAtBottom(isAtBottom);

@@ -8,7 +8,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchFromApi } from '../utils/api';
 
 // Time in milliseconds to wait before fetching a new placeholder
-const PLACEHOLDER_INTERVAL = 5000;
+// Increased to 30s to prevent hitting Gemini API rate limits (15 RPM on free tier)
+const PLACEHOLDER_INTERVAL = 30000;
 
 // Custom-made fallback placeholders for Chat mode
 const CHAT_FALLBACK_PLACEHOLDERS = [
