@@ -11,6 +11,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import { getMarkdownComponents } from './markdownComponents';
+// We import local CSS as well, though index.html CDN is primary fallback
 import 'katex/dist/katex.min.css';
 
 type ManualCodeRendererProps = {
@@ -21,23 +22,23 @@ type ManualCodeRendererProps = {
   isRunDisabled?: boolean;
 };
 
-// Robust function to protect code blocks from highlight replacement
-// This prevents "==" equality operators in code from being converted to <mark> tags
+// Robust function to protect code blocks AND math from highlight replacement.
+// This prevents "==" or other sequences inside math/code from being converted to <mark> tags.
 const processHighlights = (content: string): string => {
     if (!content) return '';
     
-    // Split content by code blocks (triple backtick) and inline code (single backtick)
-    // We capture the delimiters so we can reconstruct the string
-    // This regex matches:
+    // Split content by:
     // 1. ``` ... ``` (Multi-line code blocks)
     // 2. ` ... ` (Inline code)
-    const parts = content.split(/(`{3}[\s\S]*?`{3}|`[^`]+`)/g);
+    // 3. $$ ... $$ (Display math) - Captures multi-line math blocks
+    // 4. $ ... $ (Inline math) - Captures single line math (excludes newlines to avoid false positives)
+    const parts = content.split(/(`{3}[\s\S]*?`{3}|`[^`]+`|\$\$[\s\S]*?\$\$|\$[^$\n]+\$)/g);
     
     return parts.map(part => {
-        // If this part is a code block, return it untouched
-        if (part.startsWith('`')) return part;
+        // If this part is a code block or math, return it untouched
+        if (part.startsWith('`') || part.startsWith('$')) return part;
         
-        // Apply highlight replacement only to non-code text
+        // Apply highlight replacement only to regular text
         // Converts ==[color]text== or ==text== to HTML <mark> tags
         return part
             .replace(/==\[([a-zA-Z]+)\](.*?)==/g, '<mark>[$1]$2</mark>')
@@ -68,7 +69,9 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
     <div className="markdown-root">
         <ReactMarkdown
             remarkPlugins={[remarkMath, remarkGfm]}
-            rehypePlugins={[rehypeRaw, rehypeKatex]}
+            // Important: rehypeKatex must run BEFORE rehypeRaw to ensure math nodes 
+            // are transformed into HTML before raw HTML processing occurs.
+            rehypePlugins={[rehypeKatex, rehypeRaw]}
             components={mergedComponents}
         >
             {processedText}
