@@ -80,7 +80,7 @@ body {
   border-width: 0;
 }
 
-/* Prevent scroll chaining in nested scrollable areas */
+/* Allow scroll chaining in nested scrollable areas so user can scroll past them */
 .overflow-y-auto, .overflow-x-auto {
-  overscroll-behavior: contain;
+  overscroll-behavior: auto;
 }
