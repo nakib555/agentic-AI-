@@ -244,43 +244,45 @@ export const useAppLogic = () => {
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
 
-  // --- Health check effect ---
-  useEffect(() => {
-    let intervalId: number | null = null;
+  // --- Health Check ---
+  const retryTimeoutRef = useRef<number | null>(null);
 
-    const checkBackendStatus = async () => {
-        try {
-            setBackendStatus('checking');
-            const response = await fetchFromApi('/api/health');
-            if (!response.ok) throw new Error(`Status: ${response.status}`);
-            const data = await response.json();
-            if (data.status !== 'ok') throw new Error('Invalid health response');
+  const checkBackendStatus = useCallback(async () => {
+      // Clear any pending retry
+      if (retryTimeoutRef.current) {
+          window.clearTimeout(retryTimeoutRef.current);
+          retryTimeoutRef.current = null;
+      }
 
-            setBackendStatus('online');
-            setBackendError(null);
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = null;
-            }
-        } catch (error) {
-            if ((error as Error).message === 'Version mismatch') return;
-            console.error('[APP_LOGIC] Backend is offline:', error);
-            setBackendStatus('offline');
-            setBackendError("Could not connect to the backend server. Please ensure it is running.");
-            if (!intervalId) {
-                intervalId = window.setInterval(checkBackendStatus, 5000);
-            }
-        }
-    };
+      try {
+          setBackendStatus('checking');
+          const response = await fetchFromApi('/api/health');
+          
+          if (!response.ok) throw new Error(`Status: ${response.status}`);
+          const data = await response.json();
+          if (data.status !== 'ok') throw new Error('Invalid health response');
 
-    checkBackendStatus();
-
-    return () => {
-        if (intervalId) {
-            clearInterval(intervalId);
-        }
-    };
+          setBackendStatus('online');
+          setBackendError(null);
+      } catch (error) {
+          if ((error as Error).message === 'Version mismatch') return;
+          console.error('[APP_LOGIC] Backend is offline:', error);
+          setBackendStatus('offline');
+          setBackendError("Could not connect to the backend server. Please ensure it is running.");
+          
+          // Schedule retry
+          retryTimeoutRef.current = window.setTimeout(checkBackendStatus, 5000);
+      }
   }, []);
+
+  useEffect(() => {
+      checkBackendStatus();
+      return () => {
+          if (retryTimeoutRef.current) {
+              window.clearTimeout(retryTimeoutRef.current);
+          }
+      };
+  }, [checkBackendStatus]);
 
 
   // --- Chat Core ---
@@ -584,6 +586,7 @@ export const serverData = ${JSON.stringify(exportData, null, 2)};
     isSourcesSidebarOpen, sourcesForSidebar,
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading,
     versionMismatch,
+    retryConnection: checkBackendStatus,
     confirmation, handleConfirm, handleCancel,
     availableModels,
     availableImageModels,

@@ -94,6 +94,7 @@ export const App = () => {
               setIsAgentMode={logic.setIsAgentMode}
               backendStatus={logic.backendStatus}
               backendError={logic.backendError}
+              onRetryConnection={logic.retryConnection}
               hasApiKey={!!logic.apiKey}
            />
         </div>

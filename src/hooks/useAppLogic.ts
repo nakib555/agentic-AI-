@@ -189,25 +189,38 @@ export const useAppLogic = () => {
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
 
   // --- Health Check ---
+  const checkBackendStatusTimeoutRef = useRef<number | null>(null);
+
+  const checkBackendStatus = useCallback(async () => {
+    if (checkBackendStatusTimeoutRef.current) {
+        window.clearTimeout(checkBackendStatusTimeoutRef.current);
+        checkBackendStatusTimeoutRef.current = null;
+    }
+
+    try {
+        setBackendStatus('checking');
+        const response = await fetchFromApi('/api/health');
+        if (response.ok) {
+            setBackendStatus('online');
+            setBackendError(null);
+        } else {
+            throw new Error();
+        }
+    } catch (error) {
+        setBackendStatus('offline');
+        setBackendError("Connection lost.");
+        checkBackendStatusTimeoutRef.current = window.setTimeout(checkBackendStatus, 5000);
+    }
+  }, []);
+
   useEffect(() => {
-    const checkBackendStatus = async () => {
-        try {
-            setBackendStatus('checking');
-            const response = await fetchFromApi('/api/health');
-            if (response.ok) {
-                setBackendStatus('online');
-                setBackendError(null);
-            } else {
-                throw new Error();
-            }
-        } catch (error) {
-            setBackendStatus('offline');
-            setBackendError("Connection lost. Retrying...");
-            setTimeout(checkBackendStatus, 5000);
+    checkBackendStatus();
+    return () => {
+        if (checkBackendStatusTimeoutRef.current) {
+            window.clearTimeout(checkBackendStatusTimeoutRef.current);
         }
     };
-    checkBackendStatus();
-  }, []);
+  }, [checkBackendStatus]);
 
 
   // --- Chat ---
@@ -346,6 +359,7 @@ export const useAppLogic = () => {
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
     isImportModalOpen, setIsImportModalOpen, isSourcesSidebarOpen, sourcesForSidebar,
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading, versionMismatch,
+    retryConnection: checkBackendStatus,
     confirmation, handleConfirm, handleCancel: () => setConfirmation(null),
     availableModels, availableImageModels, availableVideoModels, availableTtsModels,
     modelsLoading, activeModel, onModelChange: handleModelChange,
