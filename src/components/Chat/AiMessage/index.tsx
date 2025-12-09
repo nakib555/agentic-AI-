@@ -84,45 +84,47 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   return (
     <motion.div 
         {...animationProps} 
-        className="w-full flex flex-col items-start gap-3 origin-bottom-left"
+        className="w-full flex flex-col items-start gap-4 origin-bottom-left group/message"
         style={{ willChange: 'transform, opacity' }}
     >
       {/* Inline Thought Process Display */}
       {logic.hasThinkingProcess && (
-        <div className="w-full max-w-3xl border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden bg-slate-50 dark:bg-[#121212]/50 shadow-sm transition-all duration-300">
+        <div className="w-full max-w-3xl rounded-xl overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/5 transition-all duration-300">
             <button
                 onClick={() => setIsWorkflowCollapsed(!isWorkflowCollapsed)}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left group"
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/50 dark:hover:bg-white/5 transition-colors text-left"
             >
                 <div className="flex items-center gap-3">
                     {logic.thinkingIsComplete ? (
-                        <div className="w-6 h-6 rounded-full bg-emerald-100/80 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-200/50 dark:ring-emerald-500/20">
+                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
                         </div>
                     ) : (
                         <div className="relative w-6 h-6 flex items-center justify-center">
-                            <div className="w-2.5 h-2.5 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-                            <div className="absolute inset-0 w-full h-full bg-indigo-400/20 dark:bg-indigo-500/10 rounded-full animate-ping" />
+                            <div className="w-2.5 h-2.5 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-pulse" />
+                            <div className="absolute inset-0 w-full h-full bg-indigo-500/20 dark:bg-indigo-400/20 rounded-full animate-ping" />
                         </div>
                     )}
                     <div className="flex flex-col">
-                        <span className="font-semibold text-slate-700 dark:text-slate-200 text-sm">
-                            {logic.thinkingIsComplete ? 'Reasoning complete' : 'Reasoning...'}
-                        </span>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                            {logic.thinkingIsComplete ? `${logic.displayDuration}s` : 'Processing task'}
+                        <span className="font-semibold text-sm text-slate-700 dark:text-slate-200">
+                            {logic.thinkingIsComplete ? 'Reasoning complete' : 'Thinking...'}
                         </span>
                     </div>
                 </div>
-                <div className="p-1.5 rounded-lg text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
-                    <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        viewBox="0 0 20 20" 
-                        fill="currentColor" 
-                        className={`w-4 h-4 transition-transform duration-300 ${isWorkflowCollapsed ? '' : 'rotate-180'}`}
-                    >
-                        <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-                    </svg>
+                <div className="flex items-center gap-3">
+                    <span className="text-xs font-mono font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-black/20 px-2 py-0.5 rounded-full">
+                        {logic.displayDuration}s
+                    </span>
+                    <div className="text-slate-400 dark:text-slate-500">
+                        <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            viewBox="0 0 20 20" 
+                            fill="currentColor" 
+                            className={`w-4 h-4 transition-transform duration-300 ${isWorkflowCollapsed ? '' : 'rotate-180'}`}
+                        >
+                            <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                        </svg>
+                    </div>
                 </div>
             </button>
             
@@ -134,16 +136,16 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                     >
-                        <div className="p-4 border-t border-slate-200 dark:border-white/5 space-y-6 bg-white dark:bg-[#151515]">
+                        <div className="px-4 pb-4 pt-0 space-y-6 bg-transparent">
                             {agentPlan && (
-                                <div>
-                                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 ml-1 select-none">Mission Plan</h4>
+                                <div className="pt-2 border-t border-slate-200/50 dark:border-white/5">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 mt-4 ml-1 select-none">Mission Plan</h4>
                                     <FormattedBlock content={agentPlan} isStreaming={msg.isThinking && executionLog.length === 0} />
                                 </div>
                             )}
                             {executionLog.length > 0 && (
-                                <div>
-                                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 ml-1 select-none">Execution Log</h4>
+                                <div className={`${agentPlan ? '' : 'pt-2 border-t border-slate-200/50 dark:border-white/5'}`}>
+                                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 mt-2 ml-1 select-none">Execution Log</h4>
                                     <ThinkingWorkflow
                                         nodes={executionLog}
                                         sendMessage={sendMessage}
@@ -160,12 +162,12 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
       
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer) && (
-        <div className="w-full flex flex-col gap-4">
+        <div className="w-full flex flex-col gap-4 pl-1">
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
           
           <div className="markdown-content max-w-none w-full text-slate-800 dark:text-slate-100">
-            {/* Streaming Answer: Now using ManualCodeRenderer for proper styling during generation */}
+            {/* Streaming Answer */}
             {isStreamingFinalAnswer && (
                <ManualCodeRenderer 
                   text={finalAnswerText} 
@@ -176,7 +178,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                />
             )}
             
-            {/* Complete Answer: Renders static parsed segments */}
+            {/* Complete Answer */}
             {thinkingIsComplete && logic.hasFinalAnswer && !activeResponse.error && (
                 parsedFinalAnswer.map((segment, index) => {
                     const key = `${id}-${index}`;
@@ -203,12 +205,11 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                             case 'BROWSER':
                                 return <BrowserSessionDisplay key={key} {...data} />;
                             case 'CODE_OUTPUT':
-                                return null; // Handled by tool call history usually, but can be added here if needed in final answer
+                                return null; 
                             default:
                                 return <ErrorDisplay key={key} error={{ message: `Unknown component type: ${componentType}`, details: JSON.stringify(data) }} />;
                         }
                     } else {
-                        // Text segment
                         return (
                             <ManualCodeRenderer 
                                 key={key} 
@@ -245,7 +246,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
 
       {logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
-         <div className="w-full"><SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} /></div>
+         <div className="w-full pl-1"><SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} /></div>
       )}
     </motion.div>
   );

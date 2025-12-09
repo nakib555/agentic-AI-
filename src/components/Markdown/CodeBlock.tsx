@@ -80,29 +80,29 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
     const isRunnable = onRunCode && runnableLanguages.includes(rawLanguage);
 
     return (
-      <div className="my-5 rounded-xl text-sm overflow-hidden border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#0d0d0d]">
-        <div className="flex justify-between items-center px-4 py-2.5 bg-gray-100/50 dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-white/5">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400 select-none">
+      <div className="my-6 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-[#09090b] shadow-sm">
+        <div className="flex justify-between items-center px-4 py-2 bg-gray-50/80 dark:bg-white/5 border-b border-gray-200 dark:border-white/5">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 select-none font-mono">
             {formattedLanguage}
           </span>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             {isRunnable && (
                 <button
                     onClick={handleRun}
                     disabled={isDisabled}
                     aria-label="Run code"
                     title="Run code"
-                    className="flex items-center space-x-2 p-1.5 rounded-md text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-gray-400 dark:hover:text-indigo-300 dark:hover:bg-white/5 transition-colors duration-150 active:scale-95 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center space-x-1.5 px-2 py-1 rounded-md text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-gray-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-500/20 transition-colors duration-150 active:scale-95 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                    <span className="text-xs font-medium uppercase tracking-wider">Run</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider">Run</span>
                 </button>
             )}
             <button
                 onClick={handleCopy}
                 aria-label={isCopied ? 'Copied!' : 'Copy code'}
                 title={isCopied ? 'Copied!' : 'Copy code'}
-                className="flex items-center space-x-2 p-1.5 rounded-md text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-white/5 transition-colors duration-150 active:scale-95 focus:outline-none"
+                className="flex items-center space-x-1.5 px-2 py-1 rounded-md text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors duration-150 active:scale-95 focus:outline-none"
             >
                 <AnimatePresence mode="wait" initial={false}>
                 {isCopied ? (
@@ -115,7 +115,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
                     </motion.div>
                 )}
                 </AnimatePresence>
-                <span className="text-xs font-medium uppercase tracking-wider">
+                <span className="text-[10px] font-semibold uppercase tracking-wider">
                     {isCopied ? 'Copied' : 'Copy'}
                 </span>
             </button>
@@ -133,8 +133,8 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
                   customStyle={{
                     margin: 0,
                     padding: '1.25rem',
-                    backgroundColor: 'transparent',
-                    fontSize: '0.875rem',
+                    backgroundColor: 'transparent', // Let container bg handle it
+                    fontSize: '0.875rem', // 14px
                     lineHeight: '1.6',
                     fontFamily: "'Fira Code', monospace",
                   }}

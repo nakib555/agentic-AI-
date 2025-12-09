@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -69,8 +68,8 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
     };
 
     return (
-        <div className="w-full flex flex-wrap items-center justify-between gap-y-3 pt-4 border-t border-slate-100 dark:border-white/5 mt-2">
-            <div className="flex items-center gap-1.5">
+        <div className="w-full flex flex-wrap items-center justify-between gap-y-3 pt-4 mt-2">
+            <div className="flex items-center gap-1">
                 <IconButton title={isCopied ? 'Copied!' : 'Copy'} onClick={handleCopy}>
                     <AnimatePresence mode="wait" initial={false}>
                         {isCopied ? (
@@ -98,7 +97,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                     </svg>
                 </IconButton>
 
-                <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-1"></div>
+                <div className="w-px h-3 bg-slate-200 dark:bg-white/10 mx-2"></div>
 
                 <IconButton title="Helpful" onClick={() => setFeedback('up')} active={feedback === 'up'}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
@@ -112,7 +111,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                     </svg>
                 </IconButton>
 
-                <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-1"></div>
+                <div className="w-px h-3 bg-slate-200 dark:bg-white/10 mx-2"></div>
 
                 <TtsButton isPlaying={ttsState === 'playing'} isLoading={ttsState === 'loading'} onClick={onTtsClick} />
             </div>

@@ -43,8 +43,8 @@ const BlockquoteRouter = (props: any) => {
         }
     }
     
-    // If no special syntax is matched, render a standard blockquote
-    return React.createElement('blockquote', { className: "custom-blockquote my-4 text-slate-700 dark:text-slate-300 break-words", ...props });
+    // If no special syntax is matched, render a standard blockquote with enhanced styling
+    return React.createElement('blockquote', { className: "custom-blockquote my-6 pl-6 py-1 border-l-4 border-indigo-500/50 dark:border-indigo-400/50 bg-gray-50/50 dark:bg-white/5 rounded-r-lg text-slate-700 dark:text-slate-300 break-words", ...props });
 };
 
 type MarkdownOptions = {
@@ -54,22 +54,26 @@ type MarkdownOptions = {
 
 // Factory function to create components with context (like code running handlers)
 export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
-    h1: (props: any) => React.createElement('h1', { className: "text-2xl font-bold my-5 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
-    h2: (props: any) => React.createElement('h2', { className: "text-xl font-bold my-4 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
-    h3: (props: any) => React.createElement('h3', { className: "text-lg font-bold my-3 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
-    h4: (props: any) => React.createElement('h4', { className: "text-sm font-bold my-2 text-slate-900 dark:text-slate-100 break-words font-['Space_Grotesk']", ...props }),
-    p: (props: any) => React.createElement('p', { className: "text-sm mb-4 leading-relaxed text-slate-700 dark:text-slate-300 break-words", ...props }),
+    // Enhanced Typography Headers
+    h1: (props: any) => React.createElement('h1', { className: "text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 mb-6 mt-10 first:mt-0 font-display", ...props }),
+    h2: (props: any) => React.createElement('h2', { className: "text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100 mb-4 mt-8 font-display", ...props }),
+    h3: (props: any) => React.createElement('h3', { className: "text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100 mb-3 mt-6 font-display", ...props }),
+    h4: (props: any) => React.createElement('h4', { className: "text-lg font-medium text-gray-900 dark:text-gray-100 mb-2 mt-4 font-display", ...props }),
     
-    ul: (props: any) => React.createElement('ul', { className: "text-sm list-disc list-outside pl-6 mb-4 space-y-1 text-slate-700 dark:text-slate-300 marker:text-slate-400", ...props }),
-    ol: (props: any) => React.createElement('ol', { className: "text-sm list-decimal list-outside pl-6 mb-4 space-y-1 text-slate-700 dark:text-slate-300 marker:text-slate-400", ...props }),
-    li: (props: any) => React.createElement('li', { className: "pl-1 break-words", ...props }),
+    // Readable Paragraphs
+    p: (props: any) => React.createElement('p', { className: "text-base leading-7 text-gray-700 dark:text-gray-300 mb-5 last:mb-0", ...props }),
+    
+    // Styled Lists
+    ul: (props: any) => React.createElement('ul', { className: "my-5 list-disc list-outside ml-5 space-y-2 text-gray-700 dark:text-gray-300 marker:text-indigo-500/70", ...props }),
+    ol: (props: any) => React.createElement('ol', { className: "my-5 list-decimal list-outside ml-5 space-y-2 text-gray-700 dark:text-gray-300 marker:text-indigo-500/70 marker:font-medium", ...props }),
+    li: (props: any) => React.createElement('li', { className: "pl-1", ...props }),
     
     blockquote: BlockquoteRouter,
     a: (props: any) => React.createElement(StyledLink, props),
     
-    strong: (props: any) => React.createElement('strong', { className: "font-bold text-slate-900 dark:text-slate-100", ...props }),
-    em: (props: any) => React.createElement('em', { className: "italic text-slate-800 dark:text-slate-200", ...props }),
-    img: (props: any) => React.createElement('img', { className: "max-w-full h-auto rounded-lg my-4 border border-gray-200 dark:border-gray-700", loading: "lazy", ...props }),
+    strong: (props: any) => React.createElement('strong', { className: "font-semibold text-gray-900 dark:text-gray-100", ...props }),
+    em: (props: any) => React.createElement('em', { className: "italic text-gray-800 dark:text-gray-200", ...props }),
+    img: (props: any) => React.createElement('img', { className: "max-w-full h-auto rounded-xl my-6 border border-gray-200 dark:border-gray-800 shadow-sm", loading: "lazy", ...props }),
     mark: (props: any) => React.createElement(StyledMark, props),
 
     code: ({ inline, className, children, isBlock, ...props }: any) => {
@@ -110,31 +114,31 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
         // Intercept the `code` child and inject a prop `isBlock={true}` to identify it as a block context
         // This is necessary because recent versions of react-markdown do not pass `inline` prop reliably.
         if (React.isValidElement(children)) {
-             return React.createElement('div', { className: "not-prose my-4" }, 
+             return React.createElement('div', { className: "not-prose my-6" }, 
                 React.cloneElement(children as React.ReactElement<any>, { isBlock: true })
              );
         }
-        return React.createElement('div', { className: "not-prose my-4" }, children);
+        return React.createElement('div', { className: "not-prose my-6" }, children);
     },
 
     // --- Enhanced Table Styling ---
     table: (props: any) => React.createElement(
         'div',
-        { className: "my-6 w-full overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 shadow-sm bg-white dark:bg-[#1e1e1e]" },
+        { className: "my-8 w-full overflow-hidden rounded-xl border border-gray-200 dark:border-white/5 shadow-sm bg-white dark:bg-[#1e1e1e]" },
         React.createElement(
             'div',
             { className: "overflow-x-auto" },
             React.createElement('table', { className: "w-full text-left border-collapse min-w-full", ...props })
         )
     ),
-    thead: (props: any) => React.createElement('thead', { className: "bg-gray-50/80 dark:bg-white/5 border-b border-gray-200 dark:border-white/10", ...props }),
+    thead: (props: any) => React.createElement('thead', { className: "bg-gray-50/80 dark:bg-white/5 border-b border-gray-200 dark:border-white/5", ...props }),
     tbody: (props: any) => React.createElement('tbody', { className: "divide-y divide-gray-100 dark:divide-white/5 bg-transparent", ...props }),
     tr: (props: any) => React.createElement('tr', { className: "group transition-colors duration-150 hover:bg-gray-50/50 dark:hover:bg-white/5", ...props }),
     th: (props: any) => React.createElement('th', { className: "px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 select-none", ...props }),
     td: (props: any) => React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700 dark:text-gray-300 align-top leading-relaxed", ...props }),
     
-    hr: (props: any) => React.createElement('hr', { className: "my-6 border-slate-200 dark:border-white/10", ...props }),
-    del: (props: any) => React.createElement('del', { className: "text-slate-500 dark:text-slate-400", ...props }),
+    hr: (props: any) => React.createElement('hr', { className: "my-8 border-gray-200 dark:border-white/10", ...props }),
+    del: (props: any) => React.createElement('del', { className: "text-gray-400 dark:text-gray-500", ...props }),
 });
 
 // Main component map for standard markdown rendering in the chat.
@@ -153,20 +157,16 @@ export const WorkflowMarkdownComponents = {
     li: (props: any) => React.createElement('li', { className: "pl-1", ...props }),
     blockquote: (props: any) => React.createElement('blockquote', { className: "custom-blockquote custom-blockquote-workflow my-2 text-slate-700 dark:text-slate-300", ...props }),
     
-    // Compact table for workflow view (smaller padding, no double wrap to save space)
+    // Compact table for workflow view
     table: (props: any) => React.createElement('div', { className: "my-2 w-full overflow-x-auto rounded border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/20" }, React.createElement('table', { className: "w-full text-xs text-left border-collapse", ...props })),
     thead: (props: any) => React.createElement('thead', { className: "bg-slate-50 dark:bg-white/5", ...props }),
     tr: (props: any) => React.createElement('tr', { className: "border-b border-slate-100 dark:border-white/5 last:border-0", ...props }),
     th: (props: any) => React.createElement('th', { className: "px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 align-bottom", ...props }),
     td: (props: any) => React.createElement('td', { className: "px-3 py-2 text-slate-600 dark:text-slate-300 align-top", ...props }),
     
-    // Workflow-specific code component logic
     code: ({ inline, className, children, isBlock, ...props }: any) => {
-        // Replicate logic from main code component but simplified
         if (inline) return React.createElement(InlineCode, null, children);
-        
         const match = /language-(\w+)/.exec(className || '');
-        // Workflow code blocks are often smaller/simpler, but we can stick to differentiation
         if (isBlock || match) {
             let content = String(children ?? '').replace(/\n$/, '');
             if (Array.isArray(children)) content = children.join('');

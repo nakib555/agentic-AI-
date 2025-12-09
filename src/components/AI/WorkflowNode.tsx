@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -162,7 +161,7 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
         }
 
         return (
-            <div className={`group border rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? 'bg-white dark:bg-white/5 shadow-sm' : 'bg-transparent hover:bg-white/50 dark:hover:bg-white/5'} border-slate-200 dark:border-white/10`}>
+            <div className={`group border rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? 'bg-white dark:bg-white/5 shadow-sm border-slate-200 dark:border-white/10' : 'bg-transparent border-transparent dark:border-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}>
                 {/* Header */}
                 <div 
                     className="flex items-center justify-between p-3 cursor-pointer"
@@ -219,7 +218,7 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
     const hasDetails = !!node.details;
 
     return (
-        <div className={`group border rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? 'bg-white dark:bg-white/5 shadow-sm' : 'bg-transparent hover:bg-white/50 dark:hover:bg-white/5'} border-slate-200 dark:border-white/10`}>
+        <div className={`group border rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? 'bg-white dark:bg-white/5 shadow-sm border-slate-200 dark:border-white/10' : 'bg-transparent border-transparent dark:border-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}>
             {/* Header */}
             <div 
                 className="flex items-center justify-between p-3 cursor-pointer"

@@ -9,16 +9,15 @@
 .markdown-content > div:first-child { margin-top: 0; }
 .markdown-content > div:last-child { margin-bottom: 0; }
 
-/* Custom Blockquote styles */
+/* Custom Blockquote styles - Redefined as fallback, mostly handled by component now */
 .custom-blockquote {
   position: relative;
-  padding: 0.75rem 1rem 0.75rem 1.25rem;
+  padding: 1rem 1.5rem;
   border-left: 4px solid var(--primary-main);
   background-color: var(--bg-layer-2);
-  color: var(--text-secondary);
   border-radius: 0 0.5rem 0.5rem 0;
   margin: 1.5rem 0;
-  font-style: italic;
+  font-style: normal;
 }
 
 /* Ensure paragraphs inside the blockquote don't add extra margins */
@@ -36,14 +35,15 @@
   border-left-width: 2px;
   background-color: transparent;
   margin: 0.5rem 0;
+  font-size: 0.9em;
 }
 
 /* --- Robust List Alignment Fixes --- */
 
 /* 1. Base List Item Styling */
 .markdown-content li {
-  margin-bottom: 0.35rem; /* Increased for readability */
-  line-height: 1.6;
+  margin-bottom: 0.5rem;
+  line-height: 1.7; /* Increased line height for readability */
   position: relative;
   padding-left: 0.25rem;
 }
@@ -126,4 +126,15 @@
 .workflow-markdown th,
 .workflow-markdown td {
   min-width: 80px;
+}
+
+/* Header Spacing */
+.markdown-content h1, .markdown-content h2, .markdown-content h3 {
+    margin-top: 2.5rem; /* More breathing room */
+    margin-bottom: 1.25rem;
+    line-height: 1.3;
+}
+
+.markdown-content h1:first-child, .markdown-content h2:first-child, .markdown-content h3:first-child {
+    margin-top: 0;
 }
