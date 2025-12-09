@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -21,10 +22,10 @@ const InstructionField: React.FC<{
     disabled: boolean;
     placeholder: string;
 }> = ({ label, description, value, onChange, disabled, placeholder }) => (
-    <div className="py-4">
-        <div className="mb-3">
-            <label className="block text-base font-semibold text-slate-800 dark:text-slate-200">{label}</label>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{description}</p>
+    <div className="p-5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl mb-4 shadow-sm hover:border-indigo-300 dark:hover:border-white/20 transition-colors">
+        <div className="mb-4">
+            <label className="block text-base font-bold text-slate-800 dark:text-slate-200">{label}</label>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{description}</p>
         </div>
         <div className="relative group">
             <textarea
@@ -32,11 +33,11 @@ const InstructionField: React.FC<{
                 onChange={e => onChange(e.target.value)}
                 disabled={disabled}
                 placeholder={placeholder}
-                className="w-full min-h-[140px] p-4 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-black/20 text-sm text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 resize-y leading-relaxed"
+                className="w-full min-h-[160px] p-4 bg-slate-50 dark:bg-[#1a1a1a] border border-slate-300 dark:border-white/10 rounded-xl text-sm font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-y leading-relaxed shadow-inner"
                 aria-disabled={disabled}
             />
-            <div className="absolute bottom-3 right-3 pointer-events-none">
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-slate-300 dark:text-slate-600"><path fillRule="evenodd" d="M3 17a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Zm3.293-7.707a1 1 0 0 1 1.414 0L9 10.586V3a1 1 0 1 1 2 0v7.586l1.293-1.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 0-1.414Z" clipRule="evenodd" /></svg>
+            <div className="absolute bottom-4 right-4 pointer-events-none opacity-50">
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-slate-400 dark:text-slate-500"><path fillRule="evenodd" d="M3 17a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Zm3.293-7.707a1 1 0 0 1 1.414 0L9 10.586V3a1 1 0 1 1 2 0v7.586l1.293-1.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 0-1.414Z" clipRule="evenodd" /></svg>
             </div>
         </div>
     </div>
@@ -51,10 +52,10 @@ const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProps> = ({
     disabled
 }) => {
     return (
-        <div className="space-y-2">
-             <div className="mb-4">
-                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">Custom Instructions</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+        <div className="space-y-6">
+             <div className="mb-6">
+                <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Custom Instructions</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     Tailor the AI's personality and knowledge to your specific needs.
                 </p>
             </div>
@@ -67,8 +68,6 @@ const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProps> = ({
                 disabled={disabled}
                 placeholder={"E.g., I'm a senior software engineer using Python. I prefer technical depth over simplification."}
             />
-
-            <div className="h-px bg-slate-200 dark:bg-white/10 my-2"></div>
 
             <InstructionField
                 label="Response Preferences"

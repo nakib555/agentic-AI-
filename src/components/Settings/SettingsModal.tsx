@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -12,7 +13,6 @@ import { SettingsSkeleton } from './SettingsSkeleton';
 const motion = motionTyped as any;
 
 // Lazy load the settings tabs to optimize bundle size and startup time
-// This ensures the main modal opens instantly, while content loads in background
 const GeneralSettings = React.lazy(() => import('./GeneralSettings'));
 const ModelSettings = React.lazy(() => import('./ModelSettings'));
 const CustomInstructionsSettings = React.lazy(() => import('./CustomInstructionsSettings'));
@@ -72,35 +72,30 @@ const CATEGORIES = [
   },
   { 
     id: 'model', 
-    label: 'Model & Behavior', 
+    label: 'Model & AI', 
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
-        <rect x="9" y="9" width="6" height="6"></rect>
-        <line x1="9" y1="1" x2="9" y2="4"></line>
-        <line x1="15" y1="1" x2="15" y2="4"></line>
-        <line x1="9" y1="20" x2="9" y2="23"></line>
-        <line x1="15" y1="20" x2="15" y2="23"></line>
-        <line x1="20" y1="9" x2="23" y2="9"></line>
-        <line x1="20" y1="14" x2="23" y2="14"></line>
-        <line x1="1" y1="9" x2="4" y2="9"></line>
-        <line x1="1" y1="14" x2="4" y2="14"></line>
+        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" />
+        <path d="M12 6v6l4 2" />
       </svg>
     ) 
   },
   { 
     id: 'instructions', 
-    label: 'Custom Instructions', 
+    label: 'Instructions', 
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
       </svg>
     ) 
   },
   { 
     id: 'speech', 
-    label: 'Speech & Memory', 
+    label: 'Voice & Memory', 
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
@@ -112,7 +107,6 @@ const CATEGORIES = [
   },
 ];
 
-// Memoized to prevent re-rendering the shell unless open state changes
 export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) => {
     const { isOpen, onClose } = props;
     const [activeCategory, setActiveCategory] = useState('general');
@@ -126,7 +120,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="settings-title"
@@ -135,21 +129,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.3, type: "spring", bounce: 0.3 }}
-            className="bg-white dark:bg-layer-1 w-full shadow-2xl rounded-2xl max-w-4xl h-[85vh] max-h-[800px] flex flex-col overflow-hidden border border-slate-200 dark:border-white/10"
+            transition={{ duration: 0.3, type: "spring", bounce: 0.25 }}
+            className="bg-page w-full shadow-2xl rounded-3xl max-w-5xl h-[85vh] max-h-[800px] flex flex-col overflow-hidden border border-slate-200 dark:border-white/10"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-sm z-10">
-              <h2 id="settings-title" className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                Settings
-              </h2>
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur-md z-20">
+              <div>
+                <h2 id="settings-title" className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  Settings
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Preferences & Configuration</p>
+              </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                className="p-2.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-all duration-200"
                 aria-label="Close settings"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
@@ -158,9 +155,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
             
             <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-slate-50/50 dark:bg-black/20">
                 {/* Navigation Sidebar */}
-                <nav className="flex-shrink-0 p-4 md:border-r border-slate-200 dark:border-white/10 md:w-64 bg-white dark:bg-layer-1 z-10">
+                <nav className="flex-shrink-0 p-4 md:p-6 md:pr-0 md:w-72 bg-white/50 dark:bg-layer-1/50 z-10 md:border-r border-slate-200 dark:border-white/5">
                     <LayoutGroup id="settings-nav">
-                        <ul className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar">
+                        <ul className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar">
                             {CATEGORIES.map(cat => (
                                 <li key={cat.id} className="flex-shrink-0">
                                     <SettingsCategoryButton
@@ -176,8 +173,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                 </nav>
 
                 {/* Content Area - Lazy Loaded */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-                    <div className="p-6 md:p-8 max-w-2xl mx-auto">
+                <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-slate-50/30 dark:bg-[#0f0f0f]">
+                    <div className="p-6 md:p-10 max-w-3xl mx-auto">
                         <Suspense fallback={<SettingsSkeleton />}>
                             <AnimatePresence mode="wait">
                                 <motion.div
@@ -185,7 +182,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                     initial={{ opacity: 0, x: 10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -10 }}
-                                    transition={{ duration: 0.15, ease: "easeOut" }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
                                 >
                                     {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
                                     {activeCategory === 'model' && (
