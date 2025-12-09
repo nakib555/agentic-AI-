@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -52,7 +53,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
       <form onSubmit={logic.handleSubmit} className="relative">
         <motion.div 
             className={`
-              relative flex flex-col bg-white dark:bg-[#1e1e1e] shadow-lg dark:shadow-2xl
+              relative flex flex-col bg-white dark:bg-layer-1 shadow-lg dark:shadow-2xl
               rounded-[24px] sm:rounded-[32px] transition-shadow duration-300
               ${logic.isFocused 
                 ? 'shadow-xl ring-1 ring-black/5 dark:ring-white/10' 

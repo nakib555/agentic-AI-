@@ -159,7 +159,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                 mass: 0.8,
             }}
             className={`
-                flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-[#1e1e1e]
+                flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-layer-1
                 ${isDesktop 
                     ? 'relative border-l border-gray-200 dark:border-white/10' // Desktop styling
                     : 'fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 dark:border-white/10 rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]' // Mobile styling

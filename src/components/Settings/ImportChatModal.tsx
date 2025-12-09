@@ -124,11 +124,11 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="bg-slate-50 dark:bg-[#1a1a1a] rounded-2xl shadow-2xl w-full max-w-2xl h-[600px] max-h-[85vh] border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
+            className="bg-slate-50 dark:bg-layer-1 rounded-2xl shadow-2xl w-full max-w-2xl h-[600px] max-h-[85vh] border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 flex-shrink-0 bg-white dark:bg-[#1e1e1e]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 flex-shrink-0 bg-white dark:bg-layer-1">
               <div>
                 <h2 id="import-chat-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">
                   Import Chat
@@ -147,7 +147,7 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
             </div>
             
             {/* Tab Bar */}
-            <div className="flex items-center px-6 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#1e1e1e] gap-4">
+            <div className="flex items-center px-6 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-layer-1 gap-4">
                 <TabButton label="Import File" isActive={activeTab === 'import'} onClick={() => setActiveTab('import')} />
                 <TabButton label="JSON Structure" isActive={activeTab === 'structure'} onClick={() => setActiveTab('structure')} />
             </div>

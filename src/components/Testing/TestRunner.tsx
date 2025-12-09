@@ -57,7 +57,7 @@ export const TestRunner: React.FC<TestRunnerProps> = ({ isOpen, onClose, runTest
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="bg-white dark:bg-[#202123] rounded-2xl shadow-xl w-full max-w-2xl h-[80vh] border border-gray-200 dark:border-white/10 flex flex-col"
+            className="bg-white dark:bg-layer-1 rounded-2xl shadow-xl w-full max-w-2xl h-[80vh] border border-gray-200 dark:border-white/10 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10">

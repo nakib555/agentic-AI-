@@ -38,8 +38,8 @@ const FileEditor: React.FC<{
     };
 
     return (
-        <div className="flex flex-col h-full bg-slate-50 dark:bg-[#151515]">
-            <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-white/10 flex justify-between items-center bg-white dark:bg-[#1e1e1e]">
+        <div className="flex flex-col h-full bg-slate-50 dark:bg-black/20">
+            <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-white/10 flex justify-between items-center bg-white dark:bg-layer-1">
                  <button onClick={onCancel} className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clipRule="evenodd" /></svg>
                     Back
@@ -214,7 +214,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-slate-50 dark:bg-[#1a1a1a] rounded-xl sm:rounded-2xl shadow-2xl w-[95vw] sm:w-full max-w-3xl h-[90vh] sm:h-[85vh] border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
+            className="bg-slate-50 dark:bg-layer-1 rounded-xl sm:rounded-2xl shadow-2xl w-[95vw] sm:w-full max-w-3xl h-[90vh] sm:h-[85vh] border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
           >
             {editingFile ? (
                 <FileEditor 
@@ -225,7 +225,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
             ) : (
             <>
                 {/* Header */}
-                <div className="flex flex-col border-b border-slate-200 dark:border-white/5 bg-white dark:bg-[#1e1e1e] z-10">
+                <div className="flex flex-col border-b border-slate-200 dark:border-white/5 bg-white dark:bg-layer-1 z-10">
                     <div className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
                         <div className="flex-1">
                             <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">Manage Memory</h2>
@@ -249,7 +249,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                 <div className="flex-1 overflow-hidden relative flex flex-col">
                         <>
                              {/* Toolbar: Search + New File */}
-                             <div className="px-4 py-3 sm:px-6 sm:py-4 bg-slate-50/80 dark:bg-[#1a1a1a]/90 backdrop-blur-sm border-b border-slate-200 dark:border-white/5 z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                             <div className="px-4 py-3 sm:px-6 sm:py-4 bg-slate-50/80 dark:bg-layer-2/90 backdrop-blur-sm border-b border-slate-200 dark:border-white/5 z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                                 <div className="flex-1 relative group">
                                     <input
                                         type="text"
@@ -328,7 +328,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#1e1e1e] flex flex-col-reverse sm:flex-row items-center justify-between gap-3 z-10">
+                <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-layer-1 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 z-10">
                     <div className="flex gap-2 w-full sm:w-auto">
                         <div className="relative flex-1 sm:flex-initial" ref={exportMenuRef}>
                             <button
