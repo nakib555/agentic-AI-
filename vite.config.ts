@@ -20,6 +20,19 @@ export default defineConfig(({ mode }) => {
       },
       resolve: {
         
+      },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'vendor-react': ['react', 'react-dom', 'framer-motion'],
+              'syntax-highlighter': ['react-syntax-highlighter'],
+              'markdown': ['react-markdown', 'rehype-katex', 'rehype-raw', 'remark-gfm', 'remark-math'],
+              'gemini': ['@google/genai'],
+              'icons': ['@heroicons/react'], // if used, or generic icon splitting
+            }
+          }
+        }
       }
     };
 });

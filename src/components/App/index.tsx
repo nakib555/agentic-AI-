@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Sidebar } from '../Sidebar/Sidebar';
 import { ChatHeader } from '../Chat/ChatHeader';
 import { ChatArea } from '../Chat/ChatArea';
@@ -13,8 +13,10 @@ import { AppModals } from './AppModals';
 import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 } from './constants';
-import { TestRunner } from '../Testing';
 import { VersionMismatchOverlay } from '../UI/VersionMismatchOverlay';
+
+// Lazy load the TestRunner to reduce initial bundle size
+const TestRunner = React.lazy(() => import('../Testing').then(module => ({ default: module.TestRunner })));
 
 export const App = () => {
   const logic = useAppLogic();
@@ -169,11 +171,13 @@ export const App = () => {
       />
 
       {logic.isTestMode && (
-          <TestRunner 
-              isOpen={logic.isTestMode}
-              onClose={() => logic.setIsTestMode(false)}
-              runTests={logic.runDiagnosticTests}
-          />
+          <Suspense fallback={null}>
+            <TestRunner 
+                isOpen={logic.isTestMode}
+                onClose={() => logic.setIsTestMode(false)}
+                runTests={logic.runDiagnosticTests}
+            />
+          </Suspense>
       )}
     </div>
   );

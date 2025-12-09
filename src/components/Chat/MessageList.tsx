@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -82,13 +81,15 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                 // or existing items grow (streaming), ONLY if the user was already at the bottom.
                 followOutput="auto"
                 // Increase overscan to ensure smooth scrolling during rapid height changes
-                overscan={200}
+                // 'increaseViewportBy' helps significantly on mobile where address bars resize the viewport
+                increaseViewportBy={400}
+                overscan={400} 
                 initialTopMostItemIndex={visibleMessages.length - 1}
                 atBottomStateChange={(isAtBottom) => {
                     setAtBottom(isAtBottom);
                     setShowScrollButton(!isAtBottom);
                 }}
-                atBottomThreshold={80} // Increased threshold to catch "stick" earlier
+                atBottomThreshold={80} 
                 className="custom-scrollbar"
                 itemContent={(index, msg) => (
                     <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-4">

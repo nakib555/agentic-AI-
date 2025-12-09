@@ -88,6 +88,17 @@ export const useAppLogic = () => {
     logCollector.start();
     setOnVersionMismatch(() => setVersionMismatch(true));
   }, []);
+
+  // --- State Refs to break dependency cycles ---
+  const activeModelRef = useRef(activeModel);
+  const imageModelRef = useRef(imageModel);
+  const videoModelRef = useRef(videoModel);
+  const ttsModelRef = useRef(ttsModel);
+
+  useEffect(() => { activeModelRef.current = activeModel; }, [activeModel]);
+  useEffect(() => { imageModelRef.current = imageModel; }, [imageModel]);
+  useEffect(() => { videoModelRef.current = videoModel; }, [videoModel]);
+  useEffect(() => { ttsModelRef.current = ttsModel; }, [ttsModel]);
   
   // --- Data Loading ---
   const processModelData = useCallback((data: { models?: Model[], imageModels?: Model[], videoModels?: Model[], ttsModels?: Model[] }) => {
@@ -102,37 +113,39 @@ export const useAppLogic = () => {
     setAvailableVideoModels(newVideoModels);
     setAvailableTtsModels(newTtsModels);
     
-    // Smart Defaults Logic: Validate current selection against available list
-    // If the currently selected model is NOT in the new list (e.g. deprecated, or key changed),
-    // automatically fall back to the first available model in that category.
-
+    // Smart Defaults Logic using Refs to avoid dependency cycles
+    
+    const currentActiveModel = activeModelRef.current;
     if (newModels.length > 0) {
-        if (!activeModel || !newModels.some((m: Model) => m.id === activeModel)) {
+        if (!currentActiveModel || !newModels.some((m: Model) => m.id === currentActiveModel)) {
             setActiveModel(newModels[0].id);
         }
     } else {
         setActiveModel('');
     }
     
+    const currentImageModel = imageModelRef.current;
     if (newImageModels.length > 0) {
-        if (!imageModel || !newImageModels.some((m: Model) => m.id === imageModel)) {
+        if (!currentImageModel || !newImageModels.some((m: Model) => m.id === currentImageModel)) {
             setImageModel(newImageModels[0].id);
         }
     }
 
+    const currentVideoModel = videoModelRef.current;
     if (newVideoModels.length > 0) {
-        if (!videoModel || !newVideoModels.some((m: Model) => m.id === videoModel)) {
+        if (!currentVideoModel || !newVideoModels.some((m: Model) => m.id === currentVideoModel)) {
             setVideoModel(newVideoModels[0].id);
         }
     }
 
+    const currentTtsModel = ttsModelRef.current;
     if (newTtsModels.length > 0) {
-        if (!ttsModel || !newTtsModels.some((m: Model) => m.id === ttsModel)) {
+        if (!currentTtsModel || !newTtsModels.some((m: Model) => m.id === currentTtsModel)) {
             setTtsModel(newTtsModels[0].id);
         }
     }
 
-  }, [activeModel, imageModel, videoModel, ttsModel]);
+  }, []); // No dependencies needed due to Refs
 
   const fetchModels = useCallback(async () => {
     try {
@@ -160,8 +173,7 @@ export const useAppLogic = () => {
             setTemperature(settings.temperature);
             setMaxTokens(settings.maxTokens);
             
-            // Set initial state from settings, but these might be overridden by fetchModels
-            // if they are invalid for the current API key
+            // Set initial state from settings
             setImageModel(settings.imageModel);
             setVideoModel(settings.videoModel);
             setTtsModel(settings.ttsModel);
