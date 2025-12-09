@@ -88,7 +88,6 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = React.m
                             selectedVoice={ttsVoice} 
                             onVoiceChange={setTtsVoice} 
                             disabled={disabled}
-                            placement="top"
                             className="w-full"
                         />
                     </div>

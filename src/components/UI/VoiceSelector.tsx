@@ -1,9 +1,11 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const TTS_VOICES = [
@@ -18,7 +20,6 @@ type VoiceSelectorProps = {
     selectedVoice: string;
     onVoiceChange: (voiceId: string) => void;
     disabled?: boolean;
-    placement?: 'top' | 'bottom';
     className?: string;
 };
 
@@ -26,32 +27,79 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
     selectedVoice, 
     onVoiceChange, 
     disabled,
-    placement = 'top',
     className = ''
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
     const selected = TTS_VOICES.find(v => v.id === selectedVoice) || TTS_VOICES[0];
+    
+    // State to hold the calculated position of the menu
+    const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number; width: number }>({ left: 0, width: 0 });
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+            if (
+                containerRef.current && !containerRef.current.contains(event.target as Node) &&
+                menuRef.current && !menuRef.current.contains(event.target as Node)
+            ) {
                 setIsOpen(false);
             }
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+        
+        // Close menu on scroll or resize to prevent it from floating detached
+        const handleScrollOrResize = () => {
+            if (isOpen) setIsOpen(false);
+        };
 
-    const placementClasses = placement === 'top' 
-        ? 'bottom-full mb-2 origin-bottom' 
-        : 'top-full mt-2 origin-top';
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            window.addEventListener('resize', handleScrollOrResize);
+            window.addEventListener('scroll', handleScrollOrResize, true); // Capture phase to detect scrolling in parents
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('resize', handleScrollOrResize);
+            window.removeEventListener('scroll', handleScrollOrResize, true);
+        };
+    }, [isOpen]);
+
+    const toggleOpen = () => {
+        if (disabled) return;
+        
+        if (isOpen) {
+            setIsOpen(false);
+            return;
+        }
+
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            const spaceBelow = windowHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            const menuHeight = 320; // Estimated max height including padding
+
+            // Intelligent placement:
+            // Default to bottom. If not enough space below AND there is enough space above, flip to top.
+            const showOnTop = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+
+            setCoords({
+                left: rect.left,
+                width: rect.width,
+                top: showOnTop ? undefined : rect.bottom + 8,
+                bottom: showOnTop ? windowHeight - rect.top + 8 : undefined
+            });
+            
+            setIsOpen(true);
+        }
+    };
 
     return (
         <div className={`relative ${className}`} ref={containerRef}>
             <button
                 type="button"
-                onClick={() => !disabled && setIsOpen(!isOpen)}
+                onClick={toggleOpen}
                 disabled={disabled}
                 className={`
                     w-full flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-200
@@ -75,64 +123,77 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                 </svg>
             </button>
 
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: placement === 'top' ? 10 : -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: placement === 'top' ? 10 : -10 }}
-                        transition={{ duration: 0.15, ease: "easeOut" }}
-                        className={`absolute left-0 w-64 bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-xl border border-gray-200 dark:border-white/10 overflow-hidden z-50 p-1.5 ${placementClasses}`}
-                    >
-                        <div className="flex flex-col gap-0.5 max-h-[300px] overflow-y-auto custom-scrollbar">
-                            <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-[#1e1e1e] z-10">
-                                Gemini Voices
+            {/* Render the menu in a Portal to break out of overflow-hidden parents */}
+            {createPortal(
+                <AnimatePresence>
+                    {isOpen && (
+                        <motion.div
+                            ref={menuRef}
+                            initial={{ opacity: 0, scale: 0.95, y: coords.bottom ? 10 : -10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: coords.bottom ? 10 : -10 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
+                            style={{
+                                position: 'fixed',
+                                left: coords.left,
+                                width: coords.width,
+                                top: coords.top,
+                                bottom: coords.bottom,
+                                zIndex: 99999, // Ensure it sits on top of everything
+                            }}
+                            className="bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-xl border border-gray-200 dark:border-white/10 overflow-hidden p-1.5"
+                        >
+                            <div className="flex flex-col gap-0.5 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-[#1e1e1e] z-10">
+                                    Gemini Voices
+                                </div>
+                                {TTS_VOICES.map(voice => (
+                                    <button
+                                        key={voice.id}
+                                        onClick={() => {
+                                            onVoiceChange(voice.id);
+                                            setIsOpen(false);
+                                        }}
+                                        className={`
+                                            flex items-center gap-3 p-2.5 rounded-xl text-left transition-all duration-200
+                                            ${selectedVoice === voice.id 
+                                                ? 'bg-indigo-50 dark:bg-indigo-500/20' 
+                                                : 'hover:bg-gray-100 dark:hover:bg-white/5'
+                                            }
+                                        `}
+                                    >
+                                        <div className={`
+                                            w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors flex-shrink-0
+                                            ${selectedVoice === voice.id 
+                                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/40 dark:text-indigo-200' 
+                                                : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'
+                                            }
+                                        `}>
+                                            {voice.name[0]}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`text-sm font-semibold truncate ${selectedVoice === voice.id ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-700 dark:text-slate-200'}`}>
+                                                {voice.name}
+                                            </p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                                {voice.desc}
+                                            </p>
+                                        </div>
+                                        {selectedVoice === voice.id && (
+                                            <motion.div 
+                                                initial={{ scale: 0 }} 
+                                                animate={{ scale: 1 }}
+                                                className="w-2 h-2 rounded-full bg-indigo-500 mr-1 flex-shrink-0"
+                                            />
+                                        )}
+                                    </button>
+                                ))}
                             </div>
-                            {TTS_VOICES.map(voice => (
-                                <button
-                                    key={voice.id}
-                                    onClick={() => {
-                                        onVoiceChange(voice.id);
-                                        setIsOpen(false);
-                                    }}
-                                    className={`
-                                        flex items-center gap-3 p-2.5 rounded-xl text-left transition-all duration-200
-                                        ${selectedVoice === voice.id 
-                                            ? 'bg-indigo-50 dark:bg-indigo-500/20' 
-                                            : 'hover:bg-gray-100 dark:hover:bg-white/5'
-                                        }
-                                    `}
-                                >
-                                    <div className={`
-                                        w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors flex-shrink-0
-                                        ${selectedVoice === voice.id 
-                                            ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/40 dark:text-indigo-200' 
-                                            : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'
-                                        }
-                                    `}>
-                                        {voice.name[0]}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className={`text-sm font-semibold truncate ${selectedVoice === voice.id ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-700 dark:text-slate-200'}`}>
-                                            {voice.name}
-                                        </p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                                            {voice.desc}
-                                        </p>
-                                    </div>
-                                    {selectedVoice === voice.id && (
-                                        <motion.div 
-                                            initial={{ scale: 0 }} 
-                                            animate={{ scale: 1 }}
-                                            className="w-2 h-2 rounded-full bg-indigo-500 mr-1 flex-shrink-0"
-                                        />
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        </motion.div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 };
