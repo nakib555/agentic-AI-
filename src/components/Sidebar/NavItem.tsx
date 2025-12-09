@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -20,48 +21,53 @@ type NavItemProps = {
 export const NavItem = ({ icon, text, active, isCollapsed, isDesktop, onClick, disabled }: NavItemProps) => {
     const shouldCollapse = isDesktop && isCollapsed;
     
-    // Removed 'transition-all' to prevent layout thrashing with framer-motion
-    const baseClasses = `w-full flex items-center px-3 py-2 rounded-lg text-left text-sm transition-colors duration-200`;
+    const baseClasses = `
+        group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left 
+        transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+    `;
     
-    const activeClasses = `bg-gray-200/60 dark:bg-violet-900/60 shadow-inner text-slate-900 font-semibold dark:text-slate-50`;
-    const inactiveClasses = `bg-gray-100/30 dark:bg-violet-900/20 text-slate-600 dark:text-slate-300 shadow-sm border border-gray-200/50 dark:border-white/10`;
-    const hoverClasses = `hover:shadow-md hover:border-gray-300/80 dark:hover:border-white/20 hover:bg-gray-100/80 dark:hover:bg-violet-900/40`;
+    const activeClasses = `
+        bg-white dark:bg-white/10 text-indigo-600 dark:text-indigo-300 font-semibold shadow-sm ring-1 ring-slate-200 dark:ring-white/5
+    `;
+    const inactiveClasses = `
+        text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-200
+    `;
 
     const disabledClasses = `opacity-50 cursor-not-allowed`;
-    const layoutClasses = shouldCollapse ? 'justify-center' : '';
+    const layoutClasses = shouldCollapse ? 'justify-center px-2' : '';
 
     return (
-        <div className="relative group" style={{ perspective: '800px' }}>
-            <motion.button 
-                onClick={onClick} 
-                disabled={disabled}
-                className={`${baseClasses} ${active ? activeClasses : inactiveClasses} ${layoutClasses} ${disabled ? disabledClasses : hoverClasses}`}
-                whileHover={!disabled ? { scale: 1.03, y: -2, z: 5 } : {}}
-                whileTap={!disabled ? { scale: 0.97, y: 1, z: -5 } : {}}
-                transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                style={{ transformStyle: 'preserve-3d' }}
+        <button 
+            onClick={onClick} 
+            disabled={disabled}
+            className={`${baseClasses} ${active ? activeClasses : inactiveClasses} ${layoutClasses} ${disabled ? disabledClasses : ''}`}
+            title={shouldCollapse ? text : undefined}
+        >
+            <div className={`flex-shrink-0 w-5 h-5 flex items-center justify-center transition-colors ${active ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'}`}>
+                {icon}
+            </div>
+            
+            <motion.span 
+                className="text-sm truncate leading-none"
+                initial={false}
+                animate={{ 
+                    width: shouldCollapse ? 0 : 'auto', 
+                    opacity: shouldCollapse ? 0 : 1, 
+                    display: shouldCollapse ? 'none' : 'block'
+                }}
+                transition={{ duration: 0.2 }}
             >
-                <div className="flex-shrink-0 w-5 h-5">{icon}</div>
-                <motion.span 
-                    className="overflow-hidden"
-                    initial={false}
-                    animate={{ 
-                        width: shouldCollapse ? 0 : 'auto', 
-                        opacity: shouldCollapse ? 0 : 1, 
-                        x: shouldCollapse ? -5 : 0,
-                        marginLeft: shouldCollapse ? 0 : 12 // Simulate gap-3
-                    }}
-                    transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                    style={{ willChange: "width, margin-left, opacity, transform" }}
-                >
-                    {text}
-                </motion.span>
-            </motion.button>
+                {text}
+            </motion.span>
+
+            {/* Desktop Tooltip for Collapsed State */}
             {shouldCollapse && !disabled && (
-                <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-white dark:bg-[#2D2D2D] text-slate-800 dark:text-slate-100 text-sm font-semibold rounded-md shadow-lg border border-gray-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-md shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                     {text}
+                    {/* Tiny arrow */}
+                    <div className="absolute top-1/2 right-full -translate-y-1/2 -mr-[1px] border-4 border-transparent border-r-slate-800"></div>
                 </div>
             )}
-        </div>
+        </button>
     );
 };

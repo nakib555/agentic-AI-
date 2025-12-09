@@ -37,7 +37,10 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
 
   return (
     <div
-      className={`relative grid grid-cols-2 p-1 rounded-xl bg-gray-100/80 dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 shadow-sm transition-opacity ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+      className={`
+        relative grid grid-cols-2 p-1 rounded-xl bg-slate-100/80 dark:bg-[#151515] border border-slate-200 dark:border-white/5 
+        transition-opacity ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
+      `}
       style={{ width: 'fit-content' }}
     >
       {modes.map((mode) => {
@@ -49,21 +52,21 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
             disabled={disabled}
             type="button"
             className={`
-              relative z-10 flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold transition-colors duration-200 rounded-lg select-none
+              relative z-10 flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-bold transition-colors duration-200 rounded-lg select-none
               ${isActive 
                 ? 'text-indigo-600 dark:text-indigo-300' 
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
               }
             `}
           >
             {isActive && (
               <motion.div
                 layoutId="mode-pill"
-                className="absolute inset-0 bg-white dark:bg-[#2d2d2d] shadow-[0_1px_3px_rgba(0,0,0,0.1)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.3)] rounded-lg border border-gray-200/50 dark:border-white/5"
+                className="absolute inset-0 bg-white dark:bg-[#2d2d2d] shadow-sm rounded-lg border border-slate-200/50 dark:border-white/10"
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
             )}
-            <span className="relative z-10 flex items-center gap-2">
+            <span className="relative z-10 flex items-center gap-1.5">
               {mode.icon}
               {mode.label}
             </span>

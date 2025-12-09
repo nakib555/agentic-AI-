@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// This is the view part of the refactored MessageForm component.
-// All logic is now handled by the `useMessageForm` hook.
-
 import React, { forwardRef } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { AttachedFilePreview } from './AttachedFilePreview';
@@ -36,7 +33,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   const logic = useMessageForm(onSubmit, isLoading, ref, messages, isAgentMode, hasApiKey);
   
   const isBackendOffline = backendStatus !== 'online';
-  const isBackendChecking = backendStatus === 'checking';
   const isGeneratingResponse = isLoading;
   
   const isProcessingFiles = logic.processedFiles.some(f => f.progress < 100 && !f.error);
@@ -45,69 +41,83 @@ export const MessageForm = forwardRef<MessageFormHandle, {
 
   const isSendDisabled = isBackendOffline || isAppLoading || isProcessingFiles || logic.isEnhancing || !hasInput || !hasApiKey;
   
-  const sendButtonClasses = "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ease-out shadow-md";
-
-  let sendButtonStateClasses = 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-slate-600 cursor-not-allowed shadow-none';
-  if (isGeneratingResponse) {
-    sendButtonStateClasses = 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-2 border-red-500/50 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/30';
-  } else if (!isSendDisabled) {
-    sendButtonStateClasses = 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/30 hover:shadow-indigo-500/50 transform hover:-translate-y-0.5';
-  }
+  // Standardized Icon Button Class
+  const iconBtnClass = `
+    flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200
+    text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-indigo-600 dark:hover:text-indigo-300
+    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-500
+  `;
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto px-0 sm:px-4">
       <form onSubmit={logic.handleSubmit} className="relative">
         <motion.div 
             className={`
-              relative flex flex-col p-2 rounded-3xl transition-all duration-300 ease-out
-              glass-input
+              relative flex flex-col bg-white dark:bg-[#1e1e1e] shadow-lg dark:shadow-2xl
+              rounded-[24px] sm:rounded-[32px] transition-shadow duration-300
               ${logic.isFocused 
-                ? 'ring-2 ring-indigo-500/20 border-indigo-500/30 dark:border-indigo-400/30' 
-                : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20'
+                ? 'shadow-xl ring-1 ring-black/5 dark:ring-white/10' 
+                : 'shadow-md border border-slate-200/60 dark:border-white/5'
               }
             `}
             layout
         >
-            {/* Proactive Assistance */}
+            {/* Top Section: Suggestions & Files */}
             <AnimatePresence>
-                {logic.proactiveSuggestions.length > 0 && (
-                    <div className="mb-2 px-2 overflow-hidden">
-                        <ProactiveAssistance suggestions={logic.proactiveSuggestions} onSuggestionClick={logic.handleSuggestionClick} />
-                    </div>
-                )}
-            </AnimatePresence>
-
-            {/* File Previews */}
-            <AnimatePresence>
-                {logic.processedFiles.length > 0 && (
+                {(logic.proactiveSuggestions.length > 0 || logic.processedFiles.length > 0) && (
                     <motion.div 
-                        layout 
                         initial={{ opacity: 0, height: 0 }} 
                         animate={{ opacity: 1, height: 'auto' }} 
-                        exit={{ opacity: 0, height: 0 }} 
-                        className="mb-2 flex flex-col gap-2 px-2 pt-2"
+                        exit={{ opacity: 0, height: 0 }}
+                        className="px-3 pt-3 flex flex-col gap-2"
                     >
-                        {logic.processedFiles.map((pf) => (
-                            <AttachedFilePreview 
-                                key={pf.id} 
-                                file={pf.file} 
-                                onRemove={() => logic.handleRemoveFile(pf.id)} 
-                                progress={pf.progress} 
-                                error={pf.error} 
-                            />
-                        ))}
+                        {logic.proactiveSuggestions.length > 0 && (
+                            <ProactiveAssistance suggestions={logic.proactiveSuggestions} onSuggestionClick={logic.handleSuggestionClick} />
+                        )}
+                        {logic.processedFiles.length > 0 && (
+                            <div className="flex flex-col gap-2">
+                                {logic.processedFiles.map((pf) => (
+                                    <AttachedFilePreview 
+                                        key={pf.id} 
+                                        file={pf.file} 
+                                        onRemove={() => logic.handleRemoveFile(pf.id)} 
+                                        progress={pf.progress} 
+                                        error={pf.error} 
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
             
             {/* Hidden Inputs */}
-            <input type="file" ref={logic.fileInputRef} onChange={logic.handleFileChange} className="hidden" aria-hidden="true" multiple accept="image/*,video/*,audio/*,application/pdf,.txt,.md,.csv,.json,.py,.js,.ts,.html,.css,.xml,.rtf,.log,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
-            <input type="file" ref={logic.folderInputRef} onChange={logic.handleFileChange} className="hidden" aria-hidden="true" {...{ webkitdirectory: "", directory: "" }} multiple />
+            <input type="file" ref={logic.fileInputRef} onChange={logic.handleFileChange} className="hidden" multiple accept="image/*,video/*,audio/*,application/pdf,.txt,.md,.csv,.json,.py,.js,.ts,.html,.css,.xml,.rtf,.log,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
+            <input type="file" ref={logic.folderInputRef} onChange={logic.handleFileChange} className="hidden" {...{ webkitdirectory: "", directory: "" }} multiple />
             
-            {/* Input & Actions Container */}
-            <div className="flex items-end gap-2 pl-3 pr-2 py-1">
-                {/* Main Input Area */}
-                <div className="relative flex-grow min-h-[44px] py-1">
+            {/* Main Input Area */}
+            <div className="flex items-end gap-2 p-2 sm:p-3">
+                {/* Left Actions (Attach) */}
+                <div className="relative flex-shrink-0 pb-0.5">
+                    <button 
+                        ref={logic.attachButtonRef} 
+                        type="button" 
+                        onClick={() => logic.setIsUploadMenuOpen(p => !p)} 
+                        disabled={logic.isEnhancing || isAppLoading || isBackendOffline || !hasApiKey} 
+                        className={iconBtnClass}
+                        title="Attach files"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                    </button>
+                    <AnimatePresence>
+                        {logic.isUploadMenuOpen && ( <UploadMenu menuRef={logic.uploadMenuRef} onFileClick={() => { logic.fileInputRef.current?.click(); logic.setIsUploadMenuOpen(false); }} onFolderClick={() => { logic.folderInputRef.current?.click(); logic.setIsUploadMenuOpen(false); }} /> )}
+                    </AnimatePresence>
+                </div>
+
+                {/* Textarea */}
+                <div className="relative flex-grow min-h-[44px] py-2">
                   <AnimatePresence mode="popLayout">
                     {!hasInput && !logic.isFocused && (
                         <motion.div
@@ -115,15 +125,14 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0, transition: { duration: 0 } }}
-                            className="absolute inset-0 py-2 text-gray-400 dark:text-slate-500 pointer-events-none select-none truncate font-medium z-0 flex items-center"
-                            aria-hidden="true"
+                            className="absolute inset-0 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none select-none text-base sm:text-sm"
                         >
                             <TextType
                                 text={logic.placeholder}
                                 loop={true}
-                                typingSpeed={65}
-                                deletingSpeed={50}
-                                pauseDuration={2000}
+                                typingSpeed={60}
+                                deletingSpeed={40}
+                                pauseDuration={3000}
                                 showCursor={false}
                             />
                         </motion.div>
@@ -139,15 +148,15 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     onBlur={() => logic.setIsFocused(false)}
                     aria-label="Chat input"
                     disabled={!hasApiKey}
-                    className={`w-full py-2 bg-transparent text-gray-900 dark:text-slate-100 focus:outline-none relative z-10 resize-none overflow-hidden leading-relaxed placeholder:text-transparent ${logic.isEnhancing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    style={{ minHeight: '24px', maxHeight: '200px' }}
+                    className={`w-full bg-transparent text-slate-900 dark:text-slate-100 text-base sm:text-sm focus:outline-none resize-none leading-relaxed placeholder:text-transparent max-h-[200px] overflow-y-auto custom-scrollbar ${logic.isEnhancing ? 'opacity-50' : ''}`}
                     rows={1}
+                    style={{ minHeight: '24px' }}
                   />
                 </div>
 
                 {/* Right Actions */}
-                <div className="flex items-center gap-2 pb-1">
-                    {/* Enhance Prompt */}
+                <div className="flex items-center gap-1 sm:gap-2 pb-0.5">
+                    {/* Enhance Button */}
                     <AnimatePresence>
                       {hasText && (
                         <motion.button 
@@ -157,107 +166,91 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                             type="button" 
                             onClick={logic.handleEnhancePrompt} 
                             disabled={logic.isEnhancing || isAppLoading || isBackendOffline || !hasApiKey} 
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 transition-all disabled:opacity-50"
-                            title="Enhance prompt"
+                            className={iconBtnClass}
+                            title="Enhance prompt with AI"
                         >
                           {logic.isEnhancing ? ( 
-                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
-                            </motion.div> 
+                            <svg className="animate-spin w-4 h-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                           ) : ( 
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-5.82 3.25L7.38 14.14 2.38 9.27l6.91-1.01L12 2z"></path></svg> 
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-5.82 3.25L7.38 14.14 2.38 9.27l6.91-1.01L12 2z"></path></svg> 
                           )}
                         </motion.button>
                       )}
                     </AnimatePresence>
 
-                    {/* Submit Button */}
+                    {/* Mic Button */}
+                    <AnimatePresence>
+                        {logic.isSupported && !hasText && (
+                            <motion.button
+                                initial={{ opacity: 0, scale: 0.8, width: 0 }}
+                                animate={{ opacity: 1, scale: 1, width: 'auto' }}
+                                exit={{ opacity: 0, scale: 0.8, width: 0 }}
+                                type="button"
+                                onClick={logic.handleMicClick}
+                                disabled={isLoading || logic.isEnhancing || isAppLoading || !hasApiKey}
+                                className={`${iconBtnClass} ${logic.isRecording ? 'text-red-500 bg-red-50 dark:bg-red-500/20 hover:bg-red-100 dark:hover:bg-red-500/30' : ''}`}
+                            >
+                                {logic.isRecording ? (
+                                    <span className="relative flex h-3 w-3">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                    </span>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                                )}
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Send Button */}
                     <motion.button
                         type={isGeneratingResponse ? 'button' : 'submit'}
                         onClick={isGeneratingResponse ? onCancel : undefined}
-                        disabled={isGeneratingResponse ? false : isSendDisabled}
+                        disabled={!isGeneratingResponse && isSendDisabled}
                         aria-label={isGeneratingResponse ? "Stop generating" : "Send message"}
-                        className={`${sendButtonClasses} ${sendButtonStateClasses}`}
-                        whileTap={{ scale: 0.95 }}
-                        whileHover={!isSendDisabled && !isGeneratingResponse ? { scale: 1.05 } : {}}
+                        className={`
+                            flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 shadow-md
+                            ${isGeneratingResponse 
+                                ? 'bg-white border-2 border-red-500 text-red-500 hover:bg-red-50 dark:bg-slate-800 dark:hover:bg-red-900/20' 
+                                : isSendDisabled 
+                                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none' 
+                                    : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-indigo-500/25 hover:-translate-y-0.5'
+                            }
+                        `}
                     >
                         {isGeneratingResponse ? ( 
-                           <div className="w-7 h-7 flex items-center justify-center">
-                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-full h-full">
-                                <rect x="18" y="18" width="12" height="12" rx="2" ry="2" fill="currentColor"></rect>
-                                <circle cx="24" cy="24" r="16" fill="none" stroke="#4f46e5" strokeWidth="4.5" strokeLinecap="round" strokeDasharray="80 100" strokeDashoffset="0">
-                                    <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="2.5s" repeatCount="indefinite"></animateTransform>
-                                    <animate attributeName="stroke-dashoffset" values="0; -180" dur="2.5s" repeatCount="indefinite"></animate>
-                                    <animate attributeName="stroke" dur="10s" repeatCount="indefinite" values="#f87171; #fb923c; #facc15; #4ade80; #22d3ee; #3b82f6; #818cf8; #e879f9; #f472b6; #f87171"></animate>
-                                </circle>
-                             </svg>
-                           </div>
+                           <div className="w-3 h-3 bg-current rounded-sm"></div>
                         ) : ( 
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 ml-0.5">
-                                <line x1="22" y1="2" x2="11" y2="13"></line>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 ml-0.5">
+                                <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
                             </svg>
                          )}
                     </motion.button>
                 </div>
             </div>
             
-            {/* Bottom Toolbar */}
-            <div className="flex items-center gap-2 px-3 pb-2 pt-1">
-                {/* Attach Button */}
-                <div className="relative">
-                    <motion.button 
-                        ref={logic.attachButtonRef} 
-                        type="button" 
-                        onClick={() => logic.setIsUploadMenuOpen(p => !p)} 
-                        disabled={logic.isEnhancing || isAppLoading || isBackendOffline || !hasApiKey} 
-                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors disabled:opacity-50"
-                        title="Attach files"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-                        </svg>
-                    </motion.button>
-                    <AnimatePresence>
-                        {logic.isUploadMenuOpen && ( <UploadMenu menuRef={logic.uploadMenuRef} onFileClick={() => { logic.fileInputRef.current?.click(); logic.setIsUploadMenuOpen(false); }} onFolderClick={() => { logic.folderInputRef.current?.click(); logic.setIsUploadMenuOpen(false); }} /> )}
-                    </AnimatePresence>
+            {/* Footer / Mode Toggle */}
+            <div className="flex items-center justify-between px-4 pb-2">
+                <div className="flex-1"></div> {/* Spacer */}
+                <div className="flex justify-center">
+                    <ModeToggle 
+                        isAgentMode={isAgentMode} 
+                        onToggle={setIsAgentMode}
+                        disabled={isLoading || isAppLoading || isBackendOffline}
+                    />
                 </div>
-
-                {/* Voice Input */}
-                <AnimatePresence>
-                  {logic.isSupported && (
-                      <motion.button 
-                        type="button" 
-                        onClick={logic.handleMicClick} 
-                        disabled={isLoading || logic.isEnhancing || isAppLoading || isBackendOffline || !hasApiKey} 
-                        className={`p-1.5 rounded-lg transition-colors disabled:opacity-50 ${logic.isRecording ? 'text-red-500 bg-red-50 dark:bg-red-500/20' : 'text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
-                        title={logic.isRecording ? "Stop recording" : "Voice input"}
-                      >
-                          {logic.isRecording ? ( 
-                            <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /></svg>
-                            </motion.div> 
-                          ) : ( 
-                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg> 
-                          )}
-                      </motion.button>
-                  )}
-                </AnimatePresence>
-
-                <div className="h-4 w-px bg-gray-200 dark:bg-white/10 mx-1"></div>
-
-                <ModeToggle 
-                    isAgentMode={isAgentMode} 
-                    onToggle={setIsAgentMode}
-                    disabled={isLoading || isAppLoading || isBackendOffline}
-                />
+                <div className="flex-1 text-right">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-600 font-medium hidden sm:inline-block">
+                        Agentic AI v1.0
+                    </span>
+                </div>
             </div>
         </motion.div>
       </form>
       
-      <div className="flex justify-center mt-3">
-          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-             Agentic AI can make mistakes. Please verify important information.
+      <div className="flex justify-center mt-3 mb-1">
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium text-center">
+             AI can make mistakes. Check important info.
           </p>
       </div>
     </div>

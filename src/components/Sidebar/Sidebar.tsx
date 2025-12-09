@@ -36,9 +36,10 @@ type SidebarProps = {
     isDesktop: boolean;
 };
 
+// Simplified mobile animation variants
 const mobileVariants = {
-    open: { translateX: '0%' },
-    closed: { translateX: '-100%' },
+    open: { x: '0%' },
+    closed: { x: '-100%' },
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -111,21 +112,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
 
     return (
-        <aside className={`h-full ${isDesktop ? 'flex-shrink-0 z-20' : 'fixed inset-0 z-40 pointer-events-none'}`}>
+        <aside className={`h-full flex-shrink-0 ${isDesktop ? 'relative z-20' : 'fixed inset-0 z-40 pointer-events-none'}`}>
+            {/* Mobile Backdrop */}
             <AnimatePresence>
                 {!isDesktop && isOpen && (
                     <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "linear" }}
+                        transition={{ duration: 0.2 }}
                         onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto" 
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto" 
                         style={{ willChange: 'opacity' }}
                     />
                 )}
             </AnimatePresence>
             
+            {/* Sidebar Content */}
             <motion.div
                 initial={false}
                 animate={isDesktop ? { width: isCollapsed ? 72 : width } : (isOpen ? 'open' : 'closed')}
@@ -139,14 +142,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }}
                 style={{
                     height: '100%',
-                    position: isDesktop ? 'relative' : 'absolute', // Absolute within the fixed aside
-                    width: !isDesktop ? 288 : 'auto', // 288px = w-72
+                    position: isDesktop ? 'relative' : 'absolute',
+                    width: isDesktop ? 'auto' : 300, // Fixed width on mobile for consistency
                     left: 0,
                     top: 0,
                     pointerEvents: 'auto',
                     willChange: isResizing ? 'width' : 'transform, width',
                 }}
-                className="bg-layer-1 border-r border-border flex flex-col transform-gpu shadow-2xl md:shadow-none"
+                className="bg-layer-1 border-r border-border flex flex-col transform-gpu shadow-2xl md:shadow-none overflow-hidden"
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
@@ -204,19 +207,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {/* Resize Handle */}
                 {isDesktop && !isCollapsed && (
                     <div
-                        className="group absolute top-0 right-0 h-full z-50"
-                        style={{ width: '16px', transform: 'translateX(50%)', cursor: 'col-resize' }}
+                        className="group absolute top-0 right-0 h-full z-50 w-4 translate-x-2 cursor-col-resize flex justify-center hover:bg-transparent"
                         onMouseDown={startResizing}
                     >
-                        <div className={`w-[1.5px] h-full mx-auto transition-colors duration-200 ${isResizing ? 'bg-blue-500' : 'bg-transparent group-hover:bg-blue-400/50'}`}></div>
+                        <div className={`w-[2px] h-full transition-colors duration-200 ${isResizing ? 'bg-indigo-500' : 'bg-transparent group-hover:bg-indigo-400/50'}`}></div>
                     </div>
                 )}
                 
-                {/* Desktop Expand Button (Visible when collapsed, attached to side) */}
+                {/* Desktop Expand Button */}
                 {isDesktop && isCollapsed && (
                     <button
                         onClick={() => setIsCollapsed(false)}
-                        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-12 bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-r-lg flex items-center justify-center text-slate-400 hover:text-indigo-500 shadow-sm cursor-pointer z-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute -right-3 top-12 w-6 h-12 bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-r-lg flex items-center justify-center text-slate-400 hover:text-indigo-500 shadow-sm cursor-pointer z-50 opacity-0 group-hover:opacity-100 transition-opacity delay-300"
                         title="Expand sidebar"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>

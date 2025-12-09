@@ -18,6 +18,14 @@ html, body, #root {
     color: var(--text-primary);
     touch-action: manipulation; /* Improves tap responsiveness */
     -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+    text-rendering: optimizeLegibility; /* Improved font rendering */
+}
+
+/* Ensure mobile inputs don't zoom */
+@media screen and (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important; /* Prevents iOS zoom */
+  }
 }
 
 /* Placeholder styling */
