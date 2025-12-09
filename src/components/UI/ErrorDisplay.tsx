@@ -205,43 +205,43 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
                     {error.details && (
                         <button
                         onClick={() => setIsDetailsOpen(!isDetailsOpen)}
-                        className={`text-xs font-semibold flex items-center gap-1.5 px-2 py-1.5 -ml-2 rounded-md transition-colors ${styles.detailsBtn}`}
+                        className={`text-xs font-semibold flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all ${styles.detailsBtn}`}
                         >
                             <svg 
                                 xmlns="http://www.w3.org/2000/svg" 
                                 viewBox="0 0 16 16" 
                                 fill="currentColor" 
-                                className={`w-4 h-4 transition-transform duration-200 ${isDetailsOpen ? 'rotate-90' : ''}`}
+                                className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ${isDetailsOpen ? 'rotate-90' : ''}`}
                             >
                                 <path fillRule="evenodd" d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
                             </svg>
-                            <span>{isDetailsOpen ? 'Hide Details' : 'View Details'}</span>
+                            <span className="whitespace-nowrap">{isDetailsOpen ? 'Hide Details' : 'View Details'}</span>
                         </button>
                     )}
                     
                     {error.details && (
                         <button
                             onClick={() => navigator.clipboard.writeText(JSON.stringify(error, null, 2))}
-                            className={`text-xs font-semibold flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 ${styles.detailsBtn}`}
+                            className={`text-xs font-semibold flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 ${styles.detailsBtn}`}
                             title="Copy error details to clipboard"
                         >
-                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 flex-shrink-0">
                                  <path d="M4.75 2A1.75 1.75 0 0 0 3 3.75v8.5A1.75 1.75 0 0 0 4.75 14h6.5A1.75 1.75 0 0 0 13 12.25v-6.5L9.25 2H4.75ZM8.5 2.75V6H12v6.25a.25.25 0 0 1-.25.25h-6.5a.25.25 0 0 1-.25-.25v-8.5a.25.25 0 0 1 .25-.25H8.5Z" />
                              </svg>
-                             Copy
+                             <span className="whitespace-nowrap">Copy</span>
                         </button>
                     )}
 
                     {onRetry && (
                         <button
                             onClick={onRetry}
-                            className={`text-xs font-semibold flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors ${styles.detailsBtn} border border-current/20 hover:bg-current/10`}
+                            className={`text-xs font-semibold flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg transition-all ${styles.detailsBtn} border border-current/20 hover:bg-current/10 shadow-sm hover:shadow active:scale-95`}
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 flex-shrink-0">
                                 <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
                                 <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
                             </svg>
-                            Regenerate
+                            <span className="whitespace-nowrap">Regenerate</span>
                         </button>
                     )}
                 </div>
