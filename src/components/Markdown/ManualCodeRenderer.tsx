@@ -27,6 +27,9 @@ type ManualCodeRendererProps = {
 const processHighlights = (content: string): string => {
     if (!content) return '';
     
+    // FAST PATH: If no "==" exists, skip the expensive regex split entirely.
+    if (!content.includes('==')) return content;
+    
     // Split content by:
     // 1. ``` ... ``` (Multi-line code blocks)
     // 2. ` ... ` (Inline code)

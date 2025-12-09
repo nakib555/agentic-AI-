@@ -57,11 +57,6 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
         
         if (index !== -1 && virtuosoRef.current) {
             virtuosoRef.current.scrollToIndex({ index, behavior: 'smooth', align: 'center' });
-            
-            // Highlight effect - tricky with virtualization as the DOM node might not exist yet.
-            // A robust way is to pass a "highlightedId" prop down to MessageComponent, 
-            // but for simplicity we rely on the scroll for now.
-            // Ideally, the MessageComponent would check a global or context for "highlight this ID".
         }
     }
   }));
@@ -86,12 +81,14 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                 // followOutput="auto" ensures the list sticks to the bottom when new items are added
                 // or existing items grow (streaming), ONLY if the user was already at the bottom.
                 followOutput="auto"
+                // Increase overscan to ensure smooth scrolling during rapid height changes
+                overscan={200}
                 initialTopMostItemIndex={visibleMessages.length - 1}
                 atBottomStateChange={(isAtBottom) => {
                     setAtBottom(isAtBottom);
                     setShowScrollButton(!isAtBottom);
                 }}
-                atBottomThreshold={60}
+                atBottomThreshold={80} // Increased threshold to catch "stick" earlier
                 className="custom-scrollbar"
                 itemContent={(index, msg) => (
                     <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-4">
