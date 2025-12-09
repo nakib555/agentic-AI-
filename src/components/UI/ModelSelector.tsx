@@ -16,13 +16,24 @@ type ModelSelectorProps = {
   onModelChange: (modelId: string) => void;
   disabled?: boolean;
   className?: string;
+  placeholder?: string;
+  icon?: React.ReactNode;
 };
 
-export const ModelSelector: React.FC<ModelSelectorProps> = ({ models, selectedModel, onModelChange, disabled, className }) => {
+export const ModelSelector: React.FC<ModelSelectorProps> = ({
+  models,
+  selectedModel,
+  onModelChange,
+  disabled,
+  className,
+  placeholder = "Select Model",
+  icon
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
-  const selectedModelName = models.find(m => m.id === selectedModel)?.name || 'Select Model';
+  const selectedModelData = models.find(m => m.id === selectedModel);
 
+  // Close on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (selectorRef.current && !selectorRef.current.contains(event.target as Node)) {
@@ -43,43 +54,100 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({ models, selectedMo
       <button
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 w-full border border-slate-200/80 dark:border-white/10 rounded-lg shadow-sm bg-white/60 dark:bg-black/20 backdrop-blur-md flex items-center justify-between gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
+        className={`
+            w-full flex items-center justify-between gap-3 px-4 py-3 text-left
+            bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10
+            rounded-xl transition-all duration-200
+            hover:border-indigo-300 dark:hover:border-indigo-700
+            focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500
+            disabled:opacity-50 disabled:cursor-not-allowed
+            ${isOpen ? 'ring-2 ring-indigo-500/20 border-indigo-500 dark:border-indigo-500 shadow-md' : 'shadow-sm'}
+        `}
       >
-        <div className="flex items-center gap-2">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-indigo-600 dark:text-indigo-400">
-                <path d="M12 4C13.1046 4 14 4.89543 14 6V7.67451C15.8457 8.21661 17.2166 9.58752 17.7587 11.4332H19.4332C20.5378 11.4332 21.4332 12.3287 21.4332 13.4332C21.4332 14.5378 20.5378 15.4332 19.4332 15.4332H17.7587C17.2166 17.2789 15.8457 18.6498 14 19.1919V20.8665C14 21.9711 13.1046 22.8665 12 22.8665C10.8954 22.8665 10 21.9711 10 20.8665V19.1919C8.15432 18.6498 6.7834 17.2789 6.24131 15.4332H4.56681C3.46224 15.4332 2.56681 14.5378 2.56681 13.4332C2.56681 12.3287 3.46224 11.4332 4.56681 11.4332H6.24131C6.7834 9.58752 8.15432 8.21661 10 7.67451V6C10 4.89543 10.8954 4 12 4ZM12 9.14155C9.88142 9.14155 8.14155 10.8814 8.14155 13C8.14155 15.1186 9.88142 16.8584 12 16.8584C14.1186 16.8584 15.8584 15.1186 15.8584 13C15.8584 10.8814 14.1186 9.14155 12 9.14155Z" fill="currentColor"/>
-            </svg>
-            <span className="font-semibold text-sm text-slate-800 dark:text-slate-100">{disabled ? 'Loading Models...' : selectedModelName}</span>
+        <div className="flex items-center gap-3 min-w-0">
+            <div className={`
+                flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 transition-colors
+                ${disabled ? 'bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-600' : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400'}
+            `}>
+                {icon || (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                        <path d="M16.5 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        <path fillRule="evenodd" d="M1.5 14.25c0-2.146 2.925-5.813 10.5-5.813 7.575 0 10.5 3.667 10.5 5.813V20.25a2.25 2.25 0 0 1-2.25 2.25H3.75a2.25 2.25 0 0 1-2.25-2.25v-6ZM4.5 19.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm16.5-1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" clipRule="evenodd" />
+                    </svg>
+                )}
+            </div>
+            <div className="flex flex-col min-w-0">
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
+                    {selectedModelData ? selectedModelData.name : placeholder}
+                </span>
+                {selectedModelData && (
+                    <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate opacity-80">
+                        {selectedModelData.id}
+                    </span>
+                )}
+            </div>
         </div>
-        <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-400 dark:text-slate-500"><path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
-        </motion.div>
+        
+        <div className={`p-1 rounded-md transition-all duration-200 ${isOpen ? 'bg-indigo-50 dark:bg-white/10 rotate-180' : ''}`}>
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 20 20" 
+                fill="currentColor" 
+                className={`w-4 h-4 text-slate-400 transition-colors ${isOpen ? 'text-indigo-600 dark:text-indigo-400' : ''}`}
+            >
+                <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+            </svg>
+        </div>
       </button>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.ul
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full right-0 mt-2 w-full sm:w-64 bg-white/80 dark:bg-black/50 backdrop-blur-lg border border-slate-200 dark:border-white/10 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto"
-            role="listbox"
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }} // Cubic bezier for nice pop
+            className="absolute z-50 w-full mt-2 bg-white/90 dark:bg-[#1e1e1e]/90 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-black/5 origin-top"
           >
-            {models.map(model => (
-              <li key={model.id} className="group relative">
-                <button
-                  onClick={() => handleSelect(model.id)}
-                  className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${selectedModel === model.id ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-700 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-white/5'}`}
-                  role="option"
-                  aria-selected={selectedModel === model.id}
-                >
-                  <span>{model.name}</span>
-                </button>
-              </li>
-            ))}
-          </motion.ul>
+            <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
+                {models.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-slate-500">No models available</div>
+                ) : (
+                    models.map((model) => {
+                        const isSelected = selectedModel === model.id;
+                        return (
+                            <button
+                                key={model.id}
+                                onClick={() => handleSelect(model.id)}
+                                className={`
+                                    w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all duration-200 group
+                                    ${isSelected 
+                                        ? 'bg-indigo-50/80 dark:bg-indigo-500/20' 
+                                        : 'hover:bg-slate-100/80 dark:hover:bg-white/5'
+                                    }
+                                `}
+                            >
+                                <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600 group-hover:border-indigo-400'}`}>
+                                    {isSelected && (
+                                        <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className={`text-sm font-semibold ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-700 dark:text-slate-200'}`}>
+                                            {model.name}
+                                        </span>
+                                    </div>
+                                    <p className={`text-xs mt-0.5 line-clamp-2 leading-relaxed ${isSelected ? 'text-indigo-700/70 dark:text-indigo-300/70' : 'text-slate-500 dark:text-slate-400'}`}>
+                                        {model.description || model.id}
+                                    </p>
+                                </div>
+                            </button>
+                        );
+                    })
+                )}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
