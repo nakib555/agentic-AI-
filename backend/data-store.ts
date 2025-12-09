@@ -40,17 +40,20 @@ export async function initDataStore() {
     await initDataFile(TIME_GROUPS_PATH, {});
     
     // Default settings
+    // Note: Model fields are initialized as empty strings. 
+    // The frontend application logic automatically selects the first available model 
+    // from the dynamically fetched list if the setting is empty.
     const defaultSettings = {
         apiKey: '',
         aboutUser: '',
         aboutResponse: '',
         temperature: 0.7,
         maxTokens: 0,
-        imageModel: 'gemini-2.5-flash-image',
-        videoModel: 'veo-3.1-fast-generate-preview',
+        imageModel: '', // Dynamic
+        videoModel: '', // Dynamic
         isMemoryEnabled: false,
         ttsVoice: 'Kore',
-        ttsModel: 'gemini-2.5-flash-preview-tts',
+        ttsModel: '', // Dynamic
         isAgentMode: false,
     };
     await initDataFile(SETTINGS_FILE_PATH, defaultSettings);

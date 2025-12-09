@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -113,33 +112,34 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
             const methods = model.supportedGenerationMethods || [];
             const lowerId = modelId.toLowerCase();
 
-            // 1. Video Models (Veo)
-            // Explicitly check for 'generateVideos' capability OR 'veo' in the name.
+            // 1. Video Models (Veo checking)
+            // Explicitly check for 'generateVideos' capability OR 'veo' in the name for dynamic detection.
             if (methods.includes('generateVideos') || lowerId.includes('veo')) {
                 availableVideoModels.push(modelInfo);
-                continue; // Video models are specialized, exclude from other lists to keep them clean
+                continue; // Specialized model
             }
 
             // 2. Audio/TTS Models
             if (lowerId.includes('tts')) {
                 availableTtsModels.push(modelInfo);
-                continue; // TTS models are specialized
+                continue; // Specialized model
             }
 
-            // 3. Image Models (Imagen or Flash-Image)
+            // 3. Image Models (Imagen checking)
             // Checks for 'generateImages' capability OR specific naming conventions like 'imagen' or 'flash-image'
             if (methods.includes('generateImages') || lowerId.includes('imagen') || lowerId.includes('flash-image')) {
                 availableImageModels.push(modelInfo);
-                // If it's strictly an image model (like imagen-3.0 or flash-image), exclude it from the main chat list
-                // to prevent clutter and errors if it doesn't support chat.
-                if (lowerId.includes('imagen') || lowerId.includes('flash-image')) {
+                
+                // If the model *also* supports content generation (like flash-image might in future),
+                // we might want it in chat, but generally dedicated image models are separate.
+                if (lowerId.includes('imagen')) {
                     continue;
                 }
             }
 
             // 4. Chat/Text Models (Default bucket for generateContent)
+            // Exclude specialized models (embeddings, aqa) that aren't for general chat.
             if (methods.includes('generateContent') && !lowerId.includes('embedding') && !lowerId.includes('aqa')) {
-                // Exclude specialized models that shouldn't be in the main chat dropdown
                 availableChatModels.push(modelInfo);
             }
         }
@@ -161,7 +161,6 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
         return result;
     } catch (error: any) {
         console.warn('[ModelService] Model fetch failed with error:', error.message);
-        // Do not return empty arrays on verification error; throw so the caller knows the key failed.
         throw error;
     }
 }
