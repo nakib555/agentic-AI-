@@ -8,10 +8,14 @@ import { executeGetCurrentLocation, executeRequestLocationPermission } from './l
 import { executeVideoGenerator } from './videoGenerator';
 import { executeCaptureCodeOutputScreenshot } from './screenshot';
 
-// Map of tool names to their FRONTEND implementation
+// Only tools that REQUIRE browser APIs (DOM, Geolocation, window object) remain here.
+// All logic, calculation, search, and file IO is handled 100% by the backend.
 export const toolImplementations: Record<string, (args: any) => string | Promise<string>> = {
   'getCurrentLocation': executeGetCurrentLocation,
   'requestLocationPermission': executeRequestLocationPermission,
-  'generateVideo': executeVideoGenerator, // This is the frontend wrapper
+  'generateVideo': executeVideoGenerator, // Frontend wrapper for API Key check
   'captureCodeOutputScreenshot': executeCaptureCodeOutputScreenshot,
+  
+  // 'approveExecution' and 'denyExecution' are handled specially in useChat/index.ts 
+  // and do not need to be registered here.
 };
