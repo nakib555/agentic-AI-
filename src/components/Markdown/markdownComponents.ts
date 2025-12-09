@@ -72,7 +72,8 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
     img: (props: any) => React.createElement('img', { className: "max-w-full h-auto rounded-lg my-4 border border-gray-200 dark:border-gray-700", loading: "lazy", ...props }),
     mark: (props: any) => React.createElement(StyledMark, props),
 
-    code: ({ inline, className, children, ...props }: any) => {
+    code: ({ inline, className, children, isBlock, ...props }: any) => {
+        // 1. If explicit inline prop is true (legacy react-markdown), render InlineCode
         if (inline) {
              return React.createElement(InlineCode, null, children);
         }
@@ -80,25 +81,41 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
         const match = /language-(\w+)/.exec(className || '');
         const language = match ? match[1] : '';
         
-        let codeContent = '';
-        if (Array.isArray(children)) {
-            codeContent = children.map(child => 
-              (typeof child === 'string' || typeof child === 'number') ? String(child) : ''
-            ).join('');
-        } else {
-            codeContent = String(children ?? '');
-        }
-        codeContent = codeContent.replace(/\n$/, '');
+        // 2. If 'isBlock' is true (passed from our custom 'pre') OR explicitly has a language class -> CodeBlock
+        if (isBlock || match) {
+            let codeContent = '';
+            if (Array.isArray(children)) {
+                codeContent = children.map(child => 
+                  (typeof child === 'string' || typeof child === 'number') ? String(child) : ''
+                ).join('');
+            } else {
+                codeContent = String(children ?? '');
+            }
+            codeContent = codeContent.replace(/\n$/, '');
 
-        return React.createElement(CodeBlock, { 
-            language, 
-            isStreaming: false, 
-            onRunCode: options.onRunCode,
-            isDisabled: options.isRunDisabled,
-            children: codeContent
-        });
+            return React.createElement(CodeBlock, { 
+                language: language || 'plaintext', 
+                isStreaming: false, 
+                onRunCode: options.onRunCode,
+                isDisabled: options.isRunDisabled,
+                children: codeContent
+            });
+        }
+
+        // 3. Fallback -> InlineCode (This covers single backticks in paragraphs)
+        return React.createElement(InlineCode, null, children);
     },
-    pre: ({ children }: any) => React.createElement('div', { className: "not-prose my-4" }, children),
+    
+    pre: ({ children }: any) => {
+        // Intercept the `code` child and inject a prop `isBlock={true}` to identify it as a block context
+        // This is necessary because recent versions of react-markdown do not pass `inline` prop reliably.
+        if (React.isValidElement(children)) {
+             return React.createElement('div', { className: "not-prose my-4" }, 
+                React.cloneElement(children as React.ReactElement<any>, { isBlock: true })
+             );
+        }
+        return React.createElement('div', { className: "not-prose my-4" }, children);
+    },
 
     table: (props: any) => React.createElement('div', { className: "my-4 w-full overflow-x-auto rounded-lg border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/20 shadow-sm" }, React.createElement('table', { className: "w-full text-sm text-left border-collapse", ...props })),
     thead: (props: any) => React.createElement('thead', { className: "bg-slate-50 dark:bg-white/5", ...props }),
@@ -130,13 +147,27 @@ export const WorkflowMarkdownComponents = {
     tr: (props: any) => React.createElement('tr', { className: "border-b border-slate-100 dark:border-white/5 last:border-0", ...props }),
     th: (props: any) => React.createElement('th', { className: "px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 align-bottom", ...props }),
     td: (props: any) => React.createElement('td', { className: "px-3 py-2 text-slate-600 dark:text-slate-300 align-top", ...props }),
-    code: ({ inline, className, children, ...props }: any) => {
+    
+    // Workflow-specific code component logic
+    code: ({ inline, className, children, isBlock, ...props }: any) => {
+        // Replicate logic from main code component but simplified
         if (inline) return React.createElement(InlineCode, null, children);
-        const match = /language-(\w+)/.exec(className || '');
-        let content = String(children ?? '').replace(/\n$/, '');
-        if (Array.isArray(children)) content = children.join('');
         
-        return React.createElement(CodeBlock, { language: match ? match[1] : '', isStreaming: false, children: content });
+        const match = /language-(\w+)/.exec(className || '');
+        // Workflow code blocks are often smaller/simpler, but we can stick to differentiation
+        if (isBlock || match) {
+            let content = String(children ?? '').replace(/\n$/, '');
+            if (Array.isArray(children)) content = children.join('');
+            return React.createElement(CodeBlock, { language: match ? match[1] : 'plaintext', isStreaming: false, children: content });
+        }
+        return React.createElement(InlineCode, null, children);
     },
-    pre: ({ children }: any) => React.createElement('div', { className: "not-prose my-2" }, children),
+    pre: ({ children }: any) => {
+        if (React.isValidElement(children)) {
+             return React.createElement('div', { className: "not-prose my-2" }, 
+                React.cloneElement(children as React.ReactElement<any>, { isBlock: true })
+             );
+        }
+        return React.createElement('div', { className: "not-prose my-2" }, children);
+    },
 };
