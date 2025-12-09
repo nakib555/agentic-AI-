@@ -477,15 +477,24 @@ export const useAppLogic = () => {
             method: 'POST',
         });
         if (!response.ok) throw new Error('Failed to fetch data tree');
-        const { tree } = await response.json();
+        const data = await response.json();
+        const { tree } = data;
         
         console.log('--- Server Data Structure ---\n' + tree);
         
-        const blob = new Blob([tree], { type: 'text/plain' });
+        const tsContent = `/**
+ * Server Data Structure Snapshot
+ * Generated: ${new Date().toISOString()}
+ */
+
+export const serverData = ${JSON.stringify(data, null, 2)};
+`;
+
+        const blob = new Blob([tsContent], { type: 'text/typescript;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `data-structure-${new Date().toISOString().slice(0,10)}.txt`;
+        a.download = `data-structure-${new Date().toISOString().slice(0,10)}.tsx`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
