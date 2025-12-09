@@ -262,6 +262,47 @@ export const apiHandler = async (req: any, res: any) => {
                 break;
             }
 
+            case 'count_tokens': {
+                if (!ai) throw new Error("GoogleGenAI not initialized.");
+                const { chatId, model, newMessage, isAgentMode } = req.body;
+
+                // 1. Fetch History
+                const savedChat = await historyControl.getChat(chatId);
+                const historyMessages = savedChat?.messages || [];
+                const fullHistory = transformHistoryToGeminiFormat(historyMessages);
+
+                // 2. Append new message if provided
+                if (newMessage) {
+                    fullHistory.push({
+                        role: 'user',
+                        parts: [
+                            ...(newMessage.text ? [{ text: newMessage.text }] : []),
+                            ...(newMessage.attachments || []).map((att: any) => ({
+                                inlineData: { mimeType: att.mimeType, data: att.data }
+                            }))
+                        ]
+                    });
+                }
+
+                // 3. Define System Instruction & Tools based on mode
+                const systemInstruction = isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
+                const tools = isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }];
+
+                // 4. Count Tokens
+                // Note: We use ai.models.countTokens which accepts the same config as generateContent
+                const countResult = await ai.models.countTokens({
+                    model: model || 'gemini-2.5-flash',
+                    contents: fullHistory,
+                    config: {
+                        systemInstruction,
+                        tools,
+                    }
+                });
+
+                res.status(200).json({ totalTokens: countResult.totalTokens });
+                break;
+            }
+
             case 'tool_response': {
                 const { callId, result, error } = req.body;
                 const resolver = frontendToolRequests.get(callId);
