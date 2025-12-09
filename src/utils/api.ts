@@ -5,22 +5,13 @@
  */
 
 const getApiBaseUrl = () => {
-    // If a specific backend URL is provided via environment variables (e.g. for Cloudflare/Render split), use it.
-    // @ts-ignore
-    let backendUrl = import.meta.env.VITE_BACKEND_URL;
-    
-    if (backendUrl) {
-        // Remove trailing slash if present to avoid //api paths
-        return backendUrl.replace(/\/$/, '');
-    }
-
     // In development, the frontend is served by esbuild's dev server (e.g., on port 8000)
     // and the backend is on port 3001. We need to make absolute requests to the backend.
     if (process.env.NODE_ENV === 'development') {
         return 'http://localhost:3001';
     }
-    
-    // In monolithic production (served by Express), relative paths work.
+    // In production, both frontend and backend are served from the same origin,
+    // so we can use relative paths.
     return '';
 };
 

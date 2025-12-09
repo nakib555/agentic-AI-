@@ -4,34 +4,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Context } from 'hono';
 import { historyControl } from './services/historyControl.js';
 import type { ChatSession } from '../src/types';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-export const getHistory = async (c: Context) => {
+export const getHistory = async (req: any, res: any) => {
     try {
         const history = await historyControl.getHistoryList();
-        return c.json(history);
+        res.status(200).json(history);
     } catch (error) {
         console.error('Failed to get chat history:', error);
-        return c.json({ error: 'Failed to retrieve chat history.' }, 500);
+        res.status(500).json({ error: 'Failed to retrieve chat history from the server.' });
     }
 };
 
-export const getChat = async (c: Context) => {
-    const chatId = c.req.param('chatId');
-    const chat = await historyControl.getChat(chatId);
+export const getChat = async (req: any, res: any) => {
+    const chat = await historyControl.getChat(req.params.chatId);
     if (chat) {
-        return c.json(chat);
+        res.status(200).json(chat);
+    } else {
+        res.status(404).json({ error: 'Chat not found' });
     }
-    return c.json({ error: 'Chat not found' }, 404);
 };
 
-export const createNewChat = async (c: Context) => {
-    const body = await c.req.json();
-    const { model, temperature, maxOutputTokens, imageModel, videoModel } = body;
+export const createNewChat = async (req: any, res: any) => {
+    const { model, temperature, maxOutputTokens, imageModel, videoModel } = req.body;
     const newChatId = generateId();
     const newChat: ChatSession = {
         id: newChatId,
@@ -42,27 +40,29 @@ export const createNewChat = async (c: Context) => {
         createdAt: Date.now(),
         temperature,
         maxOutputTokens,
-        imageModel,
-        videoModel,
+        imageModel: imageModel,
+        videoModel: videoModel,
     };
     
     try {
         await historyControl.createChat(newChat);
-        return c.json(newChat, 201);
+        res.status(201).json(newChat);
     } catch (error) {
         console.error("Failed to create chat:", error);
-        return c.json({ error: "Failed to create chat session." }, 500);
+        res.status(500).json({ error: "Failed to create chat session." });
     }
 };
 
-export const updateChat = async (c: Context) => {
-    const chatId = c.req.param('chatId');
-    const updates = await c.req.json();
+export const updateChat = async (req: any, res: any) => {
+    const { chatId } = req.params;
+    const updates = req.body;
     
+    // historyControl.updateChat handles title renaming and index updating automatically
     const updatedChat = await historyControl.updateChat(chatId, updates);
     
     if (!updatedChat) {
-         // Recovery mechanism
+        // If chat doesn't exist in index (e.g. manual deletion or sync issue), attempt to recreate it.
+         console.warn(`[CRUD] updateChat called for non-existent chatId "${chatId}". Creating new session.`);
          const recoveredChat: ChatSession = {
             id: chatId,
             title: updates.title || "New Chat",
@@ -72,30 +72,32 @@ export const updateChat = async (c: Context) => {
             ...updates
         };
         await historyControl.createChat(recoveredChat);
-        return c.json(recoveredChat);
+        res.status(200).json(recoveredChat);
+        return;
     }
 
-    return c.json(updatedChat);
+    res.status(200).json(updatedChat);
 };
 
-export const deleteChat = async (c: Context) => {
-    await historyControl.deleteChat(c.req.param('chatId'));
-    return c.body(null, 204);
+export const deleteChat = async (req: any, res: any) => {
+    await historyControl.deleteChat(req.params.chatId);
+    res.status(204).send();
 };
 
-export const deleteAllHistory = async (c: Context) => {
+export const deleteAllHistory = async (req: any, res: any) => {
     try {
         await historyControl.deleteAllChats();
-        return c.body(null, 204);
+        res.status(204).send();
     } catch (error) {
-        return c.json({ error: "Failed to delete all data." }, 500);
+        console.error("Failed to delete all history:", error);
+        res.status(500).json({ error: "Failed to delete all data." });
     }
 };
 
-export const importChat = async (c: Context) => {
-    const importedChat = await c.req.json() as ChatSession;
+export const importChat = async (req: any, res: any) => {
+    const importedChat = req.body as ChatSession;
     if (!importedChat || typeof importedChat.title !== 'string' || !Array.isArray(importedChat.messages)) {
-        return c.json({ error: "Invalid chat file format." }, 400);
+        return res.status(400).json({ error: "Invalid chat file format." });
     }
     const newChat: ChatSession = {
         ...importedChat,
@@ -104,5 +106,5 @@ export const importChat = async (c: Context) => {
         isLoading: false,
     };
     await historyControl.createChat(newChat);
-    return c.json(newChat, 201);
+    res.status(201).json(newChat);
 };

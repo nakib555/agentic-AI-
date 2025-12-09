@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Context } from 'hono';
-import { stream } from 'hono/streaming';
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { GoogleGenAI } from "@google/genai";
+import { promises as fs } from 'fs';
 import path from 'path';
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
@@ -18,17 +18,27 @@ import { createToolExecutor } from './tools/index.js';
 import { toolDeclarations } from './tools/declarations.js';
 import { getApiKey } from './settingsHandler.js';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils.js';
-import { isNode, getFs } from './utils/platform.js';
 
+// Store promises for frontend tool requests that the backend is waiting on
 const frontendToolRequests = new Map<string, (result: any) => void>();
+
+// Store abort controllers for ongoing agentic loops to allow cancellation
 const activeAgentLoops = new Map<string, AbortController>();
+
+// Using 'any' for res to bypass type definition mismatches in the environment
+const writeEvent = (res: any, type: string, payload: any) => {
+    if (!res.writableEnded && !res.closed) {
+        try {
+            res.write(JSON.stringify({ type, payload }) + '\n');
+        } catch (e) {
+            console.error(`[HANDLER] Error writing '${type}' event to stream:`, e);
+        }
+    }
+};
 
 const generateId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
 async function generateAsciiTree(dirPath: string, prefix: string = ''): Promise<string> {
-    const fs = await getFs();
-    if (!fs) return "FileSystem debug not supported in this environment.";
-    
     let output = '';
     let entries;
     try {
@@ -36,7 +46,9 @@ async function generateAsciiTree(dirPath: string, prefix: string = ''): Promise<
     } catch (e) {
         return `${prefix} [Error reading directory]\n`;
     }
-    entries = entries.filter((e: any) => !e.name.startsWith('.'));
+
+    // Filter out hidden files/dirs if necessary, e.g. .DS_Store
+    entries = entries.filter(e => !e.name.startsWith('.'));
 
     for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
@@ -52,16 +64,20 @@ async function generateAsciiTree(dirPath: string, prefix: string = ''): Promise<
     return output;
 }
 
-export const apiHandler = async (c: Context) => {
-    const task = c.req.query('task');
-    console.log(`[HANDLER] Received request for task: "${task}"`);
+// Using 'any' for req/res to bypass strict type checks that are failing due to missing properties in the inferred types
+export const apiHandler = async (req: any, res: any) => {
+    const task = req.query.task as string;
+    console.log(`[HANDLER] Received request for task: "${task}"`); // LOG
+    
+    const apiKey = await getApiKey();
 
-    // Pass context 'c' to getApiKey so it can check c.env
-    const apiKey = await getApiKey(c);
+    // Tasks that are allowed to run without an API key
+    // 'debug_data_tree' must be here to allow checking file structure without a valid key setup
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree'];
 
-    if (!apiKey && !BYPASS_TASKS.includes(task || '')) {
-        return c.json({ error: "API key not configured on the server." }, 401);
+    if (!apiKey && !BYPASS_TASKS.includes(task)) {
+        console.error(`[HANDLER] API key not configured on server. Blocking task: "${task}"`);
+        return res.status(401).json({ error: "API key not configured on the server." });
     }
     
     const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
@@ -70,187 +86,265 @@ export const apiHandler = async (c: Context) => {
         switch (task) {
             case 'chat': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const body = await c.req.json();
-                const { chatId, model, history, settings } = body;
-
-                return stream(c, async (stream) => {
-                    const requestId = generateId();
-                    const abortController = new AbortController();
-                    activeAgentLoops.set(requestId, abortController);
-
-                    const writeEvent = async (type: string, payload: any) => {
-                        await stream.write(JSON.stringify({ type, payload }) + '\n');
-                    };
-
-                    await writeEvent('start', { requestId });
-                    const pingInterval = setInterval(() => writeEvent('ping', {}), 10000);
-
-                    stream.onAbort(() => {
-                        console.log(`[HANDLER] Client disconnected for request ${requestId}.`);
-                        abortController.abort();
-                        activeAgentLoops.delete(requestId);
-                        clearInterval(pingInterval);
-                    });
-
-                    const requestFrontendExecution = (callId: string, toolName: string, toolArgs: any) => {
-                        return new Promise<string | { error: string }>((resolve) => {
-                            frontendToolRequests.set(callId, resolve);
-                            writeEvent('frontend-tool-request', { callId, toolName, toolArgs });
-                        });
-                    };
-
-                    const onToolUpdate = (callId: string, data: any) => {
-                        writeEvent('tool-update', { id: callId, ...data });
-                    };
-
-                    const toolExecutor = createToolExecutor(
-                        ai, settings.imageModel, settings.videoModel, apiKey!, chatId, 
-                        requestFrontendExecution, false, onToolUpdate
-                    );
-
-                    const finalSettings = {
-                        ...settings,
-                        systemInstruction: settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction,
-                        tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }],
-                    };
-
-                    try {
-                        await runAgenticLoop({
-                            ai, model, history, toolExecutor,
-                            callbacks: {
-                                onTextChunk: (text) => writeEvent('text-chunk', text),
-                                onNewToolCalls: (events) => writeEvent('tool-call-start', events),
-                                onToolResult: (id, result) => writeEvent('tool-call-end', { id, result }),
-                                onPlanReady: (plan) => {
-                                    return new Promise((resolve) => {
-                                        const callId = `plan-approval-${generateId()}`;
-                                        frontendToolRequests.set(callId, resolve);
-                                        writeEvent('plan-ready', { plan, callId });
-                                    });
-                                },
-                                onComplete: (finalText, groundingMetadata) => writeEvent('complete', { finalText, groundingMetadata }),
-                                onCancel: () => writeEvent('cancel', {}),
-                                onError: (error) => writeEvent('error', error),
-                            },
-                            settings: finalSettings,
-                            signal: abortController.signal,
-                            threadId: requestId,
-                        });
-                    } catch (e: any) {
-                        if (e.message !== 'AbortError') console.error(e);
-                    } finally {
-                        clearInterval(pingInterval);
-                        activeAgentLoops.delete(requestId);
-                    }
+                const { chatId, model, history, settings } = req.body;
+                console.log(`[HANDLER] Starting chat task for chatId: ${chatId}`); // LOG
+                console.log('[HANDLER] Chat Request Body (Summary):', { 
+                    model, 
+                    historyLength: history.length, 
+                    isAgentMode: settings.isAgentMode,
+                    apiKeyConfigured: !!apiKey 
                 });
+
+
+                res.setHeader('Content-Type', 'application/json');
+                res.setHeader('Transfer-Encoding', 'chunked');
+                res.flushHeaders();
+
+                const requestId = generateId();
+                console.log(`[HANDLER] Generated requestId: ${requestId}`); // LOG
+                const abortController = new AbortController();
+                activeAgentLoops.set(requestId, abortController);
+                writeEvent(res, 'start', { requestId });
+
+                const pingInterval = setInterval(() => writeEvent(res, 'ping', {}), 10000);
+                
+                // Track callIds associated with this request to clean them up on disconnect
+                const sessionCallIds = new Set<string>();
+
+                req.on('close', () => {
+                    console.log(`[HANDLER] Client disconnected for request ${requestId}. Aborting loop.`);
+                    abortController.abort();
+                    activeAgentLoops.delete(requestId);
+                    clearInterval(pingInterval);
+                    
+                    // Clean up any pending tool requests for this session by resolving them with an error.
+                    // This ensures the agentic loop doesn't hang indefinitely awaiting a promise.
+                    sessionCallIds.forEach(callId => {
+                        const resolver = frontendToolRequests.get(callId);
+                        if (resolver) {
+                            console.log(`[HANDLER] Resolving orphaned tool request ${callId} due to disconnect.`);
+                            resolver({ error: "Client disconnected during tool execution" });
+                            frontendToolRequests.delete(callId);
+                        }
+                    });
+                });
+
+                const requestFrontendExecution = (callId: string, toolName: string, toolArgs: any) => {
+                    return new Promise<string | { error: string }>((resolve) => {
+                        frontendToolRequests.set(callId, resolve);
+                        sessionCallIds.add(callId); // Track it
+                        writeEvent(res, 'frontend-tool-request', { callId, toolName, toolArgs });
+                    });
+                };
+                
+                // New callback for real-time tool updates (e.g. browser logs, screenshots)
+                const onToolUpdate = (callId: string, data: any) => {
+                    writeEvent(res, 'tool-update', { id: callId, ...data });
+                };
+                
+                const toolExecutor = createToolExecutor(
+                    ai, 
+                    settings.imageModel, 
+                    settings.videoModel, 
+                    apiKey!, 
+                    chatId, 
+                    requestFrontendExecution, 
+                    false, 
+                    onToolUpdate // Pass the update callback
+                );
+
+                const finalSettings = {
+                    ...settings,
+                    systemInstruction: settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction,
+                    tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }],
+                };
+                
+                console.log(`[HANDLER] Running agentic loop... Mode: ${settings.isAgentMode ? 'Agent' : 'Chat'}`); // LOG
+
+                await runAgenticLoop({
+                    ai,
+                    model,
+                    history,
+                    toolExecutor,
+                    callbacks: {
+                        onTextChunk: (text) => writeEvent(res, 'text-chunk', text),
+                        onNewToolCalls: (toolCallEvents) => writeEvent(res, 'tool-call-start', toolCallEvents),
+                        onToolResult: (id, result) => writeEvent(res, 'tool-call-end', { id, result }),
+                        onPlanReady: (plan) => {
+                            return new Promise((resolve) => {
+                                const callId = `plan-approval-${generateId()}`;
+                                frontendToolRequests.set(callId, resolve);
+                                sessionCallIds.add(callId); // Track it
+                                writeEvent(res, 'plan-ready', { plan, callId });
+                            });
+                        },
+                        onComplete: (finalText, groundingMetadata) => writeEvent(res, 'complete', { finalText, groundingMetadata }),
+                        onCancel: () => writeEvent(res, 'cancel', {}),
+                        onError: (error) => writeEvent(res, 'error', error),
+                    },
+                    settings: finalSettings,
+                    signal: abortController.signal,
+                    threadId: requestId, // Pass unique thread ID for Checkpointer
+                });
+
+                console.log(`[HANDLER] Agentic loop completed for ${requestId}.`); // LOG
+                clearInterval(pingInterval);
+                activeAgentLoops.delete(requestId);
+                res.end();
+                break;
             }
 
             case 'tool_response': {
-                const body = await c.req.json();
-                const { callId, result, error } = body;
+                const { callId, result, error } = req.body;
                 const resolver = frontendToolRequests.get(callId);
                 if (resolver) {
                     resolver(error ? { error } : result);
                     frontendToolRequests.delete(callId);
-                    return c.body(null, 200);
+                    res.status(200).send();
+                } else {
+                    console.warn(`[HANDLER] CallId mismatch or session expired: ${callId}`);
+                    res.status(404).json({ error: `No pending tool request found for callId: ${callId}` });
                 }
-                return c.json({ error: `No pending tool request found for callId: ${callId}` }, 404);
+                break;
             }
 
             case 'cancel': {
-                const body = await c.req.json();
-                const { requestId } = body;
+                const { requestId } = req.body;
                 const controller = activeAgentLoops.get(requestId);
                 if (controller) {
+                    console.log(`[HANDLER] Received cancel request for ${requestId}. Aborting.`);
                     controller.abort();
                     activeAgentLoops.delete(requestId);
-                    return c.json({ message: 'Cancellation request received.' });
+                    res.status(200).send({ message: 'Cancellation request received.' });
+                } else {
+                    res.status(404).json({ error: `No active request found for requestId: ${requestId}` });
                 }
-                return c.json({ error: 'No active request found.' }, 404);
+                break;
             }
 
             case 'title': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { messages } = await c.req.json();
+                const { messages } = req.body;
                 const historyText = messages.slice(0, 3).map((m: any) => `${m.role}: ${m.text}`).join('\n');
-                const prompt = `Generate a short, concise title (max 6 words) for this conversation. No quotes.\n\nCONVERSATION:\n${historyText}\n\nTITLE:`;
-                const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt });
-                return c.json({ title: response.text.trim() });
+                const prompt = `You are a helpful assistant. Generate a short, concise title (max 6 words) for this conversation. Do not use quotes or markdown. Just the title text.\n\nCONVERSATION:\n${historyText}\n\nTITLE:`;
+                
+                const response = await generateContentWithRetry(ai, {
+                    model: 'gemini-2.5-flash',
+                    contents: prompt,
+                });
+                res.status(200).json({ title: response.text.trim() });
+                break;
             }
 
             case 'suggestions': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { conversation } = await c.req.json();
+                const { conversation } = req.body;
                 const recentHistory = conversation.slice(-5).map((m: any) => `${m.role}: ${(m.text || '').substring(0, 200)}`).join('\n');
-                const prompt = `Based on the conversation, suggest 3 short follow-up actions. Return JSON string array. Example: ["Explain more", "Generate image"].\n\nCONVERSATION:\n${recentHistory}\n\nJSON:`;
-                const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
-                return c.json({ suggestions: JSON.parse(response.text) });
+                const prompt = `Based on the conversation below, suggest 3 short, relevant follow-up questions or actions the user might want to take next. Return ONLY a JSON array of strings. Example: ["Tell me a more", "Explain the code", "Generate an image"].\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
+                
+                const response = await generateContentWithRetry(ai, {
+                    model: 'gemini-2.5-flash',
+                    contents: prompt,
+                    config: { responseMimeType: 'application/json' },
+                });
+                
+                let suggestions = [];
+                try {
+                    suggestions = JSON.parse(response.text);
+                } catch (e) {
+                    console.error("Failed to parse suggestions JSON:", e);
+                }
+                res.status(200).json({ suggestions });
+                break;
             }
 
             case 'tts': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { text, voice, model } = await c.req.json();
+                const { text, voice, model } = req.body;
                 const audio = await executeTextToSpeech(ai, text, voice, model);
-                return c.json({ audio });
+                res.status(200).json({ audio });
+                break;
             }
-
+            
             case 'enhance': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { userInput } = await c.req.json();
-                const prompt = `Rewrite this prompt to be more detailed and specific for an LLM:\n\n"${userInput}"\n\nREWRITTEN:`;
+                const { userInput } = req.body;
+                const prompt = `You are a prompt rewriting expert. Rewrite the following user input to be more detailed, specific, and clear for a large language model. Expand on the user's intent. Do not add conversational filler. Just provide the rewritten prompt.\n\nUSER INPUT: "${userInput}"\n\nREWRITTEN PROMPT:`;
                 
-                return stream(c, async (stream) => {
-                    const result = await generateContentStreamWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt });
-                    for await (const chunk of result) {
-                        await stream.write(chunk.text);
-                    }
+                res.setHeader('Content-Type', 'text/plain');
+                const stream = await generateContentStreamWithRetry(ai, {
+                    model: 'gemini-2.5-flash',
+                    contents: prompt,
                 });
+                for await (const chunk of stream) {
+                    res.write(chunk.text);
+                }
+                res.end();
+                break;
             }
 
             case 'memory_suggest': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { conversation } = await c.req.json();
+                const { conversation } = req.body;
                 const suggestions = await executeExtractMemorySuggestions(ai, conversation);
-                return c.json({ suggestions });
+                res.status(200).json({ suggestions });
+                break;
             }
 
             case 'memory_consolidate': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { currentMemory, suggestions } = await c.req.json();
+                const { currentMemory, suggestions } = req.body;
                 const memory = await executeConsolidateMemory(ai, currentMemory, suggestions);
-                return c.json({ memory });
+                res.status(200).json({ memory });
+                break;
             }
-
+            
             case 'placeholder': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { conversationContext, isAgentMode } = await c.req.json();
-                const prompt = `Generate one short engaging placeholder question for a chat input. Context: "${conversationContext}". Mode: ${isAgentMode ? 'Agent' : 'Chat'}.`;
+                const { conversationContext, isAgentMode } = req.body;
+                const prompt = `You are an expert at creating engaging placeholder text for a chat input field. Based on the last turn of the conversation, generate one short, interesting follow-up question or command. The placeholder should be under 15 words. Mode: ${isAgentMode ? 'Agent (task-oriented)' : 'Chat (conversational)'}.\n\nLAST MESSAGE: "${conversationContext}"\n\nPLACEHOLDER:`;
                 const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt });
-                return c.json({ placeholder: response.text.replace(/"/g, '') });
+                res.status(200).json({ placeholder: response.text.replace(/"/g, '') });
+                break;
             }
 
             case 'tool_exec': {
-                if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { toolName, toolArgs, chatId } = await c.req.json();
-                const toolExecutor = createToolExecutor(ai, '', '', apiKey!, chatId, async () => ({error: 'Frontend exec not supported'}), true);
+                 if (!ai) throw new Error("GoogleGenAI not initialized.");
+                const { toolName, toolArgs, chatId } = req.body;
+                // Pass empty strings for optional models, and TRUE for skipFrontendCheck
+                // This forces the backend implementation to run, breaking the frontend delegation loop
+                const toolExecutor = createToolExecutor(
+                    ai, 
+                    '', 
+                    '', 
+                    apiKey!, 
+                    chatId, 
+                    async () => ({error: 'Frontend execution not supported in this context'}), 
+                    true // skipFrontendCheck
+                );
+                // Manually pass a dummy ID if needed, though for direct tool_exec it might not matter
+                // as long as the tool doesn't try to stream updates to a non-existent stream.
                 const result = await toolExecutor(toolName, toolArgs, 'manual-exec');
-                return c.json({ result });
+                res.status(200).json({ result });
+                break;
             }
 
             case 'debug_data_tree': {
-                if (isNode) {
-                    const dataPath = path.join((process as any).cwd(), 'data');
-                    const tree = `data/\n` + await generateAsciiTree(dataPath);
-                    return c.json({ tree });
-                }
-                return c.json({ tree: "Not supported in this environment." });
+                const dataPath = path.join((process as any).cwd(), 'data');
+                let tree = `data/\n`;
+                tree += await generateAsciiTree(dataPath);
+                res.status(200).json({ tree });
+                break;
             }
 
             default:
-                return c.json({ error: `Unknown task: ${task}` }, 404);
+                res.status(404).json({ error: `Unknown task: ${task}` });
         }
     } catch (error) {
         console.error(`[HANDLER] Error processing task "${task}":`, error);
-        return c.json({ error: parseApiError(error) }, 500);
+        const parsedError = parseApiError(error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: parsedError });
+        }
     }
 };

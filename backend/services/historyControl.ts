@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { promises as fs } from 'fs';
 import path from 'path';
 import { HISTORY_PATH, HISTORY_INDEX_PATH, TIME_GROUPS_PATH } from '../data-store.js';
 import type { ChatSession } from '../../src/types';
-import { getFs } from '../utils/platform.js';
 
 // Minimal metadata stored in the master index for fast listing
 type ChatIndexEntry = {
@@ -31,15 +31,11 @@ type ChatDataFile = ChatSession & {
 
 class HistoryControlService {
     private indexCache: ChatIndexEntry[] | null = null;
-    private memoryStore: Map<string, ChatDataFile> = new Map(); // Fallback for Cloudflare
 
     // --- Index Management ---
 
     private async loadIndex(): Promise<ChatIndexEntry[]> {
         if (this.indexCache) return this.indexCache;
-        const fs = await getFs();
-        if (!fs) return this.indexCache || []; // In-memory fallback starts empty
-
         try {
             const data = await fs.readFile(HISTORY_INDEX_PATH, 'utf-8');
             this.indexCache = JSON.parse(data);
@@ -51,9 +47,8 @@ class HistoryControlService {
 
     private async saveIndex(index: ChatIndexEntry[]) {
         this.indexCache = index;
-        const fs = await getFs();
-        if (!fs) return; // In-memory only on Edge
         
+        // Check and ensure directory exists to prevent crash if folder is deleted manually
         try {
             await fs.mkdir(HISTORY_PATH, { recursive: true });
         } catch (error: any) {
@@ -65,6 +60,9 @@ class HistoryControlService {
     }
 
     private sanitizeTitle(title: string): string {
+        // Improved to support Unicode characters for international titles
+        // while maintaining filesystem safety.
+        // Allows letters (unicode), numbers, spaces, dashes, underscores.
         return title
             .replace(/[^\p{L}\p{N}\s\-_]/gu, '') 
             .trim()
@@ -76,6 +74,7 @@ class HistoryControlService {
 
     private getFolderName(title: string, id: string): string {
         const safeTitle = this.sanitizeTitle(title);
+        // Suffix with ID to ensure uniqueness and persistence even if titles collide
         return `${safeTitle}-${id.substring(0, 8)}`;
     }
 
@@ -100,6 +99,7 @@ class HistoryControlService {
             } else if (entry.updatedAt >= weekStart) {
                 groups['Previous 7 Days'].push(entry);
             } else {
+                // Group older items by Month Year
                 const date = new Date(entry.updatedAt);
                 const monthYear = date.toLocaleString('default', { month: 'long', year: 'numeric' });
                 if (!groups[monthYear]) groups[monthYear] = [];
@@ -107,11 +107,10 @@ class HistoryControlService {
             }
         }
         
+        // Remove empty default groups if not used (except maybe Today)
         if (groups['Older'].length === 0) delete groups['Older'];
 
-        const fs = await getFs();
-        if (!fs) return;
-
+        // Check and ensure directory exists
         try {
             await fs.mkdir(HISTORY_PATH, { recursive: true });
         } catch (error: any) {
@@ -129,28 +128,22 @@ class HistoryControlService {
         const chatSubDir = path.join(chatFolderPath, 'chat');
         const fileSubDir = path.join(chatFolderPath, 'file');
 
-        const fs = await getFs();
+        // 1. Create Directory Structure
+        await fs.mkdir(chatFolderPath, { recursive: true });
+        await fs.mkdir(chatSubDir, { recursive: true });
+        await fs.mkdir(fileSubDir, { recursive: true });
 
+        // 2. Save Conversation Data (conversation.json inside chat/)
         const chatData: ChatDataFile = {
             ...session,
             version: 1,
             pagination: { currentPage: 1, totalPages: 1, pageSize: 100 }
         };
-
-        if (fs) {
-            // Node.js Persistence
-            await fs.mkdir(chatFolderPath, { recursive: true });
-            await fs.mkdir(chatSubDir, { recursive: true });
-            await fs.mkdir(fileSubDir, { recursive: true });
-            await fs.writeFile(
-                path.join(chatSubDir, 'conversation.json'), 
-                JSON.stringify(chatData, null, 2), 
-                'utf-8'
-            );
-        } else {
-            // Edge In-Memory
-            this.memoryStore.set(session.id, chatData);
-        }
+        await fs.writeFile(
+            path.join(chatSubDir, 'conversation.json'), 
+            JSON.stringify(chatData, null, 2), 
+            'utf-8'
+        );
 
         // 3. Update Index
         const index = await this.loadIndex();
@@ -173,18 +166,13 @@ class HistoryControlService {
         const entry = index.find(e => e.id === id);
         if (!entry) return null;
 
-        const fs = await getFs();
-        if (fs) {
-            const filePath = path.join(HISTORY_PATH, entry.folderName, 'chat', 'conversation.json');
-            try {
-                const content = await fs.readFile(filePath, 'utf-8');
-                return JSON.parse(content) as ChatSession;
-            } catch (error) {
-                console.error(`[HistoryControl] Failed to read chat ${id}:`, error);
-                return null;
-            }
-        } else {
-            return this.memoryStore.get(id) || null;
+        const filePath = path.join(HISTORY_PATH, entry.folderName, 'chat', 'conversation.json');
+        try {
+            const content = await fs.readFile(filePath, 'utf-8');
+            return JSON.parse(content) as ChatSession;
+        } catch (error) {
+            console.error(`[HistoryControl] Failed to read chat ${id}:`, error);
+            return null;
         }
     }
 
@@ -196,57 +184,65 @@ class HistoryControlService {
         const entry = index[entryIndex];
         const originalFolderPath = path.join(HISTORY_PATH, entry.folderName);
         
+        // Read current data
         const currentChat = await this.getChat(id);
         if (!currentChat) return null;
 
         const updatedChat: ChatDataFile = {
             ...currentChat,
             ...updates,
-            version: 1
+            version: 1 // Ensure version is preserved or incremented
         };
         let newFolderName = entry.folderName;
 
-        const fs = await getFs();
+        // Handle Renaming (Title Change) - Rename the folder dynamically
+        if (updates.title && updates.title !== entry.title) {
+            newFolderName = this.getFolderName(updates.title, id);
+            const newFolderPath = path.join(HISTORY_PATH, newFolderName);
 
-        if (fs) {
-            // Handle Renaming (Title Change) on Filesystem
-            if (updates.title && updates.title !== entry.title) {
-                newFolderName = this.getFolderName(updates.title, id);
-                const newFolderPath = path.join(HISTORY_PATH, newFolderName);
-
-                if (newFolderName !== entry.folderName) {
+            if (newFolderName !== entry.folderName) {
+                try {
+                    // Check for collision
                     try {
-                        try {
-                            await fs.access(newFolderPath);
-                            newFolderName = `${newFolderName}-${Date.now()}`;
-                            await fs.rename(originalFolderPath, path.join(HISTORY_PATH, newFolderName));
-                        } catch {
-                            await fs.rename(originalFolderPath, newFolderPath);
-                        }
-                        entry.folderName = newFolderName;
-                    } catch (error) {
-                        newFolderName = entry.folderName; 
+                        await fs.access(newFolderPath);
+                        // If exists (rare), keep old folder or append timestamp?
+                        // Appending timestamp to ensure uniqueness
+                        newFolderName = `${newFolderName}-${Date.now()}`;
+                        // Re-calculate path
+                        await fs.rename(originalFolderPath, path.join(HISTORY_PATH, newFolderName));
+                    } catch {
+                        // Destination does not exist, safe to rename
+                        await fs.rename(originalFolderPath, newFolderPath);
                     }
-                }
-                entry.title = updates.title;
-            }
 
-            const chatSubDir = path.join(HISTORY_PATH, newFolderName, 'chat');
-            await fs.mkdir(chatSubDir, { recursive: true });
-            await fs.writeFile(
-                path.join(chatSubDir, 'conversation.json'),
-                JSON.stringify(updatedChat, null, 2),
-                'utf-8'
-            );
-        } else {
-            // Edge: Update memory map
-            if (updates.title) entry.title = updates.title;
-            this.memoryStore.set(id, updatedChat);
+                    entry.folderName = newFolderName;
+                } catch (error) {
+                    console.error(`[HistoryControl] Failed to rename folder for chat ${id}:`, error);
+                    // Fallback: keep old folder name if rename fails
+                    newFolderName = entry.folderName; 
+                }
+            }
+            // Always update index title if requested
+            entry.title = updates.title;
         }
 
+        // Update File content in the (potentially new) location
+        const chatSubDir = path.join(HISTORY_PATH, newFolderName, 'chat');
+        
+        // Ensure directory exists (in case of manual deletion or corruption)
+        await fs.mkdir(chatSubDir, { recursive: true });
+        
+        await fs.writeFile(
+            path.join(chatSubDir, 'conversation.json'),
+            JSON.stringify(updatedChat, null, 2),
+            'utf-8'
+        );
+
+        // Update Index metadata
         entry.updatedAt = Date.now();
         if (updates.model) entry.model = updates.model;
         
+        // Move updated entry to top (Recency)
         index.splice(entryIndex, 1);
         index.unshift(entry);
         
@@ -260,17 +256,12 @@ class HistoryControlService {
         if (entryIndex === -1) return;
 
         const entry = index[entryIndex];
-        const fs = await getFs();
+        const folderPath = path.join(HISTORY_PATH, entry.folderName);
 
-        if (fs) {
-            const folderPath = path.join(HISTORY_PATH, entry.folderName);
-            try {
-                await fs.rm(folderPath, { recursive: true, force: true });
-            } catch (error) {
-                console.error(`[HistoryControl] Failed to delete folder ${folderPath}:`, error);
-            }
-        } else {
-            this.memoryStore.delete(id);
+        try {
+            await fs.rm(folderPath, { recursive: true, force: true });
+        } catch (error) {
+            console.error(`[HistoryControl] Failed to delete folder ${folderPath}:`, error);
         }
 
         index.splice(entryIndex, 1);
@@ -278,42 +269,47 @@ class HistoryControlService {
     }
 
     async deleteAllChats(): Promise<void> {
+        // 1. Clear In-Memory Cache
         this.indexCache = [];
-        const fs = await getFs();
 
-        if (fs) {
+        // 2. Physically Wipe the History Directory
+        try {
+            // Check if directory exists first
             try {
-                try {
-                    await fs.access(HISTORY_PATH);
-                } catch {
-                    await this.saveIndex([]);
-                    return;
-                }
-
-                const entries = await fs.readdir(HISTORY_PATH);
-                for (const entry of entries) {
-                    const fullPath = path.join(HISTORY_PATH, entry);
-                    await fs.rm(fullPath, { recursive: true, force: true });
-                }
-            } catch (error) {
-                console.error("[HistoryControl] Failed to wipe history directory:", error);
-                throw error;
+                await fs.access(HISTORY_PATH);
+            } catch {
+                // Directory doesn't exist, nothing to delete.
+                // Re-initialize empty index and return.
+                await this.saveIndex([]);
+                return;
             }
-        } else {
-            this.memoryStore.clear();
+
+            const entries = await fs.readdir(HISTORY_PATH);
+            for (const entry of entries) {
+                const fullPath = path.join(HISTORY_PATH, entry);
+                // Forcefully remove everything in the history path
+                await fs.rm(fullPath, { recursive: true, force: true });
+            }
+        } catch (error) {
+            console.error("[HistoryControl] Failed to wipe history directory:", error);
+            throw error;
         }
 
+        // 3. Re-initialize empty Index and TimeGroups files
         await this.saveIndex([]);
     }
 
     async getHistoryList(): Promise<Omit<ChatSession, 'messages'>[]> {
         const index = await this.loadIndex();
+        // Return the cached index list. 
+        // CRITICAL: We explicitly set messages to undefined so the frontend knows 
+        // this is a summary and needs to fetch full details.
         return index.map(e => ({
             id: e.id,
             title: e.title,
             createdAt: e.createdAt,
             model: e.model,
-            messages: undefined as any
+            messages: undefined as any // Type cast to satisfy TS but send "undefined" in logic (JSON.stringify will omit it)
         }));
     }
 
@@ -330,6 +326,7 @@ class HistoryControlService {
         const index = await this.loadIndex();
         const entry = index.find(e => e.id === id);
         if (!entry) return null;
+        // Returns the URL segment for the frontend to access files
         return `/uploads/${entry.folderName}/file`;
     }
 }
