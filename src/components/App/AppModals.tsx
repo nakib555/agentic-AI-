@@ -5,12 +5,12 @@
  */
 
 import React, { Suspense } from 'react';
-import type { Model } from '../../services/modelService';
+import type { Model } from '../../types';
 import type { MemoryFile } from '../../hooks/useMemory';
 import type { Theme } from '../../hooks/useTheme';
+import { SettingsModal } from '../Settings/SettingsModal';
 
-// Lazy load modals to reduce initial bundle size
-const SettingsModal = React.lazy(() => import('../Settings/SettingsModal').then(module => ({ default: module.SettingsModal })));
+// Lazy load other modals to reduce initial bundle size
 const MemoryModal = React.lazy(() => import('../Settings/MemoryModal').then(module => ({ default: module.MemoryModal })));
 const MemoryConfirmationModal = React.lazy(() => import('../Settings/MemoryConfirmationModal').then(module => ({ default: module.MemoryConfirmationModal })));
 const ImportChatModal = React.lazy(() => import('../Settings/ImportChatModal').then(module => ({ default: module.ImportChatModal })));
@@ -102,7 +102,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
   }
 
   return (
-    <Suspense fallback={null}>
+    <>
+      {/* Settings Modal is rendered directly for instant feedback, managing its own internal lazy loading */}
       {isSettingsOpen && (
         <SettingsModal
           isOpen={isSettingsOpen}
@@ -145,38 +146,42 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           setTheme={setTheme}
         />
       )}
-      {isMemoryModalOpen && (
-        <MemoryModal
-          isOpen={isMemoryModalOpen}
-          onClose={() => setIsMemoryModalOpen(false)}
-          memoryFiles={memoryFiles}
-          onUpdateMemoryFiles={updateMemoryFiles}
-        />
-      )}
-      {isConfirmationOpen && (
-        <MemoryConfirmationModal
-          isOpen={isConfirmationOpen}
-          suggestions={memorySuggestions}
-          onConfirm={confirmMemoryUpdate}
-          onCancel={cancelMemoryUpdate}
-        />
-      )}
-      {isImportModalOpen && (
-        <ImportChatModal
-          isOpen={isImportModalOpen}
-          onClose={() => setIsImportModalOpen(false)}
-          onFileUpload={handleFileUploadForImport}
-        />
-      )}
-      {!!confirmation && (
-        <ConfirmationModal
-          isOpen={!!confirmation}
-          prompt={confirmation?.prompt || ''}
-          onConfirm={onConfirm}
-          onCancel={onCancel}
-          destructive={confirmation?.destructive}
-        />
-      )}
-    </Suspense>
+
+      {/* Other modals remain lazy loaded via Suspense */}
+      <Suspense fallback={null}>
+        {isMemoryModalOpen && (
+          <MemoryModal
+            isOpen={isMemoryModalOpen}
+            onClose={() => setIsMemoryModalOpen(false)}
+            memoryFiles={memoryFiles}
+            onUpdateMemoryFiles={updateMemoryFiles}
+          />
+        )}
+        {isConfirmationOpen && (
+          <MemoryConfirmationModal
+            isOpen={isConfirmationOpen}
+            suggestions={memorySuggestions}
+            onConfirm={confirmMemoryUpdate}
+            onCancel={cancelMemoryUpdate}
+          />
+        )}
+        {isImportModalOpen && (
+          <ImportChatModal
+            isOpen={isImportModalOpen}
+            onClose={() => setIsImportModalOpen(false)}
+            onFileUpload={handleFileUploadForImport}
+          />
+        )}
+        {!!confirmation && (
+          <ConfirmationModal
+            isOpen={!!confirmation}
+            prompt={confirmation?.prompt || ''}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+            destructive={confirmation?.destructive}
+          />
+        )}
+      </Suspense>
+    </>
   );
 };

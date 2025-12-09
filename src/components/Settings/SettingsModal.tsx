@@ -12,6 +12,7 @@ import type { Theme } from '../../hooks/useTheme';
 const motion = motionTyped as any;
 
 // Lazy load the settings tabs to optimize bundle size and startup time
+// This ensures the main modal opens instantly, while content loads in background
 const GeneralSettings = React.lazy(() => import('./GeneralSettings').then(module => ({ default: module.GeneralSettings })));
 const ModelSettings = React.lazy(() => import('./ModelSettings').then(module => ({ default: module.ModelSettings })));
 const CustomInstructionsSettings = React.lazy(() => import('./CustomInstructionsSettings').then(module => ({ default: module.CustomInstructionsSettings })));
@@ -120,6 +121,7 @@ const LoadingSpinner = () => (
   </div>
 );
 
+// Memoized to prevent re-rendering the shell unless open state changes
 export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) => {
     const { isOpen, onClose } = props;
     const [activeCategory, setActiveCategory] = useState('general');
@@ -182,7 +184,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                     </LayoutGroup>
                 </nav>
 
-                {/* Content Area */}
+                {/* Content Area - Lazy Loaded */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative">
                     <div className="p-6 md:p-8 max-w-2xl mx-auto">
                         <Suspense fallback={<LoadingSpinner />}>
