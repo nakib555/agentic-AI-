@@ -5,22 +5,22 @@
 
 const lightTheme = {
   // --- Base Layers ---
-  "--bg-page": "#F5F5F0",
-  "--bg-layer-1": "#ffffff",
-  "--bg-layer-2": "#f3f4f6",
-  "--bg-layer-3": "#e5e7eb",
-  "--bg-glass": "rgba(255, 255, 255, 0.8)",
+  "--bg-page": "#f8f9fa",
+  "--bg-layer-1": "rgba(255, 255, 255, 0.8)",
+  "--bg-layer-2": "#f1f5f9",
+  "--bg-layer-3": "#e2e8f0",
+  "--bg-glass": "rgba(255, 255, 255, 0.7)",
 
   // --- Text Colors ---
-  "--text-primary": "#111827",
-  "--text-secondary": "#4b5563",
-  "--text-tertiary": "#9ca3af",
+  "--text-primary": "#0f172a",
+  "--text-secondary": "#475569",
+  "--text-tertiary": "#94a3b8",
   "--text-inverted": "#ffffff",
 
   // --- Borders ---
-  "--border-subtle": "rgba(0, 0, 0, 0.05)",
-  "--border-default": "#e5e7eb",
-  "--border-strong": "#d1d5db",
+  "--border-subtle": "rgba(0, 0, 0, 0.04)",
+  "--border-default": "rgba(0, 0, 0, 0.08)",
+  "--border-strong": "rgba(0, 0, 0, 0.12)",
   "--border-focus": "#6366f1",
 
   // --- Brand Colors ---
@@ -39,12 +39,12 @@ const lightTheme = {
 
   // --- Component Specifics ---
   "--bg-message-user": "#ffffff",
-  "--bg-message-ai": "rgba(255, 255, 255, 0.6)",
-  "--bg-input": "#ffffff",
-  "--bg-input-secondary": "#f9fafb",
-  "--bg-code": "#f6f8fa",
-  "--text-code": "#24292e",
-  "--bg-sidebar": "#ffffff"
+  "--bg-message-ai": "rgba(255, 255, 255, 0.5)",
+  "--bg-input": "rgba(255, 255, 255, 0.8)",
+  "--bg-input-secondary": "#f8fafc",
+  "--bg-code": "#f1f5f9",
+  "--text-code": "#1e293b",
+  "--bg-sidebar": "rgba(255, 255, 255, 0.7)"
 };
 
 export default lightTheme;

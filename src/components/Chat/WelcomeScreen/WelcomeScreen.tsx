@@ -16,93 +16,83 @@ type WelcomeScreenProps = {
 };
 
 export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
-    <div className="flex flex-col items-center justify-center h-full text-center pb-12 px-4">
+    <div className="flex flex-col items-center justify-center h-full text-center pb-12 px-4 relative overflow-y-auto custom-scrollbar">
         <motion.div 
-            className="relative mb-10"
+            className="relative mb-8"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
         >
             {/* Ambient glow behind the logo */}
-            <div className="absolute -inset-12 rounded-full bg-indigo-500/20 blur-3xl dark:bg-indigo-500/10 animate-pulse"></div>
+            <div className="absolute -inset-16 rounded-full bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-blue-500/20 blur-3xl animate-pulse"></div>
             
             {/* The Main Logo */}
-            <div className="relative drop-shadow-2xl">
-                <WelcomeLogo size={140} className="filter drop-shadow-[0_0_20px_rgba(99,102,241,0.3)]" />
+            <div className="relative drop-shadow-[0_20px_50px_rgba(99,102,241,0.25)]">
+                <WelcomeLogo size={140} className="filter" />
             </div>
         </motion.div>
 
-        <motion.h1 
-            className="text-4xl sm:text-5xl md:text-6xl font-bold font-['Space_Grotesk'] tracking-tight mb-5 leading-tight"
+        <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+            className="mb-6 space-y-2"
         >
-            <span className="text-slate-800 dark:text-slate-100">How can </span>
-            <span className="block sm:inline">
-                <motion.span
-                    className="brand-gradient pb-1" // pb-1 to prevent descenders clipping
-                    animate={{ backgroundPosition: ["0% center", "200% center"] }}
-                    transition={{
-                        duration: 8,
-                        repeat: Infinity,
-                        ease: "linear",
-                    }}
-                >
-                    I help you today?
-                </motion.span>
-            </span>
-        </motion.h1>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-['Space_Grotesk'] tracking-tight leading-tight">
+                <span className="text-slate-800 dark:text-slate-100">How can </span>
+                <span className="brand-gradient">I help you?</span>
+            </h1>
+            <p className="text-lg text-slate-500 dark:text-slate-400 font-medium max-w-lg mx-auto">
+                Your autonomous agent for reasoning, coding, and creation.
+            </p>
+        </motion.div>
         
-        <motion.p
-            className="text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto mb-12 leading-relaxed"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-        >
-            Your autonomous agent for reasoning, coding, and creation.
-        </motion.p>
+        <div className="mb-12 w-full max-w-3xl">
+             <FloatingPrompts onPromptClick={sendMessage} />
+        </div>
         
-        <FloatingPrompts onPromptClick={sendMessage} />
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12 w-full max-w-5xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-5xl px-2">
             <CapabilityCard 
                 icon="💡"
                 title="Reason"
-                description="Solve complex problems and provide detailed explanations."
+                description="Solve complex problems."
                 delay={0.4}
+                color="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-500/20"
             />
             <CapabilityCard 
                 icon="🎨"
                 title="Create"
-                description="Generate images and videos from your descriptions."
+                description="Generate images & videos."
                 delay={0.5}
+                color="bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-200/50 dark:border-pink-500/20"
             />
             <CapabilityCard 
                 icon="💻"
                 title="Code"
-                description="Write and execute code to perform calculations and tasks."
+                description="Execute Python & JS."
                 delay={0.6}
+                color="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-500/20"
             />
             <CapabilityCard 
                 icon="🌐"
                 title="Search"
-                description="Find the latest information from across the web."
+                description="Access real-time info."
                 delay={0.7}
+                color="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-500/20"
             />
         </div>
     </div>
 );
 
-const CapabilityCard = ({ icon, title, description, delay }: { icon: React.ReactNode, title: string, description: string, delay: number }) => (
+const CapabilityCard = ({ icon, title, description, delay, color }: { icon: React.ReactNode, title: string, description: string, delay: number, color: string }) => (
     <motion.div 
-        className="bg-white dark:bg-black/20 p-4 rounded-xl border border-gray-200 dark:border-white/10 h-full"
+        className={`glass-panel p-5 rounded-2xl flex flex-col items-center text-center transition-transform hover:-translate-y-1 duration-300 ${color} border bg-opacity-50 dark:bg-opacity-10 backdrop-blur-md`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut", delay }}
     >
         <div className="text-2xl mb-3">{icon}</div>
-        <h3 className="font-semibold text-gray-800 dark:text-slate-100 mb-1">{title}</h3>
-        <p className="text-sm text-gray-600 dark:text-slate-400">{description}</p>
+        <h3 className="font-bold text-base mb-1">{title}</h3>
+        <p className="text-sm opacity-80">{description}</p>
     </motion.div>
 );
