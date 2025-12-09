@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,6 +7,7 @@ import { AnimatePresence, motion as motionTyped, LayoutGroup } from 'framer-moti
 import type { Model } from '../../types';
 import { SettingsCategoryButton } from './SettingsCategoryButton';
 import type { Theme } from '../../hooks/useTheme';
+import { SettingsSkeleton } from './SettingsSkeleton';
 
 const motion = motionTyped as any;
 
@@ -112,15 +112,6 @@ const CATEGORIES = [
   },
 ];
 
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center h-64">
-    <div className="relative w-12 h-12">
-      <div className="absolute inset-0 rounded-full border-4 border-slate-200 dark:border-slate-700"></div>
-      <div className="absolute inset-0 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
-    </div>
-  </div>
-);
-
 // Memoized to prevent re-rendering the shell unless open state changes
 export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) => {
     const { isOpen, onClose } = props;
@@ -187,7 +178,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                 {/* Content Area - Lazy Loaded */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative">
                     <div className="p-6 md:p-8 max-w-2xl mx-auto">
-                        <Suspense fallback={<LoadingSpinner />}>
+                        <Suspense fallback={<SettingsSkeleton />}>
                             <AnimatePresence mode="wait">
                                 <motion.div
                                     key={activeCategory}

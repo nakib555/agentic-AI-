@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Model } from '../../services/modelService';
+import { Model } from '../../types';
 import { ModelSelector } from '../UI/ModelSelector';
 import { SettingItem } from './SettingItem';
 
@@ -63,10 +63,10 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
 
             <div className="grid md:grid-cols-2 gap-6">
                 <SettingItem label="Image Model" description="Model for image generation." layout="col" className="!border-0 pb-0">
-                    <ModelSelector models={imageModels} selectedModel={imageModel} onImageModelChange={onImageModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
+                    <ModelSelector models={imageModels} selectedModel={imageModel} onModelChange={onImageModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
                 </SettingItem>
                 <SettingItem label="Video Model" description="Model for video generation." layout="col" className="!border-0 pb-0">
-                    <ModelSelector models={videoModels} selectedModel={videoModel} onVideoModelChange={onVideoModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
+                    <ModelSelector models={videoModels} selectedModel={videoModel} onModelChange={onVideoModelChange} disabled={disabled || noModelsAvailable} className="w-full" />
                 </SettingItem>
             </div>
 
