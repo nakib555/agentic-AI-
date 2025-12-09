@@ -110,6 +110,7 @@ export const App = () => {
       />
 
       <AppModals
+        isDesktop={logic.isDesktop}
         isSettingsOpen={logic.isSettingsOpen}
         setIsSettingsOpen={logic.setIsSettingsOpen}
         isMemoryModalOpen={logic.isMemoryModalOpen}
