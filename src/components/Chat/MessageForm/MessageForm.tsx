@@ -53,11 +53,12 @@ export const MessageForm = forwardRef<MessageFormHandle, {
       <form onSubmit={logic.handleSubmit} className="relative">
         <motion.div 
             className={`
-              relative flex flex-col bg-white dark:bg-layer-1 shadow-lg dark:shadow-2xl
-              rounded-[24px] sm:rounded-[32px] transition-shadow duration-300
+              relative flex flex-col bg-page
+              border-2 border-slate-300 dark:border-slate-600
+              rounded-xl transition-shadow duration-300
               ${logic.isFocused 
-                ? 'shadow-xl ring-1 ring-black/5 dark:ring-white/10' 
-                : 'shadow-md border border-slate-200/60 dark:border-white/5'
+                ? 'border-indigo-500 dark:border-indigo-400' 
+                : ''
               }
             `}
             layout

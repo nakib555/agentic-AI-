@@ -25,6 +25,7 @@ import { MessageToolbar } from './MessageToolbar';
 import { ThinkingWorkflow } from '../../AI/ThinkingWorkflow';
 import { FormattedBlock } from '../../Markdown/FormattedBlock';
 import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
+import { useTypewriter } from '../../../hooks/useTypewriter';
 
 // Optimized spring physics for performance
 const animationProps = {
@@ -58,6 +59,9 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
   const { activeResponse, finalAnswerText, thinkingIsComplete, isStreamingFinalAnswer, agentPlan, executionLog, parsedFinalAnswer } = logic;
   const [isWorkflowCollapsed, setIsWorkflowCollapsed] = useState(false);
+
+  // Apply typewriter effect to the final answer text when streaming
+  const typedFinalAnswer = useTypewriter(finalAnswerText, !thinkingIsComplete);
 
   // Auto-collapse workflow when thinking is complete if there is a final answer
   useEffect(() => {
@@ -167,10 +171,10 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
           
           <div className="markdown-content max-w-none w-full text-slate-800 dark:text-white">
-            {/* Streaming Answer */}
+            {/* Streaming Answer - Uses the typed text */}
             {isStreamingFinalAnswer && (
                <ManualCodeRenderer 
-                  text={finalAnswerText} 
+                  text={typedFinalAnswer} 
                   components={MarkdownComponents} 
                   isStreaming={true} 
                   onRunCode={isAgentMode ? logic.handleRunCode : undefined}
