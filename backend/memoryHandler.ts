@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -86,7 +85,7 @@ export const updateMemory = async (req: any, res: any) => {
                 if (entry.isFile() && entry.name.endsWith('.tsx')) {
                     try {
                         const filePath = path.join(MEMORY_FILES_DIR, entry.name);
-                        const json = await readData(filePath);
+                        const json = await readData<any>(filePath);
                         if (json.id) {
                             existingFileMap.set(json.id, entry.name);
                         }

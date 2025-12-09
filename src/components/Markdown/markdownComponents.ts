@@ -79,7 +79,7 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
     code: ({ inline, className, children, isBlock, ...props }: any) => {
         // 1. If explicit inline prop is true (legacy react-markdown), render InlineCode
         if (inline) {
-             return React.createElement(InlineCode, null, children);
+             return React.createElement(InlineCode, { className, ...props }, children);
         }
 
         const match = /language-(\w+)/.exec(className || '');
@@ -107,7 +107,8 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
         }
 
         // 3. Fallback -> InlineCode (This covers single backticks in paragraphs)
-        return React.createElement(InlineCode, null, children);
+        // Now passing props to allow className and other attributes to flow through
+        return React.createElement(InlineCode, { className, ...props }, children);
     },
     
     pre: ({ children }: any) => {
@@ -165,14 +166,14 @@ export const WorkflowMarkdownComponents = {
     td: (props: any) => React.createElement('td', { className: "px-3 py-2 text-slate-600 dark:text-white align-top", ...props }),
     
     code: ({ inline, className, children, isBlock, ...props }: any) => {
-        if (inline) return React.createElement(InlineCode, null, children);
+        if (inline) return React.createElement(InlineCode, { className, ...props }, children);
         const match = /language-(\w+)/.exec(className || '');
         if (isBlock || match) {
             let content = String(children ?? '').replace(/\n$/, '');
             if (Array.isArray(children)) content = children.join('');
             return React.createElement(CodeBlock, { language: match ? match[1] : 'plaintext', isStreaming: false, children: content });
         }
-        return React.createElement(InlineCode, null, children);
+        return React.createElement(InlineCode, { className, ...props }, children);
     },
     pre: ({ children }: any) => {
         if (React.isValidElement(children)) {
