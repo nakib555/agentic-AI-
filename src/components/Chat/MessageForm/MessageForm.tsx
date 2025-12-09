@@ -59,7 +59,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full">
       <form onSubmit={logic.handleSubmit} className="relative">
         <motion.div 
             className={`

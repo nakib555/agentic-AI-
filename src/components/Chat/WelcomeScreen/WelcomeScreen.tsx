@@ -64,5 +64,45 @@ export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
         </motion.p>
         
         <FloatingPrompts onPromptClick={sendMessage} />
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12 w-full max-w-5xl">
+            <CapabilityCard 
+                icon="💡"
+                title="Reason"
+                description="Solve complex problems and provide detailed explanations."
+                delay={0.4}
+            />
+            <CapabilityCard 
+                icon="🎨"
+                title="Create"
+                description="Generate images and videos from your descriptions."
+                delay={0.5}
+            />
+            <CapabilityCard 
+                icon="💻"
+                title="Code"
+                description="Write and execute code to perform calculations and tasks."
+                delay={0.6}
+            />
+            <CapabilityCard 
+                icon="🌐"
+                title="Search"
+                description="Find the latest information from across the web."
+                delay={0.7}
+            />
+        </div>
     </div>
+);
+
+const CapabilityCard = ({ icon, title, description, delay }: { icon: React.ReactNode, title: string, description: string, delay: number }) => (
+    <motion.div 
+        className="bg-white dark:bg-black/20 p-4 rounded-xl border border-gray-200 dark:border-white/10 h-full"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay }}
+    >
+        <div className="text-2xl mb-3">{icon}</div>
+        <h3 className="font-semibold text-gray-800 dark:text-slate-100 mb-1">{title}</h3>
+        <p className="text-sm text-gray-600 dark:text-slate-400">{description}</p>
+    </motion.div>
 );

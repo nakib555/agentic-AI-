@@ -148,7 +148,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
     >
       <div 
         ref={contentRef}
-        className={`min-h-full flex w-full justify-center px-4 sm:px-6 md:px-8 max-w-3xl mx-auto ${visibleMessages.length > 0 ? 'items-start' : 'items-center'}`}
+        className={`min-h-full flex w-full justify-center px-4 sm:px-6 md:px-8 max-w-5xl mx-auto ${visibleMessages.length > 0 ? 'items-start' : 'items-center'}`}
       >
         {visibleMessages.length === 0 ? (
           <WelcomeScreen sendMessage={sendMessage} />
