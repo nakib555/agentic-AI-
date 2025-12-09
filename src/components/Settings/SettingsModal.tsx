@@ -52,8 +52,6 @@ type SettingsModalProps = {
   onManageMemory: () => void;
   ttsVoice: string;
   setTtsVoice: (voice: string) => void;
-  isAutoPlayEnabled: boolean;
-  setIsAutoPlayEnabled: (enabled: boolean) => void;
   disabled: boolean;
   theme: Theme;
   setTheme: (theme: Theme) => void;
@@ -188,7 +186,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
                                 {activeCategory === 'model' && <ModelSettings {...props} />}
                                 {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
-                                {activeCategory === 'speech' && <SpeechMemorySettings isMemoryEnabled={props.isMemoryEnabled} setIsMemoryEnabled={props.setIsMemoryEnabled} onManageMemory={props.onManageMemory} isAutoPlayEnabled={props.isAutoPlayEnabled} setIsAutoPlayEnabled={props.setIsAutoPlayEnabled} disabled={props.disabled} />}
+                                {activeCategory === 'speech' && <SpeechMemorySettings isMemoryEnabled={props.isMemoryEnabled} setIsMemoryEnabled={props.setIsMemoryEnabled} onManageMemory={props.onManageMemory} disabled={props.disabled} />}
                             </motion.div>
                         </AnimatePresence>
                     </div>

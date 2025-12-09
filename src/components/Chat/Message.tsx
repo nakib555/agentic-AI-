@@ -16,7 +16,6 @@ const MessageComponentRaw: React.FC<{
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void; 
     ttsVoice: string; 
     ttsModel: string;
-    isAutoPlayEnabled: boolean;
     currentChatId: string | null;
     onShowSources: (sources: Source[]) => void;
     approveExecution: (editedPlan: string) => void;
@@ -26,7 +25,7 @@ const MessageComponentRaw: React.FC<{
     onSetActiveResponseIndex: (messageId: string, index: number) => void;
     isAgentMode: boolean;
 }> = ({ 
-    msg, isLoading, sendMessage, ttsVoice, ttsModel, isAutoPlayEnabled, currentChatId, 
+    msg, isLoading, sendMessage, ttsVoice, ttsModel, currentChatId, 
     onShowSources, approveExecution, denyExecution, messageFormRef,
     onRegenerate, onSetActiveResponseIndex, isAgentMode
 }) => {
@@ -43,7 +42,6 @@ const MessageComponentRaw: React.FC<{
                 sendMessage={sendMessage} 
                 ttsVoice={ttsVoice}
                 ttsModel={ttsModel} 
-                isAutoPlayEnabled={isAutoPlayEnabled} 
                 currentChatId={currentChatId} 
                 onShowSources={onShowSources}
                 approveExecution={approveExecution}

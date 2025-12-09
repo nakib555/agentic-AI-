@@ -15,14 +15,11 @@ type SpeechMemorySettingsProps = {
   isMemoryEnabled: boolean;
   setIsMemoryEnabled: (enabled: boolean) => void;
   onManageMemory: () => void;
-  isAutoPlayEnabled: boolean;
-  setIsAutoPlayEnabled: (enabled: boolean) => void;
   disabled: boolean;
 };
 
 export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
     isMemoryEnabled, setIsMemoryEnabled, onManageMemory,
-    isAutoPlayEnabled, setIsAutoPlayEnabled,
     disabled
 }) => {
     return (
@@ -79,16 +76,6 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                     )}
                 </AnimatePresence>
             </div>
-            
-            <div className="h-px bg-slate-200 dark:bg-white/10" />
-
-            <SettingItem 
-                label="Auto-Play Audio" 
-                description="Automatically read aloud the AI's response when it finishes generating."
-                wrapControls={false}
-            >
-                <ToggleSwitch checked={isAutoPlayEnabled} onChange={setIsAutoPlayEnabled} disabled={disabled} />
-            </SettingItem>
         </div>
     );
 };

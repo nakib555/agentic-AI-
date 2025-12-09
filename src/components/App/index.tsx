@@ -73,7 +73,6 @@ export const App = () => {
               ttsVoice={logic.ttsVoice}
               ttsModel={logic.ttsModel}
               setTtsVoice={logic.setTtsVoice}
-              isAutoPlayEnabled={logic.isAutoPlayEnabled}
               currentChatId={logic.currentChatId}
               onShowSources={logic.handleShowSources}
               approveExecution={logic.approveExecution}
@@ -150,8 +149,6 @@ export const App = () => {
         cancelMemoryUpdate={logic.cancelMemoryUpdate}
         ttsVoice={logic.ttsVoice}
         setTtsVoice={logic.setTtsVoice}
-        isAutoPlayEnabled={logic.isAutoPlayEnabled}
-        setIsAutoPlayEnabled={logic.setIsAutoPlayEnabled}
         confirmation={logic.confirmation}
         onConfirm={logic.handleConfirm}
         onCancel={logic.handleCancel}

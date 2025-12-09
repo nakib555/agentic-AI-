@@ -91,7 +91,6 @@ export const initDataStore = async () => {
         isMemoryEnabled: false,
         ttsVoice: 'Kore',
         ttsModel: 'gemini-2.5-flash-preview-tts', // Add default
-        isAutoPlayEnabled: false,
         isAgentMode: true,
     };
     await initJsonFile(SETTINGS_FILE_PATH, defaultSettings);

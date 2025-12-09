@@ -18,7 +18,6 @@ export type AppSettings = {
     isMemoryEnabled: boolean;
     ttsVoice: string;
     ttsModel: string; // Add this
-    isAutoPlayEnabled: boolean;
     isAgentMode: boolean;
 };
 

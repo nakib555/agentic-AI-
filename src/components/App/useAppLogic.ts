@@ -26,8 +26,7 @@ import {
   DEFAULT_ABOUT_RESPONSE,
   DEFAULT_TEMPERATURE,
   DEFAULT_MAX_TOKENS,
-  DEFAULT_TTS_VOICE,
-  DEFAULT_AUTO_PLAY_AUDIO
+  DEFAULT_TTS_VOICE
 } from './constants';
 import { fetchFromApi, setOnVersionMismatch } from '../../utils/api';
 import { testSuite, type TestResult, type TestProgress } from '../Testing/testSuite';
@@ -81,7 +80,6 @@ export const useAppLogic = () => {
   const [videoModel, setVideoModel] = useState('');
   const [ttsModel, setTtsModel] = useState('');
   const [ttsVoice, setTtsVoice] = useState(DEFAULT_TTS_VOICE);
-  const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState(DEFAULT_AUTO_PLAY_AUDIO);
   const [isAgentMode, setIsAgentModeState] = useState(true);
   
   // Memory state is managed by its own hook, but we need to pass the enabled flag.
@@ -180,7 +178,6 @@ export const useAppLogic = () => {
             setTtsModel(settings.ttsModel || 'gemini-2.5-flash-preview-tts');
             setIsMemoryEnabledState(settings.isMemoryEnabled);
             setTtsVoice(settings.ttsVoice);
-            setIsAutoPlayEnabled(settings.isAutoPlayEnabled);
             setIsAgentModeState(settings.isAgentMode);
         } catch (error) {
             if ((error as Error).message === 'Version mismatch') return;
@@ -249,7 +246,6 @@ export const useAppLogic = () => {
   const handleSetVideoModel = createSettingUpdater(setVideoModel, 'videoModel');
   const handleSetTtsModel = createSettingUpdater(setTtsModel, 'ttsModel');
   const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
-  const handleSetIsAutoPlayEnabled = createSettingUpdater(setIsAutoPlayEnabled, 'isAutoPlayEnabled');
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
 
@@ -596,8 +592,6 @@ export const useAppLogic = () => {
     onTtsModelChange: handleSetTtsModel,
     ttsVoice,
     setTtsVoice: handleSetTtsVoice,
-    isAutoPlayEnabled,
-    setIsAutoPlayEnabled: handleSetIsAutoPlayEnabled,
     isMemoryEnabled,
     setIsMemoryEnabled: handleSetIsMemoryEnabled,
     setIsAgentMode: handleSetIsAgentMode,

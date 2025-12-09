@@ -19,7 +19,6 @@ export type RenderSegment = {
 
 export const useAiMessageLogic = (
     msg: Message,
-    isAutoPlayEnabled: boolean,
     ttsVoice: string,
     ttsModel: string,
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void,
@@ -136,15 +135,6 @@ export const useAiMessageLogic = (
     const hasFinalAnswer = finalAnswerText && finalAnswerText.trim() !== '';
     const duration = activeResponse?.startTime && activeResponse?.endTime ? (activeResponse.endTime - activeResponse.startTime) / 1000 : null;
     
-    // Auto-play audio handling
-    const autoPlayTriggered = useRef(false);
-    useEffect(() => {
-        if (isAutoPlayEnabled && thinkingIsComplete && !activeResponse?.error && hasFinalAnswer && !autoPlayTriggered.current && !isPlaying) {
-            autoPlayTriggered.current = true;
-            playOrStopAudio();
-        }
-    }, [isAutoPlayEnabled, thinkingIsComplete, activeResponse, hasFinalAnswer, isPlaying, playOrStopAudio]);
-
     // Duration timer
     useEffect(() => {
         if (isThinking && activeResponse?.startTime) {

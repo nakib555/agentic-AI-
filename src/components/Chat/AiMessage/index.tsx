@@ -39,7 +39,6 @@ type AiMessageProps = {
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void; 
     ttsVoice: string; 
     ttsModel: string;
-    isAutoPlayEnabled: boolean;
     currentChatId: string | null;
     onShowSources: (sources: Source[]) => void;
     approveExecution: (editedPlan: string) => void;
@@ -51,12 +50,12 @@ type AiMessageProps = {
 };
 
 const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
-  const { msg, isLoading, sendMessage, ttsVoice, ttsModel, isAutoPlayEnabled, currentChatId, 
+  const { msg, isLoading, sendMessage, ttsVoice, ttsModel, currentChatId, 
           onShowSources, approveExecution, denyExecution, messageFormRef, onRegenerate,
           onSetActiveResponseIndex, isAgentMode } = props;
   const { id } = msg;
 
-  const logic = useAiMessageLogic(msg, isAutoPlayEnabled, ttsVoice, ttsModel, sendMessage, isLoading);
+  const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
   const { activeResponse, finalAnswerText, thinkingIsComplete, isStreamingFinalAnswer, agentPlan, executionLog, parsedFinalAnswer } = logic;
   const [isWorkflowCollapsed, setIsWorkflowCollapsed] = useState(false);
 

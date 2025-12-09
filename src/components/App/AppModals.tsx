@@ -71,8 +71,6 @@ type AppModalsProps = {
   cancelMemoryUpdate: () => void;
   ttsVoice: string;
   setTtsVoice: (value: string) => void;
-  isAutoPlayEnabled: boolean;
-  setIsAutoPlayEnabled: (enabled: boolean) => void;
   // Confirmation Modal
   confirmation: { prompt: string; onConfirm: () => void; onCancel?: () => void; destructive?: boolean } | null;
   onConfirm: () => void;
@@ -92,7 +90,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     defaultTemperature, defaultMaxTokens, isMemoryEnabled,
     setIsMemoryEnabled, memoryContent, memoryFiles, clearMemory, updateBackendMemory, updateMemoryFiles, isConfirmationOpen,
     memorySuggestions, confirmMemoryUpdate, cancelMemoryUpdate, ttsVoice,
-    setTtsVoice, isAutoPlayEnabled, setIsAutoPlayEnabled, onManageMemory,
+    setTtsVoice, onManageMemory,
     apiKey, onSaveApiKey, isImportModalOpen, setIsImportModalOpen, handleFileUploadForImport,
     onDownloadLogs, onShowDataStructure, confirmation, onConfirm, onCancel,
     theme, setTheme
@@ -143,8 +141,6 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           onManageMemory={onManageMemory}
           ttsVoice={ttsVoice}
           setTtsVoice={setTtsVoice}
-          isAutoPlayEnabled={isAutoPlayEnabled}
-          setIsAutoPlayEnabled={setIsAutoPlayEnabled}
           theme={theme}
           setTheme={setTheme}
         />
