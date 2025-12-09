@@ -44,7 +44,7 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
                         </div>
                     )}
                     {text && (
-                        <div className="markdown-content markdown-content-user text-[15px] leading-relaxed">
+                        <div className="markdown-content markdown-content-user text-base leading-relaxed">
                             <ManualCodeRenderer text={text} components={MarkdownComponents} isStreaming={false} />
                         </div>
                     )}

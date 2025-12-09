@@ -42,7 +42,7 @@
 /* Adjust coloring to match theme and increase size */
 .katex {
   color: var(--text-primary);
-  font-size: 1.5em;
+  font-size: 1.15em; /* Reduced from 1.5em to 1.15em */
 }
 
 /* Styles for bullet points inside workflow */

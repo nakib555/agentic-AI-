@@ -1,3 +1,4 @@
+
 /* PART 1 of 2 of main.css (Lines 1-70) */
 
 /* --- Modern, Theme-Aware Scrollbar --- */
@@ -10,7 +11,7 @@ html {
 
 @media (min-width: 768px) {
   html {
-    font-size: 13px; /* Scaled down for desktop "one level" reduction */
+    font-size: 15px; /* Increased from 13px to 15px for better readability */
   }
 }
 
