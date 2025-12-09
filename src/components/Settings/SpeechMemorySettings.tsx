@@ -52,7 +52,7 @@ const StopIcon = () => (
     </svg>
 );
 
-export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
+export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = React.memo(({
     isMemoryEnabled, setIsMemoryEnabled, onManageMemory,
     disabled, ttsVoice, setTtsVoice
 }) => {
@@ -174,4 +174,4 @@ export const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
             </div>
         </div>
     );
-};
+});

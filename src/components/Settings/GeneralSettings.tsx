@@ -20,7 +20,7 @@ type GeneralSettingsProps = {
   setTheme: (theme: Theme) => void;
 };
 
-export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ 
+export const GeneralSettings: React.FC<GeneralSettingsProps> = React.memo(({ 
     onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, apiKey, onSaveApiKey,
     theme, setTheme
 }) => {
@@ -111,4 +111,4 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
       </div>
     </div>
   );
-};
+});

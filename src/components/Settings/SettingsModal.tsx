@@ -3,18 +3,19 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { AnimatePresence, motion as motionTyped, LayoutGroup } from 'framer-motion';
 import type { Model } from '../../types';
 import { SettingsCategoryButton } from './SettingsCategoryButton';
 import type { Theme } from '../../hooks/useTheme';
 
-import { GeneralSettings } from './GeneralSettings';
-import { ModelSettings } from './ModelSettings';
-import { CustomInstructionsSettings } from './CustomInstructionsSettings';
-import { SpeechMemorySettings } from './SpeechMemorySettings';
-
 const motion = motionTyped as any;
+
+// Lazy load the settings tabs to optimize bundle size and startup time
+const GeneralSettings = React.lazy(() => import('./GeneralSettings').then(module => ({ default: module.GeneralSettings })));
+const ModelSettings = React.lazy(() => import('./ModelSettings').then(module => ({ default: module.ModelSettings })));
+const CustomInstructionsSettings = React.lazy(() => import('./CustomInstructionsSettings').then(module => ({ default: module.CustomInstructionsSettings })));
+const SpeechMemorySettings = React.lazy(() => import('./SpeechMemorySettings').then(module => ({ default: module.SpeechMemorySettings })));
 
 type SettingsModalProps = {
   isOpen: boolean;
@@ -110,7 +111,16 @@ const CATEGORIES = [
   },
 ];
 
-export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="relative w-12 h-12">
+      <div className="absolute inset-0 rounded-full border-4 border-slate-200 dark:border-slate-700"></div>
+      <div className="absolute inset-0 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
+    </div>
+  </div>
+);
+
+export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) => {
     const { isOpen, onClose } = props;
     const [activeCategory, setActiveCategory] = useState('general');
 
@@ -175,51 +185,53 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative">
                     <div className="p-6 md:p-8 max-w-2xl mx-auto">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={activeCategory}
-                                initial={{ opacity: 0, x: 10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -10 }}
-                                transition={{ duration: 0.15, ease: "easeOut" }}
-                            >
-                                {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
-                                {activeCategory === 'model' && (
-                                    <ModelSettings
-                                        models={props.models}
-                                        imageModels={props.imageModels}
-                                        videoModels={props.videoModels}
-                                        ttsModels={props.ttsModels}
-                                        selectedModel={props.selectedModel}
-                                        onModelChange={props.onModelChange}
-                                        temperature={props.temperature}
-                                        setTemperature={props.setTemperature}
-                                        maxTokens={props.maxTokens}
-                                        setMaxTokens={props.setMaxTokens}
-                                        imageModel={props.imageModel}
-                                        onImageModelChange={props.onImageModelChange}
-                                        videoModel={props.videoModel}
-                                        onVideoModelChange={props.onVideoModelChange}
-                                        ttsModel={props.ttsModel}
-                                        onTtsModelChange={props.onTtsModelChange}
-                                        defaultTemperature={props.defaultTemperature}
-                                        defaultMaxTokens={props.defaultMaxTokens}
-                                        disabled={props.disabled}
-                                    />
-                                )}
-                                {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
-                                {activeCategory === 'speech' && (
-                                    <SpeechMemorySettings 
-                                        isMemoryEnabled={props.isMemoryEnabled} 
-                                        setIsMemoryEnabled={props.setIsMemoryEnabled} 
-                                        onManageMemory={props.onManageMemory} 
-                                        disabled={props.disabled}
-                                        ttsVoice={props.ttsVoice}
-                                        setTtsVoice={props.setTtsVoice}
-                                    />
-                                )}
-                            </motion.div>
-                        </AnimatePresence>
+                        <Suspense fallback={<LoadingSpinner />}>
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={activeCategory}
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    transition={{ duration: 0.15, ease: "easeOut" }}
+                                >
+                                    {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
+                                    {activeCategory === 'model' && (
+                                        <ModelSettings
+                                            models={props.models}
+                                            imageModels={props.imageModels}
+                                            videoModels={props.videoModels}
+                                            ttsModels={props.ttsModels}
+                                            selectedModel={props.selectedModel}
+                                            onModelChange={props.onModelChange}
+                                            temperature={props.temperature}
+                                            setTemperature={props.setTemperature}
+                                            maxTokens={props.maxTokens}
+                                            setMaxTokens={props.setMaxTokens}
+                                            imageModel={props.imageModel}
+                                            onImageModelChange={props.onImageModelChange}
+                                            videoModel={props.videoModel}
+                                            onVideoModelChange={props.onVideoModelChange}
+                                            ttsModel={props.ttsModel}
+                                            onTtsModelChange={props.onTtsModelChange}
+                                            defaultTemperature={props.defaultTemperature}
+                                            defaultMaxTokens={props.defaultMaxTokens}
+                                            disabled={props.disabled}
+                                        />
+                                    )}
+                                    {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
+                                    {activeCategory === 'speech' && (
+                                        <SpeechMemorySettings 
+                                            isMemoryEnabled={props.isMemoryEnabled} 
+                                            setIsMemoryEnabled={props.setIsMemoryEnabled} 
+                                            onManageMemory={props.onManageMemory} 
+                                            disabled={props.disabled}
+                                            ttsVoice={props.ttsVoice}
+                                            setTtsVoice={props.setTtsVoice}
+                                        />
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
+                        </Suspense>
                     </div>
                 </div>
             </div>
@@ -228,4 +240,4 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
       )}
     </AnimatePresence>
   );
-};
+});

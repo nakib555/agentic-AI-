@@ -31,7 +31,7 @@ type ModelSettingsProps = {
   disabled: boolean;
 };
 
-export const ModelSettings: React.FC<ModelSettingsProps> = ({
+export const ModelSettings: React.FC<ModelSettingsProps> = React.memo(({
     models, imageModels, videoModels, ttsModels, selectedModel, onModelChange,
     temperature, setTemperature, maxTokens, setMaxTokens,
     imageModel, onImageModelChange, videoModel, onVideoModelChange, ttsModel, onTtsModelChange,
@@ -101,4 +101,4 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
             </SettingItem>
         </div>
     );
-};
+});

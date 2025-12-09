@@ -44,7 +44,7 @@ const InstructionField: React.FC<{
 );
 
 
-export const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProps> = ({
+export const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProps> = React.memo(({
     aboutUser,
     setAboutUser,
     aboutResponse,
@@ -81,4 +81,4 @@ export const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProp
             />
         </div>
     );
-};
+});
