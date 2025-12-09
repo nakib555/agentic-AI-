@@ -182,9 +182,14 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         whileHover={!isSendDisabled && !isGeneratingResponse ? { scale: 1.05 } : {}}
                     >
                         {isGeneratingResponse ? ( 
-                           <div className="w-5 h-5 flex items-center justify-center">
-                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
-                                <rect x="7" y="7" width="10" height="10" rx="1" />
+                           <div className="w-7 h-7 flex items-center justify-center">
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-full h-full">
+                                <rect x="18" y="18" width="12" height="12" rx="2" ry="2" fill="currentColor"></rect>
+                                <circle cx="24" cy="24" r="16" fill="none" stroke="#4f46e5" strokeWidth="4.5" strokeLinecap="round" strokeDasharray="80 100" strokeDashoffset="0">
+                                    <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="2.5s" repeatCount="indefinite"></animateTransform>
+                                    <animate attributeName="stroke-dashoffset" values="0; -180" dur="2.5s" repeatCount="indefinite"></animate>
+                                    <animate attributeName="stroke" dur="10s" repeatCount="indefinite" values="#f87171; #fb923c; #facc15; #4ade80; #22d3ee; #3b82f6; #818cf8; #e879f9; #f472b6; #f87171"></animate>
+                                </circle>
                              </svg>
                            </div>
                         ) : ( 
