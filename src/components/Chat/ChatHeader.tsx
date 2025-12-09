@@ -21,13 +21,6 @@ type ChatHeaderProps = {
   chatTitle: string | null;
 };
 
-const ToggleIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-        <line x1="9" y1="3" x2="9" y2="21"></line>
-    </svg>
-);
-
 const MoreOptionsIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
         <circle cx="12" cy="12" r="1"></circle>
@@ -99,7 +92,7 @@ const MenuSectionTitle: React.FC<{ children: React.ReactNode }> = ({ children })
 
 const MenuDivider = () => <li className="my-1 h-px bg-slate-100 dark:bg-white/10 mx-2" />;
 
-export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollapsed, onImportChat, onExportChat, onShareChat, isChatActive, isDesktop, chatTitle }: ChatHeaderProps) => {
+export const ChatHeader = ({ onImportChat, onExportChat, onShareChat, isChatActive, chatTitle }: ChatHeaderProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -107,16 +100,6 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
     const [isAnimatingTitle, setIsAnimatingTitle] = useState(false);
     const [animationKey, setAnimationKey] = useState(chatTitle);
     const prevChatTitleRef = useRef(chatTitle);
-
-
-    const isSidebarActive = isDesktop ? !isSidebarCollapsed : isSidebarOpen;
-
-    const getAriaAndTitle = () => {
-        if (isDesktop) {
-            return isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar";
-        }
-        return isSidebarOpen ? "Close sidebar" : "Open sidebar";
-    };
 
     useEffect(() => {
         const prevTitle = prevChatTitleRef.current;
@@ -149,107 +132,98 @@ export const ChatHeader = ({ handleToggleSidebar, isSidebarOpen, isSidebarCollap
     const activeClasses = "bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/40";
     const inactiveClasses = "bg-white/60 text-slate-700 border-slate-200/80 hover:bg-white/90 dark:bg-black/20 dark:text-slate-200 dark:border-white/10 dark:hover:bg-black/40";
     
-    const toggleButtonClasses = `${baseButtonClasses} ${isSidebarActive ? activeClasses : inactiveClasses}`;
     const moreOptionsButtonClasses = `${baseButtonClasses} ${isMenuOpen ? activeClasses : inactiveClasses}`;
 
     return (
-        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 z-10 gap-4">
-        
-        {/* --- Left controls --- */}
-        <div className="flex-shrink-0">
-            <button
-                onClick={handleToggleSidebar}
-                className={toggleButtonClasses}
-                aria-label={getAriaAndTitle()}
-                title={getAriaAndTitle()}
-            >
-                <ToggleIcon />
-            </button>
-        </div>
+        <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center justify-center sticky top-0 z-10 gap-4 w-full">
+            <div className="w-full max-w-3xl flex items-center justify-between">
+                {/* --- Left Spacer (balanced) --- */}
+                <div className="flex-shrink-0 w-11 h-11" />
 
-        {/* --- Centered Title --- */}
-        <div className="flex-1 min-w-0 text-center">
-            <AnimatePresence>
-                {chatTitle && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-sm min-h-[32px]" title={chatTitle}>
-                        
-                        {isAnimatingTitle && animationKey ? (
-                            <TextType
-                                key={animationKey}
-                                text={['New Chat', animationKey]}
-                                loop={false}
-                                onSequenceComplete={() => setIsAnimatingTitle(false)}
-                            />
-                        ) : (
-                            <span className="truncate max-w-[200px] sm:max-w-sm md:max-w-md inline-block align-middle">
-                                {chatTitle}
-                            </span>
-                        )}
-
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-
-        {/* --- Right controls --- */}
-        <div className="flex-shrink-0">
-            <div className="relative">
-                <button
-                    ref={buttonRef}
-                    onClick={() => setIsMenuOpen(prev => !prev)}
-                    className={moreOptionsButtonClasses}
-                    aria-label="Chat options"
-                    title="Chat options"
-                    aria-haspopup="true"
-                    aria-expanded={isMenuOpen}
-                >
-                    <MoreOptionsIcon />
-                </button>
-                <AnimatePresence>
-                    {isMenuOpen && (
-                        <motion.div
-                            ref={menuRef}
-                            initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                            className="absolute right-0 top-full mt-2 w-64 bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 p-2 z-20 origin-top-right overflow-hidden"
-                        >
-                            <ul className="flex flex-col">
-                                <MenuSectionTitle>Actions</MenuSectionTitle>
-                                <MenuItem onClick={onShareChat} disabled={!isChatActive} label="Share to Clipboard">
-                                    <ShareIcon />
-                                </MenuItem>
-
-                                <MenuDivider />
+                {/* --- Centered Title --- */}
+                <div className="flex-1 min-w-0 text-center">
+                    <AnimatePresence>
+                        {chatTitle && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-sm min-h-[32px]" title={chatTitle}>
                                 
-                                <MenuSectionTitle>Management</MenuSectionTitle>
-                                <MenuItem onClick={() => { onImportChat(); setIsMenuOpen(false); }} disabled={false} label="Import Chat...">
-                                    <ImportIcon />
-                                </MenuItem>
+                                {isAnimatingTitle && animationKey ? (
+                                    <TextType
+                                        key={animationKey}
+                                        text={['New Chat', animationKey]}
+                                        loop={false}
+                                        onSequenceComplete={() => setIsAnimatingTitle(false)}
+                                    />
+                                ) : (
+                                    <span className="truncate max-w-[200px] sm:max-w-sm md:max-w-md inline-block align-middle">
+                                        {chatTitle}
+                                    </span>
+                                )}
 
-                                <MenuDivider />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
 
-                                <MenuSectionTitle>Export</MenuSectionTitle>
-                                <MenuItem onClick={() => onExportChat('md')} disabled={!isChatActive} label="Markdown">
-                                    <ExportIcon />
-                                </MenuItem>
-                                <MenuItem onClick={() => onExportChat('json')} disabled={!isChatActive} label="JSON">
-                                    <CodeIcon />
-                                </MenuItem>
-                                <MenuItem onClick={() => onExportChat('pdf')} disabled={!isChatActive} label="PDF">
-                                    <PdfIcon />
-                                </MenuItem>
-                            </ul>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                {/* --- Right controls --- */}
+                <div className="flex-shrink-0">
+                    <div className="relative">
+                        <button
+                            ref={buttonRef}
+                            onClick={() => setIsMenuOpen(prev => !prev)}
+                            className={moreOptionsButtonClasses}
+                            aria-label="Chat options"
+                            title="Chat options"
+                            aria-haspopup="true"
+                            aria-expanded={isMenuOpen}
+                        >
+                            <MoreOptionsIcon />
+                        </button>
+                        <AnimatePresence>
+                            {isMenuOpen && (
+                                <motion.div
+                                    ref={menuRef}
+                                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                    className="absolute right-0 top-full mt-2 w-64 bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 p-2 z-20 origin-top-right overflow-hidden"
+                                >
+                                    <ul className="flex flex-col">
+                                        <MenuSectionTitle>Actions</MenuSectionTitle>
+                                        <MenuItem onClick={onShareChat} disabled={!isChatActive} label="Share to Clipboard">
+                                            <ShareIcon />
+                                        </MenuItem>
+
+                                        <MenuDivider />
+                                        
+                                        <MenuSectionTitle>Management</MenuSectionTitle>
+                                        <MenuItem onClick={() => { onImportChat(); setIsMenuOpen(false); }} disabled={false} label="Import Chat...">
+                                            <ImportIcon />
+                                        </MenuItem>
+
+                                        <MenuDivider />
+
+                                        <MenuSectionTitle>Export</MenuSectionTitle>
+                                        <MenuItem onClick={() => onExportChat('md')} disabled={!isChatActive} label="Markdown">
+                                            <ExportIcon />
+                                        </MenuItem>
+                                        <MenuItem onClick={() => onExportChat('json')} disabled={!isChatActive} label="JSON">
+                                            <CodeIcon />
+                                        </MenuItem>
+                                        <MenuItem onClick={() => onExportChat('pdf')} disabled={!isChatActive} label="PDF">
+                                            <PdfIcon />
+                                        </MenuItem>
+                                    </ul>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
             </div>
-        </div>
-  </header>
-);
+      </header>
+    );
 };

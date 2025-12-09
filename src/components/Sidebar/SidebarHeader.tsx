@@ -13,9 +13,10 @@ type SidebarHeaderProps = {
   isCollapsed: boolean;
   isDesktop: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  setIsCollapsed: (collapsed: boolean) => void;
 };
 
-export const SidebarHeader = ({ isCollapsed, isDesktop, setIsOpen }: SidebarHeaderProps) => {
+export const SidebarHeader = ({ isCollapsed, isDesktop, setIsOpen, setIsCollapsed }: SidebarHeaderProps) => {
   const shouldCollapse = isDesktop && isCollapsed;
   
   return (
@@ -35,6 +36,29 @@ export const SidebarHeader = ({ isCollapsed, isDesktop, setIsOpen }: SidebarHead
           </motion.span>
       </div>
       
+      {/* Desktop Toggle Button */}
+      {isDesktop && !shouldCollapse && (
+        <button
+            onClick={() => setIsCollapsed(true)}
+            className="p-1.5 rounded-lg text-slate-400 hover:bg-gray-200/50 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+            title="Collapse sidebar"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><path d="M17 16l-4-4 4-4"></path></svg>
+        </button>
+      )}
+
+      {/* Desktop Expand Trigger (Only visible in collapsed mode header if needed, but usually header is just logo) */}
+      {isDesktop && shouldCollapse && (
+         <button
+            onClick={() => setIsCollapsed(false)}
+            className="absolute top-4 left-1/2 -translate-x-1/2 mt-12 p-1.5 rounded-lg text-slate-400 hover:bg-gray-200/50 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-slate-200 transition-colors opacity-0 group-hover:opacity-100"
+            title="Expand sidebar"
+        >
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><path d="M13 16l4-4-4-4"></path></svg>
+        </button>
+      )}
+      
+      {/* Mobile Close Button */}
       <button
           onClick={() => setIsOpen(false)}
           className="md:hidden p-2 -mr-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition-colors"

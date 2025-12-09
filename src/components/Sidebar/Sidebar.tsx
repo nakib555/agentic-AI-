@@ -150,13 +150,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
-                    className="p-3 flex flex-col h-full"
+                    className="p-3 flex flex-col h-full group"
                     style={{ userSelect: isResizing ? 'none' : 'auto' }}
                 >
                     <SidebarHeader 
                         isCollapsed={isCollapsed}
                         isDesktop={isDesktop}
                         setIsOpen={setIsOpen} 
+                        setIsCollapsed={setIsCollapsed}
                     />
 
                     <SearchInput 
@@ -209,6 +210,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     >
                         <div className={`w-[1.5px] h-full mx-auto transition-colors duration-200 ${isResizing ? 'bg-blue-500' : 'bg-transparent group-hover:bg-blue-400/50'}`}></div>
                     </div>
+                )}
+                
+                {/* Desktop Expand Button (Visible when collapsed, attached to side) */}
+                {isDesktop && isCollapsed && (
+                    <button
+                        onClick={() => setIsCollapsed(false)}
+                        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-12 bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-r-lg flex items-center justify-center text-slate-400 hover:text-indigo-500 shadow-sm cursor-pointer z-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Expand sidebar"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
                 )}
             </motion.div>
         </aside>
