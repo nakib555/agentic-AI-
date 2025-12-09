@@ -25,7 +25,7 @@ type ChatSettings = {
 
 export const useChat = (initialModel: string, settings: ChatSettings, memoryContent: string, isAgentMode: boolean, apiKey: string) => {
     const chatHistoryHook = useChatHistory();
-    const { chatHistory, currentChatId, updateChatTitle } = chatHistoryHook;
+    const { chatHistory, currentChatId, updateChatTitle, updateChatProperty } = chatHistoryHook;
     const abortControllerRef = useRef<AbortController | null>(null);
     const requestIdRef = useRef<string | null>(null); // For explicit cancellation
     const testResolverRef = useRef<((value: Message | PromiseLike<Message>) => void) | null>(null);
@@ -440,6 +440,21 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                         chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
                     }
                 }
+
+                // Force a sync of the full chat state to the backend to ensure persistence
+                // We do this in a timeout to allow the final state updates (from processBackendStream) to propagate to the Ref.
+                setTimeout(() => {
+                    const chatToPersist = chatHistoryRef.current.find(c => c.id === chatId);
+                    if (chatToPersist) {
+                        // Ensure the message we just finished is marked as not thinking in the persistence payload
+                        const cleanMessages = chatToPersist.messages.map(m => 
+                            m.id === messageId ? { ...m, isThinking: false } : m
+                        );
+                        console.log('[FRONTEND] Persisting chat history to backend.', { chatId, msgCount: cleanMessages.length });
+                        updateChatProperty(chatId, { messages: cleanMessages });
+                    }
+                }, 100);
+
             } else {
                 // If aborted, ensure loading state is false
                 chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });

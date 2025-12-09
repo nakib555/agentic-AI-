@@ -332,6 +332,7 @@ export const useChatHistory = () => {
     startNewChat, loadChat, deleteChat, clearAllChats, importChat,
     addMessagesToChat, addModelResponse, updateActiveResponseOnMessage, setActiveResponseIndex,
     updateMessage, setChatLoadingState, completeChatLoading,
-    updateChatTitle, updateChatModel, updateChatSettings
+    updateChatTitle, updateChatModel, updateChatSettings,
+    updateChatProperty
   };
 };
