@@ -117,12 +117,22 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
         return React.createElement('div', { className: "not-prose my-4" }, children);
     },
 
-    table: (props: any) => React.createElement('div', { className: "my-4 w-full overflow-x-auto rounded-lg border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/20 shadow-sm" }, React.createElement('table', { className: "w-full text-sm text-left border-collapse", ...props })),
-    thead: (props: any) => React.createElement('thead', { className: "bg-slate-50 dark:bg-white/5", ...props }),
-    tbody: (props: any) => React.createElement('tbody', { className: "divide-y divide-slate-200 dark:divide-white/5", ...props }),
-    tr: (props: any) => React.createElement('tr', { className: "transition-colors hover:bg-slate-50/50 dark:hover:bg-white/5", ...props }),
-    th: (props: any) => React.createElement('th', { className: "px-4 py-3 font-semibold text-slate-900 dark:text-slate-100 align-bottom", ...props }),
-    td: (props: any) => React.createElement('td', { className: "px-4 py-3 text-slate-700 dark:text-slate-300 align-top", ...props }),
+    // --- Enhanced Table Styling ---
+    table: (props: any) => React.createElement(
+        'div',
+        { className: "my-6 w-full overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 shadow-sm bg-white dark:bg-[#1e1e1e]" },
+        React.createElement(
+            'div',
+            { className: "overflow-x-auto" },
+            React.createElement('table', { className: "w-full text-left border-collapse min-w-full", ...props })
+        )
+    ),
+    thead: (props: any) => React.createElement('thead', { className: "bg-gray-50/80 dark:bg-white/5 border-b border-gray-200 dark:border-white/10", ...props }),
+    tbody: (props: any) => React.createElement('tbody', { className: "divide-y divide-gray-100 dark:divide-white/5 bg-transparent", ...props }),
+    tr: (props: any) => React.createElement('tr', { className: "group transition-colors duration-150 hover:bg-gray-50/50 dark:hover:bg-white/5", ...props }),
+    th: (props: any) => React.createElement('th', { className: "px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 select-none", ...props }),
+    td: (props: any) => React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700 dark:text-gray-300 align-top leading-relaxed", ...props }),
+    
     hr: (props: any) => React.createElement('hr', { className: "my-6 border-slate-200 dark:border-white/10", ...props }),
     del: (props: any) => React.createElement('del', { className: "text-slate-500 dark:text-slate-400", ...props }),
 });
@@ -142,6 +152,8 @@ export const WorkflowMarkdownComponents = {
     ol: (props: any) => React.createElement('ol', { className: "text-sm list-decimal list-outside pl-5 mb-2 space-y-1 text-slate-700 dark:text-slate-300", ...props }),
     li: (props: any) => React.createElement('li', { className: "pl-1", ...props }),
     blockquote: (props: any) => React.createElement('blockquote', { className: "custom-blockquote custom-blockquote-workflow my-2 text-slate-700 dark:text-slate-300", ...props }),
+    
+    // Compact table for workflow view (smaller padding, no double wrap to save space)
     table: (props: any) => React.createElement('div', { className: "my-2 w-full overflow-x-auto rounded border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/20" }, React.createElement('table', { className: "w-full text-xs text-left border-collapse", ...props })),
     thead: (props: any) => React.createElement('thead', { className: "bg-slate-50 dark:bg-white/5", ...props }),
     tr: (props: any) => React.createElement('tr', { className: "border-b border-slate-100 dark:border-white/5 last:border-0", ...props }),
