@@ -18,7 +18,7 @@ type Callbacks = {
     onNewToolCalls: (toolCallEvents: ToolCallEvent[]) => void;
     onToolResult: (id: string, result: string) => void;
     onPlanReady: (plan: string) => Promise<boolean | string>;
-    onWorkflowUpdate: (workflow: any) => void; // New callback
+    onWorkflowUpdate: (workflow: any) => void; 
     onComplete: (finalText: string, groundingMetadata: any) => void;
     onCancel: () => void;
     onError: (error: any) => void;
@@ -46,14 +46,14 @@ const AgentStateAnnotation = Annotation.Root({
         default: () => undefined,
     }),
     toolCalls: Annotation<FunctionCall[]>({
-        reducer: (x, y) => y, // Replace current turn's calls
+        reducer: (x, y) => y, 
         default: () => [],
     }),
     latestAgentText: Annotation<string>({
         reducer: (x, y) => y || x,
         default: () => "",
     }),
-    toolEvents: Annotation<ToolCallEvent[]>({ // Track all tool events for workflow parsing
+    toolEvents: Annotation<ToolCallEvent[]>({ 
         reducer: (x, y) => x.concat(y),
         default: () => [],
     })
@@ -62,9 +62,8 @@ const AgentStateAnnotation = Annotation.Root({
 const extractPlan = (rawText: string): string => {
     const planMarker = '[STEP] Strategic Plan:';
     const planMarkerIndex = rawText.indexOf(planMarker);
-    if (planMarkerIndex === -1) return rawText; // Fallback
+    if (planMarkerIndex === -1) return rawText; 
 
-    // Heuristic: Plan is everything from the marker to the approval tag
     const planStart = rawText.substring(planMarkerIndex);
     return planStart.replace(/\[USER_APPROVAL_REQUIRED\][\s\S]*/, '').trim();
 };
@@ -111,7 +110,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     fullTextResponse += chunkText;
                     callbacks.onTextChunk(fullTextResponse);
                     
-                    // Live Workflow Update
                     const parsedWorkflow = parseAgenticWorkflow(fullTextResponse, state.toolEvents, false);
                     callbacks.onWorkflowUpdate(parsedWorkflow);
                 }
@@ -130,7 +128,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     }
                     if (typeof approval === 'string') {
                         console.log('[AGENT_LOOP] User edited plan. Injecting updated plan.');
-                        // Replace the generated text with the user's edited plan to keep context consistent
                         fullTextResponse = approval + "\n\n[PLAN_APPROVED_BY_USER]"; 
                         callbacks.onTextChunk(fullTextResponse);
                     }
@@ -153,7 +150,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
             const historyUpdate: Content[] = [{ role: 'model', parts: newContentParts }];
 
-            // Inject a "System/User" prompt to nudge the model into the next step after plan approval
             if (hasSentPlan) {
                  historyUpdate.push({ 
                      role: 'user', 
@@ -161,7 +157,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                  });
             }
 
-            // Final update for this turn
             const finalWorkflow = parseAgenticWorkflow(fullTextResponse, state.toolEvents, toolCalls.length === 0 && !hasSentPlan);
             callbacks.onWorkflowUpdate(finalWorkflow);
 
@@ -205,48 +200,57 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         const currentWorkflow = parseAgenticWorkflow(state.latestAgentText, allToolEvents, false);
         callbacks.onWorkflowUpdate(currentWorkflow);
 
-        console.log('[AGENT_LOOP] Executing tools in parallel:', toolCalls.map(tc => tc.name));
+        console.log('[AGENT_LOOP] Executing tools sequentially to respect rate limits...');
 
-        // Execute tools in parallel
-        const toolResponses = await Promise.all(
-            toolCalls.map(async (call: FunctionCall) => {
-                const event = newToolCallEvents.find(e => e.call === call)!;
-                try {
-                    const result = await toolExecutor(call.name, call.args, event.id);
-                    callbacks.onToolResult(event.id, result);
-                    // Update event result for parser
-                    event.result = result;
-                    event.endTime = Date.now();
-                    return {
-                        functionResponse: {
-                            name: call.name,
-                            response: { result },
-                        }
-                    };
-                } catch (error) {
-                    const parsedError = parseApiError(error);
-                    const errorMessage = `Tool execution failed: ${parsedError.message}`;
-                    callbacks.onToolResult(event.id, errorMessage);
-                    event.result = errorMessage;
-                    event.endTime = Date.now();
-                    return {
-                        functionResponse: {
-                            name: call.name,
-                            response: { error: errorMessage },
-                        }
-                    };
-                }
-            })
-        );
+        // Execute tools SEQUENTIALLY to prevent API rate limit bursts
+        // Using Promise.all here caused 429 errors when multiple tools (e.g. 3 searches) 
+        // triggered Gemini API calls simultaneously.
+        const toolResponses = [];
         
-        // Emit updated workflow after tools complete
-        const updatedWorkflow = parseAgenticWorkflow(state.latestAgentText, allToolEvents, false);
-        callbacks.onWorkflowUpdate(updatedWorkflow);
+        for (const call of toolCalls) {
+            if (signal.aborted) break;
+
+            const event = newToolCallEvents.find(e => e.call === call)!;
+            try {
+                // The toolExecutor (and subsequent API calls) are now globally throttled in geminiUtils.ts
+                // but sequential execution here doubles down on safety.
+                const result = await toolExecutor(call.name, call.args, event.id);
+                
+                callbacks.onToolResult(event.id, result);
+                
+                event.result = result;
+                event.endTime = Date.now();
+                
+                toolResponses.push({
+                    functionResponse: {
+                        name: call.name,
+                        response: { result },
+                    }
+                });
+            } catch (error) {
+                const parsedError = parseApiError(error);
+                const errorMessage = `Tool execution failed: ${parsedError.message}`;
+                callbacks.onToolResult(event.id, errorMessage);
+                event.result = errorMessage;
+                event.endTime = Date.now();
+                
+                toolResponses.push({
+                    functionResponse: {
+                        name: call.name,
+                        response: { error: errorMessage },
+                    }
+                });
+            }
+            
+            // Update workflow state after each tool completes for better UI feedback
+            const intermediateWorkflow = parseAgenticWorkflow(state.latestAgentText, allToolEvents, false);
+            callbacks.onWorkflowUpdate(intermediateWorkflow);
+        }
         
         return {
             history: [{ role: 'user', parts: toolResponses.map(tr => ({ functionResponse: tr.functionResponse })) }],
-            toolCalls: [], // Clear tool calls so we don't loop back here immediately
-            toolEvents: newToolCallEvents // Add to state accumulator
+            toolCalls: [], // Clear tool calls
+            toolEvents: newToolCallEvents 
         };
     };
 
@@ -264,7 +268,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 if (state.toolCalls && state.toolCalls.length > 0) {
                     return "tools";
                 }
-                // If we just injected the "Proceed" message (User role at end of history), loop back to agent
                 const lastMsg = state.history[state.history.length - 1];
                 if (lastMsg.role === 'user') {
                     return "agent";
@@ -289,7 +292,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
         if (!signal.aborted) {
             console.log('[AGENT_LOOP] Loop Completed Successfully.');
-            // Final parse with complete=true
             const finalWorkflow = parseAgenticWorkflow(finalText, finalState.toolEvents, true);
             callbacks.onWorkflowUpdate(finalWorkflow);
             callbacks.onComplete(finalText, finalState.groundingMetadata);
