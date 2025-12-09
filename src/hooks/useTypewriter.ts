@@ -11,12 +11,14 @@ import { useState, useEffect, useRef } from 'react';
  * It catches up dynamically if the target text grows significantly faster than the typing speed.
  */
 export const useTypewriter = (targetText: string, isThinking: boolean) => {
-  const [displayedText, setDisplayedText] = useState('');
-  const index = useRef(0);
+  // If not thinking (e.g. history load), show full text immediately.
+  // If thinking, start empty and animate.
+  const [displayedText, setDisplayedText] = useState(() => isThinking ? '' : targetText);
+  const index = useRef(isThinking ? 0 : targetText.length);
   const frameRef = useRef<number>();
 
   useEffect(() => {
-    // If we switched to a completely new message or cleared text, reset.
+    // If we switched to a completely new message (length dropped), reset.
     if (targetText.length < displayedText.length) {
       index.current = targetText.length;
       setDisplayedText(targetText);
@@ -41,20 +43,14 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       }
     };
 
-    frameRef.current = requestAnimationFrame(animate);
+    if (index.current < targetText.length) {
+        frameRef.current = requestAnimationFrame(animate);
+    }
 
     return () => {
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
   }, [targetText, displayedText]);
-
-  // If thinking is complete, ensure we show the full text immediately to avoid stuck states
-  useEffect(() => {
-    if (!isThinking && displayedText !== targetText) {
-       index.current = targetText.length;
-       setDisplayedText(targetText);
-    }
-  }, [isThinking, targetText]);
 
   return displayedText;
 };

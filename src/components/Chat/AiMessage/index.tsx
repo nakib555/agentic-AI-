@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useMemo } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import type { Message, Source } from '../../../types';
@@ -26,6 +26,7 @@ import { ThinkingWorkflow } from '../../AI/ThinkingWorkflow';
 import { FormattedBlock } from '../../Markdown/FormattedBlock';
 import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 import { useTypewriter } from '../../../hooks/useTypewriter';
+import { parseContentSegments } from '../../../utils/workflowParsing';
 
 // Optimized spring physics for performance
 const animationProps = {
@@ -57,11 +58,19 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
-  const { activeResponse, finalAnswerText, thinkingIsComplete, isStreamingFinalAnswer, agentPlan, executionLog, parsedFinalAnswer } = logic;
+  const { activeResponse, finalAnswerText, thinkingIsComplete, agentPlan, executionLog } = logic;
   const [isWorkflowCollapsed, setIsWorkflowCollapsed] = useState(false);
 
-  // Apply typewriter effect to the final answer text when streaming
-  const typedFinalAnswer = useTypewriter(finalAnswerText, !thinkingIsComplete);
+  // Apply typewriter effect to the final answer text.
+  // We pass isThinking so it starts empty for new messages, but full for history.
+  // Note: we use msg.isThinking directly to determine if it's an active generation.
+  const typedFinalAnswer = useTypewriter(finalAnswerText, msg.isThinking ?? false);
+
+  // Dynamic Parsing: Parse the *typed* text into segments.
+  // This ensures components "pop in" as their tags are fully typed.
+  const displaySegments = useMemo(() => {
+      return parseContentSegments(typedFinalAnswer);
+  }, [typedFinalAnswer]);
 
   // Auto-collapse workflow when thinking is complete if there is a final answer
   useEffect(() => {
@@ -171,62 +180,48 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} />}
           
           <div className="markdown-content max-w-none w-full text-slate-800 dark:text-white">
-            {/* Streaming Answer - Uses the typed text */}
-            {isStreamingFinalAnswer && (
-               <ManualCodeRenderer 
-                  text={typedFinalAnswer} 
-                  components={MarkdownComponents} 
-                  isStreaming={true} 
-                  onRunCode={isAgentMode ? logic.handleRunCode : undefined}
-                  isRunDisabled={true}
-               />
-            )}
-            
-            {/* Complete Answer */}
-            {thinkingIsComplete && logic.hasFinalAnswer && !activeResponse.error && (
-                parsedFinalAnswer.map((segment, index) => {
-                    const key = `${id}-${index}`;
-                    if (segment.type === 'component') {
-                        const { componentType, data } = segment;
-                        switch (componentType) {
-                            case 'VIDEO':
-                                return <VideoDisplay key={key} {...data} />;
-                            case 'ONLINE_VIDEO':
-                                return <VideoDisplay key={key} srcUrl={data.url} prompt={data.title} />;
-                            case 'IMAGE':
-                            case 'ONLINE_IMAGE':
-                                return <ImageDisplay key={key} onEdit={handleEditImage} {...data} />;
-                            case 'MCQ':
-                                return <McqComponent key={key} {...data} />;
-                            case 'MAP':
-                                return (
-                                    <motion.div key={key} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                                        <MapDisplay {...data} />
-                                    </motion.div>
-                                );
-                            case 'FILE':
-                                return <FileAttachment key={key} {...data} />;
-                            case 'BROWSER':
-                                return <BrowserSessionDisplay key={key} {...data} />;
-                            case 'CODE_OUTPUT':
-                                return null; 
-                            default:
-                                return <ErrorDisplay key={key} error={{ message: `Unknown component type: ${componentType}`, details: JSON.stringify(data) }} />;
-                        }
-                    } else {
-                        return (
-                            <ManualCodeRenderer 
-                                key={key} 
-                                text={segment.content!} 
-                                components={MarkdownComponents} 
-                                isStreaming={false} 
-                                onRunCode={isAgentMode ? logic.handleRunCode : undefined} 
-                                isRunDisabled={isLoading} 
-                            />
-                        );
+            {displaySegments.map((segment, index) => {
+                const key = `${id}-${index}`;
+                if (segment.type === 'component') {
+                    const { componentType, data } = segment;
+                    switch (componentType) {
+                        case 'VIDEO':
+                            return <VideoDisplay key={key} {...data} />;
+                        case 'ONLINE_VIDEO':
+                            return <VideoDisplay key={key} srcUrl={data.url} prompt={data.title} />;
+                        case 'IMAGE':
+                        case 'ONLINE_IMAGE':
+                            return <ImageDisplay key={key} onEdit={handleEditImage} {...data} />;
+                        case 'MCQ':
+                            return <McqComponent key={key} {...data} />;
+                        case 'MAP':
+                            return (
+                                <motion.div key={key} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                                    <MapDisplay {...data} />
+                                </motion.div>
+                            );
+                        case 'FILE':
+                            return <FileAttachment key={key} {...data} />;
+                        case 'BROWSER':
+                            return <BrowserSessionDisplay key={key} {...data} />;
+                        case 'CODE_OUTPUT':
+                            return null; 
+                        default:
+                            return <ErrorDisplay key={key} error={{ message: `Unknown component type: ${componentType}`, details: JSON.stringify(data) }} />;
                     }
-                })
-            )}
+                } else {
+                    return (
+                        <ManualCodeRenderer 
+                            key={key} 
+                            text={segment.content!} 
+                            components={MarkdownComponents} 
+                            isStreaming={msg.isThinking ?? false} // Pass thinking state for any internal cursor logic in renderer
+                            onRunCode={isAgentMode ? logic.handleRunCode : undefined} 
+                            isRunDisabled={isLoading} 
+                        />
+                    );
+                }
+            })}
           </div>
         </div>
       )}
