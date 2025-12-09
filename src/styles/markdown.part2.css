@@ -39,10 +39,10 @@
   background-color: var(--text-secondary);
 }
 
-/* Adjust coloring to match theme */
+/* Adjust coloring to match theme and increase size */
 .katex {
   color: var(--text-primary);
-  font-size: 1.1em;
+  font-size: 1.5em;
 }
 
 /* Styles for bullet points inside workflow */
