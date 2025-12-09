@@ -75,8 +75,9 @@ const CATEGORIES = [
     label: 'Model & AI', 
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" />
-        <path d="M12 6v6l4 2" />
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+        <line x1="12" y1="22.08" x2="12" y2="12"></line>
       </svg>
     ) 
   },
@@ -139,25 +140,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                 <h2 id="settings-title" className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                   Settings
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Preferences & Configuration</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Preferences & Configuration</p>
               </div>
               <button
                 onClick={onClose}
-                className="p-2.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-all duration-200"
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-200"
                 aria-label="Close settings"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
               </button>
             </div>
             
-            <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-slate-50/50 dark:bg-black/20">
+            <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-slate-50/30 dark:bg-black/20">
                 {/* Navigation Sidebar */}
-                <nav className="flex-shrink-0 p-4 md:p-6 md:pr-0 md:w-72 bg-white/50 dark:bg-layer-1/50 z-10 md:border-r border-slate-200 dark:border-white/5">
+                <nav className="flex-shrink-0 p-4 md:p-6 md:pr-0 md:w-64 bg-white/50 dark:bg-layer-1/50 z-10 md:border-r border-slate-200 dark:border-white/5">
                     <LayoutGroup id="settings-nav">
-                        <ul className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar">
+                        <ul className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar">
                             {CATEGORIES.map(cat => (
                                 <li key={cat.id} className="flex-shrink-0">
                                     <SettingsCategoryButton
@@ -173,7 +174,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                 </nav>
 
                 {/* Content Area - Lazy Loaded */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-slate-50/30 dark:bg-[#0f0f0f]">
+                <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-white dark:bg-[#0f0f0f]">
                     <div className="p-6 md:p-10 max-w-3xl mx-auto">
                         <Suspense fallback={<SettingsSkeleton />}>
                             <AnimatePresence mode="wait">

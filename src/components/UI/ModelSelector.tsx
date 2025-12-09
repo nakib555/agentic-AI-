@@ -22,9 +22,16 @@ type ModelSelectorProps = {
 
 // Default icons if none provided
 const DefaultModelIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path d="M16.5 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-        <path fillRule="evenodd" d="M1.5 14.25c0-2.146 2.925-5.813 10.5-5.813 7.575 0 10.5 3.667 10.5 5.813V20.25a2.25 2.25 0 0 1-2.25 2.25H3.75a2.25 2.25 0 0 1-2.25-2.25v-6ZM4.5 19.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm16.5-1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" clipRule="evenodd" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+    </svg>
+);
+
+const CheckIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+        <polyline points="20 6 9 17 4 12"></polyline>
     </svg>
 );
 
@@ -65,42 +72,42 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         className={`
             group w-full flex items-center justify-between gap-3 px-4 py-3 text-left
-            bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10
-            rounded-2xl transition-all duration-200 ease-out
-            hover:bg-white dark:hover:bg-white/10 hover:border-indigo-300 dark:hover:border-white/20 hover:shadow-sm
-            focus:outline-none focus:ring-4 focus:ring-indigo-500/10
-            disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
-            ${isOpen ? 'ring-4 ring-indigo-500/10 border-indigo-500 dark:border-indigo-500 bg-white dark:bg-white/10' : ''}
+            bg-slate-100/50 dark:bg-white/5 border border-transparent
+            rounded-xl transition-all duration-200 ease-out
+            hover:bg-slate-100 dark:hover:bg-white/10
+            focus:outline-none focus:ring-2 focus:ring-indigo-500/30
+            disabled:opacity-50 disabled:cursor-not-allowed
+            ${isOpen ? 'bg-white dark:bg-white/10 shadow-lg ring-1 ring-black/5 dark:ring-white/10' : ''}
         `}
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className={`
-                flex items-center justify-center w-10 h-10 rounded-xl flex-shrink-0 transition-colors duration-200 shadow-sm
+                flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0 transition-colors duration-200
                 ${disabled 
-                    ? 'bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-600' 
-                    : 'bg-white dark:bg-white/10 text-indigo-600 dark:text-indigo-400 border border-slate-100 dark:border-white/5 group-hover:scale-105'
+                    ? 'text-slate-400 dark:text-slate-600' 
+                    : 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10'
                 }
             `}>
                 {icon || <DefaultModelIcon />}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
-                <span className={`text-sm font-bold truncate transition-colors ${selectedModelData ? 'text-slate-800 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'}`}>
+                <span className={`text-sm font-semibold truncate ${selectedModelData ? 'text-slate-800 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'}`}>
                     {selectedModelData ? selectedModelData.name : placeholder}
                 </span>
                 {selectedModelData && (
-                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate opacity-80">
-                        {selectedModelData.description || selectedModelData.id}
+                    <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                        {selectedModelData.id}
                     </span>
                 )}
             </div>
         </div>
         
         <div className={`
-            w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300
-            ${isOpen ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/30 dark:text-indigo-300 rotate-180' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}
+            text-slate-400 transition-transform duration-300
+            ${isOpen ? 'rotate-180 text-indigo-500' : 'group-hover:text-slate-600 dark:group-hover:text-slate-300'}
         `}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <path d="m6 9 6 6 6-6"/>
             </svg>
         </div>
       </button>
@@ -108,16 +115,16 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            initial={{ opacity: 0, y: 4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-            className="absolute z-50 w-full mt-2 bg-white/90 dark:bg-[#151515]/90 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden ring-1 ring-black/5 origin-top"
+            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute z-50 w-full mt-2 bg-white/90 dark:bg-[#1a1a1a]/90 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/5 origin-top"
           >
-            <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
+            <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
                 {models.length === 0 ? (
-                    <div className="p-6 text-center">
-                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No models available</p>
+                    <div className="p-4 text-center">
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">No models available</p>
                     </div>
                 ) : (
                     models.map((model) => {
@@ -127,46 +134,25 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                                 key={model.id}
                                 onClick={() => handleSelect(model.id)}
                                 className={`
-                                    relative w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all duration-200 group
+                                    relative w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all duration-200 group
                                     ${isSelected 
-                                        ? 'bg-indigo-50/80 dark:bg-indigo-500/20' 
+                                        ? 'bg-indigo-50 dark:bg-indigo-500/20' 
                                         : 'hover:bg-slate-100 dark:hover:bg-white/5'
                                     }
                                 `}
                             >
-                                <div className={`
-                                    mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200
-                                    ${isSelected 
-                                        ? 'border-indigo-500 bg-indigo-500 scale-100' 
-                                        : 'border-slate-300 dark:border-slate-600 scale-90 opacity-60 group-hover:border-indigo-400 group-hover:scale-100 group-hover:opacity-100'
-                                    }
-                                `}>
-                                    {isSelected && (
-                                        <motion.svg 
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: 1 }}
-                                            className="w-3 h-3 text-white" 
-                                            fill="none" 
-                                            viewBox="0 0 24 24" 
-                                            stroke="currentColor" 
-                                            strokeWidth={4}
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                        </motion.svg>
-                                    )}
-                                </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className={`text-sm font-bold truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-700 dark:text-slate-200'}`}>
+                                        <span className={`text-sm font-medium truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-700 dark:text-slate-200'}`}>
                                             {model.name}
                                         </span>
+                                        {isSelected && (
+                                            <div className="text-indigo-600 dark:text-indigo-400">
+                                                <CheckIcon />
+                                            </div>
+                                        )}
                                     </div>
-                                    {model.description && (
-                                        <p className={`text-xs mt-0.5 line-clamp-1 opacity-80 ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`}>
-                                            {model.description}
-                                        </p>
-                                    )}
-                                    <p className="text-[10px] font-mono opacity-50 mt-0.5 truncate text-slate-400">
+                                    <p className={`text-[10px] font-mono mt-0.5 truncate ${isSelected ? 'text-indigo-700/70 dark:text-indigo-300/70' : 'text-slate-400'}`}>
                                         {model.id}
                                     </p>
                                 </div>
