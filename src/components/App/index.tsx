@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -86,6 +87,7 @@ export const App = () => {
               ttsModel={logic.ttsModel}
               setTtsVoice={logic.setTtsVoice}
               currentChatId={logic.currentChatId}
+              activeModel={logic.activeModel} 
               onShowSources={logic.handleShowSources}
               approveExecution={logic.approveExecution}
               denyExecution={logic.denyExecution}

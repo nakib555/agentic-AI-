@@ -21,6 +21,7 @@ type ChatAreaProps = {
   ttsModel: string;
   setTtsVoice: (voice: string) => void;
   currentChatId: string | null;
+  activeModel: string;
   onShowSources: (sources: Source[]) => void;
   approveExecution: (editedPlan: string) => void;
   denyExecution: () => void;
@@ -37,7 +38,7 @@ type ChatAreaProps = {
 
 export const ChatArea = ({ 
     messages, isLoading, isAppLoading, sendMessage, onCancel, 
-    ttsVoice, ttsModel, setTtsVoice, currentChatId,
+    ttsVoice, ttsModel, setTtsVoice, currentChatId, activeModel,
     onShowSources, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
     isAgentMode, setIsAgentMode, backendStatus, backendError, onRetryConnection, hasApiKey
@@ -171,6 +172,8 @@ export const ChatArea = ({
             hasApiKey={hasApiKey}
             ttsVoice={ttsVoice}
             setTtsVoice={setTtsVoice}
+            currentChatId={currentChatId}
+            activeModel={activeModel}
           />
         </div>
       </div>
