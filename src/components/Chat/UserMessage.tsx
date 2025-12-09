@@ -28,7 +28,7 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
         <div className="w-fit max-w-[80%] flex flex-col items-end">
             <motion.div 
                 {...animationProps} 
-                className="bg-[#f3f4f6] dark:bg-[#27272a] text-slate-900 dark:text-white rounded-2xl rounded-tr-sm shadow-sm border border-transparent dark:border-white/5 origin-bottom-right overflow-hidden"
+                className="bg-[#f3f4f6] dark:bg-[#27272a] text-slate-900 dark:text-white rounded-2xl shadow-sm border border-transparent dark:border-white/5 origin-bottom-right overflow-hidden"
                 style={{ willChange: 'transform, opacity' }}
             >
                 {/* Content Section */}
