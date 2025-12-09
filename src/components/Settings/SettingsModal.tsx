@@ -184,9 +184,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 transition={{ duration: 0.15, ease: "easeOut" }}
                             >
                                 {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
-                                {activeCategory === 'model' && <ModelSettings {...props} />}
+                                {activeCategory === 'model' && (
+                                    <ModelSettings
+                                        models={props.models}
+                                        imageModels={props.imageModels}
+                                        videoModels={props.videoModels}
+                                        ttsModels={props.ttsModels}
+                                        selectedModel={props.selectedModel}
+                                        onModelChange={props.onModelChange}
+                                        temperature={props.temperature}
+                                        setTemperature={props.setTemperature}
+                                        maxTokens={props.maxTokens}
+                                        setMaxTokens={props.setMaxTokens}
+                                        imageModel={props.imageModel}
+                                        onImageModelChange={props.onImageModelChange}
+                                        videoModel={props.videoModel}
+                                        onVideoModelChange={props.onVideoModelChange}
+                                        ttsModel={props.ttsModel}
+                                        onTtsModelChange={props.onTtsModelChange}
+                                        defaultTemperature={props.defaultTemperature}
+                                        defaultMaxTokens={props.defaultMaxTokens}
+                                        disabled={props.disabled}
+                                    />
+                                )}
                                 {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
-                                {activeCategory === 'speech' && <SpeechMemorySettings isMemoryEnabled={props.isMemoryEnabled} setIsMemoryEnabled={props.setIsMemoryEnabled} onManageMemory={props.onManageMemory} disabled={props.disabled} />}
+                                {activeCategory === 'speech' && (
+                                    <SpeechMemorySettings 
+                                        isMemoryEnabled={props.isMemoryEnabled} 
+                                        setIsMemoryEnabled={props.setIsMemoryEnabled} 
+                                        onManageMemory={props.onManageMemory} 
+                                        disabled={props.disabled}
+                                        ttsVoice={props.ttsVoice}
+                                        setTtsVoice={props.setTtsVoice}
+                                    />
+                                )}
                             </motion.div>
                         </AnimatePresence>
                     </div>
