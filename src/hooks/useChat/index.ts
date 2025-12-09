@@ -202,6 +202,7 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         // that arrived within a single frame window (16ms).
         let pendingText: string | null = null;
         let animationFrameId: number | null = null;
+        let lastChunkTime = performance.now();
 
         const flushTextUpdates = () => {
             if (pendingText !== null) {
@@ -234,6 +235,12 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                                 break;
                             case 'text-chunk':
                                 // Buffer text updates
+                                const now = performance.now();
+                                if (now - lastChunkTime < 5) {
+                                    // High frequency warning
+                                    // console.debug(`[Stream] Rapid chunks detected: ${now - lastChunkTime}ms`);
+                                }
+                                lastChunkTime = now;
                                 pendingText = event.payload;
                                 if (animationFrameId === null) {
                                     animationFrameId = requestAnimationFrame(flushTextUpdates);

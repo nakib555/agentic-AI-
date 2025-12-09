@@ -85,7 +85,6 @@ export const useAppLogic = () => {
 
   // --- Initialization ---
   useEffect(() => {
-    logCollector.start();
     setOnVersionMismatch(() => setVersionMismatch(true));
   }, []);
 

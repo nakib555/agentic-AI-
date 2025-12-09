@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
@@ -49,6 +49,9 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
   onRunCode,
   isRunDisabled,
 }) => {
+  const renderStartTime = useRef(performance.now());
+  renderStartTime.current = performance.now();
+
   // Memoize components object creation to prevent ReactMarkdown re-instantiation
   const mergedComponents = useMemo(
     () => ({
@@ -60,7 +63,13 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
 
   // Heavy regex parsing should be memoized based on the text input
   const processedText = useMemo(() => {
-    return processHighlights(text);
+    const t0 = performance.now();
+    const result = processHighlights(text);
+    const duration = performance.now() - t0;
+    if (duration > 10) {
+        console.debug(`[ManualCodeRenderer] Highlight processing took ${duration.toFixed(2)}ms for ${text.length} chars.`);
+    }
+    return result;
   }, [text]);
 
   return (
@@ -86,11 +95,13 @@ export const ManualCodeRenderer = memo(ManualCodeRendererRaw, (prev, next) => {
     // If we are not streaming, simple equality check
     if (!next.isStreaming) return prev.text === next.text;
     
-    // DURING STREAMING OPTIMIZATION:
-    // If the text is just getting longer, ReactMarkdown is heavy.
-    // We let it re-render, but the internal useMemo above saves the parsing cost 
-    // if the text chunk didn't change the structure significantly. 
-    // However, purely blocking re-renders based on length chunks (e.g. every 50 chars) 
-    // can cause visual stutter. The best optimization is the useMemo inside the component.
-    return prev.text === next.text;
+    // During streaming, we rely on the component's internal optimizations.
+    // If we return 'true' here, we skip the render entirely.
+    // If we return 'false', we allow re-render.
+    // Given the request for performance debugging, let's log when we re-render.
+    const shouldRender = prev.text !== next.text;
+    if (shouldRender) {
+        // console.debug(`[ManualCodeRenderer] Re-rendering. Length delta: ${next.text.length - prev.text.length}`);
+    }
+    return !shouldRender;
 });
