@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -20,6 +21,30 @@ type ManualCodeRendererProps = {
   isRunDisabled?: boolean;
 };
 
+// Robust function to protect code blocks from highlight replacement
+// This prevents "==" equality operators in code from being converted to <mark> tags
+const processHighlights = (content: string): string => {
+    if (!content) return '';
+    
+    // Split content by code blocks (triple backtick) and inline code (single backtick)
+    // We capture the delimiters so we can reconstruct the string
+    // This regex matches:
+    // 1. ``` ... ``` (Multi-line code blocks)
+    // 2. ` ... ` (Inline code)
+    const parts = content.split(/(`{3}[\s\S]*?`{3}|`[^`]+`)/g);
+    
+    return parts.map(part => {
+        // If this part is a code block, return it untouched
+        if (part.startsWith('`')) return part;
+        
+        // Apply highlight replacement only to non-code text
+        // Converts ==[color]text== or ==text== to HTML <mark> tags
+        return part
+            .replace(/==\[([a-zA-Z]+)\](.*?)==/g, '<mark>[$1]$2</mark>')
+            .replace(/==(.*?)==/g, '<mark>$1</mark>');
+    }).join('');
+};
+
 const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
   text,
   components: baseComponents,
@@ -34,14 +59,9 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
     [baseComponents, onRunCode, isRunDisabled]
   );
 
-  // Preprocess highlights to HTML <mark> tags
-  // Markdown parsers usually ignore custom syntax like ==text==, so we pre-convert to HTML
-  // and use rehype-raw to parse the HTML.
+  // Preprocess highlights to HTML <mark> tags safely
   const processedText = useMemo(() => {
-    if (!text) return '';
-    return text
-      .replace(/==\[([a-zA-Z]+)\](.*?)==/g, '<mark>[$1]$2</mark>')
-      .replace(/==(.*?)==/g, '<mark>$1</mark>');
+    return processHighlights(text);
   }, [text]);
 
   return (
