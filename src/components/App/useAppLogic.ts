@@ -88,7 +88,6 @@ export const useAppLogic = () => {
 
   // --- Start Log Collector & Version Mismatch Handler on Mount ---
   useEffect(() => {
-    console.log('[APP_LOGIC] Initializing app...');
     logCollector.start();
     setOnVersionMismatch(() => setVersionMismatch(true));
   }, []);
@@ -141,12 +140,10 @@ export const useAppLogic = () => {
 
   const fetchModels = useCallback(async () => {
     try {
-        console.log('[APP_LOGIC] Fetching available models...');
         setModelsLoading(true);
         const response = await fetchFromApi('/api/models');
         if (!response.ok) throw new Error('Failed to fetch models');
         const data = await response.json();
-        console.log('[APP_LOGIC] Models fetched successfully:', data);
         processModelData(data);
     } catch (error) {
         if ((error as Error).message === 'Version mismatch') return;
@@ -164,10 +161,8 @@ export const useAppLogic = () => {
   useEffect(() => {
     const loadSettings = async () => {
         try {
-            console.log('[APP_LOGIC] Loading settings from backend...');
             setSettingsLoading(true);
             const settings = await getSettings();
-            console.log('[APP_LOGIC] Settings loaded successfully:', settings);
             setApiKey(settings.apiKey);
             setAboutUser(settings.aboutUser);
             setAboutResponse(settings.aboutResponse);
@@ -255,14 +250,12 @@ export const useAppLogic = () => {
 
     const checkBackendStatus = async () => {
         try {
-            console.log('[APP_LOGIC] Checking backend status...');
             setBackendStatus('checking');
             const response = await fetchFromApi('/api/health');
             if (!response.ok) throw new Error(`Status: ${response.status}`);
             const data = await response.json();
             if (data.status !== 'ok') throw new Error('Invalid health response');
 
-            console.log('[APP_LOGIC] Backend is online.');
             setBackendStatus('online');
             setBackendError(null);
             if (intervalId) {
@@ -570,12 +563,6 @@ export const serverData = ${JSON.stringify(exportData, null, 2)};
     return report;
   }, [chat, startNewChat]);
   
-  // Wrap the sendMessage from useChat to add logging
-  const wrappedSendMessage = useCallback((message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean }) => {
-      console.log('[DEBUG] useAppLogic: sendMessage called', { message, fileCount: files?.length, options });
-      chat.sendMessage(message, files, options);
-  }, [chat]);
-
   return {
     appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, ...memory,
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
@@ -613,7 +600,7 @@ export const serverData = ${JSON.stringify(exportData, null, 2)};
     setIsMemoryEnabled: handleSetIsMemoryEnabled,
     setIsAgentMode: handleSetIsAgentMode,
     ...chat, isChatActive,
-    sendMessage: wrappedSendMessage, // Use the wrapped version
+    sendMessage: chat.sendMessage, 
     startNewChat, isNewChatDisabled,
     handleDeleteChatRequest, handleRequestClearAll,
     handleToggleSidebar, 

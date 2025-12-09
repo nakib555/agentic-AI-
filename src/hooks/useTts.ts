@@ -8,7 +8,6 @@ import { useState, useCallback } from 'react';
 import { audioCache } from '../services/audioCache';
 import { audioManager } from '../services/audioService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
-import { cleanTextForTts } from '../components/Chat/AiMessage/utils';
 import { fetchFromApi } from '../utils/api';
 
 type AudioState = 'idle' | 'loading' | 'error' | 'playing';
@@ -27,12 +26,8 @@ export const useTts = (text: string, voice: string, model: string) => {
     
     setAudioState('loading');
     
-    const textToSpeak = cleanTextForTts(text);
-    if (!textToSpeak) {
-        console.error("TTS failed: No text to speak after cleaning.");
-        setAudioState('error');
-        return;
-    }
+    // Text cleaning is now handled on the backend
+    const textToSpeak = text;
       
     const cacheKey = audioCache.createKey(textToSpeak, voice, model);
     const cachedBuffer = audioCache.get(cacheKey);

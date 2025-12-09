@@ -11,7 +11,6 @@ import { useChatHistory } from '../useChatHistory';
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
 import { fetchFromApi } from '../../utils/api';
 import { toolImplementations as frontendToolImplementations } from '../../tools';
-import { buildApiHistory } from './history-builder';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -90,7 +89,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 if (err.message === 'Version mismatch') throw err;
 
                 attempts++;
-                console.warn(`[FRONTEND] Tool response fetch failed (Attempt ${attempts}/${maxAttempts}): ${err.message}`);
                 
                 if (attempts >= maxAttempts) {
                     console.error(`[FRONTEND] Giving up on sending tool response for ${callId} after ${maxAttempts} attempts.`);
@@ -106,7 +104,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     }, []);
 
     const handleFrontendToolExecution = useCallback(async (callId: string, toolName: string, toolArgs: any) => {
-        console.log(`[FRONTEND] Received request to execute tool: ${toolName}`, { callId, toolArgs });
         try {
             let result: any;
             if (toolName === 'approveExecution') {
@@ -118,7 +115,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                  if (!toolImplementation) throw new Error(`Frontend tool not found: ${toolName}`);
                  result = await toolImplementation(toolArgs);
             }
-            console.log(`[FRONTEND] Tool '${toolName}' executed successfully. Sending result to backend.`, { callId });
             
             await sendToolResponse(callId, { result });
 
@@ -134,13 +130,11 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
 
     const cancelGeneration = useCallback(() => {
-        console.log('[DEBUG] Canceling generation...');
         // Abort the frontend fetch immediately for responsiveness
         abortControllerRef.current?.abort();
         
         // Send the explicit cancel request to the backend fire-and-forget style
         if (requestIdRef.current) {
-            console.log('[FRONTEND] Sending explicit cancel request to backend for requestId:', requestIdRef.current);
             fetchFromApi('/api/handler?task=cancel', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -167,7 +161,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     const { updateMessage } = chatHistoryHook;
     
     const approveExecution = useCallback((editedPlan: string) => {
-        console.log('[DEBUG] Execution approved.');
         const chatId = currentChatIdRef.current;
         if (chatId) {
             const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
@@ -183,7 +176,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     }, [updateMessage, handleFrontendToolExecution]);
   
     const denyExecution = useCallback(() => {
-        console.log('[DEBUG] Execution denied.');
         const chatId = currentChatIdRef.current;
         if (chatId) {
             const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
@@ -200,7 +192,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
 
     const processBackendStream = async (chatId: string, messageId: string, response: Response) => {
-        console.log('[DEBUG] Processing backend stream...'); // LOG
         const reader = response.body!.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -217,14 +208,10 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 if (!line.trim()) continue;
                 try {
                     const event = JSON.parse(line);
-                    if (event.type !== 'ping') { // Don't log pings to avoid clutter
-                        // console.log('[FRONTEND] Received stream event:', event); // LOG - commented out to reduce noise from tool updates
-                    }
                     switch (event.type) {
                         case 'start':
                             if (event.payload?.requestId) {
                                 requestIdRef.current = event.payload.requestId;
-                                console.log('[FRONTEND] Received requestId from backend:', requestIdRef.current);
                             }
                             break;
                         case 'ping':
@@ -286,16 +273,14 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                             break;
                     }
                 } catch(e) {
-                    console.error("[FRONTEND] Failed to parse stream event:", line, e); // LOG
+                    console.error("[FRONTEND] Failed to parse stream event:", line, e);
                 }
             }
         }
     };
     
     const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean; isThinkingModeEnabled?: boolean } = {}) => {
-        console.log('[FRONTEND] sendMessage called.', { userMessage, files: files?.map(f => f.name), options }); // LOG
         if (isLoading) {
-            console.log('[FRONTEND] sendMessage ignored, a request is already in progress.'); // LOG
             return;
         }
         
@@ -303,10 +288,8 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     
         let activeChatId = currentChatId;
         const currentChat = currentChatId ? chatHistory.find(c => c.id === currentChatId) : undefined;
-        let messagesForHistory = currentChat ? currentChat.messages : [];
 
         if (!activeChatId || !currentChat) {
-            console.log('[DEBUG] No active chat, creating new session...'); // LOG
             const newChatSession = await chatHistoryHook.startNewChat(initialModel, {
                 temperature: settings.temperature,
                 maxOutputTokens: settings.maxOutputTokens,
@@ -318,7 +301,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 return;
             }
             activeChatId = newChatSession.id;
-            console.log('[DEBUG] New chat created:', activeChatId); // LOG
         }
     
         const attachmentsData = files?.length ? await Promise.all(files.map(async f => ({ name: f.name, mimeType: f.type, data: await fileToBase64(f) }))) : undefined;
@@ -330,13 +312,18 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         chatHistoryHook.addMessagesToChat(activeChatId, [modelPlaceholder]);
         chatHistoryHook.setChatLoadingState(activeChatId, true);
     
-        const finalMessagesForApi = [...messagesForHistory, userMessageObj];
-        const historyForApi = buildApiHistory(finalMessagesForApi);
+        // WE NO LONGER BUILD HISTORY HERE.
+        // We only send the new message content. The backend rebuilds history from DB.
         
         const chatForSettings = currentChat || { model: initialModel, ...settings };
 
-        console.log('[DEBUG] Starting backend chat...', { activeChatId, modelPlaceholderId: modelPlaceholder.id }); // LOG
-        await startBackendChat(activeChatId, modelPlaceholder.id, historyForApi, chatForSettings, { ...settings, isAgentMode: options.isThinkingModeEnabled ?? isAgentMode });
+        await startBackendChat(
+            activeChatId, 
+            modelPlaceholder.id, 
+            userMessageObj, // Send only the new message object
+            chatForSettings, 
+            { ...settings, isAgentMode: options.isThinkingModeEnabled ?? isAgentMode }
+        );
     };
 
     const sendMessageForTest = (userMessage: string, options?: { isThinkingModeEnabled?: boolean }): Promise<Message> => {
@@ -347,7 +334,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     };
 
     const regenerateResponse = useCallback(async (aiMessageId: string) => {
-        console.log(`[FRONTEND] regenerateResponse called for messageId: ${aiMessageId}`);
         if (isLoading) cancelGeneration();
         if (!currentChatId) return;
 
@@ -362,6 +348,24 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
             return;
         }
 
+        // When regenerating, we don't send a "newMessage". 
+        // We rely on the backend to load history. 
+        // IMPORTANT: The backend history will include the user message we are responding to, 
+        // but it will also include the OLD model response we are regenerating. 
+        // This is tricky. The backend logic currently blindly loads "messages". 
+        
+        // For simplicity in this heavy-lift refactor: 
+        // We will send the full history for REGENERATION case only, or modify backend to support truncation.
+        // Given the constraints, let's keep sending full history ONLY for regeneration to ensure correct context state
+        // until backend supports "truncate at message ID".
+        
+        // Actually, the easiest fix for regeneration without heavy backend logic change is:
+        // Pass the history explicitly like before, BUT only for regeneration.
+        // OR: Update backend to handle `history` payload if present (fallback mode).
+        
+        // Let's use the fallback mode added to handler.ts.
+        // We construct history up to the user message.
+        
         const userMessageToResend = currentChat.messages[messageIndex - 1];
         const historyUntilUserMessage = currentChat.messages.slice(0, messageIndex - 1);
         
@@ -370,21 +374,59 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         chatHistoryHook.setChatLoadingState(currentChatId, true);
         chatHistoryHook.updateMessage(currentChatId, aiMessageId, { isThinking: true });
 
-        const historyForApi = buildApiHistory([...historyUntilUserMessage, userMessageToResend]);
+        // We temporarily import the builder just for this edge case or reconstruct it manually?
+        // Let's reconstruct manually to avoid circular dependency or re-adding the file we deleted.
+        // Actually, we can just send the array of messages and let backend transform it if we change the API to accept Message[] for history fallback.
+        // But backend expects Content[].
+        
+        // Since we removed history-builder.ts, we need to let backend handle this.
+        // We will send `newMessage: null` but provide `history` in the body.
+        // But wait, the backend `transformHistoryToGeminiFormat` is available on backend.
+        
+        // Best approach: Send the `newMessage` as the user message we are regenerating for.
+        // But we need to tell backend to IGNORE the last X messages in DB (the old response).
+        // This is getting complex.
+        
+        // Simple Fix: For regeneration, we just rely on the fact that `newMessage` is appended.
+        // If we treat the "user message to resend" as a "new message", the backend will append it to the END of the DB history.
+        // But the DB history already contains that user message + old AI response.
+        // This would duplicate the user message.
+        
+        // Solution: Do not support regeneration in this specific refactor step without a larger backend API change (e.g., /api/chat/regenerate).
+        // OR: Send the `history` array manually constructed here.
+        // Since I removed `history-builder.ts`, I will add a minimal local builder here for regeneration fallback.
+        
+        const buildLocalHistory = (msgs: Message[]) => {
+             return msgs.filter(m => !m.isHidden).map(m => {
+                 if (m.role === 'user') return { role: 'user', parts: [{ text: m.text }] };
+                 const resp = m.responses?.[m.activeResponseIndex];
+                 return { role: 'model', parts: [{ text: resp?.text || '' }] };
+             });
+        };
+        
+        // Construct history excluding the AI response we are replacing AND the user message (since we will send it as newMessage)
+        const historyForApi = buildLocalHistory(historyUntilUserMessage);
 
-        await startBackendChat(currentChatId, aiMessageId, historyForApi, currentChat, { ...settings, isAgentMode: isAgentMode });
+        await startBackendChat(
+            currentChatId, 
+            aiMessageId, 
+            userMessageToResend, // Send this as "new"
+            currentChat, 
+            { ...settings, isAgentMode: isAgentMode },
+            historyForApi // Override backend history fetching
+        );
 
     }, [isLoading, currentChatId, chatHistory, cancelGeneration, chatHistoryHook, initialModel, settings, memoryContent, isAgentMode]);
 
     const startBackendChat = async (
         chatId: string,
         messageId: string, // The ID of the model message to update
-        history: any[],
+        newMessage: Message, // The new user message
         chatConfig: Pick<ChatSession, 'model' | 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>,
-        runtimeSettings: { isAgentMode: boolean } & ChatSettings
+        runtimeSettings: { isAgentMode: boolean } & ChatSettings,
+        overrideHistory?: any[] // Optional: If provided, backend uses this instead of DB
     ) => {
         abortControllerRef.current = new AbortController();
-        console.log('[FRONTEND] Starting backend chat stream...', { chatId, messageId, historyLength: history.length, chatConfig, runtimeSettings }); // LOG
 
         try {
             const response = await fetchFromApi('/api/handler?task=chat', {
@@ -394,12 +436,12 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                 body: JSON.stringify({
                     chatId: chatId,
                     model: chatConfig.model,
-                    history: history,
+                    newMessage: newMessage, // Send message object
+                    history: overrideHistory, // Optional override
                     settings: {
                         isAgentMode: runtimeSettings.isAgentMode,
                         systemPrompt: runtimeSettings.systemPrompt,
                         temperature: chatConfig.temperature,
-                        // Ensure maxOutputTokens is undefined if it's 0, as the API rejects 0.
                         maxOutputTokens: chatConfig.maxOutputTokens || undefined,
                         imageModel: runtimeSettings.imageModel,
                         videoModel: runtimeSettings.videoModel,
@@ -410,30 +452,24 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
 
             if (!response.ok || !response.body) throw new Error(await response.text() || `Request failed with status ${response.status}`);
             
-            console.log('[FRONTEND] Backend stream connected.'); // LOG
             await processBackendStream(chatId, messageId, response);
-            console.log('[FRONTEND] Backend stream finished processing.'); // LOG
 
         } catch (error) {
             if ((error as Error).message === 'Version mismatch') {
-                // Do not log or update message with error; let the global overlay handle it.
-                console.log('[FRONTEND] Aborting chat due to version mismatch.');
+                // Handled globally
             } else if ((error as Error).name !== 'AbortError') {
-                console.error('[FRONTEND] Backend stream failed.', { error }); // LOG
+                console.error('[FRONTEND] Backend stream failed.', { error });
                 chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
-            } else {
-                console.log('[FRONTEND] Backend stream aborted.'); // LOG
             }
         } finally {
             if (!abortControllerRef.current?.signal.aborted) {
-                console.log('[FRONTEND] Finalizing chat turn.'); // LOG
                 chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
                 chatHistoryHook.completeChatLoading(chatId);
                 abortControllerRef.current = null;
                 requestIdRef.current = null;
                 
+                // Fetch suggestions only if API key present
                 const finalChatState = chatHistoryRef.current.find(c => c.id === chatId);
-                // Guard: Only request suggestions if API key is configured
                 if (finalChatState && apiKey) {
                     const suggestions = await generateFollowUpSuggestions(finalChatState.messages);
                      if (suggestions.length > 0) {
@@ -441,22 +477,18 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                     }
                 }
 
-                // Force a sync of the full chat state to the backend to ensure persistence
-                // We do this in a timeout to allow the final state updates (from processBackendStream) to propagate to the Ref.
+                // Force sync state
                 setTimeout(() => {
                     const chatToPersist = chatHistoryRef.current.find(c => c.id === chatId);
                     if (chatToPersist) {
-                        // Ensure the message we just finished is marked as not thinking in the persistence payload
                         const cleanMessages = chatToPersist.messages.map(m => 
                             m.id === messageId ? { ...m, isThinking: false } : m
                         );
-                        console.log('[FRONTEND] Persisting chat history to backend.', { chatId, msgCount: cleanMessages.length });
                         updateChatProperty(chatId, { messages: cleanMessages });
                     }
                 }, 100);
 
             } else {
-                // If aborted, ensure loading state is false
                 chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
                 chatHistoryHook.completeChatLoading(chatId);
                 abortControllerRef.current = null;
@@ -469,7 +501,6 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
     useEffect(() => {
         const currentChat = chatHistory.find(c => c.id === currentChatId);
         if (currentChat && currentChat.messages && currentChat.title === "New Chat" && currentChat.messages.length >= 2 && !currentChat.isLoading) {
-          // Guard: Don't attempt title generation without API key
           if (!apiKey) return;
 
           updateChatTitle(currentChatId!, "Generating title...");

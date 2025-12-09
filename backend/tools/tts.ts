@@ -8,11 +8,45 @@ import { GoogleGenAI } from "@google/genai";
 import { ToolError } from "../utils/apiError";
 import { generateContentWithRetry } from "../utils/geminiUtils.js";
 
+/**
+ * Cleans text for Text-to-Speech by removing markdown, component tags, and excess whitespace.
+ * The TTS model works best with plain, clean text.
+ */
+const cleanTextForTts = (text: string): string => {
+    // Remove all component tags like [IMAGE_COMPONENT]...[/IMAGE_COMPONENT]
+    let cleanedText = text.replace(/\[[A-Z_]+_COMPONENT\].*?\[\/[A-Z_]+_COMPONENT\]/gs, '');
+  
+    // Remove code blocks
+    cleanedText = cleanedText.replace(/```[\s\S]*?```/g, '');
+  
+    // Simple markdown removal
+    cleanedText = cleanedText
+      .replace(/^#{1,6}\s/gm, '') // Headers
+      .replace(/(\*\*|__|\*|_|==|~~)(.*?)\1/g, '$2') // Bold, italic, highlight, strikethrough
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Links
+      .replace(/!\[(.*?)\]\(.*?\)/g, '$1') // Images
+      .replace(/`([^`]+)`/g, '$1') // Inline code
+      .replace(/^>\s/gm, '') // Blockquotes
+      .replace(/^-{3,}\s*$/gm, '') // Horizontal rules
+      .replace(/^\s*[-*+]\s/gm, '') // List items
+      .replace(/^\s*\d+\.\s/gm, ''); // Numbered list items
+  
+    // Collapse multiple newlines/spaces to a single space and trim
+    cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
+    
+    return cleanedText;
+};
+
 export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: string, model: string): Promise<string> => {
     try {
+        const cleanedText = cleanTextForTts(text);
+        if (!cleanedText) {
+            throw new Error("No text to speak after cleaning.");
+        }
+
         const response = await generateContentWithRetry(ai, {
             model: model || "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text }] }],
+            contents: [{ parts: [{ text: cleanedText }] }],
             config: {
                 responseModalities: ['AUDIO'],
                 speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } },

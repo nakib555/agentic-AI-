@@ -18,6 +18,8 @@ import { createToolExecutor } from './tools/index.js';
 import { toolDeclarations } from './tools/declarations.js';
 import { getApiKey } from './settingsHandler.js';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils.js';
+import { historyControl } from './services/historyControl.js';
+import { transformHistoryToGeminiFormat } from './utils/historyTransformer.js';
 
 // Store promises for frontend tool requests that the backend is waiting on
 const frontendToolRequests = new Map<string, (result: any) => void>();
@@ -125,29 +127,63 @@ export const apiHandler = async (req: any, res: any) => {
         switch (task) {
             case 'chat': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { chatId, model, history, settings } = req.body;
-                console.log(`[HANDLER] Starting chat task for chatId: ${chatId}`); // LOG
-                console.log('[HANDLER] Chat Request Body (Summary):', { 
-                    model, 
-                    historyLength: history.length, 
-                    isAgentMode: settings.isAgentMode,
-                    apiKeyConfigured: !!apiKey 
-                });
+                
+                // --- BACKEND-SIDE HISTORY RECONSTRUCTION ---
+                // The frontend no longer sends the full 'history'. 
+                // Instead, it sends the chatId and the *new* message content.
+                // We fetch the persisted chat, append the new message temporarily for the prompt,
+                // and then run the agent.
+                const { chatId, model, settings, newMessage } = req.body;
+                
+                console.log(`[HANDLER] Starting chat task for chatId: ${chatId}`);
 
+                // 1. Fetch persisted history
+                const savedChat = await historyControl.getChat(chatId);
+                let fullHistory: any[] = [];
+                
+                if (savedChat && savedChat.messages) {
+                    // Filter out the "placeholder" messages that the frontend might have created
+                    // optimistically but are not yet filled with content, though usually the backend
+                    // history is the source of truth.
+                    
+                    // Convert saved history to Gemini API format
+                    fullHistory = transformHistoryToGeminiFormat(savedChat.messages);
+                }
+
+                // 2. Append the new incoming message (User turn)
+                if (newMessage) {
+                    fullHistory.push({
+                        role: 'user',
+                        parts: [
+                            ...(newMessage.text ? [{ text: newMessage.text }] : []),
+                            ...(newMessage.attachments || []).map((att: any) => ({
+                                inlineData: { mimeType: att.mimeType, data: att.data }
+                            }))
+                        ]
+                    });
+                } else if (req.body.history) {
+                    // Fallback for older frontend clients sending full history
+                    fullHistory = req.body.history;
+                }
+
+                console.log('[HANDLER] Chat Context Ready:', { 
+                    model, 
+                    historyLength: fullHistory.length, 
+                    isAgentMode: settings.isAgentMode 
+                });
 
                 res.setHeader('Content-Type', 'application/json');
                 res.setHeader('Transfer-Encoding', 'chunked');
                 res.flushHeaders();
 
                 const requestId = generateId();
-                console.log(`[HANDLER] Generated requestId: ${requestId}`); // LOG
                 const abortController = new AbortController();
                 activeAgentLoops.set(requestId, abortController);
                 writeEvent(res, 'start', { requestId });
 
                 const pingInterval = setInterval(() => writeEvent(res, 'ping', {}), 10000);
                 
-                // Track callIds associated with this request to clean them up on disconnect
+                // Track callIds associated with this request
                 const sessionCallIds = new Set<string>();
 
                 req.on('close', () => {
@@ -155,13 +191,9 @@ export const apiHandler = async (req: any, res: any) => {
                     abortController.abort();
                     activeAgentLoops.delete(requestId);
                     clearInterval(pingInterval);
-                    
-                    // Clean up any pending tool requests for this session by resolving them with an error.
-                    // This ensures the agentic loop doesn't hang indefinitely awaiting a promise.
                     sessionCallIds.forEach(callId => {
                         const resolver = frontendToolRequests.get(callId);
                         if (resolver) {
-                            console.log(`[HANDLER] Resolving orphaned tool request ${callId} due to disconnect.`);
                             resolver({ error: "Client disconnected during tool execution" });
                             frontendToolRequests.delete(callId);
                         }
@@ -171,12 +203,11 @@ export const apiHandler = async (req: any, res: any) => {
                 const requestFrontendExecution = (callId: string, toolName: string, toolArgs: any) => {
                     return new Promise<string | { error: string }>((resolve) => {
                         frontendToolRequests.set(callId, resolve);
-                        sessionCallIds.add(callId); // Track it
+                        sessionCallIds.add(callId);
                         writeEvent(res, 'frontend-tool-request', { callId, toolName, toolArgs });
                     });
                 };
                 
-                // New callback for real-time tool updates (e.g. browser logs, screenshots)
                 const onToolUpdate = (callId: string, data: any) => {
                     writeEvent(res, 'tool-update', { id: callId, ...data });
                 };
@@ -189,7 +220,7 @@ export const apiHandler = async (req: any, res: any) => {
                     chatId, 
                     requestFrontendExecution, 
                     false, 
-                    onToolUpdate // Pass the update callback
+                    onToolUpdate 
                 );
 
                 const finalSettings = {
@@ -198,12 +229,12 @@ export const apiHandler = async (req: any, res: any) => {
                     tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }],
                 };
                 
-                console.log(`[HANDLER] Running agentic loop... Mode: ${settings.isAgentMode ? 'Agent' : 'Chat'}`); // LOG
+                console.log(`[HANDLER] Running agentic loop... Mode: ${settings.isAgentMode ? 'Agent' : 'Chat'}`);
 
                 await runAgenticLoop({
                     ai,
                     model,
-                    history,
+                    history: fullHistory, // Use the server-constructed history
                     toolExecutor,
                     callbacks: {
                         onTextChunk: (text) => writeEvent(res, 'text-chunk', text),
@@ -213,7 +244,7 @@ export const apiHandler = async (req: any, res: any) => {
                             return new Promise((resolve) => {
                                 const callId = `plan-approval-${generateId()}`;
                                 frontendToolRequests.set(callId, resolve);
-                                sessionCallIds.add(callId); // Track it
+                                sessionCallIds.add(callId);
                                 writeEvent(res, 'plan-ready', { plan, callId });
                             });
                         },
@@ -223,10 +254,10 @@ export const apiHandler = async (req: any, res: any) => {
                     },
                     settings: finalSettings,
                     signal: abortController.signal,
-                    threadId: requestId, // Pass unique thread ID for Checkpointer
+                    threadId: requestId,
                 });
 
-                console.log(`[HANDLER] Agentic loop completed for ${requestId}.`); // LOG
+                console.log(`[HANDLER] Agentic loop completed for ${requestId}.`);
                 clearInterval(pingInterval);
                 activeAgentLoops.delete(requestId);
                 res.end();
@@ -241,7 +272,6 @@ export const apiHandler = async (req: any, res: any) => {
                     frontendToolRequests.delete(callId);
                     res.status(200).send();
                 } else {
-                    console.warn(`[HANDLER] CallId mismatch or session expired: ${callId}`);
                     res.status(404).json({ error: `No pending tool request found for callId: ${callId}` });
                 }
                 break;
@@ -251,7 +281,6 @@ export const apiHandler = async (req: any, res: any) => {
                 const { requestId } = req.body;
                 const controller = activeAgentLoops.get(requestId);
                 if (controller) {
-                    console.log(`[HANDLER] Received cancel request for ${requestId}. Aborting.`);
                     controller.abort();
                     activeAgentLoops.delete(requestId);
                     res.status(200).send({ message: 'Cancellation request received.' });
@@ -361,8 +390,7 @@ export const apiHandler = async (req: any, res: any) => {
                     async () => ({error: 'Frontend execution not supported in this context'}), 
                     true // skipFrontendCheck
                 );
-                // Manually pass a dummy ID if needed, though for direct tool_exec it might not matter
-                // as long as the tool doesn't try to stream updates to a non-existent stream.
+                // Manually pass a dummy ID if needed
                 const result = await toolExecutor(toolName, toolArgs, 'manual-exec');
                 res.status(200).json({ result });
                 break;

@@ -27,15 +27,6 @@ export const fetchFromApi = async (url: string, options: RequestInit = {}): Prom
     const fullUrl = `${API_BASE_URL}${url}`;
     const method = options.method || 'GET';
     
-    console.log(`[API Request] 🚀 ${method} ${url}`, {
-        fullUrl,
-        options: {
-            ...options,
-            // Don't log the full body if it's huge (like images), just a summary if possible or raw
-            body: options.body ? (String(options.body).length > 1000 ? '(Payload too large)' : options.body) : undefined
-        }
-    });
-
     const headers = {
         ...options.headers,
         'X-Client-Version': process.env.APP_VERSION || 'unknown',
@@ -67,8 +58,6 @@ export const fetchFromApi = async (url: string, options: RequestInit = {}): Prom
                  cause: errorDetails,
                  how: 'Server responded with non-2xx status code'
              });
-        } else {
-             console.log(`[API Success] ✅ ${method} ${url} (${response.status})`);
         }
         
         return response;
