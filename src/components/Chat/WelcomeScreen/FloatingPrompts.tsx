@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { motion as motionTyped } from 'framer-motion';
-import { PromptButton } from './PromptButton';
+import { PromptButton, type PromptColor } from './PromptButton';
 const motion = motionTyped as any;
 
 type FloatingPromptsProps = {
@@ -24,6 +24,17 @@ const containerVariants = {
     },
 };
 
+const PROMPTS: { icon: string; text: string; prompt: string; color: PromptColor }[] = [
+    { icon: "🧠", text: "Reasoning", prompt: "What is the capital of France?", color: "violet" },
+    { icon: "🎬", text: "Video", prompt: "Generate a video of a cat playing a piano.", color: "rose" },
+    { icon: "🎨", text: "Image", prompt: "Generate an image of a robot eating spaghetti.", color: "fuchsia" },
+    { icon: "🗺️", text: "Map", prompt: "Show me a map of the Eiffel Tower.", color: "emerald" },
+    { icon: "🤔", text: "MCQ", prompt: "Ask me a multiple choice question about physics.", color: "amber" },
+    { icon: "📍", text: "Nearby", prompt: "Find coffee shops near me.", color: "blue" },
+    { icon: "📊", text: "Table", prompt: "Create a markdown table comparing the features of Gemini 2.5 Pro and Gemini 2.5 Flash.", color: "indigo" },
+    { icon: "📝", text: "Markdown", prompt: "Show me a comprehensive example of all the markdown formatting you support.", color: "teal" },
+];
+
 export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
   <motion.div
     variants={containerVariants}
@@ -32,13 +43,14 @@ export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
     exit="hidden"
     className="flex flex-wrap justify-center gap-3 w-full max-w-5xl mx-auto"
   >
-    <PromptButton icon="🧠" text="Reasoning" onClick={() => onPromptClick("What is the capital of France?")} />
-    <PromptButton icon="🎬" text="Video" onClick={() => onPromptClick("Generate a video of a cat playing a piano.")} />
-    <PromptButton icon="🎨" text="Image" onClick={() => onPromptClick("Generate an image of a robot eating spaghetti.")} />
-    <PromptButton icon="🗺️" text="Map" onClick={() => onPromptClick("Show me a map of the Eiffel Tower.")} />
-    <PromptButton icon="🤔" text="MCQ" onClick={() => onPromptClick("Ask me a multiple choice question about physics.")} />
-    <PromptButton icon="📍" text="Nearby" onClick={() => onPromptClick("Find coffee shops near me.")} />
-    <PromptButton icon="📊" text="Table" onClick={() => onPromptClick("Create a markdown table comparing the features of Gemini 2.5 Pro and Gemini 2.5 Flash.")} />
-    <PromptButton icon="📝" text="Markdown" onClick={() => onPromptClick("Show me a comprehensive example of all the markdown formatting you support.")} />
+    {PROMPTS.map((p, i) => (
+        <PromptButton 
+            key={i} 
+            icon={p.icon} 
+            text={p.text} 
+            color={p.color}
+            onClick={() => onPromptClick(p.prompt)} 
+        />
+    ))}
   </motion.div>
 );
