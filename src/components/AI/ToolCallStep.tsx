@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -250,6 +249,16 @@ export const ToolCallStep = ({ event, sendMessage, onRegenerate, messageId }: To
         <div className="pt-1">
             {result ? (
                 <ToolResultDisplay result={result} sendMessage={sendMessage} onRegenerate={handleRegenerate} />
+            ) : call.name === 'generateVideo' ? (
+                <div className="p-3 bg-indigo-500/10 dark:bg-indigo-900/20 border border-indigo-500/20 rounded-lg text-sm">
+                    <div className="flex items-start gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 flex-shrink-0 text-indigo-500 dark:text-indigo-400 animate-pulse mt-0.5"><path d="m11.25 8.122-2.122-1.59a.75.75 0 0 0-1.278.61v4.716a.75.75 0 0 0 1.278.61l2.122-1.59a.75.75 0 0 0 0-1.22Z" /><path fillRule="evenodd" d="M1.75 6.125a3.375 3.375 0 0 1 3.375-3.375h10.125a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75H5.125a3.375 3.375 0 0 1-3.375-3.375V6.125Zm2.625.75c-.414 0-.75.336-.75.75v7.25c0 .414.336.75.75.75h10.125a.75.75 0 0 0 .75-.75V6.125a.75.75 0 0 0-.75-.75H4.375Z" clipRule="evenodd" /></svg>
+                        <div>
+                           <p className="font-semibold text-indigo-700 dark:text-indigo-300">Generating video...</p>
+                           <p className="text-indigo-600/80 dark:text-indigo-400/80 mt-1">This can take a few minutes. Please wait.</p>
+                        </div>
+                    </div>
+                </div>
             ) : (
                 <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400">
                     <span>Executing</span>
