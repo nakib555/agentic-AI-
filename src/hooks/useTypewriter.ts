@@ -10,72 +10,82 @@ import { useState, useEffect, useRef } from 'react';
  * A hook that progressively reveals text to simulate a typewriter effect.
  * It catches up dynamically if the target text grows significantly faster than the typing speed.
  * 
- * OPTIMIZED: Now throttled to ~30fps (32ms) to prevent main thread blocking during
- * heavy markdown/code rendering.
+ * OPTIMIZED: Uses requestAnimationFrame for 60fps smoothness and time-slicing
+ * to prevent main thread blocking during heavy rendering.
  */
 export const useTypewriter = (targetText: string, isThinking: boolean) => {
   // If not thinking (e.g. history load), show full text immediately.
-  // If thinking, start empty and animate.
   const [displayedText, setDisplayedText] = useState(() => isThinking ? '' : targetText);
-  const index = useRef(isThinking ? 0 : targetText.length);
-  const timerRef = useRef<number | null>(null);
-  const lastUpdateRef = useRef<number>(0);
+  
+  // Use a ref to track the current length to avoid closure staleness in the animation loop
+  const currentLength = useRef(isThinking ? 0 : targetText.length);
+  const targetTextRef = useRef(targetText);
+  const rafId = useRef<number | null>(null);
+  const lastFrameTime = useRef<number>(0);
 
-  // Target roughly 30fps to balance smoothness with performance
-  const FRAME_BUDGET_MS = 32;
+  // Sync ref
+  useEffect(() => {
+    targetTextRef.current = targetText;
+  }, [targetText]);
 
   useEffect(() => {
     // If we switched to a completely new message (length dropped), reset.
     if (targetText.length < displayedText.length) {
-      index.current = targetText.length;
+      currentLength.current = targetText.length;
       setDisplayedText(targetText);
       return;
     }
 
-    const animate = () => {
-      const now = performance.now();
-      const timeSinceLast = now - lastUpdateRef.current;
+    // If fully caught up, stop.
+    if (currentLength.current >= targetText.length) {
+        return;
+    }
 
-      if (index.current < targetText.length) {
-        // Only update state if enough time has passed to respect our frame budget
-        if (timeSinceLast >= FRAME_BUDGET_MS) {
-            // Dynamic speed: If we are far behind, type faster (catch up).
-            const distance = targetText.length - index.current;
-            
-            // Base jump calculation:
-            // If distance is small (<20), jump 1-2 chars.
-            // If distance is large (>100), jump significantly to avoid falling behind.
-            let jump = 1;
-            
-            if (distance > 100) jump = Math.ceil(distance / 5);
-            else if (distance > 50) jump = Math.ceil(distance / 10);
-            else if (distance > 10) jump = 2;
+    const animate = (time: number) => {
+      // Initialize start time
+      if (lastFrameTime.current === 0) lastFrameTime.current = time;
+      
+      const delta = time - lastFrameTime.current;
+      const targetLen = targetTextRef.current.length;
 
-            index.current += jump;
-            
-            // Ensure we don't overshoot
-            if (index.current > targetText.length) index.current = targetText.length;
-            
-            setDisplayedText(targetText.slice(0, index.current));
-            lastUpdateRef.current = now;
-        }
+      // Target ~30-60fps. We update every frame, but calculating how many chars to add
+      // based on the gap between current and target.
+      if (currentLength.current < targetLen) {
         
-        // Schedule next check
-        timerRef.current = window.setTimeout(animate, 10); 
+        // Dynamic Velocity:
+        // The further behind we are, the faster we type.
+        // If we are 1000 chars behind, type 20 chars per frame.
+        // If we are 5 chars behind, type 1 char per frame.
+        const distance = targetLen - currentLength.current;
+        
+        let jump = 1;
+        if (distance > 200) jump = 15;
+        else if (distance > 100) jump = 8;
+        else if (distance > 50) jump = 4;
+        else if (distance > 20) jump = 2;
+
+        // Apply jump
+        currentLength.current += jump;
+        
+        // Clamp
+        if (currentLength.current > targetLen) currentLength.current = targetLen;
+
+        setDisplayedText(targetTextRef.current.slice(0, currentLength.current));
+      }
+
+      lastFrameTime.current = time;
+      
+      if (currentLength.current < targetLen) {
+        rafId.current = requestAnimationFrame(animate);
       }
     };
 
-    // If we have more text to show, ensure the loop is running
-    if (index.current < targetText.length) {
-        // Clear any existing timer to prevent overlaps
-        if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = window.setTimeout(animate, 10);
-    }
+    rafId.current = requestAnimationFrame(animate);
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (rafId.current) cancelAnimationFrame(rafId.current);
     };
-  }, [targetText, displayedText]);
+  }, [targetText, displayedText.length]); // Dependency on targetText length change
 
   return displayedText;
 };

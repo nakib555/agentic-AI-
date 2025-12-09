@@ -260,45 +260,6 @@ export const useChatHistory = () => {
     }));
   }, []);
 
-  const setActiveResponseIndex = useCallback((chatId: string, messageId: string, index: number) => {
-    setChatHistory(prev => prev.map(chat => {
-      if (chat.id !== chatId) return chat;
-      if (!chat.messages) return chat;
-
-      const messageIndex = chat.messages.findIndex(m => m.id === messageId);
-      if (messageIndex === -1) return chat;
-      
-      const updatedMessages = [...chat.messages];
-      const currentMessage = updatedMessages[messageIndex];
-      if (index >= 0 && index < (currentMessage.responses?.length || 0)) {
-        updatedMessages[messageIndex] = { ...currentMessage, activeResponseIndex: index };
-      }
-      return { ...chat, messages: updatedMessages };
-    }));
-  }, []);
-
-  const setChatLoadingState = useCallback((chatId: string, isLoading: boolean) => {
-    setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, isLoading } : s));
-  }, []);
-
-  const completeChatLoading = useCallback((chatId: string) => {
-    setChatLoadingState(chatId, false);
-  }, [setChatLoadingState]);
-
-  const updateMessage = useCallback((chatId: string, messageId: string, update: Partial<Message>) => {
-    setChatHistory(prev => prev.map(chat => {
-        if (chat.id !== chatId) return chat;
-        if (!chat.messages) return chat;
-
-        const messageIndex = chat.messages.findIndex(m => m.id === messageId);
-        if (messageIndex === -1) return chat;
-        
-        const updatedMessages = [...chat.messages];
-        updatedMessages[messageIndex] = { ...updatedMessages[messageIndex], ...update };
-        return { ...chat, messages: updatedMessages };
-    }));
-  }, []);
-
   const updateChatProperty = useCallback(async (chatId: string, update: Partial<ChatSession>) => {
       // Snapshot for rollback
       const currentHistory = chatHistoryRef.current;
@@ -321,6 +282,48 @@ export const useChatHistory = () => {
           // Rollback on error
           setChatHistory(prev => prev.map(s => s.id === chatId ? previousChat : s));
       }
+  }, []);
+
+  const setActiveResponseIndex = useCallback((chatId: string, messageId: string, index: number) => {
+    // We need the current chat data to modify it
+    const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+    if (!currentChat || !currentChat.messages) return;
+
+    const messageIndex = currentChat.messages.findIndex(m => m.id === messageId);
+    if (messageIndex === -1) return;
+
+    const targetMessage = currentChat.messages[messageIndex];
+    if (index < 0 || index >= (targetMessage.responses?.length || 0)) return;
+    if (targetMessage.activeResponseIndex === index) return; // No change
+
+    const updatedMessages = [...currentChat.messages];
+    updatedMessages[messageIndex] = { ...targetMessage, activeResponseIndex: index };
+
+    // Persist and Update State via existing function.
+    // This will handle the setChatHistory call internally for optimistic update.
+    updateChatProperty(chatId, { messages: updatedMessages });
+  }, [updateChatProperty]);
+
+  const setChatLoadingState = useCallback((chatId: string, isLoading: boolean) => {
+    setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, isLoading } : s));
+  }, []);
+
+  const completeChatLoading = useCallback((chatId: string) => {
+    setChatLoadingState(chatId, false);
+  }, [setChatLoadingState]);
+
+  const updateMessage = useCallback((chatId: string, messageId: string, update: Partial<Message>) => {
+    setChatHistory(prev => prev.map(chat => {
+        if (chat.id !== chatId) return chat;
+        if (!chat.messages) return chat;
+
+        const messageIndex = chat.messages.findIndex(m => m.id === messageId);
+        if (messageIndex === -1) return chat;
+        
+        const updatedMessages = [...chat.messages];
+        updatedMessages[messageIndex] = { ...updatedMessages[messageIndex], ...update };
+        return { ...chat, messages: updatedMessages };
+    }));
   }, []);
   
   const updateChatTitle = useCallback((chatId: string, title: string) => updateChatProperty(chatId, { title }), [updateChatProperty]);

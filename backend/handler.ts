@@ -133,20 +133,23 @@ export const apiHandler = async (req: any, res: any) => {
                 
                 console.log(`[HANDLER] Starting ${task} task for chatId: ${chatId}`);
 
-                // 1. Fetch and Prepare History
-                let savedChat = await historyControl.getChat(chatId);
+                // 1. Fetch History
+                const savedChat = await historyControl.getChat(chatId);
+                let historyMessages = savedChat?.messages || [];
                 
                 if (task === 'regenerate' && messageId) {
-                    // For regeneration, truncate history at the messageId (removing it and subsequent)
-                    // The messageId passed here is the AI message we want to replace.
-                    // The last message in history will be the User message that prompted it.
-                    savedChat = await historyControl.truncateChatHistory(chatId, messageId);
+                    // REFACTOR: In-memory slicing instead of destructive truncation.
+                    // We only want the AI to see messages UP TO the one being regenerated.
+                    // We do NOT want to delete the old messages from the database yet; 
+                    // the frontend will handle state updates and persistence of the new version.
+                    const targetIndex = historyMessages.findIndex((m: any) => m.id === messageId);
+                    if (targetIndex !== -1) {
+                        // Keep everything BEFORE the target message for context
+                        historyMessages = historyMessages.slice(0, targetIndex);
+                    }
                 }
 
-                let fullHistory: any[] = [];
-                if (savedChat && savedChat.messages) {
-                    fullHistory = transformHistoryToGeminiFormat(savedChat.messages);
-                }
+                let fullHistory = transformHistoryToGeminiFormat(historyMessages);
 
                 // 2. Append new message (only for 'chat' task)
                 if (task === 'chat' && newMessage) {
