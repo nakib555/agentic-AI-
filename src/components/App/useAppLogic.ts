@@ -437,12 +437,26 @@ export const useAppLogic = () => {
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
+        const content = event.target?.result as string;
+        if (!content) return;
+
+        // Pre-check for HTML content which causes cryptic SyntaxErrors in JSON.parse
+        if (content.trim().startsWith('<')) {
+             console.error("Failed to parse imported chat file: File content appears to be HTML/XML, not JSON.");
+             alert('Invalid file format. It looks like you uploaded a webpage (HTML) instead of a chat export (JSON).');
+             return;
+        }
+
         try {
-          const importedChat = JSON.parse(event.target?.result as string);
+          const importedChat = JSON.parse(content);
+          // Basic validation of structure
+          if (!importedChat.messages || !Array.isArray(importedChat.messages)) {
+              throw new Error("Missing messages array");
+          }
           chat.importChat(importedChat as ChatSession);
         } catch (error) {
           console.error("Failed to parse imported chat file:", error);
-          alert('Invalid chat file format.');
+          alert('Invalid chat file format. Please ensure you are uploading a valid JSON export.');
         }
       };
       reader.readAsText(file);
