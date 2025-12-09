@@ -126,7 +126,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
             animate={{ height: 'auto' }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
         >
-            <div className={!isStreaming ? "overflow-y-auto" : ""} style={{ maxHeight: !isStreaming ? '60vh' : undefined }}>
+            <div className="overflow-x-auto">
                 <SyntaxHighlighter
                   language={highlighterLang}
                   style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
