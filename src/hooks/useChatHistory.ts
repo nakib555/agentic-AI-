@@ -45,6 +45,9 @@ export const useChatHistory = () => {
   // Refs to hold latest state for optimistic rollbacks without triggering re-renders of callbacks
   const chatHistoryRef = useRef(chatHistory);
   const currentChatIdRef = useRef(currentChatId);
+  
+  // Ref for debouncing pagination saves
+  const paginationSaveTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
       chatHistoryRef.current = chatHistory;
@@ -299,10 +302,32 @@ export const useChatHistory = () => {
     const updatedMessages = [...currentChat.messages];
     updatedMessages[messageIndex] = { ...targetMessage, activeResponseIndex: index };
 
-    // Persist and Update State via existing function.
-    // This will handle the setChatHistory call internally for optimistic update.
-    updateChatProperty(chatId, { messages: updatedMessages });
-  }, [updateChatProperty]);
+    // 1. Optimistic Update (Immediate UI change)
+    setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, messages: updatedMessages } : s));
+
+    // 2. Debounced Persistence
+    // We clear any existing timeout to "reset the clock" on rapid clicks
+    if (paginationSaveTimeoutRef.current) {
+        clearTimeout(paginationSaveTimeoutRef.current);
+    }
+
+    // Set a new timeout to save the data after 1 second of inactivity
+    paginationSaveTimeoutRef.current = window.setTimeout(async () => {
+        try {
+            // We persist the messages array that contains the updated index.
+            // Note: In high-concurrency streaming scenarios, this might conflict, but for 
+            // typical history navigation, this is the safest way to reduce server load.
+            await fetchApi(`/api/chats/${chatId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: updatedMessages }),
+            });
+        } catch (error) {
+            console.error(`Failed to save pagination state for chat ${chatId}:`, error);
+        }
+    }, 1000);
+
+  }, []);
 
   const setChatLoadingState = useCallback((chatId: string, isLoading: boolean) => {
     setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, isLoading } : s));
