@@ -35,7 +35,16 @@ export type WorkflowNodeData = {
   handoff?: { from: string; to: string };
 };
 
+export type RenderSegment = {
+    type: 'text' | 'component';
+    content?: string;
+    componentType?: 'VIDEO' | 'ONLINE_VIDEO' | 'IMAGE' | 'ONLINE_IMAGE' | 'MCQ' | 'MAP' | 'FILE' | 'BROWSER' | 'CODE_OUTPUT';
+    data?: any;
+};
+
 export type ParsedWorkflow = {
   plan: string;
   executionLog: WorkflowNodeData[];
+  finalAnswer: string;
+  finalAnswerSegments: RenderSegment[];
 };

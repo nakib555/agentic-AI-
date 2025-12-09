@@ -4,10 +4,59 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageError, ToolCallEvent, WorkflowNodeData, WorkflowNodeType, ParsedWorkflow } from '../types.js';
+import type { MessageError, ToolCallEvent, WorkflowNodeData, WorkflowNodeType, ParsedWorkflow, RenderSegment } from '../types.js';
 
 const GENERIC_STEP_KEYWORDS = new Set(['observe', 'adapt', 'system']);
 const ACTION_KEYWORDS = new Set(['act', 'action', 'tool call']);
+
+/**
+ * Parses raw text into component segments (e.g. text vs [IMAGE_COMPONENT]...[/...]).
+ */
+const parseContentSegments = (text: string): RenderSegment[] => {
+    if (!text) return [];
+
+    // Regex to capture component tags and their content
+    const componentRegex = /(\[(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\].*?\[\/(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\])/s;
+    
+    const parts = text.split(componentRegex).filter(part => part);
+
+    return parts.map((part): RenderSegment => {
+        const componentMatch = part.match(/^\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\](\{.*?\})\[\/\1\]$/s);
+        
+        if (componentMatch) {
+            try {
+                const typeMap: Record<string, string> = {
+                    'VIDEO_COMPONENT': 'VIDEO',
+                    'ONLINE_VIDEO_COMPONENT': 'ONLINE_VIDEO',
+                    'IMAGE_COMPONENT': 'IMAGE',
+                    'ONLINE_IMAGE_COMPONENT': 'ONLINE_IMAGE',
+                    'MCQ_COMPONENT': 'MCQ',
+                    'MAP_COMPONENT': 'MAP',
+                    'FILE_ATTACHMENT_COMPONENT': 'FILE',
+                    'BROWSER_COMPONENT': 'BROWSER',
+                    'CODE_OUTPUT_COMPONENT': 'CODE_OUTPUT'
+                };
+                return {
+                    type: 'component',
+                    componentType: typeMap[componentMatch[1]] as any,
+                    data: JSON.parse(componentMatch[2])
+                };
+            } catch (e) {
+                // Fallback if JSON parse fails
+                return { type: 'text', content: part };
+            }
+        }
+        
+        // Handle any incomplete tags at the end of the stream or plain text
+        // We strip partial tags to prevent UI glitching during streaming
+        const incompleteTagRegex = /\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\].*$/s;
+        const cleanedPart = part.replace(incompleteTagRegex, '');
+        
+        if (!cleanedPart.trim()) return null; // Skip empty text parts
+
+        return { type: 'text', content: cleanedPart };
+    }).filter((s): s is RenderSegment => s !== null);
+};
 
 export const parseAgenticWorkflow = (
   rawText: string,
@@ -15,37 +64,56 @@ export const parseAgenticWorkflow = (
   isThinkingComplete: boolean,
   error?: MessageError
 ): ParsedWorkflow => {
+  let planText = '';
+  let executionText = '';
+  let finalAnswerText = '';
+
+  // 1. Check for Agentic Workflow Markers
   const planMarker = '[STEP] Strategic Plan:';
   const planMarkerIndex = rawText.indexOf(planMarker);
+  const finalAnswerMarker = '[STEP] Final Answer:';
+  const finalAnswerIndex = rawText.lastIndexOf(finalAnswerMarker);
 
-  let planText = '';
-  let executionText = rawText;
+  const hasSteps = rawText.includes('[STEP]');
 
-  if (planMarkerIndex !== -1) {
-    const planContentStartIndex = planMarkerIndex + planMarker.length;
-    const nextStepIndex = rawText.indexOf('[STEP]', planContentStartIndex);
-
-    if (nextStepIndex !== -1) {
-      planText = rawText.substring(planContentStartIndex, nextStepIndex);
-      executionText = rawText.substring(nextStepIndex);
-    } else {
-      planText = rawText.substring(planContentStartIndex);
-      executionText = '';
-    }
+  if (!hasSteps) {
+      // Chat Mode: Everything is the final answer
+      finalAnswerText = rawText;
   } else {
-    const firstStepIndex = rawText.indexOf('[STEP]');
-    if (firstStepIndex !== -1) {
-      planText = rawText.substring(0, firstStepIndex);
-      executionText = rawText.substring(firstStepIndex);
-    } else {
-      planText = rawText;
-      executionText = '';
-    }
+      // Agent Mode: Parse Steps
+      let contentStartIndex = 0;
+
+      // Extract Plan
+      if (planMarkerIndex !== -1) {
+          const planStart = planMarkerIndex + planMarker.length;
+          // Plan goes until the next step or Final Answer
+          let planEnd = rawText.indexOf('[STEP]', planStart);
+          if (planEnd === -1) planEnd = rawText.length;
+          
+          planText = rawText.substring(planStart, planEnd).trim();
+          contentStartIndex = planEnd;
+      }
+
+      // Extract Final Answer
+      if (finalAnswerIndex !== -1) {
+          finalAnswerText = rawText.substring(finalAnswerIndex + finalAnswerMarker.length);
+          // Extract execution text (between plan and final answer)
+          if (contentStartIndex < finalAnswerIndex) {
+              executionText = rawText.substring(contentStartIndex, finalAnswerIndex);
+          }
+      } else {
+          // No final answer yet, everything after plan is execution log
+          executionText = rawText.substring(contentStartIndex);
+      }
   }
 
+  // Cleanup strings
   planText = planText.replace(/\[AGENT:.*?\]\s*/, '').replace(/\[USER_APPROVAL_REQUIRED\]/, '').trim();
-  executionText = executionText.trim();
+  
+  // Clean Agent tags from Final Answer
+  finalAnswerText = finalAnswerText.replace(/^\s*:?\s*\[AGENT:\s*[^\]]+\]\s*/, '').replace(/\[AUTO_CONTINUE\]/g, '').trim();
 
+  // Parse Execution Log
   const textNodes: WorkflowNodeData[] = [];
   const stepRegex = /(?:^|\n)\[STEP\]\s*(.*?):\s*([\s\S]*?)(?=(?:^|\n)\[STEP\]|$)/g;
   
@@ -56,9 +124,7 @@ export const parseAgenticWorkflow = (
     let details = match[2].trim().replace(/\[AUTO_CONTINUE\]/g, '').trim();
     const lowerCaseTitle = title.toLowerCase();
 
-    if (lowerCaseTitle === 'final answer') {
-        continue;
-    }
+    if (lowerCaseTitle === 'final answer') continue;
 
     let type: WorkflowNodeType = 'plan';
     let agentName: string | undefined;
@@ -103,6 +169,7 @@ export const parseAgenticWorkflow = (
     });
   }
 
+  // Merge Tool Events
   const toolNodesQueue = toolCallEvents.map(event => {
     const isDuckDuckGoSearch = event.call.name === 'duckduckgoSearch';
     const duration = event.startTime && event.endTime ? (event.endTime - event.startTime) / 1000 : null;
@@ -123,6 +190,7 @@ export const parseAgenticWorkflow = (
   const executionLog: WorkflowNodeData[] = [];
   let lastAgentName: string | undefined;
 
+  // Interleave text steps and tool steps
   for (const textNode of textNodes) {
     if (textNode.agentName) {
         lastAgentName = textNode.agentName;
@@ -141,11 +209,13 @@ export const parseAgenticWorkflow = (
     }
   }
   
+  // Append remaining tools
   for (const toolNode of toolNodesQueue) {
       toolNode.agentName = lastAgentName;
       executionLog.push(toolNode);
   }
 
+  // Post-processing for status updates
   if (error) {
     let failureAssigned = false;
     for (let i = executionLog.length - 1; i >= 0; i--) {
@@ -162,6 +232,7 @@ export const parseAgenticWorkflow = (
         executionLog[executionLog.length - 1].details = error;
     }
     
+    // Mark previous as done
     let failurePointReached = false;
     executionLog.forEach(node => {
         if (node.status === 'failed') failurePointReached = true;
@@ -173,6 +244,7 @@ export const parseAgenticWorkflow = (
       if (node.status !== 'failed') node.status = 'done';
     });
   } else {
+    // Mark active/pending
     let lastActiveNodeFound = false;
     for (let i = executionLog.length - 1; i >= 0; i--) {
         const node = executionLog[i];
@@ -185,5 +257,8 @@ export const parseAgenticWorkflow = (
     }
   }
   
-  return { plan: planText, executionLog };
+  // Parse Components from Final Answer
+  const finalAnswerSegments = parseContentSegments(finalAnswerText);
+
+  return { plan: planText, executionLog, finalAnswer: finalAnswerText, finalAnswerSegments };
 };

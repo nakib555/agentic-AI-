@@ -4,17 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import type { Message, ModelResponse, Source } from '../../../types';
-import { parseMessageText } from '../../../utils/messageParser';
 import { useTts } from '../../../hooks/useTts';
-
-export type RenderSegment = {
-    type: 'text' | 'component';
-    content?: string;
-    componentType?: 'VIDEO' | 'ONLINE_VIDEO' | 'IMAGE' | 'ONLINE_IMAGE' | 'MCQ' | 'MAP' | 'FILE' | 'BROWSER';
-    data?: any;
-};
 
 export const useAiMessageLogic = (
     msg: Message,
@@ -31,12 +23,17 @@ export const useAiMessageLogic = (
         return msg.responses[msg.activeResponseIndex] ?? null;
     }, [msg.responses, msg.activeResponseIndex]);
 
-    const { thinkingText, finalAnswerText } = useMemo(
-        () => parseMessageText(activeResponse?.text || '', !!isThinking, !!activeResponse?.error),
-        [activeResponse, isThinking]
-    );
+    // Consolidate data from the pre-parsed workflow
+    const { plan: agentPlan, executionLog, finalAnswer, finalAnswerSegments } = useMemo(() => {
+        if (activeResponse?.workflow) {
+            return activeResponse.workflow;
+        }
+        // Fallback for very old chats or initial state
+        return { plan: '', executionLog: [], finalAnswer: activeResponse?.text || '', finalAnswerSegments: [] };
+    }, [activeResponse?.workflow, activeResponse?.text]);
 
-    const { playOrStopAudio, audioState, isPlaying } = useTts(finalAnswerText, ttsVoice, ttsModel);
+    // Use backend-parsed final answer for TTS
+    const { playOrStopAudio, audioState, isPlaying } = useTts(finalAnswer, ttsVoice, ttsModel);
 
     // Extract sources from both tool calls and grounding metadata
     const searchSources = useMemo((): Source[] => {
@@ -76,61 +73,10 @@ export const useAiMessageLogic = (
 
     const thinkingIsComplete = !isThinking || !!activeResponse?.error;
     
-    // Workflow from backend response object (parsed server-side)
-    const { plan: agentPlan, executionLog } = useMemo(() => {
-        if (activeResponse?.workflow) {
-            return activeResponse.workflow;
-        }
-        // Fallback or empty if not yet available
-        return { plan: '', executionLog: [] };
-    }, [activeResponse?.workflow]);
-
-    // Parse final answer into renderable segments (text vs components)
-    const parsedFinalAnswer = useMemo((): RenderSegment[] => {
-        if (!finalAnswerText) return [];
-
-        const componentRegex = /(\[(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\].*?\[\/(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\])/s;
-        const parts = finalAnswerText.split(componentRegex).filter(part => part);
-
-        return parts.map((part): RenderSegment => {
-            const componentMatch = part.match(/^\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\](\{.*?\})\[\/\1\]$/s);
-            
-            if (componentMatch) {
-                try {
-                    const typeMap: Record<string, string> = {
-                        'VIDEO_COMPONENT': 'VIDEO',
-                        'ONLINE_VIDEO_COMPONENT': 'ONLINE_VIDEO',
-                        'IMAGE_COMPONENT': 'IMAGE',
-                        'ONLINE_IMAGE_COMPONENT': 'ONLINE_IMAGE',
-                        'MCQ_COMPONENT': 'MCQ',
-                        'MAP_COMPONENT': 'MAP',
-                        'FILE_ATTACHMENT_COMPONENT': 'FILE',
-                        'BROWSER_COMPONENT': 'BROWSER'
-                    };
-                    return {
-                        type: 'component',
-                        componentType: typeMap[componentMatch[1]] as any,
-                        data: JSON.parse(componentMatch[2])
-                    };
-                } catch (e) {
-                    // Fallback if JSON parse fails
-                    return { type: 'text', content: part };
-                }
-            }
-            
-            // Handle any incomplete tags at the end of the stream or plain text
-            const incompleteTagRegex = /\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT)\].*$/s;
-            const cleanedPart = part.replace(incompleteTagRegex, '');
-            
-            return { type: 'text', content: cleanedPart };
-        }).filter(segment => segment.type === 'component' || (segment.content && segment.content.trim() !== ''));
-
-    }, [finalAnswerText]);
-
     // We now consider "having thinking process" true if we have a plan OR execution steps
     const hasThinkingProcess = !!agentPlan || executionLog.length > 0;
     
-    const hasFinalAnswer = finalAnswerText && finalAnswerText.trim() !== '';
+    const hasFinalAnswer = finalAnswer && finalAnswer.trim() !== '';
     const duration = activeResponse?.startTime && activeResponse?.endTime ? (activeResponse.endTime - activeResponse.startTime) / 1000 : null;
     
     // Duration timer
@@ -143,8 +89,10 @@ export const useAiMessageLogic = (
 
     const displayDuration = thinkingIsComplete && duration !== null ? duration.toFixed(1) : elapsed.toFixed(1);
 
+    // Streaming Logic: If we are thinking, have a final answer, and no error, we are streaming content.
     const isStreamingFinalAnswer = !!isThinking && hasFinalAnswer && !activeResponse?.error;
-    // We adjust waiting logic: if we have thinking process, we are NOT just waiting, we are showing the process.
+    
+    // Waiting Logic: If we are thinking, BUT have no thinking process visible (chat mode) and no answer yet.
     const isWaitingForFinalAnswer = !!isThinking && !hasThinkingProcess && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
     
     // showApprovalUI logic
@@ -155,10 +103,19 @@ export const useAiMessageLogic = (
         sendMessage(userPrompt, undefined, { isThinkingModeEnabled: true });
     }, [sendMessage]);
 
+    // Fallback parsing for legacy/streaming catch-up if segments missing
+    const segmentsToRender = finalAnswerSegments && finalAnswerSegments.length > 0 
+        ? finalAnswerSegments 
+        : [{ type: 'text', content: finalAnswer } as any];
+
     return {
-        activeResponse, thinkingText, finalAnswerText, playOrStopAudio, audioState, isPlaying, searchSources,
-        thinkingIsComplete, hasThinkingProcess, hasFinalAnswer, displayDuration, isInitialWait: !hasThinkingProcess && isWaitingForFinalAnswer,
+        activeResponse, 
+        thinkingText: '', // No longer used/needed
+        finalAnswerText: finalAnswer, 
+        playOrStopAudio, audioState, isPlaying, searchSources,
+        thinkingIsComplete, hasThinkingProcess, hasFinalAnswer, displayDuration, 
+        isInitialWait: !hasThinkingProcess && isWaitingForFinalAnswer,
         isStreamingFinalAnswer, isWaitingForFinalAnswer, showApprovalUI, handleRunCode,
-        agentPlan, executionLog, parsedFinalAnswer
+        agentPlan, executionLog, parsedFinalAnswer: segmentsToRender
     };
 };
