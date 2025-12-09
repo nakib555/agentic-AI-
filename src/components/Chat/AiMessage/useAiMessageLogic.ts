@@ -8,7 +8,6 @@ import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import type { Message, ModelResponse, Source } from '../../../types';
 import { parseMessageText } from '../../../utils/messageParser';
 import { useTts } from '../../../hooks/useTts';
-import { parseAgenticWorkflow } from '../../../services/workflowParser';
 
 export type RenderSegment = {
     type: 'text' | 'component';
@@ -77,15 +76,14 @@ export const useAiMessageLogic = (
 
     const thinkingIsComplete = !isThinking || !!activeResponse?.error;
     
-    // Parse Agentic Workflow for inline display
+    // Workflow from backend response object (parsed server-side)
     const { plan: agentPlan, executionLog } = useMemo(() => {
-        return parseAgenticWorkflow(
-            thinkingText,
-            activeResponse?.toolCallEvents || [],
-            thinkingIsComplete,
-            activeResponse?.error
-        );
-    }, [thinkingText, activeResponse?.toolCallEvents, thinkingIsComplete, activeResponse?.error]);
+        if (activeResponse?.workflow) {
+            return activeResponse.workflow;
+        }
+        // Fallback or empty if not yet available
+        return { plan: '', executionLog: [] };
+    }, [activeResponse?.workflow]);
 
     // Parse final answer into renderable segments (text vs components)
     const parsedFinalAnswer = useMemo((): RenderSegment[] => {

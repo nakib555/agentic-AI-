@@ -125,33 +125,31 @@ export const apiHandler = async (req: any, res: any) => {
 
     try {
         switch (task) {
-            case 'chat': {
+            case 'chat': 
+            case 'regenerate': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
                 
-                // --- BACKEND-SIDE HISTORY RECONSTRUCTION ---
-                // The frontend no longer sends the full 'history'. 
-                // Instead, it sends the chatId and the *new* message content.
-                // We fetch the persisted chat, append the new message temporarily for the prompt,
-                // and then run the agent.
-                const { chatId, model, settings, newMessage } = req.body;
+                const { chatId, model, settings, newMessage, messageId } = req.body;
                 
-                console.log(`[HANDLER] Starting chat task for chatId: ${chatId}`);
+                console.log(`[HANDLER] Starting ${task} task for chatId: ${chatId}`);
 
-                // 1. Fetch persisted history
-                const savedChat = await historyControl.getChat(chatId);
-                let fullHistory: any[] = [];
+                // 1. Fetch and Prepare History
+                let savedChat = await historyControl.getChat(chatId);
                 
+                if (task === 'regenerate' && messageId) {
+                    // For regeneration, truncate history at the messageId (removing it and subsequent)
+                    // The messageId passed here is the AI message we want to replace.
+                    // The last message in history will be the User message that prompted it.
+                    savedChat = await historyControl.truncateChatHistory(chatId, messageId);
+                }
+
+                let fullHistory: any[] = [];
                 if (savedChat && savedChat.messages) {
-                    // Filter out the "placeholder" messages that the frontend might have created
-                    // optimistically but are not yet filled with content, though usually the backend
-                    // history is the source of truth.
-                    
-                    // Convert saved history to Gemini API format
                     fullHistory = transformHistoryToGeminiFormat(savedChat.messages);
                 }
 
-                // 2. Append the new incoming message (User turn)
-                if (newMessage) {
+                // 2. Append new message (only for 'chat' task)
+                if (task === 'chat' && newMessage) {
                     fullHistory.push({
                         role: 'user',
                         parts: [
@@ -161,12 +159,9 @@ export const apiHandler = async (req: any, res: any) => {
                             }))
                         ]
                     });
-                } else if (req.body.history) {
-                    // Fallback for older frontend clients sending full history
-                    fullHistory = req.body.history;
                 }
 
-                console.log('[HANDLER] Chat Context Ready:', { 
+                console.log('[HANDLER] Context Ready:', { 
                     model, 
                     historyLength: fullHistory.length, 
                     isAgentMode: settings.isAgentMode 
@@ -183,7 +178,6 @@ export const apiHandler = async (req: any, res: any) => {
 
                 const pingInterval = setInterval(() => writeEvent(res, 'ping', {}), 10000);
                 
-                // Track callIds associated with this request
                 const sessionCallIds = new Set<string>();
 
                 req.on('close', () => {
@@ -234,7 +228,7 @@ export const apiHandler = async (req: any, res: any) => {
                 await runAgenticLoop({
                     ai,
                     model,
-                    history: fullHistory, // Use the server-constructed history
+                    history: fullHistory, 
                     toolExecutor,
                     callbacks: {
                         onTextChunk: (text) => writeEvent(res, 'text-chunk', text),
@@ -248,6 +242,7 @@ export const apiHandler = async (req: any, res: any) => {
                                 writeEvent(res, 'plan-ready', { plan, callId });
                             });
                         },
+                        onWorkflowUpdate: (workflow) => writeEvent(res, 'workflow-update', workflow),
                         onComplete: (finalText, groundingMetadata) => writeEvent(res, 'complete', { finalText, groundingMetadata }),
                         onCancel: () => writeEvent(res, 'cancel', {}),
                         onError: (error) => writeEvent(res, 'error', error),

@@ -219,6 +219,10 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
                         case 'text-chunk':
                             chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text: event.payload }));
                             break;
+                        case 'workflow-update':
+                            // Consume the pre-parsed workflow from backend
+                            chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ workflow: event.payload }));
+                            break;
                         case 'tool-call-start':
                             const newToolCallEvents = event.payload.map((toolEvent: any) => ({ 
                                 id: toolEvent.id, 
@@ -312,15 +316,14 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         chatHistoryHook.addMessagesToChat(activeChatId, [modelPlaceholder]);
         chatHistoryHook.setChatLoadingState(activeChatId, true);
     
-        // WE NO LONGER BUILD HISTORY HERE.
-        // We only send the new message content. The backend rebuilds history from DB.
-        
         const chatForSettings = currentChat || { model: initialModel, ...settings };
 
+        // Use 'chat' task for new messages
         await startBackendChat(
+            'chat',
             activeChatId, 
             modelPlaceholder.id, 
-            userMessageObj, // Send only the new message object
+            userMessageObj,
             chatForSettings, 
             { ...settings, isAgentMode: options.isThinkingModeEnabled ?? isAgentMode }
         );
@@ -347,97 +350,45 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
             console.error("Cannot regenerate: AI message is not preceded by a user message.");
             return;
         }
-
-        // When regenerating, we don't send a "newMessage". 
-        // We rely on the backend to load history. 
-        // IMPORTANT: The backend history will include the user message we are responding to, 
-        // but it will also include the OLD model response we are regenerating. 
-        // This is tricky. The backend logic currently blindly loads "messages". 
         
-        // For simplicity in this heavy-lift refactor: 
-        // We will send the full history for REGENERATION case only, or modify backend to support truncation.
-        // Given the constraints, let's keep sending full history ONLY for regeneration to ensure correct context state
-        // until backend supports "truncate at message ID".
-        
-        // Actually, the easiest fix for regeneration without heavy backend logic change is:
-        // Pass the history explicitly like before, BUT only for regeneration.
-        // OR: Update backend to handle `history` payload if present (fallback mode).
-        
-        // Let's use the fallback mode added to handler.ts.
-        // We construct history up to the user message.
-        
-        const userMessageToResend = currentChat.messages[messageIndex - 1];
-        const historyUntilUserMessage = currentChat.messages.slice(0, messageIndex - 1);
-        
+        // Add new response entry
         const newResponse: ModelResponse = { text: '', toolCallEvents: [], startTime: Date.now() };
         chatHistoryHook.addModelResponse(currentChatId, aiMessageId, newResponse);
         chatHistoryHook.setChatLoadingState(currentChatId, true);
         chatHistoryHook.updateMessage(currentChatId, aiMessageId, { isThinking: true });
 
-        // We temporarily import the builder just for this edge case or reconstruct it manually?
-        // Let's reconstruct manually to avoid circular dependency or re-adding the file we deleted.
-        // Actually, we can just send the array of messages and let backend transform it if we change the API to accept Message[] for history fallback.
-        // But backend expects Content[].
-        
-        // Since we removed history-builder.ts, we need to let backend handle this.
-        // We will send `newMessage: null` but provide `history` in the body.
-        // But wait, the backend `transformHistoryToGeminiFormat` is available on backend.
-        
-        // Best approach: Send the `newMessage` as the user message we are regenerating for.
-        // But we need to tell backend to IGNORE the last X messages in DB (the old response).
-        // This is getting complex.
-        
-        // Simple Fix: For regeneration, we just rely on the fact that `newMessage` is appended.
-        // If we treat the "user message to resend" as a "new message", the backend will append it to the END of the DB history.
-        // But the DB history already contains that user message + old AI response.
-        // This would duplicate the user message.
-        
-        // Solution: Do not support regeneration in this specific refactor step without a larger backend API change (e.g., /api/chat/regenerate).
-        // OR: Send the `history` array manually constructed here.
-        // Since I removed `history-builder.ts`, I will add a minimal local builder here for regeneration fallback.
-        
-        const buildLocalHistory = (msgs: Message[]) => {
-             return msgs.filter(m => !m.isHidden).map(m => {
-                 if (m.role === 'user') return { role: 'user', parts: [{ text: m.text }] };
-                 const resp = m.responses?.[m.activeResponseIndex];
-                 return { role: 'model', parts: [{ text: resp?.text || '' }] };
-             });
-        };
-        
-        // Construct history excluding the AI response we are replacing AND the user message (since we will send it as newMessage)
-        const historyForApi = buildLocalHistory(historyUntilUserMessage);
-
+        // Use 'regenerate' task
         await startBackendChat(
+            'regenerate',
             currentChatId, 
             aiMessageId, 
-            userMessageToResend, // Send this as "new"
+            null, // No new user message
             currentChat, 
-            { ...settings, isAgentMode: isAgentMode },
-            historyForApi // Override backend history fetching
+            { ...settings, isAgentMode: isAgentMode }
         );
 
     }, [isLoading, currentChatId, chatHistory, cancelGeneration, chatHistoryHook, initialModel, settings, memoryContent, isAgentMode]);
 
     const startBackendChat = async (
+        task: 'chat' | 'regenerate',
         chatId: string,
         messageId: string, // The ID of the model message to update
-        newMessage: Message, // The new user message
+        newMessage: Message | null, // The new user message (null for regenerate)
         chatConfig: Pick<ChatSession, 'model' | 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>,
-        runtimeSettings: { isAgentMode: boolean } & ChatSettings,
-        overrideHistory?: any[] // Optional: If provided, backend uses this instead of DB
+        runtimeSettings: { isAgentMode: boolean } & ChatSettings
     ) => {
         abortControllerRef.current = new AbortController();
 
         try {
-            const response = await fetchFromApi('/api/handler?task=chat', {
+            const response = await fetchFromApi(`/api/handler?task=${task}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 signal: abortControllerRef.current.signal,
                 body: JSON.stringify({
                     chatId: chatId,
+                    messageId: messageId,
                     model: chatConfig.model,
-                    newMessage: newMessage, // Send message object
-                    history: overrideHistory, // Optional override
+                    newMessage: newMessage, // Send message object or null
                     settings: {
                         isAgentMode: runtimeSettings.isAgentMode,
                         systemPrompt: runtimeSettings.systemPrompt,

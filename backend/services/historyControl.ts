@@ -319,6 +319,24 @@ class HistoryControlService {
         // Returns the URL segment for the frontend to access files
         return `/uploads/${entry.folderName}/file`;
     }
+
+    // --- Truncation Logic for Regeneration ---
+    async truncateChatHistory(chatId: string, messageId: string): Promise<ChatSession | null> {
+        const chat = await this.getChat(chatId);
+        if (!chat) return null;
+
+        const messageIndex = chat.messages.findIndex(m => m.id === messageId);
+        // If message not found, or it's the very first message, handled by caller or no-op
+        if (messageIndex === -1) return chat;
+
+        // Keep messages BEFORE this index
+        // This removes the target AI message and anything after it.
+        // It keeps the User message that triggered it if the AI message is at index > 0
+        const truncatedMessages = chat.messages.slice(0, messageIndex);
+        
+        // We update the chat with truncated messages
+        return await this.updateChat(chatId, { messages: truncatedMessages });
+    }
 }
 
 export const historyControl = new HistoryControlService();

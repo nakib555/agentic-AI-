@@ -8,9 +8,7 @@ import React, { useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion as motionTyped } from 'framer-motion';
 import type { Message } from '../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
-import { parseMessageText } from '../../utils/messageParser';
 import { useViewport } from '../../hooks/useViewport';
-import { parseAgenticWorkflow } from '../../services/workflowParser';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
 import { FormattedBlock } from '../Markdown/FormattedBlock';
 
@@ -64,19 +62,11 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
 
         const { isThinking } = message;
         const activeResponse = (message.responses && message.responses[message.activeResponseIndex]) || null;
-
-        const text = activeResponse?.text ?? '';
         const error = activeResponse?.error;
-        const toolCallEvents = activeResponse?.toolCallEvents;
-
-        const thinkingIsComplete = !isThinking || !!error;
         
-        const { plan: parsedPlan, executionLog: parsedLog } = parseAgenticWorkflow(
-            parseMessageText(text, !!isThinking, !!error).thinkingText,
-            toolCallEvents,
-            thinkingIsComplete,
-            error
-        );
+        // Use workflow parsed by backend
+        const parsedPlan = activeResponse?.workflow?.plan || '';
+        const parsedLog = activeResponse?.workflow?.executionLog || [];
 
         if (error) {
             return { status: 'Failed', statusColor: 'bg-red-500 dark:bg-red-600', plan: parsedPlan, executionLog: parsedLog };

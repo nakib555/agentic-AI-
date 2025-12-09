@@ -7,8 +7,9 @@
 import { GoogleGenAI, Part, FunctionCall, FinishReason, Content } from "@google/genai";
 import { StateGraph, START, END, Annotation, MemorySaver } from "@langchain/langgraph";
 import { parseApiError } from "../../utils/apiError.js";
-import { ToolCallEvent } from "./types.js";
+import { ToolCallEvent } from "../../types.js";
 import { getText, generateContentStreamWithRetry } from "../../utils/geminiUtils.js";
+import { parseAgenticWorkflow } from "../../utils/workflowParser.js";
 
 // --- Types & Interfaces ---
 
@@ -17,6 +18,7 @@ type Callbacks = {
     onNewToolCalls: (toolCallEvents: ToolCallEvent[]) => void;
     onToolResult: (id: string, result: string) => void;
     onPlanReady: (plan: string) => Promise<boolean | string>;
+    onWorkflowUpdate: (workflow: any) => void; // New callback
     onComplete: (finalText: string, groundingMetadata: any) => void;
     onCancel: () => void;
     onError: (error: any) => void;
@@ -51,6 +53,10 @@ const AgentStateAnnotation = Annotation.Root({
         reducer: (x, y) => y || x,
         default: () => "",
     }),
+    toolEvents: Annotation<ToolCallEvent[]>({ // Track all tool events for workflow parsing
+        reducer: (x, y) => x.concat(y),
+        default: () => [],
+    })
 });
 
 const extractPlan = (rawText: string): string => {
@@ -104,6 +110,10 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 if (chunkText) {
                     fullTextResponse += chunkText;
                     callbacks.onTextChunk(fullTextResponse);
+                    
+                    // Live Workflow Update
+                    const parsedWorkflow = parseAgenticWorkflow(fullTextResponse, state.toolEvents, false);
+                    callbacks.onWorkflowUpdate(parsedWorkflow);
                 }
 
                 const planMatch = fullTextResponse.includes('[USER_APPROVAL_REQUIRED]');
@@ -151,6 +161,10 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                  });
             }
 
+            // Final update for this turn
+            const finalWorkflow = parseAgenticWorkflow(fullTextResponse, state.toolEvents, toolCalls.length === 0 && !hasSentPlan);
+            callbacks.onWorkflowUpdate(finalWorkflow);
+
             return {
                 history: historyUpdate,
                 groundingMetadata,
@@ -181,7 +195,15 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             call: fc,
             startTime: Date.now()
         }));
+        
         callbacks.onNewToolCalls(newToolCallEvents);
+        
+        // Update local state with new events for parser
+        const allToolEvents = [...state.toolEvents, ...newToolCallEvents];
+        
+        // Emit updated workflow immediately so UI shows "Active" tool
+        const currentWorkflow = parseAgenticWorkflow(state.latestAgentText, allToolEvents, false);
+        callbacks.onWorkflowUpdate(currentWorkflow);
 
         console.log('[AGENT_LOOP] Executing tools in parallel:', toolCalls.map(tc => tc.name));
 
@@ -192,6 +214,9 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 try {
                     const result = await toolExecutor(call.name, call.args, event.id);
                     callbacks.onToolResult(event.id, result);
+                    // Update event result for parser
+                    event.result = result;
+                    event.endTime = Date.now();
                     return {
                         functionResponse: {
                             name: call.name,
@@ -202,6 +227,8 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     const parsedError = parseApiError(error);
                     const errorMessage = `Tool execution failed: ${parsedError.message}`;
                     callbacks.onToolResult(event.id, errorMessage);
+                    event.result = errorMessage;
+                    event.endTime = Date.now();
                     return {
                         functionResponse: {
                             name: call.name,
@@ -212,9 +239,14 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             })
         );
         
+        // Emit updated workflow after tools complete
+        const updatedWorkflow = parseAgenticWorkflow(state.latestAgentText, allToolEvents, false);
+        callbacks.onWorkflowUpdate(updatedWorkflow);
+        
         return {
             history: [{ role: 'user', parts: toolResponses.map(tr => ({ functionResponse: tr.functionResponse })) }],
             toolCalls: [], // Clear tool calls so we don't loop back here immediately
+            toolEvents: newToolCallEvents // Add to state accumulator
         };
     };
 
@@ -257,6 +289,9 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
         if (!signal.aborted) {
             console.log('[AGENT_LOOP] Loop Completed Successfully.');
+            // Final parse with complete=true
+            const finalWorkflow = parseAgenticWorkflow(finalText, finalState.toolEvents, true);
+            callbacks.onWorkflowUpdate(finalWorkflow);
             callbacks.onComplete(finalText, finalState.groundingMetadata);
         }
 
