@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -149,7 +148,7 @@ export const ChatArea = ({
         )}
       </AnimatePresence>
       
-      <div className="flex-shrink-0 px-4 pt-2 pb-6 sm:px-6 md:px-8 z-20 max-w-4xl mx-auto w-full">
+      <div className="flex-shrink-0 px-4 pt-2 pb-2 sm:px-6 md:px-8 z-20 max-w-4xl mx-auto w-full">
         <div className="relative w-full">
           <MessageForm 
             ref={messageFormRef}

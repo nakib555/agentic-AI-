@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -49,7 +48,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   `;
 
   return (
-    <div className="w-full mx-auto px-0 sm:px-4">
+    <div className="w-full mx-auto">
       <form onSubmit={logic.handleSubmit} className="relative">
         <motion.div 
             className={`
