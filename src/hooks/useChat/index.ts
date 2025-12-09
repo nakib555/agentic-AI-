@@ -196,89 +196,116 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         const decoder = new TextDecoder();
         let buffer = '';
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
+        // --- Performance Optimization: Buffered State Updates ---
+        // We use requestAnimationFrame to decouple high-speed network events from React renders.
+        // The 'text-chunk' event sends the FULL text so far, so we only need to render the LATEST one
+        // that arrived within a single frame window (16ms).
+        let pendingText: string | null = null;
+        let animationFrameId: number | null = null;
 
-            for (const line of lines) {
-                if (!line.trim()) continue;
-                try {
-                    const event = JSON.parse(line);
-                    switch (event.type) {
-                        case 'start':
-                            if (event.payload?.requestId) {
-                                requestIdRef.current = event.payload.requestId;
-                            }
-                            break;
-                        case 'ping':
-                            break;
-                        case 'text-chunk':
-                            chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text: event.payload }));
-                            break;
-                        case 'workflow-update':
-                            // Consume the pre-parsed workflow from backend
-                            chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ workflow: event.payload }));
-                            break;
-                        case 'tool-call-start':
-                            const newToolCallEvents = event.payload.map((toolEvent: any) => ({ 
-                                id: toolEvent.id, 
-                                call: toolEvent.call, 
-                                startTime: Date.now() 
-                            }));
-                            chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({ toolCallEvents: [...(r.toolCallEvents || []), ...newToolCallEvents] }));
-                            break;
-                        case 'tool-update':
-                            // Handle real-time tool updates (browser logs, etc.)
-                            chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({
-                                toolCallEvents: r.toolCallEvents?.map(tc => {
-                                    if (tc.id === event.payload.id) {
-                                        const session = (tc.browserSession || { url: event.payload.url || '', logs: [], status: 'running' }) as BrowserSession;
-                                        
-                                        // Merge updates
-                                        if (event.payload.log) session.logs = [...session.logs, event.payload.log];
-                                        if (event.payload.screenshot) session.screenshot = event.payload.screenshot;
-                                        if (event.payload.title) session.title = event.payload.title;
-                                        if (event.payload.url) session.url = event.payload.url;
-                                        if (event.payload.status) session.status = event.payload.status;
+        const flushTextUpdates = () => {
+            if (pendingText !== null) {
+                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text: pendingText! }));
+                pendingText = null;
+            }
+            animationFrameId = null;
+        };
 
-                                        return { ...tc, browserSession: { ...session } }; // Create new object reference
-                                    }
-                                    return tc;
-                                })
-                            }));
-                            break;
-                        case 'tool-call-end':
-                             chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({
-                                toolCallEvents: r.toolCallEvents?.map(tc => tc.id === event.payload.id ? { ...tc, result: event.payload.result, endTime: Date.now() } : tc)
-                            }));
-                            break;
-                        case 'plan-ready':
-                            // Payload is { plan: string, callId: string }
-                            chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: event.payload }));
-                            chatHistoryHook.updateMessage(chatId, messageId, { executionState: 'pending_approval' });
-                            break;
-                        case 'frontend-tool-request':
-                            handleFrontendToolExecution(event.payload.callId, event.payload.toolName, event.payload.toolArgs);
-                            break;
-                        case 'complete':
-                            chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text: event.payload.finalText, endTime: Date.now(), groundingMetadata: event.payload.groundingMetadata }));
-                            break;
-                        case 'error':
-                             chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error: event.payload, endTime: Date.now() }));
-                            break;
-                        case 'cancel':
-                            if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
-                                abortControllerRef.current.abort();
-                            }
-                            break;
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    try {
+                        const event = JSON.parse(line);
+                        switch (event.type) {
+                            case 'start':
+                                if (event.payload?.requestId) {
+                                    requestIdRef.current = event.payload.requestId;
+                                }
+                                break;
+                            case 'ping':
+                                break;
+                            case 'text-chunk':
+                                // Buffer text updates
+                                pendingText = event.payload;
+                                if (animationFrameId === null) {
+                                    animationFrameId = requestAnimationFrame(flushTextUpdates);
+                                }
+                                break;
+                            case 'workflow-update':
+                                // Workflow updates are less frequent but complex objects, flush immediately
+                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ workflow: event.payload }));
+                                break;
+                            case 'tool-call-start':
+                                const newToolCallEvents = event.payload.map((toolEvent: any) => ({ 
+                                    id: toolEvent.id, 
+                                    call: toolEvent.call, 
+                                    startTime: Date.now() 
+                                }));
+                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({ toolCallEvents: [...(r.toolCallEvents || []), ...newToolCallEvents] }));
+                                break;
+                            case 'tool-update':
+                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({
+                                    toolCallEvents: r.toolCallEvents?.map(tc => {
+                                        if (tc.id === event.payload.id) {
+                                            const session = (tc.browserSession || { url: event.payload.url || '', logs: [], status: 'running' }) as BrowserSession;
+                                            if (event.payload.log) session.logs = [...session.logs, event.payload.log];
+                                            if (event.payload.screenshot) session.screenshot = event.payload.screenshot;
+                                            if (event.payload.title) session.title = event.payload.title;
+                                            if (event.payload.url) session.url = event.payload.url;
+                                            if (event.payload.status) session.status = event.payload.status;
+                                            return { ...tc, browserSession: { ...session } };
+                                        }
+                                        return tc;
+                                    })
+                                }));
+                                break;
+                            case 'tool-call-end':
+                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({
+                                    toolCallEvents: r.toolCallEvents?.map(tc => tc.id === event.payload.id ? { ...tc, result: event.payload.result, endTime: Date.now() } : tc)
+                                }));
+                                break;
+                            case 'plan-ready':
+                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: event.payload }));
+                                chatHistoryHook.updateMessage(chatId, messageId, { executionState: 'pending_approval' });
+                                break;
+                            case 'frontend-tool-request':
+                                handleFrontendToolExecution(event.payload.callId, event.payload.toolName, event.payload.toolArgs);
+                                break;
+                            case 'complete':
+                                // Ensure pending text is flushed before completing
+                                if (animationFrameId !== null) {
+                                    cancelAnimationFrame(animationFrameId);
+                                    flushTextUpdates();
+                                }
+                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text: event.payload.finalText, endTime: Date.now(), groundingMetadata: event.payload.groundingMetadata }));
+                                break;
+                            case 'error':
+                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error: event.payload, endTime: Date.now() }));
+                                break;
+                            case 'cancel':
+                                if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+                                    abortControllerRef.current.abort();
+                                }
+                                break;
+                        }
+                    } catch(e) {
+                        console.error("[FRONTEND] Failed to parse stream event:", line, e);
                     }
-                } catch(e) {
-                    console.error("[FRONTEND] Failed to parse stream event:", line, e);
                 }
+            }
+        } finally {
+            // Cleanup any pending animation frame on stream end/error
+            if (animationFrameId !== null) {
+                cancelAnimationFrame(animationFrameId);
+                flushTextUpdates();
             }
         }
     };

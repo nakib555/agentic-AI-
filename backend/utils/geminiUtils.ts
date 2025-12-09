@@ -22,7 +22,8 @@ const INITIAL_BACKOFF_MS = 2000;
 
 // Global throttling to smooth out bursts
 let lastRequestTimestamp = 0;
-const MIN_REQUEST_INTERVAL = 2000; // 2 seconds spacing = max 30 RPM (Safe-ish for Flash/Pro mix)
+// Reduced from 2000ms to 200ms to optimize speed/smoothness while preventing instant burst errors
+const MIN_REQUEST_INTERVAL = 200; 
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
