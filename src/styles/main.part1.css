@@ -8,6 +8,12 @@ html {
   scrollbar-gutter: stable;
 }
 
+@media (min-width: 768px) {
+  html {
+    font-size: 13px; /* Scaled down for desktop "one level" reduction */
+  }
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
