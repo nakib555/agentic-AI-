@@ -67,6 +67,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     if (selectorRef.current) {
         const rect = selectorRef.current.getBoundingClientRect();
         const windowHeight = window.innerHeight;
+        const windowWidth = window.innerWidth;
         
         // Safety padding from screen edges
         const padding = 8;
@@ -82,9 +83,34 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         const availableHeight = showOnTop ? spaceAbove : spaceBelow;
         const constrainedMaxHeight = Math.min(desiredMaxHeight, availableHeight);
 
+        // Calculate Responsive Width
+        // 1. Start with the trigger button width
+        // 2. Enforce a minimum width (e.g. 260px) to ensure long model IDs are visible even on small triggers
+        // 3. But don't exceed the viewport width (minus padding)
+        const minReadableWidth = 260;
+        let calculatedWidth = Math.max(rect.width, minReadableWidth);
+        
+        if (calculatedWidth > windowWidth - (padding * 2)) {
+            calculatedWidth = windowWidth - (padding * 2);
+        }
+
+        // Calculate Horizontal Position (Left)
+        // Default to aligning with the left edge of the trigger
+        let left = rect.left;
+
+        // If the dropdown would go off the right edge of the screen, align it to the right edge of the screen (minus padding)
+        if (left + calculatedWidth > windowWidth - padding) {
+            left = windowWidth - padding - calculatedWidth;
+        }
+
+        // Ensure it doesn't go off the left edge
+        if (left < padding) {
+            left = padding;
+        }
+
         setCoords({
-            left: rect.left,
-            width: rect.width, // Ensure width matches trigger button exactly
+            left: left,
+            width: calculatedWidth,
             top: showOnTop ? undefined : rect.bottom + 6,
             bottom: showOnTop ? windowHeight - rect.top + 6 : undefined,
             maxHeight: Math.max(100, constrainedMaxHeight) // Ensure at least 100px
