@@ -89,7 +89,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                 value={localApiKey}
                 onChange={e => setLocalApiKey(e.target.value)}
                 placeholder="Enter your Gemini API key"
-                className="w-full pl-9 pr-20 py-2.5 bg-slate-100/50 dark:bg-white/5 border border-transparent dark:border-transparent rounded-lg text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                className="w-full pl-9 pr-28 py-2.5 bg-slate-100/50 dark:bg-white/5 border border-transparent dark:border-transparent rounded-lg text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 gap-1">
                 <button
@@ -108,7 +108,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                     type="submit"
                     disabled={saveStatus === 'saving' || !localApiKey}
                     className={`
-                        px-2.5 py-1 text-xs font-semibold text-white rounded-md transition-all shadow-sm
+                        px-2.5 py-1.5 text-xs font-semibold text-white rounded-md transition-all shadow-sm
                         ${saveStatus === 'saved' 
                             ? 'bg-green-500 hover:bg-green-600' 
                             : 'bg-indigo-600 hover:bg-indigo-500'

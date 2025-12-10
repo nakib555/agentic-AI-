@@ -42,7 +42,7 @@ const TemperatureControl = ({ value, onChange, disabled }: { value: number, onCh
             
             <div className="relative h-10 flex items-center group touch-none">
                 {/* Track Background */}
-                <div className="absolute inset-x-0 h-3 bg-slate-200 dark:bg-black/40 rounded-full overflow-hidden shadow-inner">
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-3 bg-slate-200 dark:bg-black/40 rounded-full overflow-hidden shadow-inner">
                     {/* Gradient Fill */}
                     <div 
                         className="h-full bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-600 transition-all duration-100 ease-out origin-left" 
@@ -65,7 +65,7 @@ const TemperatureControl = ({ value, onChange, disabled }: { value: number, onCh
                 
                 {/* Animated Thumb */}
                 <div 
-                    className="absolute h-7 w-7 bg-white dark:bg-slate-200 shadow-[0_4px_10px_rgba(0,0,0,0.2)] border-2 border-transparent rounded-full pointer-events-none transition-all duration-100 ease-out z-10 flex items-center justify-center"
+                    className="absolute top-1/2 -translate-y-1/2 h-7 w-7 bg-white dark:bg-slate-200 shadow-[0_4px_10px_rgba(0,0,0,0.2)] border-2 border-transparent rounded-full pointer-events-none transition-all duration-100 ease-out z-10 flex items-center justify-center"
                     style={{ left: `calc(${value * 100}% - 14px)` }}
                 >
                     <div className={`w-2 h-2 rounded-full ${value > 0.7 ? 'bg-purple-500' : value > 0.3 ? 'bg-blue-500' : 'bg-emerald-500'}`} />
