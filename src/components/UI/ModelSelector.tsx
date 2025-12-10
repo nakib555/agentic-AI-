@@ -94,7 +94,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         const windowHeight = window.innerHeight;
         const spaceBelow = windowHeight - rect.bottom;
         const spaceAbove = rect.top;
-        const menuHeight = 320; // Estimated max height
+        const menuHeight = 320; // Estimated max height for the dropdown
 
         // Flip to top if not enough space below AND sufficient space above
         const showOnTop = spaceBelow < menuHeight && spaceAbove > spaceBelow;
