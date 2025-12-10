@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import type { Model } from '../../types';
 
@@ -46,18 +47,68 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const selectedModelData = models.find(m => m.id === selectedModel);
 
-  // Close on click outside
+  // State to calculate dynamic position
+  const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number; width: number }>({ left: 0, width: 0 });
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (selectorRef.current && !selectorRef.current.contains(event.target as Node)) {
+      // Check if click is outside both the button (selectorRef) and the portal menu (menuRef)
+      if (
+          selectorRef.current && !selectorRef.current.contains(event.target as Node) &&
+          menuRef.current && !menuRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+
+    // Close on window resize or scroll to prevent menu from detaching visually
+    const handleScrollOrResize = () => {
+        if (isOpen) setIsOpen(false);
+    };
+
+    if (isOpen) {
+        document.addEventListener('mousedown', handleClickOutside);
+        window.addEventListener('resize', handleScrollOrResize);
+        window.addEventListener('scroll', handleScrollOrResize, true); // Capture phase
+    }
+    return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        window.removeEventListener('resize', handleScrollOrResize);
+        window.removeEventListener('scroll', handleScrollOrResize, true);
+    };
+  }, [isOpen]);
+
+  const toggleOpen = () => {
+    if (disabled) return;
+    
+    if (isOpen) {
+        setIsOpen(false);
+        return;
+    }
+
+    if (selectorRef.current) {
+        const rect = selectorRef.current.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        const spaceBelow = windowHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const menuHeight = 320; // Estimated max height
+
+        // Flip to top if not enough space below AND sufficient space above
+        const showOnTop = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+
+        setCoords({
+            left: rect.left,
+            width: rect.width,
+            top: showOnTop ? undefined : rect.bottom + 6,
+            bottom: showOnTop ? windowHeight - rect.top + 6 : undefined
+        });
+        
+        setIsOpen(true);
+    }
+  };
 
   const handleSelect = (modelId: string) => {
     onModelChange(modelId);
@@ -69,7 +120,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleOpen}
         className={`
             group w-full flex items-center justify-between gap-3 px-4 py-3 text-left
             bg-slate-100/50 dark:bg-white/5 border border-transparent
@@ -112,58 +163,71 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         </div>
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute z-50 w-full mt-2 bg-white/90 dark:bg-[#1a1a1a]/90 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/5 origin-top"
-          >
-            <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
-                {models.length === 0 ? (
-                    <div className="p-4 text-center">
-                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">No models available</p>
-                    </div>
-                ) : (
-                    models.map((model) => {
-                        const isSelected = selectedModel === model.id;
-                        return (
-                            <button
-                                key={model.id}
-                                onClick={() => handleSelect(model.id)}
-                                className={`
-                                    relative w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all duration-200 group
-                                    ${isSelected 
-                                        ? 'bg-indigo-50 dark:bg-indigo-500/20' 
-                                        : 'hover:bg-slate-100 dark:hover:bg-white/5'
-                                    }
-                                `}
-                            >
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <span className={`text-sm font-medium truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-700 dark:text-slate-200'}`}>
-                                            {model.name}
-                                        </span>
-                                        {isSelected && (
-                                            <div className="text-indigo-600 dark:text-indigo-400">
-                                                <CheckIcon />
-                                            </div>
-                                        )}
+      {/* Render the dropdown using a Portal to break out of overflow:hidden parents */}
+      {createPortal(
+        <AnimatePresence>
+            {isOpen && (
+            <motion.div
+                ref={menuRef}
+                initial={{ opacity: 0, scale: 0.95, y: coords.bottom ? 10 : -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: coords.bottom ? 10 : -10 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                style={{
+                    position: 'fixed',
+                    left: coords.left,
+                    width: coords.width,
+                    top: coords.top,
+                    bottom: coords.bottom,
+                    zIndex: 99999, // Ensure it sits on top of everything, including modals
+                }}
+                className="bg-white/90 dark:bg-[#1a1a1a]/90 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/5"
+            >
+                <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
+                    {models.length === 0 ? (
+                        <div className="p-4 text-center">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">No models available</p>
+                        </div>
+                    ) : (
+                        models.map((model) => {
+                            const isSelected = selectedModel === model.id;
+                            return (
+                                <button
+                                    key={model.id}
+                                    onClick={() => handleSelect(model.id)}
+                                    className={`
+                                        relative w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all duration-200 group
+                                        ${isSelected 
+                                            ? 'bg-indigo-50 dark:bg-indigo-500/20' 
+                                            : 'hover:bg-slate-100 dark:hover:bg-white/5'
+                                        }
+                                    `}
+                                >
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className={`text-sm font-medium truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-700 dark:text-slate-200'}`}>
+                                                {model.name}
+                                            </span>
+                                            {isSelected && (
+                                                <div className="text-indigo-600 dark:text-indigo-400">
+                                                    <CheckIcon />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <p className={`text-[10px] font-mono mt-0.5 truncate ${isSelected ? 'text-indigo-700/70 dark:text-indigo-300/70' : 'text-slate-400'}`}>
+                                            {model.id}
+                                        </p>
                                     </div>
-                                    <p className={`text-[10px] font-mono mt-0.5 truncate ${isSelected ? 'text-indigo-700/70 dark:text-indigo-300/70' : 'text-slate-400'}`}>
-                                        {model.id}
-                                    </p>
-                                </div>
-                            </button>
-                        );
-                    })
-                )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                                </button>
+                            );
+                        })
+                    )}
+                </div>
+            </motion.div>
+            )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };
