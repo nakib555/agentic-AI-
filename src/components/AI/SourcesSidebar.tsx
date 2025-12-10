@@ -56,7 +56,7 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
                 damping: 30,
                 mass: 0.8
             }}
-            className={`flex-shrink-0 overflow-hidden bg-gray-100/70 dark:bg-[#1e1e1e]/70 backdrop-blur-md ${
+            className={`flex-shrink-0 overflow-hidden bg-layer-1/95 backdrop-blur-xl ${
                 isDesktop 
                 ? 'relative border-l border-gray-200 dark:border-white/10' 
                 : 'fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 dark:border-white/10 rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]'

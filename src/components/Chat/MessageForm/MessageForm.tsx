@@ -71,24 +71,26 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         initial={{ opacity: 0, height: 0 }} 
                         animate={{ opacity: 1, height: 'auto' }} 
                         exit={{ opacity: 0, height: 0 }}
-                        className="px-3 pt-3 flex flex-col gap-2"
+                        className="overflow-hidden"
                     >
-                        {logic.proactiveSuggestions.length > 0 && (
-                            <ProactiveAssistance suggestions={logic.proactiveSuggestions} onSuggestionClick={logic.handleSuggestionClick} />
-                        )}
-                        {logic.processedFiles.length > 0 && (
-                            <div className="flex flex-col gap-2">
-                                {logic.processedFiles.map((pf) => (
-                                    <AttachedFilePreview 
-                                        key={pf.id} 
-                                        file={pf.file} 
-                                        onRemove={() => logic.handleRemoveFile(pf.id)} 
-                                        progress={pf.progress} 
-                                        error={pf.error} 
-                                    />
-                                ))}
-                            </div>
-                        )}
+                        <div className="px-3 pt-3 flex flex-col gap-2">
+                            {logic.proactiveSuggestions.length > 0 && (
+                                <ProactiveAssistance suggestions={logic.proactiveSuggestions} onSuggestionClick={logic.handleSuggestionClick} />
+                            )}
+                            {logic.processedFiles.length > 0 && (
+                                <div className="flex flex-col gap-2">
+                                    {logic.processedFiles.map((pf) => (
+                                        <AttachedFilePreview 
+                                            key={pf.id} 
+                                            file={pf.file} 
+                                            onRemove={() => logic.handleRemoveFile(pf.id)} 
+                                            progress={pf.progress} 
+                                            error={pf.error} 
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>

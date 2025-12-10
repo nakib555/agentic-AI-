@@ -5,8 +5,6 @@
 
 html {
   font-size: 15px;
-  /* Prevent layout shifts when scrollbar appears/disappears */
-  scrollbar-gutter: stable;
 }
 
 @media (min-width: 768px) {

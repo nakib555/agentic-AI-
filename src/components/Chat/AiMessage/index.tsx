@@ -102,7 +102,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
     >
       {/* Inline Thought Process Display */}
       {logic.hasThinkingProcess && (
-        <div className="w-full max-w-3xl rounded-xl overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/5 transition-all duration-300">
+        <div className="w-full rounded-xl overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/5 transition-all duration-300">
             <button
                 onClick={() => setIsWorkflowCollapsed(!isWorkflowCollapsed)}
                 className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/50 dark:hover:bg-white/5 transition-colors text-left"
@@ -175,7 +175,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
       
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer) && (
-        <div className="w-full flex flex-col gap-4 pl-1">
+        <div className="w-full flex flex-col gap-4">
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} onRetry={() => onRegenerate(id)} />}
           
@@ -227,7 +227,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
       
       {logic.thinkingIsComplete && logic.hasFinalAnswer && !activeResponse?.error && (
-          <div className="w-full pl-1">
+          <div className="w-full">
             <MessageToolbar
                 messageId={id}
                 messageText={logic.finalAnswerText}
@@ -245,7 +245,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
 
       {logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
-         <div className="w-full pl-1"><SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} /></div>
+         <div className="w-full"><SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} /></div>
       )}
     </motion.div>
   );
