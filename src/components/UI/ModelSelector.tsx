@@ -54,24 +54,26 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   const [coords, setCoords] = useState<{ 
       top?: number; 
       bottom?: number; 
-      left: number; 
-      width: number;
+      left?: number; 
+      right?: number;
+      minWidth: number;
+      maxWidth: number;
       maxHeight: number;
   }>({ 
-      left: 0, 
-      width: 0, 
+      minWidth: 0, 
+      maxWidth: 0, 
       maxHeight: 300 
   });
 
   const updatePosition = useCallback(() => {
     if (selectorRef.current) {
         const rect = selectorRef.current.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-        const windowWidth = window.innerWidth;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
         
         // Safety padding from screen edges
         const padding = 8;
-        const spaceBelow = windowHeight - rect.bottom - padding;
+        const spaceBelow = viewportHeight - rect.bottom - padding;
         const spaceAbove = rect.top - padding;
         
         const desiredMaxHeight = 320; // Estimated max height for the dropdown
@@ -83,36 +85,42 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         const availableHeight = showOnTop ? spaceAbove : spaceBelow;
         const constrainedMaxHeight = Math.min(desiredMaxHeight, availableHeight);
 
-        // Calculate Responsive Width
-        // 1. Start with the trigger button width
-        // 2. Enforce a minimum width (e.g. 260px) to ensure long model IDs are visible even on small triggers
-        // 3. But don't exceed the viewport width (minus padding)
-        const minReadableWidth = 260;
-        let calculatedWidth = Math.max(rect.width, minReadableWidth);
+        // Responsive Width & Alignment Logic
+        // Determine alignment based on horizontal position to prevent overflow
+        const alignRight = rect.left > viewportWidth / 2;
         
-        if (calculatedWidth > windowWidth - (padding * 2)) {
-            calculatedWidth = windowWidth - (padding * 2);
+        let left: number | undefined;
+        let right: number | undefined;
+        let maxWidthAvailable: number;
+
+        if (alignRight) {
+            // Align to right edge of trigger
+            right = viewportWidth - rect.right;
+            // Max width extends to left edge of screen
+            maxWidthAvailable = rect.right - padding;
+        } else {
+            // Align to left edge of trigger
+            left = rect.left;
+            // Max width extends to right edge of screen
+            maxWidthAvailable = viewportWidth - rect.left - padding;
         }
 
-        // Calculate Horizontal Position (Left)
-        // Default to aligning with the left edge of the trigger
-        let left = rect.left;
-
-        // If the dropdown would go off the right edge of the screen, align it to the right edge of the screen (minus padding)
-        if (left + calculatedWidth > windowWidth - padding) {
-            left = windowWidth - padding - calculatedWidth;
-        }
-
-        // Ensure it doesn't go off the left edge
-        if (left < padding) {
-            left = padding;
-        }
+        // Min width: At least the trigger width, but constrained by screen width (for very small screens)
+        // Also ensure a minimum readable width (e.g. 200px) if the trigger is tiny (icon-only), unless screen is smaller.
+        const readabilityMin = 240;
+        const triggerWidth = rect.width;
+        
+        // Use trigger width, or 240px if trigger is small, but never exceed available screen width - padding
+        const idealMinWidth = Math.max(triggerWidth, readabilityMin);
+        const finalMinWidth = Math.min(idealMinWidth, viewportWidth - (padding * 2));
 
         setCoords({
-            left: left,
-            width: calculatedWidth,
+            left,
+            right,
+            minWidth: finalMinWidth,
+            maxWidth: maxWidthAvailable,
             top: showOnTop ? undefined : rect.bottom + 6,
-            bottom: showOnTop ? windowHeight - rect.top + 6 : undefined,
+            bottom: showOnTop ? viewportHeight - rect.top + 6 : undefined,
             maxHeight: Math.max(100, constrainedMaxHeight) // Ensure at least 100px
         });
     }
@@ -216,7 +224,9 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                 style={{
                     position: 'fixed',
                     left: coords.left,
-                    width: coords.width,
+                    right: coords.right,
+                    minWidth: coords.minWidth,
+                    maxWidth: coords.maxWidth,
                     top: coords.top,
                     bottom: coords.bottom,
                     zIndex: 99999, // Ensure it sits on top of everything, including modals
@@ -252,7 +262,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                                                 {model.name}
                                             </span>
                                             {isSelected && (
-                                                <div className="text-indigo-600 dark:text-indigo-400">
+                                                <div className="text-indigo-600 dark:text-indigo-400 flex-shrink-0">
                                                     <CheckIcon />
                                                 </div>
                                             )}
