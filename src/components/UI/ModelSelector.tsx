@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import type { Model } from '../../types';
@@ -63,42 +63,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       maxHeight: 300 
   });
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // Check if click is outside both the button (selectorRef) and the portal menu (menuRef)
-      if (
-          selectorRef.current && !selectorRef.current.contains(event.target as Node) &&
-          menuRef.current && !menuRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    // Close on window resize or scroll to prevent menu from detaching visually
-    const handleScrollOrResize = () => {
-        if (isOpen) setIsOpen(false);
-    };
-
-    if (isOpen) {
-        document.addEventListener('mousedown', handleClickOutside);
-        window.addEventListener('resize', handleScrollOrResize);
-        window.addEventListener('scroll', handleScrollOrResize, true); // Capture phase
-    }
-    return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-        window.removeEventListener('resize', handleScrollOrResize);
-        window.removeEventListener('scroll', handleScrollOrResize, true);
-    };
-  }, [isOpen]);
-
-  const toggleOpen = () => {
-    if (disabled) return;
-    
-    if (isOpen) {
-        setIsOpen(false);
-        return;
-    }
-
+  const updatePosition = useCallback(() => {
     if (selectorRef.current) {
         const rect = selectorRef.current.getBoundingClientRect();
         const windowHeight = window.innerHeight;
@@ -124,9 +89,39 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             bottom: showOnTop ? windowHeight - rect.top + 6 : undefined,
             maxHeight: Math.max(100, constrainedMaxHeight) // Ensure at least 100px
         });
-        
-        setIsOpen(true);
     }
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Check if click is outside both the button (selectorRef) and the portal menu (menuRef)
+      if (
+          selectorRef.current && !selectorRef.current.contains(event.target as Node) &&
+          menuRef.current && !menuRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+        updatePosition(); // Initial position calculation
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        // Using capture phase for scroll to detect scrolling in any parent container
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true); 
+    }
+    
+    return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen, updatePosition]);
+
+  const toggleOpen = () => {
+    if (disabled) return;
+    setIsOpen(prev => !prev);
   };
 
   const handleSelect = (modelId: string) => {
