@@ -51,7 +51,17 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   const selectedModelData = models.find(m => m.id === selectedModel);
 
   // State to calculate dynamic position
-  const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number; width: number }>({ left: 0, width: 0 });
+  const [coords, setCoords] = useState<{ 
+      top?: number; 
+      bottom?: number; 
+      left: number; 
+      width: number;
+      maxHeight: number;
+  }>({ 
+      left: 0, 
+      width: 0, 
+      maxHeight: 300 
+  });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -92,18 +102,27 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     if (selectorRef.current) {
         const rect = selectorRef.current.getBoundingClientRect();
         const windowHeight = window.innerHeight;
-        const spaceBelow = windowHeight - rect.bottom;
-        const spaceAbove = rect.top;
-        const menuHeight = 320; // Estimated max height for the dropdown
+        
+        // Safety padding from screen edges
+        const padding = 8;
+        const spaceBelow = windowHeight - rect.bottom - padding;
+        const spaceAbove = rect.top - padding;
+        
+        const desiredMaxHeight = 320; // Estimated max height for the dropdown
 
         // Flip to top if not enough space below AND sufficient space above
-        const showOnTop = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+        // We prefer bottom (default), so only flip if bottom is cramped (< 200px) and top has more room
+        const showOnTop = spaceBelow < 200 && spaceAbove > spaceBelow;
+
+        const availableHeight = showOnTop ? spaceAbove : spaceBelow;
+        const constrainedMaxHeight = Math.min(desiredMaxHeight, availableHeight);
 
         setCoords({
             left: rect.left,
-            width: rect.width,
+            width: rect.width, // Ensure width matches trigger button exactly
             top: showOnTop ? undefined : rect.bottom + 6,
-            bottom: showOnTop ? windowHeight - rect.top + 6 : undefined
+            bottom: showOnTop ? windowHeight - rect.top + 6 : undefined,
+            maxHeight: Math.max(100, constrainedMaxHeight) // Ensure at least 100px
         });
         
         setIsOpen(true);
@@ -183,7 +202,10 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                 }}
                 className="bg-white/90 dark:bg-[#1a1a1a]/90 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/5"
             >
-                <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
+                <div 
+                    className="overflow-y-auto custom-scrollbar p-1.5 space-y-0.5"
+                    style={{ maxHeight: coords.maxHeight }}
+                >
                     {models.length === 0 ? (
                         <div className="p-4 text-center">
                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">No models available</p>
