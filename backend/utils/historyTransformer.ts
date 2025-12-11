@@ -7,31 +7,17 @@
 import { Content, Part } from "@google/genai";
 import { Message } from '../../src/types';
 
-/**
- * Parses the raw text to separate thinking process from final answer.
- * Replicated from frontend logic to ensure consistency.
- */
-const parseMessageText = (text: string): { thinkingText: string, finalAnswerText: string } => {
-  const finalAnswerMarker = '[STEP] Final Answer:';
-  const finalAnswerIndex = text.lastIndexOf(finalAnswerMarker);
-
-  if (finalAnswerIndex !== -1) {
-    const thinkingText = text.substring(0, finalAnswerIndex);
-    let rawFinalAnswer = text.substring(finalAnswerIndex + finalAnswerMarker.length);
-    const agentTagRegex = /^\s*:?\s*\[AGENT:\s*[^\]]+\]\s*/;
-    rawFinalAnswer = rawFinalAnswer.replace(agentTagRegex, '');
-    const finalAnswerText = rawFinalAnswer.replace(/\[AUTO_CONTINUE\]/g, '').trim();
-    return { thinkingText, finalAnswerText };
-  }
-  
-  // If we assume the message is complete (from DB), and no marker, treating entire text as answer
-  // might be safer for context injection, or we stick to the rule:
-  return { thinkingText: '', finalAnswerText: text.trim() };
-};
-
 export const transformHistoryToGeminiFormat = (messages: Message[]): Content[] => {
     const historyForApi: Content[] = [];
     
+    const pushContent = (role: 'user' | 'model', parts: Part[]) => {
+        if (historyForApi.length > 0 && historyForApi[historyForApi.length - 1].role === role) {
+            historyForApi[historyForApi.length - 1].parts.push(...parts);
+        } else {
+            historyForApi.push({ role, parts });
+        }
+    };
+
     messages.forEach((msg: Message) => {
         if (msg.isHidden) return;
 
@@ -44,7 +30,7 @@ export const transformHistoryToGeminiFormat = (messages: Message[]): Content[] =
                 }));
             }
             if (parts.length > 0) {
-                historyForApi.push({ role: 'user', parts });
+                pushContent('user', parts);
             }
         } else if (msg.role === 'model') {
             const activeResponse = msg.responses?.[msg.activeResponseIndex];
@@ -81,10 +67,10 @@ export const transformHistoryToGeminiFormat = (messages: Message[]): Content[] =
             }
 
             if (modelParts.length > 0) {
-                historyForApi.push({ role: 'model', parts: modelParts });
+                pushContent('model', modelParts);
             }
             if (functionResponseParts.length > 0) {
-                historyForApi.push({ role: 'user', parts: functionResponseParts });
+                pushContent('user', functionResponseParts);
             }
         }
     });

@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -166,7 +167,7 @@ export const apiHandler = async (req: any, res: any) => {
 
                 // 2. Append new message (only for 'chat' task)
                 if (task === 'chat' && newMessage) {
-                    fullHistory.push({
+                    const newPart = {
                         role: 'user',
                         parts: [
                             ...(newMessage.text ? [{ text: newMessage.text }] : []),
@@ -174,7 +175,17 @@ export const apiHandler = async (req: any, res: any) => {
                                 inlineData: { mimeType: att.mimeType, data: att.data }
                             }))
                         ]
-                    });
+                    };
+                    
+                    // Manually merge if the last message in history is also user
+                    // This handles cases where tools might have left a trailing user part
+                    if (fullHistory.length > 0 && fullHistory[fullHistory.length - 1].role === 'user') {
+                        // Cast to any to access parts, as Content interface can be strict
+                        (fullHistory[fullHistory.length - 1].parts as any[]).push(...newPart.parts);
+                    } else {
+                        // Safe cast for strict typing
+                        fullHistory.push(newPart as any);
+                    }
                 }
 
                 console.log('[HANDLER] Context Ready:', { 
@@ -280,13 +291,17 @@ export const apiHandler = async (req: any, res: any) => {
                 const { chatId, model, newMessage, isAgentMode } = req.body;
 
                 // 1. Fetch History
-                const savedChat = await historyControl.getChat(chatId);
-                const historyMessages = savedChat?.messages || [];
-                const fullHistory = transformHistoryToGeminiFormat(historyMessages);
+                // Handle null chatId gracefully
+                let fullHistory: any[] = [];
+                if (chatId) {
+                    const savedChat = await historyControl.getChat(chatId);
+                    const historyMessages = savedChat?.messages || [];
+                    fullHistory = transformHistoryToGeminiFormat(historyMessages);
+                }
 
                 // 2. Append new message if provided
                 if (newMessage && (newMessage.text || (newMessage.attachments && newMessage.attachments.length > 0))) {
-                    fullHistory.push({
+                    const newPart = {
                         role: 'user',
                         parts: [
                             ...(newMessage.text ? [{ text: newMessage.text }] : []),
@@ -294,7 +309,14 @@ export const apiHandler = async (req: any, res: any) => {
                                 inlineData: { mimeType: att.mimeType, data: att.data }
                             }))
                         ]
-                    });
+                    };
+
+                    // Check if last message is also user, if so, merge parts to avoid API errors
+                    if (fullHistory.length > 0 && fullHistory[fullHistory.length - 1].role === 'user') {
+                        (fullHistory[fullHistory.length - 1].parts as any[]).push(...newPart.parts);
+                    } else {
+                        fullHistory.push(newPart);
+                    }
                 }
 
                 // 3. Define System Instruction & Tools based on mode
@@ -302,13 +324,12 @@ export const apiHandler = async (req: any, res: any) => {
                 const tools = isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }];
 
                 // Check if history is empty. If so, the API will error on empty contents.
-                // We add a dummy empty string to satisfy the API and get the count for system prompt + tools.
+                // We use a single space instead of empty string to satisfy the API.
                 if (fullHistory.length === 0) {
-                    fullHistory.push({ role: 'user', parts: [{ text: '' }] });
+                    fullHistory.push({ role: 'user', parts: [{ text: ' ' }] });
                 }
 
                 // 4. Count Tokens
-                // Note: We use ai.models.countTokens which accepts the same config as generateContent
                 const countResult = await ai.models.countTokens({
                     model: model || 'gemini-2.5-flash',
                     contents: fullHistory,
