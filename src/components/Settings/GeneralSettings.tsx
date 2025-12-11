@@ -207,7 +207,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
       </div>
 
       <SettingItem label="Theme">
-        <div className="w-full max-w-[240px]">
+        <div className="w-full max-w-[360px]">
             <ThemeToggle theme={theme} setTheme={setTheme} isCollapsed={false} isDesktop={true} />
         </div>
       </SettingItem>

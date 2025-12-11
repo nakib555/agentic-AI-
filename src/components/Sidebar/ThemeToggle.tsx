@@ -44,7 +44,7 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
                         )}
                         <span className={`relative z-10 flex items-center gap-1.5 ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                             {btn.icon}
-                            {!shouldCollapse && <span className="hidden sm:inline">{btn.label}</span>}
+                            {!shouldCollapse && <span className="truncate">{btn.label}</span>}
                         </span>
                     </button>
                 );
