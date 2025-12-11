@@ -38,12 +38,12 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   const isBackendOffline = backendStatus !== 'online';
   const isGeneratingResponse = isLoading;
   
-  const isProcessingFiles = logic.processedFiles.some(f => f.progress < 100 && !f.error);
-  const hasInput = logic.inputValue.length > 0 || logic.processedFiles.length > 0;
-  const hasText = logic.inputValue.trim().length > 0 && logic.processedFiles.length === 0;
-
-  const isSendDisabled = isBackendOffline || isAppLoading || isProcessingFiles || logic.isEnhancing || !hasInput || !hasApiKey;
+  // Use centralized validation from hook + external conditions
+  const isSendDisabled = !logic.canSubmit || isBackendOffline || isAppLoading || !hasApiKey;
   
+  const hasText = logic.inputValue.trim().length > 0 && logic.processedFiles.length === 0;
+  const hasInput = logic.inputValue.length > 0 || logic.processedFiles.length > 0;
+
   const iconBtnClass = `
     flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200
     text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-indigo-600 dark:hover:text-indigo-300

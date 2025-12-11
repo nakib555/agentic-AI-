@@ -64,18 +64,13 @@ export const useMessageForm = (
   }, [inputValue, fileHandling.processedFiles.length]);
   
   // Handle automatic resizing of the input area
-  // Uses a shadow element to calculate height, allowing for smooth CSS transitions on the real element
   useLayoutEffect(() => {
     const element = inputRef.current;
     if (!element) return;
 
-    // Create a hidden shadow element to calculate exact height requirements
-    // This allows us to update the real element's height without the
-    // jitter caused by resetting to 'auto' directly on the visible element.
     const shadow = document.createElement('textarea');
     const computed = window.getComputedStyle(element);
 
-    // Copy critical styles that affect layout/sizing
     shadow.value = inputValue;
     shadow.style.width = computed.width;
     shadow.style.padding = computed.padding;
@@ -87,21 +82,16 @@ export const useMessageForm = (
     shadow.style.letterSpacing = computed.letterSpacing;
     shadow.style.boxSizing = computed.boxSizing;
     
-    // Hide shadow
     shadow.style.position = 'absolute';
     shadow.style.visibility = 'hidden';
     shadow.style.top = '-9999px';
     shadow.style.left = '-9999px';
     shadow.style.overflow = 'hidden';
     shadow.style.height = '0';
-    shadow.style.minHeight = '0'; // Ensure it can shrink to content
+    shadow.style.minHeight = '0';
 
     document.body.appendChild(shadow);
-    
-    // Force calculation
     const scrollHeight = shadow.scrollHeight;
-    
-    // Cleanup
     document.body.removeChild(shadow);
 
     const MAX_HEIGHT_PX = 192;
@@ -118,7 +108,7 @@ export const useMessageForm = (
     }
   }, [inputValue, fileHandling.processedFiles.length]);
 
-  // Handle clicks outside the upload menu to close it
+  // Handle clicks outside the upload menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isUploadMenuOpen && attachButtonRef.current && !attachButtonRef.current.contains(event.target as Node) && uploadMenuRef.current && !uploadMenuRef.current.contains(event.target as Node)) {
@@ -131,36 +121,30 @@ export const useMessageForm = (
 
   const clearDraft = () => {
     setInputValue('');
-    fileHandling.clearFiles(); // Use the method from the file handling hook
+    fileHandling.clearFiles(); 
     localStorage.removeItem('messageDraft_text');
     localStorage.removeItem('messageDraft_files');
   };
 
+  // Centralized Validation Logic
+  const isProcessingFiles = fileHandling.processedFiles.some(f => f.progress < 100 && !f.error);
+  // Ensure we check for trimmed content OR files.
+  const hasContent = inputValue.trim().length > 0 || fileHandling.processedFiles.length > 0;
+  
+  const canSubmit = hasContent && !isLoading && !enhancements.isEnhancing && !isProcessingFiles;
+
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    console.log('[DEBUG] useMessageForm: handleSubmit called');
 
     if (enhancements.isRecording) {
-        console.log('[DEBUG] useMessageForm: Stopping recording before submit');
         enhancements.stopRecording();
     }
     
-    const isProcessingFiles = fileHandling.processedFiles.some(f => f.progress < 100 && !f.error);
-    
-    console.log('[DEBUG] useMessageForm State:', {
-        inputValueLength: inputValue.trim().length,
-        hasFiles: fileHandling.processedFiles.length > 0,
-        isLoading,
-        isEnhancing: enhancements.isEnhancing,
-        isProcessingFiles
-    });
-
-    if ((!inputValue.trim() && fileHandling.processedFiles.length === 0) || isLoading || enhancements.isEnhancing || isProcessingFiles) {
-        console.warn('[DEBUG] useMessageForm: Submission blocked due to validation state.');
+    if (!canSubmit) {
+        // Just return, no need to log a warning if it's just an empty enter press
         return;
     }
 
-    console.log('[DEBUG] useMessageForm: Calling onSubmit prop');
     onSubmit(inputValue, fileHandling.getFilesToSend());
     clearDraft();
   };
@@ -170,19 +154,21 @@ export const useMessageForm = (
       e.preventDefault();
       fileHandling.processAndSetFiles(Array.from(e.clipboardData.files));
     }
-    // Let the default behavior handle text pasting, which will strip formatting.
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Submit on Enter (but not Shift+Enter) for a classic chat experience
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        handleSubmit();
+        // Only submit if valid, otherwise do nothing (prevent newline)
+        if (canSubmit) {
+            handleSubmit();
+        }
     }
-    // Also allow submitting with Ctrl/Cmd+Enter for power users
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        handleSubmit();
+        if (canSubmit) {
+            handleSubmit();
+        }
     }
   };
 
@@ -193,6 +179,8 @@ export const useMessageForm = (
     placeholder,
     inputRef, attachButtonRef, uploadMenuRef,
     handleSubmit, handlePaste, handleKeyDown,
+    canSubmit, // Export validation state
+    isProcessingFiles,
     ...fileHandling,
     ...enhancements,
   };
