@@ -33,7 +33,7 @@ const InstructionField: React.FC<{
                 onChange={e => onChange(e.target.value)}
                 disabled={disabled}
                 placeholder={placeholder}
-                className="w-full min-h-[140px] p-4 bg-slate-100/50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/30 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-y leading-relaxed"
+                className="w-full min-h-[250px] max-h-[500px] p-4 bg-slate-100/50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/30 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-y leading-relaxed custom-scrollbar overflow-y-auto"
                 aria-disabled={disabled}
             />
         </div>

@@ -70,58 +70,54 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         const rect = selectorRef.current.getBoundingClientRect();
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-        
-        // Safety padding from screen edges
-        const padding = 8;
+        const padding = 8; // Safety padding from screen edges
+
+        // Vertical positioning logic
         const spaceBelow = viewportHeight - rect.bottom - padding;
         const spaceAbove = rect.top - padding;
-        
-        const desiredMaxHeight = 320; // Estimated max height for the dropdown
-
-        // Flip to top if not enough space below AND sufficient space above
-        // We prefer bottom (default), so only flip if bottom is cramped (< 200px) and top has more room
+        const desiredMaxHeight = 320; 
+        // Prefer bottom, flip to top if cramped below (<200px) and more room above
         const showOnTop = spaceBelow < 200 && spaceAbove > spaceBelow;
+        const maxHeight = Math.min(desiredMaxHeight, showOnTop ? spaceAbove : spaceBelow);
 
-        const availableHeight = showOnTop ? spaceAbove : spaceBelow;
-        const constrainedMaxHeight = Math.min(desiredMaxHeight, availableHeight);
-
-        // Responsive Width & Alignment Logic
-        // Determine alignment based on horizontal position to prevent overflow
-        const alignRight = rect.left > viewportWidth / 2;
+        // Width & Alignment Logic
+        // 1. Min width: Match trigger width, but enforce ~200px floor for readability
+        let minWidth = Math.max(rect.width, 200);
         
-        let left: number | undefined;
-        let right: number | undefined;
-        let maxWidthAvailable: number;
-
-        if (alignRight) {
-            // Align to right edge of trigger
-            right = viewportWidth - rect.right;
-            // Max width extends to left edge of screen
-            maxWidthAvailable = rect.right - padding;
-        } else {
-            // Align to left edge of trigger
-            left = rect.left;
-            // Max width extends to right edge of screen
-            maxWidthAvailable = viewportWidth - rect.left - padding;
+        // 2. Clamp minWidth if screen is extremely small (e.g. mobile portrait)
+        if (minWidth > viewportWidth - (padding * 2)) {
+            minWidth = viewportWidth - (padding * 2);
         }
 
-        // Min width: At least the trigger width, but constrained by screen width (for very small screens)
-        // Also ensure a minimum readable width (e.g. 200px) if the trigger is tiny (icon-only), unless screen is smaller.
-        const readabilityMin = 240;
-        const triggerWidth = rect.width;
+        // 3. Determine Alignment (Left vs Right)
+        // Check available space on both sides
+        const spaceOnRight = viewportWidth - rect.left - padding;
+        const spaceOnLeft = rect.right - padding;
         
-        // Use trigger width, or 240px if trigger is small, but never exceed available screen width - padding
-        const idealMinWidth = Math.max(triggerWidth, readabilityMin);
-        const finalMinWidth = Math.min(idealMinWidth, viewportWidth - (padding * 2));
+        // Prefer left align (growing right) if space permits the minWidth
+        // OR if right side has strictly more space than left side
+        const alignLeft = spaceOnRight >= minWidth || spaceOnRight > spaceOnLeft;
+
+        let left: number | undefined;
+        let right: number | undefined;
+        let maxWidth: number;
+
+        if (alignLeft) {
+            left = rect.left;
+            maxWidth = spaceOnRight;
+        } else {
+            right = viewportWidth - rect.right;
+            maxWidth = spaceOnLeft;
+        }
 
         setCoords({
             left,
             right,
-            minWidth: finalMinWidth,
-            maxWidth: maxWidthAvailable,
+            minWidth,
+            maxWidth,
             top: showOnTop ? undefined : rect.bottom + 6,
             bottom: showOnTop ? viewportHeight - rect.top + 6 : undefined,
-            maxHeight: Math.max(100, constrainedMaxHeight) // Ensure at least 100px
+            maxHeight: Math.max(100, maxHeight) // Ensure at least 100px height
         });
     }
   }, []);
