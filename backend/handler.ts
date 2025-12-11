@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -16,7 +15,7 @@ import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./too
 import { runAgenticLoop } from './services/agenticLoop/index.js';
 import { createToolExecutor } from './tools/index.js';
 import { toolDeclarations } from './tools/declarations.js';
-import { getApiKey } from './settingsHandler.js';
+import { getApiKey, getSuggestionApiKey } from './settingsHandler.js';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils.js';
 import { historyControl } from './services/historyControl.js';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer.js';
@@ -108,20 +107,34 @@ async function generateDirectoryStructure(dirPath: string): Promise<any> {
 // Using 'any' for req/res to bypass strict type checks that are failing due to missing properties in the inferred types
 export const apiHandler = async (req: any, res: any) => {
     const task = req.query.task as string;
-    console.log(`[HANDLER] Received request for task: "${task}"`); // LOG
     
-    const apiKey = await getApiKey();
+    const mainApiKey = await getApiKey();
+    const suggestionApiKey = await getSuggestionApiKey();
+
+    // Determine which key to use
+    // If it's a suggestion task and we have a specific key for it, use that.
+    // Otherwise fallback to main key.
+    const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'placeholder', 'memory_suggest', 'memory_consolidate'];
+    const isSuggestionTask = SUGGESTION_TASKS.includes(task);
+    
+    let activeApiKey = mainApiKey;
+    if (isSuggestionTask && suggestionApiKey) {
+        console.log(`[HANDLER] Using Suggestion API Key for task: "${task}"`);
+        activeApiKey = suggestionApiKey;
+    } else {
+        console.log(`[HANDLER] Using Main API Key for task: "${task}"`);
+    }
 
     // Tasks that are allowed to run without an API key
     // 'debug_data_tree' must be here to allow checking file structure without a valid key setup
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree'];
 
-    if (!apiKey && !BYPASS_TASKS.includes(task)) {
+    if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
         console.error(`[HANDLER] API key not configured on server. Blocking task: "${task}"`);
         return res.status(401).json({ error: "API key not configured on the server." });
     }
     
-    const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+    const ai = activeApiKey ? new GoogleGenAI({ apiKey: activeApiKey }) : null;
 
     try {
         switch (task) {
@@ -213,7 +226,7 @@ export const apiHandler = async (req: any, res: any) => {
                     ai, 
                     settings.imageModel, 
                     settings.videoModel, 
-                    apiKey!, 
+                    activeApiKey!, 
                     chatId, 
                     requestFrontendExecution, 
                     false, 
@@ -424,7 +437,7 @@ export const apiHandler = async (req: any, res: any) => {
                     ai, 
                     '', 
                     '', 
-                    apiKey!, 
+                    activeApiKey!, 
                     chatId, 
                     async () => ({error: 'Frontend execution not supported in this context'}), 
                     true // skipFrontendCheck

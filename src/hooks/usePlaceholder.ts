@@ -254,6 +254,7 @@ export const usePlaceholder = (isEnabled: boolean, conversationContext: string, 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ conversationContext: currentContext, isAgentMode: currentAgentMode }),
+                silent: true // Suppress errors for background tasks
             });
 
             if (!response.ok) throw new Error(`API response not OK: ${response.status}`);

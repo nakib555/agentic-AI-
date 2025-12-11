@@ -16,6 +16,8 @@ type GeneralSettingsProps = {
   onShowDataStructure: () => void;
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
+  suggestionApiKey?: string;
+  onSaveSuggestionApiKey?: (key: string) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
 };
@@ -41,34 +43,128 @@ const ActionButton = ({
     </button>
 );
 
+const ApiKeyInput = ({ 
+    label, 
+    value, 
+    onSave, 
+    placeholder, 
+    description,
+    isOptional = false
+}: { 
+    label: string, 
+    value: string, 
+    onSave: (key: string) => Promise<void> | void, 
+    placeholder: string,
+    description: string,
+    isOptional?: boolean
+}) => {
+    const [localValue, setLocalValue] = useState(value);
+    const [showKey, setShowKey] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const [saveError, setSaveError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setLocalValue(value);
+    }, [value]);
+
+    const handleSave = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (saveStatus === 'saving') return;
+
+        setSaveStatus('saving');
+        setSaveError(null);
+        
+        try {
+            await onSave(localValue);
+            setSaveStatus('saved');
+            setTimeout(() => setSaveStatus('idle'), 2000);
+        } catch (error: any) {
+            setSaveStatus('error');
+            setSaveError(error.message || 'Failed to save key.');
+        }
+    };
+
+    return (
+        <SettingItem label={label} description={description} layout="col">
+            <form onSubmit={handleSave} className="space-y-4">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className={`w-4 h-4 ${localValue ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                </div>
+                <input
+                    type={showKey ? "text" : "password"}
+                    autoComplete="off"
+                    value={localValue}
+                    onChange={e => setLocalValue(e.target.value)}
+                    placeholder={placeholder}
+                    className="w-full pl-9 pr-28 py-2.5 bg-slate-100/50 dark:bg-white/5 border border-transparent dark:border-transparent rounded-lg text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 gap-1">
+                    <button
+                        type="button"
+                        onClick={() => setShowKey(!showKey)}
+                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md transition-colors"
+                        title={showKey ? "Hide key" : "Show key"}
+                    >
+                        {showKey ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        )}
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={saveStatus === 'saving' || (!isOptional && !localValue)}
+                        className={`
+                            px-2.5 py-1.5 text-xs font-semibold text-white rounded-md transition-all shadow-sm
+                            ${saveStatus === 'saved' 
+                                ? 'bg-green-500 hover:bg-green-600' 
+                                : 'bg-indigo-600 hover:bg-indigo-500'
+                            }
+                            disabled:opacity-50 disabled:cursor-not-allowed
+                        `}
+                    >
+                        {saveStatus === 'saving' ? '...' : saveStatus === 'saved' ? 'Saved' : 'Save'}
+                    </button>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                 {saveStatus === 'error' && saveError ? (
+                     <p className="text-xs font-medium text-red-500 flex items-center gap-1">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" /></svg>
+                         {saveError}
+                     </p>
+                 ) : (
+                     <span className="text-xs text-slate-400">Stored locally.</span>
+                 )}
+              </div>
+            </form>
+        </SettingItem>
+    );
+};
+
 const GeneralSettings: React.FC<GeneralSettingsProps> = ({ 
     onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, apiKey, onSaveApiKey,
+    suggestionApiKey, onSaveSuggestionApiKey,
     theme, setTheme
 }) => {
-  const [localApiKey, setLocalApiKey] = useState(apiKey);
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [saveError, setSaveError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setLocalApiKey(apiKey);
-  }, [apiKey]);
+  const handleMainApiKeySave = async (key: string) => {
+      // Allow saving if suggestion key is empty, but if both exist, they must be different
+      if (key && suggestionApiKey && key.trim() === suggestionApiKey.trim()) {
+          throw new Error("Main API Key must be different from Suggestion API Key.");
+      }
+      await onSaveApiKey(key);
+  };
 
-  const handleSave = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (saveStatus === 'saving') return;
-
-    setSaveStatus('saving');
-    setSaveError(null);
-    
-    try {
-        await onSaveApiKey(localApiKey);
-        setSaveStatus('saved');
-        setTimeout(() => setSaveStatus('idle'), 2000);
-    } catch (error: any) {
-        setSaveStatus('error');
-        setSaveError(error.message || 'Failed to verify API Key.');
-    }
+  const handleSuggestionApiKeySave = async (key: string) => {
+      if (key && apiKey && key.trim() === apiKey.trim()) {
+          throw new Error("Suggestion API Key must be different from Main API Key.");
+      }
+      if (onSaveSuggestionApiKey) {
+          onSaveSuggestionApiKey(key);
+      }
   };
 
   return (
@@ -77,66 +173,32 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">General</h3>
       </div>
 
-      <SettingItem label="Gemini API Key" description="Required for accessing models." layout="col">
-        <form onSubmit={handleSave} className="space-y-4">
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className={`w-4 h-4 ${localApiKey ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
-            </div>
-            <input
-                type={showApiKey ? "text" : "password"}
-                autoComplete="off"
-                value={localApiKey}
-                onChange={e => setLocalApiKey(e.target.value)}
-                placeholder="Enter your Gemini API key"
-                className="w-full pl-9 pr-28 py-2.5 bg-slate-100/50 dark:bg-white/5 border border-transparent dark:border-transparent rounded-lg text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 gap-1">
-                <button
-                    type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md transition-colors"
-                    title={showApiKey ? "Hide key" : "Show key"}
-                >
-                    {showApiKey ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    )}
-                </button>
-                <button
-                    type="submit"
-                    disabled={saveStatus === 'saving' || !localApiKey}
-                    className={`
-                        px-2.5 py-1.5 text-xs font-semibold text-white rounded-md transition-all shadow-sm
-                        ${saveStatus === 'saved' 
-                            ? 'bg-green-500 hover:bg-green-600' 
-                            : 'bg-indigo-600 hover:bg-indigo-500'
-                        }
-                        disabled:opacity-50 disabled:cursor-not-allowed
-                    `}
-                >
-                    {saveStatus === 'saving' ? '...' : saveStatus === 'saved' ? 'Saved' : 'Verify'}
-                </button>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-             {saveStatus === 'error' && saveError ? (
-                 <p className="text-xs font-medium text-red-500 flex items-center gap-1">
-                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" /></svg>
-                     {saveError}
-                 </p>
-             ) : (
-                 <span className="text-xs text-slate-400">Stored locally in your browser.</span>
-             )}
-             <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
-                 Get API Key 
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
-             </a>
-          </div>
-        </form>
-      </SettingItem>
+      <ApiKeyInput 
+        label="Gemini API Key"
+        description="Required for main chat, reasoning, and tool execution."
+        value={apiKey}
+        onSave={handleMainApiKeySave}
+        placeholder="Enter your primary Gemini API key"
+      />
+
+      {onSaveSuggestionApiKey && (
+          <ApiKeyInput 
+            label="Suggestion API Key (Optional)"
+            description="Used for background tasks (titles, suggestions, memory) to save rate limits on your main key."
+            value={suggestionApiKey || ''}
+            onSave={handleSuggestionApiKeySave}
+            placeholder="Enter a secondary API key"
+            isOptional
+          />
+      )}
+
+      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 pb-4 border-b border-gray-100 dark:border-white/5">
+         <span>Need a key?</span>
+         <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
+             Get API Key 
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
+         </a>
+      </div>
 
       <SettingItem label="Theme">
         <div className="w-full max-w-[240px]">

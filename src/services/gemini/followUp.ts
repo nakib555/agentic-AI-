@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -14,6 +15,7 @@ export const generateFollowUpSuggestions = async (conversation: Message[]): Prom
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ conversation }),
+            silent: true // Suppress errors for background tasks
         });
         
         if (!response.ok) {
@@ -27,7 +29,7 @@ export const generateFollowUpSuggestions = async (conversation: Message[]): Prom
         }
         return [];
     } catch (error) {
-        console.error("Follow-up suggestion generation failed:", error);
+        // console.error("Follow-up suggestion generation failed:", error);
         return [];
     }
 };

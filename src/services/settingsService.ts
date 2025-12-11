@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -9,6 +8,7 @@ import type { Model } from '../types';
 
 export type AppSettings = {
     apiKey: string;
+    suggestionApiKey: string; // Secondary key
     aboutUser: string;
     aboutResponse: string;
     temperature: number;

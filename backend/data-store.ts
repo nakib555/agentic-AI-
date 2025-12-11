@@ -45,6 +45,7 @@ export async function initDataStore() {
     // from the dynamically fetched list if the setting is empty.
     const defaultSettings = {
         apiKey: '',
+        suggestionApiKey: '', // Secondary key for background tasks
         aboutUser: '',
         aboutResponse: '',
         temperature: 0.7,

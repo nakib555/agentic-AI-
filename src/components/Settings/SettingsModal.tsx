@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -33,6 +32,8 @@ type SettingsModalProps = {
   onShowDataStructure: () => void;
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
+  suggestionApiKey: string;
+  onSaveSuggestionApiKey: (key: string) => void;
   aboutUser: string;
   setAboutUser: (prompt: string) => void;
   aboutResponse: string;
@@ -192,7 +193,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                     exit={{ opacity: 0, x: -10 }}
                                     transition={{ duration: 0.2, ease: "easeOut" }}
                                 >
-                                    {activeCategory === 'general' && <GeneralSettings onClearAllChats={props.onClearAllChats} onRunTests={props.onRunTests} onDownloadLogs={props.onDownloadLogs} onShowDataStructure={props.onShowDataStructure} apiKey={props.apiKey} onSaveApiKey={props.onSaveApiKey} theme={props.theme} setTheme={props.setTheme} />}
+                                    {activeCategory === 'general' && (
+                                        <GeneralSettings 
+                                            onClearAllChats={props.onClearAllChats} 
+                                            onRunTests={props.onRunTests} 
+                                            onDownloadLogs={props.onDownloadLogs} 
+                                            onShowDataStructure={props.onShowDataStructure} 
+                                            apiKey={props.apiKey} 
+                                            onSaveApiKey={props.onSaveApiKey} 
+                                            suggestionApiKey={props.suggestionApiKey}
+                                            onSaveSuggestionApiKey={props.onSaveSuggestionApiKey}
+                                            theme={props.theme} 
+                                            setTheme={props.setTheme} 
+                                        />
+                                    )}
                                     {activeCategory === 'model' && (
                                         <ModelSettings
                                             models={props.models}

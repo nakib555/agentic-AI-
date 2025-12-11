@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -37,9 +36,11 @@ type AppModalsProps = {
   onModelChange: (modelId: string) => void;
   modelsLoading: boolean;
   clearAllChats: () => void;
-  // API Key
+  // API Keys
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
+  suggestionApiKey: string;
+  onSaveSuggestionApiKey: (key: string) => void;
   // Custom Instructions
   aboutUser: string;
   setAboutUser: (value: string) => void;
@@ -126,6 +127,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           onShowDataStructure={props.onShowDataStructure}
           apiKey={props.apiKey}
           onSaveApiKey={props.onSaveApiKey}
+          suggestionApiKey={props.suggestionApiKey}
+          onSaveSuggestionApiKey={props.onSaveSuggestionApiKey}
           aboutUser={props.aboutUser}
           setAboutUser={props.setAboutUser}
           aboutResponse={props.aboutResponse}

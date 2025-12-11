@@ -11,7 +11,6 @@ import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import { getMarkdownComponents } from './markdownComponents';
-// We import local CSS as well, though index.html CDN is primary fallback
 import 'katex/dist/katex.min.css';
 
 type ManualCodeRendererProps = {
@@ -26,10 +25,10 @@ type ManualCodeRendererProps = {
 const processHighlights = (content: string): string => {
     if (!content) return '';
     
-    // FAST PATH: If no "==" exists, skip the expensive regex split entirely.
+    // FAST PATH: If no "==" exists, skip expensive regex.
     if (!content.includes('==')) return content;
     
-    // Split content by code blocks, inline code, display math, and inline math
+    // Split content by code blocks, inline code, display math, and inline math to protect them
     const parts = content.split(/(`{3}[\s\S]*?`{3}|`[^`]+`|\$\$[\s\S]*?\$\$|\$[^$\n]+\$)/g);
     
     return parts.map(part => {
@@ -37,8 +36,11 @@ const processHighlights = (content: string): string => {
         if (part.startsWith('`') || part.startsWith('$')) return part;
         
         // Apply highlight replacement only to regular text
+        // Captures: ==[color] text== OR ==text==
         return part
+            // Match specific color syntax: ==[red] text==
             .replace(/==\[([a-zA-Z]+)\](.*?)==/g, '<mark>[$1]$2</mark>')
+            // Match standard highlight: ==text==
             .replace(/==(.*?)==/g, '<mark>$1</mark>');
     }).join('');
 };
@@ -52,7 +54,6 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
   const renderStartTime = useRef(performance.now());
   renderStartTime.current = performance.now();
 
-  // Memoize components object creation to prevent ReactMarkdown re-instantiation
   const mergedComponents = useMemo(
     () => ({
       ...baseComponents,
@@ -61,19 +62,12 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
     [baseComponents, onRunCode, isRunDisabled]
   );
 
-  // Heavy regex parsing should be memoized based on the text input
   const processedText = useMemo(() => {
-    const t0 = performance.now();
-    const result = processHighlights(text);
-    const duration = performance.now() - t0;
-    if (duration > 10) {
-        console.debug(`[ManualCodeRenderer] Highlight processing took ${duration.toFixed(2)}ms for ${text.length} chars.`);
-    }
-    return result;
+    return processHighlights(text);
   }, [text]);
 
   return (
-    <div className="markdown-root">
+    <div className="markdown-content">
         <ReactMarkdown
             remarkPlugins={[remarkMath, remarkGfm]}
             rehypePlugins={[rehypeKatex, rehypeRaw]}
@@ -85,23 +79,11 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
   );
 };
 
-// Strict memoization: Only re-render if text length changes significantly or is done streaming
-// This allows the typewriter effect to flow without full Markdown re-parsing on every character
 export const ManualCodeRenderer = memo(ManualCodeRendererRaw, (prev, next) => {
-    // Always re-render if streaming state changes
     if (prev.isStreaming !== next.isStreaming) return false;
-    // Always re-render if run handler changes
     if (prev.onRunCode !== next.onRunCode) return false;
-    // If we are not streaming, simple equality check
     if (!next.isStreaming) return prev.text === next.text;
     
-    // During streaming, we rely on the component's internal optimizations.
-    // If we return 'true' here, we skip the render entirely.
-    // If we return 'false', we allow re-render.
-    // Given the request for performance debugging, let's log when we re-render.
-    const shouldRender = prev.text !== next.text;
-    if (shouldRender) {
-        // console.debug(`[ManualCodeRenderer] Re-rendering. Length delta: ${next.text.length - prev.text.length}`);
-    }
-    return !shouldRender;
+    // Optimize streaming re-renders
+    return prev.text === next.text;
 });

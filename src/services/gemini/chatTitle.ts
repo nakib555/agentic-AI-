@@ -13,6 +13,7 @@ export const generateChatTitle = async (messages: Message[]): Promise<string> =>
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages }),
+            silent: true // Suppress errors for background tasks
         });
 
         if (!response.ok) {
@@ -29,7 +30,7 @@ export const generateChatTitle = async (messages: Message[]): Promise<string> =>
         // A non-critical background task failed (e.g., API overload).
         // We warn instead of erroring to avoid red console noise for the user.
         if ((error as Error).message !== 'Version mismatch') {
-            console.warn("Title generation API call failed:", error);
+            // console.warn("Title generation API call failed:", error);
         }
     }
     

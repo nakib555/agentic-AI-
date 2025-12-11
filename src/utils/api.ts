@@ -23,17 +23,20 @@ export const setOnVersionMismatch = (callback: () => void) => {
     onVersionMismatch = callback;
 };
 
-export const fetchFromApi = async (url: string, options: RequestInit = {}): Promise<Response> => {
+type ApiOptions = RequestInit & { silent?: boolean };
+
+export const fetchFromApi = async (url: string, options: ApiOptions = {}): Promise<Response> => {
     const fullUrl = `${API_BASE_URL}${url}`;
     const method = options.method || 'GET';
+    const { silent, ...fetchOptions } = options;
     
     const headers = {
-        ...options.headers,
+        ...fetchOptions.headers,
         'X-Client-Version': process.env.APP_VERSION || 'unknown',
     };
     
     try {
-        const response = await fetch(fullUrl, { ...options, headers });
+        const response = await fetch(fullUrl, { ...fetchOptions, headers });
         
         if (response.status === 409) {
             console.warn(`[API Warning] ⚠️ Version mismatch detected for ${url}`);
@@ -43,7 +46,7 @@ export const fetchFromApi = async (url: string, options: RequestInit = {}): Prom
             throw new Error('Version mismatch');
         }
 
-        if (!response.ok) {
+        if (!response.ok && !silent) {
              // Clone the response to read the body for logging without consuming the stream for the caller
              let errorDetails = 'Unknown error';
              try {
@@ -62,11 +65,13 @@ export const fetchFromApi = async (url: string, options: RequestInit = {}): Prom
         
         return response;
     } catch (error) {
-        console.error(`[API Fatal] 💥 ${method} ${url} failed to execute`, {
-            cause: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-            how: 'Network error, fetch failed, or server unreachable'
-        });
+        if (!silent) {
+            console.error(`[API Fatal] 💥 ${method} ${url} failed to execute`, {
+                cause: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined,
+                how: 'Network error, fetch failed, or server unreachable'
+            });
+        }
         throw error;
     }
 };

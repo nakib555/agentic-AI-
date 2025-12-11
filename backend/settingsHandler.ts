@@ -50,3 +50,12 @@ export const getApiKey = async (): Promise<string | undefined> => {
         return process.env.API_KEY || process.env.GEMINI_API_KEY;
     }
 };
+
+export const getSuggestionApiKey = async (): Promise<string | undefined> => {
+    try {
+        const settings: any = await readData(SETTINGS_FILE_PATH);
+        return settings.suggestionApiKey || process.env.SUGGESTION_API_KEY;
+    } catch (error) {
+        return process.env.SUGGESTION_API_KEY;
+    }
+};

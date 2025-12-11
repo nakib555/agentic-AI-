@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -69,6 +68,7 @@ export const useAppLogic = () => {
 
   // --- Settings State ---
   const [apiKey, setApiKey] = useState('');
+  const [suggestionApiKey, setSuggestionApiKey] = useState('');
   const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
   const [temperature, setTemperature] = useState(DEFAULT_TEMPERATURE);
@@ -167,6 +167,7 @@ export const useAppLogic = () => {
             setSettingsLoading(true);
             const settings = await getSettings();
             setApiKey(settings.apiKey);
+            setSuggestionApiKey(settings.suggestionApiKey);
             setAboutUser(settings.aboutUser);
             setAboutResponse(settings.aboutResponse);
             setTemperature(settings.temperature);
@@ -215,6 +216,7 @@ export const useAppLogic = () => {
     }
   }, [processModelData, fetchModels]);
 
+  const handleSetSuggestionApiKey = createSettingUpdater(setSuggestionApiKey, 'suggestionApiKey');
   const handleSetAboutUser = createSettingUpdater(setAboutUser, 'aboutUser');
   const handleSetAboutResponse = createSettingUpdater(setAboutResponse, 'aboutResponse');
   const handleSetTemperature = createSettingUpdater(setTemperature, 'temperature');
@@ -401,7 +403,8 @@ export const useAppLogic = () => {
     confirmation, handleConfirm, handleCancel: () => setConfirmation(null),
     availableModels, availableImageModels, availableVideoModels, availableTtsModels,
     modelsLoading, activeModel, onModelChange: handleModelChange,
-    apiKey, onSaveApiKey: handleSetApiKey, aboutUser, setAboutUser: handleSetAboutUser,
+    apiKey, onSaveApiKey: handleSetApiKey, suggestionApiKey, onSaveSuggestionApiKey: handleSetSuggestionApiKey,
+    aboutUser, setAboutUser: handleSetAboutUser,
     aboutResponse, setAboutResponse: handleSetAboutResponse, temperature, setTemperature: handleSetTemperature,
     maxTokens, setMaxTokens: handleSetMaxTokens, imageModel, onImageModelChange: handleSetImageModel,
     videoModel, onVideoModelChange: handleSetVideoModel, ttsModel, onTtsModelChange: handleSetTtsModel,

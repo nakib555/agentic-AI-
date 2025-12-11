@@ -73,6 +73,7 @@ export const useTokenCounter = (
                         isAgentMode,
                         newMessage
                     }),
+                    silent: true // Suppress errors for background tasks
                 });
 
                 if (requestId !== latestRequestRef.current) return; // Ignore stale requests
@@ -82,10 +83,10 @@ export const useTokenCounter = (
                     setTokenCount(data.totalTokens);
                 } else {
                     // Fail silently for token counting
-                    console.warn('[TokenCounter] Failed to fetch token count');
+                    // console.warn('[TokenCounter] Failed to fetch token count');
                 }
             } catch (error) {
-                console.error('[TokenCounter] Error:', error);
+                // console.error('[TokenCounter] Error:', error);
             } finally {
                 if (requestId === latestRequestRef.current) {
                     setIsCounting(false);
