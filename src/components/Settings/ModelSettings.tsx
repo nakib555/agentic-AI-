@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,6 +7,7 @@
 import React from 'react';
 import type { Model } from '../../types';
 import { ModelSelector } from '../UI/ModelSelector';
+import { SettingItem } from './SettingItem';
 
 // Modern Icons
 const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /><path d="M5 3v4" /><path d="M9 5H3" /><path d="M19 19v4" /><path d="M21 21h-4" /></svg>;
@@ -142,20 +144,22 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                     <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">Cognitive Engine</h4>
                 </div>
                 
-                <div className="grid gap-6">
-                    <div className="space-y-3">
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Primary Reasoning Model</label>
-                        <ModelSelector 
-                            models={models} 
-                            selectedModel={selectedModel} 
-                            onModelChange={onModelChange} 
-                            disabled={disabled || noModelsAvailable} 
-                            placeholder="Select a reasoning model"
-                            icon={<SparklesIcon />}
-                            className="w-full sm:w-[320px]"
-                        />
-                        <p className="text-xs text-slate-500 dark:text-slate-400 ml-1">The main model used for chat, reasoning, and planning.</p>
-                    </div>
+                <div className="space-y-6">
+                    <SettingItem 
+                        label="Primary Reasoning Model" 
+                        description="The main model used for chat, reasoning, and planning."
+                    >
+                        <div className="w-full sm:w-[320px]">
+                            <ModelSelector 
+                                models={models} 
+                                selectedModel={selectedModel} 
+                                onModelChange={onModelChange} 
+                                disabled={disabled || noModelsAvailable} 
+                                placeholder="Select a reasoning model"
+                                icon={<SparklesIcon />}
+                            />
+                        </div>
+                    </SettingItem>
 
                     <TemperatureControl 
                         value={temperature} 
@@ -179,45 +183,45 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                     <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">Multimodal Suite</h4>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Image Generation</label>
-                        <ModelSelector 
-                            models={imageModels} 
-                            selectedModel={imageModel} 
-                            onModelChange={onImageModelChange} 
-                            disabled={disabled || noModelsAvailable} 
-                            placeholder="Select image model"
-                            icon={<PhotoIcon />}
-                            className="w-full sm:w-[320px]"
-                        />
-                    </div>
+                <div className="space-y-6">
+                    <SettingItem label="Image Generation">
+                        <div className="w-full sm:w-[320px]">
+                            <ModelSelector 
+                                models={imageModels} 
+                                selectedModel={imageModel} 
+                                onModelChange={onImageModelChange} 
+                                disabled={disabled || noModelsAvailable} 
+                                placeholder="Select image model"
+                                icon={<PhotoIcon />}
+                            />
+                        </div>
+                    </SettingItem>
 
-                    <div className="space-y-3">
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Video Generation</label>
-                        <ModelSelector 
-                            models={videoModels} 
-                            selectedModel={videoModel} 
-                            onModelChange={onVideoModelChange} 
-                            disabled={disabled || noModelsAvailable} 
-                            placeholder="Select video model"
-                            icon={<VideoIcon />}
-                            className="w-full sm:w-[320px]"
-                        />
-                    </div>
+                    <SettingItem label="Video Generation">
+                        <div className="w-full sm:w-[320px]">
+                            <ModelSelector 
+                                models={videoModels} 
+                                selectedModel={videoModel} 
+                                onModelChange={onVideoModelChange} 
+                                disabled={disabled || noModelsAvailable} 
+                                placeholder="Select video model"
+                                icon={<VideoIcon />}
+                            />
+                        </div>
+                    </SettingItem>
 
-                    <div className="space-y-3 md:col-span-2">
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Speech Synthesis (TTS)</label>
-                        <ModelSelector 
-                            models={ttsModels} 
-                            selectedModel={ttsModel} 
-                            onModelChange={onTtsModelChange} 
-                            disabled={disabled || noModelsAvailable} 
-                            placeholder="Select TTS model"
-                            icon={<SpeakerIcon />}
-                            className="w-full sm:w-[320px]"
-                        />
-                    </div>
+                    <SettingItem label="Speech Synthesis (TTS)">
+                        <div className="w-full sm:w-[320px]">
+                            <ModelSelector 
+                                models={ttsModels} 
+                                selectedModel={ttsModel} 
+                                onModelChange={onTtsModelChange} 
+                                disabled={disabled || noModelsAvailable} 
+                                placeholder="Select TTS model"
+                                icon={<SpeakerIcon />}
+                            />
+                        </div>
+                    </SettingItem>
                 </div>
             </section>
         </div>
