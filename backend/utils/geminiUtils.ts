@@ -104,53 +104,14 @@ async function retryOperation<T>(operation: () => Promise<T>): Promise<T> {
   throw lastError;
 }
 
-function applyModelFallback<T extends { model: string }>(request: T): T {
-    const modelId = request.model;
-    if (modelId.includes('pro')) {
-        const newModel = modelId.replace('pro', 'flash');
-        console.warn(`[FALLBACK] Model request failed. Falling back from '${modelId}' to '${newModel}'.`);
-        return { ...request, model: newModel };
-    }
-    // Only fallback to flash if we aren't already there.
-    if (modelId !== 'gemini-2.5-flash') {
-        console.warn(`[FALLBACK] Model request failed for '${modelId}'. Falling back to 'gemini-2.5-flash'.`);
-        return { ...request, model: 'gemini-2.5-flash' };
-    }
-    return request;
-}
-
 export async function generateContentWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<GenerateContentResponse> {
   const operation = async () => ai.models.generateContent(request);
-  try {
-    return await retryOperation(operation);
-  } catch (error) {
-    // Only attempt fallback if we haven't already retried extensively within retryOperation
-    // OR if the error wasn't strictly rate-limiting (e.g. model overload 503)
-    console.warn(`[RETRY] All retries failed for model ${request.model}. Attempting fallback...`);
-    const fallbackRequest = applyModelFallback(request);
-    
-    // If fallback is same as original (e.g. already flash), just re-throw
-    if (fallbackRequest.model === request.model) throw error;
-
-    await throttle();
-    // One final try with the fallback model (no complex retry loop to avoid infinite waits)
-    return await ai.models.generateContent(fallbackRequest);
-  }
+  return await retryOperation(operation);
 }
 
 export async function generateContentStreamWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<GenerateContentStreamResult> {
   const operation = async () => (await ai.models.generateContentStream(request)) as unknown as GenerateContentStreamResult;
-  try {
-    return await retryOperation(operation);
-  } catch (error) {
-    console.warn(`[RETRY] All retries failed for streaming model ${request.model}. Attempting fallback...`);
-    const fallbackRequest = applyModelFallback(request);
-    
-    if (fallbackRequest.model === request.model) throw error;
-
-    await throttle();
-    return (await ai.models.generateContentStream(fallbackRequest)) as unknown as GenerateContentStreamResult;
-  }
+  return await retryOperation(operation);
 }
 
 export async function generateImagesWithRetry(ai: GoogleGenAI, request: any): Promise<GenerateImagesResponse> {
