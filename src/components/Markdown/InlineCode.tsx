@@ -44,6 +44,9 @@ export const InlineCode: React.FC<InlineCodeProps> = ({ children, className = ''
       renderedChildren = parseContent(children);
   }
 
+  // Remove potential 'node' prop if it slipped through props spreading from react-markdown
+  const { node, ...safeProps } = props as any;
+
   return (
     <code 
       className={`
@@ -61,7 +64,7 @@ export const InlineCode: React.FC<InlineCodeProps> = ({ children, className = ''
         break-words
         ${className}
       `}
-      {...props}
+      {...safeProps}
     >
       {renderedChildren}
     </code>

@@ -67,11 +67,7 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
     img: (props: any) => React.createElement('img', { loading: "lazy", ...props }),
     mark: (props: any) => React.createElement(StyledMark, props),
 
-    code: ({ inline, className, children, isBlock, ...props }: any) => {
-        if (inline) {
-             return React.createElement(InlineCode, { className, ...props }, children);
-        }
-
+    code: ({ inline, className, children, isBlock, node, ...props }: any) => {
         const match = /language-(\w+)/.exec(className || '');
         const language = match ? match[1] : '';
         

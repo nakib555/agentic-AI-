@@ -153,25 +153,3 @@
 .markdown-content tr:hover td {
   background-color: var(--bg-layer-2);
 }
-
-/* --- Inline Code (The Pill Look) --- */
-.markdown-content :not(pre) > code {
-  font-family: 'Fira Code', 'Roboto Mono', monospace;
-  font-size: 0.85em;
-  padding: 0.2em 0.4em;
-  border-radius: 0.375rem;
-  background-color: var(--bg-layer-2);
-  color: var(--primary-text); /* Use brand text color for code */
-  border: 1px solid var(--border-subtle);
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-weight: inherit; /* Allow bold/italic to work */
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-}
-
-.dark .markdown-content :not(pre) > code {
-  background-color: rgba(255,255,255,0.1);
-  border-color: rgba(255,255,255,0.05);
-  color: #e0e7ff;
-}
