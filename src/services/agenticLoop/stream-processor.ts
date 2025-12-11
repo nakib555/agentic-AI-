@@ -67,7 +67,8 @@ export const processBackendStream = async (response: Response, callbacks: Stream
                     
                     // Prioritize text chunks for the buffering optimization
                     if (event.type === 'text-chunk') {
-                        pendingText = event.payload; 
+                        // ACCUMULATE deltas instead of replacing
+                        pendingText = (pendingText || '') + event.payload; 
                         if (animationFrameId === null) {
                             animationFrameId = requestAnimationFrame(flushTextUpdates);
                         }

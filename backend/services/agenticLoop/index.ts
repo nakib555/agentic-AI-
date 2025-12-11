@@ -86,6 +86,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         let hasSentPlan = false;
         let toolCalls: FunctionCall[] = [];
         let groundingMetadata: any = undefined;
+        let lastWorkflowUpdate = 0;
 
         try {
             console.log('[AGENT_LOOP] Invoking Gemini Stream...');
@@ -109,10 +110,17 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 const chunkText = getText(chunk);
                 if (chunkText) {
                     fullTextResponse += chunkText;
-                    callbacks.onTextChunk(fullTextResponse);
                     
-                    const parsedWorkflow = parseAgenticWorkflow(fullTextResponse, state.toolEvents, false);
-                    callbacks.onWorkflowUpdate(parsedWorkflow);
+                    // Optimization: Send DELTA text instead of full history
+                    callbacks.onTextChunk(chunkText);
+                    
+                    // Optimization: Throttle workflow updates (Parsing is expensive & payload is large)
+                    const now = Date.now();
+                    if (now - lastWorkflowUpdate > 150) { // Limit to ~6 updates/sec
+                        const parsedWorkflow = parseAgenticWorkflow(fullTextResponse, state.toolEvents, false);
+                        callbacks.onWorkflowUpdate(parsedWorkflow);
+                        lastWorkflowUpdate = now;
+                    }
                 }
 
                 const planMatch = fullTextResponse.includes('[USER_APPROVAL_REQUIRED]');
@@ -121,6 +129,10 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     hasSentPlan = true;
                     const planText = extractPlan(fullTextResponse);
                     
+                    // Ensure workflow is up to date before pausing
+                    const parsedWorkflow = parseAgenticWorkflow(fullTextResponse, state.toolEvents, false);
+                    callbacks.onWorkflowUpdate(parsedWorkflow);
+
                     const approval = await callbacks.onPlanReady(planText);
 
                     if (approval === false) {
@@ -129,8 +141,14 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     }
                     if (typeof approval === 'string') {
                         console.log('[AGENT_LOOP] User edited plan. Injecting updated plan.');
-                        fullTextResponse = approval + "\n\n[PLAN_APPROVED_BY_USER]"; 
-                        callbacks.onTextChunk(fullTextResponse);
+                        const updateText = "\n\n[PLAN_APPROVED_BY_USER]";
+                        fullTextResponse = approval + updateText;
+                        
+                        // Send the full replacement text as a "chunk" if needed, 
+                        // but since we are delta streaming, the frontend state might get desynced if we replace history.
+                        // However, strictly speaking, we are just appending to the LLM's context here.
+                        // For the UI, we just send the marker so it knows we moved on.
+                        callbacks.onTextChunk(updateText); 
                     }
                 }
             }
@@ -158,6 +176,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                  });
             }
 
+            // Final workflow update ensures end state is captured
             const finalWorkflow = parseAgenticWorkflow(fullTextResponse, state.toolEvents, toolCalls.length === 0 && !hasSentPlan);
             callbacks.onWorkflowUpdate(finalWorkflow);
 
@@ -204,8 +223,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         console.log('[AGENT_LOOP] Executing tools sequentially to respect rate limits...');
 
         // Execute tools SEQUENTIALLY to prevent API rate limit bursts
-        // Using Promise.all here caused 429 errors when multiple tools (e.g. 3 searches) 
-        // triggered Gemini API calls simultaneously.
         const toolResponses = [];
         
         for (const call of toolCalls) {
@@ -213,8 +230,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
             const event = newToolCallEvents.find(e => e.call === call)!;
             try {
-                // The toolExecutor (and subsequent API calls) are now globally throttled in geminiUtils.ts
-                // but sequential execution here doubles down on safety.
                 const result = await toolExecutor(call.name, call.args, event.id);
                 
                 callbacks.onToolResult(event.id, result);

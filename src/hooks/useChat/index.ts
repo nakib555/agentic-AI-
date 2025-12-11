@@ -242,8 +242,11 @@ export const useChat = (
                     onStart: (requestId) => {
                         requestIdRef.current = requestId;
                     },
-                    onTextChunk: (text) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text }));
+                    onTextChunk: (delta) => {
+                        // Append delta to current text
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (current) => ({ 
+                            text: (current.text || '') + delta 
+                        }));
                     },
                     onWorkflowUpdate: (workflow) => {
                         chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ workflow }));
@@ -278,10 +281,6 @@ export const useChat = (
                         }));
                     },
                     onPlanReady: (plan) => {
-                        // The event.payload in handler is { plan, callId } but here we might just receive plan if mapped simply.
-                        // However, stream-processor passes payload directly.
-                        // backend handler sends: writeEvent(res, 'plan-ready', { plan, callId });
-                        // So payload has both.
                         const payload = plan as any; 
                         chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: payload }));
                         chatHistoryHook.updateMessage(chatId, messageId, { executionState: 'pending_approval' });
