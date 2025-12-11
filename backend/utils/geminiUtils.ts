@@ -9,6 +9,7 @@ import {
   GenerateContentParameters,
   GenerateImagesResponse,
   GenerateContentResponse,
+  GenerateVideosResponse,
 } from "@google/genai";
 import { parseApiError } from './apiError.js';
 
@@ -105,7 +106,12 @@ async function retryOperation<T>(operation: () => Promise<T>): Promise<T> {
 }
 
 export async function generateContentWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<GenerateContentResponse> {
-  const operation = async () => ai.models.generateContent(request);
+  // Use the streaming endpoint internally to aggregate the response.
+  // This satisfies the requirement to use streamGenerateContent (generateContentStream) for all calls.
+  const operation = async () => {
+    const streamResult = await ai.models.generateContentStream(request);
+    return await streamResult.response;
+  };
   return await retryOperation(operation);
 }
 
@@ -116,6 +122,11 @@ export async function generateContentStreamWithRetry(ai: GoogleGenAI, request: G
 
 export async function generateImagesWithRetry(ai: GoogleGenAI, request: any): Promise<GenerateImagesResponse> {
     const operation = async () => ai.models.generateImages(request);
+    return await retryOperation(operation);
+}
+
+export async function generateVideosWithRetry(ai: GoogleGenAI, request: any): Promise<GenerateVideosResponse> {
+    const operation = async () => ai.models.generateVideos(request);
     return await retryOperation(operation);
 }
 

@@ -4,88 +4,95 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 /**
  * A hook that progressively reveals text to simulate a typewriter effect.
  * It catches up dynamically if the target text grows significantly faster than the typing speed.
  * 
- * OPTIMIZED: Uses requestAnimationFrame for 60fps smoothness and time-slicing
- * to prevent main thread blocking during heavy rendering.
+ * OPTIMIZED: Uses a persistent requestAnimationFrame loop that reads from refs
+ * to prevent React Effect churn (unmounting/remounting) on every character update.
  */
 export const useTypewriter = (targetText: string, isThinking: boolean) => {
-  // If not thinking (e.g. history load), show full text immediately.
+  // Initialize state. If not thinking (e.g. loading history), show full text immediately.
   const [displayedText, setDisplayedText] = useState(() => isThinking ? '' : targetText);
   
-  // Use a ref to track the current length to avoid closure staleness in the animation loop
+  // Refs for mutable state across frames without triggering re-renders
   const currentLength = useRef(isThinking ? 0 : targetText.length);
   const targetTextRef = useRef(targetText);
   const rafId = useRef<number | null>(null);
   const lastFrameTime = useRef<number>(0);
+  const isLoopRunning = useRef(false);
 
-  // Sync ref
+  // Sync the latest prop to the ref
   useEffect(() => {
     targetTextRef.current = targetText;
+    
+    // If the new text is shorter (e.g., reset/regenerate), snap immediately to valid range
+    if (targetText.length < currentLength.current) {
+        currentLength.current = targetText.length;
+        setDisplayedText(targetText);
+    }
+    
+    // Ensure loop is running if there is work to do
+    if (!isLoopRunning.current && currentLength.current < targetText.length) {
+        startLoop();
+    }
   }, [targetText]);
 
-  useEffect(() => {
-    // If we switched to a completely new message (length dropped), reset.
-    if (targetText.length < displayedText.length) {
-      currentLength.current = targetText.length;
-      setDisplayedText(targetText);
-      return;
-    }
+  const startLoop = useCallback(() => {
+      isLoopRunning.current = true;
+      rafId.current = requestAnimationFrame(animate);
+  }, []);
 
-    // If fully caught up, stop.
-    if (currentLength.current >= targetText.length) {
-        return;
-    }
-
-    const animate = (time: number) => {
-      // Initialize start time
+  const animate = useCallback((time: number) => {
+      // Initialize timing
       if (lastFrameTime.current === 0) lastFrameTime.current = time;
       
-      const delta = time - lastFrameTime.current;
+      // Calculate target length from ref
       const targetLen = targetTextRef.current.length;
 
-      // Target ~30-60fps. We update every frame, but calculating how many chars to add
-      // based on the gap between current and target.
-      if (currentLength.current < targetLen) {
-        
-        // Dynamic Velocity:
-        // The further behind we are, the faster we type.
-        // If we are 1000 chars behind, type 20 chars per frame.
-        // If we are 5 chars behind, type 1 char per frame.
-        const distance = targetLen - currentLength.current;
-        
-        let jump = 1;
-        if (distance > 200) jump = 15;
-        else if (distance > 100) jump = 8;
-        else if (distance > 50) jump = 4;
-        else if (distance > 20) jump = 2;
-
-        // Apply jump
-        currentLength.current += jump;
-        
-        // Clamp
-        if (currentLength.current > targetLen) currentLength.current = targetLen;
-
-        setDisplayedText(targetTextRef.current.slice(0, currentLength.current));
+      // If fully caught up, stop the loop to save resources
+      if (currentLength.current >= targetLen) {
+          isLoopRunning.current = false;
+          rafId.current = null;
+          lastFrameTime.current = 0; // Reset for next run
+          return;
       }
+
+      // Dynamic Velocity Calculation
+      // The further behind we are, the faster we type to catch up.
+      const distance = targetLen - currentLength.current;
+      let jump = 1;
+      
+      // Adaptive speed curve
+      if (distance > 200) jump = 15;       // Ultra fast catch-up
+      else if (distance > 100) jump = 8;   // Fast
+      else if (distance > 50) jump = 4;    // Medium
+      else if (distance > 20) jump = 2;    // Cruising
+
+      // Apply jump
+      currentLength.current += jump;
+      
+      // Clamp
+      if (currentLength.current > targetLen) currentLength.current = targetLen;
+
+      // Update State (Trigger Render)
+      setDisplayedText(targetTextRef.current.slice(0, currentLength.current));
 
       lastFrameTime.current = time;
       
-      if (currentLength.current < targetLen) {
-        rafId.current = requestAnimationFrame(animate);
-      }
-    };
+      // Schedule next frame
+      rafId.current = requestAnimationFrame(animate);
+  }, []);
 
-    rafId.current = requestAnimationFrame(animate);
-
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       if (rafId.current) cancelAnimationFrame(rafId.current);
+      isLoopRunning.current = false;
     };
-  }, [targetText, displayedText.length]); // Dependency on targetText length change
+  }, []);
 
   return displayedText;
 };

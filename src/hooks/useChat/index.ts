@@ -207,12 +207,10 @@ export const useChat = (
         let buffer = '';
 
         // --- Performance Optimization: Buffered State Updates ---
-        // We use requestAnimationFrame to decouple high-speed network events from React renders.
-        // The 'text-chunk' event sends the FULL text so far, so we only need to render the LATEST one
-        // that arrived within a single frame window (16ms).
+        // Use requestAnimationFrame to buffer rapid text chunks and update state only once per frame (approx 60fps).
+        // This prevents the React render cycle from choking on high-speed token streams.
         let pendingText: string | null = null;
         let animationFrameId: number | null = null;
-        let lastChunkTime = performance.now();
 
         const flushTextUpdates = () => {
             if (pendingText !== null) {
@@ -244,20 +242,14 @@ export const useChat = (
                             case 'ping':
                                 break;
                             case 'text-chunk':
-                                // Buffer text updates
-                                const now = performance.now();
-                                if (now - lastChunkTime < 5) {
-                                    // High frequency warning
-                                    // console.debug(`[Stream] Rapid chunks detected: ${now - lastChunkTime}ms`);
-                                }
-                                lastChunkTime = now;
-                                pendingText = event.payload;
+                                // Optimization: Don't update state immediately. Buffer it.
+                                pendingText = event.payload; // Payload is full text, so replace is safe
                                 if (animationFrameId === null) {
                                     animationFrameId = requestAnimationFrame(flushTextUpdates);
                                 }
                                 break;
                             case 'workflow-update':
-                                // Workflow updates are less frequent but complex objects, flush immediately
+                                // Workflow updates are complex objects, flush immediately to ensure UI responsiveness
                                 chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ workflow: event.payload }));
                                 break;
                             case 'tool-call-start':
@@ -297,7 +289,7 @@ export const useChat = (
                                 handleFrontendToolExecution(event.payload.callId, event.payload.toolName, event.payload.toolArgs);
                                 break;
                             case 'complete':
-                                // Ensure pending text is flushed before completing
+                                // Ensure any pending text is flushed before marking complete
                                 if (animationFrameId !== null) {
                                     cancelAnimationFrame(animationFrameId);
                                     flushTextUpdates();
@@ -319,7 +311,7 @@ export const useChat = (
                 }
             }
         } finally {
-            // Cleanup any pending animation frame on stream end/error
+            // Cleanup any pending animation frame on stream end/error/close
             if (animationFrameId !== null) {
                 cancelAnimationFrame(animationFrameId);
                 flushTextUpdates();

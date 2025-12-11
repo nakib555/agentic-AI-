@@ -8,12 +8,13 @@ import { GoogleGenAI } from "@google/genai";
 import { ToolError } from "../utils/apiError";
 import { fileStore } from "../services/fileStore";
 import { Buffer } from 'buffer';
+import { generateVideosWithRetry } from "../utils/geminiUtils.js";
 
 export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }, apiKey: string, chatId: string): Promise<string> => {
     const { prompt, aspectRatio = '16:9', resolution = '720p', model } = args;
 
     try {
-        let operation = await ai.models.generateVideos({
+        let operation = await generateVideosWithRetry(ai, {
             model: model,
             prompt: prompt,
             config: {
