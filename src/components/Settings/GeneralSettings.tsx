@@ -151,19 +151,25 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
 }) => {
 
   const handleMainApiKeySave = async (key: string) => {
+      const cleanKey = key.trim();
+      const cleanSuggestionKey = (suggestionApiKey || '').trim();
+
       // Allow saving if suggestion key is empty, but if both exist, they must be different
-      if (key && suggestionApiKey && key.trim() === suggestionApiKey.trim()) {
-          throw new Error("Main API Key must be different from Suggestion API Key.");
+      if (cleanKey && cleanSuggestionKey && cleanKey === cleanSuggestionKey) {
+          throw new Error("Conflict: Main Key cannot be identical to Suggestion Key. Leave Suggestion Key empty to share the Main Key.");
       }
-      await onSaveApiKey(key);
+      await onSaveApiKey(cleanKey);
   };
 
   const handleSuggestionApiKeySave = async (key: string) => {
-      if (key && apiKey && key.trim() === apiKey.trim()) {
-          throw new Error("Suggestion API Key must be different from Main API Key.");
+      const cleanKey = key.trim();
+      const cleanMainKey = (apiKey || '').trim();
+
+      if (cleanKey && cleanMainKey && cleanKey === cleanMainKey) {
+          throw new Error("Conflict: Suggestion Key cannot be identical to Main Key. Leave this empty to use the Main Key.");
       }
       if (onSaveSuggestionApiKey) {
-          onSaveSuggestionApiKey(key);
+          onSaveSuggestionApiKey(cleanKey);
       }
   };
 
