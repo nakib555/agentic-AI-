@@ -111,7 +111,7 @@ class ChatPersistenceManager {
     private chatId: string;
     private messageId: string; // The ID of the model response message
     private buffer: { text: string } | null = null;
-    private saveTimeout: NodeJS.Timeout | null = null;
+    private saveTimeout: ReturnType<typeof setTimeout> | null = null;
     private isSaving = false;
 
     constructor(chatId: string, messageId: string) {

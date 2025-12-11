@@ -285,8 +285,16 @@ export const useAppLogic = () => {
   }, [chat.currentChatId, updateChatModel]);
 
   // --- Hydration Effect ---
-  // When switching chats, load that chat's settings into the UI state
+  // When switching chats, load that chat's settings into the UI state.
+  // Use a ref to track the previous ID so we only hydrate on an actual switch,
+  // preventing the chat state from overwriting active user edits in settings.
+  const prevChatIdRef = useRef<string | null>(null);
+
   useEffect(() => {
+    // Only run hydration if the chat ID actually changed
+    if (chat.currentChatId === prevChatIdRef.current) return;
+    prevChatIdRef.current = chat.currentChatId;
+
     const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
     if (currentChat) {
         // Update local state to match current chat without triggering save handlers
@@ -297,7 +305,7 @@ export const useAppLogic = () => {
         if (currentChat.imageModel) setImageModel(currentChat.imageModel);
         if (currentChat.videoModel) setVideoModel(currentChat.videoModel);
     }
-  }, [chat.currentChatId, chat.chatHistory]); // Trigger when ID changes or history (properties) update
+  }, [chat.currentChatId, chat.chatHistory]); 
 
   // --- Health Check ---
   const checkBackendStatusTimeoutRef = useRef<number | null>(null);
