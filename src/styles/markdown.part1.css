@@ -109,6 +109,14 @@
   display: block;
 }
 
+/* --- SVG Handling --- */
+.markdown-content svg {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+  vertical-align: middle;
+}
+
 /* --- Tables (Professional Data Grid) --- */
 .markdown-content table {
   width: 100%;
