@@ -113,11 +113,10 @@
 .markdown-content table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1.5em 0;
+  margin: 0; /* Removed vertical margin to avoid extra spacing inside wrapper */
   font-size: 0.95em;
-  border-radius: 0.5rem;
-  overflow: hidden; /* For border radius */
-  border: 1px solid var(--border-default);
+  /* Border radius and overflow handled by wrapper component */
+  /* Border handled by wrapper component */
 }
 
 .markdown-content thead {

@@ -285,7 +285,7 @@ export const apiHandler = async (req: any, res: any) => {
                 const fullHistory = transformHistoryToGeminiFormat(historyMessages);
 
                 // 2. Append new message if provided
-                if (newMessage) {
+                if (newMessage && (newMessage.text || (newMessage.attachments && newMessage.attachments.length > 0))) {
                     fullHistory.push({
                         role: 'user',
                         parts: [
@@ -300,6 +300,12 @@ export const apiHandler = async (req: any, res: any) => {
                 // 3. Define System Instruction & Tools based on mode
                 const systemInstruction = isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
                 const tools = isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }];
+
+                // Check if history is empty. If so, the API will error on empty contents.
+                // We add a dummy empty string to satisfy the API and get the count for system prompt + tools.
+                if (fullHistory.length === 0) {
+                    fullHistory.push({ role: 'user', parts: [{ text: '' }] });
+                }
 
                 // 4. Count Tokens
                 // Note: We use ai.models.countTokens which accepts the same config as generateContent
