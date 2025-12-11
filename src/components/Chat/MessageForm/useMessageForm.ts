@@ -64,30 +64,57 @@ export const useMessageForm = (
   }, [inputValue, fileHandling.processedFiles.length]);
   
   // Handle automatic resizing of the input area
-  // Using useLayoutEffect to prevent visual flicker (FOUC) when resizing
+  // Uses a shadow element to calculate height, allowing for smooth CSS transitions on the real element
   useLayoutEffect(() => {
     const element = inputRef.current;
-    if (element) {
-        const MAX_HEIGHT_PX = 192;
-        
-        // To correctly calculate scrollHeight, the element must be allowed to shrink.
-        // We set height to 'auto' to get the natural height of the content.
-        element.style.height = 'auto'; 
-        
-        const scrollHeight = element.scrollHeight;
-        const SINGLE_LINE_THRESHOLD = 32; 
-        
-        setIsExpanded(scrollHeight > SINGLE_LINE_THRESHOLD || fileHandling.processedFiles.length > 0);
-        
-        if (scrollHeight > MAX_HEIGHT_PX) {
-            element.style.height = `${MAX_HEIGHT_PX}px`;
-            element.style.overflowY = 'auto';
-        } else {
-            element.style.height = `${scrollHeight}px`;
-            element.style.overflowY = 'hidden';
-        }
+    if (!element) return;
+
+    // Create a hidden shadow element to calculate exact height requirements
+    // This allows us to update the real element's height without the
+    // jitter caused by resetting to 'auto' directly on the visible element.
+    const shadow = document.createElement('textarea');
+    const computed = window.getComputedStyle(element);
+
+    // Copy critical styles that affect layout/sizing
+    shadow.value = inputValue;
+    shadow.style.width = computed.width;
+    shadow.style.padding = computed.padding;
+    shadow.style.border = computed.border;
+    shadow.style.fontSize = computed.fontSize;
+    shadow.style.fontFamily = computed.fontFamily;
+    shadow.style.fontWeight = computed.fontWeight;
+    shadow.style.lineHeight = computed.lineHeight;
+    shadow.style.letterSpacing = computed.letterSpacing;
+    shadow.style.boxSizing = computed.boxSizing;
+    
+    // Hide shadow
+    shadow.style.position = 'absolute';
+    shadow.style.visibility = 'hidden';
+    shadow.style.top = '-9999px';
+    shadow.style.left = '-9999px';
+    shadow.style.overflow = 'hidden';
+    shadow.style.height = '0';
+    shadow.style.minHeight = '0'; // Ensure it can shrink to content
+
+    document.body.appendChild(shadow);
+    
+    // Force calculation
+    const scrollHeight = shadow.scrollHeight;
+    
+    // Cleanup
+    document.body.removeChild(shadow);
+
+    const MAX_HEIGHT_PX = 192;
+    const SINGLE_LINE_THRESHOLD = 32; 
+    
+    setIsExpanded(scrollHeight > SINGLE_LINE_THRESHOLD || fileHandling.processedFiles.length > 0);
+    
+    if (scrollHeight > MAX_HEIGHT_PX) {
+        element.style.height = `${MAX_HEIGHT_PX}px`;
+        element.style.overflowY = 'auto';
     } else {
-        setIsExpanded(fileHandling.processedFiles.length > 0);
+        element.style.height = `${scrollHeight}px`;
+        element.style.overflowY = 'hidden';
     }
   }, [inputValue, fileHandling.processedFiles.length]);
 

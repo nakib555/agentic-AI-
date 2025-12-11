@@ -148,7 +148,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     onBlur={() => logic.setIsFocused(false)}
                     aria-label="Chat input"
                     disabled={!hasApiKey}
-                    className={`w-full bg-transparent text-slate-900 dark:text-slate-100 text-base sm:text-sm focus:outline-none resize-none leading-relaxed placeholder:text-transparent max-h-[200px] overflow-y-auto custom-scrollbar ${logic.isEnhancing ? 'opacity-50' : ''}`}
+                    className={`w-full bg-transparent text-slate-900 dark:text-slate-100 text-base sm:text-sm focus:outline-none resize-none leading-relaxed placeholder:text-transparent max-h-[200px] overflow-y-auto custom-scrollbar transition-[height] duration-200 ease-out ${logic.isEnhancing ? 'opacity-50' : ''}`}
                     rows={1}
                     style={{ minHeight: '24px' }}
                   />
