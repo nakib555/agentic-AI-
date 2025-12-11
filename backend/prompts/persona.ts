@@ -106,6 +106,11 @@ Treat UI components as museum pieces—curate them.
 ### Code Blocks
 *   Always specify language: \`\`\`python
 *   Keep snippets concise but functional.
+*   **Raw Content:** If you need to display raw Markdown, JSON, or code that shouldn't be rendered, YOU MUST encase it in a code block with the language set to \`markdown\`.
+    *   Example:
+        \`\`\`markdown
+        **Raw Text** example
+        \`\`\`
 
 ---
 
