@@ -11,6 +11,7 @@ import { useChatHistory } from '../useChatHistory';
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
 import { fetchFromApi } from '../../utils/api';
 import { toolImplementations as frontendToolImplementations } from '../../tools';
+import { processBackendStream } from '../../services/agenticLoop/stream-processor';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -200,121 +201,148 @@ export const useChat = (
         }
     }, [updateMessage, handleFrontendToolExecution]);
 
-
-    const processBackendStream = async (chatId: string, messageId: string, response: Response) => {
-        const reader = response.body!.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        // --- Performance Optimization: Buffered State Updates ---
-        // Use requestAnimationFrame to buffer rapid text chunks and update state only once per frame (approx 60fps).
-        // This prevents the React render cycle from choking on high-speed token streams.
-        let pendingText: string | null = null;
-        let animationFrameId: number | null = null;
-
-        const flushTextUpdates = () => {
-            if (pendingText !== null) {
-                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text: pendingText! }));
-                pendingText = null;
-            }
-            animationFrameId = null;
-        };
+    const startBackendChat = async (
+        task: 'chat' | 'regenerate',
+        chatId: string,
+        messageId: string, // The ID of the model message to update
+        newMessage: Message | null, // The new user message (null for regenerate)
+        chatConfig: Pick<ChatSession, 'model' | 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>,
+        runtimeSettings: { isAgentMode: boolean } & ChatSettings
+    ) => {
+        abortControllerRef.current = new AbortController();
 
         try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop() || '';
-
-                for (const line of lines) {
-                    if (!line.trim()) continue;
-                    try {
-                        const event = JSON.parse(line);
-                        switch (event.type) {
-                            case 'start':
-                                if (event.payload?.requestId) {
-                                    requestIdRef.current = event.payload.requestId;
-                                }
-                                break;
-                            case 'ping':
-                                break;
-                            case 'text-chunk':
-                                // Optimization: Don't update state immediately. Buffer it.
-                                pendingText = event.payload; // Payload is full text, so replace is safe
-                                if (animationFrameId === null) {
-                                    animationFrameId = requestAnimationFrame(flushTextUpdates);
-                                }
-                                break;
-                            case 'workflow-update':
-                                // Workflow updates are complex objects, flush immediately to ensure UI responsiveness
-                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ workflow: event.payload }));
-                                break;
-                            case 'tool-call-start':
-                                const newToolCallEvents = event.payload.map((toolEvent: any) => ({ 
-                                    id: toolEvent.id, 
-                                    call: toolEvent.call, 
-                                    startTime: Date.now() 
-                                }));
-                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({ toolCallEvents: [...(r.toolCallEvents || []), ...newToolCallEvents] }));
-                                break;
-                            case 'tool-update':
-                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({
-                                    toolCallEvents: r.toolCallEvents?.map(tc => {
-                                        if (tc.id === event.payload.id) {
-                                            const session = (tc.browserSession || { url: event.payload.url || '', logs: [], status: 'running' }) as BrowserSession;
-                                            if (event.payload.log) session.logs = [...session.logs, event.payload.log];
-                                            if (event.payload.screenshot) session.screenshot = event.payload.screenshot;
-                                            if (event.payload.title) session.title = event.payload.title;
-                                            if (event.payload.url) session.url = event.payload.url;
-                                            if (event.payload.status) session.status = event.payload.status;
-                                            return { ...tc, browserSession: { ...session } };
-                                        }
-                                        return tc;
-                                    })
-                                }));
-                                break;
-                            case 'tool-call-end':
-                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({
-                                    toolCallEvents: r.toolCallEvents?.map(tc => tc.id === event.payload.id ? { ...tc, result: event.payload.result, endTime: Date.now() } : tc)
-                                }));
-                                break;
-                            case 'plan-ready':
-                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: event.payload }));
-                                chatHistoryHook.updateMessage(chatId, messageId, { executionState: 'pending_approval' });
-                                break;
-                            case 'frontend-tool-request':
-                                handleFrontendToolExecution(event.payload.callId, event.payload.toolName, event.payload.toolArgs);
-                                break;
-                            case 'complete':
-                                // Ensure any pending text is flushed before marking complete
-                                if (animationFrameId !== null) {
-                                    cancelAnimationFrame(animationFrameId);
-                                    flushTextUpdates();
-                                }
-                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text: event.payload.finalText, endTime: Date.now(), groundingMetadata: event.payload.groundingMetadata }));
-                                break;
-                            case 'error':
-                                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error: event.payload, endTime: Date.now() }));
-                                break;
-                            case 'cancel':
-                                if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
-                                    abortControllerRef.current.abort();
-                                }
-                                break;
-                        }
-                    } catch(e) {
-                        console.error("[FRONTEND] Failed to parse stream event:", line, e);
+            const response = await fetchFromApi(`/api/handler?task=${task}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: abortControllerRef.current.signal,
+                body: JSON.stringify({
+                    chatId: chatId,
+                    messageId: messageId,
+                    model: chatConfig.model,
+                    newMessage: newMessage, // Send message object or null
+                    settings: {
+                        isAgentMode: runtimeSettings.isAgentMode,
+                        systemPrompt: runtimeSettings.systemPrompt,
+                        temperature: chatConfig.temperature,
+                        maxOutputTokens: chatConfig.maxOutputTokens || undefined,
+                        imageModel: runtimeSettings.imageModel,
+                        videoModel: runtimeSettings.videoModel,
+                        memoryContent,
                     }
-                }
+                }),
+            });
+
+            if (!response.ok || !response.body) throw new Error(await response.text() || `Request failed with status ${response.status}`);
+            
+            // Delegate to the stream processor service
+            await processBackendStream(
+                response,
+                {
+                    onStart: (requestId) => {
+                        requestIdRef.current = requestId;
+                    },
+                    onTextChunk: (text) => {
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text }));
+                    },
+                    onWorkflowUpdate: (workflow) => {
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ workflow }));
+                    },
+                    onToolCallStart: (toolCallEvents) => {
+                        const newEvents = toolCallEvents.map((toolEvent: any) => ({
+                            id: toolEvent.id,
+                            call: toolEvent.call,
+                            startTime: Date.now()
+                        }));
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({ toolCallEvents: [...(r.toolCallEvents || []), ...newEvents] }));
+                    },
+                    onToolUpdate: (payload) => {
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({
+                            toolCallEvents: r.toolCallEvents?.map(tc => {
+                                if (tc.id === payload.id) {
+                                    const session = (tc.browserSession || { url: payload.url || '', logs: [], status: 'running' }) as BrowserSession;
+                                    if (payload.log) session.logs = [...session.logs, payload.log];
+                                    if (payload.screenshot) session.screenshot = payload.screenshot;
+                                    if (payload.title) session.title = payload.title;
+                                    if (payload.url) session.url = payload.url;
+                                    if (payload.status) session.status = payload.status;
+                                    return { ...tc, browserSession: { ...session } };
+                                }
+                                return tc;
+                            })
+                        }));
+                    },
+                    onToolCallEnd: (payload) => {
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({
+                            toolCallEvents: r.toolCallEvents?.map(tc => tc.id === payload.id ? { ...tc, result: payload.result, endTime: Date.now() } : tc)
+                        }));
+                    },
+                    onPlanReady: (plan) => {
+                        // The event.payload in handler is { plan, callId } but here we might just receive plan if mapped simply.
+                        // However, stream-processor passes payload directly.
+                        // backend handler sends: writeEvent(res, 'plan-ready', { plan, callId });
+                        // So payload has both.
+                        const payload = plan as any; 
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: payload }));
+                        chatHistoryHook.updateMessage(chatId, messageId, { executionState: 'pending_approval' });
+                    },
+                    onFrontendToolRequest: (callId, toolName, toolArgs) => {
+                        handleFrontendToolExecution(callId, toolName, toolArgs);
+                    },
+                    onComplete: (payload) => {
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text: payload.finalText, endTime: Date.now(), groundingMetadata: payload.groundingMetadata }));
+                    },
+                    onError: (error) => {
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error, endTime: Date.now() }));
+                    },
+                    onCancel: () => {
+                        if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+                            abortControllerRef.current.abort();
+                        }
+                    }
+                },
+                abortControllerRef.current.signal
+            );
+
+        } catch (error) {
+            if ((error as Error).message === 'Version mismatch') {
+                // Handled globally
+            } else if ((error as Error).name !== 'AbortError') {
+                console.error('[FRONTEND] Backend stream failed.', { error });
+                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
             }
         } finally {
-            // Cleanup any pending animation frame on stream end/error/close
-            if (animationFrameId !== null) {
-                cancelAnimationFrame(animationFrameId);
-                flushTextUpdates();
+            if (!abortControllerRef.current?.signal.aborted) {
+                chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
+                chatHistoryHook.completeChatLoading(chatId);
+                abortControllerRef.current = null;
+                requestIdRef.current = null;
+                
+                // Fetch suggestions only if API key present
+                const finalChatState = chatHistoryRef.current.find(c => c.id === chatId);
+                if (finalChatState && apiKey) {
+                    const suggestions = await generateFollowUpSuggestions(finalChatState.messages);
+                     if (suggestions.length > 0) {
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
+                    }
+                }
+
+                // Force sync state
+                setTimeout(() => {
+                    const chatToPersist = chatHistoryRef.current.find(c => c.id === chatId);
+                    if (chatToPersist) {
+                        const cleanMessages = chatToPersist.messages.map(m => 
+                            m.id === messageId ? { ...m, isThinking: false } : m
+                        );
+                        updateChatProperty(chatId, { messages: cleanMessages });
+                    }
+                }, 100);
+
+            } else {
+                chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
+                chatHistoryHook.completeChatLoading(chatId);
+                abortControllerRef.current = null;
+                requestIdRef.current = null;
             }
         }
     };
@@ -404,85 +432,6 @@ export const useChat = (
         );
 
     }, [isLoading, currentChatId, chatHistory, cancelGeneration, chatHistoryHook, initialModel, settings, memoryContent, isAgentMode]);
-
-    const startBackendChat = async (
-        task: 'chat' | 'regenerate',
-        chatId: string,
-        messageId: string, // The ID of the model message to update
-        newMessage: Message | null, // The new user message (null for regenerate)
-        chatConfig: Pick<ChatSession, 'model' | 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>,
-        runtimeSettings: { isAgentMode: boolean } & ChatSettings
-    ) => {
-        abortControllerRef.current = new AbortController();
-
-        try {
-            const response = await fetchFromApi(`/api/handler?task=${task}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                signal: abortControllerRef.current.signal,
-                body: JSON.stringify({
-                    chatId: chatId,
-                    messageId: messageId,
-                    model: chatConfig.model,
-                    newMessage: newMessage, // Send message object or null
-                    settings: {
-                        isAgentMode: runtimeSettings.isAgentMode,
-                        systemPrompt: runtimeSettings.systemPrompt,
-                        temperature: chatConfig.temperature,
-                        maxOutputTokens: chatConfig.maxOutputTokens || undefined,
-                        imageModel: runtimeSettings.imageModel,
-                        videoModel: runtimeSettings.videoModel,
-                        memoryContent,
-                    }
-                }),
-            });
-
-            if (!response.ok || !response.body) throw new Error(await response.text() || `Request failed with status ${response.status}`);
-            
-            await processBackendStream(chatId, messageId, response);
-
-        } catch (error) {
-            if ((error as Error).message === 'Version mismatch') {
-                // Handled globally
-            } else if ((error as Error).name !== 'AbortError') {
-                console.error('[FRONTEND] Backend stream failed.', { error });
-                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
-            }
-        } finally {
-            if (!abortControllerRef.current?.signal.aborted) {
-                chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
-                chatHistoryHook.completeChatLoading(chatId);
-                abortControllerRef.current = null;
-                requestIdRef.current = null;
-                
-                // Fetch suggestions only if API key present
-                const finalChatState = chatHistoryRef.current.find(c => c.id === chatId);
-                if (finalChatState && apiKey) {
-                    const suggestions = await generateFollowUpSuggestions(finalChatState.messages);
-                     if (suggestions.length > 0) {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
-                    }
-                }
-
-                // Force sync state
-                setTimeout(() => {
-                    const chatToPersist = chatHistoryRef.current.find(c => c.id === chatId);
-                    if (chatToPersist) {
-                        const cleanMessages = chatToPersist.messages.map(m => 
-                            m.id === messageId ? { ...m, isThinking: false } : m
-                        );
-                        updateChatProperty(chatId, { messages: cleanMessages });
-                    }
-                }, 100);
-
-            } else {
-                chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
-                chatHistoryHook.completeChatLoading(chatId);
-                abortControllerRef.current = null;
-                requestIdRef.current = null;
-            }
-        }
-    };
     
     // Auto-title generation
     useEffect(() => {
