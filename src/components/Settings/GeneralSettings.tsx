@@ -183,7 +183,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
 
       {onSaveSuggestionApiKey && (
           <ApiKeyInput 
-            label="Suggestion API Key (Optional)"
+            label="AI Suggestion API Key (Optional)"
             description="Used for background tasks (titles, suggestions, memory) to save rate limits on your main key."
             value={suggestionApiKey || ''}
             onSave={handleSuggestionApiKeySave}

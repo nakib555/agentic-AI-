@@ -213,6 +213,7 @@ const AGENT_FALLBACK_PLACEHOLDERS = [
 export const usePlaceholder = (isEnabled: boolean, conversationContext: string, isAgentMode: boolean, hasApiKey: boolean) => {
     const [placeholder, setPlaceholder] = useState<string[]>(['Ask anything, or drop a file']);
     const isFetching = useRef(false);
+    const cycleCount = useRef(0);
     const contextRef = useRef({ conversationContext, isAgentMode, hasApiKey });
 
     // Keep the ref updated with the latest values without causing re-renders
@@ -237,13 +238,22 @@ export const usePlaceholder = (isEnabled: boolean, conversationContext: string, 
             });
         };
 
-        // Guard: If no API key, use fallback immediately without hitting the API
-        if (!currentHasApiKey) {
+        // CYCLE LOGIC:
+        // We want 5 fallback suggestions, then 1 AI suggestion, then repeat.
+        // Counts: 0 (Fallback), 1 (Fallback), 2 (Fallback), 3 (Fallback), 4 (Fallback), 5 (AI), 0 (Fallback)...
+        const currentCount = cycleCount.current;
+        cycleCount.current = (currentCount + 1) % 6; // Advances the cycle for next time
+
+        const shouldFetchAi = (currentCount === 5) && currentHasApiKey;
+
+        if (!shouldFetchAi) {
             setRandomFallback();
             return;
         }
 
         if (!currentContext.trim()) {
+            // Even if it's the AI's turn, if we lack context, AI suggestions might be weak.
+            // Fall back to pre-written ones for better initial UX.
             setRandomFallback();
             return;
         }
