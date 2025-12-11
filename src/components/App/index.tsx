@@ -11,6 +11,7 @@ import { ChatArea } from '../Chat/ChatArea';
 import { SourcesSidebar } from '../AI/SourcesSidebar';
 import { useAppLogic } from '../../hooks/useAppLogic';
 import { AppModals } from './AppModals';
+import { Toast } from '../UI/Toast';
 import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 } from './constants';
@@ -111,6 +112,13 @@ export const App = () => {
         setWidth={logic.handleSetSourcesSidebarWidth}
         isResizing={logic.isSourcesResizing}
         setIsResizing={logic.setIsSourcesResizing}
+      />
+
+      {/* Toast Notifications */}
+      <Toast 
+        message={logic.toast?.message || null} 
+        type={logic.toast?.type} 
+        onClose={logic.closeToast} 
       />
 
       <AppModals

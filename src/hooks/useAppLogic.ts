@@ -57,6 +57,15 @@ export const useAppLogic = () => {
     onCancel?: () => void;
     destructive?: boolean;
   } | null>(null);
+  
+  // Toast Notification State
+  const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
+
+  const showToast = useCallback((message: string, type: 'info' | 'success' | 'error' = 'info') => {
+      setToast({ message, type });
+  }, []);
+
+  const closeToast = useCallback(() => setToast(null), []);
 
 
   // --- Model Management ---
@@ -240,7 +249,8 @@ export const useAppLogic = () => {
     videoModel,
   }), [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel]);
 
-  const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, apiKey);
+  // Pass showToast to useChat
+  const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, apiKey, showToast);
   const { updateChatModel, updateChatSettings } = chat;
 
   // Handler Wrappers that update Global AND Current Chat
@@ -441,6 +451,7 @@ export const useAppLogic = () => {
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading, versionMismatch,
     retryConnection: checkBackendStatus,
     confirmation, handleConfirm, handleCancel: () => setConfirmation(null),
+    toast, closeToast, showToast, // Export toast functionality
     availableModels, availableImageModels, availableVideoModels, availableTtsModels,
     modelsLoading, activeModel, onModelChange: handleModelChange,
     apiKey, onSaveApiKey: handleSetApiKey, suggestionApiKey, onSaveSuggestionApiKey: handleSetSuggestionApiKey,

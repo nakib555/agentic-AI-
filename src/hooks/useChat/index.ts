@@ -22,12 +22,22 @@ type ChatSettings = {
     videoModel: string;
 };
 
-export const useChat = (initialModel: string, settings: ChatSettings, memoryContent: string, isAgentMode: boolean, apiKey: string) => {
+export const useChat = (
+    initialModel: string, 
+    settings: ChatSettings, 
+    memoryContent: string, 
+    isAgentMode: boolean, 
+    apiKey: string,
+    onShowToast?: (message: string, type: 'info' | 'success' | 'error') => void
+) => {
     const chatHistoryHook = useChatHistory();
     const { chatHistory, currentChatId, updateChatTitle, updateChatProperty } = chatHistoryHook;
     const abortControllerRef = useRef<AbortController | null>(null);
     const requestIdRef = useRef<string | null>(null); // For explicit cancellation
     const testResolverRef = useRef<((value: Message | PromiseLike<Message>) => void) | null>(null);
+    
+    // Track title generation attempts to prevent loops
+    const titleGenerationAttemptedRef = useRef<Set<string>>(new Set());
 
 
     // Refs to hold the latest state for callbacks
@@ -488,7 +498,13 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
         if (currentChat && currentChat.messages && currentChat.title === "New Chat" && currentChat.messages.length >= 2 && !currentChat.isLoading) {
           if (!apiKey) return;
 
-          updateChatTitle(currentChatId!, "Generating title...");
+          // Prevent loop if we already tried for this chat
+          if (titleGenerationAttemptedRef.current.has(currentChatId!)) return;
+          titleGenerationAttemptedRef.current.add(currentChatId!);
+
+          // Removed disruptive optimistic update: 
+          // updateChatTitle(currentChatId!, "Generating title...");
+
           generateChatTitle(currentChat.messages)
             .then(newTitle => {
                 const finalTitle = newTitle.length > 45 ? newTitle.substring(0, 42) + '...' : newTitle;
@@ -496,10 +512,12 @@ export const useChat = (initialModel: string, settings: ChatSettings, memoryCont
             })
             .catch(err => {
                 console.error("Failed to generate chat title:", err);
-                updateChatTitle(currentChatId!, "Chat"); 
+                if (onShowToast) {
+                    onShowToast("Failed to auto-generate chat title", "error");
+                }
             });
         }
-    }, [chatHistory, currentChatId, updateChatTitle, apiKey]);
+    }, [chatHistory, currentChatId, updateChatTitle, apiKey, onShowToast]);
   
   return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse, sendMessageForTest };
 };
