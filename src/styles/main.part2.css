@@ -51,7 +51,9 @@ html, body, #root {
   position: relative;
   background-color: var(--bg-page);
   isolation: isolate;
-  overflow: hidden;
+  /* Allow natural scrolling/selection if needed by children overflowing */
+  overflow: visible; 
+  user-select: text;
 }
 
 /* Highlight Jump Animation */

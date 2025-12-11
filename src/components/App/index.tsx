@@ -53,7 +53,7 @@ export const App = () => {
         onSettingsClick={() => logic.setIsSettingsOpen(true)}
       />
 
-      <main className="relative z-10 flex-1 flex flex-col overflow-hidden chat-background min-w-0">
+      <main className="relative z-10 flex-1 flex flex-col chat-background min-w-0">
         {/* Mobile Sidebar Toggle - Only visible on mobile when sidebar is closed */}
         {!logic.isDesktop && !logic.isSidebarOpen && (
           <button
