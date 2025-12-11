@@ -5,21 +5,21 @@
  */
 
 const darkTheme = {
-  // --- Base Layers (Midnight Obsidian) ---
-  "--bg-page": "#050505", // Deep void black
-  "--bg-layer-1": "#121212", // Rich obsidian panel
-  "--bg-layer-2": "#1c1c1c", // Slightly lighter for nesting
-  "--bg-layer-3": "#262626", // Tertiary/Hover states
-  "--bg-glass": "rgba(18, 18, 18, 0.8)", // Glassmorphism base
+  // --- Base Layers (Modern Zinc) ---
+  "--bg-page": "#09090b", // Zinc 950 - Rich, warm black
+  "--bg-layer-1": "#18181b", // Zinc 900 - Soft card background
+  "--bg-layer-2": "#27272a", // Zinc 800 - Borders/Separators
+  "--bg-layer-3": "#3f3f46", // Zinc 700 - Hover states
+  "--bg-glass": "rgba(24, 24, 27, 0.8)", // Glassmorphism base
 
-  // --- Text Colors (High Clarity) ---
-  "--text-primary": "#EDEDED", // Off-white (softer on eyes than #FFF)
-  "--text-secondary": "#A1A1AA", // Zinc 400
-  "--text-tertiary": "#52525B", // Zinc 600
+  // --- Text Colors (High Contrast) ---
+  "--text-primary": "#fafafa", // Zinc 50
+  "--text-secondary": "#a1a1aa", // Zinc 400
+  "--text-tertiary": "#71717a", // Zinc 500
   "--text-inverted": "#000000",
 
   // --- Borders (Subtle & Refined) ---
-  "--border-subtle": "rgba(255, 255, 255, 0.04)",
+  "--border-subtle": "rgba(255, 255, 255, 0.05)",
   "--border-default": "rgba(255, 255, 255, 0.08)",
   "--border-strong": "rgba(255, 255, 255, 0.15)",
   "--border-focus": "#6366f1", // Indigo 500
@@ -39,13 +39,13 @@ const darkTheme = {
   "--status-warning-text": "#fde047",
 
   // --- Component Specifics ---
-  "--bg-message-user": "#1c1c1c", // Matches layer 2
+  "--bg-message-user": "#27272a", // Matches layer 2
   "--bg-message-ai": "transparent",
-  "--bg-input": "#121212", // Matches layer 1
-  "--bg-input-secondary": "#1c1c1c",
-  "--bg-code": "#0a0a0a", // Deep black for code blocks
+  "--bg-input": "#18181b", // Matches layer 1
+  "--bg-input-secondary": "#27272a",
+  "--bg-code": "#121214", // Deep black for code blocks
   "--text-code": "#e4e4e7",
-  "--bg-sidebar": "#000000" // Pure black sidebar
+  "--bg-sidebar": "#09090b" // Matches page
 };
 
 export default darkTheme;

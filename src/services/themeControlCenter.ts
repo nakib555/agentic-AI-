@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -5,9 +6,10 @@
 
 import lightTheme from '../theme/light';
 import darkTheme from '../theme/dark';
+import spockeTheme from '../theme/spocke';
 import systemTheme from '../theme/system';
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = 'light' | 'dark' | 'spocke' | 'system';
 
 class ThemeControlCenterService {
   private currentMode: ThemeMode = 'system';
@@ -47,8 +49,14 @@ class ThemeControlCenterService {
   /**
    * Loads the specific theme file and injects values into the DOM.
    */
-  private applyThemeFile(theme: 'light' | 'dark') {
-    const themeTokens = theme === 'dark' ? darkTheme : lightTheme;
+  private applyThemeFile(theme: 'light' | 'dark' | 'spocke') {
+    let themeTokens;
+    switch (theme) {
+        case 'spocke': themeTokens = spockeTheme; break;
+        case 'dark': themeTokens = darkTheme; break;
+        default: themeTokens = lightTheme; break;
+    }
+
     const root = document.documentElement;
 
     // 1. Inject CSS Variables (The Colors)
@@ -57,7 +65,9 @@ class ThemeControlCenterService {
     });
 
     // 2. Toggle Tailwind Class (The Utilities)
-    if (theme === 'dark') {
+    // Spocke is fundamentally a dark theme, so we enable the 'dark' class
+    // to utilize dark-mode Tailwind variants (e.g. dark:bg-...).
+    if (theme === 'dark' || theme === 'spocke') {
       root.classList.add('dark');
       root.classList.remove('light');
     } else {
