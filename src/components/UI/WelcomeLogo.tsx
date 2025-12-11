@@ -46,6 +46,21 @@ export const WelcomeLogo: React.FC<LogoProps> = ({ className = "", size }) => {
               0%, 100% { transform: translateY(0px); }
               50% { transform: translateY(-4px); }
             }
+
+            /* Mobile Performance Optimization */
+            @media (max-width: 768px) {
+              .spin-slow-${id}, 
+              .spin-mid-${id}, 
+              .spin-fast-${id}, 
+              .spin-reverse-slow-${id}, 
+              .pulse-${id}, 
+              .float-${id} {
+                animation: none !important;
+                transform: none !important;
+                filter: none !important;
+                opacity: 1 !important;
+              }
+            }
           `}
         </style>
         

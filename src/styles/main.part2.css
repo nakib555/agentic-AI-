@@ -85,26 +85,53 @@ html, body, #root {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-/* Mobile Performance Overrides (4GB RAM Optimization) */
+/* Mobile Performance Overrides (Battery Saver & GPU Optimization) */
 @media screen and (max-width: 768px) {
+  /* 1. Disable Glassmorphism / Blurs */
   .glass-panel, 
   .glass-input,
   .backdrop-blur-md,
   .backdrop-blur-sm,
-  .backdrop-blur-xl {
+  .backdrop-blur-xl,
+  [class*="backdrop-blur"] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    /* Use solid backgrounds with slightly higher opacity instead of blur */
-    background-color: var(--bg-layer-1); 
+    /* Use solid backgrounds */
+    background-color: var(--bg-layer-1) !important;
+    /* Replace depth/blur with subtle border */
+    border: 1px solid var(--border-default) !important;
   }
   
-  /* Reduce shadow complexity on mobile */
-  .shadow-2xl, .shadow-xl, .shadow-lg {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  /* 2. Flatten Shadows */
+  .shadow-2xl, .shadow-xl, .shadow-lg, .shadow-md, .shadow-sm,
+  [class*="shadow-"] {
+    box-shadow: none !important;
+    /* Add border to maintain component separation */
+    border: 1px solid var(--border-subtle) !important;
+  }
+
+  /* 3. Disable Expensive Text Animations */
+  .shimmer-text {
+    animation: none !important;
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    color: var(--text-tertiary) !important;
+  }
+
+  /* 4. Disable Decorative Pulses */
+  .animate-pulse {
+    animation: none !important;
+    opacity: 0.7;
+  }
+
+  /* 5. Disable CSS Filters */
+  [class*="filter"], 
+  [class*="drop-shadow"] {
+    filter: none !important;
   }
 }
 
-/* Shimmer Text Animation */
+/* Shimmer Text Animation (Desktop Only via media query override above) */
 @keyframes shimmer {
   to {
     background-position: 200% center;
