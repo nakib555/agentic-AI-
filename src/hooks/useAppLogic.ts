@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -195,10 +196,11 @@ export const useAppLogic = () => {
     loadSettings();
   }, [fetchModels]);
 
+  // --- Settings Updaters ---
+  // Helper to create simple update handlers for global settings
   const createSettingUpdater = <T,>(setter: Dispatch<SetStateAction<T>>, key: string) => {
     return useCallback((newValue: T) => {
         setter(newValue);
-        // Fire-and-forget update to backend
         updateSettings({ [key]: newValue });
     }, [setter, key]);
   };
@@ -218,17 +220,74 @@ export const useAppLogic = () => {
     }
   }, [processModelData, fetchModels]);
 
+  // Simple global-only settings
   const handleSetSuggestionApiKey = createSettingUpdater(setSuggestionApiKey, 'suggestionApiKey');
   const handleSetAboutUser = createSettingUpdater(setAboutUser, 'aboutUser');
   const handleSetAboutResponse = createSettingUpdater(setAboutResponse, 'aboutResponse');
-  const handleSetTemperature = createSettingUpdater(setTemperature, 'temperature');
-  const handleSetMaxTokens = createSettingUpdater(setMaxTokens, 'maxTokens');
-  const handleSetImageModel = createSettingUpdater(setImageModel, 'imageModel');
-  const handleSetVideoModel = createSettingUpdater(setVideoModel, 'videoModel');
   const handleSetTtsModel = createSettingUpdater(setTtsModel, 'ttsModel');
   const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
+
+  // --- Chat Settings ---
+  // These require specialized handling to update the active chat if one exists
+  
+  const chatSettings = useMemo(() => ({
+    systemPrompt: `About me: ${aboutUser}\nHow to respond: ${aboutResponse}`,
+    temperature,
+    maxOutputTokens: maxTokens,
+    imageModel,
+    videoModel,
+  }), [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel]);
+
+  const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, apiKey);
+  const { updateChatModel, updateChatSettings } = chat;
+
+  // Handler Wrappers that update Global AND Current Chat
+  const handleSetTemperature = useCallback((val: number) => {
+      setTemperature(val);
+      updateSettings({ temperature: val });
+      if (chat.currentChatId) updateChatSettings(chat.currentChatId, { temperature: val });
+  }, [chat.currentChatId, updateChatSettings]);
+
+  const handleSetMaxTokens = useCallback((val: number) => {
+      setMaxTokens(val);
+      updateSettings({ maxTokens: val });
+      if (chat.currentChatId) updateChatSettings(chat.currentChatId, { maxOutputTokens: val });
+  }, [chat.currentChatId, updateChatSettings]);
+
+  const handleSetImageModel = useCallback((val: string) => {
+      setImageModel(val);
+      updateSettings({ imageModel: val });
+      if (chat.currentChatId) updateChatSettings(chat.currentChatId, { imageModel: val });
+  }, [chat.currentChatId, updateChatSettings]);
+
+  const handleSetVideoModel = useCallback((val: string) => {
+      setVideoModel(val);
+      updateSettings({ videoModel: val });
+      if (chat.currentChatId) updateChatSettings(chat.currentChatId, { videoModel: val });
+  }, [chat.currentChatId, updateChatSettings]);
+
+  const handleModelChange = useCallback((modelId: string) => {
+    setActiveModel(modelId);
+    updateSettings({ activeModel: modelId }); // Persist global default
+    if (chat.currentChatId) updateChatModel(chat.currentChatId, modelId);
+  }, [chat.currentChatId, updateChatModel]);
+
+  // --- Hydration Effect ---
+  // When switching chats, load that chat's settings into the UI state
+  useEffect(() => {
+    const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
+    if (currentChat) {
+        // Update local state to match current chat without triggering save handlers
+        // This ensures the UI controls reflect the active chat's configuration
+        if (currentChat.model) setActiveModel(currentChat.model);
+        if (currentChat.temperature !== undefined) setTemperature(currentChat.temperature);
+        if (currentChat.maxOutputTokens !== undefined) setMaxTokens(currentChat.maxOutputTokens);
+        if (currentChat.imageModel) setImageModel(currentChat.imageModel);
+        if (currentChat.videoModel) setVideoModel(currentChat.videoModel);
+    }
+  }, [chat.currentChatId, chat.chatHistory]); // Trigger when ID changes or history (properties) update
 
   // --- Health Check ---
   const checkBackendStatusTimeoutRef = useRef<number | null>(null);
@@ -265,18 +324,6 @@ export const useAppLogic = () => {
   }, [checkBackendStatus]);
 
 
-  // --- Chat ---
-  const chatSettings = useMemo(() => ({
-    systemPrompt: `About me: ${aboutUser}\nHow to respond: ${aboutResponse}`,
-    temperature,
-    maxOutputTokens: maxTokens,
-    imageModel,
-    videoModel,
-  }), [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel]);
-
-  const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, apiKey);
-  const { updateChatModel, updateChatSettings } = chat;
-
   const startNewChat = useCallback(async () => {
     const mostRecentChat = chat.chatHistory[0];
     // Don't create duplicates of empty new chats
@@ -302,16 +349,6 @@ export const useAppLogic = () => {
       setConfirmation(null);
   }, [confirmation]);
 
-  // --- Handlers ---
-  const handleModelChange = useCallback((modelId: string) => {
-    setActiveModel(modelId);
-    updateSettings({ activeModel: modelId }); // Persist selection
-    if (chat.currentChatId) updateChatModel(chat.currentChatId, modelId);
-  }, [chat.currentChatId, updateChatModel]);
-  
-  useEffect(() => {
-    if (chat.currentChatId) updateChatSettings(chat.currentChatId, { temperature, maxOutputTokens: maxTokens, imageModel, videoModel });
-  }, [temperature, maxTokens, imageModel, videoModel, chat.currentChatId, updateChatSettings]);
   
   useEffect(() => {
     const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
