@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -153,6 +152,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                             disabled={disabled || noModelsAvailable} 
                             placeholder="Select a reasoning model"
                             icon={<SparklesIcon />}
+                            className="w-full sm:w-[320px]"
                         />
                         <p className="text-xs text-slate-500 dark:text-slate-400 ml-1">The main model used for chat, reasoning, and planning.</p>
                     </div>
@@ -189,6 +189,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                             disabled={disabled || noModelsAvailable} 
                             placeholder="Select image model"
                             icon={<PhotoIcon />}
+                            className="w-full sm:w-[320px]"
                         />
                     </div>
 
@@ -201,6 +202,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                             disabled={disabled || noModelsAvailable} 
                             placeholder="Select video model"
                             icon={<VideoIcon />}
+                            className="w-full sm:w-[320px]"
                         />
                     </div>
 
@@ -213,6 +215,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                             disabled={disabled || noModelsAvailable} 
                             placeholder="Select TTS model"
                             icon={<SpeakerIcon />}
+                            className="w-full sm:w-[320px]"
                         />
                     </div>
                 </div>

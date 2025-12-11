@@ -75,7 +75,7 @@ const MenuItem: React.FC<{ onClick: () => void; disabled: boolean; children: Rea
         <motion.button 
             onClick={onClick}
             disabled={disabled}
-            className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all text-slate-700 dark:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+            className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
             whileHover={{ x: 2, backgroundColor: 'rgba(var(--primary-main), 0.1)' }}
         >
             <span className="text-slate-400 dark:text-slate-500">{children}</span>
@@ -128,9 +128,9 @@ export const ChatHeader = ({ onImportChat, onExportChat, onShareChat, isChatActi
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const baseButtonClasses = "w-11 h-11 flex items-center justify-center rounded-full transition-all duration-200 backdrop-blur-md border shadow-sm hover:scale-105 active:scale-95 touch-manipulation";
-    const activeClasses = "bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/40";
-    const inactiveClasses = "bg-white/60 text-slate-700 border-slate-200/80 hover:bg-white/90 dark:bg-black/20 dark:text-slate-200 dark:border-white/10 dark:hover:bg-black/40";
+    const baseButtonClasses = "w-11 h-11 flex items-center justify-center rounded-full transition-all duration-200 bg-white/60 dark:bg-black/20 border shadow-sm hover:scale-105 active:scale-95 touch-manipulation";
+    const activeClasses = "text-indigo-700 border-indigo-200 dark:text-indigo-300 dark:border-indigo-500/40";
+    const inactiveClasses = "text-slate-700 border-slate-200/80 hover:bg-white dark:text-slate-200 dark:border-white/10 dark:hover:bg-black/40";
     
     const moreOptionsButtonClasses = `${baseButtonClasses} ${isMenuOpen ? activeClasses : inactiveClasses}`;
 
@@ -148,7 +148,7 @@ export const ChatHeader = ({ onImportChat, onExportChat, onShareChat, isChatActi
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-sm min-h-[32px]" title={chatTitle}>
+                                className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 border border-slate-200/80 dark:border-white/10 shadow-sm min-h-[32px]" title={chatTitle}>
                                 
                                 {isAnimatingTitle && animationKey ? (
                                     <TextType
@@ -190,7 +190,7 @@ export const ChatHeader = ({ onImportChat, onExportChat, onShareChat, isChatActi
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 8, scale: 0.95 }}
                                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                    className="absolute right-0 top-full mt-2 w-64 bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 p-2 z-20 origin-top-right overflow-hidden"
+                                    className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl border border-gray-200 dark:border-white/10 p-2 z-20 origin-top-right overflow-hidden"
                                 >
                                     <ul className="flex flex-col">
                                         <MenuSectionTitle>Actions</MenuSectionTitle>

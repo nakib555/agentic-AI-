@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,10 +7,10 @@
 const lightTheme = {
   // --- Base Layers ---
   "--bg-page": "#f8f9fa",
-  "--bg-layer-1": "rgba(255, 255, 255, 0.8)",
+  "--bg-layer-1": "#ffffff",
   "--bg-layer-2": "#f1f5f9",
   "--bg-layer-3": "#e2e8f0",
-  "--bg-glass": "rgba(255, 255, 255, 0.7)",
+  "--bg-glass": "#ffffff",
 
   // --- Text Colors ---
   "--text-primary": "#0f172a",
@@ -39,12 +40,12 @@ const lightTheme = {
 
   // --- Component Specifics ---
   "--bg-message-user": "#ffffff",
-  "--bg-message-ai": "rgba(255, 255, 255, 0.5)",
-  "--bg-input": "rgba(255, 255, 255, 0.8)",
+  "--bg-message-ai": "#f1f5f9",
+  "--bg-input": "#ffffff",
   "--bg-input-secondary": "#f8fafc",
   "--bg-code": "#f1f5f9",
   "--text-code": "#1e293b",
-  "--bg-sidebar": "rgba(255, 255, 255, 0.7)"
+  "--bg-sidebar": "#ffffff"
 };
 
 export default lightTheme;
