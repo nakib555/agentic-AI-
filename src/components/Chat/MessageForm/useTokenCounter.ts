@@ -6,7 +6,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { fetchFromApi } from '../../../utils/api';
-import { fileToBase64 } from '../../../utils/fileUtils';
 import type { ProcessedFile } from './types';
 
 // Debounce interval to prevent API flooding
@@ -18,7 +17,8 @@ export const useTokenCounter = (
     isAgentMode: boolean,
     model: string,
     chatId: string | null,
-    hasApiKey: boolean
+    hasApiKey: boolean,
+    historyTrigger: string | number
 ) => {
     const [tokenCount, setTokenCount] = useState<number | null>(null);
     const [isCounting, setIsCounting] = useState(false);
@@ -97,7 +97,7 @@ export const useTokenCounter = (
         return () => {
             if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
         };
-    }, [inputValue, files, isAgentMode, model, chatId, hasApiKey]);
+    }, [inputValue, files, isAgentMode, model, chatId, hasApiKey, historyTrigger]);
 
     return {
         formattedCount: tokenCount !== null ? formatCount(tokenCount) : null,

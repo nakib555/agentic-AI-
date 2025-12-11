@@ -7,7 +7,6 @@
 import React, { forwardRef, useMemo } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { AttachedFilePreview } from './AttachedFilePreview';
-import { ProactiveAssistance } from './ProactiveAssistance';
 import { UploadMenu } from './UploadMenu';
 import { useMessageForm } from './useMessageForm';
 import { type MessageFormHandle } from './types';
@@ -44,6 +43,11 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   const hasText = logic.inputValue.trim().length > 0 && logic.processedFiles.length === 0;
   const hasInput = logic.inputValue.length > 0 || logic.processedFiles.length > 0;
 
+  // Calculate history trigger for token counter
+  // Updates when message count changes or the last message's thinking state changes
+  const lastMessage = messages[messages.length - 1];
+  const historyTrigger = lastMessage ? `${lastMessage.id}-${lastMessage.isThinking ? 'thinking' : 'done'}-${messages.length}` : messages.length;
+
   const iconBtnClass = `
     flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200
     text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-indigo-600 dark:hover:text-indigo-300
@@ -66,7 +70,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
             layout
         >
             <AnimatePresence>
-                {(logic.proactiveSuggestions.length > 0 || logic.processedFiles.length > 0) && (
+                {(logic.processedFiles.length > 0) && (
                     <motion.div 
                         initial={{ opacity: 0, height: 0 }} 
                         animate={{ opacity: 1, height: 'auto' }} 
@@ -74,9 +78,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         className="overflow-hidden"
                     >
                         <div className="px-3 pt-3 flex flex-col gap-2">
-                            {logic.proactiveSuggestions.length > 0 && (
-                                <ProactiveAssistance suggestions={logic.proactiveSuggestions} onSuggestionClick={logic.handleSuggestionClick} />
-                            )}
                             {logic.processedFiles.length > 0 && (
                                 <div className="flex flex-col gap-2">
                                     {logic.processedFiles.map((pf) => (
@@ -241,6 +242,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         hasApiKey={hasApiKey}
                         model={activeModel || 'gemini-2.5-flash'}
                         chatId={currentChatId || null}
+                        historyTrigger={historyTrigger}
                     />
                 </div>
                 <div className="flex justify-center">
@@ -274,14 +276,15 @@ const TokenCounterDisplay: React.FC<{
     isAgentMode: boolean, 
     hasApiKey: boolean,
     model: string,
-    chatId: string | null
-}> = ({ inputValue, files, isAgentMode, hasApiKey, model, chatId }) => {
-    const { formattedCount, isCounting } = useTokenCounter(inputValue, files, isAgentMode, model, chatId, hasApiKey);
+    chatId: string | null,
+    historyTrigger: string | number
+}> = ({ inputValue, files, isAgentMode, hasApiKey, model, chatId, historyTrigger }) => {
+    const { formattedCount, isCounting } = useTokenCounter(inputValue, files, isAgentMode, model, chatId, hasApiKey, historyTrigger);
 
     if (!hasApiKey) return null;
 
     return (
-        <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-400 dark:text-slate-500 min-w-[60px]" title="Estimated input token count">
+        <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-400 dark:text-slate-500 min-w-[60px]" title="Estimated total tokens (context + input)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 opacity-70">
                 <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
             </svg>

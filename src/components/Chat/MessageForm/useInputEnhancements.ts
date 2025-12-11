@@ -1,15 +1,15 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 // This hook manages features that enhance the user's text input,
-// such as voice input, prompt enhancement, and proactive suggestions.
+// such as voice input, prompt enhancement.
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useVoiceInput } from '../../../hooks/useVoiceInput';
 import { enhanceUserPromptStream } from '../../../services/promptImprover';
-import { PROACTIVE_SUGGESTIONS, isComplexText } from './utils';
 
 export const useInputEnhancements = (
     inputValue: string,
@@ -18,21 +18,11 @@ export const useInputEnhancements = (
     onSubmit: (message: string, files?: File[], options?: { isThinkingModeEnabled?: boolean }) => void
 ) => {
   const [isEnhancing, setIsEnhancing] = useState(false);
-  const [proactiveSuggestions, setProactiveSuggestions] = useState<string[]>([]);
 
   // --- Voice Input ---
   const { isRecording, startRecording, stopRecording, isSupported } = useVoiceInput({
     onTranscriptUpdate: setInputValue,
   });
-
-  // --- Proactive Suggestions ---
-  useEffect(() => {
-    if (!hasFiles && isComplexText(inputValue)) {
-      setProactiveSuggestions(PROACTIVE_SUGGESTIONS);
-    } else {
-      setProactiveSuggestions([]);
-    }
-  }, [inputValue, hasFiles]);
 
   // --- Event Handlers ---
   const handleEnhancePrompt = async () => {
@@ -81,27 +71,17 @@ export const useInputEnhancements = (
     }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    const formattedMessage = `${suggestion}:\n\`\`\`\n${inputValue}\n\`\`\``;
-    // This submission is a special case that bypasses the normal form submission
-    // to include the thinking mode option.
-    onSubmit(formattedMessage, [], { isThinkingModeEnabled: true });
-    setInputValue(''); // Clear input after submitting
-  };
-
   const handleMicClick = () => {
     isRecording ? stopRecording() : (setInputValue(''), startRecording());
   };
 
   return {
     isEnhancing,
-    proactiveSuggestions,
     isRecording,
     startRecording,
     stopRecording,
     isSupported,
     handleEnhancePrompt,
-    handleSuggestionClick,
     handleMicClick,
   };
 };
