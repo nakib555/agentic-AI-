@@ -3,11 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { PREAMBLE } from './preamble';
-import { AGENTIC_WORKFLOW } from './agenticWorkflow';
-import { PERSONA_AND_UI_FORMATTING } from './persona';
-import { TOOLS_OVERVIEW } from './tools';
-import { MATH_RENDERING_INSTRUCTIONS } from './math.js';
+import { PREAMBLE } from './preamble.js';
+import { AGENTIC_WORKFLOW } from './agenticWorkflow.js';
+import { PERSONA_AND_UI_FORMATTING } from './persona.js';
+import { TOOLS_OVERVIEW } from './tools.js';
 
 // =================================================================================================
 // MASTER PROMPT: CORE DIRECTIVES FOR THE AGENTIC AI
@@ -18,5 +17,4 @@ export const systemInstruction = [
     AGENTIC_WORKFLOW,
     PERSONA_AND_UI_FORMATTING,
     TOOLS_OVERVIEW,
-    MATH_RENDERING_INSTRUCTIONS,
 ].join('\n\n');
