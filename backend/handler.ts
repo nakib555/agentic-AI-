@@ -115,7 +115,7 @@ export const apiHandler = async (req: any, res: any) => {
     // Determine which key to use
     // If it's a suggestion task and we have a specific key for it, use that.
     // Otherwise fallback to main key.
-    const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'placeholder', 'memory_suggest', 'memory_consolidate'];
+    const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate'];
     const isSuggestionTask = SUGGESTION_TASKS.includes(task);
     
     let activeApiKey = mainApiKey;
@@ -152,13 +152,8 @@ export const apiHandler = async (req: any, res: any) => {
                 let historyMessages = savedChat?.messages || [];
                 
                 if (task === 'regenerate' && messageId) {
-                    // REFACTOR: In-memory slicing instead of destructive truncation.
-                    // We only want the AI to see messages UP TO the one being regenerated.
-                    // We do NOT want to delete the old messages from the database yet; 
-                    // the frontend will handle state updates and persistence of the new version.
                     const targetIndex = historyMessages.findIndex((m: any) => m.id === messageId);
                     if (targetIndex !== -1) {
-                        // Keep everything BEFORE the target message for context
                         historyMessages = historyMessages.slice(0, targetIndex);
                     }
                 }
@@ -177,13 +172,9 @@ export const apiHandler = async (req: any, res: any) => {
                         ]
                     };
                     
-                    // Manually merge if the last message in history is also user
-                    // This handles cases where tools might have left a trailing user part
                     if (fullHistory.length > 0 && fullHistory[fullHistory.length - 1].role === 'user') {
-                        // Cast to any to access parts, as Content interface can be strict
                         (fullHistory[fullHistory.length - 1].parts as any[]).push(...newPart.parts);
                     } else {
-                        // Safe cast for strict typing
                         fullHistory.push(newPart as any);
                     }
                 }
@@ -290,8 +281,6 @@ export const apiHandler = async (req: any, res: any) => {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { chatId, model, newMessage, isAgentMode } = req.body;
 
-                // 1. Fetch History
-                // Handle null chatId gracefully
                 let fullHistory: any[] = [];
                 if (chatId) {
                     const savedChat = await historyControl.getChat(chatId);
@@ -299,7 +288,6 @@ export const apiHandler = async (req: any, res: any) => {
                     fullHistory = transformHistoryToGeminiFormat(historyMessages);
                 }
 
-                // 2. Append new message if provided
                 if (newMessage && (newMessage.text || (newMessage.attachments && newMessage.attachments.length > 0))) {
                     const newPart = {
                         role: 'user',
@@ -311,7 +299,6 @@ export const apiHandler = async (req: any, res: any) => {
                         ]
                     };
 
-                    // Check if last message is also user, if so, merge parts to avoid API errors
                     if (fullHistory.length > 0 && fullHistory[fullHistory.length - 1].role === 'user') {
                         (fullHistory[fullHistory.length - 1].parts as any[]).push(...newPart.parts);
                     } else {
@@ -319,17 +306,13 @@ export const apiHandler = async (req: any, res: any) => {
                     }
                 }
 
-                // 3. Define System Instruction & Tools based on mode
                 const systemInstruction = isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
                 const tools = isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }];
 
-                // Check if history is empty. If so, the API will error on empty contents.
-                // We use a single space instead of empty string to satisfy the API.
                 if (fullHistory.length === 0) {
                     fullHistory.push({ role: 'user', parts: [{ text: ' ' }] });
                 }
 
-                // 4. Count Tokens
                 const countResult = await ai.models.countTokens({
                     model: model || 'gemini-2.5-flash',
                     contents: fullHistory,
@@ -375,11 +358,17 @@ export const apiHandler = async (req: any, res: any) => {
                 const historyText = messages.slice(0, 3).map((m: any) => `${m.role}: ${m.text}`).join('\n');
                 const prompt = `You are a helpful assistant. Generate a short, concise title (max 6 words) for this conversation. Do not use quotes or markdown. Just the title text.\n\nCONVERSATION:\n${historyText}\n\nTITLE:`;
                 
-                const response = await generateContentWithRetry(ai, {
-                    model: 'gemini-2.5-flash',
-                    contents: prompt,
-                });
-                res.status(200).json({ title: response.text.trim() });
+                try {
+                    const response = await generateContentWithRetry(ai, {
+                        model: 'gemini-2.5-flash',
+                        contents: prompt,
+                    });
+                    res.status(200).json({ title: response.text.trim() });
+                } catch (e) {
+                    console.warn(`[HANDLER] Title generation failed (skipping):`, e);
+                    // Return OK to prevent error noise in frontend
+                    res.status(200).json({ title: '' });
+                }
                 break;
             }
 
@@ -389,27 +378,35 @@ export const apiHandler = async (req: any, res: any) => {
                 const recentHistory = conversation.slice(-5).map((m: any) => `${m.role}: ${(m.text || '').substring(0, 200)}`).join('\n');
                 const prompt = `Based on the conversation below, suggest 3 short, relevant follow-up questions or actions the user might want to take next. Return ONLY a JSON array of strings. Example: ["Tell me a more", "Explain the code", "Generate an image"].\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
                 
-                const response = await generateContentWithRetry(ai, {
-                    model: 'gemini-2.5-flash',
-                    contents: prompt,
-                    config: { responseMimeType: 'application/json' },
-                });
-                
-                let suggestions = [];
                 try {
-                    suggestions = JSON.parse(response.text);
+                    const response = await generateContentWithRetry(ai, {
+                        model: 'gemini-2.5-flash',
+                        contents: prompt,
+                        config: { responseMimeType: 'application/json' },
+                    });
+                    
+                    let suggestions = [];
+                    try {
+                        suggestions = JSON.parse(response.text);
+                    } catch (e) { /* ignore parse error */ }
+                    res.status(200).json({ suggestions });
                 } catch (e) {
-                    console.error("Failed to parse suggestions JSON:", e);
+                    console.warn(`[HANDLER] Suggestion generation failed (skipping):`, e);
+                    res.status(200).json({ suggestions: [] });
                 }
-                res.status(200).json({ suggestions });
                 break;
             }
 
             case 'tts': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { text, voice, model } = req.body;
-                const audio = await executeTextToSpeech(ai, text, voice, model);
-                res.status(200).json({ audio });
+                try {
+                    const audio = await executeTextToSpeech(ai, text, voice, model);
+                    res.status(200).json({ audio });
+                } catch (e) {
+                    console.error("TTS Failed:", e);
+                    res.status(500).json({ error: "TTS Failed" });
+                }
                 break;
             }
             
@@ -419,12 +416,17 @@ export const apiHandler = async (req: any, res: any) => {
                 const prompt = `You are a prompt rewriting expert. Rewrite the following user input to be more detailed, specific, and clear for a large language model. Expand on the user's intent. Do not add conversational filler. Just provide the rewritten prompt.\n\nUSER INPUT: "${userInput}"\n\nREWRITTEN PROMPT:`;
                 
                 res.setHeader('Content-Type', 'text/plain');
-                const stream = await generateContentStreamWithRetry(ai, {
-                    model: 'gemini-2.5-flash',
-                    contents: prompt,
-                });
-                for await (const chunk of stream) {
-                    res.write(chunk.text);
+                try {
+                    const stream = await generateContentStreamWithRetry(ai, {
+                        model: 'gemini-2.5-flash',
+                        contents: prompt,
+                    });
+                    for await (const chunk of stream) {
+                        res.write(chunk.text);
+                    }
+                } catch (e) {
+                    console.error("Prompt enhance failed:", e);
+                    res.write(userInput); // Fallback to original
                 }
                 res.end();
                 break;
@@ -433,28 +435,30 @@ export const apiHandler = async (req: any, res: any) => {
             case 'memory_suggest': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { conversation } = req.body;
-                const suggestions = await executeExtractMemorySuggestions(ai, conversation);
-                res.status(200).json({ suggestions });
+                try {
+                    const suggestions = await executeExtractMemorySuggestions(ai, conversation);
+                    res.status(200).json({ suggestions });
+                } catch (e) {
+                    console.warn(`[HANDLER] Memory suggest failed (skipping):`, e);
+                    res.status(200).json({ suggestions: [] });
+                }
                 break;
             }
 
             case 'memory_consolidate': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { currentMemory, suggestions } = req.body;
-                const memory = await executeConsolidateMemory(ai, currentMemory, suggestions);
-                res.status(200).json({ memory });
+                try {
+                    const memory = await executeConsolidateMemory(ai, currentMemory, suggestions);
+                    res.status(200).json({ memory });
+                } catch (e) {
+                    console.warn(`[HANDLER] Memory consolidate failed:`, e);
+                    // Fallback to simple append
+                    res.status(200).json({ memory: [currentMemory, ...suggestions].join('\n') });
+                }
                 break;
             }
             
-            case 'placeholder': {
-                if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { conversationContext, isAgentMode } = req.body;
-                const prompt = `You are an expert at creating engaging placeholder text for a chat input field. Based on the last turn of the conversation, generate one short, interesting follow-up question or command. The placeholder should be under 15 words. Mode: ${isAgentMode ? 'Agent (task-oriented)' : 'Chat (conversational)'}.\n\nLAST MESSAGE: "${conversationContext}"\n\nPLACEHOLDER:`;
-                const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt });
-                res.status(200).json({ placeholder: response.text.replace(/"/g, '') });
-                break;
-            }
-
             case 'tool_exec': {
                  if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { toolName, toolArgs, chatId } = req.body;

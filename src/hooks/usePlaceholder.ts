@@ -5,11 +5,10 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { fetchFromApi } from '../utils/api';
 
 // Time in milliseconds to wait before fetching a new placeholder
-// Increased to 30s to prevent hitting Gemini API rate limits (15 RPM on free tier)
-const PLACEHOLDER_INTERVAL = 30000;
+// Reduced to 10s for better interactivity since it's local now
+const PLACEHOLDER_INTERVAL = 10000;
 
 // Custom-made fallback placeholders for Chat mode
 const CHAT_FALLBACK_PLACEHOLDERS = [
@@ -202,91 +201,44 @@ const AGENT_FALLBACK_PLACEHOLDERS = [
 ];
 
 /**
- * A custom hook to manage a dynamic, AI-generated placeholder for an input field.
- * It now includes a fallback mechanism to use custom placeholders if the AI fails.
+ * A custom hook to manage a dynamic placeholder for an input field.
+ * This version uses locally defined fallbacks instead of an AI generation step.
  * @param isEnabled - Whether the placeholder functionality should be active.
- * @param conversationContext - The text of the last message to provide context.
+ * @param conversationContext - (Unused) Kept for signature compatibility.
  * @param isAgentMode - Whether the app is in Agent mode, to tailor suggestions.
- * @param hasApiKey - Whether an API key is configured.
+ * @param hasApiKey - (Unused) Kept for signature compatibility.
  * @returns An array of strings for the TextType component [previous, current].
  */
 export const usePlaceholder = (isEnabled: boolean, conversationContext: string, isAgentMode: boolean, hasApiKey: boolean) => {
     const [placeholder, setPlaceholder] = useState<string[]>(['Ask anything, or drop a file']);
-    const isFetching = useRef(false);
-    const cycleCount = useRef(0);
-    const contextRef = useRef({ conversationContext, isAgentMode, hasApiKey });
+    
+    // We use a ref to access the latest isAgentMode in the interval closure without restarting it
+    const contextRef = useRef({ isAgentMode });
 
-    // Keep the ref updated with the latest values without causing re-renders
     useEffect(() => {
-        contextRef.current = { conversationContext, isAgentMode, hasApiKey };
-    }, [conversationContext, isAgentMode, hasApiKey]);
+        contextRef.current = { isAgentMode };
+    }, [isAgentMode]);
 
-    const fetchNewPlaceholder = useCallback(async () => {
-        if (isFetching.current) return;
+    const fetchNewPlaceholder = useCallback(() => {
+        const { isAgentMode: currentAgentMode } = contextRef.current;
 
-        const { conversationContext: currentContext, isAgentMode: currentAgentMode, hasApiKey: currentHasApiKey } = contextRef.current;
-
-        const setRandomFallback = () => {
-            const fallbacks = currentAgentMode ? AGENT_FALLBACK_PLACEHOLDERS : CHAT_FALLBACK_PLACEHOLDERS;
-            setPlaceholder(prev => {
-                const current = prev[prev.length - 1];
-                let next = current;
-                while (next === current && fallbacks.length > 1) {
-                    next = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-                }
-                return [current, next];
-            });
-        };
-
-        // CYCLE LOGIC:
-        // We want 5 fallback suggestions, then 1 AI suggestion, then repeat.
-        // Counts: 0 (Fallback), 1 (Fallback), 2 (Fallback), 3 (Fallback), 4 (Fallback), 5 (AI), 0 (Fallback)...
-        const currentCount = cycleCount.current;
-        cycleCount.current = (currentCount + 1) % 6; // Advances the cycle for next time
-
-        const shouldFetchAi = (currentCount === 5) && currentHasApiKey;
-
-        if (!shouldFetchAi) {
-            setRandomFallback();
-            return;
-        }
-
-        if (!currentContext.trim()) {
-            // Even if it's the AI's turn, if we lack context, AI suggestions might be weak.
-            // Fall back to pre-written ones for better initial UX.
-            setRandomFallback();
-            return;
-        }
-
-        try {
-            isFetching.current = true;
-            const response = await fetchFromApi('/api/handler?task=placeholder', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ conversationContext: currentContext, isAgentMode: currentAgentMode }),
-                silent: true // Suppress errors for background tasks
-            });
-
-            if (!response.ok) throw new Error(`API response not OK: ${response.status}`);
-
-            const { placeholder: newPlaceholder } = await response.json();
-
-            if (newPlaceholder && typeof newPlaceholder === 'string' && newPlaceholder.trim()) {
-                setPlaceholder(prev => [prev[prev.length - 1], newPlaceholder.trim()]);
-            } else {
-                setRandomFallback();
+        const fallbacks = currentAgentMode ? AGENT_FALLBACK_PLACEHOLDERS : CHAT_FALLBACK_PLACEHOLDERS;
+        
+        setPlaceholder(prev => {
+            const current = prev[prev.length - 1];
+            let next = current;
+            // Prevent picking the same one twice
+            while (next === current && fallbacks.length > 1) {
+                next = fallbacks[Math.floor(Math.random() * fallbacks.length)];
             }
-        } catch (error) {
-            // Silent failure on placeholder generation
-            setRandomFallback();
-        } finally {
-            isFetching.current = false;
-        }
+            return [current, next];
+        });
     }, []);
 
     useEffect(() => {
         if (isEnabled) {
-            fetchNewPlaceholder(); // Initial fetch
+            // Initial fetch to move away from default if preferred, 
+            // or just start the interval.
             const id = window.setInterval(fetchNewPlaceholder, PLACEHOLDER_INTERVAL);
             return () => clearInterval(id);
         }

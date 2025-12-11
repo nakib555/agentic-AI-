@@ -20,9 +20,9 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
 
     const shouldCollapse = isDesktop && isCollapsed;
 
-    // Vibrant purple/blue gradient background
-    const containerClasses = `relative p-1 rounded-full flex items-center bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 shadow-lg border border-white/10`;
-    const layoutClasses = shouldCollapse ? `flex-col gap-2 ${containerClasses}` : `justify-between ${containerClasses}`;
+    // Clean segmented control style instead of gradient
+    const containerClasses = `relative p-1 rounded-xl flex items-center bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/5`;
+    const layoutClasses = shouldCollapse ? `flex-col gap-1 w-full ${containerClasses}` : `justify-between gap-1 w-full ${containerClasses}`;
 
     return (
         <div className={layoutClasses}>
@@ -32,17 +32,17 @@ export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme
                     <button
                         key={btn.value}
                         onClick={() => setTheme(btn.value as Theme)}
-                        className={`relative z-10 flex-1 flex items-center justify-center gap-2 rounded-full text-xs font-medium transition-all duration-300 focus:outline-none ${shouldCollapse ? 'h-8 w-8 p-0' : 'py-1.5 px-2'}`}
+                        className={`relative z-10 flex-1 flex items-center justify-center gap-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none ${shouldCollapse ? 'h-9 w-full p-0' : 'py-1.5 px-2 h-8'}`}
                         title={shouldCollapse ? btn.label : undefined}
                     >
                         {isActive && (
                             <motion.div
                                 layoutId="theme-pill"
-                                className="absolute inset-0 bg-white/20 backdrop-blur-md rounded-full shadow-sm border border-white/20"
+                                className="absolute inset-0 bg-white dark:bg-gray-700 shadow-sm rounded-lg border border-gray-200/50 dark:border-white/10"
                                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                             />
                         )}
-                        <span className={`relative z-10 flex items-center gap-1.5 ${isActive ? 'text-white font-bold' : 'text-white/70 hover:text-white'}`}>
+                        <span className={`relative z-10 flex items-center gap-1.5 ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                             {btn.icon}
                             {!shouldCollapse && <span className="hidden sm:inline">{btn.label}</span>}
                         </span>
