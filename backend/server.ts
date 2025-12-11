@@ -82,6 +82,14 @@ async function startServer() {
     res.sendFile(path.join(staticPath, 'index.html'));
   }) as any);
 
+  // Global Error Handler
+  app.use(((err: any, req: any, res: any, next: any) => {
+    console.error('[SERVER] Unhandled Error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }) as any);
+
   app.listen(PORT, () => {
     console.log(`[SERVER] Backend server is running on http://localhost:${PORT}`);
   });

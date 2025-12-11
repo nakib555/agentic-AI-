@@ -210,6 +210,8 @@ class HistoryControlService {
                     }
 
                     entry.folderName = newFolderName;
+                    // Persist the folder rename immediately to index to stay in sync even if subsequent write fails
+                    await this.saveIndex(index);
                 } catch (error) {
                     console.error(`[HistoryControl] Failed to rename folder for chat ${id}:`, error);
                     // Fallback: keep old folder name if rename fails
@@ -223,10 +225,15 @@ class HistoryControlService {
         // Update File content in the (potentially new) location
         const chatSubDir = path.join(HISTORY_PATH, newFolderName, 'chat');
         
-        // Ensure directory exists (in case of manual deletion or corruption)
-        await fs.mkdir(chatSubDir, { recursive: true });
-        
-        await writeData(path.join(chatSubDir, 'conversation.tsx'), updatedChat);
+        try {
+            // Ensure directory exists (in case of manual deletion or corruption)
+            await fs.mkdir(chatSubDir, { recursive: true });
+            
+            await writeData(path.join(chatSubDir, 'conversation.tsx'), updatedChat);
+        } catch (error) {
+            console.error(`[HistoryControl] Failed to write conversation data for ${id}:`, error);
+            throw error; // Propagate up so crudHandler can send 500
+        }
 
         // Update Index metadata
         entry.updatedAt = Date.now();
