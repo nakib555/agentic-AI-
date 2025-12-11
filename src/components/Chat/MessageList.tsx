@@ -11,6 +11,7 @@ import { WelcomeScreen } from './WelcomeScreen/index';
 import type { MessageFormHandle } from './MessageForm/index';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
+import { useViewport } from '../../hooks/useViewport';
 
 const motion = motionTyped as any;
 
@@ -44,6 +45,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
+  const { isDesktop } = useViewport();
 
   // Expose scroll methods to parent via ref
   useImperativeHandle(ref, () => ({
@@ -78,13 +80,11 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
             <Virtuoso
                 ref={virtuosoRef}
                 data={visibleMessages}
-                // followOutput="auto" ensures the list sticks to the bottom when new items are added
-                // or existing items grow (streaming), ONLY if the user was already at the bottom.
                 followOutput="auto"
-                // Reduced overscan for better performance on slower devices/connections.
-                // 200px is sufficient buffer without rendering too many heavy Markdown components.
-                increaseViewportBy={200}
-                overscan={200} 
+                // Mobile Optimization: Significantly reduce overscan to save memory on 4GB devices.
+                // Desktop can handle more for smoother scrolling.
+                increaseViewportBy={isDesktop ? 200 : 100}
+                overscan={isDesktop ? 200 : 50} 
                 initialTopMostItemIndex={visibleMessages.length - 1}
                 atBottomStateChange={(isAtBottom) => {
                     setAtBottom(isAtBottom);
@@ -112,7 +112,6 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                         />
                     </div>
                 )}
-                // Header acts as top padding
                 components={{
                     Header: () => <div className="h-4" />,
                     Footer: () => <div className="h-4" />
@@ -121,7 +120,6 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
         </div>
       )}
 
-      {/* Floating Scroll Button */}
       <AnimatePresence>
         {showScrollButton && (
           <motion.div
@@ -133,7 +131,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
           >
             <button
                 onClick={handleScrollToBottom}
-                className="pointer-events-auto group flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md text-sm font-medium text-gray-700 dark:text-gray-200 shadow-lg hover:shadow-xl border border-gray-200/50 dark:border-white/10 rounded-full transition-all transform hover:-translate-y-0.5 active:scale-95 ring-1 ring-black/5 dark:ring-white/5"
+                className="pointer-events-auto group flex items-center gap-2 px-4 py-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md text-sm font-medium text-gray-700 dark:text-gray-200 shadow-lg hover:shadow-xl border border-gray-200/50 dark:border-white/10 rounded-full transition-all transform hover:-translate-y-0.5 active:scale-95 ring-1 ring-black/5 dark:ring-white/5"
                 aria-label="Scroll to latest messages"
             >
                 {!atBottom && isLoading && (

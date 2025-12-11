@@ -29,7 +29,7 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
             <motion.div 
                 {...animationProps} 
                 className="bg-message-user text-slate-900 dark:text-white rounded-xl shadow-sm border border-slate-300 dark:border-slate-600 origin-bottom-right overflow-hidden"
-                style={{ willChange: 'transform, opacity' }}
+                // Performance Fix: Removed 'layout' prop to prevent layout thrashing on message list updates
             >
                 {/* Content Section */}
                 <div className="px-5 py-3.5 flex flex-col gap-3">

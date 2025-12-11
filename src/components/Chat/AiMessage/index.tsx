@@ -99,7 +99,8 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
     <motion.div 
         {...animationProps} 
         className="w-full flex flex-col items-start gap-4 origin-bottom-left group/message"
-        style={{ willChange: 'transform, opacity' }}
+        // Performance Fix: Removed 'layout' prop.
+        // The 'layout' prop causes heavy recalculations on list updates which kills mobile perf during streaming.
     >
       {/* 1. Agentic Workflow (Timeline) */}
       {logic.hasWorkflow && (
