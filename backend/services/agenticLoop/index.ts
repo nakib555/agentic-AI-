@@ -89,6 +89,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
         try {
             console.log('[AGENT_LOOP] Invoking Gemini Stream...');
+            // CRITICAL: Using streaming endpoint via utility
             const streamResult = await generateContentStreamWithRetry(ai, {
                 model,
                 contents: state.history,

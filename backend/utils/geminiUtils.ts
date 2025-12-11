@@ -13,17 +13,18 @@ import {
 } from "@google/genai";
 import { parseApiError } from './apiError.js';
 
-export type GenerateContentStreamResult = AsyncGenerator<GenerateContentResponse> & {
+// Define the result type for streaming, compatible with the SDK's return type.
+// The SDK returns an object that is both an async iterable and has a .response promise.
+export type GenerateContentStreamResult = AsyncIterable<GenerateContentResponse> & {
   readonly response: Promise<GenerateContentResponse>;
 };
 
 const RETRYABLE_ERRORS = ['UNAVAILABLE', 'RATE_LIMIT_EXCEEDED', 'RESOURCE_EXHAUSTED', 'TIMEOUT', '429', '503', 'QUOTA_EXCEEDED'];
-const MAX_RETRIES = 5; // Increased from 3 to 5 to handle strict free tier limits
-const INITIAL_BACKOFF_MS = 3000; // Increased base backoff
+const MAX_RETRIES = 5; 
+const INITIAL_BACKOFF_MS = 3000; 
 
 // Global throttling to smooth out bursts
 let lastRequestTimestamp = 0;
-// Reduced from 2000ms to 200ms to optimize speed/smoothness while preventing instant burst errors
 const MIN_REQUEST_INTERVAL = 200; 
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -54,14 +55,12 @@ function parseRetryDelay(errorMessage: string): number | null {
         if (match[2].toLowerCase() === 's') {
             value = value * 1000;
         }
-        // Add a small buffer (500ms) to ensure we don't hit the exact edge
         return Math.ceil(value + 500); 
     }
     return null;
 }
 
 async function retryOperation<T>(operation: () => Promise<T>): Promise<T> {
-  // Throttle EVERY request start, including the first one.
   await throttle();
 
   let lastError: any = new Error("Retry operation failed.");
@@ -81,21 +80,13 @@ async function retryOperation<T>(operation: () => Promise<T>): Promise<T> {
       );
 
       if (isRetryable) {
-        // 1. Check for explicit retry delay in error message (common in Gemini 429 errors)
         const explicitDelay = parseRetryDelay(errorMessage);
-        
-        // 2. Calculate exponential backoff
-        // Exponential backoff: 3s, 6s, 12s, 24s...
         const exponentialDelay = (INITIAL_BACKOFF_MS * Math.pow(2, i)) + (Math.random() * 1000);
-        
-        // Use the larger of the two
         const backoffTime = explicitDelay ? Math.max(explicitDelay, exponentialDelay) : exponentialDelay;
 
         console.warn(`[GEMINI_UTILS] API Limit/Error (${parsedError.code}). Retrying in ${(backoffTime/1000).toFixed(1)}s... (Attempt ${i + 1}/${MAX_RETRIES})`);
         
         await sleep(backoffTime);
-        
-        // After sleeping, we throttle again before the next attempt
         await throttle();
       } else {
         throw error;
@@ -105,18 +96,28 @@ async function retryOperation<T>(operation: () => Promise<T>): Promise<T> {
   throw lastError;
 }
 
+/**
+ * Generates content using the streaming endpoint (`generateContentStream`) but waits for the full response.
+ * This ensures compliance with the requirement to use the streaming endpoint for all model calls.
+ */
 export async function generateContentWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<GenerateContentResponse> {
-  // Use the streaming endpoint internally to aggregate the response.
-  // This satisfies the requirement to use streamGenerateContent (generateContentStream) for all calls.
   const operation = async () => {
+    // CRITICAL: Always use generateContentStream.
     const streamResult = await ai.models.generateContentStream(request);
+    // Wait for the stream to finish and return the aggregated response.
     return await streamResult.response;
   };
   return await retryOperation(operation);
 }
 
+/**
+ * Generates content using the streaming endpoint (`generateContentStream`) and returns the stream iterable.
+ */
 export async function generateContentStreamWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<GenerateContentStreamResult> {
-  const operation = async () => (await ai.models.generateContentStream(request)) as unknown as GenerateContentStreamResult;
+  const operation = async () => {
+      // Cast is generally not needed if types align, but ensures compatibility if SDK types are strict
+      return await ai.models.generateContentStream(request) as GenerateContentStreamResult;
+  };
   return await retryOperation(operation);
 }
 
