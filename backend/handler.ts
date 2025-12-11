@@ -307,22 +307,39 @@ export const apiHandler = async (req: any, res: any) => {
                 }
 
                 const systemInstruction = isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
-                const tools = isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }];
+                
+                // For token counting, we should include tool declarations even in chat mode if the history
+                // potentially contains tool usage (from previous agent mode turns).
+                // Safest approach for accurate counting is to include them if agent mode is on,
+                // OR if we suspect history has tools.
+                // To prevent "function call without declaration" errors during counting, we enable tools globally for counting.
+                // We merge googleSearch and functionDeclarations.
+                
+                const tools: any[] = [{ functionDeclarations: toolDeclarations }];
+                if (!isAgentMode) {
+                    // If specifically in chat mode, also add googleSearch capabilities to estimation
+                    tools.push({ googleSearch: {} });
+                }
 
                 if (fullHistory.length === 0) {
                     fullHistory.push({ role: 'user', parts: [{ text: ' ' }] });
                 }
 
-                const countResult = await ai.models.countTokens({
-                    model: model || 'gemini-2.5-flash',
-                    contents: fullHistory,
-                    config: {
-                        systemInstruction,
-                        tools,
-                    }
-                });
-
-                res.status(200).json({ totalTokens: countResult.totalTokens });
+                try {
+                    const countResult = await ai.models.countTokens({
+                        model: model || 'gemini-2.5-flash',
+                        contents: fullHistory,
+                        config: {
+                            systemInstruction,
+                            tools,
+                        }
+                    });
+                    res.status(200).json({ totalTokens: countResult.totalTokens });
+                } catch (countError: any) {
+                    console.warn(`[HANDLER] countTokens failed: ${countError.message}`);
+                    // Return 0 or null instead of 500 to avoid crashing frontend logic
+                    res.status(200).json({ totalTokens: 0, error: "Count failed" });
+                }
                 break;
             }
 
@@ -454,7 +471,7 @@ export const apiHandler = async (req: any, res: any) => {
                 } catch (e) {
                     console.warn(`[HANDLER] Memory consolidate failed:`, e);
                     // Fallback to simple append
-                    res.status(200).json({ memory: [currentMemory, ...suggestions].join('\n') });
+                    res.status(200).json({ memory: [currentMemory, ...suggestions].filter(Boolean).join('\n') });
                 }
                 break;
             }
