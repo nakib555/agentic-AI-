@@ -56,6 +56,7 @@ export async function initDataStore() {
         ttsVoice: 'Kore',
         ttsModel: '', // Dynamic
         isAgentMode: false,
+        activeModel: '', // Add this
     };
     await initDataFile(SETTINGS_FILE_PATH, defaultSettings);
     

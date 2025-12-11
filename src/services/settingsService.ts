@@ -19,6 +19,7 @@ export type AppSettings = {
     ttsVoice: string;
     ttsModel: string; // Add this
     isAgentMode: boolean;
+    activeModel: string;
 };
 
 export type UpdateSettingsResponse = AppSettings & {

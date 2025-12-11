@@ -120,7 +120,8 @@ export const useAppLogic = () => {
             setActiveModel(newModels[0].id);
         }
     } else {
-        setActiveModel('');
+        // Only clear if we really have no models, otherwise keep the user's setting (might be offline/loading issue)
+        if (!currentActiveModel) setActiveModel('');
     }
     
     const currentImageModel = imageModelRef.current;
@@ -174,6 +175,7 @@ export const useAppLogic = () => {
             setMaxTokens(settings.maxTokens);
             
             // Set initial state from settings
+            setActiveModel(settings.activeModel);
             setImageModel(settings.imageModel);
             setVideoModel(settings.videoModel);
             setTtsModel(settings.ttsModel);
@@ -303,6 +305,7 @@ export const useAppLogic = () => {
   // --- Handlers ---
   const handleModelChange = useCallback((modelId: string) => {
     setActiveModel(modelId);
+    updateSettings({ activeModel: modelId }); // Persist selection
     if (chat.currentChatId) updateChatModel(chat.currentChatId, modelId);
   }, [chat.currentChatId, updateChatModel]);
   
