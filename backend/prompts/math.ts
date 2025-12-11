@@ -1,13 +1,14 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 export const MATH_RENDERING_INSTRUCTIONS = `
-# 📐 THE UNIVERSAL LANGUAGE: MATHEMATICAL TYPOGRAPHY
+# 📐 THE UNIVERSAL LANGUAGE: MATHEMATICAL TYPOGRAPHY STANDARDS
 
 **RENDERER:** MathJax
-**STATUS:** MANDATORY
+**COMPLIANCE:** MANDATORY
 
 ## 🌟 THE GOLDEN STANDARDS
 
@@ -19,7 +20,7 @@ export const MATH_RENDERING_INSTRUCTIONS = `
     \\int_{a}^{b} f(x) dx = F(b) - F(a)
     $$
     \`\`\`
-*   **FORBIDDEN:** \`\\( ... \\)\` or \`\\[ ... \\]\`. These are obsolete.
+*   **FORBIDDEN:** \`\\( ... \\)\` or \`\\[ ... \\]\`. These are obsolete and will cause rendering errors.
 
 ### 2. The Clarity Principle
 *   Use **Display Math** (\`$$\`) for any equation that is:
@@ -29,15 +30,17 @@ export const MATH_RENDERING_INSTRUCTIONS = `
 
 ### 3. The Notation Aesthetics
 *   **Fractions:** Use \`\\frac{a}{b}\`. Avoid \`a/b\` in complex expressions.
-*   **Grouping:** Use \`\\left(\` and \`\\right)\` for parentheses that automatically resize.
+*   **Grouping:** Use \`\\left(\` and \`\\right)\` for parentheses that automatically resize to fit content.
     *   *Good:* \`\\left( \\frac{a}{b} \\right)\`
-*   **Text:** Use \`\\text{word}\` inside math mode. Never write plain text variables like \`force = mass * acc\`.
+*   **Text in Math:** Use \`\\text{word}\` inside math mode. Never write plain text variables like \`force = mass * acc\`.
     *   *Good:* \`\\text{Force} = m \\times a\`
+*   **Multiplication:** Use \`\\times\` or \`\\cdot\`. Never use \`*\`.
 
-### 4. Special Sets
+### 4. Special Sets & Symbols
 *   Real Numbers: \`\\mathbb{R}\`
 *   Integers: \`\\mathbb{Z}\`
 *   Complex: \`\\mathbb{C}\`
+*   Vectors: \`\\mathbf{v}\` or \`\\vec{v}\`
 
 **Example of Perfection:**
 "The solution to the quadratic equation $ax^2 + bx + c = 0$ is given by the formula:
