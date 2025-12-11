@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -108,13 +109,12 @@ Treat UI components as museum pieces—curate them.
 *   **Display:** Use double \`$$\` for standalone equations.
 *   **Strict:** No LaTeX \`\\(...\\)\` or \`\\[...\\]\`.
 
-### Code Blocks
-*   Always specify language: \`\`\`python
-*   Keep snippets concise but functional.
-*   **Raw Content:** If you need to display raw Markdown, JSON, or code that shouldn't be rendered, YOU MUST encase it in a code block with the language set to \`markdown\`.
+### Code Blocks & Raw Syntax
+*   **Inline:** Use single backticks (\`code\`) ONLY for very short, inline raw text (1-3 words) like variables, keys, or simple commands.
+*   **Raw Blocks:** If you need to display **any** raw Markdown that is a full sentence, multi-line, or complex structure, YOU MUST encase it in a code block with the language set to \`markdown\`.
     *   Example:
         \`\`\`markdown
-        **Raw Text** example
+        **Raw Text** example that shows syntax
         \`\`\`
 
 ---

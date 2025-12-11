@@ -57,7 +57,7 @@ export const InlineCode: React.FC<InlineCodeProps> = ({ children, className = ''
         text-indigo-700 dark:text-indigo-200 
         border border-indigo-200/50 dark:border-indigo-500/20 
         align-baseline
-        inline-block
+        inline 
         break-words
         ${className}
       `}
