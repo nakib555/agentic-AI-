@@ -52,7 +52,7 @@ async function executeOperation<T>(operation: () => Promise<T>): Promise<T> {
 export async function generateContentWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<GenerateContentResponse> {
   const operation = async () => {
     // CRITICAL: Always use generateContentStream.
-    const streamResult = await ai.models.generateContentStream(request);
+    const streamResult = (await ai.models.generateContentStream(request)) as unknown as GenerateContentStreamResult;
     // Wait for the stream to finish and return the aggregated response.
     return await streamResult.response;
   };
@@ -65,7 +65,7 @@ export async function generateContentWithRetry(ai: GoogleGenAI, request: Generat
 export async function generateContentStreamWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<GenerateContentStreamResult> {
   const operation = async () => {
       // Cast is generally not needed if types align, but ensures compatibility if SDK types are strict
-      return await ai.models.generateContentStream(request) as GenerateContentStreamResult;
+      return (await ai.models.generateContentStream(request)) as unknown as GenerateContentStreamResult;
   };
   return await executeOperation(operation);
 }
@@ -75,7 +75,9 @@ export async function generateImagesWithRetry(ai: GoogleGenAI, request: any): Pr
     return await executeOperation(operation);
 }
 
-export async function generateVideosWithRetry(ai: GoogleGenAI, request: any): Promise<GenerateVideosResponse> {
+// Changed return type to Promise<any> to support operation object return structure 
+// required for polling, as SDK types for LROs might vary.
+export async function generateVideosWithRetry(ai: GoogleGenAI, request: any): Promise<any> {
     const operation = async () => ai.models.generateVideos(request);
     return await executeOperation(operation);
 }

@@ -29,7 +29,8 @@ const activeAgentLoops = new Map<string, AbortController>();
 
 // Using 'any' for res to bypass type definition mismatches in the environment
 const writeEvent = (res: any, type: string, payload: any) => {
-    if (!res.writableEnded && !res.closed) {
+    // Only write if the connection is actually open
+    if (!res.writableEnded && !res.closed && !res.destroyed) {
         try {
             res.write(JSON.stringify({ type, payload }) + '\n');
         } catch (e) {
@@ -105,6 +106,123 @@ async function generateDirectoryStructure(dirPath: string): Promise<any> {
     }
 }
 
+// Throttled Saver Class to manage disk writes
+class ChatPersistenceManager {
+    private chatId: string;
+    private messageId: string; // The ID of the model response message
+    private buffer: { text: string } | null = null;
+    private saveTimeout: NodeJS.Timeout | null = null;
+    private isSaving = false;
+
+    constructor(chatId: string, messageId: string) {
+        this.chatId = chatId;
+        this.messageId = messageId;
+    }
+
+    // Accumulate text delta
+    addText(delta: string) {
+        if (!this.buffer) this.buffer = { text: '' };
+        this.buffer.text += delta;
+        this.scheduleSave();
+    }
+
+    // Trigger an immediate update (for tool calls, status changes, etc)
+    // This allows passing a modifier function to update the specific message response
+    async update(modifier: (response: any) => void) {
+        // Flush any pending text first
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+            this.saveTimeout = null;
+        }
+        
+        try {
+            const chat = await historyControl.getChat(this.chatId);
+            if (!chat) return;
+
+            const msgIndex = chat.messages.findIndex((m: any) => m.id === this.messageId);
+            if (msgIndex !== -1) {
+                const message = chat.messages[msgIndex];
+                const activeResponse = message.responses[message.activeResponseIndex];
+                
+                // Apply pending buffer if any
+                if (this.buffer) {
+                    activeResponse.text = (activeResponse.text || '') + this.buffer.text;
+                    this.buffer = null;
+                }
+
+                // Apply the specific modification (e.g., adding a tool call event)
+                modifier(activeResponse);
+
+                await historyControl.updateChat(this.chatId, { messages: chat.messages });
+            }
+        } catch (e) {
+            console.error(`[PERSISTENCE] Failed to update chat ${this.chatId}:`, e);
+        }
+    }
+
+    // Schedule a debounced save for text chunks
+    private scheduleSave() {
+        if (this.saveTimeout) return;
+        this.saveTimeout = setTimeout(() => this.flush(), 1500); // Save every 1.5s
+    }
+
+    private async flush() {
+        this.saveTimeout = null;
+        if (!this.buffer) return;
+        
+        const textToAppend = this.buffer.text;
+        this.buffer = null; // Clear buffer immediately to capture new typing during await
+
+        try {
+            const chat = await historyControl.getChat(this.chatId);
+            if (!chat) return;
+
+            const msgIndex = chat.messages.findIndex((m: any) => m.id === this.messageId);
+            if (msgIndex !== -1) {
+                const message = chat.messages[msgIndex];
+                const activeResponse = message.responses[message.activeResponseIndex];
+                activeResponse.text = (activeResponse.text || '') + textToAppend;
+                await historyControl.updateChat(this.chatId, { messages: chat.messages });
+            }
+        } catch (e) {
+            console.error(`[PERSISTENCE] Failed to flush text to chat ${this.chatId}:`, e);
+            // On failure, we might lose that chunk from disk, but in-memory stream usually keeps UI alive.
+            // Ideally we'd re-buffer, but simple for now.
+        }
+    }
+
+    // Force a final save
+    async complete(finalModifier?: (response: any) => void) {
+        if (this.saveTimeout) clearTimeout(this.saveTimeout);
+        
+        try {
+            const chat = await historyControl.getChat(this.chatId);
+            if (!chat) return;
+
+            const msgIndex = chat.messages.findIndex((m: any) => m.id === this.messageId);
+            if (msgIndex !== -1) {
+                const message = chat.messages[msgIndex];
+                const activeResponse = message.responses[message.activeResponseIndex];
+                
+                if (this.buffer) {
+                    activeResponse.text = (activeResponse.text || '') + this.buffer.text;
+                    this.buffer = null;
+                }
+
+                if (finalModifier) finalModifier(activeResponse);
+                
+                // Mark as done thinking
+                message.isThinking = false;
+
+                await historyControl.updateChat(this.chatId, { messages: chat.messages });
+            }
+        } catch (e) {
+            console.error(`[PERSISTENCE] Failed to complete save for chat ${this.chatId}:`, e);
+        }
+    }
+}
+
+
 // Using 'any' for req/res to bypass strict type checks that are failing due to missing properties in the inferred types
 export const apiHandler = async (req: any, res: any) => {
     const task = req.query.task as string;
@@ -147,37 +265,69 @@ export const apiHandler = async (req: any, res: any) => {
                 
                 console.log(`[HANDLER] Starting ${task} task for chatId: ${chatId}`);
 
-                // 1. Fetch History
-                const savedChat = await historyControl.getChat(chatId);
-                let historyMessages = savedChat?.messages || [];
+                // 1. Initial Persistence & History Fetch
+                // We MUST save the user message and model placeholder immediately to disk.
+                // This ensures that if the user refreshes instantly, the chat state is recovered.
+                
+                let savedChat = await historyControl.getChat(chatId);
+                if (!savedChat) {
+                    // Recover: If chat ID doesn't exist (race condition?), try create it?
+                    // For now, assume valid ID or error.
+                    return res.status(404).json({ error: "Chat not found" });
+                }
+
+                let historyMessages = savedChat.messages || [];
                 
                 if (task === 'regenerate' && messageId) {
                     const targetIndex = historyMessages.findIndex((m: any) => m.id === messageId);
                     if (targetIndex !== -1) {
+                        // Truncate history up to the user message before this one
                         historyMessages = historyMessages.slice(0, targetIndex);
                     }
                 }
 
-                let fullHistory = transformHistoryToGeminiFormat(historyMessages);
-
-                // 2. Append new message (only for 'chat' task)
                 if (task === 'chat' && newMessage) {
-                    const newPart = {
-                        role: 'user',
-                        parts: [
-                            ...(newMessage.text ? [{ text: newMessage.text }] : []),
-                            ...(newMessage.attachments || []).map((att: any) => ({
-                                inlineData: { mimeType: att.mimeType, data: att.data }
-                            }))
-                        ]
-                    };
+                    // Append User Message
+                    historyMessages.push(newMessage);
                     
-                    if (fullHistory.length > 0 && fullHistory[fullHistory.length - 1].role === 'user') {
-                        (fullHistory[fullHistory.length - 1].parts as any[]).push(...newPart.parts);
-                    } else {
-                        fullHistory.push(newPart as any);
-                    }
+                    // Create and Append Model Placeholder
+                    const modelPlaceholder = {
+                        id: messageId,
+                        role: 'model' as const,
+                        text: '',
+                        isThinking: true,
+                        startTime: Date.now(),
+                        responses: [{ text: '', toolCallEvents: [], startTime: Date.now() }],
+                        activeResponseIndex: 0
+                    };
+                    historyMessages.push(modelPlaceholder);
+
+                    // SAVE NOW
+                    savedChat = await historyControl.updateChat(chatId, { messages: historyMessages });
+                } else if (task === 'regenerate') {
+                     // Re-append a fresh model placeholder for the regeneration
+                     const modelPlaceholder = {
+                        id: messageId,
+                        role: 'model' as const,
+                        text: '',
+                        isThinking: true,
+                        startTime: Date.now(),
+                        responses: [{ text: '', toolCallEvents: [], startTime: Date.now() }],
+                        activeResponseIndex: 0
+                    };
+                    historyMessages.push(modelPlaceholder);
+                    savedChat = await historyControl.updateChat(chatId, { messages: historyMessages });
                 }
+
+                if (!savedChat) throw new Error("Failed to initialize chat persistence");
+
+                // Initialize Persistence Manager for this run
+                const persistence = new ChatPersistenceManager(chatId, messageId);
+
+                // Prepare History for Gemini (excluding the empty placeholder we just added)
+                // We exclude the last message (model placeholder) because it has no text yet.
+                const historyForAI = historyMessages.slice(0, -1);
+                let fullHistory = transformHistoryToGeminiFormat(historyForAI);
 
                 console.log('[HANDLER] Context Ready:', { 
                     model, 
@@ -198,23 +348,39 @@ export const apiHandler = async (req: any, res: any) => {
                 
                 const sessionCallIds = new Set<string>();
 
+                // handle client disconnect WITHOUT aborting the AI loop
                 req.on('close', () => {
-                    console.log(`[HANDLER] Client disconnected for request ${requestId}. Aborting loop.`);
-                    abortController.abort();
-                    activeAgentLoops.delete(requestId);
+                    console.log(`[HANDLER] Client disconnected for request ${requestId}. Continuing execution in background...`);
+                    // We DO NOT call abortController.abort() here.
+                    // We DO clear the ping interval as the response stream is dead.
                     clearInterval(pingInterval);
-                    sessionCallIds.forEach(callId => {
-                        const resolver = frontendToolRequests.get(callId);
-                        if (resolver) {
-                            resolver({ error: "Client disconnected during tool execution" });
-                            frontendToolRequests.delete(callId);
-                        }
-                    });
+                    
+                    // Note: We leave sessionCallIds/frontendToolRequests active. 
+                    // If the AI calls a frontend tool while user is gone, it will hit the check below.
                 });
 
                 const requestFrontendExecution = (callId: string, toolName: string, toolArgs: any) => {
                     return new Promise<string | { error: string }>((resolve) => {
-                        frontendToolRequests.set(callId, resolve);
+                        // Check if client is still connected
+                        if (res.writableEnded || res.closed || res.destroyed) {
+                            console.warn(`[HANDLER] Frontend tool ${toolName} requested but client disconnected.`);
+                            resolve({ error: "Client disconnected. Cannot execute frontend tool." });
+                            return;
+                        }
+
+                        // Set a timeout for frontend tools to prevent eternal hanging
+                        const timeoutId = setTimeout(() => {
+                            if (frontendToolRequests.has(callId)) {
+                                console.warn(`[HANDLER] Frontend tool ${toolName} timed out.`);
+                                frontendToolRequests.delete(callId);
+                                resolve({ error: "Tool execution timed out (User did not respond)." });
+                            }
+                        }, 60000); // 60s timeout
+
+                        frontendToolRequests.set(callId, (result) => {
+                            clearTimeout(timeoutId);
+                            resolve(result);
+                        });
                         sessionCallIds.add(callId);
                         writeEvent(res, 'frontend-tool-request', { callId, toolName, toolArgs });
                     });
@@ -222,6 +388,8 @@ export const apiHandler = async (req: any, res: any) => {
                 
                 const onToolUpdate = (callId: string, data: any) => {
                     writeEvent(res, 'tool-update', { id: callId, ...data });
+                    // We could persist detailed tool logs here if needed, but it might be too verbose for the main chat file.
+                    // For now, we only persist the final result or major state changes in the main loop callbacks.
                 };
                 
                 const toolExecutor = createToolExecutor(
@@ -243,37 +411,102 @@ export const apiHandler = async (req: any, res: any) => {
                 
                 console.log(`[HANDLER] Running agentic loop... Mode: ${settings.isAgentMode ? 'Agent' : 'Chat'}`);
 
-                await runAgenticLoop({
-                    ai,
-                    model,
-                    history: fullHistory, 
-                    toolExecutor,
-                    callbacks: {
-                        onTextChunk: (text) => writeEvent(res, 'text-chunk', text),
-                        onNewToolCalls: (toolCallEvents) => writeEvent(res, 'tool-call-start', toolCallEvents),
-                        onToolResult: (id, result) => writeEvent(res, 'tool-call-end', { id, result }),
-                        onPlanReady: (plan) => {
-                            return new Promise((resolve) => {
-                                const callId = `plan-approval-${generateId()}`;
-                                frontendToolRequests.set(callId, resolve);
-                                sessionCallIds.add(callId);
-                                writeEvent(res, 'plan-ready', { plan, callId });
-                            });
-                        },
-                        onWorkflowUpdate: (workflow) => writeEvent(res, 'workflow-update', workflow),
-                        onComplete: (finalText, groundingMetadata) => writeEvent(res, 'complete', { finalText, groundingMetadata }),
-                        onCancel: () => writeEvent(res, 'cancel', {}),
-                        onError: (error) => writeEvent(res, 'error', error),
-                    },
-                    settings: finalSettings,
-                    signal: abortController.signal,
-                    threadId: requestId,
-                });
+                try {
+                    await runAgenticLoop({
+                        ai,
+                        model,
+                        history: fullHistory, 
+                        toolExecutor,
+                        callbacks: {
+                            onTextChunk: (text) => {
+                                writeEvent(res, 'text-chunk', text);
+                                persistence.addText(text);
+                            },
+                            onNewToolCalls: (toolCallEvents) => {
+                                writeEvent(res, 'tool-call-start', toolCallEvents);
+                                persistence.update((response) => {
+                                    // Append new events
+                                    response.toolCallEvents = [...(response.toolCallEvents || []), ...toolCallEvents];
+                                });
+                            },
+                            onToolResult: (id, result) => {
+                                writeEvent(res, 'tool-call-end', { id, result });
+                                persistence.update((response) => {
+                                    if (response.toolCallEvents) {
+                                        const event = response.toolCallEvents.find((e: any) => e.id === id);
+                                        if (event) {
+                                            event.result = result;
+                                            event.endTime = Date.now();
+                                        }
+                                    }
+                                });
+                            },
+                            onPlanReady: (plan) => {
+                                return new Promise((resolve) => {
+                                    if (res.writableEnded || res.closed) {
+                                        // If user disconnected during plan, auto-deny or abort?
+                                        // Safety: Deny execution if user isn't there to approve.
+                                        resolve(false); 
+                                        return;
+                                    }
 
-                console.log(`[HANDLER] Agentic loop completed for ${requestId}.`);
-                clearInterval(pingInterval);
-                activeAgentLoops.delete(requestId);
-                res.end();
+                                    const callId = `plan-approval-${generateId()}`;
+                                    
+                                    // Save plan to history so it's visible if user reloads
+                                    persistence.update((response) => {
+                                        response.plan = { plan, callId };
+                                        // We don't have direct access to 'executionState' on the message here easily without refetching parent,
+                                        // but the frontend handles the UI state based on the presence of the plan.
+                                        // Ideally, we'd update the message metadata too.
+                                    });
+
+                                    frontendToolRequests.set(callId, resolve);
+                                    sessionCallIds.add(callId);
+                                    writeEvent(res, 'plan-ready', { plan, callId });
+                                });
+                            },
+                            onWorkflowUpdate: (workflow) => {
+                                writeEvent(res, 'workflow-update', workflow);
+                                persistence.update((response) => {
+                                    response.workflow = workflow;
+                                });
+                            },
+                            onComplete: (finalText, groundingMetadata) => {
+                                writeEvent(res, 'complete', { finalText, groundingMetadata });
+                                persistence.complete((response) => {
+                                    response.endTime = Date.now();
+                                    if (groundingMetadata) response.groundingMetadata = groundingMetadata;
+                                });
+                            },
+                            onCancel: () => {
+                                writeEvent(res, 'cancel', {});
+                                persistence.complete(); // Ensure we save whatever we have
+                            },
+                            onError: (error) => {
+                                writeEvent(res, 'error', error);
+                                persistence.complete((response) => {
+                                    response.error = error;
+                                    response.endTime = Date.now();
+                                });
+                            },
+                        },
+                        settings: finalSettings,
+                        signal: abortController.signal,
+                        threadId: requestId,
+                    });
+                } catch (loopError) {
+                    console.error(`[HANDLER] Agentic loop crashed for ${requestId}:`, loopError);
+                    persistence.complete((response) => {
+                        response.error = parseApiError(loopError);
+                    });
+                } finally {
+                    console.log(`[HANDLER] Finished processing for ${requestId}.`);
+                    clearInterval(pingInterval);
+                    activeAgentLoops.delete(requestId);
+                    if (!res.writableEnded) {
+                        res.end();
+                    }
+                }
                 break;
             }
 
@@ -308,16 +541,8 @@ export const apiHandler = async (req: any, res: any) => {
 
                 const systemInstruction = isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
                 
-                // For token counting, we should include tool declarations even in chat mode if the history
-                // potentially contains tool usage (from previous agent mode turns).
-                // Safest approach for accurate counting is to include them if agent mode is on,
-                // OR if we suspect history has tools.
-                // To prevent "function call without declaration" errors during counting, we enable tools globally for counting.
-                // We merge googleSearch and functionDeclarations.
-                
                 const tools: any[] = [{ functionDeclarations: toolDeclarations }];
                 if (!isAgentMode) {
-                    // If specifically in chat mode, also add googleSearch capabilities to estimation
                     tools.push({ googleSearch: {} });
                 }
 
@@ -337,7 +562,6 @@ export const apiHandler = async (req: any, res: any) => {
                     res.status(200).json({ totalTokens: countResult.totalTokens });
                 } catch (countError: any) {
                     console.warn(`[HANDLER] countTokens failed: ${countError.message}`);
-                    // Return 0 or null instead of 500 to avoid crashing frontend logic
                     res.status(200).json({ totalTokens: 0, error: "Count failed" });
                 }
                 break;
@@ -383,7 +607,6 @@ export const apiHandler = async (req: any, res: any) => {
                     res.status(200).json({ title: response.text.trim() });
                 } catch (e) {
                     console.warn(`[HANDLER] Title generation failed (skipping):`, e);
-                    // Return OK to prevent error noise in frontend
                     res.status(200).json({ title: '' });
                 }
                 break;
