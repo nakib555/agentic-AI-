@@ -353,8 +353,12 @@ export const useChat = (
         
         requestIdRef.current = null; // Reset before new message
     
-        let activeChatId = currentChatId;
-        const currentChat = currentChatId ? chatHistory.find(c => c.id === currentChatId) : undefined;
+        // Use Refs for latest state to avoid closure staleness issues
+        const currentHistory = chatHistoryRef.current;
+        const activeChatIdFromRef = currentChatIdRef.current;
+        
+        let activeChatId = activeChatIdFromRef;
+        const currentChat = activeChatId ? currentHistory.find(c => c.id === activeChatId) : undefined;
 
         if (!activeChatId || !currentChat) {
             const newChatSession = await chatHistoryHook.startNewChat(initialModel, {

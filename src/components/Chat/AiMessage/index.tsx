@@ -27,6 +27,7 @@ import { FormattedBlock } from '../../Markdown/FormattedBlock';
 import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 import { useTypewriter } from '../../../hooks/useTypewriter';
 import { parseContentSegments } from '../../../utils/workflowParsing';
+import { ThinkingProcess } from './ThinkingProcess';
 
 // Optimized spring physics for performance
 const animationProps = {
@@ -58,7 +59,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
-  const { activeResponse, finalAnswerText, thinkingIsComplete, agentPlan, executionLog } = logic;
+  const { activeResponse, finalAnswerText, thinkingIsComplete, agentPlan, executionLog, thinkingText } = logic;
   const [isWorkflowCollapsed, setIsWorkflowCollapsed] = useState(false);
 
   // Apply typewriter effect to the final answer text.
@@ -100,8 +101,8 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
         className="w-full flex flex-col items-start gap-4 origin-bottom-left group/message"
         style={{ willChange: 'transform, opacity' }}
     >
-      {/* Inline Thought Process Display */}
-      {logic.hasThinkingProcess && (
+      {/* 1. Agentic Workflow (Timeline) */}
+      {logic.hasWorkflow && (
         <div className="w-full rounded-xl overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/5 transition-all duration-300">
             <button
                 onClick={() => setIsWorkflowCollapsed(!isWorkflowCollapsed)}
@@ -174,6 +175,15 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
         </div>
       )}
       
+      {/* 2. Chain of Thought (Thinking Process Stream) */}
+      {logic.hasThinkingText && (
+          <ThinkingProcess 
+              thinkingText={thinkingText} 
+              isThinking={!logic.thinkingIsComplete} 
+          />
+      )}
+      
+      {/* 3. Final Answer / Result */}
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer) && (
         <div className="w-full flex flex-col gap-4">
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}

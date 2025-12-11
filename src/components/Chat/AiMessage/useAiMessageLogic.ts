@@ -7,6 +7,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import type { Message, ModelResponse, Source } from '../../../types';
 import { useTts } from '../../../hooks/useTts';
+import { parseMessageText } from '../../../utils/messageParser';
 
 export const useAiMessageLogic = (
     msg: Message,
@@ -23,17 +24,27 @@ export const useAiMessageLogic = (
         return msg.responses[msg.activeResponseIndex] ?? null;
     }, [msg.responses, msg.activeResponseIndex]);
 
+    // Parse the raw text to separate Thinking (CoT) from Final Answer
+    const { thinkingText, finalAnswerText: rawFinalAnswerText } = useMemo(() => {
+        const text = activeResponse?.text || '';
+        const error = !!activeResponse?.error;
+        // Use the existing utility to split the stream
+        return parseMessageText(text, isThinking ?? false, error);
+    }, [activeResponse?.text, activeResponse?.error, isThinking]);
+
     // Consolidate data from the pre-parsed workflow
-    const { plan: agentPlan, executionLog, finalAnswer, finalAnswerSegments } = useMemo(() => {
+    const { plan: agentPlan, executionLog, finalAnswerSegments } = useMemo(() => {
         if (activeResponse?.workflow) {
             return activeResponse.workflow;
         }
         // Fallback for very old chats or initial state
-        return { plan: '', executionLog: [], finalAnswer: activeResponse?.text || '', finalAnswerSegments: [] };
-    }, [activeResponse?.workflow, activeResponse?.text]);
+        return { plan: '', executionLog: [], finalAnswerSegments: [] };
+    }, [activeResponse?.workflow]);
 
     // Use backend-parsed final answer for TTS
-    const { playOrStopAudio, audioState, isPlaying } = useTts(finalAnswer, ttsVoice, ttsModel);
+    // We prefer the parsed one from parser if available, otherwise fallback to workflow's final answer
+    const textForTts = rawFinalAnswerText || (activeResponse?.workflow?.finalAnswer || '');
+    const { playOrStopAudio, audioState, isPlaying } = useTts(textForTts, ttsVoice, ttsModel);
 
     // Extract sources from both tool calls and grounding metadata
     const searchSources = useMemo((): Source[] => {
@@ -74,9 +85,12 @@ export const useAiMessageLogic = (
     const thinkingIsComplete = !isThinking || !!activeResponse?.error;
     
     // We now consider "having thinking process" true if we have a plan OR execution steps
-    const hasThinkingProcess = !!agentPlan || executionLog.length > 0;
+    const hasWorkflow = !!agentPlan || executionLog.length > 0;
     
-    const hasFinalAnswer = finalAnswer && finalAnswer.trim() !== '';
+    // Determine if we have a pure "Thinking" text (Chain of Thought) that isn't just the plan
+    const hasThinkingText = thinkingText && thinkingText.trim().length > 0;
+    
+    const hasFinalAnswer = rawFinalAnswerText && rawFinalAnswerText.trim() !== '';
     const duration = activeResponse?.startTime && activeResponse?.endTime ? (activeResponse.endTime - activeResponse.startTime) / 1000 : null;
     
     // Duration timer
@@ -93,7 +107,8 @@ export const useAiMessageLogic = (
     const isStreamingFinalAnswer = !!isThinking && hasFinalAnswer && !activeResponse?.error;
     
     // Waiting Logic: If we are thinking, BUT have no thinking process visible (chat mode) and no answer yet.
-    const isWaitingForFinalAnswer = !!isThinking && !hasThinkingProcess && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
+    // Updated to account for thinkingText availability
+    const isWaitingForFinalAnswer = !!isThinking && !hasWorkflow && !hasThinkingText && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
     
     // showApprovalUI logic
     const showApprovalUI = executionState === 'pending_approval' && !!activeResponse?.plan;
@@ -106,15 +121,15 @@ export const useAiMessageLogic = (
     // Fallback parsing for legacy/streaming catch-up if segments missing
     const segmentsToRender = finalAnswerSegments && finalAnswerSegments.length > 0 
         ? finalAnswerSegments 
-        : [{ type: 'text', content: finalAnswer } as any];
+        : [{ type: 'text', content: rawFinalAnswerText } as any];
 
     return {
         activeResponse, 
-        thinkingText: '', // No longer used/needed
-        finalAnswerText: finalAnswer, 
+        thinkingText, // Now properly exposed
+        finalAnswerText: rawFinalAnswerText, 
         playOrStopAudio, audioState, isPlaying, searchSources,
-        thinkingIsComplete, hasThinkingProcess, hasFinalAnswer, displayDuration, 
-        isInitialWait: !hasThinkingProcess && isWaitingForFinalAnswer,
+        thinkingIsComplete, hasWorkflow, hasThinkingText, hasFinalAnswer, displayDuration, 
+        isInitialWait: !hasWorkflow && !hasThinkingText && isWaitingForFinalAnswer,
         isStreamingFinalAnswer, isWaitingForFinalAnswer, showApprovalUI, handleRunCode,
         agentPlan, executionLog, parsedFinalAnswer: segmentsToRender
     };
