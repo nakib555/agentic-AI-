@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import type { MessageError } from '../../types';
 
@@ -72,11 +72,58 @@ const getErrorVariant = (code?: string): ErrorVariant => {
     return 'critical'; 
 };
 
+// Parse delay seconds from error text
+const extractRetryDelay = (text?: string): number | null => {
+    if (!text) return null;
+    
+    // Pattern 1: "Please retry in 44.211911205s" or similar textual descriptions
+    const textMatch = text.match(/retry in (\d+(\.\d+)?)s/i);
+    if (textMatch && textMatch[1]) {
+        return Math.ceil(parseFloat(textMatch[1]));
+    }
+
+    // Pattern 2: JSON "retryDelay": "44s"
+    const jsonMatch = text.match(/"retryDelay":\s*"(\d+(\.\d+)?)s"/);
+    if (jsonMatch && jsonMatch[1]) {
+        return Math.ceil(parseFloat(jsonMatch[1]));
+    }
+
+    return null;
+};
 
 export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [retryCountdown, setRetryCountdown] = useState<number | null>(null);
+    
     const suggestion = error.suggestion || getErrorMessageSuggestion(error.code);
     const variant = getErrorVariant(error.code);
+
+    // Initialize countdown if applicable
+    useEffect(() => {
+        // Only check for rate limits or resource exhaustion
+        if (error.code === 'RATE_LIMIT_EXCEEDED' || error.code === 'RESOURCE_EXHAUSTED' || error.message.includes('429')) {
+            const delay = extractRetryDelay(error.details) || extractRetryDelay(error.message);
+            if (delay && delay > 0) {
+                setRetryCountdown(delay);
+            }
+        }
+    }, [error]);
+
+    // Timer logic
+    useEffect(() => {
+        if (retryCountdown === null || retryCountdown <= 0) return;
+
+        const timer = setInterval(() => {
+            setRetryCountdown(prev => {
+                if (prev === null || prev <= 1) return 0;
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [retryCountdown]);
+
+    const isRateLimited = retryCountdown !== null && retryCountdown > 0;
 
     // Define distinct styles for each variant
     const variantStyles = {
@@ -237,13 +284,25 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
                     {onRetry && (
                         <button
                             onClick={onRetry}
-                            className={`text-xs font-semibold flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-all ${styles.detailsBtn} border border-current/20 hover:bg-current/10 shadow-sm hover:shadow active:scale-95 flex-1 sm:flex-initial`}
+                            disabled={isRateLimited}
+                            className={`text-xs font-semibold flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-all ${styles.detailsBtn} border border-current/20 hover:bg-current/10 shadow-sm hover:shadow active:scale-95 flex-1 sm:flex-initial disabled:opacity-50 disabled:cursor-wait disabled:active:scale-100`}
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 flex-shrink-0">
-                                <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-                                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-                            </svg>
-                            <span className="whitespace-nowrap">Regenerate</span>
+                            {isRateLimited ? (
+                                <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 flex-shrink-0 animate-pulse">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clipRule="evenodd" />
+                                    </svg>
+                                    <span className="whitespace-nowrap">Retry in {retryCountdown}s</span>
+                                </>
+                            ) : (
+                                <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 flex-shrink-0">
+                                        <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                                        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                                    </svg>
+                                    <span className="whitespace-nowrap">Regenerate</span>
+                                </>
+                            )}
                         </button>
                     )}
                 </div>
