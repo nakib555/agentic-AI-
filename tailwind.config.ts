@@ -62,6 +62,15 @@ const config: Config = {
         mono: ['Fira Code', 'monospace'],
         display: ['Space Grotesk', 'sans-serif'],
       },
+      keyframes: {
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 1.5s linear infinite',
+      },
     },
   },
   plugins: [],
