@@ -15,7 +15,7 @@ import { executeTextToSpeech } from "./tools/tts.js";
 import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory.js";
 import { runAgenticLoop } from './services/agenticLoop/index.js';
 import { createToolExecutor } from './tools/index.js';
-import { toolDeclarations } from './tools/declarations.js';
+import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations.js'; // Imported codeExecutorDeclaration
 import { getApiKey, getSuggestionApiKey } from './settingsHandler.js';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils.js';
 import { historyControl } from './services/historyControl.js';
@@ -406,7 +406,10 @@ export const apiHandler = async (req: any, res: any) => {
                 const finalSettings = {
                     ...settings,
                     systemInstruction: settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction,
-                    tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }],
+                    // In Agent Mode, full tools. In Chat Mode, Google Search + Code Execution.
+                    tools: settings.isAgentMode 
+                        ? [{ functionDeclarations: toolDeclarations }] 
+                        : [{ googleSearch: {} }, { functionDeclarations: [codeExecutorDeclaration] }],
                 };
                 
                 console.log(`[HANDLER] Running agentic loop... Mode: ${settings.isAgentMode ? 'Agent' : 'Chat'}`);
@@ -541,10 +544,9 @@ export const apiHandler = async (req: any, res: any) => {
 
                 const systemInstruction = isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
                 
-                const tools: any[] = [{ functionDeclarations: toolDeclarations }];
-                if (!isAgentMode) {
-                    tools.push({ googleSearch: {} });
-                }
+                const tools: any[] = isAgentMode 
+                    ? [{ functionDeclarations: toolDeclarations }] 
+                    : [{ googleSearch: {} }, { functionDeclarations: [codeExecutorDeclaration] }];
 
                 if (fullHistory.length === 0) {
                     fullHistory.push({ role: 'user', parts: [{ text: ' ' }] });

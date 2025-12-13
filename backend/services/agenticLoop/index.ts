@@ -112,6 +112,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     fullTextResponse += chunkText;
                     
                     // Optimization: Send DELTA text instead of full history
+                    // The frontend accumulates this delta immediately.
                     callbacks.onTextChunk(chunkText);
                     
                     // Optimization: Throttle workflow updates (Parsing is expensive & payload is large)
@@ -144,10 +145,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                         const updateText = "\n\n[PLAN_APPROVED_BY_USER]";
                         fullTextResponse = approval + updateText;
                         
-                        // Send the full replacement text as a "chunk" if needed, 
-                        // but since we are delta streaming, the frontend state might get desynced if we replace history.
-                        // However, strictly speaking, we are just appending to the LLM's context here.
-                        // For the UI, we just send the marker so it knows we moved on.
+                        // Send text marker
                         callbacks.onTextChunk(updateText); 
                     }
                 }
@@ -220,13 +218,11 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         const currentWorkflow = parseAgenticWorkflow(state.latestAgentText, allToolEvents, false);
         callbacks.onWorkflowUpdate(currentWorkflow);
 
-        console.log('[AGENT_LOOP] Executing tools sequentially to respect rate limits...');
+        console.log('[AGENT_LOOP] Executing tools asynchronously (Parallel Execution)...');
 
-        // Execute tools SEQUENTIALLY to prevent API rate limit bursts
-        const toolResponses = [];
-        
-        for (const call of toolCalls) {
-            if (signal.aborted) break;
+        // Execute tools in PARALLEL to maximize throughput and reduce latency
+        const toolPromises = toolCalls.map(async (call) => {
+            if (signal.aborted) return null;
 
             const event = newToolCallEvents.find(e => e.call === call)!;
             try {
@@ -234,38 +230,47 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 
                 callbacks.onToolResult(event.id, result);
                 
+                // Update local event state
                 event.result = result;
                 event.endTime = Date.now();
                 
-                toolResponses.push({
+                return {
                     functionResponse: {
                         name: call.name,
                         response: { result },
                     }
-                });
+                };
             } catch (error) {
                 const parsedError = parseApiError(error);
                 const errorMessage = `Tool execution failed: ${parsedError.message}`;
+                
                 callbacks.onToolResult(event.id, errorMessage);
+                
                 event.result = errorMessage;
                 event.endTime = Date.now();
                 
-                toolResponses.push({
+                return {
                     functionResponse: {
                         name: call.name,
                         response: { error: errorMessage },
                     }
-                });
+                };
             }
-            
-            // Update workflow state after each tool completes for better UI feedback
-            const intermediateWorkflow = parseAgenticWorkflow(state.latestAgentText, allToolEvents, false);
-            callbacks.onWorkflowUpdate(intermediateWorkflow);
-        }
+        });
+
+        // Wait for all tools to finish (or fail)
+        const results = await Promise.all(toolPromises);
+        
+        // Filter out nulls from aborted calls
+        const validToolResponses = results.filter(r => r !== null) as Part[];
+
+        // Final workflow update for this step
+        const intermediateWorkflow = parseAgenticWorkflow(state.latestAgentText, allToolEvents, false);
+        callbacks.onWorkflowUpdate(intermediateWorkflow);
         
         return {
-            history: [{ role: 'user', parts: toolResponses.map(tr => ({ functionResponse: tr.functionResponse })) }],
-            toolCalls: [], // Clear tool calls
+            history: [{ role: 'user', parts: validToolResponses }],
+            toolCalls: [], // Clear processed tool calls
             toolEvents: newToolCallEvents 
         };
     };
@@ -286,6 +291,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 }
                 const lastMsg = state.history[state.history.length - 1];
                 if (lastMsg.role === 'user') {
+                    // Loop back to agent if we just processed tool results (User role injection)
                     return "agent";
                 }
                 return END;
