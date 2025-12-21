@@ -9,7 +9,6 @@ import { StateGraph, START, END, Annotation, MemorySaver } from "@langchain/lang
 import { parseApiError } from "../../utils/apiError.js";
 import { ToolCallEvent } from "../../types.js";
 import { getText, generateContentStreamWithRetry } from "../../utils/geminiUtils.js";
-import { parseAgenticWorkflow } from "../../utils/workflowParser.js";
 
 // --- Types & Interfaces ---
 
@@ -18,10 +17,10 @@ type Callbacks = {
     onNewToolCalls: (toolCallEvents: ToolCallEvent[]) => void;
     onToolResult: (id: string, result: string) => void;
     onPlanReady: (plan: string) => Promise<boolean | string>;
-    onWorkflowUpdate: (workflow: any) => void; 
     onComplete: (finalText: string, groundingMetadata: any) => void;
     onCancel: () => void;
     onError: (error: any) => void;
+    onFrontendToolRequest: (callId: string, name: string, args: any) => void;
 };
 
 type RunAgenticLoopParams = {
@@ -86,7 +85,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         let hasSentPlan = false;
         let toolCalls: FunctionCall[] = [];
         let groundingMetadata: any = undefined;
-        let lastWorkflowUpdate = 0;
 
         try {
             console.log('[AGENT_LOOP] Invoking Gemini Stream...');
@@ -114,14 +112,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     // Optimization: Send DELTA text instead of full history
                     // The frontend accumulates this delta immediately.
                     callbacks.onTextChunk(chunkText);
-                    
-                    // Optimization: Throttle workflow updates (Parsing is expensive & payload is large)
-                    const now = Date.now();
-                    if (now - lastWorkflowUpdate > 150) { // Limit to ~6 updates/sec
-                        const parsedWorkflow = parseAgenticWorkflow(fullTextResponse, state.toolEvents, false);
-                        callbacks.onWorkflowUpdate(parsedWorkflow);
-                        lastWorkflowUpdate = now;
-                    }
                 }
 
                 const planMatch = fullTextResponse.includes('[USER_APPROVAL_REQUIRED]');
@@ -130,10 +120,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     hasSentPlan = true;
                     const planText = extractPlan(fullTextResponse);
                     
-                    // Ensure workflow is up to date before pausing
-                    const parsedWorkflow = parseAgenticWorkflow(fullTextResponse, state.toolEvents, false);
-                    callbacks.onWorkflowUpdate(parsedWorkflow);
-
                     const approval = await callbacks.onPlanReady(planText);
 
                     if (approval === false) {
@@ -174,10 +160,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                  });
             }
 
-            // Final workflow update ensures end state is captured
-            const finalWorkflow = parseAgenticWorkflow(fullTextResponse, state.toolEvents, toolCalls.length === 0 && !hasSentPlan);
-            callbacks.onWorkflowUpdate(finalWorkflow);
-
             return {
                 history: historyUpdate,
                 groundingMetadata,
@@ -211,13 +193,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         
         callbacks.onNewToolCalls(newToolCallEvents);
         
-        // Update local state with new events for parser
-        const allToolEvents = [...state.toolEvents, ...newToolCallEvents];
-        
-        // Emit updated workflow immediately so UI shows "Active" tool
-        const currentWorkflow = parseAgenticWorkflow(state.latestAgentText, allToolEvents, false);
-        callbacks.onWorkflowUpdate(currentWorkflow);
-
         console.log('[AGENT_LOOP] Executing tools asynchronously (Parallel Execution)...');
 
         // Execute tools in PARALLEL to maximize throughput and reduce latency
@@ -264,10 +239,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
         // Filter out nulls from aborted calls
         const validToolResponses = results.filter(r => r !== null) as Part[];
 
-        // Final workflow update for this step
-        const intermediateWorkflow = parseAgenticWorkflow(state.latestAgentText, allToolEvents, false);
-        callbacks.onWorkflowUpdate(intermediateWorkflow);
-        
         return {
             history: [{ role: 'user', parts: validToolResponses }],
             toolCalls: [], // Clear processed tool calls
@@ -314,8 +285,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
         if (!signal.aborted) {
             console.log('[AGENT_LOOP] Loop Completed Successfully.');
-            const finalWorkflow = parseAgenticWorkflow(finalText, finalState.toolEvents, true);
-            callbacks.onWorkflowUpdate(finalWorkflow);
             callbacks.onComplete(finalText, finalState.groundingMetadata);
         }
 

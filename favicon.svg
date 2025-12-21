@@ -1,1 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><path fill="#4f46e5" d="M168.867 59.133L135.867 23.133c-3.72-3.72-9.75-3.72-13.47 0L97.33 48.2 72.263 23.133c-3.72-3.72-9.75-3.72-13.47 0L23.133 59.133c-3.72 3.72-3.72 9.75 0 13.47l33 33.004 25.067-25.067c5.07-5.07 13.3-5.07 18.37 0l25.067 25.067 33-33.004c3.72-3.72 3.7-9.75 0-13.47zM96 96.004L127.03 65l19.7 19.7-42.88 42.88c-3.72 3.72-9.75 3.72-13.47 0l-42.88-42.88 19.7-19.7L96 96.004z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg-grad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4f46e5"/> <!-- Indigo 600 -->
+      <stop offset="100%" stop-color="#9333ea"/> <!-- Purple 600 -->
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  
+  <!-- Modern Squircle Background -->
+  <rect width="512" height="512" rx="128" fill="url(#bg-grad)"/>
+  
+  <!-- Subtle Orbital Ring representing Agentic Loop -->
+  <circle cx="256" cy="256" r="170" stroke="white" stroke-width="16" stroke-opacity="0.15" stroke-dasharray="80 60" stroke-linecap="round" transform="rotate(45 256 256)"/>
+  
+  <!-- Main Intelligence Spark -->
+  <path d="M256 100 C 256 100, 300 212, 412 256 C 300 300, 256 412, 256 412 C 256 412, 212 300, 100 256 C 212 212, 256 100, 256 100 Z" fill="white"/>
+  
+  <!-- Core Node -->
+  <circle cx="256" cy="256" r="40" fill="white" fill-opacity="0.9"/>
+</svg>

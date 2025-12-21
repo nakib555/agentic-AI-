@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -43,7 +42,7 @@ const CHAT_FALLBACK_PLACEHOLDERS = [
   'Give me some workout ideas I can do at home',
   'Explain the stock market',
   'What are the seven wonders of the ancient world?',
-  'Help me debug this simple JavaScript code',
+  'What are some interesting historical facts?',
   "What's a good movie to watch tonight?",
   'Tell me about the history of the internet',
   'How can I be more productive?',

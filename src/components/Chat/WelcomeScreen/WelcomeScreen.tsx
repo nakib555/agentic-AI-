@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -11,7 +10,7 @@ import { FloatingPrompts } from './FloatingPrompts';
 const motion = motionTyped as any;
 
 type WelcomeScreenProps = {
-  sendMessage: (message: string) => void;
+  sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
 };
 
 export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
@@ -32,7 +31,7 @@ export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
         </motion.div>
         
         <div className="w-full max-w-3xl">
-             <FloatingPrompts onPromptClick={sendMessage} />
+             <FloatingPrompts onPromptClick={(prompt, options) => sendMessage(prompt, undefined, options)} />
         </div>
     </div>
 );

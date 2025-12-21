@@ -12,6 +12,7 @@ import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '.
 import { fetchFromApi } from '../../utils/api';
 import { toolImplementations as frontendToolImplementations } from '../../tools';
 import { processBackendStream } from '../../services/agenticLoop/stream-processor';
+import { parseAgenticWorkflow } from '../../utils/workflowParsing';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -244,12 +245,15 @@ export const useChat = (
                     },
                     onTextChunk: (delta) => {
                         // Append delta to current text
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (current) => ({ 
-                            text: (current.text || '') + delta 
-                        }));
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (current) => {
+                            const newText = (current.text || '') + delta;
+                            // Client-side workflow parsing
+                            const parsedWorkflow = parseAgenticWorkflow(newText, current.toolCallEvents || [], false);
+                            return { text: newText, workflow: parsedWorkflow };
+                        });
                     },
-                    onWorkflowUpdate: (workflow) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ workflow }));
+                    onWorkflowUpdate: () => {
+                        // Deprecated: Workflow is now computed client-side in onTextChunk/onTool*
                     },
                     onToolCallStart: (toolCallEvents) => {
                         const newEvents = toolCallEvents.map((toolEvent: any) => ({
@@ -257,11 +261,15 @@ export const useChat = (
                             call: toolEvent.call,
                             startTime: Date.now()
                         }));
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({ toolCallEvents: [...(r.toolCallEvents || []), ...newEvents] }));
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
+                            const updatedEvents = [...(r.toolCallEvents || []), ...newEvents];
+                            const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents, false);
+                            return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
+                        });
                     },
                     onToolUpdate: (payload) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({
-                            toolCallEvents: r.toolCallEvents?.map(tc => {
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
+                            const updatedEvents = r.toolCallEvents?.map(tc => {
                                 if (tc.id === payload.id) {
                                     const session = (tc.browserSession || { url: payload.url || '', logs: [], status: 'running' }) as BrowserSession;
                                     if (payload.log) session.logs = [...session.logs, payload.log];
@@ -272,13 +280,17 @@ export const useChat = (
                                     return { ...tc, browserSession: { ...session } };
                                 }
                                 return tc;
-                            })
-                        }));
+                            });
+                            const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents || [], false);
+                            return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
+                        });
                     },
                     onToolCallEnd: (payload) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => ({
-                            toolCallEvents: r.toolCallEvents?.map(tc => tc.id === payload.id ? { ...tc, result: payload.result, endTime: Date.now() } : tc)
-                        }));
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
+                            const updatedEvents = r.toolCallEvents?.map(tc => tc.id === payload.id ? { ...tc, result: payload.result, endTime: Date.now() } : tc);
+                            const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents || [], false);
+                            return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
+                        });
                     },
                     onPlanReady: (plan) => {
                         const payload = plan as any; 
@@ -289,7 +301,15 @@ export const useChat = (
                         handleFrontendToolExecution(callId, toolName, toolArgs);
                     },
                     onComplete: (payload) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ text: payload.finalText, endTime: Date.now(), groundingMetadata: payload.groundingMetadata }));
+                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
+                            const finalWorkflow = parseAgenticWorkflow(payload.finalText, r.toolCallEvents || [], true);
+                            return { 
+                                text: payload.finalText, 
+                                endTime: Date.now(), 
+                                groundingMetadata: payload.groundingMetadata,
+                                workflow: finalWorkflow 
+                            };
+                        });
                     },
                     onError: (error) => {
                         chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error, endTime: Date.now() }));

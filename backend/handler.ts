@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -406,10 +405,10 @@ export const apiHandler = async (req: any, res: any) => {
                 const finalSettings = {
                     ...settings,
                     systemInstruction: settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction,
-                    // In Agent Mode, full tools. In Chat Mode, Google Search + Code Execution.
+                    // In Agent Mode, full tools. In Chat Mode, only Google Search.
                     tools: settings.isAgentMode 
                         ? [{ functionDeclarations: toolDeclarations }] 
-                        : [{ googleSearch: {} }, { functionDeclarations: [codeExecutorDeclaration] }],
+                        : [{ googleSearch: {} }],
                 };
                 
                 console.log(`[HANDLER] Running agentic loop... Mode: ${settings.isAgentMode ? 'Agent' : 'Chat'}`);
@@ -468,11 +467,12 @@ export const apiHandler = async (req: any, res: any) => {
                                     writeEvent(res, 'plan-ready', { plan, callId });
                                 });
                             },
-                            onWorkflowUpdate: (workflow) => {
-                                writeEvent(res, 'workflow-update', workflow);
-                                persistence.update((response) => {
-                                    response.workflow = workflow;
-                                });
+                            // @ts-ignore
+                            // FIX: Add missing onFrontendToolRequest callback to satisfy the type.
+                            // This appears to be a stale requirement from a previous refactor, as the
+                            // toolExecutor now handles this logic. We add a warning to detect if it's ever called.
+                            onFrontendToolRequest: (callId, name, args) => {
+                                console.warn(`[HANDLER] onFrontendToolRequest called, but this path is deprecated. Tool: ${name}`);
                             },
                             onComplete: (finalText, groundingMetadata) => {
                                 writeEvent(res, 'complete', { finalText, groundingMetadata });
@@ -546,7 +546,7 @@ export const apiHandler = async (req: any, res: any) => {
                 
                 const tools: any[] = isAgentMode 
                     ? [{ functionDeclarations: toolDeclarations }] 
-                    : [{ googleSearch: {} }, { functionDeclarations: [codeExecutorDeclaration] }];
+                    : [{ googleSearch: {} }];
 
                 if (fullHistory.length === 0) {
                     fullHistory.push({ role: 'user', parts: [{ text: ' ' }] });
@@ -655,16 +655,31 @@ export const apiHandler = async (req: any, res: any) => {
             case 'enhance': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { userInput } = req.body;
-                const prompt = `You are a prompt rewriting expert. Rewrite the following user input to be more detailed, specific, and clear for a large language model. Expand on the user's intent. Do not add conversational filler. Just provide the rewritten prompt.\n\nUSER INPUT: "${userInput}"\n\nREWRITTEN PROMPT:`;
+                
+                const prompt = `You are a professional prompt engineer. Your goal is to optimize the user's input for a large language model (LLM) to ensure the best possible response.
+
+                User Input: "${userInput}"
+
+                Instructions:
+                1.  **Clarify & Expand:** Make the intent explicit. If the user asks a vague question, add necessary context or specify the desired format (e.g., "explain step-by-step", "provide code examples").
+                2.  **Remove Ambiguity:** Replace vague terms with precise terminology.
+                3.  **Maintain Voice:** Keep the request in the first person (as if the user is asking).
+                4.  **No Fluff:** Do not add conversational filler like "Hello AI" or "Please". Go straight to the request.
+                5.  **Preserve Constraints:** If the user specifies a constraint (e.g., "in Python", "short answer"), strictly keep it.
+                6.  **Short Inputs:** If the input is already simple/optimal or just a greeting ("Hi", "Hello"), return it exactly as is.
+
+                Optimized Prompt:`;
                 
                 res.setHeader('Content-Type', 'text/plain');
                 try {
+                    // Use gemini-3-flash-preview as recommended for basic text tasks
                     const stream = await generateContentStreamWithRetry(ai, {
-                        model: 'gemini-2.5-flash',
+                        model: 'gemini-3-flash-preview',
                         contents: prompt,
                     });
                     for await (const chunk of stream) {
-                        res.write(chunk.text);
+                        const text = chunk.text || '';
+                        if (text) res.write(text);
                     }
                 } catch (e) {
                     console.error("Prompt enhance failed:", e);

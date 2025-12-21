@@ -20,7 +20,7 @@ export interface StreamCallbacks {
 
 /**
  * Processes a streaming response from the backend API.
- * Uses requestAnimationFrame to buffer rapid text updates for UI performance.
+ * Uses requestAnimationFrame to buffer rapid text chunks for UI performance.
  */
 export const processBackendStream = async (response: Response, callbacks: StreamCallbacks, signal?: AbortSignal) => {
     if (!response.body) {
@@ -89,7 +89,8 @@ export const processBackendStream = async (response: Response, callbacks: Stream
                             // Keep-alive, ignore
                             break;
                         case 'workflow-update':
-                            callbacks.onWorkflowUpdate(event.payload);
+                            // Deprecated from backend, but kept for compatibility if needed
+                            if (callbacks.onWorkflowUpdate) callbacks.onWorkflowUpdate(event.payload);
                             break;
                         case 'tool-call-start':
                             callbacks.onToolCallStart(event.payload);
