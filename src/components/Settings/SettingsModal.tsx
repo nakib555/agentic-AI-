@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -129,7 +130,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="settings-title"
@@ -143,16 +144,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur-md z-20">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-layer-1/80 backdrop-blur-md z-20">
               <div>
-                <h2 id="settings-title" className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                <h2 id="settings-title" className="text-xl font-bold text-content-primary tracking-tight">
                   Settings
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Preferences & Configuration</p>
+                <p className="text-xs text-content-tertiary font-medium mt-0.5">Preferences & Configuration</p>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-200"
+                className="p-2 rounded-xl text-content-tertiary hover:text-content-primary hover:bg-layer-2 transition-all duration-200"
                 aria-label="Close settings"
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -162,9 +163,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
               </button>
             </div>
             
-            <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-slate-50/30 dark:bg-black/20">
+            <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-layer-2/50">
                 {/* Navigation Sidebar */}
-                <nav className="flex-shrink-0 p-4 md:p-6 md:pr-0 md:w-64 bg-white/50 dark:bg-layer-1/50 z-10 md:border-r border-slate-200 dark:border-white/5">
+                <nav className="flex-shrink-0 p-4 md:p-6 md:pr-0 md:w-64 bg-layer-1/50 z-10 md:border-r border-border">
                     <LayoutGroup id="settings-nav">
                         <ul className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar">
                             {CATEGORIES.map(cat => (
@@ -182,7 +183,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                 </nav>
 
                 {/* Content Area - Lazy Loaded */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-white dark:bg-[#0f0f0f]">
+                <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-page">
                     <div className="p-6 md:p-10 max-w-3xl mx-auto">
                         <Suspense fallback={<SettingsSkeleton />}>
                             <AnimatePresence mode="wait">
