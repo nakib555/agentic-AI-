@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -17,7 +18,6 @@ import { McqComponent } from '../../AI/McqComponent';
 import { MapDisplay } from '../../AI/MapDisplay';
 import { FileAttachment } from '../../AI/FileAttachment';
 import { SuggestedActions } from '../SuggestedActions';
-import { ExecutionApproval } from '../../AI/ExecutionApproval';
 import type { MessageFormHandle } from '../MessageForm/index';
 import { useAiMessageLogic } from './useAiMessageLogic';
 import { MessageToolbar } from './MessageToolbar';
@@ -25,7 +25,6 @@ import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 import { useTypewriter } from '../../../hooks/useTypewriter';
 import { parseContentSegments } from '../../../utils/workflowParsing';
 import { ThinkingProcess } from './ThinkingProcess';
-import { ManusMessage } from '../../AI/ManusMessage';
 
 // Optimized spring physics for performance
 const animationProps = {
@@ -58,7 +57,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
-  const { activeResponse, finalAnswerText, thinkingIsComplete, agentPlan, executionLog, thinkingText } = logic;
+  const { activeResponse, finalAnswerText, thinkingIsComplete, thinkingText } = logic;
   
   // Apply typewriter effect to the final answer text.
   const typedFinalAnswer = useTypewriter(finalAnswerText, msg.isThinking ?? false);
@@ -76,48 +75,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   };
 
   if (logic.isInitialWait) return <TypingIndicator />;
-
-  if (logic.showApprovalUI && activeResponse?.plan) {
-    return <ExecutionApproval plan={activeResponse.plan} onApprove={approveExecution} onDeny={denyExecution} />;
-  }
-
-  // --- MANUS UI MODE (Agent Mode Only) ---
-  // If we are in Agent Mode, we use the specific Dashboard UI
-  if (isAgentMode && logic.hasWorkflow) {
-      return (
-          <motion.div {...animationProps} className="w-full origin-bottom-left">
-              <ManusMessage 
-                  userQuery={userQuery || "Request..."}
-                  plan={agentPlan || ''}
-                  executionLog={executionLog}
-                  finalAnswerSegments={displaySegments}
-                  status={!thinkingIsComplete ? 'thinking' : activeResponse?.error ? 'failed' : 'completed'}
-                  isStreaming={msg.isThinking ?? false}
-              />
-              
-              {logic.thinkingIsComplete && logic.hasFinalAnswer && !activeResponse?.error && (
-                  <div className="w-full px-1">
-                    <MessageToolbar
-                        messageId={id}
-                        messageText={logic.finalAnswerText}
-                        rawText={activeResponse?.text || ''}
-                        sources={logic.searchSources}
-                        onShowSources={onShowSources}
-                        ttsState={logic.audioState}
-                        onTtsClick={logic.playOrStopAudio}
-                        onRegenerate={() => onRegenerate(id)}
-                        responseCount={msg.responses?.length || 0}
-                        activeResponseIndex={msg.activeResponseIndex}
-                        onResponseChange={(index) => onSetActiveResponseIndex(id, index)}
-                    />
-                  </div>
-              )}
-              {logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
-                 <div className="w-full px-1"><SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} /></div>
-              )}
-          </motion.div>
-      );
-  }
 
   // --- STANDARD CHAT MODE ---
   return (

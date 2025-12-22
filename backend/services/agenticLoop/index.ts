@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -32,15 +33,6 @@ type RunAgenticLoopParams = {
     threadId: string;
 };
 
-const extractPlan = (rawText: string): string => {
-    const planMarker = '[STEP] Strategic Plan:';
-    const planMarkerIndex = rawText.indexOf(planMarker);
-    if (planMarkerIndex === -1) return rawText; 
-
-    const planStart = rawText.substring(planMarkerIndex);
-    return planStart.replace(/\[USER_APPROVAL_REQUIRED\][\s\S]*/, '').trim();
-};
-
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
 // --- Custom Agentic Loop Implementation ---
@@ -66,7 +58,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             let fullTextResponse = '';
             let toolCalls: FunctionCall[] = [];
             let groundingMetadata: any = undefined;
-            let hasSentPlan = false;
 
             // 1. Generate Content (Streaming)
             console.log('[AGENT_LOOP] Invoking Gemini Stream...');
@@ -91,27 +82,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                     fullTextResponse += chunkText;
                     finalAnswerAccumulator = fullTextResponse; // Track for final output
                     callbacks.onTextChunk(chunkText);
-                }
-
-                // Check for Plan Approval Pause
-                const planMatch = fullTextResponse.includes('[USER_APPROVAL_REQUIRED]');
-                if (planMatch && !hasSentPlan) {
-                    console.log('[AGENT_LOOP] Plan approval required. Pausing for user input...');
-                    hasSentPlan = true;
-                    const planText = extractPlan(fullTextResponse);
-                    
-                    const approval = await callbacks.onPlanReady(planText);
-
-                    if (approval === false) {
-                        console.log('[AGENT_LOOP] User denied execution.');
-                        throw new Error("AbortError");
-                    }
-                    if (typeof approval === 'string') {
-                        console.log('[AGENT_LOOP] User edited plan. Injecting updated plan.');
-                        const updateText = "\n\n[PLAN_APPROVED_BY_USER]";
-                        fullTextResponse += updateText;
-                        callbacks.onTextChunk(updateText); 
-                    }
                 }
             }
 
@@ -182,13 +152,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
             // 5. Add Tool Outputs to History
             history.push({ role: 'user', parts: validToolResponses });
-
-            // If plan was just approved, inject the user confirmation message into history effectively
-            if (hasSentPlan) {
-                 // We already handled the pause, the next loop iteration continues naturally with tool results or new generation.
-                 // We append a virtual steering message if no tools were called to force continuation,
-                 // but since tools WERE called (logic above), the functionResponse is sufficient.
-            }
         }
 
         if (!signal.aborted) {

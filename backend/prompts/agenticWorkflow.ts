@@ -86,10 +86,7 @@ You **MUST** follow this cycle for every multi-step request.
 1. **[Agent Name]**: [Action description] (Tools: tool_name)
 2. **[Agent Name]**: [Action description] (Dependency: Step 1)
 ...
-
-[USER_APPROVAL_REQUIRED]
 \`\`\`
-*(The system pauses here. Once approved, you proceed.)*
 
 ### PHASE 2: EXECUTE (The Loop)
 \`\`\`markdown
