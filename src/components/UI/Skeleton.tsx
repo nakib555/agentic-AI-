@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -14,9 +15,14 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '' }) => {
     <div 
       className={`
         relative overflow-hidden rounded-md 
-        bg-gradient-to-r from-slate-200 via-slate-100/50 to-slate-200 
-        dark:from-white/5 dark:via-white/10 dark:to-white/5 
-        bg-[length:200%_100%] animate-shimmer
+        bg-slate-200/80 dark:bg-white/5 
+        before:absolute before:inset-0
+        before:-translate-x-full
+        before:animate-shimmer
+        before:bg-gradient-to-r
+        before:from-transparent 
+        before:via-white/50 dark:before:via-white/10
+        before:to-transparent
         ${className}
       `} 
       aria-hidden="true"
