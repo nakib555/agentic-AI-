@@ -59,9 +59,9 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
     const isRunnable = onRunCode && runnableLanguages.includes(rawLanguage);
 
     return (
-      <div className="my-6 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 bg-[#f9f9f9] dark:bg-[#0d0d0d] shadow-sm font-sans group">
+      <div className="my-6 rounded-lg overflow-hidden border border-slate-300 dark:border-white/20 bg-[#f9f9f9] dark:bg-[#0d0d0d] shadow-sm font-sans group">
         {/* Header */}
-        <div className="flex justify-between items-center px-4 py-2.5 bg-gray-100 dark:bg-[#1e1e1e] border-b border-gray-200 dark:border-white/5 select-none">
+        <div className="flex justify-between items-center px-4 py-2.5 bg-gray-100 dark:bg-[#1e1e1e] border-b border-slate-300 dark:border-white/20 select-none">
           <div className="flex items-center gap-3">
              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 lowercase">
                 {formattedLanguage}
