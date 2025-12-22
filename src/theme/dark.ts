@@ -5,32 +5,32 @@
  */
 
 const darkTheme = {
-  // --- Base Layers (Modern Zinc) ---
-  "--bg-page": "#09090b", // Zinc 950 - Rich, warm black
-  "--bg-layer-1": "#18181b", // Zinc 900 - Soft card background
-  "--bg-layer-2": "#27272a", // Zinc 800 - Borders/Separators
-  "--bg-layer-3": "#3f3f46", // Zinc 700 - Hover states
-  "--bg-glass": "rgba(24, 24, 27, 0.8)", // Glassmorphism base
+  // --- Base Layers ---
+  "--bg-page": "#121212",       // Carbon
+  "--bg-layer-1": "#1E1E1E",    // Gunmetal (Surface)
+  "--bg-layer-2": "#27272A",    // Charcoal
+  "--bg-layer-3": "#334155",    // Steel (used for hovers/tertiary)
+  "--bg-glass": "rgba(30, 30, 30, 0.9)",
 
-  // --- Text Colors (High Contrast) ---
-  "--text-primary": "#fafafa", // Zinc 50
-  "--text-secondary": "#a1a1aa", // Zinc 400
-  "--text-tertiary": "#71717a", // Zinc 500
-  "--text-inverted": "#000000",
+  // --- Text Colors ---
+  "--text-primary": "#E2E8F0",  // Cloud
+  "--text-secondary": "#94a3b8", // Slate 400
+  "--text-tertiary": "#64748b",  // Slate 500
+  "--text-inverted": "#121212",  // Carbon
 
-  // --- Borders (Subtle & Refined) ---
-  "--border-subtle": "rgba(255, 255, 255, 0.05)",
-  "--border-default": "rgba(255, 255, 255, 0.08)",
-  "--border-strong": "rgba(255, 255, 255, 0.15)",
-  "--border-focus": "#6366f1", // Indigo 500
+  // --- Borders ---
+  "--border-subtle": "rgba(51, 65, 85, 0.3)",
+  "--border-default": "#334155", // Steel
+  "--border-strong": "#475569",  // Lighter Steel
+  "--border-focus": "#2DD4BF",   // Teal Mint
 
-  // --- Brand Colors (Electric Indigo) ---
-  "--primary-main": "#6366f1", // Indigo 500
-  "--primary-hover": "#818cf8", // Indigo 400
-  "--primary-subtle": "rgba(99, 102, 241, 0.15)", // Glow effect
-  "--primary-text": "#e0e7ff", // Indigo 50
+  // --- Brand Colors ---
+  "--primary-main": "#2DD4BF",   // Teal Mint
+  "--primary-hover": "#14b8a6",  // Teal 500
+  "--primary-subtle": "rgba(45, 212, 191, 0.15)",
+  "--primary-text": "#ccfbf1",   // Teal 50
 
-  // --- Status Indicators (Vibrant Glass) ---
+  // --- Status Indicators ---
   "--status-error-bg": "rgba(127, 29, 29, 0.2)",
   "--status-error-text": "#fca5a5",
   "--status-success-bg": "rgba(20, 83, 45, 0.2)",
@@ -39,13 +39,13 @@ const darkTheme = {
   "--status-warning-text": "#fde047",
 
   // --- Component Specifics ---
-  "--bg-message-user": "#27272a", // Matches layer 2
-  "--bg-message-ai": "transparent",
-  "--bg-input": "#18181b", // Matches layer 1
-  "--bg-input-secondary": "#27272a",
-  "--bg-code": "#121214", // Deep black for code blocks
-  "--text-code": "#e4e4e7",
-  "--bg-sidebar": "#09090b" // Matches page
+  "--bg-message-user": "#27272A", // Charcoal
+  "--bg-message-ai": "#2563EB",   // Oceanic
+  "--bg-input": "#1E1E1E",        // Gunmetal
+  "--bg-input-secondary": "#27272A", // Charcoal
+  "--bg-code": "#121212",         // Carbon
+  "--text-code": "#E2E8F0",       // Cloud
+  "--bg-sidebar": "#1E1E1E"       // Gunmetal
 };
 
 export default darkTheme;
