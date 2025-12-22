@@ -5,7 +5,9 @@
  */
 
 import React from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
+
+const motion = motionTyped as any;
 
 type ConfirmationModalProps = {
   isOpen: boolean;

@@ -5,7 +5,9 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+
+const motion = motionTyped as any;
 
 type BrowserSessionDisplayProps = {
     url: string;

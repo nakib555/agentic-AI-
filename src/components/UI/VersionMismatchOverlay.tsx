@@ -5,7 +5,9 @@
  */
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion as motionTyped } from 'framer-motion';
+
+const motion = motionTyped as any;
 
 export const VersionMismatchOverlay: React.FC = () => {
   const [isReloading, setIsReloading] = useState(false);

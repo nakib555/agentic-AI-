@@ -5,8 +5,10 @@
  */
 
 import React, { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { TabButton } from '../UI/TabButton';
+
+const motion = motionTyped as any;
 
 type ImportChatModalProps = {
   isOpen: boolean;
