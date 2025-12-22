@@ -131,6 +131,7 @@ export const useAiMessageLogic = (
         thinkingIsComplete, hasWorkflow, hasThinkingText, hasFinalAnswer, displayDuration, 
         isInitialWait: !hasWorkflow && !hasThinkingText && isWaitingForFinalAnswer,
         isStreamingFinalAnswer, isWaitingForFinalAnswer, showApprovalUI, handleRunCode,
-        agentPlan, executionLog, parsedFinalAnswer: segmentsToRender
+        agentPlan, executionLog, parsedFinalAnswer: segmentsToRender,
+        usageMetadata: activeResponse?.usageMetadata // Expose usage metadata
     };
 };

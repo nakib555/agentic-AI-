@@ -16,6 +16,7 @@ export interface StreamCallbacks {
     onComplete: (data: { finalText: string, groundingMetadata: any }) => void;
     onError: (error: any) => void;
     onCancel?: () => void;
+    onTokenUsage: (usage: any) => void;
 }
 
 /**
@@ -115,6 +116,9 @@ export const processBackendStream = async (response: Response, callbacks: Stream
                             break;
                         case 'cancel':
                             callbacks.onCancel?.();
+                            break;
+                        case 'token-usage':
+                            callbacks.onTokenUsage(event.payload);
                             break;
                         default:
                             console.warn(`[StreamProcessor] Unknown event type: ${event.type}`);

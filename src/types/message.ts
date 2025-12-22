@@ -35,6 +35,12 @@ export type Source = {
   title: string;
 };
 
+export type UsageMetadata = {
+  promptTokenCount: number;
+  candidatesTokenCount: number;
+  totalTokenCount: number;
+};
+
 export type ModelResponse = {
   text: string;
   toolCallEvents?: ToolCallEvent[];
@@ -45,6 +51,7 @@ export type ModelResponse = {
   plan?: { plan: string; callId?: string }; // Updated to support callId
   groundingMetadata?: any;
   workflow?: ParsedWorkflow;
+  usageMetadata?: UsageMetadata;
 };
 
 export type Message = {
