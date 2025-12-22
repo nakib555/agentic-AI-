@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -53,9 +54,10 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
     // Maintain local history state
     let history: Content[] = [...initialHistory];
     let turns = 0;
-    const MAX_TURNS = 15; // Safety limit
+    const MAX_TURNS = 12; // Adjusted safety limit
     let finalAnswerAccumulator = "";
     let finalGroundingMetadata: any = undefined;
+    let consecutiveTurnsWithoutTools = 0;
 
     try {
         while (turns < MAX_TURNS) {
@@ -127,67 +129,71 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             
             history.push({ role: 'model', parts: newContentParts });
 
-            // 3. Check for Termination (No tools, just text)
+            // 3. Logic to prevent infinite loops without progress
             if (toolCalls.length === 0) {
-                console.log('[AGENT_LOOP] No tool calls detected. Ending loop.');
-                break;
+                consecutiveTurnsWithoutTools++;
+                console.log(`[AGENT_LOOP] No tool calls detected (${consecutiveTurnsWithoutTools} streak).`);
+                
+                // If the model just talks for 2 turns without doing anything, forcing it to stop is safer.
+                // However, we check if it generated a Final Answer marker.
+                if (fullTextResponse.includes('[STEP] Final Answer:') || consecutiveTurnsWithoutTools >= 2) {
+                    console.log('[AGENT_LOOP] Ending loop naturally or due to chatter limit.');
+                    break;
+                }
+            } else {
+                consecutiveTurnsWithoutTools = 0; // Reset streak if tools are used
             }
 
             // 4. Execute Tools
-            console.log(`[AGENT_LOOP] Executing ${toolCalls.length} tools...`);
-            
-            // Create UI Events
-            const newToolCallEvents: ToolCallEvent[] = toolCalls.map(fc => ({
-                id: `${fc.name}-${generateId()}`,
-                call: fc,
-                startTime: Date.now()
-            }));
-            callbacks.onNewToolCalls(newToolCallEvents);
-
-            // Execute in Parallel
-            const toolPromises = toolCalls.map(async (call) => {
-                if (signal.aborted) return null;
-                const event = newToolCallEvents.find(e => e.call === call)!;
+            if (toolCalls.length > 0) {
+                console.log(`[AGENT_LOOP] Executing ${toolCalls.length} tools...`);
                 
-                try {
-                    const result = await toolExecutor(call.name, call.args, event.id);
-                    callbacks.onToolResult(event.id, result);
-                    event.result = result;
-                    event.endTime = Date.now();
+                // Create UI Events
+                const newToolCallEvents: ToolCallEvent[] = toolCalls.map(fc => ({
+                    id: `${fc.name}-${generateId()}`,
+                    call: fc,
+                    startTime: Date.now()
+                }));
+                callbacks.onNewToolCalls(newToolCallEvents);
+
+                // Execute in Parallel
+                const toolPromises = toolCalls.map(async (call) => {
+                    if (signal.aborted) return null;
+                    const event = newToolCallEvents.find(e => e.call === call)!;
                     
-                    return {
-                        functionResponse: {
-                            name: call.name,
-                            response: { result },
-                        }
-                    };
-                } catch (error) {
-                    const parsedError = parseApiError(error);
-                    const errorMessage = `Tool execution failed: ${parsedError.message}`;
-                    callbacks.onToolResult(event.id, errorMessage);
-                    event.result = errorMessage;
-                    event.endTime = Date.now();
-                    
-                    return {
-                        functionResponse: {
-                            name: call.name,
-                            response: { error: errorMessage },
-                        }
-                    };
-                }
-            });
+                    try {
+                        const result = await toolExecutor(call.name, call.args, event.id);
+                        callbacks.onToolResult(event.id, result);
+                        event.result = result;
+                        event.endTime = Date.now();
+                        
+                        return {
+                            functionResponse: {
+                                name: call.name,
+                                response: { result },
+                            }
+                        };
+                    } catch (error) {
+                        const parsedError = parseApiError(error);
+                        const errorMessage = `Tool execution failed: ${parsedError.message}`;
+                        callbacks.onToolResult(event.id, errorMessage);
+                        event.result = errorMessage;
+                        event.endTime = Date.now();
+                        
+                        return {
+                            functionResponse: {
+                                name: call.name,
+                                response: { error: errorMessage },
+                            }
+                        };
+                    }
+                });
 
-            const results = await Promise.all(toolPromises);
-            const validToolResponses = results.filter(r => r !== null) as Part[];
+                const results = await Promise.all(toolPromises);
+                const validToolResponses = results.filter(r => r !== null) as Part[];
 
-            // 5. Add Tool Outputs to History
-            history.push({ role: 'user', parts: validToolResponses });
-
-            // If plan was just approved, inject the user confirmation message into history effectively
-            if (hasSentPlan) {
-                 // We already handled the pause, the next loop iteration continues naturally with tool results or new generation.
-                 // We append a virtual steering message if no tools were called to force continuation,
-                 // but since tools WERE called (logic above), the functionResponse is sufficient.
+                // 5. Add Tool Outputs to History
+                history.push({ role: 'user', parts: validToolResponses });
             }
         }
 
