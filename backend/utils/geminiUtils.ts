@@ -9,18 +9,17 @@ import {
   GenerateContentParameters,
   GenerateImagesResponse,
   GenerateContentResponse,
-  GenerateVideosResponse,
 } from "@google/genai";
 
 // Define the result type for streaming, compatible with the SDK's return type.
-// The SDK returns an object that is both an async iterable and has a .response promise.
 export type GenerateContentStreamResult = AsyncIterable<GenerateContentResponse> & {
   readonly response: Promise<GenerateContentResponse>;
 };
 
 // Global throttling to smooth out bursts
 let lastRequestTimestamp = 0;
-const MIN_REQUEST_INTERVAL = 200; 
+// Increased interval to be safer
+const MIN_REQUEST_INTERVAL = 1000; 
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -40,46 +39,67 @@ async function throttle() {
     }
 }
 
-async function executeOperation<T>(operation: () => Promise<T>): Promise<T> {
-  await throttle();
-  return await operation();
+/**
+ * Wrapper for API calls that handles 429/503 errors with exponential backoff.
+ */
+async function executeOperationWithRetry<T>(
+    operation: () => Promise<T>,
+    retries = 3,
+    baseDelay = 2000
+): Promise<T> {
+    await throttle();
+    
+    let lastError: any;
+    
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await operation();
+        } catch (error: any) {
+            lastError = error;
+            
+            // Check for Rate Limit (429) or Server Overload (503)
+            const isRateLimit = error.message?.includes('429') || error.status === 429 || error.message?.includes('RESOURCE_EXHAUSTED');
+            const isOverloaded = error.message?.includes('503') || error.status === 503 || error.message?.includes('UNAVAILABLE');
+            
+            if (isRateLimit || isOverloaded) {
+                // Exponential backoff: 2s, 4s, 8s
+                const delay = baseDelay * Math.pow(2, i) + (Math.random() * 500);
+                console.warn(`[GeminiUtils] API hit limit/overload (Attempt ${i+1}/${retries}). Retrying in ${Math.round(delay)}ms...`);
+                await sleep(delay);
+                continue;
+            }
+            
+            // If it's a different error, throw immediately
+            throw error;
+        }
+    }
+    
+    throw lastError;
 }
 
-/**
- * Generates content using the streaming endpoint (`generateContentStream`) but waits for the full response.
- * This ensures compliance with the requirement to use the streaming endpoint for all model calls.
- */
 export async function generateContentWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<GenerateContentResponse> {
   const operation = async () => {
-    // CRITICAL: Always use generateContentStream.
     const streamResult = (await ai.models.generateContentStream(request)) as unknown as GenerateContentStreamResult;
-    // Wait for the stream to finish and return the aggregated response.
     return await streamResult.response;
   };
-  return await executeOperation(operation);
+  return await executeOperationWithRetry(operation);
 }
 
-/**
- * Generates content using the streaming endpoint (`generateContentStream`) and returns the stream iterable.
- */
 export async function generateContentStreamWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<GenerateContentStreamResult> {
   const operation = async () => {
-      // Cast is generally not needed if types align, but ensures compatibility if SDK types are strict
       return (await ai.models.generateContentStream(request)) as unknown as GenerateContentStreamResult;
   };
-  return await executeOperation(operation);
+  return await executeOperationWithRetry(operation);
 }
 
 export async function generateImagesWithRetry(ai: GoogleGenAI, request: any): Promise<GenerateImagesResponse> {
     const operation = async () => ai.models.generateImages(request);
-    return await executeOperation(operation);
+    return await executeOperationWithRetry(operation);
 }
 
-// Changed return type to Promise<any> to support operation object return structure 
-// required for polling, as SDK types for LROs might vary.
 export async function generateVideosWithRetry(ai: GoogleGenAI, request: any): Promise<any> {
     const operation = async () => ai.models.generateVideos(request);
-    return await executeOperation(operation);
+    return await executeOperationWithRetry(operation);
 }
 
 export const getText = (response: GenerateContentResponse): string => {

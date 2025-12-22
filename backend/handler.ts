@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -324,7 +325,7 @@ export const apiHandler = async (req: any, res: any) => {
                 const persistence = new ChatPersistenceManager(chatId, messageId);
 
                 // Prepare History for Gemini (excluding the empty placeholder we just added)
-                // We exclude the last message (model placeholder) because it has no text yet.
+                // The transformer now handles truncation and compression of tool outputs
                 const historyForAI = historyMessages.slice(0, -1);
                 let fullHistory = transformHistoryToGeminiFormat(historyForAI);
 
@@ -521,6 +522,7 @@ export const apiHandler = async (req: any, res: any) => {
                 if (chatId) {
                     const savedChat = await historyControl.getChat(chatId);
                     const historyMessages = savedChat?.messages || [];
+                    // Ensure token counting also uses the truncated/transformed history
                     fullHistory = transformHistoryToGeminiFormat(historyMessages);
                 }
 

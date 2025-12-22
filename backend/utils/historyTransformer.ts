@@ -7,10 +7,19 @@
 import { Content, Part } from "@google/genai";
 import { Message } from '../../src/types';
 
+// Maximum number of previous exchange turns to send to the model.
+// 20 turns = ~40 messages (User + AI).
+const MAX_HISTORY_TURNS = 20;
+
+// Maximum length for OLD tool outputs.
+// If a tool output is not from the very last turn, we truncate it to save tokens.
+const MAX_OLD_TOOL_OUTPUT_LENGTH = 500;
+
 export const transformHistoryToGeminiFormat = (messages: Message[]): Content[] => {
-    const historyForApi: Content[] = [];
+    let historyForApi: Content[] = [];
     
     const pushContent = (role: 'user' | 'model', parts: Part[]) => {
+        // Merge consecutive messages from the same role to satisfy Gemini API constraints
         if (historyForApi.length > 0 && historyForApi[historyForApi.length - 1].role === role) {
             historyForApi[historyForApi.length - 1].parts.push(...parts);
         } else {
@@ -18,8 +27,25 @@ export const transformHistoryToGeminiFormat = (messages: Message[]): Content[] =
         }
     };
 
-    messages.forEach((msg: Message) => {
-        if (msg.isHidden) return;
+    // 1. Filter hidden messages first
+    const visibleMessages = messages.filter(msg => !msg.isHidden);
+
+    // 2. Apply Sliding Window
+    // We keep the *last* N messages to fit in context.
+    // However, we must ensure we don't split a tool call from its response.
+    let startIndex = 0;
+    if (visibleMessages.length > MAX_HISTORY_TURNS * 2) {
+        startIndex = visibleMessages.length - (MAX_HISTORY_TURNS * 2);
+    }
+    
+    // Always include the very first message if it's a user message (often contains core intent),
+    // unless the conversation is huge, then reliance on Summary memory (if implemented) is better.
+    // For now, we strictly slice to avoid token overload.
+    const slicedMessages = visibleMessages.slice(startIndex);
+
+    slicedMessages.forEach((msg: Message, index: number) => {
+        // Is this the very last message in the list?
+        const isLastMessage = index === slicedMessages.length - 1;
 
         if (msg.role === 'user') {
             const parts: Part[] = [];
@@ -36,7 +62,7 @@ export const transformHistoryToGeminiFormat = (messages: Message[]): Content[] =
             const activeResponse = msg.responses?.[msg.activeResponseIndex];
             if (!activeResponse) return;
 
-            // We send the FULL text (thought + answer) to the model so it maintains its own chain of thought context
+            // We send the FULL text (thought + answer) so the model maintains chain of thought
             const fullText = activeResponse.text; 
             const modelParts: Part[] = [];
             const functionResponseParts: Part[] = [];
@@ -47,16 +73,21 @@ export const transformHistoryToGeminiFormat = (messages: Message[]): Content[] =
 
             if (activeResponse.toolCallEvents) {
                 activeResponse.toolCallEvents.forEach(event => {
-                    // Turn-based logic:
-                    // If a tool has a result, it means the model called it, and we (user/system) provided a response.
-                    // The Model's turn includes the FunctionCall.
-                    // The User's turn (next) includes the FunctionResponse.
-                    
                     if (event.result !== undefined) {
+                        // TRUNCATION LOGIC:
+                        // If this is NOT the last message, truncate large tool outputs.
+                        // This prevents "Browser" or "ListFiles" from eating 100k tokens 10 turns later.
+                        let resultText = event.result;
+                        
+                        if (!isLastMessage && typeof resultText === 'string' && resultText.length > MAX_OLD_TOOL_OUTPUT_LENGTH) {
+                            resultText = resultText.substring(0, MAX_OLD_TOOL_OUTPUT_LENGTH) + 
+                                `\n...[Output truncated to save context. Original length: ${event.result.length} chars]...`;
+                        }
+
                         functionResponseParts.push({
                             functionResponse: {
                                 name: event.call.name,
-                                response: { result: event.result }
+                                response: { result: resultText }
                             }
                         });
                     } else {
