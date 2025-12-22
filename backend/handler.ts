@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -492,9 +491,6 @@ export const apiHandler = async (req: any, res: any) => {
                                     response.error = error;
                                     response.endTime = Date.now();
                                 });
-                            },
-                            onTokenUsage: (usage) => {
-                                writeEvent(res, 'token-usage', usage);
                             },
                         },
                         settings: finalSettings,

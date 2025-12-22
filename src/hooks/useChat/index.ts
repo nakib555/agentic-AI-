@@ -318,10 +318,7 @@ export const useChat = (
                         if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
                             abortControllerRef.current.abort();
                         }
-                    },
-                    onTokenUsage: (usage) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ usageMetadata: usage }));
-                    },
+                    }
                 },
                 abortControllerRef.current.signal
             );

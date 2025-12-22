@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { TtsButton } from './TtsButton';
-import type { Source, UsageMetadata } from '../../../types';
+import type { Source } from '../../../types';
 import { SourcesPills } from '../../AI/SourcesPills';
 import { ResponsePaginator } from './ResponsePaginator';
 
@@ -25,7 +25,6 @@ type MessageToolbarProps = {
     responseCount: number;
     activeResponseIndex: number;
     onResponseChange: (index: number) => void;
-    usageMetadata?: UsageMetadata;
 };
 
 type FeedbackState = 'up' | 'down' | null;
@@ -57,7 +56,7 @@ const IconButton: React.FC<{
 
 export const MessageToolbar: React.FC<MessageToolbarProps> = ({
     messageText, sources, onShowSources, ttsState, onTtsClick, onRegenerate,
-    responseCount, activeResponseIndex, onResponseChange, usageMetadata
+    responseCount, activeResponseIndex, onResponseChange,
 }) => {
     const [isCopied, setIsCopied] = useState(false);
     const [feedback, setFeedback] = useState<FeedbackState>(null);
@@ -122,14 +121,6 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
             </div>
             
             <div className="flex items-center gap-3">
-                 {usageMetadata && (
-                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 font-medium" title="Tokens used for this response">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 opacity-70">
-                            <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
-                        </svg>
-                        <span>{usageMetadata.totalTokenCount} tokens</span>
-                    </div>
-                 )}
                  <SourcesPills sources={sources} onShowSources={() => onShowSources(sources)} />
             </div>
         </div>

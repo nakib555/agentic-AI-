@@ -9,31 +9,25 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 /**
  * A hook that progressively reveals text to simulate a typewriter effect.
  * It catches up dynamically if the target text grows significantly faster than the typing speed.
+ * 
+ * OPTIMIZED: Uses a persistent requestAnimationFrame loop that reads from refs
+ * to prevent React Effect churn (unmounting/remounting) on every character update.
  */
 export const useTypewriter = (targetText: string, isThinking: boolean) => {
   // Initialize state. If not thinking (e.g. loading history), show full text immediately.
   const [displayedText, setDisplayedText] = useState(() => isThinking ? '' : targetText);
   
-  // Refs for mutable state across frames
+  // Refs for mutable state across frames without triggering re-renders
   const currentLength = useRef(isThinking ? 0 : targetText.length);
   const targetTextRef = useRef(targetText);
   const rafId = useRef<number | null>(null);
+  const lastFrameTime = useRef<number>(0);
   const isLoopRunning = useRef(false);
 
   // Sync the latest prop to the ref
   useEffect(() => {
     targetTextRef.current = targetText;
     
-    // If not thinking anymore, we must ensure we show the full text immediately
-    // to prevent getting stuck in a partial state if the stream ends abruptly.
-    if (!isThinking) {
-        if (rafId.current) cancelAnimationFrame(rafId.current);
-        isLoopRunning.current = false;
-        currentLength.current = targetText.length;
-        setDisplayedText(targetText);
-        return;
-    }
-
     // If the new text is shorter (e.g., reset/regenerate), snap immediately to valid range
     if (targetText.length < currentLength.current) {
         currentLength.current = targetText.length;
@@ -44,14 +38,17 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
     if (!isLoopRunning.current && currentLength.current < targetText.length) {
         startLoop();
     }
-  }, [targetText, isThinking]);
+  }, [targetText]);
 
   const startLoop = useCallback(() => {
       isLoopRunning.current = true;
       rafId.current = requestAnimationFrame(animate);
   }, []);
 
-  const animate = useCallback(() => {
+  const animate = useCallback((time: number) => {
+      // Initialize timing
+      if (lastFrameTime.current === 0) lastFrameTime.current = time;
+      
       // Calculate target length from ref
       const targetLen = targetTextRef.current.length;
 
@@ -59,25 +56,20 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       if (currentLength.current >= targetLen) {
           isLoopRunning.current = false;
           rafId.current = null;
-          // Ensure exact match at the end
-          if (displayedText !== targetTextRef.current) {
-             setDisplayedText(targetTextRef.current);
-          }
+          lastFrameTime.current = 0; // Reset for next run
           return;
       }
 
       // Dynamic Velocity Calculation
+      // The further behind we are, the faster we type to catch up.
       const distance = targetLen - currentLength.current;
       let jump = 1;
       
       // Adaptive speed curve
-      // For very small updates (streaming char by char), stick to 1-2 chars per frame for smoothness.
-      // For large dumps (markdown blocks), speed up significantly.
-      if (distance > 500) jump = 25;
-      else if (distance > 200) jump = 15;
-      else if (distance > 100) jump = 8;
-      else if (distance > 50) jump = 4;
-      else if (distance > 10) jump = 2;
+      if (distance > 200) jump = 15;       // Ultra fast catch-up
+      else if (distance > 100) jump = 8;   // Fast
+      else if (distance > 50) jump = 4;    // Medium
+      else if (distance > 20) jump = 2;    // Cruising
 
       // Apply jump
       currentLength.current += jump;
@@ -87,10 +79,12 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
 
       // Update State (Trigger Render)
       setDisplayedText(targetTextRef.current.slice(0, currentLength.current));
+
+      lastFrameTime.current = time;
       
       // Schedule next frame
       rafId.current = requestAnimationFrame(animate);
-  }, [displayedText]);
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {

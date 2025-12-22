@@ -21,7 +21,6 @@ type Callbacks = {
     onCancel: () => void;
     onError: (error: any) => void;
     onFrontendToolRequest: (callId: string, name: string, args: any) => void;
-    onTokenUsage: (usage: any) => void;
 };
 
 type RunAgenticLoopParams = {
@@ -104,10 +103,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
 
                 if (chunk.candidates && chunk.candidates[0].finishReason === FinishReason.SAFETY) {
                     throw new Error("Response was blocked due to safety policy.");
-                }
-
-                if (chunk.usageMetadata) {
-                    callbacks.onTokenUsage(chunk.usageMetadata);
                 }
 
                 const chunkText = getText(chunk);

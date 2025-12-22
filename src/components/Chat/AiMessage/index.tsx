@@ -59,7 +59,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
-  const { activeResponse, finalAnswerText, thinkingIsComplete, agentPlan, executionLog, thinkingText, usageMetadata } = logic;
+  const { activeResponse, finalAnswerText, thinkingIsComplete, agentPlan, executionLog, thinkingText } = logic;
   const [isWorkflowCollapsed, setIsWorkflowCollapsed] = useState(false);
 
   // Apply typewriter effect to the final answer text.
@@ -251,7 +251,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                 responseCount={msg.responses?.length || 0}
                 activeResponseIndex={msg.activeResponseIndex}
                 onResponseChange={(index) => onSetActiveResponseIndex(id, index)}
-                usageMetadata={usageMetadata}
             />
           </div>
       )}
