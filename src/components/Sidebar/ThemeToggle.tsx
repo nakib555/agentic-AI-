@@ -84,7 +84,7 @@ export const ThemeToggle = ({ theme, setTheme, variant = 'compact' }: ThemeToggl
 
     if (variant === 'cards') {
         return (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                 {options.map((option) => {
                     const isActive = theme === option.value;
                     return (
@@ -94,26 +94,26 @@ export const ThemeToggle = ({ theme, setTheme, variant = 'compact' }: ThemeToggl
                             className={`
                                 group relative flex flex-col items-center text-left rounded-xl border-2 transition-all duration-200 overflow-hidden outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-[#09090b]
                                 ${isActive 
-                                    ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/10 dark:bg-indigo-500/5' 
-                                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-[#18181b]'
+                                    ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/10 dark:bg-indigo-500/5 shadow-md' 
+                                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-[#18181b] hover:shadow-sm'
                                 }
                             `}
                         >
-                            <div className="w-full aspect-[1.6] bg-slate-100 dark:bg-black/20 border-b border-inherit relative">
+                            <div className="w-full aspect-[1.8] sm:aspect-[1.6] bg-slate-100 dark:bg-black/20 border-b border-inherit relative">
                                 <ThemePreviewIcon type={option.value} isActive={isActive} />
                                 {isActive && (
-                                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-sm">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
+                                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-sm ring-2 ring-white dark:ring-black">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
                                             <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
                                         </svg>
                                     </div>
                                 )}
                             </div>
-                            <div className="w-full p-3">
-                                <span className={`block text-sm font-semibold ${isActive ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}>
+                            <div className="w-full p-4">
+                                <span className={`block text-sm font-bold ${isActive ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-800 dark:text-slate-200'}`}>
                                     {option.label}
                                 </span>
-                                <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                <span className="block text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
                                     {option.desc}
                                 </span>
                             </div>
@@ -134,8 +134,8 @@ export const ThemeToggle = ({ theme, setTheme, variant = 'compact' }: ThemeToggl
                         key={option.value}
                         onClick={() => setTheme(option.value as Theme)}
                         className={`
-                            relative z-10 flex-1 flex items-center justify-center gap-2 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none
-                            ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}
+                            relative z-10 flex-1 flex items-center justify-center gap-2 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none touch-manipulation
+                            ${isActive ? 'text-gray-900 dark:text-white font-semibold' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}
                         `}
                         title={option.desc}
                     >
