@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -41,10 +42,15 @@ export const parseMessageText = (text: string, isThinking: boolean, hasError: bo
   }
   
   // Rule 3: If there's no final answer marker, check if the model is still actively thinking.
-  // If it is, ALL text so far is considered part of the thinking process, even if it doesn't
-  // have a `[STEP]` marker yet. This prevents an initial flicker of content in the final answer area.
   if (isThinking) {
-    return { thinkingText: text, finalAnswerText: '' };
+    // CRITICAL FIX: Only treat the text as "Thinking" (hidden) if it contains the Agentic Workflow signature ([STEP]).
+    // If it DOES NOT contain [STEP], it's likely a standard chat response, so we should stream it 
+    // directly to the finalAnswerText to allow the typewriter effect to work immediately.
+    if (text.includes('[STEP]')) {
+        return { thinkingText: text, finalAnswerText: '' };
+    }
+    // Standard Chat Mode: Stream content immediately
+    return { thinkingText: '', finalAnswerText: text };
   }
 
   // Rule 4: At this point, thinking is complete and there is no error.
