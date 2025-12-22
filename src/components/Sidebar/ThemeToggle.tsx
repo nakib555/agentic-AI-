@@ -84,7 +84,7 @@ export const ThemeToggle = ({ theme, setTheme, variant = 'compact' }: ThemeToggl
 
     if (variant === 'cards') {
         return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
                 {options.map((option) => {
                     const isActive = theme === option.value;
                     return (
@@ -109,11 +109,11 @@ export const ThemeToggle = ({ theme, setTheme, variant = 'compact' }: ThemeToggl
                                     </div>
                                 )}
                             </div>
-                            <div className="w-full p-4">
-                                <span className={`block text-sm font-bold ${isActive ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-800 dark:text-slate-200'}`}>
+                            <div className="w-full p-3 sm:p-4">
+                                <span className={`block text-xs sm:text-sm font-bold ${isActive ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-800 dark:text-slate-200'}`}>
                                     {option.label}
                                 </span>
-                                <span className="block text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                                <span className="block text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 font-medium">
                                     {option.desc}
                                 </span>
                             </div>
