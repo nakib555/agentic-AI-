@@ -23,6 +23,7 @@
 
 .markdown-content p {
   margin-bottom: 1.25em; /* Generous paragraph spacing */
+  color: var(--text-primary); /* Ensure explicit color inheritance */
 }
 
 /* --- Headers --- */
@@ -38,16 +39,35 @@
     margin-bottom: 0.75em;
 }
 
-.markdown-content h1 { font-size: 1.75em; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.3em; }
-.markdown-content h2 { font-size: 1.5em; }
-.markdown-content h3 { font-size: 1.25em; }
-.markdown-content h4 { font-size: 1em; text-transform: uppercase; color: var(--text-secondary); font-size: 0.85em; letter-spacing: 0.05em; margin-top: 1.5em; }
+.markdown-content h1 { 
+  font-size: 1.75em; 
+  border-bottom: 1px solid var(--border-subtle); 
+  padding-bottom: 0.3em; 
+}
+
+.markdown-content h2 { 
+  font-size: 1.5em; 
+}
+
+.markdown-content h3 { 
+  font-size: 1.25em; 
+}
+
+.markdown-content h4 { 
+  font-size: 1em; 
+  text-transform: uppercase; 
+  color: var(--text-secondary); 
+  font-size: 0.85em; 
+  letter-spacing: 0.05em; 
+  margin-top: 1.5em; 
+}
 
 /* --- Lists --- */
 .markdown-content ul, 
 .markdown-content ol {
   margin-bottom: 1.25em;
   padding-left: 1.5em; /* Indent lists properly */
+  color: var(--text-primary);
 }
 
 .markdown-content li {
@@ -73,19 +93,21 @@
   margin: 1.5em 0;
   padding: 1em 1.25em;
   background-color: var(--bg-layer-2);
-  border-left: 4px solid var(--border-strong); /* Neutral by default */
+  border-left: 4px solid var(--border-default);
   border-radius: 0.5rem;
   color: var(--text-secondary);
-  font-style: normal; /* Remove italics for cleaner look */
+  font-style: normal;
 }
 
 .dark .custom-blockquote {
   background-color: rgba(255, 255, 255, 0.03);
   border-left-color: var(--primary-main); /* Pop of color in dark mode */
+  color: var(--text-secondary);
 }
 
 .custom-blockquote p {
   margin-bottom: 0.5em;
+  color: inherit;
 }
 .custom-blockquote p:last-child {
   margin-bottom: 0;
@@ -104,7 +126,7 @@
   max-width: 100%;
   height: auto;
   border-radius: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   margin: 1.5em 0;
   display: block;
 }
@@ -120,16 +142,14 @@
 /* --- Tables (Professional Data Grid) --- */
 .markdown-content table {
   width: 100%;
-  border-collapse: collapse;
-  margin: 0; /* Removed vertical margin to avoid extra spacing inside wrapper */
-  font-size: 0.95em;
-  /* Border radius and overflow handled by wrapper component */
-  /* Border handled by wrapper component */
+  border-collapse: separate; /* Allows border radius */
+  border-spacing: 0;
+  margin: 0;
+  font-size: 0.9em;
 }
 
 .markdown-content thead {
   background-color: var(--bg-layer-2);
-  border-bottom: 2px solid var(--border-default);
 }
 
 .markdown-content th {
@@ -137,6 +157,8 @@
   text-align: left;
   padding: 0.75em 1em;
   color: var(--text-primary);
+  border-bottom: 2px solid var(--border-default);
+  white-space: nowrap;
 }
 
 .markdown-content td {
@@ -152,4 +174,5 @@
 
 .markdown-content tr:hover td {
   background-color: var(--bg-layer-2);
+  color: var(--text-primary);
 }
