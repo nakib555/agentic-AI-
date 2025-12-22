@@ -6,9 +6,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { motion as motionTyped, AnimatePresence } from 'framer-motion';
-
-const motion = motionTyped as any;
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const TTS_VOICES = [
     { id: 'Kore', name: 'Kore', desc: 'Calm & Soothing' },

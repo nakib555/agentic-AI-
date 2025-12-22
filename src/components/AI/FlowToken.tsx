@@ -1,13 +1,10 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useMemo } from 'react';
-import { motion as motionTyped } from 'framer-motion';
-
-const motion = motionTyped as any;
+import { motion } from 'framer-motion';
 
 type FlowTokenProps = {
   children: string;

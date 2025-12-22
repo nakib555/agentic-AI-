@@ -5,9 +5,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { motion as motionTyped, AnimatePresence } from 'framer-motion';
-
-const motion = motionTyped as any;
+import { motion, AnimatePresence } from 'framer-motion';
 
 export type ToastType = 'success' | 'error' | 'info';
 

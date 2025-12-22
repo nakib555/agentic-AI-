@@ -5,12 +5,10 @@
  */
 
 import React, { useCallback } from 'react';
-import { motion as motionTyped } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { Source } from '../../types';
 import { useViewport } from '../../hooks/useViewport';
 import { SourceItem } from './SourceItem';
-
-const motion = motionTyped as any;
 
 type SourcesSidebarProps = {
     isOpen: boolean;
