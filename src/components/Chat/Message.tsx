@@ -65,13 +65,21 @@ const MessageComponentRaw: React.FC<{
 };
 
 export const MessageComponent = memo(MessageComponentRaw, (prevProps, nextProps) => {
-    // Custom comparison for high performance
+    const prevMsg = prevProps.msg;
+    const nextMsg = nextProps.msg;
+
+    // Retrieve the specific response objects being displayed
+    const prevActiveResponse = prevMsg.responses?.[prevMsg.activeResponseIndex];
+    const nextActiveResponse = nextMsg.responses?.[nextMsg.activeResponseIndex];
+
     const msgChanged = 
-        prevProps.msg.text !== nextProps.msg.text ||
-        prevProps.msg.isThinking !== nextProps.msg.isThinking ||
-        prevProps.msg.activeResponseIndex !== nextProps.msg.activeResponseIndex ||
-        prevProps.msg.responses?.length !== nextProps.msg.responses?.length ||
-        prevProps.msg.executionState !== nextProps.msg.executionState;
+        prevMsg.text !== nextMsg.text ||
+        prevMsg.isThinking !== nextMsg.isThinking ||
+        prevMsg.activeResponseIndex !== nextMsg.activeResponseIndex ||
+        prevMsg.responses?.length !== nextMsg.responses?.length ||
+        prevMsg.executionState !== nextMsg.executionState ||
+        // CRITICAL FIX: Check if the content of the active response has changed (streaming text, tools, errors)
+        prevActiveResponse !== nextActiveResponse;
 
     // Check if userQuery changed (rare, but good for correctness)
     if (prevProps.userQuery !== nextProps.userQuery) return false;
