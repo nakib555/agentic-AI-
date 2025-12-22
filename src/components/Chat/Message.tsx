@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -24,10 +23,11 @@ const MessageComponentRaw: React.FC<{
     onRegenerate: (messageId: string) => void;
     onSetActiveResponseIndex: (messageId: string, index: number) => void;
     isAgentMode: boolean;
+    userQuery?: string; // New optional prop
 }> = ({ 
     msg, isLoading, sendMessage, ttsVoice, ttsModel, currentChatId, 
     onShowSources, approveExecution, denyExecution, messageFormRef,
-    onRegenerate, onSetActiveResponseIndex, isAgentMode
+    onRegenerate, onSetActiveResponseIndex, isAgentMode, userQuery
 }) => {
   const messageContent = () => {
     if (msg.role === 'user') {
@@ -50,6 +50,7 @@ const MessageComponentRaw: React.FC<{
                 onRegenerate={onRegenerate}
                 onSetActiveResponseIndex={onSetActiveResponseIndex}
                 isAgentMode={isAgentMode}
+                userQuery={userQuery}
             />
         );
     }
@@ -71,6 +72,9 @@ export const MessageComponent = memo(MessageComponentRaw, (prevProps, nextProps)
         prevProps.msg.activeResponseIndex !== nextProps.msg.activeResponseIndex ||
         prevProps.msg.responses?.length !== nextProps.msg.responses?.length ||
         prevProps.msg.executionState !== nextProps.msg.executionState;
+
+    // Check if userQuery changed (rare, but good for correctness)
+    if (prevProps.userQuery !== nextProps.userQuery) return false;
 
     // If the message content hasn't changed, and it's not the last message (which might be loading),
     // we generally don't need to re-render. 

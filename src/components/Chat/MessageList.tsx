@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -34,6 +33,37 @@ type MessageListProps = {
   onRegenerate: (messageId: string) => void;
   onSetActiveResponseIndex: (messageId: string, index: number) => void;
   isAgentMode: boolean;
+};
+
+// Wrapper to inject context (like previous user message)
+const MessageWrapper: React.FC<{ 
+    msg: Message;
+    index: number;
+    messages: Message[];
+    props: Omit<MessageListProps, 'messages'>;
+}> = ({ msg, index, messages, props }) => {
+    // Determine context for AI messages (the prompt that triggered it)
+    let userQuery = '';
+    if (msg.role === 'model') {
+        // Find the most recent user message before this one
+        for (let i = index - 1; i >= 0; i--) {
+            if (messages[i].role === 'user' && !messages[i].isHidden) {
+                userQuery = messages[i].text;
+                break;
+            }
+        }
+    }
+
+    return (
+        <MessageComponent 
+            key={msg.id} 
+            msg={msg} 
+            {...props}
+            // Pass the custom prop to AiMessage via MessageComponent
+            // (Note: MessageComponent needs to be updated to accept and pass this)
+            {...({ userQuery } as any)} 
+        />
+    );
 };
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
@@ -82,7 +112,6 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                 data={visibleMessages}
                 followOutput="auto"
                 // Mobile Optimization: Significantly reduce overscan to save memory on 4GB devices.
-                // Desktop can handle more for smoother scrolling.
                 increaseViewportBy={isDesktop ? 200 : 100}
                 overscan={isDesktop ? 200 : 50} 
                 initialTopMostItemIndex={visibleMessages.length - 1}
@@ -94,21 +123,15 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                 className="custom-scrollbar"
                 itemContent={(index, msg) => (
                     <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-4">
-                        <MessageComponent 
-                            key={msg.id} 
-                            msg={msg} 
-                            isLoading={isLoading}
-                            sendMessage={sendMessage} 
-                            ttsVoice={ttsVoice} 
-                            ttsModel={ttsModel}
-                            currentChatId={currentChatId}
-                            onShowSources={onShowSources}
-                            approveExecution={approveExecution}
-                            denyExecution={denyExecution}
-                            messageFormRef={messageFormRef}
-                            onRegenerate={onRegenerate}
-                            onSetActiveResponseIndex={onSetActiveResponseIndex}
-                            isAgentMode={isAgentMode}
+                        <MessageWrapper 
+                            msg={msg}
+                            index={index}
+                            messages={visibleMessages}
+                            props={{
+                                sendMessage, isLoading, ttsVoice, ttsModel, currentChatId,
+                                onShowSources, approveExecution, denyExecution, messageFormRef,
+                                onRegenerate, onSetActiveResponseIndex, isAgentMode
+                            }}
                         />
                     </div>
                 )}

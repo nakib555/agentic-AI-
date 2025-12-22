@@ -13,11 +13,6 @@
   },
   "dependencies": {
   "@google/genai": "1.29.1",
-  "@langchain/core": "^0.3.30",
-  "@langchain/community": "^0.3.25",
-  "@langchain/google-genai": "^0.1.6",
-  "@langchain/langgraph": "^0.2.41",
-  "langchain": "^0.3.13",
   "ai": "^3.2.18",
   "cors": "^2.8.5",
   "dotenv": "^16.4.5",
