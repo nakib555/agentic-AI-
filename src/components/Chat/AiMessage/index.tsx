@@ -60,15 +60,14 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
 
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
   const { activeResponse, finalAnswerText, thinkingIsComplete, agentPlan, executionLog, thinkingText } = logic;
-  const [isWorkflowCollapsed, setIsWorkflowCollapsed] = useState(false);
+  
+  // Default to collapsed if finished, open if thinking
+  const [isWorkflowOpen, setIsWorkflowOpen] = useState(!thinkingIsComplete);
 
   // Apply typewriter effect to the final answer text.
-  // We pass isThinking so it starts empty for new messages, but full for history.
-  // Note: we use msg.isThinking directly to determine if it's an active generation.
   const typedFinalAnswer = useTypewriter(finalAnswerText, msg.isThinking ?? false);
 
   // Dynamic Parsing: Parse the *typed* text into segments.
-  // This ensures components "pop in" as their tags are fully typed.
   const displaySegments = useMemo(() => {
       return parseContentSegments(typedFinalAnswer);
   }, [typedFinalAnswer]);
@@ -76,9 +75,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   // Auto-collapse workflow when thinking is complete if there is a final answer
   useEffect(() => {
       if (thinkingIsComplete && finalAnswerText) {
-          setIsWorkflowCollapsed(true);
-      } else {
-          setIsWorkflowCollapsed(false);
+          setIsWorkflowOpen(false);
       }
   }, [thinkingIsComplete, !!finalAnswerText]);
 
@@ -98,76 +95,84 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   return (
     <motion.div 
         {...animationProps} 
-        className="w-full flex flex-col items-start gap-4 origin-bottom-left group/message"
-        // Performance Fix: Removed 'layout' prop.
-        // The 'layout' prop causes heavy recalculations on list updates which kills mobile perf during streaming.
+        className="w-full flex flex-col items-start gap-3 origin-bottom-left group/message"
     >
-      {/* 1. Agentic Workflow (Timeline) */}
+      {/* --- Agentic Workflow (The Brain) --- */}
       {logic.hasWorkflow && (
-        <div className="w-full rounded-xl overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/5 transition-all duration-300">
-            <button
-                onClick={() => setIsWorkflowCollapsed(!isWorkflowCollapsed)}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/50 dark:hover:bg-white/5 transition-colors text-left"
+        <div className="w-full">
+            <motion.button
+                onClick={() => setIsWorkflowOpen(!isWorkflowOpen)}
+                className={`
+                    group relative flex items-center gap-3 px-3 py-1.5 rounded-full border transition-all duration-300 ease-out w-fit
+                    ${isWorkflowOpen 
+                        ? 'bg-indigo-50/50 border-indigo-100 dark:bg-white/5 dark:border-white/10' 
+                        : 'bg-transparent border-transparent hover:bg-gray-100 dark:hover:bg-white/5'
+                    }
+                `}
+                whileTap={{ scale: 0.98 }}
             >
-                <div className="flex items-center gap-3">
+                <div className="relative flex items-center justify-center w-5 h-5">
                     {logic.thinkingIsComplete ? (
-                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
+                        <div className="text-emerald-500 dark:text-emerald-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M20 6 9 17l-5-5"/></svg>
                         </div>
                     ) : (
-                        <div className="relative w-6 h-6 flex items-center justify-center">
-                            <div className="w-2.5 h-2.5 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-pulse" />
-                            <div className="absolute inset-0 w-full h-full bg-indigo-500/20 dark:bg-indigo-400/20 rounded-full animate-ping" />
-                        </div>
+                        <>
+                            <span className="absolute inline-flex h-full w-full rounded-full bg-indigo-400/20 animate-ping"></span>
+                            <div className="relative w-2 h-2 bg-indigo-500 dark:bg-indigo-400 rounded-full" />
+                        </>
                     )}
-                    <div className="flex flex-col">
-                        <span className="font-semibold text-sm text-slate-700 dark:text-white">
-                            {logic.thinkingIsComplete ? 'Reasoning complete' : 'Thinking...'}
-                        </span>
-                    </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-black/20 px-2 py-0.5 rounded-full">
-                        {logic.displayDuration}s
-                    </span>
-                    <div className="text-slate-400 dark:text-slate-500">
-                        <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            viewBox="0 0 20 20" 
-                            fill="currentColor" 
-                            className={`w-4 h-4 transition-transform duration-300 ${isWorkflowCollapsed ? '' : 'rotate-180'}`}
-                        >
-                            <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-                        </svg>
-                    </div>
-                </div>
-            </button>
+                
+                <span className={`text-xs font-medium tracking-wide transition-colors ${isWorkflowOpen ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200'}`}>
+                    {logic.thinkingIsComplete 
+                        ? `Reasoned for ${logic.displayDuration}s` 
+                        : 'Thinking...'}
+                </span>
+
+                <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-300 ${isWorkflowOpen ? 'rotate-180' : ''}`}
+                >
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+            </motion.button>
             
             <AnimatePresence initial={false}>
-                {!isWorkflowCollapsed && (
+                {isWorkflowOpen && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }} // Elegant ease
+                        className="overflow-hidden"
                     >
-                        <div className="px-4 pb-4 pt-0 space-y-6 bg-transparent">
+                        <div className="pl-2 pr-4 pt-3 pb-6 space-y-4">
                             {agentPlan && (
-                                <div className="pt-2 border-t border-slate-200/50 dark:border-white/5">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 mt-4 ml-1 select-none">Mission Plan</h4>
-                                    <FormattedBlock content={agentPlan} isStreaming={msg.isThinking && executionLog.length === 0} />
+                                <div className="mb-4">
+                                    <div className="flex items-center gap-2 mb-2 px-2">
+                                        <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Mission Plan</span>
+                                    </div>
+                                    <div className="bg-gray-50/50 dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/5 p-3">
+                                        <FormattedBlock content={agentPlan} isStreaming={msg.isThinking && executionLog.length === 0} />
+                                    </div>
                                 </div>
                             )}
+                            
                             {executionLog.length > 0 && (
-                                <div className={`${agentPlan ? '' : 'pt-2 border-t border-slate-200/50 dark:border-white/5'}`}>
-                                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 mt-2 ml-1 select-none">Execution Log</h4>
-                                    <ThinkingWorkflow
-                                        nodes={executionLog}
-                                        sendMessage={sendMessage}
-                                        onRegenerate={() => onRegenerate(id)}
-                                        messageId={id}
-                                    />
-                                </div>
+                                <ThinkingWorkflow
+                                    nodes={executionLog}
+                                    sendMessage={sendMessage}
+                                    onRegenerate={() => onRegenerate(id)}
+                                    messageId={id}
+                                />
                             )}
                         </div>
                     </motion.div>
@@ -176,7 +181,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
         </div>
       )}
       
-      {/* 2. Chain of Thought (Thinking Process Stream) */}
+      {/* --- Chain of Thought (Raw Stream) --- */}
       {logic.hasThinkingText && (
           <ThinkingProcess 
               thinkingText={thinkingText} 
@@ -184,13 +189,13 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           />
       )}
       
-      {/* 3. Final Answer / Result */}
+      {/* --- Final Output --- */}
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer) && (
-        <div className="w-full flex flex-col gap-4">
+        <div className="w-full flex flex-col gap-3">
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} onRetry={() => onRegenerate(id)} />}
           
-          <div className="markdown-content max-w-none w-full text-slate-800 dark:text-white">
+          <div className="markdown-content max-w-none w-full text-slate-800 dark:text-gray-100 leading-relaxed">
             {displaySegments.map((segment, index) => {
                 const key = `${id}-${index}`;
                 if (segment.type === 'component') {
@@ -226,7 +231,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                             key={key} 
                             text={segment.content!} 
                             components={MarkdownComponents} 
-                            isStreaming={msg.isThinking ?? false} // Pass thinking state for any internal cursor logic in renderer
+                            isStreaming={msg.isThinking ?? false} 
                             onRunCode={isAgentMode ? logic.handleRunCode : undefined} 
                             isRunDisabled={isLoading} 
                         />
@@ -238,7 +243,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
       
       {logic.thinkingIsComplete && logic.hasFinalAnswer && !activeResponse?.error && (
-          <div className="w-full">
+          <div className="w-full opacity-0 group-hover/message:opacity-100 transition-opacity duration-300 delay-150">
             <MessageToolbar
                 messageId={id}
                 messageText={logic.finalAnswerText}
