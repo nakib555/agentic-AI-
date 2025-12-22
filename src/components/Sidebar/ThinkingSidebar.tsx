@@ -57,7 +57,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
     
     const { status, statusColor, plan, executionLog } = useMemo(() => {
         if (!message) {
-            return { status: 'Idle', statusColor: 'bg-gray-400', plan: '', executionLog: [] };
+            return { status: 'Idle', statusColor: 'bg-slate-400', plan: '', executionLog: [] };
         }
 
         const { isThinking } = message;
@@ -72,7 +72,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             return { status: 'Failed', statusColor: 'bg-red-500 dark:bg-red-600', plan: parsedPlan, executionLog: parsedLog };
         }
         if (!isThinking) {
-            return { status: 'Completed', statusColor: 'bg-green-500 dark:bg-green-600', plan: parsedPlan, executionLog: parsedLog };
+            return { status: 'Completed', statusColor: 'bg-emerald-500 dark:bg-emerald-600', plan: parsedPlan, executionLog: parsedLog };
         }
         return { status: 'In Progress', statusColor: 'bg-indigo-500 animate-pulse', plan: parsedPlan, executionLog: parsedLog };
     }, [message]);
@@ -101,8 +101,15 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
     const thinkingContent = () => {
         if (!message) {
             return (
-                <div className="flex items-center justify-center h-full text-sm text-gray-500 dark:text-slate-400">
-                    No thought process to display.
+                <div className="flex flex-col items-center justify-center h-full text-center p-8 opacity-60">
+                    <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-slate-400">
+                            <path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+                            <path d="M3 12h1m8-9v1m8 8h1m-9 8v1M5.6 5.6l.7.7m12.1-.7-.7.7m0 11.4.7.7m-12.1-.7-.7.7" />
+                        </svg>
+                    </div>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300">No active thought process</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">Select a message with reasoning to view details.</p>
                 </div>
             );
         }
@@ -119,27 +126,34 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
         }
 
         return (
-            <div className="space-y-4 px-4">
+            <div className="space-y-6 px-4 pb-12">
                 {plan && (
-                    <div>
-                        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                            Mission Briefing
-                        </h3>
+                    <section>
+                        <div className="flex items-center gap-2 mb-3">
+                            <div className="w-1 h-4 bg-indigo-500 rounded-full" />
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                Strategic Plan
+                            </h3>
+                        </div>
                         <FormattedBlock content={plan} isStreaming={message.isThinking && executionLog.length === 0} />
-                    </div>
+                    </section>
                 )}
+                
                 {executionLog.length > 0 && (
-                     <div>
-                        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                            Execution Log
-                        </h3>
+                     <section>
+                        <div className="flex items-center gap-2 mb-3">
+                            <div className="w-1 h-4 bg-emerald-500 rounded-full" />
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                Execution Log
+                            </h3>
+                        </div>
                         <ThinkingWorkflow
                             nodes={executionLog}
                             sendMessage={sendMessage}
                             onRegenerate={onRegenerate}
                             messageId={message.id}
                         />
-                    </div>
+                    </section>
                 )}
             </div>
         );
@@ -159,42 +173,44 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                 mass: 0.8,
             }}
             className={`
-                flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-layer-1
+                flex-shrink-0 overflow-hidden bg-white dark:bg-layer-1
                 ${isDesktop 
-                    ? 'relative border-l border-gray-200 dark:border-white/10' // Desktop styling
-                    : 'fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 dark:border-white/10 rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]' // Mobile styling
+                    ? 'relative border-l border-gray-200 dark:border-white/10' 
+                    : 'fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 dark:border-white/10 rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]' 
                 }
             `}
             role="complementary"
             aria-labelledby="thinking-sidebar-title"
             style={{ 
-                height: isDesktop ? '100%' : '60vh', // Increased height for mobile sheet
+                height: isDesktop ? '100%' : '60vh',
                 userSelect: isResizing ? 'none' : 'auto',
-                willChange: isResizing ? 'width' : 'width, transform' // GPU hint
+                willChange: isResizing ? 'width' : 'width, transform'
             }}
         >
             <div 
                 className="flex flex-col h-full overflow-hidden" 
                 style={{ width: isDesktop ? `${width}px` : '100%' }}
             >
-                {/* Drag handle for mobile (decorative) */}
+                {/* Drag handle for mobile */}
                 {!isDesktop && (
                     <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
-                        <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-600 rounded-full"></div>
+                        <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
                     </div>
                 )}
                 
                 {/* Header */}
-                <div className={`flex items-center justify-between px-4 pb-3 ${isDesktop ? 'pt-4' : 'pt-2'} border-b border-gray-200 dark:border-white/10 flex-shrink-0`}>
+                <div className={`flex items-center justify-between px-4 pb-3 ${isDesktop ? 'pt-4' : 'pt-2'} border-b border-gray-200 dark:border-white/5 flex-shrink-0`}>
                     <div className="flex items-center gap-3">
-                        <h2 id="thinking-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Thought Process</h2>
-                        <span className={`px-2 py-1 text-xs font-semibold text-white rounded-full ${statusColor}`}>
-                            {status}
-                        </span>
+                        <h2 id="thinking-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Reasoning</h2>
+                        {message && (
+                            <span className={`px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide text-white rounded-md ${statusColor}`}>
+                                {status}
+                            </span>
+                        )}
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-1.5 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-black/20 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                         aria-label="Close thought process"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
@@ -204,7 +220,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                 </div>
 
                 {/* Content */}
-                <div ref={contentRef} className="flex-1 overflow-y-auto py-4 min-h-0">
+                <div ref={contentRef} className="flex-1 overflow-y-auto py-4 min-h-0 bg-slate-50/50 dark:bg-black/10">
                     {thinkingContent()}
                 </div>
             </div>
@@ -212,7 +228,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             {isDesktop && isOpen && (
                 <div
                     onMouseDown={startResizing}
-                    className="absolute top-0 left-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-blue-500/30 transition-colors z-10"
+                    className="absolute top-0 left-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-indigo-500/50 transition-colors z-10"
                     title="Resize sidebar"
                 />
             )}
