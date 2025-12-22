@@ -15,15 +15,6 @@
   /* Transparent background and no border */
   background-color: transparent;
   border: none;
-  
-  scrollbar-width: none; /* Hide scrollbar Firefox */
-  -ms-overflow-style: none;  /* Hide scrollbar IE/Edge */
-}
-
-.katex-display::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
 }
 
 /* Adjust coloring to match theme and increase size */
