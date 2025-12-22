@@ -10,42 +10,143 @@ import type { Theme } from '../../hooks/useTheme';
 
 const motion = motionTyped as any;
 
-export const ThemeToggle = ({ theme, setTheme, isCollapsed, isDesktop }: { theme: Theme, setTheme: (theme: Theme) => void, isCollapsed: boolean, isDesktop: boolean }) => {
-    const buttons = [
-        { value: 'light', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>, label: 'Light' },
-        { value: 'dark', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>, label: 'Dark' },
-        { value: 'spocke', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>, label: 'Spocke' },
-        { value: 'system', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>, label: 'Auto' },
+type ThemeToggleProps = {
+    theme: Theme;
+    setTheme: (theme: Theme) => void;
+    variant?: 'compact' | 'cards'; // 'compact' for sidebar/headers, 'cards' for settings modal
+};
+
+const ThemePreviewIcon = ({ type, isActive }: { type: string, isActive: boolean }) => {
+    // Shared layout skeleton for the preview
+    const SkeletonUI = ({ bgClass, accentClass, textClass }: any) => (
+        <div className={`w-full h-full p-3 flex flex-col gap-2 ${bgClass}`}>
+            <div className="flex gap-2">
+                <div className={`w-1/4 h-2 rounded-full opacity-40 ${textClass}`}></div>
+                <div className="w-1/2 h-2 rounded-full opacity-20 ${textClass}"></div>
+            </div>
+            <div className={`w-full h-8 rounded-md opacity-10 ${textClass}`}></div>
+            <div className="flex gap-2 mt-auto">
+                <div className={`w-8 h-8 rounded-full ${accentClass} opacity-20`}></div>
+                <div className="flex-1 flex flex-col gap-1.5 justify-center">
+                    <div className={`w-full h-1.5 rounded-full opacity-30 ${textClass}`}></div>
+                    <div className={`w-2/3 h-1.5 rounded-full opacity-20 ${textClass}`}></div>
+                </div>
+            </div>
+        </div>
+    );
+
+    switch (type) {
+        case 'light':
+            return <SkeletonUI bgClass="bg-white" accentClass="bg-indigo-500" textClass="bg-slate-900" />;
+        case 'dark':
+            return <SkeletonUI bgClass="bg-slate-900" accentClass="bg-indigo-500" textClass="bg-slate-100" />;
+        case 'spocke':
+            return (
+                <div className="w-full h-full p-3 flex flex-col gap-2 bg-black relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-cyan-900/20 via-transparent to-transparent"></div>
+                    <div className="flex gap-2 relative z-10">
+                        <div className="w-1/4 h-2 rounded-full bg-cyan-400/60 shadow-[0_0_8px_rgba(34,211,238,0.4)]"></div>
+                    </div>
+                    <div className="w-full h-8 rounded-md bg-cyan-900/10 border border-cyan-500/20 mt-1"></div>
+                    <div className="flex gap-2 mt-auto relative z-10">
+                        <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/40"></div>
+                        <div className="flex-1 flex flex-col gap-1.5 justify-center">
+                            <div className="w-full h-1.5 rounded-full bg-slate-700"></div>
+                            <div className="w-2/3 h-1.5 rounded-full bg-slate-800"></div>
+                        </div>
+                    </div>
+                </div>
+            );
+        case 'system':
+            return (
+                <div className="w-full h-full relative flex overflow-hidden">
+                    <div className="w-1/2 h-full">
+                        <SkeletonUI bgClass="bg-white" accentClass="bg-indigo-500" textClass="bg-slate-900" />
+                    </div>
+                    <div className="w-1/2 h-full">
+                        <SkeletonUI bgClass="bg-slate-900" accentClass="bg-indigo-500" textClass="bg-slate-100" />
+                    </div>
+                    <div className="absolute inset-y-0 left-1/2 w-px bg-slate-200 dark:bg-slate-700"></div>
+                </div>
+            );
+        default:
+            return null;
+    }
+};
+
+export const ThemeToggle = ({ theme, setTheme, variant = 'compact' }: ThemeToggleProps) => {
+    const options = [
+        { value: 'light', label: 'Light', desc: 'Clean & Bright' },
+        { value: 'dark', label: 'Dark', desc: 'Easy on the Eyes' },
+        { value: 'spocke', label: 'Spocke', desc: 'High Contrast Neon' },
+        { value: 'system', label: 'Auto', desc: 'Follows System' },
     ];
 
-    const shouldCollapse = isDesktop && isCollapsed;
+    if (variant === 'cards') {
+        return (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+                {options.map((option) => {
+                    const isActive = theme === option.value;
+                    return (
+                        <button
+                            key={option.value}
+                            onClick={() => setTheme(option.value as Theme)}
+                            className={`
+                                group relative flex flex-col items-center text-left rounded-xl border-2 transition-all duration-200 overflow-hidden outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-[#09090b]
+                                ${isActive 
+                                    ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/10 dark:bg-indigo-500/5' 
+                                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-[#18181b]'
+                                }
+                            `}
+                        >
+                            <div className="w-full aspect-[1.6] bg-slate-100 dark:bg-black/20 border-b border-inherit relative">
+                                <ThemePreviewIcon type={option.value} isActive={isActive} />
+                                {isActive && (
+                                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
+                                            <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="w-full p-3">
+                                <span className={`block text-sm font-semibold ${isActive ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}>
+                                    {option.label}
+                                </span>
+                                <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    {option.desc}
+                                </span>
+                            </div>
+                        </button>
+                    );
+                })}
+            </div>
+        );
+    }
 
-    // Clean segmented control style instead of gradient
-    const containerClasses = `relative p-1 rounded-xl flex items-center bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/5`;
-    const layoutClasses = shouldCollapse ? `flex-col gap-1 w-full ${containerClasses}` : `justify-between gap-1 w-full ${containerClasses}`;
-
+    // Default Compact Variant (Sidebar / Header)
     return (
-        <div className={layoutClasses}>
-            {buttons.map(btn => {
-                const isActive = theme === btn.value;
+        <div className="relative p-1 rounded-xl flex items-center bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/5 w-full">
+            {options.map((option) => {
+                const isActive = theme === option.value;
                 return (
                     <button
-                        key={btn.value}
-                        onClick={() => setTheme(btn.value as Theme)}
-                        className={`relative z-10 flex-1 flex items-center justify-center gap-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none ${shouldCollapse ? 'h-9 w-full p-0' : 'py-1.5 px-2 h-8'}`}
-                        title={shouldCollapse ? btn.label : undefined}
+                        key={option.value}
+                        onClick={() => setTheme(option.value as Theme)}
+                        className={`
+                            relative z-10 flex-1 flex items-center justify-center gap-2 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none
+                            ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}
+                        `}
+                        title={option.desc}
                     >
                         {isActive && (
                             <motion.div
-                                layoutId="theme-pill"
+                                layoutId="theme-pill-compact"
                                 className="absolute inset-0 bg-white dark:bg-gray-700 shadow-sm rounded-lg border border-gray-200/50 dark:border-white/10"
                                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                             />
                         )}
-                        <span className={`relative z-10 flex items-center gap-1.5 ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
-                            {btn.icon}
-                            {!shouldCollapse && <span className="truncate">{btn.label}</span>}
-                        </span>
+                        <span className="relative z-10 truncate">{option.label}</span>
                     </button>
                 );
             })}

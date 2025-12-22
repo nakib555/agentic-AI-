@@ -206,10 +206,8 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
          </a>
       </div>
 
-      <SettingItem label="Theme">
-        <div className="w-full max-w-[360px]">
-            <ThemeToggle theme={theme} setTheme={setTheme} isCollapsed={false} isDesktop={true} />
-        </div>
+      <SettingItem label="Theme" description="Choose your preferred visual style." layout="col">
+        <ThemeToggle theme={theme} setTheme={setTheme} variant="cards" />
       </SettingItem>
 
       <div className="pt-6">
