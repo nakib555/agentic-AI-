@@ -19,12 +19,11 @@ async function startServer() {
 
   // Middlewares
   const corsOptions = {
-    origin: '*',
+    origin: '*', // In production, replace '*' with your Cloudflare domain (e.g., 'https://myapp.pages.dev')
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Client-Version'],
   };
 
-  // Cast handlers to 'any' to avoid TypeScript overload mismatches with Express types
   app.options('*', cors(corsOptions) as any);
   app.use(cors(corsOptions) as any);
   app.use(express.json({ limit: '50mb' }) as any);
@@ -34,23 +33,18 @@ async function startServer() {
   if (appVersion) {
     app.use('/api', ((req: any, res: any, next: any) => {
       const clientVersion = req.header('X-Client-Version');
+      // Optional: Strict version checking can be problematic if deployments aren't perfectly synced.
+      // You might want to loosen this for separate deployments.
       if (clientVersion && clientVersion !== appVersion) {
-        console.warn(`[VERSION_MISMATCH] Client: ${clientVersion}, Server: ${appVersion}.`);
-        return res.status(409).json({
-          error: 'version_mismatch',
-          message: 'Your application version is out of date. Please refresh the page to get the latest version.',
-        });
+         // console.warn(`[VERSION_MISMATCH] Client: ${clientVersion}, Server: ${appVersion}.`);
       }
       next();
     }) as any);
     console.log(`[SERVER] Running version: ${appVersion}`);
   }
 
-  const staticPath = path.join((process as any).cwd(), 'dist');
-
   // API routes
-  // Using 'as any' for handlers to bypass strict RequestHandler type checks
-  app.get('/api/health', ((req: any, res: any) => res.json({ status: 'ok' })) as any);
+  app.get('/api/health', ((req: any, res: any) => res.json({ status: 'ok', mode: 'api-only' })) as any);
   
   app.get('/api/models', getAvailableModelsHandler as any);
 
@@ -72,15 +66,10 @@ async function startServer() {
   app.put('/api/memory', updateMemory as any);
   app.delete('/api/memory', clearMemory as any);
 
-  // Serve static assets (Frontend)
-  app.use(express.static(staticPath) as any);
-  
   // Mount the HISTORY_PATH to /uploads so that files in data/history/{folder}/file/ are accessible.
+  // Note: On Render (free tier), the filesystem is ephemeral. Files uploaded here will be lost on redeploy
+  // unless you attach a Render Disk to '/usr/src/app/data'.
   app.use('/uploads', express.static(HISTORY_PATH) as any);
-
-  app.get('*', ((req: any, res: any) => {
-    res.sendFile(path.join(staticPath, 'index.html'));
-  }) as any);
 
   // Global Error Handler
   app.use(((err: any, req: any, res: any, next: any) => {
@@ -91,7 +80,7 @@ async function startServer() {
   }) as any);
 
   app.listen(PORT, () => {
-    console.log(`[SERVER] Backend server is running on http://localhost:${PORT}`);
+    console.log(`[SERVER] Backend API is running on port ${PORT}`);
   });
 }
 

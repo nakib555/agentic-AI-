@@ -1,0 +1,21 @@
+
+services:
+  # Backend Service
+  - type: web
+    name: agentic-ai-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build:server
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: GEMINI_API_KEY
+        sync: false # User must set this in dashboard
+    # Optional: Attach a disk if you want persistent chats on Render
+    # disk:
+    #   name: agentic-data
+    #   mountPath: /usr/src/app/data
+    #   sizeGB: 1

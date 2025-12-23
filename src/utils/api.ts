@@ -1,17 +1,22 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 const getApiBaseUrl = () => {
-    // In development, the frontend is served by esbuild's dev server (e.g., on port 8000)
-    // and the backend is on port 3001. We need to make absolute requests to the backend.
+    // 1. Check for explicit environment variable (Set this in Cloudflare Pages)
+    // Cast import.meta to any to avoid TypeScript errors if types aren't configured
+    const meta = import.meta as any;
+    if (meta.env && meta.env.VITE_API_BASE_URL) {
+        return meta.env.VITE_API_BASE_URL;
+    }
+
+    // 2. Development fallback
     if (process.env.NODE_ENV === 'development') {
         return 'http://localhost:3001';
     }
-    // In production, both frontend and backend are served from the same origin,
-    // so we can use relative paths.
+
+    // 3. Fallback to empty string (relative path) if hosted on same domain
     return '';
 };
 
@@ -30,9 +35,12 @@ export const fetchFromApi = async (url: string, options: ApiOptions = {}): Promi
     const method = options.method || 'GET';
     const { silent, ...fetchOptions } = options;
     
+    // Cast import.meta to any to avoid TypeScript errors
+    const meta = import.meta as any;
+    
     const headers = {
         ...fetchOptions.headers,
-        'X-Client-Version': process.env.APP_VERSION || 'unknown',
+        'X-Client-Version': (meta.env && meta.env.VITE_APP_VERSION) || 'unknown',
     };
     
     try {
@@ -41,13 +49,10 @@ export const fetchFromApi = async (url: string, options: ApiOptions = {}): Promi
         if (response.status === 409) {
             console.warn(`[API Warning] ⚠️ Version mismatch detected for ${url}`);
             onVersionMismatch();
-            // Throw an error to stop the current operation and prevent further processing.
-            // The component logic should not need to handle this explicitly; the global overlay will take over.
             throw new Error('Version mismatch');
         }
 
         if (!response.ok && !silent) {
-             // Clone the response to read the body for logging without consuming the stream for the caller
              let errorDetails = 'Unknown error';
              try {
                  errorDetails = await response.clone().text();
