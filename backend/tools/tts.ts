@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Modality } from "@google/genai";
 import { ToolError } from "../utils/apiError.js";
 import { generateContentWithRetry } from "../utils/geminiUtils.js";
 
@@ -57,7 +57,7 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
             model: targetModel,
             contents: [{ parts: [{ text: cleanedText }] }],
             config: {
-                responseModalities: ['AUDIO'],
+                responseModalities: [Modality.AUDIO],
                 speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } },
             },
         });

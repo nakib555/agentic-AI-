@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -32,7 +33,15 @@ export async function decodeAudioData(
   sampleRate: number,
   numChannels: number,
 ): Promise<AudioBuffer> {
-  const dataInt16 = new Int16Array(data.buffer);
+  // Ensure the buffer is a multiple of 2 for Int16Array (PCM 16-bit)
+  let processedData = data;
+  if (processedData.byteLength % 2 !== 0) {
+      const newData = new Uint8Array(processedData.byteLength + 1);
+      newData.set(processedData);
+      processedData = newData;
+  }
+
+  const dataInt16 = new Int16Array(processedData.buffer, processedData.byteOffset, processedData.byteLength / 2);
   const frameCount = dataInt16.length / numChannels;
   const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
 
