@@ -25,8 +25,8 @@ export const getApiBaseUrl = () => {
         return 'http://localhost:3001';
     }
 
-    // 4. Fallback to empty string (relative path) if hosted on same domain
-    return '';
+    // 4. Default Fallback if hosted separately (e.g., frontend on Cloudflare, backend on Render)
+    return 'https://agentic-ai-xl8f.onrender.com';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
