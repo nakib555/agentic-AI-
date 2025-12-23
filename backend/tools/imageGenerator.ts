@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -29,7 +30,9 @@ export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: str
         }
 
         for (const part of parts) {
-            if (part.inlineData) base64ImageBytesArray.push(part.inlineData.data);
+            if (part.inlineData?.data) {
+                base64ImageBytesArray.push(part.inlineData.data);
+            }
         }
     } else { // Assume Imagen model
         const count = Math.max(1, Math.min(4, Math.floor(numberOfImages)));
@@ -47,7 +50,11 @@ export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: str
         if (!response.generatedImages || response.generatedImages.length === 0) {
             throw new ToolError('generateImage', 'NO_IMAGE_RETURNED', 'Image generation failed. The model did not return any images.');
         }
-        base64ImageBytesArray = response.generatedImages.map(img => img.image.imageBytes);
+        
+        // Filter out undefined bytes
+        base64ImageBytesArray = response.generatedImages
+            .map(img => img.image?.imageBytes)
+            .filter((bytes): bytes is string => !!bytes);
     }
 
     if (base64ImageBytesArray.length === 0) {

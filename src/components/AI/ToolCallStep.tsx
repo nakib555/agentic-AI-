@@ -178,7 +178,7 @@ export const ToolCallStep = ({ event, sendMessage, onRegenerate, messageId }: To
     };
 
     // Special rendering for the 'displayMap' tool call to embed the map directly.
-    if (call.name === 'displayMap') {
+    if (call.name === 'displayMap' && args) {
         const { latitude, longitude, zoom, markerText } = args as { latitude: number, longitude: number, zoom?: number, markerText?: string };
         return <MapDisplay latitude={latitude} longitude={longitude} zoom={zoom ?? 13} markerText={markerText} />;
     }
@@ -204,7 +204,7 @@ export const ToolCallStep = ({ event, sendMessage, onRegenerate, messageId }: To
     }
     
     // Special full-width rendering for code execution
-    if (call.name === 'executeCode' && args.code) {
+    if (call.name === 'executeCode' && args && args.code) {
         const packages = (args.packages as string[] | undefined) || [];
         return (
             <div className="space-y-3">
@@ -233,7 +233,7 @@ export const ToolCallStep = ({ event, sendMessage, onRegenerate, messageId }: To
         );
     }
     
-    const argEntries = Object.entries(args);
+    const argEntries = args ? Object.entries(args) : [];
   
     return (
       <div className="min-w-0 flex-1 text-sm space-y-2">

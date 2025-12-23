@@ -35,7 +35,7 @@ export const MemoryConfirmationModal: React.FC<MemoryConfirmationModalProps> = (
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="bg-white dark:bg-[#202123] rounded-2xl shadow-xl w-full max-w-md border border-gray-200 dark:border-white/10 flex flex-col max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-start gap-4 p-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">

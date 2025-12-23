@@ -241,7 +241,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
             className="bg-slate-50 dark:bg-[#09090b] rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
           >
             {editingFile ? (

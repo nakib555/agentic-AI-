@@ -19,10 +19,15 @@ const cleanTextForTts = (text: string): string => {
     // Remove code blocks
     cleanedText = cleanedText.replace(/```[\s\S]*?```/g, '');
   
-    // Simple markdown removal
+    // Simple markdown removal - simplified regex to avoid potential backreference issues in strict mode
     cleanedText = cleanedText
       .replace(/^#{1,6}\s/gm, '') // Headers
-      .replace(/(\*\*|__|\*|_|==|~~)(.*?)\1/g, '$2') // Bold, italic, highlight, strikethrough
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Bold
+      .replace(/__(.*?)__/g, '$1') // Underline
+      .replace(/\*(.*?)\*/g, '$1') // Italic
+      .replace(/_(.*?)_/g, '$1') // Italic
+      .replace(/==(.*?)==/g, '$1') // Highlight
+      .replace(/~~(.*?)~~/g, '$1') // Strikethrough
       .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Links
       .replace(/!\[(.*?)\]\(.*?\)/g, '$1') // Images
       .replace(/`([^`]+)`/g, '$1') // Inline code
@@ -59,7 +64,7 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
         let base64Audio: string | undefined;
         if (response.candidates && response.candidates.length > 0) {
             for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData && part.inlineData.mimeType.startsWith('audio/')) {
+                if (part.inlineData?.mimeType?.startsWith('audio/') && part.inlineData?.data) {
                     base64Audio = part.inlineData.data;
                     break;
                 }

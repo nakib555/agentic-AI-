@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -31,7 +32,7 @@ export const executeWebSearch = async (ai: GoogleGenAI, args: { query: string })
       config: { tools: [{ googleSearch: {} }] },
     });
 
-    const summary = response.text.trim() ?? '';
+    const summary = response.text?.trim() ?? '';
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
     
     const sources: { uri: string; title: string }[] = [];

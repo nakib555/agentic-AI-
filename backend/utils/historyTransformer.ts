@@ -20,8 +20,11 @@ export const transformHistoryToGeminiFormat = (messages: Message[]): Content[] =
     
     const pushContent = (role: 'user' | 'model', parts: Part[]) => {
         // Merge consecutive messages from the same role to satisfy Gemini API constraints
-        if (historyForApi.length > 0 && historyForApi[historyForApi.length - 1].role === role) {
-            historyForApi[historyForApi.length - 1].parts.push(...parts);
+        if (historyForApi.length > 0 && historyForApi[historyForApi.length - 1] && historyForApi[historyForApi.length - 1].role === role) {
+            const lastEntry = historyForApi[historyForApi.length - 1];
+            if (lastEntry.parts) {
+                lastEntry.parts.push(...parts);
+            }
         } else {
             historyForApi.push({ role, parts });
         }

@@ -135,7 +135,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                                 Strategic Plan
                             </h3>
                         </div>
-                        <FormattedBlock content={plan} isStreaming={message.isThinking && executionLog.length === 0} />
+                        <FormattedBlock content={plan} isStreaming={(message.isThinking ?? false) && executionLog.length === 0} />
                     </section>
                 )}
                 

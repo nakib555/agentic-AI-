@@ -184,7 +184,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
                         exit={{ opacity: 0, y: -5, scale: 0.95 }}
                         transition={{ duration: 0.1 }}
                         className="absolute right-2 top-10 z-20 w-36 bg-white dark:bg-[#2D2D2D] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
                         <ul className="text-sm">
                             <li>

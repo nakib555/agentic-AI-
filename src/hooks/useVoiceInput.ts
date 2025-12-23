@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -31,7 +32,7 @@ export const useVoiceInput = ({ onTranscriptUpdate }: UseVoiceInputProps) => {
         recognition.interimResults = true; // Get results as they are recognized
         recognition.lang = 'en-US';
 
-        recognition.onresult = (event) => {
+        recognition.onresult = (event: any) => {
             let finalTranscript = '';
             let interimTranscript = '';
 
@@ -51,7 +52,7 @@ export const useVoiceInput = ({ onTranscriptUpdate }: UseVoiceInputProps) => {
             setIsRecording(false);
         };
 
-        recognition.onerror = (event) => {
+        recognition.onerror = (event: any) => {
             console.error('Speech recognition error:', event.error);
 
             // Silently handle non-critical errors. The `onend` event will fire regardless,

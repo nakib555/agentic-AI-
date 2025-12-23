@@ -4,15 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageError, ToolCallEvent, WorkflowNodeData, WorkflowNodeType, ParsedWorkflow, RenderSegment } from '../types.js';
+import type { MessageError, ToolCallEvent, WorkflowNodeData, WorkflowNodeType, ParsedWorkflow, RenderSegment } from '../types';
 
 const GENERIC_STEP_KEYWORDS = new Set(['observe', 'adapt', 'system']);
 const ACTION_KEYWORDS = new Set(['act', 'action', 'tool call']);
 
 /**
  * Parses raw text into component segments (e.g. text vs [IMAGE_COMPONENT]...[/...]).
+ * This is used by the frontend to render components dynamically as text is typed.
  */
-const parseContentSegments = (text: string): RenderSegment[] => {
+export const parseContentSegments = (text: string): RenderSegment[] => {
     if (!text) return [];
 
     // Regex to capture component tags and their content
@@ -47,12 +48,12 @@ const parseContentSegments = (text: string): RenderSegment[] => {
             }
         }
         
-        // Handle any incomplete tags at the end of the stream or plain text
-        // We strip partial tags to prevent UI glitching during streaming
+        // Handle any incomplete tags at the end of the stream
+        // We strip partial tags to prevent UI glitching during streaming/typing
         const incompleteTagRegex = /\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\].*$/s;
         const cleanedPart = part.replace(incompleteTagRegex, '');
         
-        if (!cleanedPart.trim()) return null; // Skip empty text parts
+        if (!cleanedPart.trim()) return null; // Skip empty parts
 
         return { type: 'text', content: cleanedPart };
     }).filter((s): s is RenderSegment => s !== null);

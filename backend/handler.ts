@@ -142,18 +142,21 @@ class ChatPersistenceManager {
             const msgIndex = chat.messages.findIndex((m: any) => m.id === this.messageId);
             if (msgIndex !== -1) {
                 const message = chat.messages[msgIndex];
-                const activeResponse = message.responses[message.activeResponseIndex];
-                
-                // Apply pending buffer if any
-                if (this.buffer) {
-                    activeResponse.text = (activeResponse.text || '') + this.buffer.text;
-                    this.buffer = null;
+                // Ensure responses array exists
+                if (message.responses && message.responses[message.activeResponseIndex]) {
+                    const activeResponse = message.responses[message.activeResponseIndex];
+                    
+                    // Apply pending buffer if any
+                    if (this.buffer) {
+                        activeResponse.text = (activeResponse.text || '') + this.buffer.text;
+                        this.buffer = null;
+                    }
+
+                    // Apply the specific modification (e.g., adding a tool call event)
+                    modifier(activeResponse);
+
+                    await historyControl.updateChat(this.chatId, { messages: chat.messages });
                 }
-
-                // Apply the specific modification (e.g., adding a tool call event)
-                modifier(activeResponse);
-
-                await historyControl.updateChat(this.chatId, { messages: chat.messages });
             }
         } catch (e) {
             console.error(`[PERSISTENCE] Failed to update chat ${this.chatId}:`, e);
@@ -180,9 +183,11 @@ class ChatPersistenceManager {
             const msgIndex = chat.messages.findIndex((m: any) => m.id === this.messageId);
             if (msgIndex !== -1) {
                 const message = chat.messages[msgIndex];
-                const activeResponse = message.responses[message.activeResponseIndex];
-                activeResponse.text = (activeResponse.text || '') + textToAppend;
-                await historyControl.updateChat(this.chatId, { messages: chat.messages });
+                if (message.responses && message.responses[message.activeResponseIndex]) {
+                    const activeResponse = message.responses[message.activeResponseIndex];
+                    activeResponse.text = (activeResponse.text || '') + textToAppend;
+                    await historyControl.updateChat(this.chatId, { messages: chat.messages });
+                }
             }
         } catch (e) {
             console.error(`[PERSISTENCE] Failed to flush text to chat ${this.chatId}:`, e);
@@ -202,19 +207,21 @@ class ChatPersistenceManager {
             const msgIndex = chat.messages.findIndex((m: any) => m.id === this.messageId);
             if (msgIndex !== -1) {
                 const message = chat.messages[msgIndex];
-                const activeResponse = message.responses[message.activeResponseIndex];
-                
-                if (this.buffer) {
-                    activeResponse.text = (activeResponse.text || '') + this.buffer.text;
-                    this.buffer = null;
+                if (message.responses && message.responses[message.activeResponseIndex]) {
+                    const activeResponse = message.responses[message.activeResponseIndex];
+                    
+                    if (this.buffer) {
+                        activeResponse.text = (activeResponse.text || '') + this.buffer.text;
+                        this.buffer = null;
+                    }
+
+                    if (finalModifier) finalModifier(activeResponse);
+                    
+                    // Mark as done thinking
+                    message.isThinking = false;
+
+                    await historyControl.updateChat(this.chatId, { messages: chat.messages });
                 }
-
-                if (finalModifier) finalModifier(activeResponse);
-                
-                // Mark as done thinking
-                message.isThinking = false;
-
-                await historyControl.updateChat(this.chatId, { messages: chat.messages });
             }
         } catch (e) {
             console.error(`[PERSISTENCE] Failed to complete save for chat ${this.chatId}:`, e);
@@ -608,7 +615,7 @@ export const apiHandler = async (req: any, res: any) => {
                         model: 'gemini-2.5-flash',
                         contents: prompt,
                     });
-                    res.status(200).json({ title: response.text.trim() });
+                    res.status(200).json({ title: response.text?.trim() ?? '' });
                 } catch (e) {
                     console.warn(`[HANDLER] Title generation failed (skipping):`, e);
                     res.status(200).json({ title: '' });
@@ -631,7 +638,7 @@ export const apiHandler = async (req: any, res: any) => {
                     
                     let suggestions = [];
                     try {
-                        suggestions = JSON.parse(response.text);
+                        suggestions = JSON.parse(response.text || '[]');
                     } catch (e) { /* ignore parse error */ }
                     res.status(200).json({ suggestions });
                 } catch (e) {

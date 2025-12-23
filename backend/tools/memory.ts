@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -22,7 +23,8 @@ export const executeExtractMemorySuggestions = async (ai: GoogleGenAI, conversat
             config: { responseMimeType: 'application/json' },
         });
 
-        const jsonText = response.text.trim() || '[]';
+        const text = response.text || '';
+        const jsonText = text.trim() || '[]';
         const suggestions = JSON.parse(jsonText);
 
         if (Array.isArray(suggestions) && suggestions.every(s => typeof s === 'string')) {
@@ -43,7 +45,7 @@ export const executeConsolidateMemory = async (ai: GoogleGenAI, currentMemory: s
             model: 'gemini-2.5-flash',
             contents: prompt,
         });
-        return response.text.trim();
+        return (response.text || '').trim();
     } catch (error) {
         console.error("Memory consolidation failed:", error);
         // Fallback: simple append

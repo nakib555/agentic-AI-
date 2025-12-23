@@ -141,7 +141,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3, type: "spring", bounce: 0.25 }}
             className="bg-page w-full shadow-2xl rounded-3xl max-w-5xl h-[85vh] max-h-[800px] flex flex-col overflow-hidden border border-slate-200 dark:border-white/10"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-layer-1/80 backdrop-blur-md z-20">
