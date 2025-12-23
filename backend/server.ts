@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { apiHandler } from './handler.js';
 import * as crudHandler from './crudHandler.js';
@@ -85,17 +86,30 @@ async function startServer() {
   // unless you attach a Render Disk to '/usr/src/app/data'.
   app.use('/uploads', express.static(HISTORY_PATH) as any);
 
-  // Serve static files from the current directory (dist)
-  // This allows the backend to serve the frontend bundle
-  app.use(express.static(serverDir));
-
-  // Handle SPA routing: Serve index.html for any unknown non-API routes
-  app.get('*', (req, res) => {
-    if (req.path.startsWith('/api')) {
-      return res.status(404).json({ error: 'API route not found' });
-    }
-    res.sendFile(path.join(serverDir, 'index.html'));
-  });
+  // Serve static files from the current directory (dist) if they exist
+  // This allows the backend to serve the frontend bundle if built together,
+  // or gracefully fallback if running as API-only (Split Deployment)
+  const indexHtmlPath = path.join(serverDir, 'index.html');
+  if (fs.existsSync(indexHtmlPath)) {
+      app.use(express.static(serverDir));
+      
+      // Handle SPA routing: Serve index.html for any unknown non-API routes
+      app.get('*', (req, res) => {
+        if (req.path.startsWith('/api')) {
+          return res.status(404).json({ error: 'API route not found' });
+        }
+        res.sendFile(indexHtmlPath);
+      });
+  } else {
+      console.log('[SERVER] Static files not found. Running in API-only mode.');
+      app.get('/', (req, res) => {
+          res.json({ 
+              status: 'online', 
+              message: 'Agentic AI Backend is running.',
+              note: 'Frontend should be deployed separately (e.g., Cloudflare Pages).' 
+          });
+      });
+  }
 
   // Global Error Handler
   app.use(((err: any, req: any, res: any, next: any) => {

@@ -13,8 +13,8 @@ const staticAssetsPlugin = (appVersion: string) => ({
   closeBundle: async () => {
     const distDir = path.resolve(__dirname, 'dist');
     
-    // 1. Copy Manifest & Favicon
-    const filesToCopy = ['manifest.json', 'favicon.svg'];
+    // 1. Copy Manifest, Favicon, and Cloudflare Redirects
+    const filesToCopy = ['manifest.json', 'favicon.svg', '_redirects'];
     for (const file of filesToCopy) {
       if (fs.existsSync(file)) {
         fs.copyFileSync(file, path.join(distDir, file));
