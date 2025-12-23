@@ -52,7 +52,8 @@ const parseContentSegments = (text: string): RenderSegment[] => {
         const incompleteTagRegex = /\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\].*$/s;
         const cleanedPart = part.replace(incompleteTagRegex, '');
         
-        if (!cleanedPart.trim()) return null; // Skip empty text parts
+        // CRITICAL FIX: Allow whitespace-only segments (e.g. newlines) to preserve markdown structure
+        if (cleanedPart.length === 0) return null;
 
         return { type: 'text', content: cleanedPart };
     }).filter((s): s is RenderSegment => s !== null);

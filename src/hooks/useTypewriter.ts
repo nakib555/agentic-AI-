@@ -62,9 +62,12 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       let jump = 1;
       
       // Adaptive speed curve for 60fps (updates every ~16ms)
-      if (distance > 200) jump = 8;       // Very fast catch-up
-      else if (distance > 100) jump = 4;  // Fast
-      else if (distance > 50) jump = 2;   // Medium
+      // Aggressive catch-up for large blocks (tables/code) to prevent "stuck" feeling
+      if (distance > 1000) jump = 100;    // Instant catch-up for massive dumps
+      else if (distance > 500) jump = 50; // Very fast
+      else if (distance > 200) jump = 20; // Fast
+      else if (distance > 100) jump = 10; // Moderate catch-up
+      else if (distance > 20) jump = 2;   // Slight catch-up
       else jump = 1;                      // Cruising
 
       // Apply jump

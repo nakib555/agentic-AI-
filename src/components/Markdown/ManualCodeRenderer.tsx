@@ -25,23 +25,29 @@ type ManualCodeRendererProps = {
 const processHighlights = (content: string): string => {
     if (!content) return '';
     
-    // FAST PATH: If no "==" exists, skip expensive regex.
-    if (!content.includes('==')) return content;
+    // Check if we need processing at all
+    const hasHighlight = content.includes('==');
+    const hasCurrency = content.includes('$');
+    
+    if (!hasHighlight && !hasCurrency) return content;
     
     // Split content by code blocks, inline code, display math, and inline math to protect them
+    // Note: The regex `\$[^$\n]+\$` captures valid inline math (single line).
     const parts = content.split(/(`{3}[\s\S]*?`{3}|`[^`]+`|\$\$[\s\S]*?\$\$|\$[^$\n]+\$)/g);
     
     return parts.map(part => {
         // If this part is a code block or math, return it untouched
         if (part.startsWith('`') || part.startsWith('$')) return part;
         
-        // Apply highlight replacement only to regular text
-        // Captures: ==[color] text== OR ==text==
+        // Apply text transformations to regular text segments
         return part
             // Match specific color syntax: ==[red] text==
             .replace(/==\[([a-zA-Z]+)\](.*?)==/g, '<mark>[$1]$2</mark>')
             // Match standard highlight: ==text==
-            .replace(/==(.*?)==/g, '<mark>$1</mark>');
+            .replace(/==(.*?)==/g, '<mark>$1</mark>')
+            // Escape currency symbols ($ followed by digit) to prevent KaTeX from mistaking them for open math tags
+            // This prevents "stuck" rendering when the model writes "$100" without a closing $.
+            .replace(/\$(\d)/g, '\\$$$1');
     }).join('');
 };
 
