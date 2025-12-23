@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -41,10 +42,25 @@ export const parseMessageText = (text: string, isThinking: boolean, hasError: bo
   }
   
   // Rule 3: If there's no final answer marker, check if the model is still actively thinking.
-  // If it is, ALL text so far is considered part of the thinking process, even if it doesn't
-  // have a `[STEP]` marker yet. This prevents an initial flicker of content in the final answer area.
   if (isThinking) {
-    return { thinkingText: text, finalAnswerText: '' };
+    const trimmed = text.trimStart();
+
+    // HEURISTIC: In Agent Mode, the output typically starts with a [STEP] marker.
+    // If the text starts with [STEP], treat it as thinking process content.
+    if (trimmed.startsWith('[STEP]')) {
+        return { thinkingText: text, finalAnswerText: '' };
+    }
+    
+    // HEURISTIC: Prevent flicker for the first few characters if they look like they might start a tag.
+    // Buffer output that starts with '[' until it's long enough to disambiguate or confirms it's not a step.
+    // This prevents a brief flash of the thinking box if the chat starts with a link like "[Google]".
+    if (trimmed.startsWith('[') && trimmed.length < 10) {
+        // Return empty to show typing indicator, effectively buffering the stream
+        return { thinkingText: '', finalAnswerText: '' };
+    }
+
+    // Otherwise, treat as direct streaming response (Chat Mode)
+    return { thinkingText: '', finalAnswerText: text };
   }
 
   // Rule 4: At this point, thinking is complete and there is no error.
