@@ -103,5 +103,11 @@ export async function generateVideosWithRetry(ai: GoogleGenAI, request: any): Pr
 }
 
 export const getText = (response: GenerateContentResponse): string => {
-  return response.text || '';
+  // Safe access to .text property.
+  // The SDK might throw if .text is accessed on a response that doesn't contain text (e.g. usage metadata only).
+  try {
+    return response.text || '';
+  } catch (e) {
+    return '';
+  }
 };

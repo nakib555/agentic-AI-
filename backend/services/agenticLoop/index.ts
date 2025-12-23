@@ -73,10 +73,14 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             for await (const chunk of streamResult) {
                 if (signal.aborted) throw new Error("AbortError");
 
-                if (chunk.candidates && chunk.candidates[0].finishReason === FinishReason.SAFETY) {
+                // Check for safety blocking
+                const candidate = chunk.candidates?.[0];
+                if (candidate?.finishReason === FinishReason.SAFETY) {
                     throw new Error("Response was blocked due to safety policy.");
                 }
 
+                // Robust text extraction
+                // getText in geminiUtils is now safe, but we double-check handling here implicitly
                 const chunkText = getText(chunk);
                 if (chunkText) {
                     fullTextResponse += chunkText;
