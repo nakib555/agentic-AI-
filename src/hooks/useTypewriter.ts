@@ -10,9 +10,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
  * A hook that progressively reveals text to simulate a typewriter effect.
  * It catches up dynamically if the target text grows significantly faster than the typing speed.
  * 
- * OPTIMIZED: Uses a setTimeout loop instead of requestAnimationFrame to throttle updates
- * to a reasonable framerate (e.g. 30fps). This significantly reduces CPU usage and
- * re-renders on high-refresh rate monitors (120Hz+) during heavy text streaming.
+ * OPTIMIZED: Uses a setTimeout loop at ~16ms (60fps) instead of requestAnimationFrame.
+ * This ensures visually smooth updates while preventing the UI thread from locking up
+ * on high-refresh rate monitors or during intensive rendering.
  */
 export const useTypewriter = (targetText: string, isThinking: boolean) => {
   // Initialize state. If not thinking (e.g. loading history), show full text immediately.
@@ -61,11 +61,11 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       const distance = targetLen - currentLength.current;
       let jump = 1;
       
-      // Adaptive speed curve
-      if (distance > 200) jump = 15;       // Ultra fast catch-up
-      else if (distance > 100) jump = 8;   // Fast
-      else if (distance > 50) jump = 4;    // Medium
-      else if (distance > 20) jump = 2;    // Cruising
+      // Adaptive speed curve for 60fps (updates every ~16ms)
+      if (distance > 200) jump = 8;       // Very fast catch-up
+      else if (distance > 100) jump = 4;  // Fast
+      else if (distance > 50) jump = 2;   // Medium
+      else jump = 1;                      // Cruising
 
       // Apply jump
       currentLength.current += jump;
@@ -76,9 +76,8 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       // Update State (Trigger Render)
       setDisplayedText(targetTextRef.current.slice(0, currentLength.current));
 
-      // Schedule next frame. 33ms is roughly 30fps, which is visually smooth enough for text
-      // but far less expensive than 60fps or 144fps.
-      timeoutId.current = setTimeout(animate, 33);
+      // Schedule next frame. 16ms is roughly 60fps.
+      timeoutId.current = setTimeout(animate, 16);
   }, []);
 
   // Cleanup on unmount

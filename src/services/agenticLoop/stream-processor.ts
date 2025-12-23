@@ -32,10 +32,9 @@ export const processBackendStream = async (response: Response, callbacks: Stream
     let buffer = '';
 
     // --- Performance Optimization: Buffered State Updates ---
-    // Use setTimeout to buffer rapid text chunks and update state only occasionally (e.g. every 50ms).
-    // This prevents the React render cycle from choking on high-speed token streams,
-    // which can lock up the UI if using requestAnimationFrame on high-refresh monitors.
-    const FLUSH_INTERVAL_MS = 50; 
+    // Use setTimeout to buffer rapid text chunks. 
+    // 16ms approximates 60fps, ensuring smooth updates without overloading React.
+    const FLUSH_INTERVAL_MS = 16; 
     let pendingText: string | null = null;
     let flushTimeoutId: any = null;
 
