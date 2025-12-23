@@ -1,4 +1,3 @@
-
 {
   "name": "agentic-ai-chat",
   "version": "1.0.0",
@@ -6,6 +5,9 @@
   "keywords": ["react", "gemini", "ai", "chat", "agentic", "math"],
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "npm run build:client && npm run build:server",
     "build:client": "tsc && vite build",

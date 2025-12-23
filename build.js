@@ -79,7 +79,7 @@ try {
   await copyFiles('index.html', 'dist');
   await copyFiles('src/styles/**', 'dist/styles');
   // Exclude sw.js from bulk copy, handle it specifically below
-  await copyFiles('{manifest.json,favicon.svg}', 'dist');
+  await copyFiles('{manifest.json,favicon.svg,_headers,_redirects}', 'dist');
 
   // 5. Compile Tailwind CSS
   console.log('Compiling Tailwind CSS...');
