@@ -28,6 +28,10 @@ export const useMemory = (isMemoryEnabled: boolean) => {
                 try {
                     const response = await fetchFromApi('/api/memory');
                     if (!response.ok) throw new Error('Failed to fetch memory');
+                    
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.includes("text/html")) throw new Error("Backend returned HTML");
+
                     const data = await response.json();
                     setMemoryContent(data.content || '');
                     setMemoryFiles(data.files || []);

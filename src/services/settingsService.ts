@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -34,6 +35,13 @@ export const getSettings = async (): Promise<AppSettings> => {
     if (!response.ok) {
         throw new Error('Failed to fetch settings');
     }
+    
+    // Robust check: Ensure we got JSON, not an HTML error page or fallback
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("text/html")) {
+        throw new Error("Backend not connected (Received HTML).");
+    }
+
     return response.json();
 };
 
@@ -52,6 +60,11 @@ export const updateSettings = async (settings: Partial<AppSettings>): Promise<Up
         keepalive: useKeepalive,
     });
     if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) {
+            throw new Error("Backend not connected (Received HTML).");
+        }
+        
         const errorBody = await response.json().catch(() => ({ error: 'An unknown error occurred while saving settings.' }));
         throw new Error(errorBody.error);
     }

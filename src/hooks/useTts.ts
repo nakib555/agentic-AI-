@@ -51,6 +51,9 @@ export const useTts = (text: string, voice: string, model: string) => {
 
         if (!response.ok) throw new Error(`TTS request failed with status ${response.status}`);
         
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) throw new Error("Backend returned HTML");
+
         const { audio: base64Audio } = await response.json();
         
         if (base64Audio) {

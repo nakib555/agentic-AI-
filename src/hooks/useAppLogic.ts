@@ -354,15 +354,18 @@ export const useAppLogic = () => {
     try {
         setBackendStatus('checking');
         const response = await fetchFromApi('/api/health');
-        if (response.ok) {
+        
+        // FIX: Verify we actually got JSON back, not the HTML fallback
+        const contentType = response.headers.get("content-type");
+        if (response.ok && contentType && contentType.includes("application/json")) {
             setBackendStatus('online');
             setBackendError(null);
         } else {
-            throw new Error();
+            throw new Error("Invalid response from server");
         }
     } catch (error) {
         setBackendStatus('offline');
-        setBackendError("Connection lost.");
+        setBackendError("Connection lost. Please check your backend URL.");
         checkBackendStatusTimeoutRef.current = window.setTimeout(checkBackendStatus, 5000);
     }
   }, []);

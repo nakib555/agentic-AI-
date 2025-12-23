@@ -18,6 +18,13 @@ const fetchApi = async (url: string, options?: RequestInit) => {
     }
 
     const response = await fetchFromApi(finalUrl, options);
+    
+    // Safety check for HTML responses (fallback from static host 404s)
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("text/html")) {
+        throw new Error(`Endpoint ${url} returned HTML instead of JSON. Backend may be offline or unreachable.`);
+    }
+
     if (!response.ok) {
         const error = await response.json().catch(() => ({ message: response.statusText }));
         // Pass through status for handling 404s in caller
