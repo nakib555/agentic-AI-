@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
+import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import type { Message, Source } from '../../types';
 import { MessageComponent } from './Message';
 import { WelcomeScreen } from './WelcomeScreen/index';
@@ -78,14 +78,15 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   const [atBottom, setAtBottom] = useState(true);
   const { isDesktop } = useViewport();
 
+  const visibleMessages = useMemo(() => messages.filter(msg => !msg.isHidden), [messages]);
+
   // Expose scroll methods to parent via ref
   useImperativeHandle(ref, () => ({
     scrollToBottom: () => {
-      virtuosoRef.current?.scrollToIndex({ index: messages.filter(m => !m.isHidden).length - 1, behavior: 'smooth', align: 'end' });
+      virtuosoRef.current?.scrollToIndex({ index: visibleMessages.length - 1, behavior: 'smooth', align: 'end' });
     },
     scrollToMessage: (messageId: string) => {
         // We need to find the index of the message in the *visible* list
-        const visibleMessages = messages.filter(msg => !msg.isHidden);
         const index = visibleMessages.findIndex(m => m.id === messageId);
         
         if (index !== -1 && virtuosoRef.current) {
@@ -93,8 +94,6 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
         }
     }
   }));
-
-  const visibleMessages = messages.filter(msg => !msg.isHidden);
 
   const handleScrollToBottom = useCallback(() => {
       virtuosoRef.current?.scrollToIndex({ index: visibleMessages.length - 1, behavior: 'smooth', align: 'end' });
@@ -120,7 +119,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                     setAtBottom(isAtBottom);
                     setShowScrollButton(!isAtBottom);
                 }}
-                atBottomThreshold={80} 
+                atBottomThreshold={60} 
                 className="custom-scrollbar"
                 itemContent={(index, msg) => (
                     <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-4">
