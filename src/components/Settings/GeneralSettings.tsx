@@ -20,6 +20,8 @@ type GeneralSettingsProps = {
   onSaveSuggestionApiKey?: (key: string) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  serverUrl: string;
+  onSaveServerUrl: (url: string) => Promise<boolean>;
 };
 
 const ActionButton = ({ 
@@ -144,10 +146,104 @@ const ApiKeyInput = ({
     );
 };
 
+const ServerUrlInput = ({
+    value,
+    onSave
+}: {
+    value: string,
+    onSave: (url: string) => Promise<boolean>
+}) => {
+    const [localValue, setLocalValue] = useState(value);
+    const [status, setStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
+    const [message, setMessage] = useState<string | null>(null);
+
+    const handleVerify = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        
+        const urlToTest = localValue.trim().replace(/\/$/, '');
+        
+        // Allow clearing the override
+        if (!urlToTest) {
+            await onSave('');
+            setStatus('success');
+            setMessage('Reset to default');
+            setTimeout(() => { setStatus('idle'); setMessage(null); }, 2000);
+            return;
+        }
+
+        setStatus('verifying');
+        setMessage(null);
+
+        const success = await onSave(urlToTest);
+        
+        if (success) {
+            setStatus('success');
+            setMessage('Connected successfully');
+            setTimeout(() => { setStatus('idle'); setMessage(null); }, 2000);
+        } else {
+            setStatus('error');
+            setMessage('Connection failed. Check URL.');
+        }
+    };
+
+    return (
+        <SettingItem 
+            label="Backend Server URL" 
+            description="Override the default backend URL. Useful if you are self-hosting or experiencing connection issues." 
+            layout="col"
+        >
+            <form onSubmit={handleVerify} className="space-y-4">
+                <div className="flex gap-2">
+                    <div className="relative flex-1 group">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className={`w-4 h-4 ${status === 'success' ? 'text-green-500' : status === 'error' ? 'text-red-500' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        </div>
+                        <input
+                            type="text"
+                            value={localValue}
+                            onChange={e => setLocalValue(e.target.value)}
+                            placeholder="https://your-backend-url.com"
+                            className="w-full pl-9 pr-4 py-2.5 bg-slate-100/50 dark:bg-white/5 border border-transparent dark:border-transparent rounded-lg text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={status === 'verifying'}
+                        className={`
+                            px-4 py-2.5 text-sm font-semibold text-white rounded-lg transition-all shadow-sm flex items-center gap-2
+                            ${status === 'success' 
+                                ? 'bg-green-600 hover:bg-green-700' 
+                                : status === 'error'
+                                    ? 'bg-red-600 hover:bg-red-700'
+                                    : 'bg-slate-700 hover:bg-slate-800 dark:bg-white/10 dark:hover:bg-white/20 dark:text-slate-200'
+                            }
+                            disabled:opacity-50 disabled:cursor-not-allowed
+                        `}
+                    >
+                        {status === 'verifying' ? (
+                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        ) : status === 'success' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
+                        ) : (
+                            'Verify'
+                        )}
+                    </button>
+                </div>
+                {message && (
+                    <p className={`text-xs font-medium flex items-center gap-1 ${status === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+                        {message}
+                    </p>
+                )}
+            </form>
+        </SettingItem>
+    );
+};
+
 const GeneralSettings: React.FC<GeneralSettingsProps> = ({ 
     onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, apiKey, onSaveApiKey,
     suggestionApiKey, onSaveSuggestionApiKey,
-    theme, setTheme
+    theme, setTheme,
+    serverUrl, onSaveServerUrl
 }) => {
 
   const handleMainApiKeySave = async (key: string) => {
@@ -209,6 +305,9 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
       <SettingItem label="Theme" description="Choose your preferred visual style." layout="col">
         <ThemeToggle theme={theme} setTheme={setTheme} variant="cards" />
       </SettingItem>
+
+      {/* Manual Server URL Override */}
+      <ServerUrlInput value={serverUrl} onSave={onSaveServerUrl} />
 
       <div className="pt-6">
           <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 uppercase tracking-wide opacity-80">Data & Debugging</h4>

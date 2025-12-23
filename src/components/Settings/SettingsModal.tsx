@@ -59,6 +59,8 @@ type SettingsModalProps = {
   disabled: boolean;
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  serverUrl: string;
+  onSaveServerUrl: (url: string) => Promise<boolean>;
 };
 
 const CATEGORIES = [
@@ -206,6 +208,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                             onSaveSuggestionApiKey={props.onSaveSuggestionApiKey}
                                             theme={props.theme} 
                                             setTheme={props.setTheme} 
+                                            serverUrl={props.serverUrl}
+                                            onSaveServerUrl={props.onSaveServerUrl}
                                         />
                                     )}
                                     {activeCategory === 'model' && (

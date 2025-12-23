@@ -25,7 +25,7 @@ import {
   DEFAULT_MAX_TOKENS,
   DEFAULT_TTS_VOICE
 } from '../components/App/constants';
-import { fetchFromApi, setOnVersionMismatch } from '../utils/api';
+import { fetchFromApi, setOnVersionMismatch, getApiBaseUrl } from '../utils/api';
 import { testSuite, type TestResult, type TestProgress } from '../components/Testing/testSuite';
 import { getSettings, updateSettings, type UpdateSettingsResponse } from '../services/settingsService';
 import { logCollector } from '../utils/logCollector';
@@ -88,6 +88,7 @@ export const useAppLogic = () => {
   const [ttsModel, setTtsModel] = useState('');
   const [ttsVoice, setTtsVoice] = useState(DEFAULT_TTS_VOICE);
   const [isAgentMode, setIsAgentModeState] = useState(true);
+  const [serverUrl, setServerUrl] = useState(() => getApiBaseUrl());
   
   // Memory state is managed by its own hook
   const [isMemoryEnabled, setIsMemoryEnabledState] = useState(false);
@@ -228,6 +229,40 @@ export const useAppLogic = () => {
         throw error;
     }
   }, [processModelData, fetchModels]);
+
+  // Server URL Override logic
+  const handleSaveServerUrl = useCallback(async (newUrl: string): Promise<boolean> => {
+      // 1. Temporarily save to check connection
+      if (typeof window !== 'undefined') {
+          if (!newUrl) {
+              localStorage.removeItem('custom_server_url');
+          } else {
+              localStorage.setItem('custom_server_url', newUrl);
+          }
+      }
+      
+      try {
+          // 2. Try to hit health check
+          const response = await fetchFromApi('/api/health');
+          if (response.ok) {
+              setServerUrl(newUrl);
+              setBackendStatus('online');
+              setBackendError(null);
+              // Refresh models since we changed backend
+              fetchModels();
+              return true;
+          }
+          throw new Error('Health check failed');
+      } catch (error) {
+          // Revert if check failed
+          if (typeof window !== 'undefined') {
+              // Restore previous known good or empty
+              if (serverUrl) localStorage.setItem('custom_server_url', serverUrl);
+              else localStorage.removeItem('custom_server_url');
+          }
+          return false;
+      }
+  }, [fetchModels, serverUrl]);
 
   // Simple global-only settings
   const handleSetSuggestionApiKey = createSettingUpdater(setSuggestionApiKey, 'suggestionApiKey');
@@ -476,6 +511,7 @@ export const useAppLogic = () => {
     handleCloseSourcesSidebar: () => setIsSourcesSidebarOpen(false),
     handleExportChat, handleShareChat, handleImportChat: () => setIsImportModalOpen(true),
     runDiagnosticTests, handleFileUploadForImport, handleDownloadLogs, handleShowDataStructure,
-    updateBackendMemory: memory.updateBackendMemory, memoryFiles: memory.memoryFiles, updateMemoryFiles: memory.updateMemoryFiles
+    updateBackendMemory: memory.updateBackendMemory, memoryFiles: memory.memoryFiles, updateMemoryFiles: memory.updateMemoryFiles,
+    serverUrl, onSaveServerUrl: handleSaveServerUrl
   };
 };

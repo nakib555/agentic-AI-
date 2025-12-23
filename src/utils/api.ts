@@ -1,22 +1,30 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-const getApiBaseUrl = () => {
-    // 1. Check for explicit environment variable (Set this in Cloudflare Pages)
+export const getApiBaseUrl = () => {
+    // 1. Manual Override from LocalStorage (Highest Priority)
+    // This allows users to fix connection issues at runtime via Settings
+    if (typeof window !== 'undefined') {
+        const customUrl = localStorage.getItem('custom_server_url');
+        if (customUrl) return customUrl.replace(/\/$/, ''); // Remove trailing slash
+    }
+
+    // 2. Check for explicit environment variable (Set this in Cloudflare Pages/Vercel)
     // Cast import.meta to any to avoid TypeScript errors if types aren't configured
     const meta = import.meta as any;
     if (meta.env && meta.env.VITE_API_BASE_URL) {
-        return meta.env.VITE_API_BASE_URL;
+        return meta.env.VITE_API_BASE_URL.replace(/\/$/, '');
     }
 
-    // 2. Development fallback
+    // 3. Development fallback
     if (process.env.NODE_ENV === 'development') {
         return 'http://localhost:3001';
     }
 
-    // 3. Fallback to empty string (relative path) if hosted on same domain
+    // 4. Fallback to empty string (relative path) if hosted on same domain
     return '';
 };
 
@@ -31,7 +39,8 @@ export const setOnVersionMismatch = (callback: () => void) => {
 type ApiOptions = RequestInit & { silent?: boolean };
 
 export const fetchFromApi = async (url: string, options: ApiOptions = {}): Promise<Response> => {
-    const fullUrl = `${API_BASE_URL}${url}`;
+    const baseUrl = getApiBaseUrl();
+    const fullUrl = `${baseUrl}${url}`;
     const method = options.method || 'GET';
     const { silent, ...fetchOptions } = options;
     
@@ -74,7 +83,8 @@ export const fetchFromApi = async (url: string, options: ApiOptions = {}): Promi
             console.error(`[API Fatal] 💥 ${method} ${url} failed to execute`, {
                 cause: error instanceof Error ? error.message : String(error),
                 stack: error instanceof Error ? error.stack : undefined,
-                how: 'Network error, fetch failed, or server unreachable'
+                how: 'Network error, fetch failed, or server unreachable',
+                endpoint: fullUrl
             });
         }
         throw error;
