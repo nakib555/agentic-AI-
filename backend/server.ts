@@ -36,7 +36,7 @@ async function startServer() {
 
   // Middlewares
   const corsOptions = {
-    origin: '*', // In production, replace '*' with your Cloudflare domain (e.g., 'https://myapp.pages.dev')
+    origin: '*', // In production, restrict this to your specific domain (e.g., https://your-app.com)
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Client-Version'],
   };
