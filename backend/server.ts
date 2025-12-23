@@ -1,14 +1,17 @@
-
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { apiHandler } from './handler.js';
 import * as crudHandler from './crudHandler.js';
 import { getSettings, updateSettings } from './settingsHandler.js';
 import { getMemory, updateMemory, clearMemory } from './memoryHandler.js';
 import { getAvailableModelsHandler } from './modelsHandler.js';
 import { initDataStore, HISTORY_PATH } from './data-store.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function startServer() {
   // --- Initialize Data Store ---
@@ -70,6 +73,18 @@ async function startServer() {
   // Note: On Render (free tier), the filesystem is ephemeral. Files uploaded here will be lost on redeploy
   // unless you attach a Render Disk to '/usr/src/app/data'.
   app.use('/uploads', express.static(HISTORY_PATH) as any);
+
+  // Serve static files from the current directory (dist)
+  // This allows the backend to serve the frontend bundle
+  app.use(express.static(__dirname));
+
+  // Handle SPA routing: Serve index.html for any unknown non-API routes
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ error: 'API route not found' });
+    }
+    res.sendFile(path.join(__dirname, 'index.html'));
+  });
 
   // Global Error Handler
   app.use(((err: any, req: any, res: any, next: any) => {

@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,6 +7,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './components/App/index';
 import { logCollector } from './utils/logCollector';
+
+// Import Styles for Vite Bundling
+import './styles/main.css';
+import './styles/markdown.css';
 
 // Start logging immediately to capture startup events
 logCollector.start();

@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gemini - Agentic AI</title>
-    <link rel="manifest" href="./manifest.json">
-    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <meta name="theme-color" content="#6d28d9" />
     
     <!-- Fonts -->
@@ -20,72 +20,10 @@
     <!-- KaTeX CSS for Math Rendering -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
 
-    <!-- Custom App Styles -->
-    <link rel="stylesheet" href="./styles/main.css">
-    <link rel="stylesheet" href="./styles/markdown.css">
-
-    <!-- Tailwind CSS CDN (Optional, for rapid prototyping if local build fails) -->
-    <script src="https://cdn.tailwindcss.com" onerror="console.warn('Tailwind CDN failed to load. Falling back to local build.')"></script>
+    <!-- Tailwind CSS CDN Fallback (Only active if local build fails/CDN required) -->
     <script>
-      // Match the configuration in tailwind.config.ts for consistency
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              // Background Layers
-              'page': 'var(--bg-page)',
-              'layer-1': 'var(--bg-layer-1)',
-              'layer-2': 'var(--bg-layer-2)',
-              'layer-3': 'var(--bg-layer-3)',
-              'glass': 'var(--bg-glass)',
-              
-              // Semantic Text
-              'content-primary': 'var(--text-primary)',
-              'content-secondary': 'var(--text-secondary)',
-              'content-tertiary': 'var(--text-tertiary)',
-              'text-inverted': 'var(--text-inverted)',
-              
-              // Semantic Borders
-              'border-subtle': 'var(--border-subtle)',
-              'border-default': 'var(--border-default)',
-              'border-strong': 'var(--border-strong)',
-              'border-focus': 'var(--border-focus)',
-              
-              'border': 'var(--border-default)',
-
-              // Primary Brand Colors
-              'primary-main': 'var(--primary-main)',
-              'primary-hover': 'var(--primary-hover)',
-              'primary-subtle': 'var(--primary-subtle)',
-              'primary-text': 'var(--primary-text)',
-
-              // Status Indicators
-              'status-error-bg': 'var(--status-error-bg)',
-              'status-error-text': 'var(--status-error-text)',
-              'status-success-bg': 'var(--status-success-bg)',
-              'status-success-text': 'var(--status-success-text)',
-              'status-warning-bg': 'var(--status-warning-bg)',
-              'status-warning-text': 'var(--status-warning-text)',
-
-              // UI Specifics
-              'theme-bg-light': 'var(--bg-page)',
-              'message-user': 'var(--bg-message-user)',
-              'message-ai': 'var(--bg-message-ai)',
-              'input-main': 'var(--bg-input)',
-              'input-sub': 'var(--bg-input-secondary)',
-              'code-surface': 'var(--bg-code)',
-              'code-text': 'var(--text-code)',
-              'sidebar-surface': 'var(--bg-sidebar)',
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              mono: ['Fira Code', 'monospace'],
-              display: ['Space Grotesk', 'sans-serif'],
-            },
-          }
-        }
-      }
+      // Fallback Tailwind config if CDN is used
+      tailwind = { config: { darkMode: 'class', theme: { extend: { colors: { 'page': 'var(--bg-page)', 'content-primary': 'var(--text-primary)' } } } } };
     </script>
 
 <script type="importmap">
@@ -129,7 +67,6 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-page text-content-primary transition-colors duration-300">
     <div id="root"></div>
@@ -137,7 +74,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').then(registration => {
+          navigator.serviceWorker.register('/sw.js').then(registration => {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
           }, err => {
             console.log('ServiceWorker registration failed: ', err);
