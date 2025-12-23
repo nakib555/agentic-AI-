@@ -443,7 +443,7 @@ export const useAppLogic = () => {
             await startNewChat();
             const responseMessage = await chat.sendMessageForTest(testCase.prompt, testCase.options);
             const validation = await testCase.validate(responseMessage);
-            results.push({ description: testCase.description, ...validation });
+            results.push(validation);
         } catch (error: any) {
             results.push({ description: testCase.description, pass: false, details: `Error: ${error.message}` });
         }

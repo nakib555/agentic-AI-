@@ -21,7 +21,7 @@ export const parseContentSegments = (text: string): RenderSegment[] => {
     
     const parts = text.split(componentRegex).filter(part => part);
 
-    return parts.map((part): RenderSegment => {
+    return parts.map((part): RenderSegment | null => {
         const componentMatch = part.match(/^\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\](\{.*?\})\[\/\1\]$/s);
         
         if (componentMatch) {

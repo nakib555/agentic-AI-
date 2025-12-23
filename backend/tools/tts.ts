@@ -14,7 +14,8 @@ import { generateContentWithRetry } from "../utils/geminiUtils.js";
  */
 const cleanTextForTts = (text: string): string => {
     // Remove all component tags like [IMAGE_COMPONENT]...[/IMAGE_COMPONENT]
-    let cleanedText = text.replace(/\[[A-Z_]+_COMPONENT\].*?\[\/\1_COMPONENT\]/gs, '');
+    // Fix: Added capturing group ([A-Z_]+) so \1 works
+    let cleanedText = text.replace(/\[([A-Z_]+)_COMPONENT\].*?\[\/\1_COMPONENT\]/gs, '');
   
     // Remove code blocks
     cleanedText = cleanedText.replace(/```[\s\S]*?```/g, '');
@@ -64,7 +65,8 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
         let base64Audio: string | undefined;
         if (response.candidates && response.candidates.length > 0) {
             for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData?.mimeType?.startsWith('audio/') && part.inlineData?.data) {
+                // Strict check for inlineData properties to satisfy TypeScript
+                if (part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('audio/') && part.inlineData.data) {
                     base64Audio = part.inlineData.data;
                     break;
                 }

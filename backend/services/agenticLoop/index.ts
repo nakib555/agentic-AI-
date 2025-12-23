@@ -120,7 +120,8 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 const event = newToolCallEvents.find(e => e.call === call)!;
                 
                 try {
-                    const result = await toolExecutor(call.name, call.args, event.id);
+                    // Ensure call.name is a string (default to empty if undefined) to satisfy type requirements
+                    const result = await toolExecutor(call.name || '', call.args, event.id);
                     callbacks.onToolResult(event.id, result);
                     event.result = result;
                     event.endTime = Date.now();
