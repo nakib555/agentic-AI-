@@ -13,10 +13,11 @@ export const getApiBaseUrl = () => {
     }
 
     // 2. Check for explicit environment variable (Set this in Cloudflare Pages/Vercel)
-    // Cast import.meta to any to avoid TypeScript errors if types aren't configured
-    const meta = import.meta as any;
-    if (meta.env && meta.env.VITE_API_BASE_URL) {
-        return meta.env.VITE_API_BASE_URL.replace(/\/$/, '');
+    // We access import.meta.env directly to allow Vite's `define` to replace it statically at build time.
+    // @ts-ignore
+    const envUrl = import.meta.env.VITE_API_BASE_URL;
+    if (envUrl) {
+        return envUrl.replace(/\/$/, '');
     }
 
     // 3. Development fallback
