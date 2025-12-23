@@ -64,11 +64,14 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
 
         let base64Audio: string | undefined;
         if (response.candidates && response.candidates.length > 0) {
-            for (const part of response.candidates[0].content.parts) {
-                // Strict check for inlineData properties to satisfy TypeScript
-                if (part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('audio/') && part.inlineData.data) {
-                    base64Audio = part.inlineData.data;
-                    break;
+            const content = response.candidates[0].content;
+            if (content && content.parts) {
+                for (const part of content.parts) {
+                    // Strict check for inlineData properties to satisfy TypeScript
+                    if (part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('audio/') && part.inlineData.data) {
+                        base64Audio = part.inlineData.data;
+                        break;
+                    }
                 }
             }
         }
