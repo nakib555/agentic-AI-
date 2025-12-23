@@ -13,6 +13,17 @@ import { initDataStore, HISTORY_PATH } from './data-store.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Safe __dirname determination for mixed ESM/CJS environments (Dev vs Prod Bundle)
+let serverDir: string;
+try {
+  // In ESM environment (Dev)
+  serverDir = path.dirname(fileURLToPath(import.meta.url));
+} catch (e) {
+  // In CJS bundle environment (Prod), import.meta.url might be undefined
+  // We assume the server is running from project root and pointing to dist/
+  serverDir = path.join((process as any).cwd(), 'dist');
+}
+
 async function startServer() {
   // --- Initialize Data Store ---
   await initDataStore();
@@ -76,14 +87,14 @@ async function startServer() {
 
   // Serve static files from the current directory (dist)
   // This allows the backend to serve the frontend bundle
-  app.use(express.static(__dirname));
+  app.use(express.static(serverDir));
 
   // Handle SPA routing: Serve index.html for any unknown non-API routes
   app.get('*', (req, res) => {
     if (req.path.startsWith('/api')) {
       return res.status(404).json({ error: 'API route not found' });
     }
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(serverDir, 'index.html'));
   });
 
   // Global Error Handler
