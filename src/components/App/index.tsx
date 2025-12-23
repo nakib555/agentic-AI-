@@ -177,6 +177,8 @@ export const App = () => {
           onCancel={logic.handleCancel}
           theme={logic.theme}
           setTheme={logic.setTheme}
+          serverUrl={logic.serverUrl}
+          onSaveServerUrl={logic.onSaveServerUrl}
         />
 
         {logic.isTestMode && (

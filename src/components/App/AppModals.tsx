@@ -82,6 +82,9 @@ type AppModalsProps = {
   // Theme
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  // Server URL
+  serverUrl: string;
+  onSaveServerUrl: (url: string) => Promise<boolean>;
 };
 
 // Global Fallback for modal chunks loading
@@ -164,6 +167,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           setTtsVoice={props.setTtsVoice}
           theme={props.theme}
           setTheme={props.setTheme}
+          serverUrl={props.serverUrl}
+          onSaveServerUrl={props.onSaveServerUrl}
         />
       )}
 
