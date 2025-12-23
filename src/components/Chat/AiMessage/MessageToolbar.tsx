@@ -45,7 +45,7 @@ const IconButton: React.FC<{
             flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200 
             ${active 
                 ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' 
-                : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/5 dark:hover:text-slate-300'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'
             }
             disabled:opacity-40 disabled:cursor-not-allowed
         `}
@@ -69,7 +69,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
     };
 
     return (
-        <div className="w-full flex flex-wrap items-center justify-between gap-y-3 pt-4 mt-2 select-none">
+        <div className="w-full flex flex-wrap items-center justify-between gap-y-3 pt-4 mt-2 select-none border-t border-slate-100 dark:border-white/5">
             <div className="flex items-center gap-1">
                 {/* Branching Navigation / Pagination */}
                 <ResponsePaginator count={responseCount} activeIndex={activeResponseIndex} onChange={onResponseChange} />
@@ -101,7 +101,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                     </svg>
                 </IconButton>
 
-                <div className="w-px h-3 bg-slate-200 dark:bg-white/10 mx-2"></div>
+                <div className="w-px h-3 bg-slate-300 dark:bg-white/20 mx-2"></div>
 
                 <IconButton title="Helpful" onClick={() => setFeedback('up')} active={feedback === 'up'}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
@@ -115,7 +115,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                     </svg>
                 </IconButton>
 
-                <div className="w-px h-3 bg-slate-200 dark:bg-white/10 mx-2"></div>
+                <div className="w-px h-3 bg-slate-300 dark:bg-white/20 mx-2"></div>
 
                 <TtsButton isPlaying={ttsState === 'playing'} isLoading={ttsState === 'loading'} onClick={onTtsClick} />
             </div>

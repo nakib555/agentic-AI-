@@ -144,7 +144,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
       
       {logic.thinkingIsComplete && logic.hasFinalAnswer && !activeResponse?.error && (
-          <div className="w-full opacity-0 group-hover/message:opacity-100 transition-opacity duration-300 delay-150">
+          <div className="w-full mt-2 transition-opacity duration-300">
             <MessageToolbar
                 messageId={id}
                 messageText={logic.finalAnswerText}
