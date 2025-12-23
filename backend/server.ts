@@ -11,17 +11,19 @@ import { getMemory, updateMemory, clearMemory } from './memoryHandler.js';
 import { getAvailableModelsHandler } from './modelsHandler.js';
 import { initDataStore, HISTORY_PATH } from './data-store.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Safe __dirname determination for mixed ESM/CJS environments (Dev vs Prod Bundle)
+// Determine directory for static files safely across ESM (Dev) and CJS (Prod)
 let serverDir: string;
 try {
   // In ESM environment (Dev)
-  serverDir = path.dirname(fileURLToPath(import.meta.url));
+  if (import.meta && import.meta.url) {
+    const currentFile = fileURLToPath(import.meta.url);
+    serverDir = path.dirname(currentFile);
+  } else {
+    throw new Error('CJS environment detected');
+  }
 } catch (e) {
-  // In CJS bundle environment (Prod), import.meta.url might be undefined
-  // We assume the server is running from project root and pointing to dist/
+  // In CJS bundle environment (Prod), or if import.meta.url is undefined
+  // We assume the server is running from project root (via npm start) and static files are in dist/
   serverDir = path.join((process as any).cwd(), 'dist');
 }
 
