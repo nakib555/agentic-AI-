@@ -1,1 +1,6 @@
-// Configuration moved to postcss.config.cjs to resolve build issues
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
