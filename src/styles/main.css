@@ -10,7 +10,10 @@
 @import './main.part1.css';
 @import './main.part2.css';
 
-/* 3. Tailwind Directives */
+/* 3. Import Markdown Styles */
+@import './markdown.css';
+
+/* 4. Tailwind Directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

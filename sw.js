@@ -5,13 +5,23 @@ const PRECACHE_ASSETS = [
     '/',
     '/index.html',
     '/styles/main.css',
-    '/styles/markdown.css',
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(PRECACHE_ASSETS))
+      .then(cache => {
+        // Fetch items individually to log failures
+        return Promise.all(PRECACHE_ASSETS.map(url => {
+            return fetch(url).then(res => {
+                if (!res.ok) throw new Error(`Request failed: ${url} - ${res.status}`);
+                return cache.put(url, res);
+            }).catch(err => {
+                console.error(`[SW] Failed to cache ${url}:`, err);
+                throw err; // Propagate to fail installation if critical assets are missing
+            });
+        }));
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -32,9 +42,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // CRITICAL FIX: Do not cache API requests or browser extensions. 
-  // Always let these go to the network.
-  // We use .includes('/api/') to be safe against potential path variations.
+  // Do not cache API requests or browser extensions. 
   if (event.request.method !== 'GET' || 
       url.pathname.includes('/api/') || 
       url.protocol === 'chrome-extension:') {
