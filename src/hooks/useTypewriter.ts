@@ -10,8 +10,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
  * A hook that progressively reveals text to simulate a typewriter effect.
  * It catches up dynamically if the target text grows significantly faster than the typing speed.
  * 
- * OPTIMIZED: Uses a persistent requestAnimationFrame loop that reads from refs
- * to prevent React Effect churn (unmounting/remounting) on every character update.
+ * OPTIMIZED: Uses a setTimeout loop instead of requestAnimationFrame to throttle updates
+ * to a reasonable framerate (e.g. 30fps). This significantly reduces CPU usage and
+ * re-renders on high-refresh rate monitors (120Hz+) during heavy text streaming.
  */
 export const useTypewriter = (targetText: string, isThinking: boolean) => {
   // Initialize state. If not thinking (e.g. loading history), show full text immediately.
@@ -20,8 +21,7 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
   // Refs for mutable state across frames without triggering re-renders
   const currentLength = useRef(isThinking ? 0 : targetText.length);
   const targetTextRef = useRef(targetText);
-  const rafId = useRef<number | null>(null);
-  const lastFrameTime = useRef<number>(0);
+  const timeoutId = useRef<any>(null);
   const isLoopRunning = useRef(false);
 
   // Sync the latest prop to the ref
@@ -42,21 +42,17 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
 
   const startLoop = useCallback(() => {
       isLoopRunning.current = true;
-      rafId.current = requestAnimationFrame(animate);
+      animate();
   }, []);
 
-  const animate = useCallback((time: number) => {
-      // Initialize timing
-      if (lastFrameTime.current === 0) lastFrameTime.current = time;
-      
+  const animate = useCallback(() => {
       // Calculate target length from ref
       const targetLen = targetTextRef.current.length;
 
       // If fully caught up, stop the loop to save resources
       if (currentLength.current >= targetLen) {
           isLoopRunning.current = false;
-          rafId.current = null;
-          lastFrameTime.current = 0; // Reset for next run
+          timeoutId.current = null;
           return;
       }
 
@@ -80,16 +76,15 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       // Update State (Trigger Render)
       setDisplayedText(targetTextRef.current.slice(0, currentLength.current));
 
-      lastFrameTime.current = time;
-      
-      // Schedule next frame
-      rafId.current = requestAnimationFrame(animate);
+      // Schedule next frame. 33ms is roughly 30fps, which is visually smooth enough for text
+      // but far less expensive than 60fps or 144fps.
+      timeoutId.current = setTimeout(animate, 33);
   }, []);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (rafId.current) cancelAnimationFrame(rafId.current);
+      if (timeoutId.current) clearTimeout(timeoutId.current);
       isLoopRunning.current = false;
     };
   }, []);

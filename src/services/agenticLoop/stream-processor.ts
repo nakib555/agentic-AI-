@@ -20,7 +20,7 @@ export interface StreamCallbacks {
 
 /**
  * Processes a streaming response from the backend API.
- * Uses requestAnimationFrame to buffer rapid text chunks for UI performance.
+ * Uses a time-based buffer to batch rapid text chunks for UI performance.
  */
 export const processBackendStream = async (response: Response, callbacks: StreamCallbacks, signal?: AbortSignal) => {
     if (!response.body) {
@@ -32,17 +32,19 @@ export const processBackendStream = async (response: Response, callbacks: Stream
     let buffer = '';
 
     // --- Performance Optimization: Buffered State Updates ---
-    // Use requestAnimationFrame to buffer rapid text chunks and update state only once per frame (approx 60fps).
-    // This prevents the React render cycle from choking on high-speed token streams.
+    // Use setTimeout to buffer rapid text chunks and update state only occasionally (e.g. every 50ms).
+    // This prevents the React render cycle from choking on high-speed token streams,
+    // which can lock up the UI if using requestAnimationFrame on high-refresh monitors.
+    const FLUSH_INTERVAL_MS = 50; 
     let pendingText: string | null = null;
-    let animationFrameId: number | null = null;
+    let flushTimeoutId: any = null;
 
     const flushTextUpdates = () => {
         if (pendingText !== null) {
             callbacks.onTextChunk(pendingText);
             pendingText = null;
         }
-        animationFrameId = null;
+        flushTimeoutId = null;
     };
 
     try {
@@ -69,15 +71,18 @@ export const processBackendStream = async (response: Response, callbacks: Stream
                     if (event.type === 'text-chunk') {
                         // ACCUMULATE deltas instead of replacing
                         pendingText = (pendingText || '') + event.payload; 
-                        if (animationFrameId === null) {
-                            animationFrameId = requestAnimationFrame(flushTextUpdates);
+                        
+                        // Schedule a flush if one isn't already pending
+                        if (flushTimeoutId === null) {
+                            flushTimeoutId = setTimeout(flushTextUpdates, FLUSH_INTERVAL_MS);
                         }
                         continue;
                     }
 
-                    // For all other events, flush pending text first to ensure order consistency
+                    // For all other events (tools, errors, complete), flush pending text IMMEDIATELY
+                    // to ensure correct ordering of events (e.g. text before tool call).
                     if (pendingText !== null) {
-                        if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+                        if (flushTimeoutId !== null) clearTimeout(flushTimeoutId);
                         flushTextUpdates();
                     }
 
@@ -125,9 +130,9 @@ export const processBackendStream = async (response: Response, callbacks: Stream
             }
         }
     } finally {
-        // Cleanup any pending animation frame on stream end/error/close
-        if (animationFrameId !== null) {
-            cancelAnimationFrame(animationFrameId);
+        // Cleanup any pending flush on stream end/error/close
+        if (flushTimeoutId !== null) {
+            clearTimeout(flushTimeoutId);
             flushTextUpdates();
         }
         reader.releaseLock();
