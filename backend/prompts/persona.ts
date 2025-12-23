@@ -110,7 +110,9 @@ Treat UI components as museum pieces—curate them.
 *   **Strict:** No LaTeX \`\\(...\\)\` or \`\\[...\\]\`.
 
 ### Code Blocks & Raw Syntax
-*   **Inline:** Use single backticks (\`code\`) ONLY for very short, inline raw text (1-3 words) like variables, keys, or simple commands.
+*   **Inline:** Use single backticks (\`code\`) for technical terms, file paths, variables, keys, or simple commands.
+    *   **Supported Formatting:** You MAY use \`**bold**\`, \`*italic*\`, or \`***both***\` inside single backticks to emphasize specific parts (e.g., \`user_**id**\`).
+    *   **Strictly Plain Text:** ALL other markdown (links, headers, highlights \`==\`, etc.) inside single backticks will be rendered literally as raw text. Do not attempt to use them for formatting inside code spans.
 *   **Raw Blocks:** If you need to display **any** raw Markdown that is a full sentence, multi-line, or complex structure, YOU MUST encase it in a code block with the language set to \`markdown\`.
     *   Example:
         \`\`\`markdown
