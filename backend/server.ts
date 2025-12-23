@@ -36,7 +36,7 @@ async function startServer() {
 
   // Middlewares
   const corsOptions = {
-    origin: '*', // In production, replace '*' with your Cloudflare domain (e.g., 'https://myapp.pages.dev')
+    origin: '*', // Allow all origins to support split frontend/backend hosting (e.g. Cloudflare + Render)
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Client-Version'],
   };
@@ -50,8 +50,6 @@ async function startServer() {
   if (appVersion) {
     app.use('/api', ((req: any, res: any, next: any) => {
       const clientVersion = req.header('X-Client-Version');
-      // Optional: Strict version checking can be problematic if deployments aren't perfectly synced.
-      // You might want to loosen this for separate deployments.
       if (clientVersion && clientVersion !== appVersion) {
          // console.warn(`[VERSION_MISMATCH] Client: ${clientVersion}, Server: ${appVersion}.`);
       }
@@ -61,7 +59,7 @@ async function startServer() {
   }
 
   // API routes
-  app.get('/api/health', ((req: any, res: any) => res.json({ status: 'ok', mode: 'api-only' })) as any);
+  app.get('/api/health', ((req: any, res: any) => res.json({ status: 'ok', mode: 'api-only', version: appVersion })) as any);
   
   app.get('/api/models', getAvailableModelsHandler as any);
 
@@ -84,13 +82,9 @@ async function startServer() {
   app.delete('/api/memory', clearMemory as any);
 
   // Mount the HISTORY_PATH to /uploads so that files in data/history/{folder}/file/ are accessible.
-  // Note: On Render (free tier), the filesystem is ephemeral. Files uploaded here will be lost on redeploy
-  // unless you attach a Render Disk to '/usr/src/app/data'.
   app.use('/uploads', express.static(HISTORY_PATH) as any);
 
   // Serve static files from the current directory (dist) if they exist
-  // This allows the backend to serve the frontend bundle if built together,
-  // or gracefully fallback if running as API-only (Split Deployment)
   const indexHtmlPath = path.join(serverDir, 'index.html');
   if (fs.existsSync(indexHtmlPath)) {
       app.use(express.static(serverDir));

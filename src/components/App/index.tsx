@@ -1,10 +1,9 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { useAppLogic } from '../../hooks/useAppLogic';
 import { Toast } from '../UI/Toast';
 import { AppSkeleton } from '../UI/AppSkeleton';
@@ -29,8 +28,22 @@ export const App = () => {
     : null;
   const chatTitle = currentChat ? currentChat.title : null;
 
+  // Mobile viewport height fix for iOS
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    setVh();
+    window.addEventListener('resize', setVh);
+    return () => window.removeEventListener('resize', setVh);
+  }, []);
+
   return (
-    <div ref={logic.appContainerRef} className={`flex h-full bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isResizing ? 'pointer-events-none' : ''}`}>
+    <div 
+        ref={logic.appContainerRef} 
+        className={`flex h-full h-[calc(var(--vh,1vh)*100)] bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isResizing ? 'pointer-events-none' : ''}`}
+    >
       {logic.versionMismatch && <VersionMismatchOverlay />}
       
       {/* Global Suspense Boundary with Shimmering Skeleton Loader */}
