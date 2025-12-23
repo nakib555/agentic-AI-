@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -100,7 +101,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   }, [visibleMessages.length]);
 
   return (
-    <div className="flex-1 h-full relative">
+    <div className="flex-1 min-h-0 relative w-full">
       {visibleMessages.length === 0 ? (
         <div className="h-full overflow-y-auto custom-scrollbar">
              <WelcomeScreen sendMessage={sendMessage} />
