@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { audioCache } from '../services/audioCache';
 import { audioManager } from '../services/audioService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
@@ -14,27 +14,35 @@ type AudioState = 'idle' | 'loading' | 'error' | 'playing';
 
 export const useTts = (text: string, voice: string, model: string) => {
   const [audioState, setAudioState] = useState<AudioState>('idle');
+  const isMounted = useRef(true);
   const isPlaying = audioState === 'playing';
+
+  useEffect(() => {
+      isMounted.current = true;
+      return () => { isMounted.current = false; };
+  }, []);
 
   const playOrStopAudio = useCallback(async () => {
     if (audioState === 'playing') {
       audioManager.stop();
-      setAudioState('idle');
+      if (isMounted.current) setAudioState('idle');
       return;
     }
     if (audioState === 'loading' || !text) return;
     
-    setAudioState('loading');
+    if (isMounted.current) setAudioState('loading');
     
-    // Text cleaning is now handled on the backend
     const textToSpeak = text;
       
     const cacheKey = audioCache.createKey(textToSpeak, voice, model);
     const cachedBuffer = audioCache.get(cacheKey);
 
     const doPlay = async (buffer: AudioBuffer) => {
+        if (!isMounted.current) return;
         setAudioState('playing');
-        await audioManager.play(buffer, () => setAudioState('idle'));
+        await audioManager.play(buffer, () => {
+            if (isMounted.current) setAudioState('idle');
+        });
     };
 
     if (cachedBuffer) {
@@ -65,7 +73,7 @@ export const useTts = (text: string, voice: string, model: string) => {
         }
     } catch (err) {
         console.error("TTS failed:", err);
-        setAudioState('error');
+        if (isMounted.current) setAudioState('error');
     }
   }, [text, voice, model, audioState]);
 

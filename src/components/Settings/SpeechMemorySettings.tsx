@@ -11,6 +11,9 @@ import { SettingItem } from './SettingItem';
 import { VoiceSelector } from '../UI/VoiceSelector';
 import { ModelSelector } from '../UI/ModelSelector';
 import type { Model } from '../../types';
+import { audioManager } from '../../services/audioService';
+import { fetchFromApi } from '../../utils/api';
+import { decode, decodeAudioData } from '../../utils/audioUtils';
 
 const motion = motionTyped as any;
 
@@ -57,25 +60,63 @@ const StopIcon = () => (
     </svg>
 );
 
+const SpinnerIcon = () => (
+    <svg className="animate-spin h-5 w-5 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
+
 const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
     isMemoryEnabled, setIsMemoryEnabled, onManageMemory,
     disabled, ttsVoice, setTtsVoice, ttsModels, ttsModel, onTtsModelChange
 }) => {
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+    const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
-    const handlePlayPreview = (e: React.MouseEvent) => {
+    const handlePlayPreview = async (e: React.MouseEvent) => {
         e.stopPropagation();
         
+        // If already playing, stop it
         if (isPlayingPreview) {
+            audioManager.stop();
             setIsPlayingPreview(false);
             return;
         }
 
-        setIsPlayingPreview(true);
-        // Simulate playback duration
-        setTimeout(() => {
+        setIsLoadingPreview(true);
+
+        try {
+            const text = `Hello, I am ${ttsVoice}. This is how I sound using the selected model.`;
+            
+            // 1. Fetch audio from backend
+            const response = await fetchFromApi('/api/handler?task=tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, voice: ttsVoice, model: ttsModel }),
+            });
+
+            if (!response.ok) throw new Error('TTS Preview failed');
+            
+            const { audio: base64Audio } = await response.json();
+            
+            if (base64Audio) {
+                // 2. Decode
+                const audioBuffer = await decodeAudioData(decode(base64Audio), audioManager.context, 24000, 1);
+                
+                // 3. Play
+                setIsPlayingPreview(true);
+                setIsLoadingPreview(false);
+                await audioManager.play(audioBuffer, () => {
+                    setIsPlayingPreview(false);
+                });
+            }
+        } catch (error) {
+            console.error("Preview failed:", error);
+            setIsLoadingPreview(false);
             setIsPlayingPreview(false);
-        }, 3000);
+            // Ideally show a small toast or error indication here
+        }
     };
 
     return (
@@ -96,7 +137,7 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                             models={ttsModels} 
                             selectedModel={ttsModel} 
                             onModelChange={onTtsModelChange} 
-                            disabled={disabled} 
+                            disabled={disabled || isLoadingPreview || isPlayingPreview} 
                             placeholder="Select a TTS model"
                             icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M12 6v14" /><path d="M8 10v6" /><path d="M16 10v6" /><path d="M4 12v2" /><path d="M20 12v2" /></svg>}
                         />
@@ -109,7 +150,7 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                             <VoiceSelector 
                                 selectedVoice={ttsVoice} 
                                 onVoiceChange={setTtsVoice} 
-                                disabled={disabled}
+                                disabled={disabled || isLoadingPreview || isPlayingPreview}
                                 className="w-full"
                             />
                         </div>
@@ -128,7 +169,7 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
 
                             <button
                                 onClick={handlePlayPreview}
-                                disabled={disabled}
+                                disabled={disabled || isLoadingPreview}
                                 className={`
                                     w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200
                                     ${isPlayingPreview
@@ -138,7 +179,7 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                                 `}
                                 title={isPlayingPreview ? "Stop Preview" : "Preview Selected Voice"}
                             >
-                                {isPlayingPreview ? <StopIcon /> : <PlayIcon />}
+                                {isLoadingPreview ? <SpinnerIcon /> : isPlayingPreview ? <StopIcon /> : <PlayIcon />}
                             </button>
                         </div>
                     </div>
