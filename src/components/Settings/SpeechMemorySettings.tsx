@@ -55,6 +55,7 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
 }) => {
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
     const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+    const [previewError, setPreviewError] = useState<string | null>(null);
 
     const handlePlayPreview = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -67,6 +68,7 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
         }
 
         setIsLoadingPreview(true);
+        setPreviewError(null);
 
         try {
             const text = `Hello, I am ${ttsVoice}. This is how I sound using the selected model.`;
@@ -78,7 +80,11 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                 body: JSON.stringify({ text, voice: ttsVoice, model: ttsModel }),
             });
 
-            if (!response.ok) throw new Error('TTS Preview failed');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const msg = errorData.error?.message || errorData.error?.suggestion || 'TTS Preview failed';
+                throw new Error(msg);
+            }
             
             const { audio: base64Audio } = await response.json();
             
@@ -93,13 +99,15 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                     setIsPlayingPreview(false);
                 });
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Preview failed:", error);
             setIsLoadingPreview(false);
             setIsPlayingPreview(false);
-            // Ideally show a small toast or error indication here
+            setPreviewError(error.message || "Failed to generate speech preview.");
         }
     };
+
+    const noTtsModels = !disabled && ttsModels.length === 0;
 
     return (
         <div className="space-y-6 pb-10">
@@ -107,6 +115,36 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                 <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Voice & Memory</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure speech synthesis and long-term memory.</p>
             </div>
+
+            {/* Warning if no models available */}
+            {noTtsModels && (
+                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl flex items-start gap-4 mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="p-2 bg-amber-100 dark:bg-amber-800/30 rounded-full flex-shrink-0 text-amber-600 dark:text-amber-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" /></svg>
+                    </div>
+                    <div>
+                        <p className="font-bold text-sm text-amber-800 dark:text-amber-200">TTS Models Unavailable</p>
+                        <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-300/80 mt-1 leading-relaxed">
+                            No text-to-speech models were found. Please check your API key or try again later.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Error if preview failed */}
+            {previewError && (
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-2xl flex items-start gap-4 mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="p-2 bg-red-100 dark:bg-red-800/30 rounded-full flex-shrink-0 text-red-600 dark:text-red-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" /></svg>
+                    </div>
+                    <div>
+                        <p className="font-bold text-sm text-red-800 dark:text-red-200">Voice Generation Failed</p>
+                        <p className="text-xs sm:text-sm text-red-700 dark:text-red-300/80 mt-1 leading-relaxed">
+                            {previewError}
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <section>
                 <div className="mb-2 px-1">

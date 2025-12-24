@@ -120,6 +120,26 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                 <div className="w-px h-3 bg-slate-300 dark:bg-white/20 mx-2"></div>
 
                 <div className="flex items-center gap-1">
+                    {/* Explicit Error Message for TTS */}
+                    <AnimatePresence>
+                        {ttsState === 'error' && (
+                            <motion.div
+                                initial={{ opacity: 0, width: 0, x: 10 }}
+                                animate={{ opacity: 1, width: 'auto', x: 0 }}
+                                exit={{ opacity: 0, width: 0, x: 10 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex items-center overflow-hidden mr-2"
+                            >
+                                <span 
+                                    className="text-[10px] font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/30 whitespace-nowrap max-w-[150px] truncate"
+                                    title={ttsErrorMessage}
+                                >
+                                    {ttsErrorMessage || 'Audio Failed'}
+                                </span>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     <TtsButton 
                         isPlaying={ttsState === 'playing'} 
                         isLoading={ttsState === 'loading'} 
