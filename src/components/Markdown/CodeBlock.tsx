@@ -54,9 +54,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         }));
     };
     
-    const effectiveTheme = theme === 'system' 
-        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-        : theme;
+    const isDarkMode = theme === 'dark' || theme === 'spocke' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     
     const rawLanguage = language ? language.toLowerCase() : 'plaintext';
     const highlighterLang = languageMap[rawLanguage] || rawLanguage;
@@ -64,9 +62,9 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
     const isRunnable = onRunCode && runnableLanguages.includes(rawLanguage);
 
     return (
-      <div className="my-6 rounded-xl overflow-hidden border border-border-default bg-page dark:bg-code-surface shadow-sm font-sans group">
+      <div className="my-6 rounded-xl overflow-hidden border border-border-default bg-code-surface shadow-sm font-sans group">
         {/* Header */}
-        <div className="flex justify-between items-center px-4 py-2 bg-layer-2/50 dark:bg-layer-1/50 border-b border-border-subtle select-none">
+        <div className="flex justify-between items-center px-4 py-2 bg-layer-2/50 border-b border-border-subtle select-none">
           <div className="flex items-center gap-3">
              <span className="text-xs font-semibold text-content-tertiary lowercase font-mono">
                 {formattedLanguage || 'text'}
@@ -76,7 +74,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
           <div className="flex items-center gap-2">
             <button
                 onClick={handleOpenArtifact}
-                className="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all"
+                className="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium text-primary-main hover:bg-primary-subtle transition-all"
                 title="Open in Side Panel"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M15.28 9.47a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L13.69 10 9.97 6.28a.75.75 0 0 1 1.06-1.06l4.25 4.25ZM6.03 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.69 10 5.97 6.28a.75.75 0 0 1 .06-1.06Z" clipRule="evenodd" /></svg>
@@ -118,7 +116,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         <div className="relative overflow-x-auto text-[13px] leading-6 scrollbar-thin">
             <SyntaxHighlighter
               language={highlighterLang}
-              style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
+              style={isDarkMode ? vscDarkPlus : oneLight}
               customStyle={{
                 margin: 0,
                 padding: '1.25rem',

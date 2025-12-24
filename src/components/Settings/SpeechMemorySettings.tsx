@@ -14,6 +14,7 @@ import type { Model } from '../../types';
 import { audioManager } from '../../services/audioService';
 import { fetchFromApi } from '../../utils/api';
 import { decode, decodeAudioData } from '../../utils/audioUtils';
+import { AudioWave } from '../UI/AudioWave';
 
 const motion = motionTyped as any;
 
@@ -28,25 +29,6 @@ type SpeechMemorySettingsProps = {
   ttsModel: string;
   onTtsModelChange: (modelId: string) => void;
 };
-
-const AudioWave = () => (
-    <div className="flex items-center gap-0.5 h-4 mx-1">
-        {[1, 2, 3, 4, 5].map((i) => (
-            <motion.div
-                key={i}
-                className="w-1 bg-indigo-500 dark:bg-indigo-400 rounded-full"
-                initial={{ height: 4 }}
-                animate={{ height: [4, 16, 8, 14, 4] }}
-                transition={{
-                    duration: 0.6,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: i * 0.1,
-                }}
-            />
-        ))}
-    </div>
-);
 
 const PlayIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
@@ -162,7 +144,7 @@ const SpeechMemorySettings: React.FC<SpeechMemorySettingsProps> = ({
                                         animate={{ opacity: 1, width: 'auto', marginRight: 8 }}
                                         exit={{ opacity: 0, width: 0, marginRight: 0 }}
                                     >
-                                        <AudioWave />
+                                        <AudioWave isPlaying={true} />
                                     </motion.div>
                                 )}
                             </AnimatePresence>

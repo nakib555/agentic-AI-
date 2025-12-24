@@ -10,6 +10,7 @@ import { TtsButton } from './TtsButton';
 import type { Source } from '../../../types';
 import { SourcesPills } from '../../AI/SourcesPills';
 import { ResponsePaginator } from './ResponsePaginator';
+import { AudioWave } from '../../UI/AudioWave';
 
 const motion = motionTyped as any;
 
@@ -118,14 +119,28 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
 
                 <div className="w-px h-3 bg-slate-300 dark:bg-white/20 mx-2"></div>
 
-                <TtsButton 
-                    isPlaying={ttsState === 'playing'} 
-                    isLoading={ttsState === 'loading'} 
-                    error={ttsState === 'error'}
-                    errorMessage={ttsErrorMessage}
-                    disabled={!messageText}
-                    onClick={onTtsClick} 
-                />
+                <div className="flex items-center gap-1">
+                    <TtsButton 
+                        isPlaying={ttsState === 'playing'} 
+                        isLoading={ttsState === 'loading'} 
+                        error={ttsState === 'error'}
+                        errorMessage={ttsErrorMessage}
+                        disabled={!messageText}
+                        onClick={onTtsClick} 
+                    />
+                    <AnimatePresence>
+                        {ttsState === 'playing' && (
+                            <motion.div
+                                initial={{ width: 0, opacity: 0 }}
+                                animate={{ width: 'auto', opacity: 1 }}
+                                exit={{ width: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <AudioWave isPlaying={true} className="ml-1" barColor="bg-slate-500 dark:bg-slate-400" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
             
             <div className="flex items-center gap-3">
