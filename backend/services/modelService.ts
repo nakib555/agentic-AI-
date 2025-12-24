@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -142,6 +143,19 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
             if (methods.includes('generateContent') && !lowerId.includes('embedding') && !lowerId.includes('aqa')) {
                 availableChatModels.push(modelInfo);
             }
+        }
+
+        // --- Manual Injection of Known Models ---
+        // Sometimes the listModels API doesn't return preview or experimental models immediately.
+        // We ensure critical models are available for selection.
+
+        const knownTtsModelId = 'gemini-2.5-flash-preview-tts';
+        if (!availableTtsModels.some(m => m.id === knownTtsModelId)) {
+             availableTtsModels.push({
+                id: knownTtsModelId,
+                name: 'Gemini 2.5 Flash TTS',
+                description: 'Text-to-speech capabilities',
+            });
         }
 
         const result = {

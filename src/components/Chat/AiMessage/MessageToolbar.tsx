@@ -117,7 +117,13 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
 
                 <div className="w-px h-3 bg-slate-300 dark:bg-white/20 mx-2"></div>
 
-                <TtsButton isPlaying={ttsState === 'playing'} isLoading={ttsState === 'loading'} onClick={onTtsClick} />
+                <TtsButton 
+                    isPlaying={ttsState === 'playing'} 
+                    isLoading={ttsState === 'loading'} 
+                    error={ttsState === 'error'}
+                    disabled={!messageText}
+                    onClick={onTtsClick} 
+                />
             </div>
             
             <div className="flex items-center gap-3">

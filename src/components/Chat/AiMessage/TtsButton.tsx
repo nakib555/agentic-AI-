@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -9,12 +10,23 @@ export const TtsButton = ({
   isPlaying,
   isLoading,
   onClick,
+  disabled = false,
+  error = false,
 }: {
   isPlaying: boolean;
   isLoading: boolean;
   onClick: () => void;
+  disabled?: boolean;
+  error?: boolean;
 }) => {
   const getButtonContent = () => {
+    if (error) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-red-500">
+          <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clipRule="evenodd" />
+        </svg>
+      );
+    }
     if (isLoading) {
       return (
         <svg
@@ -65,17 +77,27 @@ export const TtsButton = ({
   };
 
   const getTitle = () => {
+    if (error) return 'Failed to load audio';
     if (isLoading) return 'Synthesizing audio...';
     if (isPlaying) return 'Stop audio';
+    if (disabled) return 'No text to read';
     return 'Listen to this message';
   };
 
   return (
     <button
       onClick={onClick}
-      className="group flex items-center gap-2 self-start px-2 py-1 text-slate-800 dark:text-white hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 rounded-md transition-colors text-sm font-medium disabled:opacity-60 disabled:cursor-wait"
+      className={`
+        group flex items-center gap-2 self-start px-2 py-1 
+        rounded-md transition-colors text-sm font-medium
+        ${error 
+            ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20' 
+            : 'text-slate-800 dark:text-white hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800'
+        }
+        disabled:opacity-40 disabled:cursor-not-allowed
+      `}
       title={getTitle()}
-      disabled={isLoading}
+      disabled={disabled || isLoading}
     >
       {getButtonContent()}
     </button>
