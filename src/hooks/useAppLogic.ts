@@ -458,10 +458,32 @@ export const useAppLogic = () => {
   const handleDeleteChatRequest = useCallback((chatId: string) => {
       requestConfirmation(
           'Are you sure you want to delete this chat? This will also delete any associated files.',
-          () => chat.deleteChat(chatId),
+          async () => {
+            try {
+                await chat.deleteChat(chatId);
+                showToast('Chat deleted.', 'success');
+            } catch (e) {
+                showToast('Failed to delete chat.', 'error');
+            }
+          },
           { destructive: true }
       );
-  }, [chat.deleteChat, requestConfirmation]);
+  }, [chat.deleteChat, requestConfirmation, showToast]);
+
+  const handleRequestClearAll = useCallback(() => {
+      requestConfirmation(
+          'Are you sure you want to delete all conversation history? This cannot be undone.',
+          async () => {
+              try {
+                  await chat.clearAllChats();
+                  showToast('All conversations cleared successfully', 'success');
+              } catch (error) {
+                  showToast('Failed to clear conversations', 'error');
+              }
+          },
+          { destructive: true }
+      );
+  }, [requestConfirmation, chat.clearAllChats, showToast]);
 
   const runDiagnosticTests = useCallback(async (onProgress: (progress: TestProgress) => void) => {
     const results: TestResult[] = [];
@@ -499,7 +521,7 @@ export const useAppLogic = () => {
     ttsVoice, setTtsVoice: handleSetTtsVoice, isMemoryEnabled, setIsMemoryEnabled: handleSetIsMemoryEnabled,
     setIsAgentMode: handleSetIsAgentMode, ...chat, isChatActive: !!chat.currentChatId && chat.messages.length > 0,
     sendMessage: chat.sendMessage, startNewChat, isNewChatDisabled,
-    handleDeleteChatRequest, handleRequestClearAll: () => requestConfirmation('Delete all data?', chat.clearAllChats, { destructive: true }),
+    handleDeleteChatRequest, handleRequestClearAll,
     handleToggleSidebar: () => isDesktop ? sidebar.handleSetSidebarCollapsed(!sidebar.isSidebarCollapsed) : sidebar.setIsSidebarOpen(!sidebar.isSidebarOpen),
     handleShowSources: (s: Source[]) => { setSourcesForSidebar(s); setIsSourcesSidebarOpen(true); },
     handleCloseSourcesSidebar: () => setIsSourcesSidebarOpen(false),

@@ -163,7 +163,7 @@ export const App = () => {
           activeModel={logic.activeModel}
           onModelChange={logic.onModelChange}
           modelsLoading={logic.modelsLoading || logic.settingsLoading}
-          clearAllChats={logic.clearAllChats}
+          clearAllChats={logic.handleRequestClearAll}
           apiKey={logic.apiKey}
           onSaveApiKey={logic.onSaveApiKey}
           suggestionApiKey={logic.suggestionApiKey}

@@ -181,7 +181,8 @@ export const useChatHistory = () => {
         if (wasCurrent) {
             setCurrentChatId(chatId);
         }
-        alert("Failed to delete chat. Changes reverted.");
+        // Re-throw so caller (useAppLogic) can show a Toast
+        throw error;
     }
   }, []);
 
@@ -203,7 +204,8 @@ export const useChatHistory = () => {
         // Rollback
         setChatHistory(previousHistory);
         setCurrentChatId(previousId);
-        alert("Failed to clear history. Changes reverted.");
+        // Re-throw so caller (useAppLogic) can show a Toast
+        throw error;
     }
   }, []);
 
