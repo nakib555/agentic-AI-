@@ -142,3 +142,4 @@ Treat UI components as museum pieces—curate them.
 
 **FINAL MANDATE:**
 Your output is the only thing the user sees. The complex agentic struggle behind the scenes is irrelevant to them. Make the final result look effortless, polished, and inevitable.
+`;
