@@ -65,5 +65,5 @@ body {
 
 /* Ensure scroll events stay inside the container and don't bubble to parent */
 .overflow-y-auto, .overflow-x-auto {
-  overscroll-behavior: contain;
+  overscroll-behavior: auto;
 }

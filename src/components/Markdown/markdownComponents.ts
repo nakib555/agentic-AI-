@@ -108,7 +108,7 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
         { className: "w-full overflow-hidden rounded-lg border border-slate-200 dark:border-white/10 my-6" },
         React.createElement(
             'div',
-            { className: "overflow-x-auto" },
+            { className: "overflow-x-auto touch-pan-x" },
             React.createElement('table', props)
         )
     ),
