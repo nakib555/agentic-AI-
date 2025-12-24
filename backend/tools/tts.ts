@@ -15,35 +15,68 @@ import { generateContentWithRetry } from "../utils/geminiUtils.js";
 const cleanTextForTts = (text: string): string => {
     if (!text) return "";
 
-    // Remove all component tags like [IMAGE_COMPONENT]...[/IMAGE_COMPONENT]
-    let cleanedText = text.replace(/\[([A-Z_]+)_COMPONENT\].*?\[\/\1_COMPONENT\]/gs, '');
+    let cleanedText = text;
+
+    // 1. Remove all specific UI component tags and their JSON content
+    // We list them explicitly to avoid stripping unknown bracketed text that might be valid.
+    const componentTags = [
+        'VIDEO_COMPONENT', 'ONLINE_VIDEO_COMPONENT', 
+        'IMAGE_COMPONENT', 'ONLINE_IMAGE_COMPONENT', 
+        'MCQ_COMPONENT', 'MAP_COMPONENT', 
+        'FILE_ATTACHMENT_COMPONENT', 'BROWSER_COMPONENT', 
+        'CODE_OUTPUT_COMPONENT', 'VEO_API_KEY_SELECTION_COMPONENT',
+        'LOCATION_PERMISSION_REQUEST'
+    ];
+
+    componentTags.forEach(tag => {
+        const regex = new RegExp(`\\[${tag}\\][\\s\\S]*?\\[\\/${tag}\\]`, 'g');
+        cleanedText = cleanedText.replace(regex, '');
+    });
   
-    // Remove code blocks
-    cleanedText = cleanedText.replace(/```[\s\S]*?```/g, '');
+    // 2. Handle Code Blocks (```...```)
+    // Instead of silence, we insert a brief pause marker or phrase so the listener knows something was skipped.
+    if (cleanedText.includes('```')) {
+        cleanedText = cleanedText.replace(/```[\s\S]*?```/g, ' . Code block omitted for brevity. ');
+    }
   
-    // Simple markdown removal
+    // 3. Remove Display Math ($$...$$) - Complex formulas are hard to parse via audio.
+    cleanedText = cleanedText.replace(/\$\$[\s\S]*?\$\$/g, ' a mathematical formula ');
+
+    // 4. Process Inline Math ($...$) - Remove delimiters, keep content (often variable names).
+    cleanedText = cleanedText.replace(/\$([^$\n]+)\$/g, '$1');
+
+    // 5. Clean Markdown Links & Images
+    // Images: Keep alt text if present.
+    cleanedText = cleanedText.replace(/!\[(.*?)\]\(.*?\)/g, '$1');
+    // Links: Keep link text, discard URL.
+    cleanedText = cleanedText.replace(/\[(.*?)\]\(.*?\)/g, '$1');
+    
+    // 6. Remove Raw URLs
+    // Prevents TTS from reading out "h t t p s colon slash slash..."
+    cleanedText = cleanedText.replace(/(https?:\/\/[^\s]+)/g, ' link ');
+
+    // 7. Remove HTML Tags
+    cleanedText = cleanedText.replace(/<[^>]*>/g, '');
+  
+    // 8. Standard Markdown Symbol Removal
     cleanedText = cleanedText
       .replace(/^#{1,6}\s/gm, '') // Headers
-      .replace(/\*\*(.*?)\*\*/g, '$1') // Bold
-      .replace(/__(.*?)__/g, '$1') // Underline
-      .replace(/\*(.*?)\*/g, '$1') // Italic
-      .replace(/_(.*?)_/g, '$1') // Italic
-      .replace(/==(.*?)==/g, '$1') // Highlight
+      .replace(/(\*\*|__)(.*?)\1/g, '$2') // Bold
+      .replace(/(\*|_)(.*?)\1/g, '$2') // Italic
       .replace(/~~(.*?)~~/g, '$1') // Strikethrough
-      .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Links
-      .replace(/!\[(.*?)\]\(.*?\)/g, '$1') // Images
+      .replace(/==(.*?)==/g, '$1') // Highlight
       .replace(/`([^`]+)`/g, '$1') // Inline code
       .replace(/^>\s/gm, '') // Blockquotes
       .replace(/^-{3,}\s*$/gm, '') // Horizontal rules
-      .replace(/^\s*[-*+]\s/gm, '') // List items
+      .replace(/^\s*[-*+]\s/gm, '') // List bullets
       .replace(/^\s*\d+\.\s/gm, ''); // Numbered list items
   
-    // Collapse multiple newlines/spaces to a single space and trim
+    // 9. Collapse multiple newlines/spaces to a single space and trim
     cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
     
     // Fallback if the cleaning removed everything (e.g., purely visual response)
     if (!cleanedText && text.length > 0) {
-        return "I have generated the content you requested.";
+        return "I have generated the visual content you requested.";
     }
     
     return cleanedText;
@@ -54,7 +87,6 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
         const cleanedText = cleanTextForTts(text);
         
         if (!cleanedText) {
-            // Return a silent success (empty audio) or throw strictly?
             // Throwing allows the UI to show an error or disable the button.
             throw new Error("No readable text found for speech synthesis.");
         }

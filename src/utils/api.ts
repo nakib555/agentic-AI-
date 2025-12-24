@@ -29,14 +29,22 @@ export const getApiBaseUrl = () => {
         return 'http://localhost:3001';
     }
 
-    // 4. Localhost Production Fallback (e.g. npm start / docker locally)
-    // If running the production build locally, prefer relative paths to hit the local server.
+    // 4. Localhost Production/Preview Fallback
+    // If running locally...
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-        return ''; 
+        // If we are serving FROM the backend port (3001), use relative paths.
+        if (window.location.port === '3001') {
+            return ''; 
+        }
+        // Otherwise (e.g. 'serve -s dist' on port 3000, or 'vite preview' on 4173),
+        // default to the standard local backend port 3001.
+        return 'http://localhost:3001';
     }
 
-    // 5. Default Fallback if hosted separately (e.g., frontend on Cloudflare, backend on Render)
-    return 'https://agentic-ai-xl8f.onrender.com';
+    // 5. Deployed Fallback
+    // If we are not on localhost, assume we are deployed.
+    // Default to relative paths (monorepo deployment) unless an env var overrides it.
+    return '';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

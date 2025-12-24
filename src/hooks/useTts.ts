@@ -29,7 +29,17 @@ export const useTts = (text: string, voice: string, model: string) => {
       if (isMounted.current) setAudioState('idle');
       return;
     }
-    if (audioState === 'loading' || !text) return;
+    
+    // Valid text check
+    if (!text || text.trim().length === 0) {
+        if (isMounted.current) {
+            setAudioState('error');
+            setErrorMessage("No text available to read.");
+        }
+        return;
+    }
+
+    if (audioState === 'loading') return;
     
     if (isMounted.current) {
         setAudioState('loading');
@@ -55,6 +65,7 @@ export const useTts = (text: string, voice: string, model: string) => {
     }
     
     try {
+        // fetchFromApi automatically handles the custom Backend Server URL logic
         const response = await fetchFromApi('/api/handler?task=tts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -69,7 +80,7 @@ export const useTts = (text: string, voice: string, model: string) => {
         }
         
         const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("text/html")) throw new Error("Backend returned HTML");
+        if (contentType && contentType.includes("text/html")) throw new Error("Backend returned HTML. Please check your Server URL setting.");
 
         const { audio: base64Audio } = await response.json();
         
