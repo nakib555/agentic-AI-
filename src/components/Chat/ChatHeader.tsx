@@ -136,7 +136,7 @@ export const ChatHeader = ({ onImportChat, onExportChat, onShareChat, isChatActi
 
     return (
         <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center justify-center sticky top-0 z-10 gap-4 w-full">
-            <div className="w-full max-w-4xl flex items-center justify-between">
+            <div className="w-full max-w-3xl flex items-center justify-between">
                 {/* --- Left Spacer (balanced) --- */}
                 <div className="flex-shrink-0 w-11 h-11" />
 
