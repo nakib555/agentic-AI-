@@ -12,6 +12,12 @@ const staticAssetsPlugin = (appVersion: string) => ({
   name: 'static-assets-plugin',
   closeBundle: async () => {
     const distDir = path.resolve(__dirname, 'dist');
+    const stylesDir = path.join(distDir, 'styles');
+
+    // Ensure styles directory exists for Tailwind CLI
+    if (!fs.existsSync(stylesDir)) {
+      fs.mkdirSync(stylesDir, { recursive: true });
+    }
     
     // 1. Copy Manifest, Favicon, and Cloudflare Redirects
     const filesToCopy = ['manifest.json', 'favicon.svg', '_redirects'];
