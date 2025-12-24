@@ -79,8 +79,18 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       // Update State (Trigger Render)
       setDisplayedText(targetTextRef.current.slice(0, currentLength.current));
 
-      // Schedule next frame. 16ms is roughly 60fps.
-      timeoutId.current = setTimeout(animate, 16);
+      // PERFORMANCE OPTIMIZATION:
+      // If the content contains heavy rendering elements like tables or math blocks,
+      // we slow down the refresh rate slightly to allow the browser to paint properly
+      // and prevent the "stuck" feeling caused by main thread blocking.
+      const hasComplexMarkdown = targetTextRef.current.includes('|') || 
+                                 targetTextRef.current.includes('```') || 
+                                 targetTextRef.current.includes('$$');
+                                 
+      const delay = hasComplexMarkdown ? 32 : 16; // 30fps for complex, 60fps for simple
+
+      // Schedule next frame.
+      timeoutId.current = setTimeout(animate, delay);
   }, []);
 
   // Cleanup on unmount

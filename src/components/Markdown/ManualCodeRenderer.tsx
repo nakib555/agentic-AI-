@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { memo, useMemo, useRef } from 'react';
+import React, { memo, useMemo, useRef, Component, ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
@@ -51,15 +51,50 @@ const processHighlights = (content: string): string => {
     }).join('');
 };
 
+interface MarkdownErrorBoundaryProps {
+  children: ReactNode;
+  fallback: ReactNode;
+  text: string;
+}
+
+interface MarkdownErrorBoundaryState {
+  hasError: boolean;
+}
+
+// Internal Error Boundary to catch Markdown/Rehype parsing crashes during streaming
+class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
+  constructor(props: MarkdownErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    // console.warn("Markdown parsing error caught:", error);
+    return { hasError: true };
+  }
+
+  componentDidUpdate(prevProps: MarkdownErrorBoundaryProps) {
+    // If the text input has changed, try to recover. 
+    // The stream likely added more tokens that fixed the malformed syntax.
+    if (prevProps.text !== this.props.text && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
 const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
   text,
   components: baseComponents,
   onRunCode,
   isRunDisabled,
 }) => {
-  const renderStartTime = useRef(performance.now());
-  renderStartTime.current = performance.now();
-
   const mergedComponents = useMemo(
     () => ({
       ...baseComponents,
@@ -74,13 +109,22 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({
 
   return (
     <div className="markdown-content">
-        <ReactMarkdown
-            remarkPlugins={[remarkMath, remarkGfm]}
-            rehypePlugins={[rehypeKatex, rehypeRaw]}
-            components={mergedComponents}
+        <MarkdownErrorBoundary
+            text={processedText}
+            fallback={
+                <div className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-gray-200">
+                    {processedText}
+                </div>
+            }
         >
-            {processedText}
-        </ReactMarkdown>
+            <ReactMarkdown
+                remarkPlugins={[remarkMath, remarkGfm]}
+                rehypePlugins={[rehypeKatex, rehypeRaw]}
+                components={mergedComponents}
+            >
+                {processedText}
+            </ReactMarkdown>
+        </MarkdownErrorBoundary>
     </div>
   );
 };
