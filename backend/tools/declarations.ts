@@ -50,12 +50,19 @@ export const duckduckgoSearchDeclaration: FunctionDeclaration = {
 
 export const browserDeclaration: FunctionDeclaration = {
     name: 'browser',
-    description: 'A headless web browser that can visit websites to read their full content or take screenshots. Use this when you need detailed information from a specific URL found via search, or to visually verify a webpage. This enables deep research capabilities.',
+    description: 'A headless web browser that can visit websites to read content, take screenshots, or interact with elements (click, type, scroll). Use this for deep research, validating visual layouts, or navigating dynamic sites.',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        url: { type: Type.STRING, description: 'The specific URL to visit.' },
-        action: { type: Type.STRING, description: 'The action to perform. "read" extracts the text content. "screenshot" returns an image of the page. Defaults to "read".', enum: ['read', 'screenshot'] }
+        url: { type: Type.STRING, description: 'The URL to visit or interact with. Required for the initial visit.' },
+        action: { 
+            type: Type.STRING, 
+            description: 'The action to perform. "read" extracts text. "screenshot" captures view. "click" clicks an element. "type" enters text. "scroll" moves the page. "wait" pauses.', 
+            enum: ['read', 'screenshot', 'click', 'type', 'scroll', 'wait'] 
+        },
+        selector: { type: Type.STRING, description: 'CSS selector for "click" or "type" actions (e.g., "button#submit", "input[name=\'q\']").' },
+        text: { type: Type.STRING, description: 'Text to type for the "type" action.' },
+        scrollDirection: { type: Type.STRING, description: 'Direction for "scroll" action.', enum: ['up', 'down', 'top', 'bottom'] }
       },
       required: ['url'],
     },

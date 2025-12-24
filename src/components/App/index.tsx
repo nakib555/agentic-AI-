@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -17,6 +18,7 @@ const Sidebar = React.lazy(() => import('../Sidebar/Sidebar').then(module => ({ 
 const ChatHeader = React.lazy(() => import('../Chat/ChatHeader').then(module => ({ default: module.ChatHeader })));
 const ChatArea = React.lazy(() => import('../Chat/ChatArea').then(module => ({ default: module.ChatArea })));
 const SourcesSidebar = React.lazy(() => import('../AI/SourcesSidebar').then(module => ({ default: module.SourcesSidebar })));
+const ArtifactSidebar = React.lazy(() => import('../Sidebar/ArtifactSidebar').then(module => ({ default: module.ArtifactSidebar })));
 const AppModals = React.lazy(() => import('./AppModals').then(module => ({ default: module.AppModals })));
 const TestRunner = React.lazy(() => import('../Testing').then(module => ({ default: module.TestRunner })));
 
@@ -131,6 +133,17 @@ export const App = () => {
           setIsResizing={logic.setIsSourcesResizing}
         />
 
+        <ArtifactSidebar
+            isOpen={logic.isArtifactOpen}
+            onClose={() => logic.setIsArtifactOpen(false)}
+            content={logic.artifactContent}
+            language={logic.artifactLanguage}
+            width={logic.artifactWidth}
+            setWidth={logic.setArtifactWidth}
+            isResizing={logic.isArtifactResizing}
+            setIsResizing={logic.setIsArtifactResizing}
+        />
+
         <AppModals
           isDesktop={logic.isDesktop}
           isSettingsOpen={logic.isSettingsOpen}
@@ -203,7 +216,6 @@ export const App = () => {
         )}
       </Suspense>
 
-      {/* Toast Notifications - Can be outside suspense to allow errors during load */}
       <Toast 
         message={logic.toast?.message || null} 
         type={logic.toast?.type} 

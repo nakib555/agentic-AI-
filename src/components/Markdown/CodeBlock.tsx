@@ -5,8 +5,6 @@
  */
 
 import React, { useState } from 'react';
-import { motion as motionTyped, AnimatePresence } from 'framer-motion';
-const motion = motionTyped as any;
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTheme } from '../../hooks/useTheme';
@@ -48,6 +46,13 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         onRunCode(language, codeContent);
       }
     };
+
+    const handleOpenArtifact = () => {
+        // Dispatch event for AppLogic to catch
+        window.dispatchEvent(new CustomEvent('open-artifact', { 
+            detail: { code: codeContent, language: language || 'plaintext' } 
+        }));
+    };
     
     const effectiveTheme = theme === 'system' 
         ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -69,6 +74,15 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
           </div>
           
           <div className="flex items-center gap-2">
+            <button
+                onClick={handleOpenArtifact}
+                className="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all"
+                title="Open in Side Panel"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M15.28 9.47a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L13.69 10 9.97 6.28a.75.75 0 0 1 1.06-1.06l4.25 4.25ZM6.03 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.69 10 5.97 6.28a.75.75 0 0 1 .06-1.06Z" clipRule="evenodd" /></svg>
+                Open
+            </button>
+
             {isRunnable && (
                 <button
                     onClick={handleRun}
@@ -108,18 +122,18 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
               customStyle={{
                 margin: 0,
                 padding: '1.25rem',
-                backgroundColor: 'transparent', // Let parent bg show through
+                backgroundColor: 'transparent',
                 fontFamily: "'Fira Code', 'Consolas', monospace",
               }}
               codeTagProps={{
                   style: { fontFamily: "inherit" }
               }}
               wrapLines={true}
-              wrapLongLines={false} // Cleaner horizontal scroll
+              wrapLongLines={false}
             >
               {codeContent}
             </SyntaxHighlighter>
         </div>
       </div>
     );
-  };
+};

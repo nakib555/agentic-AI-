@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { forwardRef, useMemo } from 'react';
+import React, { forwardRef } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { AttachedFilePreview } from './AttachedFilePreview';
 import { UploadMenu } from './UploadMenu';
@@ -13,6 +13,7 @@ import { type MessageFormHandle } from './types';
 import { ModeToggle } from '../../UI/ModeToggle';
 import { TextType } from '../../UI/TextType';
 import type { Message } from '../../../types';
+import { VoiceVisualizer } from '../../UI/VoiceVisualizer';
 
 const motion = motionTyped as any;
 
@@ -30,13 +31,11 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   setTtsVoice: (voice: string) => void;
   currentChatId?: string | null;
   activeModel?: string;
-}>(({ onSubmit, isLoading, onCancel, isAppLoading, backendStatus, isAgentMode, setIsAgentMode, messages, hasApiKey, ttsVoice, setTtsVoice, currentChatId, activeModel }, ref) => {
+}>(({ onSubmit, isLoading, onCancel, isAppLoading, backendStatus, isAgentMode, setIsAgentMode, messages, hasApiKey }, ref) => {
   const logic = useMessageForm(onSubmit, isLoading, ref, messages, isAgentMode, hasApiKey);
   
   const isBackendOffline = backendStatus !== 'online';
   const isGeneratingResponse = isLoading;
-  
-  // Use centralized validation from hook + external conditions
   const isSendDisabled = !logic.canSubmit || isBackendOffline || isAppLoading || !hasApiKey;
   
   const hasText = logic.inputValue.trim().length > 0 && logic.processedFiles.length === 0;
@@ -56,13 +55,13 @@ export const MessageForm = forwardRef<MessageFormHandle, {
               relative flex flex-col bg-page
               border-2 border-slate-300 dark:border-slate-600
               rounded-xl transition-shadow duration-300
-              ${logic.isFocused 
-                ? 'border-indigo-500 dark:border-indigo-400' 
-                : ''
-              }
+              ${logic.isFocused ? 'border-indigo-500 dark:border-indigo-400' : ''}
             `}
             layout
         >
+            {/* --- Voice Visualizer Overlay --- */}
+            <VoiceVisualizer isRecording={logic.isRecording} />
+
             <AnimatePresence>
                 {(logic.processedFiles.length > 0) && (
                     <motion.div 
@@ -228,9 +227,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
             </div>
             
             <div className="flex items-center justify-between px-4 pb-2">
-                <div className="flex-1 flex items-center">
-                    {/* Token counter removed */}
-                </div>
                 <div className="flex justify-center">
                     <ModeToggle 
                         isAgentMode={isAgentMode} 
@@ -240,18 +236,12 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 </div>
                 <div className="flex-1 text-right">
                     <span className="text-[10px] text-slate-400 dark:text-slate-600 font-medium hidden sm:inline-block">
-                        Agentic AI v1.0
+                        Agentic AI v2.0
                     </span>
                 </div>
             </div>
         </motion.div>
       </form>
-      
-      <div className="flex justify-center mt-3 mb-1">
-          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium text-center">
-             AI can make mistakes. Check important info.
-          </p>
-      </div>
     </div>
   );
 });

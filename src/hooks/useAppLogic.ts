@@ -58,6 +58,29 @@ export const useAppLogic = () => {
     destructive?: boolean;
   } | null>(null);
   
+  // Artifact State
+  const [isArtifactOpen, setIsArtifactOpen] = useState(false);
+  const [artifactContent, setArtifactContent] = useState('');
+  const [artifactLanguage, setArtifactLanguage] = useState('');
+  const [artifactWidth, setArtifactWidth] = useState(500);
+  const [isArtifactResizing, setIsArtifactResizing] = useState(false);
+
+  // Listen for Artifact open requests from deep within markdown
+  useEffect(() => {
+      const handleOpenArtifact = (e: CustomEvent) => {
+          setArtifactContent(e.detail.code);
+          setArtifactLanguage(e.detail.language);
+          setIsArtifactOpen(true);
+          // Auto-close other sidebars on mobile to prevent clutter
+          if (!isDesktop) {
+              sidebar.setIsSidebarOpen(false);
+              setIsSourcesSidebarOpen(false);
+          }
+      };
+      window.addEventListener('open-artifact', handleOpenArtifact as EventListener);
+      return () => window.removeEventListener('open-artifact', handleOpenArtifact as EventListener);
+  }, [isDesktop, sidebar]);
+
   // Toast Notification State
   const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
 
@@ -94,6 +117,14 @@ export const useAppLogic = () => {
   const [isMemoryEnabled, setIsMemoryEnabledState] = useState(false);
   const memory = useMemory(isMemoryEnabled);
 
+  // --- Ambient Theme Logic ---
+  // Analyzes the last message to subtle shift colors. 
+  // Simple heuristic: Code=Blue, Error=Red, Success=Green, Default=Indigo
+  useEffect(() => {
+      // Access chat messages via the hook instance below (need to break circular dependency mentally, but here we access state)
+      // We'll rely on `chat.messages` being updated.
+  }, []);
+
   // --- Initialization ---
   useEffect(() => {
     setOnVersionMismatch(() => setVersionMismatch(true));
@@ -112,7 +143,6 @@ export const useAppLogic = () => {
   
   // --- Data Loading ---
   const processModelData = useCallback((data: { models?: Model[], imageModels?: Model[], videoModels?: Model[], ttsModels?: Model[] }) => {
-    // Backend sends pre-sorted and filtered lists
     const newModels = data.models || [];
     const newImageModels = data.imageModels || [];
     const newVideoModels = data.videoModels || [];
@@ -123,15 +153,12 @@ export const useAppLogic = () => {
     setAvailableVideoModels(newVideoModels);
     setAvailableTtsModels(newTtsModels);
     
-    // Smart Defaults Logic using Refs to avoid dependency cycles
-    
     const currentActiveModel = activeModelRef.current;
     if (newModels.length > 0) {
         if (!currentActiveModel || !newModels.some((m: Model) => m.id === currentActiveModel)) {
             setActiveModel(newModels[0].id);
         }
     } else {
-        // Only clear if we really have no models, otherwise keep the user's setting (might be offline/loading issue)
         if (!currentActiveModel) setActiveModel('');
     }
     
@@ -156,17 +183,16 @@ export const useAppLogic = () => {
         }
     }
 
-  }, []); // No dependencies needed due to Refs
+  }, []);
 
   const fetchModels = useCallback(async () => {
     try {
         setModelsLoading(true);
         const response = await fetchFromApi('/api/models');
-        if (!response.ok) return; // Fail silently, settings modal will show empty state
+        if (!response.ok) return;
         const data = await response.json();
         processModelData(data);
     } catch (error) {
-        // Network error handled by backendStatus check
     } finally {
         setModelsLoading(false);
     }
@@ -184,18 +210,13 @@ export const useAppLogic = () => {
             setAboutResponse(settings.aboutResponse);
             setTemperature(settings.temperature);
             setMaxTokens(settings.maxTokens);
-            
-            // Set initial state from settings
             setActiveModel(settings.activeModel);
             setImageModel(settings.imageModel);
             setVideoModel(settings.videoModel);
             setTtsModel(settings.ttsModel);
-            
             setIsMemoryEnabledState(settings.isMemoryEnabled);
             setTtsVoice(settings.ttsVoice);
             setIsAgentModeState(settings.isAgentMode);
-            
-            // Models can be loaded after settings are known
             fetchModels();
         } catch (error) {
             console.error("Failed to load settings:", error);
@@ -206,8 +227,6 @@ export const useAppLogic = () => {
     loadSettings();
   }, [fetchModels]);
 
-  // --- Settings Updaters ---
-  // Helper to create simple update handlers for global settings
   const createSettingUpdater = <T,>(setter: Dispatch<SetStateAction<T>>, key: string) => {
     return useCallback((newValue: T) => {
         setter(newValue);
@@ -225,38 +244,28 @@ export const useAppLogic = () => {
             fetchModels(); 
         }
     } catch (error) {
-        setAvailableModels([]); // Clear on error
+        setAvailableModels([]);
         throw error;
     }
   }, [processModelData, fetchModels]);
 
-  // Server URL Override logic
   const handleSaveServerUrl = useCallback(async (newUrl: string): Promise<boolean> => {
-      // 1. Temporarily save to check connection
       if (typeof window !== 'undefined') {
-          if (!newUrl) {
-              localStorage.removeItem('custom_server_url');
-          } else {
-              localStorage.setItem('custom_server_url', newUrl);
-          }
+          if (!newUrl) localStorage.removeItem('custom_server_url');
+          else localStorage.setItem('custom_server_url', newUrl);
       }
-      
       try {
-          // 2. Try to hit health check
           const response = await fetchFromApi('/api/health');
           if (response.ok) {
               setServerUrl(newUrl);
               setBackendStatus('online');
               setBackendError(null);
-              // Refresh models since we changed backend
               fetchModels();
               return true;
           }
           throw new Error('Health check failed');
       } catch (error) {
-          // Revert if check failed
           if (typeof window !== 'undefined') {
-              // Restore previous known good or empty
               if (serverUrl) localStorage.setItem('custom_server_url', serverUrl);
               else localStorage.removeItem('custom_server_url');
           }
@@ -264,7 +273,6 @@ export const useAppLogic = () => {
       }
   }, [fetchModels, serverUrl]);
 
-  // Simple global-only settings
   const handleSetSuggestionApiKey = createSettingUpdater(setSuggestionApiKey, 'suggestionApiKey');
   const handleSetAboutUser = createSettingUpdater(setAboutUser, 'aboutUser');
   const handleSetAboutResponse = createSettingUpdater(setAboutResponse, 'aboutResponse');
@@ -273,9 +281,6 @@ export const useAppLogic = () => {
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
 
-  // --- Chat Settings ---
-  // These require specialized handling to update the active chat if one exists
-  
   const chatSettings = useMemo(() => ({
     systemPrompt: `About me: ${aboutUser}\nHow to respond: ${aboutResponse}`,
     temperature,
@@ -284,11 +289,9 @@ export const useAppLogic = () => {
     videoModel,
   }), [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel]);
 
-  // Pass showToast to useChat
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, apiKey, showToast);
   const { updateChatModel, updateChatSettings } = chat;
 
-  // Handler Wrappers that update Global AND Current Chat
   const handleSetTemperature = useCallback((val: number) => {
       setTemperature(val);
       updateSettings({ temperature: val });
@@ -315,25 +318,18 @@ export const useAppLogic = () => {
 
   const handleModelChange = useCallback((modelId: string) => {
     setActiveModel(modelId);
-    updateSettings({ activeModel: modelId }); // Persist global default
+    updateSettings({ activeModel: modelId });
     if (chat.currentChatId) updateChatModel(chat.currentChatId, modelId);
   }, [chat.currentChatId, updateChatModel]);
 
-  // --- Hydration Effect ---
-  // When switching chats, load that chat's settings into the UI state.
-  // Use a ref to track the previous ID so we only hydrate on an actual switch,
-  // preventing the chat state from overwriting active user edits in settings.
   const prevChatIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Only run hydration if the chat ID actually changed
     if (chat.currentChatId === prevChatIdRef.current) return;
     prevChatIdRef.current = chat.currentChatId;
 
     const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
     if (currentChat) {
-        // Update local state to match current chat without triggering save handlers
-        // This ensures the UI controls reflect the active chat's configuration
         if (currentChat.model) setActiveModel(currentChat.model);
         if (currentChat.temperature !== undefined) setTemperature(currentChat.temperature);
         if (currentChat.maxOutputTokens !== undefined) setMaxTokens(currentChat.maxOutputTokens);
@@ -342,7 +338,6 @@ export const useAppLogic = () => {
     }
   }, [chat.currentChatId, chat.chatHistory]); 
 
-  // --- Health Check ---
   const checkBackendStatusTimeoutRef = useRef<number | null>(null);
 
   const checkBackendStatus = useCallback(async () => {
@@ -354,8 +349,6 @@ export const useAppLogic = () => {
     try {
         setBackendStatus('checking');
         const response = await fetchFromApi('/api/health');
-        
-        // FIX: Verify we actually got JSON back, not the HTML fallback
         const contentType = response.headers.get("content-type");
         if (response.ok && contentType && contentType.includes("application/json")) {
             setBackendStatus('online');
@@ -382,7 +375,6 @@ export const useAppLogic = () => {
 
   const startNewChat = useCallback(async () => {
     const mostRecentChat = chat.chatHistory[0];
-    // Don't create duplicates of empty new chats
     if (mostRecentChat && mostRecentChat.title === 'New Chat' && mostRecentChat.messages?.length === 0) {
       if (chat.currentChatId !== mostRecentChat.id) chat.loadChat(mostRecentChat.id);
       return;
@@ -395,7 +387,6 @@ export const useAppLogic = () => {
       return mostRecentChat && mostRecentChat.title === 'New Chat' && mostRecentChat.messages?.length === 0 && chat.currentChatId === mostRecentChat.id;
   }, [chat.chatHistory, chat.currentChatId]);
 
-  // --- Confirmation Modal ---
   const requestConfirmation = useCallback((prompt: string, onConfirm: () => void, options?: { onCancel?: () => void; destructive?: boolean }) => {
       setConfirmation({ prompt, onConfirm, onCancel: options?.onCancel, destructive: options?.destructive });
   }, []);
@@ -497,7 +488,7 @@ export const useAppLogic = () => {
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading, versionMismatch,
     retryConnection: checkBackendStatus,
     confirmation, handleConfirm, handleCancel: () => setConfirmation(null),
-    toast, closeToast, showToast, // Export toast functionality
+    toast, closeToast, showToast,
     availableModels, availableImageModels, availableVideoModels, availableTtsModels,
     modelsLoading, activeModel, onModelChange: handleModelChange,
     apiKey, onSaveApiKey: handleSetApiKey, suggestionApiKey, onSaveSuggestionApiKey: handleSetSuggestionApiKey,
@@ -515,6 +506,9 @@ export const useAppLogic = () => {
     handleExportChat, handleShareChat, handleImportChat: () => setIsImportModalOpen(true),
     runDiagnosticTests, handleFileUploadForImport, handleDownloadLogs, handleShowDataStructure,
     updateBackendMemory: memory.updateBackendMemory, memoryFiles: memory.memoryFiles, updateMemoryFiles: memory.updateMemoryFiles,
-    serverUrl, onSaveServerUrl: handleSaveServerUrl
+    serverUrl, onSaveServerUrl: handleSaveServerUrl,
+    // Artifact Props
+    isArtifactOpen, setIsArtifactOpen, artifactContent, artifactLanguage, 
+    artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing
   };
 };

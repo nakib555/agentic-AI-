@@ -5,9 +5,10 @@
  */
 
 import { ToolError } from '../utils/apiError.js';
-import { chromium, Browser } from 'playwright';
+import { chromium, Browser, Page } from 'playwright';
 
 let browserInstance: Browser | null = null;
+let activePages = new Map<string, Page>();
 
 const getBrowser = async () => {
     if (!browserInstance) {
@@ -34,15 +35,47 @@ type BrowserUpdateCallback = (data: {
     status?: 'running' | 'completed' | 'failed';
 }) => void;
 
+const getOrCreatePage = async (url: string): Promise<Page> => {
+    // Reuse page based on domain to maintain session state roughly
+    const domain = new URL(url).hostname;
+    
+    // Cleanup old pages
+    if (activePages.size > 5) {
+        const firstKey = activePages.keys().next().value;
+        if (firstKey) {
+            await activePages.get(firstKey)?.close();
+            activePages.delete(firstKey);
+        }
+    }
+
+    if (activePages.has(domain)) {
+        return activePages.get(domain)!;
+    }
+
+    const browser = await getBrowser();
+    const context = await browser.newContext({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        viewport: { width: 1280, height: 800 }
+    });
+    const page = await context.newPage();
+    activePages.set(domain, page);
+    return page;
+};
+
 export const executeBrowser = async (
-    args: { url: string, action?: 'read' | 'screenshot' }, 
+    args: { 
+        url: string, 
+        action?: 'read' | 'screenshot' | 'click' | 'type' | 'scroll' | 'wait',
+        selector?: string,
+        text?: string,
+        scrollDirection?: 'up' | 'down' | 'top' | 'bottom'
+    }, 
     onUpdate?: BrowserUpdateCallback
 ): Promise<string> => {
-    const { url, action = 'read' } = args;
+    const { url, action = 'read', selector, text, scrollDirection } = args;
     console.log(`[BrowserTool] Execution started. URL: "${url}", Action: "${action}"`);
 
     if (!url) {
-        console.error('[BrowserTool] Error: Missing "url" argument.');
         throw new ToolError('browser', 'MISSING_URL', 'A URL is required.');
     }
 
@@ -51,145 +84,117 @@ export const executeBrowser = async (
         if (onUpdate) onUpdate(data);
     };
 
-    emit({ url, status: 'running', log: `Initializing browser session for ${url}...` });
+    emit({ url, status: 'running', log: `Processing ${action} on ${url}...` });
 
-    let page = null;
     try {
-        console.log('[BrowserTool] Acquiring browser context...');
-        const browser = await getBrowser();
-        const context = await browser.newContext({
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            viewport: { width: 1280, height: 800 }
-        });
-        page = await context.newPage();
+        const page = await getOrCreatePage(url);
         
-        // Capture console logs from the page
-        page.on('console', msg => {
-            if (msg.type() === 'log' || msg.type() === 'info') {
-               // Optional: emit({ log: `[Page] ${msg.text().substring(0, 50)}...` });
+        // Navigate if we aren't already there (fuzzy match)
+        if (page.url() !== url) {
+            emit({ log: `Navigating to ${url}...` });
+            try {
+                await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+            } catch (e: any) {
+                console.warn(`[BrowserTool] Navigation warning: ${e.message}`);
+                emit({ log: `Navigation timeout or partial load. Proceeding...` });
             }
-        });
-
-        console.log(`[BrowserTool] Visiting: ${url}`);
-        emit({ log: `Navigating to ${new URL(url).hostname}...` });
-
-        // 15s timeout to prevent hanging
-        try {
-            await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
-            console.log('[BrowserTool] Navigation event "domcontentloaded" fired.');
-        } catch (e: any) {
-            console.warn(`[BrowserTool] Navigation warning (timeout or partial load): ${e.message}`);
-            emit({ log: `Navigation timeout or partial load. Proceeding...` });
         }
 
-        const title = await page.title();
-        console.log(`[BrowserTool] Page title retrieved: "${title}"`);
-        emit({ title, log: `Page loaded: "${title}"` });
+        // --- INTERACTION LOGIC ---
+        if (action === 'click') {
+            if (!selector) throw new ToolError('browser', 'MISSING_SELECTOR', 'Selector required for click action.');
+            emit({ log: `Clicking element: ${selector}` });
+            await page.click(selector, { timeout: 5000 });
+        } 
+        else if (action === 'type') {
+            if (!selector || !text) throw new ToolError('browser', 'MISSING_ARGS', 'Selector and text required for type action.');
+            emit({ log: `Typing into ${selector}...` });
+            await page.fill(selector, text, { timeout: 5000 });
+        }
+        else if (action === 'scroll') {
+            emit({ log: `Scrolling ${scrollDirection || 'down'}...` });
+            if (scrollDirection === 'top') await page.evaluate(() => window.scrollTo(0, 0));
+            else if (scrollDirection === 'bottom') await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+            else if (scrollDirection === 'up') await page.evaluate(() => window.scrollBy(0, -500));
+            else await page.evaluate(() => window.scrollBy(0, 500));
+        }
+        else if (action === 'wait') {
+            emit({ log: 'Waiting 2 seconds...' });
+            await page.waitForTimeout(2000);
+        }
 
-        // Take an initial screenshot to show the user what we found
-        console.log('[BrowserTool] Taking initial screenshot...');
-        emit({ log: 'Capturing page view...' });
+        // --- POST-ACTION STATE CAPTURE ---
+        
+        const title = await page.title();
+        const currentUrl = page.url();
+        emit({ title, url: currentUrl, log: `Current State: "${title}"` });
+
+        // Always take a fresh screenshot after interaction
         const buffer = await page.screenshot({ fullPage: false, type: 'jpeg', quality: 60 });
         const base64 = buffer.toString('base64');
         emit({ screenshot: `data:image/jpeg;base64,${base64}`, log: 'View captured.' });
         
         const browserData = {
-            url: url,
+            url: currentUrl,
             title: title,
             screenshot: `data:image/jpeg;base64,${base64}`,
-            logs: [`Visited: ${url}`, `Title: ${title}`]
+            logs: [`Action: ${action}`, `Target: ${selector || 'N/A'}`]
         };
 
         const uiComponent = `[BROWSER_COMPONENT]${JSON.stringify(browserData)}[/BROWSER_COMPONENT]`;
 
-        if (action === 'screenshot') {
-            console.log('[BrowserTool] Action "screenshot" completed successfully.');
-            emit({ status: 'completed', log: 'Session finished.' });
-            return uiComponent;
+        if (action !== 'read') {
+            emit({ status: 'completed', log: 'Interaction complete.' });
+            return `${uiComponent}\n\nAction '${action}' completed on ${currentUrl}. Screenshot updated.`;
         }
 
-        // Default: Read Text (Optimized Markdown Conversion)
-        console.log('[BrowserTool] Action "read": Converting content to Markdown...');
-        emit({ log: 'Processing content into structured Markdown...' });
+        // --- READ MODE ---
+        console.log('[BrowserTool] Converting content to Markdown...');
+        emit({ log: 'Extracting content...' });
         
         const markdown = await page.evaluate(() => {
             // Helper to remove noise
             const removeTags = (selector: string) => document.querySelectorAll(selector).forEach(el => el.remove());
-            removeTags('script');
-            removeTags('style');
-            removeTags('noscript');
-            removeTags('iframe');
-            removeTags('svg');
-            removeTags('nav');
-            removeTags('footer');
-            removeTags('.ad');
-            removeTags('.ads');
-            removeTags('[role="alert"]');
-            removeTags('[role="banner"]');
-            removeTags('[role="dialog"]');
+            removeTags('script, style, noscript, iframe, svg, nav, footer, .ad, .ads, [role="alert"], [role="banner"], [role="dialog"]');
 
-            // Simple TURNDOWN-like logic (HTML -> Markdown)
             function htmlToMarkdown(element: Element): string {
                 let text = "";
-                
-                // Handle specific tags
                 const tagName = element.tagName.toLowerCase();
                 
-                // Process children first
-                let childrenText = "";
                 element.childNodes.forEach(child => {
-                    if (child.nodeType === 3) { // Text node
-                        childrenText += child.textContent?.trim() + " ";
-                    } else if (child.nodeType === 1) { // Element node
-                        childrenText += htmlToMarkdown(child as Element);
-                    }
+                    if (child.nodeType === 3) text += child.textContent?.trim() + " ";
+                    else if (child.nodeType === 1) text += htmlToMarkdown(child as Element);
                 });
                 
-                childrenText = childrenText.replace(/\s+/g, " "); // Normalize spaces
+                text = text.replace(/\s+/g, " ");
 
                 switch (tagName) {
-                    case "h1": return `\n# ${childrenText}\n`;
-                    case "h2": return `\n## ${childrenText}\n`;
-                    case "h3": return `\n### ${childrenText}\n`;
-                    case "p": return `\n${childrenText}\n`;
-                    case "ul": return `\n${childrenText}\n`;
-                    case "ol": return `\n${childrenText}\n`;
-                    case "li": return `\n- ${childrenText}`;
-                    case "a": 
-                        const href = element.getAttribute("href");
-                        return href ? `[${childrenText.trim()}](${href}) ` : childrenText;
-                    case "b":
-                    case "strong": return `**${childrenText.trim()}** `;
-                    case "code": return `\`${childrenText.trim()}\` `;
+                    case "h1": return `\n# ${text}\n`;
+                    case "h2": return `\n## ${text}\n`;
+                    case "h3": return `\n### ${text}\n`;
+                    case "p": return `\n${text}\n`;
+                    case "li": return `\n- ${text}`;
+                    case "a": return element.getAttribute("href") ? `[${text.trim()}](${element.getAttribute("href")}) ` : text;
+                    case "code": return `\`${text.trim()}\` `;
                     case "pre": return `\n\`\`\`\n${element.textContent}\n\`\`\`\n`;
                     case "br": return "\n";
-                    case "div": return `\n${childrenText}\n`;
-                    default: return childrenText;
+                    case "div": return `\n${text}\n`;
+                    default: return text;
                 }
             }
-
-            // Target main content if possible, else body
             const main = document.querySelector('main') || document.querySelector('article') || document.body;
             return htmlToMarkdown(main);
         });
 
-        // Further cleanup of the markdown string
-        const cleanMarkdown = markdown
-            .replace(/\n\s*\n/g, '\n\n') // Remove excessive newlines
-            .trim()
-            .substring(0, 12000); // Safety cap
-
-        console.log(`[BrowserTool] Content converted. Length: ${cleanMarkdown.length} characters.`);
-        emit({ status: 'completed', log: `Extracted ${cleanMarkdown.length} chars of structured content.` });
+        const cleanMarkdown = markdown.replace(/\n\s*\n/g, '\n\n').trim().substring(0, 15000);
+        emit({ status: 'completed', log: `Extracted ${cleanMarkdown.length} chars.` });
         
-        return `${uiComponent}\n\n### Extracted Content from ${url}\n\n${cleanMarkdown}`;
+        return `${uiComponent}\n\n### Extracted Content from ${currentUrl}\n\n${cleanMarkdown}`;
 
     } catch (error) {
         const originalError = error instanceof Error ? error : new Error(String(error));
         console.error(`[BrowserTool] FATAL ERROR: ${originalError.message}`);
         emit({ status: 'failed', log: `Error: ${originalError.message}` });
-        throw new ToolError('browser', 'NAVIGATION_FAILED', `Failed to visit ${url}. ${originalError.message}`);
-    } finally {
-        if (page) await page.close();
+        throw new ToolError('browser', 'INTERACTION_FAILED', `Failed on ${url}: ${originalError.message}`);
     }
 };
