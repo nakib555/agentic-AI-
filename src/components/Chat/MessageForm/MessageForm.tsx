@@ -13,7 +13,6 @@ import { type MessageFormHandle } from './types';
 import { ModeToggle } from '../../UI/ModeToggle';
 import { TextType } from '../../UI/TextType';
 import type { Message } from '../../../types';
-import { useTokenCounter } from './useTokenCounter';
 
 const motion = motionTyped as any;
 
@@ -42,11 +41,6 @@ export const MessageForm = forwardRef<MessageFormHandle, {
   
   const hasText = logic.inputValue.trim().length > 0 && logic.processedFiles.length === 0;
   const hasInput = logic.inputValue.length > 0 || logic.processedFiles.length > 0;
-
-  // Calculate history trigger for token counter
-  // Updates when message count changes or the last message's thinking state changes
-  const lastMessage = messages[messages.length - 1];
-  const historyTrigger = lastMessage ? `${lastMessage.id}-${lastMessage.isThinking ? 'thinking' : 'done'}-${messages.length}` : messages.length;
 
   const iconBtnClass = `
     flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200
@@ -235,15 +229,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
             
             <div className="flex items-center justify-between px-4 pb-2">
                 <div className="flex-1 flex items-center">
-                    <TokenCounterDisplay 
-                        inputValue={logic.inputValue} 
-                        files={logic.processedFiles} 
-                        isAgentMode={isAgentMode} 
-                        hasApiKey={hasApiKey}
-                        model={activeModel || 'gemini-2.5-flash'}
-                        chatId={currentChatId || null}
-                        historyTrigger={historyTrigger}
-                    />
+                    {/* Token counter removed */}
                 </div>
                 <div className="flex justify-center">
                     <ModeToggle 
@@ -269,34 +255,3 @@ export const MessageForm = forwardRef<MessageFormHandle, {
     </div>
   );
 });
-
-const TokenCounterDisplay: React.FC<{ 
-    inputValue: string, 
-    files: any[], 
-    isAgentMode: boolean, 
-    hasApiKey: boolean,
-    model: string,
-    chatId: string | null,
-    historyTrigger: string | number
-}> = ({ inputValue, files, isAgentMode, hasApiKey, model, chatId, historyTrigger }) => {
-    const { formattedCount, isCounting } = useTokenCounter(inputValue, files, isAgentMode, model, chatId, hasApiKey, historyTrigger);
-
-    if (!hasApiKey) return null;
-
-    return (
-        <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-400 dark:text-slate-500 min-w-[60px]" title="Estimated total tokens (context + input)">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 opacity-70">
-                <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
-            </svg>
-            <div className="flex items-center">
-                {isCounting ? (
-                    <span className="animate-pulse">...</span>
-                ) : (
-                    <span className="font-mono tabular-nums tracking-tight">
-                        {formattedCount !== null ? formattedCount : '0'}
-                    </span>
-                )}
-            </div>
-        </div>
-    );
-};

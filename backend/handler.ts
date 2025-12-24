@@ -521,63 +521,6 @@ export const apiHandler = async (req: any, res: any) => {
                 break;
             }
 
-            case 'count_tokens': {
-                if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { chatId, model, newMessage, isAgentMode } = req.body;
-
-                let fullHistory: any[] = [];
-                if (chatId) {
-                    const savedChat = await historyControl.getChat(chatId);
-                    const historyMessages = savedChat?.messages || [];
-                    // Ensure token counting also uses the truncated/transformed history
-                    fullHistory = transformHistoryToGeminiFormat(historyMessages);
-                }
-
-                if (newMessage && (newMessage.text || (newMessage.attachments && newMessage.attachments.length > 0))) {
-                    const newPart = {
-                        role: 'user',
-                        parts: [
-                            ...(newMessage.text ? [{ text: newMessage.text }] : []),
-                            ...(newMessage.attachments || []).map((att: any) => ({
-                                inlineData: { mimeType: att.mimeType, data: att.data }
-                            }))
-                        ]
-                    };
-
-                    if (fullHistory.length > 0 && fullHistory[fullHistory.length - 1].role === 'user') {
-                        (fullHistory[fullHistory.length - 1].parts as any[]).push(...newPart.parts);
-                    } else {
-                        fullHistory.push(newPart);
-                    }
-                }
-
-                const systemInstruction = isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
-                
-                const tools: any[] = isAgentMode 
-                    ? [{ functionDeclarations: toolDeclarations }] 
-                    : [{ googleSearch: {} }];
-
-                if (fullHistory.length === 0) {
-                    fullHistory.push({ role: 'user', parts: [{ text: ' ' }] });
-                }
-
-                try {
-                    const countResult = await ai.models.countTokens({
-                        model: model || 'gemini-2.5-flash',
-                        contents: fullHistory,
-                        config: {
-                            systemInstruction,
-                            tools,
-                        }
-                    });
-                    res.status(200).json({ totalTokens: countResult.totalTokens });
-                } catch (countError: any) {
-                    console.warn(`[HANDLER] countTokens failed: ${countError.message}`);
-                    res.status(200).json({ totalTokens: 0, error: "Count failed" });
-                }
-                break;
-            }
-
             case 'tool_response': {
                 const { callId, result, error } = req.body;
                 const resolver = frontendToolRequests.get(callId);
