@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -41,7 +40,7 @@ export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
     initial="hidden"
     animate="visible"
     exit="hidden"
-    className="flex flex-wrap justify-center gap-3 w-full max-w-3xl mx-auto"
+    className="flex flex-wrap justify-center gap-3 w-full max-w-4xl mx-auto"
   >
     {PROMPTS.map((p, i) => (
         <PromptButton 

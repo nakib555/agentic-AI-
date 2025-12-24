@@ -122,10 +122,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                 atBottomThreshold={60} 
                 className="custom-scrollbar"
                 itemContent={(index, msg) => (
-                    <div 
-                        className="px-4 sm:px-6 md:px-8 mx-auto w-full py-4"
-                        style={{ maxWidth: 'calc(48rem - 1px)' }} // 48rem = 3xl. Minus 1px as requested.
-                    >
+                    <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-4">
                         <MessageWrapper 
                             msg={msg}
                             index={index}
