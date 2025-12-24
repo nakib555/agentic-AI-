@@ -7,9 +7,13 @@
 export const getApiBaseUrl = () => {
     // 1. Manual Override from LocalStorage (Highest Priority)
     // This allows users to fix connection issues at runtime via Settings
-    if (typeof window !== 'undefined') {
-        const customUrl = localStorage.getItem('custom_server_url');
-        if (customUrl) return customUrl.replace(/\/$/, ''); // Remove trailing slash
+    try {
+        if (typeof window !== 'undefined') {
+            const customUrl = localStorage.getItem('custom_server_url');
+            if (customUrl) return customUrl.replace(/\/$/, ''); // Remove trailing slash
+        }
+    } catch (e) {
+        // Ignore localStorage access errors (security settings, etc)
     }
 
     // 2. Check for explicit environment variable (Set this in Cloudflare Pages/Vercel)

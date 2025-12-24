@@ -13,10 +13,18 @@ export type ThemeMode = 'light' | 'dark' | 'spocke' | 'system';
 
 class ThemeControlCenterService {
   private currentMode: ThemeMode = 'system';
-  private mediaQuery: MediaQueryList;
+  private mediaQuery: MediaQueryList | null = null;
 
   constructor() {
-    this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    try {
+      if (typeof window !== 'undefined' && window.matchMedia) {
+        this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      } else {
+        console.warn('[ThemeControlCenter] window.matchMedia is not available.');
+      }
+    } catch (e) {
+      console.error('[ThemeControlCenter] Failed to initialize media query:', e);
+    }
   }
 
   /**
@@ -24,7 +32,7 @@ class ThemeControlCenterService {
    * This acts as the central switchboard for the entire UI.
    */
   public activateTheme(mode: ThemeMode) {
-    console.log(`[ThemeControlCenter] Activating mode: ${mode}`);
+    // console.log(`[ThemeControlCenter] Activating mode: ${mode}`);
     this.currentMode = mode;
 
     if (mode === 'system') {
@@ -40,8 +48,9 @@ class ThemeControlCenterService {
   private handleSystemMode() {
     const systemConfig = systemTheme; // Reading from system.ts
     if (systemConfig.autoDetect) {
-      const resolvedTheme = this.mediaQuery.matches ? 'dark' : 'light';
-      console.log(`[ThemeControlCenter] System mode detected: ${resolvedTheme}`);
+      // Default to light if media query is unavailable
+      const resolvedTheme = (this.mediaQuery && this.mediaQuery.matches) ? 'dark' : 'light';
+      // console.log(`[ThemeControlCenter] System mode detected: ${resolvedTheme}`);
       this.applyThemeFile(resolvedTheme);
     }
   }
@@ -57,22 +66,24 @@ class ThemeControlCenterService {
         default: themeTokens = lightTheme; break;
     }
 
-    const root = document.documentElement;
+    if (typeof document !== 'undefined') {
+        const root = document.documentElement;
 
-    // 1. Inject CSS Variables (The Colors)
-    Object.entries(themeTokens).forEach(([key, value]) => {
-      root.style.setProperty(key, String(value));
-    });
+        // 1. Inject CSS Variables (The Colors)
+        Object.entries(themeTokens).forEach(([key, value]) => {
+          root.style.setProperty(key, String(value));
+        });
 
-    // 2. Toggle Tailwind Class (The Utilities)
-    // Spocke is fundamentally a dark theme, so we enable the 'dark' class
-    // to utilize dark-mode Tailwind variants (e.g. dark:bg-...).
-    if (theme === 'dark' || theme === 'spocke') {
-      root.classList.add('dark');
-      root.classList.remove('light');
-    } else {
-      root.classList.remove('dark');
-      root.classList.add('light');
+        // 2. Toggle Tailwind Class (The Utilities)
+        // Spocke is fundamentally a dark theme, so we enable the 'dark' class
+        // to utilize dark-mode Tailwind variants (e.g. dark:bg-...).
+        if (theme === 'dark' || theme === 'spocke') {
+          root.classList.add('dark');
+          root.classList.remove('light');
+        } else {
+          root.classList.remove('dark');
+          root.classList.add('light');
+        }
     }
   }
 

@@ -48,19 +48,23 @@ export const useMessageForm = (
 
   useEffect(() => {
     // Restore text draft from local storage on initial load
-    const savedText = localStorage.getItem('messageDraft_text');
-    if (savedText) {
-      setInputValue(savedText);
-    }
+    try {
+        const savedText = localStorage.getItem('messageDraft_text');
+        if (savedText) {
+          setInputValue(savedText);
+        }
+    } catch (e) { /* ignore */ }
   }, []);
 
   useEffect(() => {
     // Save text draft to local storage
-    if (inputValue.trim() || fileHandling.processedFiles.length > 0) {
-      localStorage.setItem('messageDraft_text', inputValue);
-    } else {
-      localStorage.removeItem('messageDraft_text');
-    }
+    try {
+        if (inputValue.trim() || fileHandling.processedFiles.length > 0) {
+          localStorage.setItem('messageDraft_text', inputValue);
+        } else {
+          localStorage.removeItem('messageDraft_text');
+        }
+    } catch (e) { /* ignore */ }
   }, [inputValue, fileHandling.processedFiles.length]);
   
   // Handle automatic resizing of the input area
@@ -122,8 +126,10 @@ export const useMessageForm = (
   const clearDraft = () => {
     setInputValue('');
     fileHandling.clearFiles(); 
-    localStorage.removeItem('messageDraft_text');
-    localStorage.removeItem('messageDraft_files');
+    try {
+        localStorage.removeItem('messageDraft_text');
+        localStorage.removeItem('messageDraft_files');
+    } catch (e) { /* ignore */ }
   };
 
   // Centralized Validation Logic

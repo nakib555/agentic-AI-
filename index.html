@@ -85,24 +85,39 @@
              return;
           }
 
-          // Explicitly use window.location.origin
-          const swUrl = new URL('/sw.js', window.location.origin).href;
-          
-          navigator.serviceWorker.register(swUrl)
-            .then(registration => {
-              console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            })
-            .catch(err => {
-              console.error('ServiceWorker registration failed: ', err);
-              // Safely attempt to cleanup, ignoring errors if document is invalid
-              try {
-                navigator.serviceWorker.getRegistrations().then(registrations => {
-                    registrations.forEach(r => r.unregister().catch(e => console.warn('Failed to unregister SW:', e)));
-                }).catch(e => console.warn('Failed to get registrations during cleanup:', e));
-              } catch (e) {
-                console.warn('ServiceWorker cleanup failed:', e);
-              }
-            });
+          try {
+            // Explicitly use window.location.origin
+            const swUrl = new URL('/sw.js', window.location.origin).href;
+            
+            navigator.serviceWorker.register(swUrl)
+              .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+              })
+              .catch(err => {
+                // Suppress "invalid state" errors which happen in some environments (e.g. iframes)
+                const isInvalidState = err.message && err.message.includes('invalid state');
+                if (isInvalidState) {
+                    console.warn('ServiceWorker registration skipped (Document in invalid state). This is normal in some environments.');
+                } else {
+                    console.warn('ServiceWorker registration failed: ', err);
+                }
+                
+                // Safely attempt to cleanup, ignoring errors if document is invalid
+                try {
+                  navigator.serviceWorker.getRegistrations().then(registrations => {
+                      registrations.forEach(r => r.unregister().catch(e => console.warn('Failed to unregister SW:', e)));
+                  }).catch(e => {
+                      if (!e.message.includes('invalid state')) {
+                          console.warn('Failed to get registrations during cleanup:', e);
+                      }
+                  });
+                } catch (e) {
+                  // Ignore synchronous failures
+                }
+              });
+          } catch (e) {
+             console.warn('ServiceWorker initialization error:', e);
+          }
         });
       }
     </script>

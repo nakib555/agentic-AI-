@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -66,43 +67,47 @@ export const useFileHandling = (ref: React.ForwardedRef<MessageFormHandle>) => {
 
   // Restore file drafts from localStorage on initial load
   useEffect(() => {
-    const savedFilesJSON = localStorage.getItem('messageDraft_files');
-    if (savedFilesJSON) {
-      try {
-        const savedFiles: SavedFile[] = JSON.parse(savedFilesJSON);
-        if (Array.isArray(savedFiles)) {
-          const restoredFiles: ProcessedFile[] = savedFiles.map(sf => {
-            const file = base64ToFile(sf.data, sf.name, sf.mimeType);
-            return {
-              id: `${file.name}-${file.size}-${Date.now()}`,
-              file, progress: 100, base64Data: sf.data, error: null,
-            };
-          });
-          setProcessedFiles(restoredFiles);
+    try {
+        const savedFilesJSON = localStorage.getItem('messageDraft_files');
+        if (savedFilesJSON) {
+          const savedFiles: SavedFile[] = JSON.parse(savedFilesJSON);
+          if (Array.isArray(savedFiles)) {
+            const restoredFiles: ProcessedFile[] = savedFiles.map(sf => {
+              const file = base64ToFile(sf.data, sf.name, sf.mimeType);
+              return {
+                id: `${file.name}-${file.size}-${Date.now()}`,
+                file, progress: 100, base64Data: sf.data, error: null,
+              };
+            });
+            setProcessedFiles(restoredFiles);
+          }
         }
-      } catch (error) {
+    } catch (error) {
         console.error("Failed to parse or restore saved files:", error);
-        localStorage.removeItem('messageDraft_files');
-      }
+        try {
+            localStorage.removeItem('messageDraft_files');
+        } catch (e) { /* ignore */ }
     }
   }, []);
 
   // Save file drafts to localStorage
   useEffect(() => {
-    const filesToSave: SavedFile[] = processedFiles.filter(pf => pf.base64Data).map(pf => ({ name: pf.file.name, mimeType: pf.file.type, data: pf.base64Data! }));
-    if (filesToSave.length > 0) {
-      try {
-        localStorage.setItem('messageDraft_files', JSON.stringify(filesToSave));
-      } catch (error) {
-         if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-          alert('Draft files are too large for localStorage and were not saved. Your text has been saved.');
+    try {
+        const filesToSave: SavedFile[] = processedFiles.filter(pf => pf.base64Data).map(pf => ({ name: pf.file.name, mimeType: pf.file.type, data: pf.base64Data! }));
+        if (filesToSave.length > 0) {
+            try {
+                localStorage.setItem('messageDraft_files', JSON.stringify(filesToSave));
+            } catch (error) {
+                 if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+                  // alert('Draft files are too large for localStorage and were not saved. Your text has been saved.');
+                } else {
+                  console.error("Error saving files for draft:", error);
+                }
+            }
         } else {
-          console.error("Error saving files for draft:", error);
+            localStorage.removeItem('messageDraft_files');
         }
-      }
-    } else {
-      localStorage.removeItem('messageDraft_files');
-    }
+    } catch (e) { /* ignore */ }
   }, [processedFiles]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {

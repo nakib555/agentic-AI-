@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -92,13 +93,15 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
             const savedState = localStorage.getItem('chatHistoryGroups');
             return savedState ? JSON.parse(savedState) : {};
         } catch (e) {
-            console.error("Failed to parse chat history groups from localStorage", e);
+            console.warn("Failed to parse chat history groups from localStorage", e);
             return {};
         }
     });
 
     useEffect(() => {
-        localStorage.setItem('chatHistoryGroups', JSON.stringify(collapsedGroups));
+        try {
+            localStorage.setItem('chatHistoryGroups', JSON.stringify(collapsedGroups));
+        } catch (e) { /* ignore */ }
     }, [collapsedGroups]);
 
     const toggleGroup = (groupName: string) => {
