@@ -66,7 +66,8 @@ export const VoiceVisualizer: React.FC<VoiceVisualizerProps> = ({ isRecording })
 
             animationIdRef.current = requestAnimationFrame(draw);
 
-            analyser.getByteFrequencyData(dataArray);
+            // Cast to any to avoid TS mismatch between Uint8Array<ArrayBuffer> and Uint8Array<ArrayBufferLike>
+            analyser.getByteFrequencyData(dataArray as any);
 
             ctx.clearRect(0, 0, width, height);
 

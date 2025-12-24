@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -52,7 +51,7 @@ const processHighlights = (content: string): string => {
 };
 
 interface MarkdownErrorBoundaryProps {
-  children: ReactNode;
+  children?: ReactNode;
   fallback: ReactNode;
   text: string;
 }
@@ -62,10 +61,11 @@ interface MarkdownErrorBoundaryState {
 }
 
 // Internal Error Boundary to catch Markdown/Rehype parsing crashes during streaming
-class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
+class MarkdownErrorBoundary extends Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
+  public state: MarkdownErrorBoundaryState = { hasError: false };
+
   constructor(props: MarkdownErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: any) {

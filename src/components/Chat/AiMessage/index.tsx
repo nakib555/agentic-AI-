@@ -76,7 +76,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
 
   if (logic.isInitialWait) return <TypingIndicator />;
 
-  // --- STANDARD CHAT MODE ---
+  // --- STANDARD CHAT MODE (Unified for Agent & Chat) ---
   return (
     <motion.div 
         {...animationProps} 
