@@ -152,6 +152,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                 sources={logic.searchSources}
                 onShowSources={onShowSources}
                 ttsState={logic.audioState}
+                ttsErrorMessage={logic.ttsError}
                 onTtsClick={logic.playOrStopAudio}
                 onRegenerate={() => onRegenerate(id)}
                 responseCount={msg.responses?.length || 0}

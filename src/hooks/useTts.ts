@@ -14,6 +14,7 @@ type AudioState = 'idle' | 'loading' | 'error' | 'playing';
 
 export const useTts = (text: string, voice: string, model: string) => {
   const [audioState, setAudioState] = useState<AudioState>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
   const isMounted = useRef(true);
   const isPlaying = audioState === 'playing';
 
@@ -30,7 +31,10 @@ export const useTts = (text: string, voice: string, model: string) => {
     }
     if (audioState === 'loading' || !text) return;
     
-    if (isMounted.current) setAudioState('loading');
+    if (isMounted.current) {
+        setAudioState('loading');
+        setErrorMessage(undefined);
+    }
     
     const textToSpeak = text;
       
@@ -57,7 +61,12 @@ export const useTts = (text: string, voice: string, model: string) => {
             body: JSON.stringify({ text: textToSpeak, voice, model }),
         });
 
-        if (!response.ok) throw new Error(`TTS request failed with status ${response.status}`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            // Extract meaningful message from structured error if possible
+            const msg = errorData.error?.suggestion || errorData.error?.message || errorData.error?.details || `TTS request failed with status ${response.status}`;
+            throw new Error(msg);
+        }
         
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("text/html")) throw new Error("Backend returned HTML");
@@ -71,11 +80,14 @@ export const useTts = (text: string, voice: string, model: string) => {
         } else {
             throw new Error("No audio data returned from backend.");
         }
-    } catch (err) {
+    } catch (err: any) {
         console.error("TTS failed:", err);
-        if (isMounted.current) setAudioState('error');
+        if (isMounted.current) {
+            setAudioState('error');
+            setErrorMessage(err.message || "Failed to generate audio");
+        }
     }
   }, [text, voice, model, audioState]);
 
-  return { playOrStopAudio, audioState, isPlaying };
+  return { playOrStopAudio, audioState, isPlaying, errorMessage };
 };

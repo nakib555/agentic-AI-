@@ -599,7 +599,9 @@ export const apiHandler = async (req: any, res: any) => {
                     res.status(200).json({ audio });
                 } catch (e) {
                     console.error("TTS Failed:", e);
-                    res.status(500).json({ error: "TTS Failed" });
+                    // Parse the specific error from executeTextToSpeech to send suggestions
+                    const parsedError = parseApiError(e);
+                    res.status(500).json({ error: parsedError });
                 }
                 break;
             }

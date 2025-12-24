@@ -12,12 +12,14 @@ export const TtsButton = ({
   onClick,
   disabled = false,
   error = false,
+  errorMessage,
 }: {
   isPlaying: boolean;
   isLoading: boolean;
   onClick: () => void;
   disabled?: boolean;
   error?: boolean;
+  errorMessage?: string;
 }) => {
   const getButtonContent = () => {
     if (error) {
@@ -77,7 +79,7 @@ export const TtsButton = ({
   };
 
   const getTitle = () => {
-    if (error) return 'Failed to load audio';
+    if (error) return errorMessage || 'Failed to load audio';
     if (isLoading) return 'Synthesizing audio...';
     if (isPlaying) return 'Stop audio';
     if (disabled) return 'No text to read';

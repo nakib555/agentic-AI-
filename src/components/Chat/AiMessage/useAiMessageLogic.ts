@@ -44,7 +44,7 @@ export const useAiMessageLogic = (
     // Use backend-parsed final answer for TTS
     // We prefer the parsed one from parser if available, otherwise fallback to workflow's final answer
     const textForTts = rawFinalAnswerText || (activeResponse?.workflow?.finalAnswer || '');
-    const { playOrStopAudio, audioState, isPlaying } = useTts(textForTts, ttsVoice, ttsModel);
+    const { playOrStopAudio, audioState, isPlaying, errorMessage } = useTts(textForTts, ttsVoice, ttsModel);
 
     // Extract sources from both tool calls and grounding metadata
     const searchSources = useMemo((): Source[] => {
@@ -127,7 +127,8 @@ export const useAiMessageLogic = (
         activeResponse, 
         thinkingText, // Now properly exposed
         finalAnswerText: rawFinalAnswerText, 
-        playOrStopAudio, audioState, isPlaying, searchSources,
+        playOrStopAudio, audioState, isPlaying, ttsError: errorMessage,
+        searchSources,
         thinkingIsComplete, hasWorkflow, hasThinkingText, hasFinalAnswer, displayDuration, 
         isInitialWait: !hasWorkflow && !hasThinkingText && isWaitingForFinalAnswer,
         isStreamingFinalAnswer, isWaitingForFinalAnswer, showApprovalUI, handleRunCode,

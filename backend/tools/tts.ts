@@ -91,9 +91,23 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
             console.error("TTS Response missing audio data:", JSON.stringify(response, null, 2));
             throw new Error("No audio data returned from TTS model.");
         }
-    } catch (err) {
+    } catch (err: any) {
         console.error("TTS tool failed:", err);
         const originalError = err instanceof Error ? err : new Error("An unknown error occurred during TTS generation.");
-        throw new ToolError('textToSpeech', 'TTS_FAILED', originalError.message, originalError);
+        
+        let message = originalError.message;
+        let suggestion = "Please try again later or select a different voice.";
+
+        if (message.includes('429') || message.includes('quota') || message.includes('RESOURCE_EXHAUSTED')) {
+            suggestion = "The text-to-speech quota has been exceeded. Please check your billing or wait a few minutes.";
+        } else if (message.includes('400') || message.includes('INVALID_ARGUMENT')) {
+            suggestion = "The text provided might be too long or contain characters not supported by the audio model.";
+        } else if (message.includes('safety') || message.includes('blocked')) {
+            suggestion = "The generated audio was blocked by safety settings.";
+        } else if (message.includes('No readable text')) {
+            suggestion = "The response contains only visual elements (images, maps) and no text to read.";
+        }
+
+        throw new ToolError('textToSpeech', 'TTS_FAILED', message, originalError, suggestion);
     }
 };

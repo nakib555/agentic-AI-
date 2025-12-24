@@ -20,6 +20,7 @@ type MessageToolbarProps = {
     sources: Source[];
     onShowSources: (sources: Source[]) => void;
     ttsState: 'idle' | 'loading' | 'error' | 'playing';
+    ttsErrorMessage?: string;
     onTtsClick: () => void;
     onRegenerate: () => void;
     responseCount: number;
@@ -55,7 +56,7 @@ const IconButton: React.FC<{
 );
 
 export const MessageToolbar: React.FC<MessageToolbarProps> = ({
-    messageText, sources, onShowSources, ttsState, onTtsClick, onRegenerate,
+    messageText, sources, onShowSources, ttsState, ttsErrorMessage, onTtsClick, onRegenerate,
     responseCount, activeResponseIndex, onResponseChange,
 }) => {
     const [isCopied, setIsCopied] = useState(false);
@@ -121,6 +122,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                     isPlaying={ttsState === 'playing'} 
                     isLoading={ttsState === 'loading'} 
                     error={ttsState === 'error'}
+                    errorMessage={ttsErrorMessage}
                     disabled={!messageText}
                     onClick={onTtsClick} 
                 />
