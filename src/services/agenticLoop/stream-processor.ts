@@ -35,6 +35,9 @@ export const processBackendStream = async (response: Response, callbacks: Stream
     // Use setTimeout to buffer rapid text chunks. 
     // 16ms approximates 60fps, ensuring smooth updates without overloading React.
     const FLUSH_INTERVAL_MS = 16; 
+    // Watchdog timeout: If no data received for 45s, assume connection died
+    const WATCHDOG_TIMEOUT_MS = 45000;
+
     let pendingText: string | null = null;
     let flushTimeoutId: any = null;
 
@@ -43,7 +46,18 @@ export const processBackendStream = async (response: Response, callbacks: Stream
             callbacks.onTextChunk(pendingText);
             pendingText = null;
         }
-        flushTimeoutId = null;
+        if (flushTimeoutId !== null) {
+            clearTimeout(flushTimeoutId);
+            flushTimeoutId = null;
+        }
+    };
+
+    // Helper to read with a timeout to prevent infinite hanging
+    const readWithTimeout = async () => {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error("Stream timeout: No data received from backend")), WATCHDOG_TIMEOUT_MS);
+        });
+        return Promise.race([reader.read(), timeoutPromise]);
     };
 
     try {
@@ -53,7 +67,8 @@ export const processBackendStream = async (response: Response, callbacks: Stream
                 break;
             }
 
-            const { done, value } = await reader.read();
+            const { done, value } = await readWithTimeout();
+            
             if (done) break;
             
             buffer += decoder.decode(value, { stream: true });
@@ -80,10 +95,7 @@ export const processBackendStream = async (response: Response, callbacks: Stream
 
                     // For all other events (tools, errors, complete), flush pending text IMMEDIATELY
                     // to ensure correct ordering of events (e.g. text before tool call).
-                    if (pendingText !== null) {
-                        if (flushTimeoutId !== null) clearTimeout(flushTimeoutId);
-                        flushTextUpdates();
-                    }
+                    flushTextUpdates();
 
                     switch (event.type) {
                         case 'start':
@@ -128,12 +140,14 @@ export const processBackendStream = async (response: Response, callbacks: Stream
                 }
             }
         }
+    } catch (e: any) {
+        // If it's a timeout or network error, report it
+        if (e.message && (e.message.includes("timeout") || e.message.includes("network"))) {
+            callbacks.onError({ message: "Stream connection lost or timed out." });
+        }
     } finally {
         // Cleanup any pending flush on stream end/error/close
-        if (flushTimeoutId !== null) {
-            clearTimeout(flushTimeoutId);
-            flushTextUpdates();
-        }
+        flushTextUpdates();
         reader.releaseLock();
     }
 };

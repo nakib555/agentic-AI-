@@ -337,9 +337,24 @@ export const useChat = (
                 abortControllerRef.current = null;
                 requestIdRef.current = null;
                 
-                // Fetch suggestions only if API key present
                 const finalChatState = chatHistoryRef.current.find(c => c.id === chatId);
+                
+                // --- POST-STREAMING OPERATIONS ---
+                
                 if (finalChatState && apiKey) {
+                    // 1. Generate Title (Only for new chats, only once, only after stream complete)
+                    if (finalChatState.title === "New Chat" && finalChatState.messages.length >= 2 && !titleGenerationAttemptedRef.current.has(chatId)) {
+                        titleGenerationAttemptedRef.current.add(chatId);
+                        
+                        generateChatTitle(finalChatState.messages)
+                            .then(newTitle => {
+                                const finalTitle = newTitle.length > 45 ? newTitle.substring(0, 42) + '...' : newTitle;
+                                updateChatTitle(chatId, finalTitle);
+                            })
+                            .catch(err => console.error("Failed to generate chat title:", err));
+                    }
+
+                    // 2. Generate Suggestions
                     const suggestions = await generateFollowUpSuggestions(finalChatState.messages);
                      if (suggestions.length > 0) {
                         chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
@@ -456,32 +471,6 @@ export const useChat = (
 
     }, [isLoading, currentChatId, chatHistory, cancelGeneration, chatHistoryHook, initialModel, settings, memoryContent, isAgentMode]);
     
-    // Auto-title generation
-    useEffect(() => {
-        const currentChat = chatHistory.find(c => c.id === currentChatId);
-        if (currentChat && currentChat.messages && currentChat.title === "New Chat" && currentChat.messages.length >= 2 && !currentChat.isLoading) {
-          if (!apiKey) return;
-
-          // Prevent loop if we already tried for this chat
-          if (titleGenerationAttemptedRef.current.has(currentChatId!)) return;
-          titleGenerationAttemptedRef.current.add(currentChatId!);
-
-          // Removed disruptive optimistic update: 
-          // updateChatTitle(currentChatId!, "Generating title...");
-
-          generateChatTitle(currentChat.messages)
-            .then(newTitle => {
-                const finalTitle = newTitle.length > 45 ? newTitle.substring(0, 42) + '...' : newTitle;
-                updateChatTitle(currentChatId!, finalTitle);
-            })
-            .catch(err => {
-                console.error("Failed to generate chat title:", err);
-                if (onShowToast) {
-                    onShowToast("Failed to auto-generate chat title", "error");
-                }
-            });
-        }
-    }, [chatHistory, currentChatId, updateChatTitle, apiKey, onShowToast]);
   
   return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse, sendMessageForTest };
 };
