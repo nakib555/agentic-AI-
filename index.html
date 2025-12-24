@@ -94,10 +94,14 @@
             })
             .catch(err => {
               console.error('ServiceWorker registration failed: ', err);
-              // If registration fails significantly, try to unregister existing ones to clean state
-              navigator.serviceWorker.getRegistrations().then(registrations => {
-                  registrations.forEach(r => r.unregister());
-              });
+              // Safely attempt to cleanup, ignoring errors if document is invalid
+              try {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    registrations.forEach(r => r.unregister().catch(e => console.warn('Failed to unregister SW:', e)));
+                }).catch(e => console.warn('Failed to get registrations during cleanup:', e));
+              } catch (e) {
+                console.warn('ServiceWorker cleanup failed:', e);
+              }
             });
         });
       }

@@ -29,18 +29,17 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('Uncaught error:', error, errorInfo);
   }
 
-  private handleReload = () => {
+  private handleReload = async () => {
     // Attempt to unregister service workers before reloading to fix potential cache issues
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        const unregisterPromises = registrations.map(registration => registration.unregister());
-        Promise.all(unregisterPromises).then(() => {
-          window.location.reload();
-        });
-      }).catch(() => {
-        window.location.reload();
-      });
-    } else {
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(registration => registration.unregister()));
+      }
+    } catch (e) {
+      console.warn('Failed to unregister service workers during reload:', e);
+    } finally {
+      // Always reload, even if SW cleanup fails
       window.location.reload();
     }
   };
