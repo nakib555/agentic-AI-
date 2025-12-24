@@ -29,7 +29,13 @@ export const getApiBaseUrl = () => {
         return 'http://localhost:3001';
     }
 
-    // 4. Default Fallback if hosted separately (e.g., frontend on Cloudflare, backend on Render)
+    // 4. Localhost Production Fallback (e.g. npm start / docker locally)
+    // If running the production build locally, prefer relative paths to hit the local server.
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        return ''; 
+    }
+
+    // 5. Default Fallback if hosted separately (e.g., frontend on Cloudflare, backend on Render)
     return 'https://agentic-ai-xl8f.onrender.com';
 };
 
