@@ -1,6 +1,6 @@
 import esbuild from 'esbuild';
 import cpx from 'cpx';
-import { rm, readFile, writeFile } from 'fs/promises';
+import { rm, readFile, writeFile, mkdir } from 'fs/promises';
 import 'dotenv/config';
 import { execSync } from 'child_process';
 import path from 'path';
@@ -25,6 +25,7 @@ try {
 
   // 1. Clean the dist directory
   await rm('dist', { recursive: true, force: true });
+  await mkdir('dist', { recursive: true });
   console.log('Cleaned dist directory.');
 
   // 2. Build Frontend
@@ -78,8 +79,8 @@ try {
 
   await copyFiles('index.html', 'dist');
   await copyFiles('src/styles/**', 'dist/styles');
-  // Exclude sw.js from bulk copy, handle it specifically below
-  await copyFiles('{manifest.json,favicon.svg,_headers,_redirects}', 'dist');
+  // Exclude sw.js and _headers from bulk copy as they are handled/generated below
+  await copyFiles('{manifest.json,favicon.svg,_redirects}', 'dist');
 
   // 5. Compile Tailwind CSS
   console.log('Compiling Tailwind CSS...');
@@ -97,6 +98,30 @@ try {
   swContent = swContent.replace('{{VERSION}}', version);
   await writeFile('dist/sw.js', swContent);
   console.log('Service Worker injected with version and copied.');
+
+  // 7. Generate _headers file for Cloudflare/Netlify
+  console.log('Generating _headers file...');
+  const headersContent = `/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(self), microphone=(self), camera=(self)
+
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/styles/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.js
+  Cache-Control: public, max-age=31536000, immutable
+`;
+  await writeFile('dist/_headers', headersContent);
+  console.log('_headers file generated.');
   
   console.log('\nProduction build completed successfully!');
 

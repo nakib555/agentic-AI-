@@ -7,7 +7,7 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Custom plugin to handle static asset copying and SW processing
+// Custom plugin to handle static asset copying, SW processing, and Header generation
 const staticAssetsPlugin = (appVersion: string) => ({
   name: 'static-assets-plugin',
   closeBundle: async () => {
@@ -19,8 +19,8 @@ const staticAssetsPlugin = (appVersion: string) => ({
       fs.mkdirSync(stylesDir, { recursive: true });
     }
     
-    // 1. Copy Manifest, Favicon, Cloudflare Redirects AND Headers
-    const filesToCopy = ['manifest.json', 'favicon.svg', '_redirects', '_headers'];
+    // 1. Copy Manifest, Favicon, Cloudflare Redirects
+    const filesToCopy = ['manifest.json', 'favicon.svg', '_redirects'];
     for (const file of filesToCopy) {
       if (fs.existsSync(file)) {
         fs.copyFileSync(file, path.join(distDir, file));
@@ -35,6 +35,29 @@ const staticAssetsPlugin = (appVersion: string) => ({
       fs.writeFileSync(path.join(distDir, 'sw.js'), swContent);
       console.log(`[Vite] Injected version ${appVersion} into sw.js and copied to dist`);
     }
+
+    // 3. Generate _headers file for Cloudflare
+    const headersContent = `/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(self), microphone=(self), camera=(self)
+
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/styles/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.js
+  Cache-Control: public, max-age=31536000, immutable
+`;
+    fs.writeFileSync(path.join(distDir, '_headers'), headersContent);
+    console.log(`[Vite] Generated _headers file in dist`);
   }
 });
 

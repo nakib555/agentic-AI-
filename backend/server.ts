@@ -87,13 +87,20 @@ async function startServer() {
   // Serve static files from the current directory (dist) if they exist
   const indexHtmlPath = path.join(serverDir, 'index.html');
   if (fs.existsSync(indexHtmlPath)) {
-      app.use(express.static(serverDir));
+      app.use(express.static(serverDir, {
+        setHeaders: (res, filePath) => {
+           if (filePath.endsWith('index.html') || filePath.endsWith('sw.js')) {
+               res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+           }
+        }
+      }));
       
       // Handle SPA routing: Serve index.html for any unknown non-API routes
       app.get('*', (req, res) => {
         if (req.path.startsWith('/api')) {
           return res.status(404).json({ error: 'API route not found' });
         }
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.sendFile(indexHtmlPath);
       });
   } else {
