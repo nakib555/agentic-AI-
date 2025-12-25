@@ -171,8 +171,3 @@
 .markdown-content tr:last-child td {
   border-bottom: none;
 }
-
-.markdown-content tr:hover td {
-  background-color: var(--bg-layer-2);
-  color: var(--text-primary);
-}
