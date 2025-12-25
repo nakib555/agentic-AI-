@@ -15,7 +15,7 @@ const motion = motionTyped as any;
 // Lazy load the settings tabs to optimize bundle size and startup time
 const GeneralSettings = React.lazy(() => import('./GeneralSettings'));
 const ModelSettings = React.lazy(() => import('./ModelSettings'));
-const CustomInstructionsSettings = React.lazy(() => import('./CustomInstructionsSettings'));
+const PersonalizeSettings = React.lazy(() => import('./PersonalizeSettings'));
 const SpeechMemorySettings = React.lazy(() => import('./SpeechMemorySettings'));
 
 type SettingsModalProps = {
@@ -75,6 +75,18 @@ const CATEGORIES = [
     ) 
   },
   { 
+    id: 'personalize', 
+    label: 'Personalize', 
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+        <path d="M12 11l4 4" /> 
+        <path d="M16 11l-4 4" />
+      </svg>
+    ) 
+  },
+  { 
     id: 'model', 
     label: 'Model & AI', 
     icon: (
@@ -89,17 +101,6 @@ const CATEGORIES = [
         <path d="M18 12h4" />
         <path d="M4.93 19.07l2.83-2.83" />
         <path d="M16.24 7.76l2.83-2.83" />
-      </svg>
-    ) 
-  },
-  { 
-    id: 'instructions', 
-    label: 'Instructions', 
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <path d="M20 7h-3a2 2 0 0 1-2-2V2" />
-        <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2H9Z" />
-        <path d="M3 8v10a2 2 0 0 0 2 2h10" />
       </svg>
     ) 
   },
@@ -212,6 +213,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                             onSaveServerUrl={props.onSaveServerUrl}
                                         />
                                     )}
+                                    {activeCategory === 'personalize' && <PersonalizeSettings {...props} />}
                                     {activeCategory === 'model' && (
                                         <ModelSettings
                                             models={props.models}
@@ -235,7 +237,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                             disabled={props.disabled}
                                         />
                                     )}
-                                    {activeCategory === 'instructions' && <CustomInstructionsSettings {...props} />}
                                     {activeCategory === 'speech' && (
                                         <SpeechMemorySettings 
                                             isMemoryEnabled={props.isMemoryEnabled} 
