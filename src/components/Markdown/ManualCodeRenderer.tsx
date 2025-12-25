@@ -1,9 +1,10 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Component, memo, useMemo, ReactNode } from 'react';
+import React, { memo, useMemo, ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
@@ -61,14 +62,14 @@ interface MarkdownErrorBoundaryState {
 }
 
 // Internal Error Boundary to catch Markdown/Rehype parsing crashes during streaming
-// Fix: Use named Component import and explicit constructor to resolve "Property 'props' does not exist" errors
-class MarkdownErrorBoundary extends Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
+// Fix: Use React.Component explicitly to ensure property types (state, props, setState) are correctly inherited and recognized by the TypeScript compiler.
+class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
   constructor(props: MarkdownErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: any) {
+  static getDerivedStateFromError(_error: any) {
     // console.warn("Markdown parsing error caught:", error);
     return { hasError: true };
   }

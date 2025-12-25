@@ -125,7 +125,7 @@ const TextInput: React.FC<{
                     onBlur={onBlur}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 h-[160px] overflow-y-auto custom-scrollbar resize-none leading-relaxed"
+                    className="w-full px-4 pt-3 pb-16 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 h-[160px] overflow-y-auto custom-scrollbar resize-none leading-relaxed"
                 />
             ) : (
                 <input
@@ -344,7 +344,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         {saveState === 'saved' ? (
                             <>
                                 <svg className="w-4 h-4 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                                    <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
                                 </svg>
                                 <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Saved</span>
                             </>

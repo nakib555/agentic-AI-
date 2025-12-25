@@ -1,9 +1,10 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children?: ReactNode;
@@ -14,8 +15,8 @@ interface State {
   error: Error | null;
 }
 
-// Fix: Use named Component import and explicit constructor to resolve "Property 'props' does not exist" errors
-export class ErrorBoundary extends Component<Props, State> {
+// Fix: Use React.Component explicitly to ensure property types (state, props, setState) are correctly inherited and recognized by the TypeScript compiler.
+export class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
