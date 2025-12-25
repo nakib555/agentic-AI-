@@ -368,8 +368,6 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     useEffect(() => {
         if (!isLoaded) return;
         
-        setSaveState('saving');
-        
         const parts = [];
         if (debouncedNickname.trim()) parts.push(`Nickname: ${debouncedNickname.trim()}`);
         if (debouncedOccupation.trim()) parts.push(`Occupation: ${debouncedOccupation.trim()}`);
@@ -377,20 +375,17 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
         
         const finalString = parts.join('\n');
         
-        // Only trigger update if content effectively changes to prevent loops
+        // Only trigger update and visual feedback if content effectively changes
         if (finalString !== aboutUser) {
+            setSaveState('saving');
             setAboutUser(finalString);
+            const timer = setTimeout(() => setSaveState('saved'), 500);
+            return () => clearTimeout(timer);
         }
-        
-        // Fast completion for responsiveness
-        const timer = setTimeout(() => setSaveState('saved'), 200);
-        return () => clearTimeout(timer);
-    }, [debouncedNickname, debouncedOccupation, debouncedMore, isLoaded]);
+    }, [debouncedNickname, debouncedOccupation, debouncedMore, isLoaded, aboutUser]);
 
     useEffect(() => {
         if (!isLoaded) return;
-        
-        setSaveState('saving');
         
         const traits = [];
         if (warmth !== 'default') traits.push(`Warmth: ${warmth}`);
@@ -406,12 +401,12 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
         const finalString = parts.join('\n');
         
         if (finalString !== aboutResponse) {
+            setSaveState('saving');
             setAboutResponse(finalString);
+            const timer = setTimeout(() => setSaveState('saved'), 500);
+            return () => clearTimeout(timer);
         }
-
-        const timer = setTimeout(() => setSaveState('saved'), 200);
-        return () => clearTimeout(timer);
-    }, [debouncedInstructions, tone, warmth, enthusiasm, structure, emoji, isLoaded]);
+    }, [debouncedInstructions, tone, warmth, enthusiasm, structure, emoji, isLoaded, aboutResponse]);
 
 
     // Handlers for Selects/Segmented Controls (Immediate Update)
