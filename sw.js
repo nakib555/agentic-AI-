@@ -44,13 +44,33 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Do not cache API requests or browser extensions. 
+  // 1. Ignore API, Extensions, and non-GET methods
   if (event.request.method !== 'GET' || 
-      url.pathname.includes('/api/') || 
+      url.pathname.startsWith('/api/') || 
       url.protocol === 'chrome-extension:') {
     return;
   }
 
+  // 2. Network First Strategy for HTML / Navigation
+  // This ensures the user always gets the latest index.html with correct JS hashes
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
+    event.respondWith(
+      fetch(event.request)
+        .then(networkResponse => {
+          // Update cache with the fresh HTML
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+          return networkResponse;
+        })
+        .catch(() => {
+          // Fallback to cache if offline
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // 3. Cache First Strategy for Static Assets (JS, CSS, Images)
   event.respondWith(
     caches.open(CACHE_NAME).then(cache => {
       return cache.match(event.request).then(response => {
