@@ -48,12 +48,12 @@ const SegmentedControl: React.FC<{
     const id = React.useId();
     
     return (
-        <div className="flex flex-col gap-2.5">
-            <div className="flex items-center gap-2">
-                {icon && <span className="text-slate-400 dark:text-slate-500">{icon}</span>}
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{label}</span>
+        <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2.5 px-1">
+                {icon && <span className="flex-shrink-0">{icon}</span>}
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{label}</span>
             </div>
-            <div className="flex p-1 bg-slate-100 dark:bg-black/40 rounded-lg border border-slate-200 dark:border-white/5 relative z-0">
+            <div className="flex p-1.5 bg-slate-100/80 dark:bg-black/40 rounded-xl border border-slate-200/50 dark:border-white/5 relative z-0">
                 {options.map((opt) => {
                     const isActive = value === opt.id;
                     return (
@@ -62,7 +62,7 @@ const SegmentedControl: React.FC<{
                             onClick={() => !disabled && onChange(opt.id)}
                             disabled={disabled}
                             className={`
-                                relative flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors duration-200
+                                relative flex-1 py-2 text-xs font-semibold rounded-lg transition-colors duration-200
                                 ${isActive 
                                     ? 'text-indigo-600 dark:text-indigo-300' 
                                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -73,7 +73,7 @@ const SegmentedControl: React.FC<{
                             {isActive && (
                                 <motion.div
                                     layoutId={`seg-bg-${id}`}
-                                    className="absolute inset-0 bg-white dark:bg-white/10 rounded-md shadow-sm border border-black/5 dark:border-white/5"
+                                    className="absolute inset-0 bg-white dark:bg-white/10 rounded-lg shadow-sm border border-black/5 dark:border-white/5"
                                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                                 />
                             )}
@@ -142,10 +142,10 @@ const SelectDropdown: React.FC<{
     };
 
     return (
-        <div className="relative group" ref={containerRef}>
-            <div className="flex items-center gap-2 mb-2">
-                {icon && <span className="text-slate-400 dark:text-slate-500">{icon}</span>}
-                <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+        <div className="relative group flex flex-col gap-3" ref={containerRef}>
+            <div className="flex items-center gap-2.5 px-1">
+                {icon && <span className="flex-shrink-0">{icon}</span>}
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                     {label}
                 </label>
             </div>
@@ -154,14 +154,14 @@ const SelectDropdown: React.FC<{
                 onClick={toggleOpen}
                 disabled={disabled}
                 className={`
-                    w-full flex items-center justify-between bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-left transition-all
+                    w-full flex items-center justify-between bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3.5 text-left transition-all
                     ${isOpen ? 'ring-2 ring-indigo-500/20 border-indigo-500/50' : 'hover:border-indigo-300 dark:hover:border-indigo-500/30'}
                     ${disabled ? 'opacity-60 cursor-not-allowed' : ''}
                 `}
             >
-                <div className="flex flex-col">
+                <div className="flex flex-col gap-0.5">
                     <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{selected.label}</span>
-                    {selected.desc && <span className="text-xs text-slate-500 dark:text-slate-500 font-medium mt-0.5">{selected.desc}</span>}
+                    {selected.desc && <span className="text-xs text-slate-500 dark:text-slate-500 font-medium">{selected.desc}</span>}
                 </div>
                 <div className={`p-1 rounded-full bg-slate-200 dark:bg-white/10 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-slate-500 dark:text-slate-400">
@@ -186,7 +186,7 @@ const SelectDropdown: React.FC<{
                                 width: coords.width,
                                 zIndex: 9999
                             }}
-                            className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto custom-scrollbar"
+                            className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-72 overflow-y-auto custom-scrollbar ring-1 ring-black/5"
                         >
                             {options.map((opt) => (
                                 <button
@@ -218,24 +218,19 @@ const TextInput: React.FC<{
     disabled?: boolean;
     icon?: React.ReactNode;
 }> = ({ label, placeholder, value, onChange, multiline, disabled, icon }) => (
-    <div className="flex flex-col gap-2">
-        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+    <div className="flex flex-col gap-3">
+        <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2.5 px-1">
+            {icon && <span className="flex-shrink-0">{icon}</span>}
             {label}
         </label>
         <div className="relative group">
-            {icon && !multiline && (
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors">
-                    {icon}
-                </div>
-            )}
-            
             {multiline ? (
                 <textarea
                     value={value}
                     onChange={e => onChange(e.target.value)}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 min-h-[100px] resize-none leading-relaxed"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 min-h-[120px] resize-none leading-relaxed"
                 />
             ) : (
                 <input
@@ -244,9 +239,27 @@ const TextInput: React.FC<{
                     onChange={e => onChange(e.target.value)}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className={`w-full py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 ${icon ? 'pl-10 pr-4' : 'px-4'}`}
+                    className="w-full py-2.5 px-4 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400"
                 />
             )}
+        </div>
+    </div>
+);
+
+const SectionHeader: React.FC<{
+    title: string;
+    subtitle: string;
+    icon: React.ReactNode;
+    color: string;
+    bg: string;
+}> = ({ title, subtitle, icon, color, bg }) => (
+    <div className="flex items-center gap-4 border-b border-gray-100 dark:border-white/5 pb-4 mb-2">
+        <div className={`p-2.5 rounded-xl ${bg} ${color}`}>
+            {icon}
+        </div>
+        <div>
+            <h4 className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">{title}</h4>
+            <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">{subtitle}</p>
         </div>
     </div>
 );
@@ -322,72 +335,77 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     }, [tone, warmth, enthusiasm, structure, emoji, customInstructions, setAboutResponse]);
 
     return (
-        <div className="pb-10">
+        <div className="pb-10 max-w-6xl mx-auto">
             {/* Header */}
-            <div className="mb-10">
-                <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Personalization</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Teach the AI who you are and how it should speak.</p>
+            <div className="mb-12 border-b border-gray-100 dark:border-white/5 pb-8">
+                <div className="flex items-center gap-4 mb-2">
+                    <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M12 11l4 4"/><path d="M16 11l-4 4"/></svg>
+                    </div>
+                    <div>
+                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Personalization</h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Customize the AI's personality and your profile.</p>
+                    </div>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 lg:gap-20 items-start">
                 
                 {/* Column 1: Persona Tuning */}
-                <div className="space-y-8">
-                    <div className="flex items-center gap-3 border-b border-indigo-100 dark:border-white/5 pb-3">
-                        <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M15.75 8.25a.75.75 0 0 1 .75.75c0 1.12-.492 2.126-1.27 2.812a.75.75 0 1 1-1.04-1.08.5.5 0 0 0 .02-.022A2.48 2.48 0 0 0 15 9a.75.75 0 0 1 .75-.75Z" /><path d="M15.25 12a.75.75 0 0 1 .75.75c0 4.253-2.662 7.85-6.295 9.175a.75.75 0 0 1-.51-1.41 8.26 8.26 0 0 0 5.305-7.765.75.75 0 0 1 .75-.75Z" /><path fillRule="evenodd" d="M1.5 7.125c0-3.153 2.825-5.352 5.46-4.925.213.035.38.203.404.418.175 1.583.65 3.018 1.378 4.28.324.561.306 1.255-.07 1.803-1.29 1.88-1.29 4.318 0 6.197.376.548.394 1.242.07 1.803a10.45 10.45 0 0 0-1.378 4.28c-.024.215-.191.383-.404.418C4.325 21.977 1.5 19.778 1.5 16.625v-9.5Zm12.651 2.373a.75.75 0 0 1 1.12-.958 5.762 5.762 0 0 1 1.474 4.095.75.75 0 0 1-1.5.022 4.26 4.26 0 0 0-1.094-3.159Z" clipRule="evenodd" /></svg>
-                        </div>
-                        <div>
-                            <h4 className="text-base font-bold text-slate-800 dark:text-slate-100">Style & Tone</h4>
-                            <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">AI Personality</p>
-                        </div>
-                    </div>
-
-                    <SelectDropdown 
-                        label="Primary Persona" 
-                        icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-pink-500"><path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-2.625 6c-.54 0-.828.419-.936.634a.75.75 0 0 0 1.342.674c.05-.099.125-.183.195-.183h3.75c.07 0 .144.084.195.183a.75.75 0 0 0 1.342-.674c-.108-.215-.396-.634-.936-.634h-4.5Zm.857 6.476c-.321.34-.349.883-.02 1.238.342.368.903.368 1.246 0l1.368-1.468a.747.747 0 0 1 1.048 0l1.368 1.468c.343.368.904.368 1.246 0 .329-.355.301-.898-.02-1.238L13.593 15.3c-.85-.912-2.336-.912-3.186 0l-2.174 2.333-.003.004Z" clipRule="evenodd" /></svg>}
-                        value={tone} 
-                        onChange={setTone} 
-                        options={TONE_OPTIONS} 
-                        disabled={disabled}
+                <div className="flex flex-col gap-10">
+                    <SectionHeader 
+                        title="Style & Tone" 
+                        subtitle="AI Personality" 
+                        icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 5H3"/><path d="M19 19v4"/><path d="M21 21h-4"/></svg>}
+                        color="text-fuchsia-600 dark:text-fuchsia-400" 
+                        bg="bg-fuchsia-50 dark:bg-fuchsia-500/10" 
                     />
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-8">
-                        <SegmentedControl 
-                            label="Warmth" 
-                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-orange-500"><path d="M12 2.25a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75ZM7.5 12a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM18.894 6.166a.75.75 0 0 0-1.06-1.06l-1.591 1.59a.75.75 0 1 0 1.06 1.061l1.591-1.59ZM21.75 12a.75.75 0 0 1-.75.75h-2.25a.75.75 0 0 1 0-1.5H21a.75.75 0 0 1 .75.75ZM17.834 18.894a.75.75 0 0 0 1.06-1.06l-1.59-1.591a.75.75 0 1 0-1.061 1.06l1.59 1.591ZM12 18a.75.75 0 0 1 .75.75V21a.75.75 0 0 1-1.5 0v-2.25A.75.75 0 0 1 12 18ZM7.758 17.303a.75.75 0 0 0-1.061-1.06l-1.591 1.59a.75.75 0 0 0 1.06 1.061l1.591-1.59ZM6 12a.75.75 0 0 1-.75.75H3a.75.75 0 0 1 0-1.5h2.25A.75.75 0 0 1 6 12ZM6.697 7.757a.75.75 0 0 0 1.06-1.06l-1.59-1.591a.75.75 0 0 0-1.061 1.06l1.59 1.591Z" /></svg>}
-                            value={warmth} 
-                            onChange={setWarmth} 
-                            options={INTENSITY_OPTIONS} 
-                            disabled={disabled} 
+                    <div className="space-y-10 pl-1">
+                        <SelectDropdown 
+                            label="Primary Persona" 
+                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-fuchsia-500"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>}
+                            value={tone} 
+                            onChange={setTone} 
+                            options={TONE_OPTIONS} 
+                            disabled={disabled}
                         />
-                        <SegmentedControl 
-                            label="Enthusiasm" 
-                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-yellow-500"><path fillRule="evenodd" d="M9 4.5a.75.75 0 0 1 .721.544l.813 2.846a3.75 3.75 0 0 0 2.576 2.576l2.846.813a.75.75 0 0 1 0 1.442l-2.846.813a3.75 3.75 0 0 0-2.576 2.576l-.813 2.846a.75.75 0 0 1-1.442 0l-.813-2.846a3.75 3.75 0 0 0-2.576-2.576l-2.846-.813a.75.75 0 0 1 0-1.442l2.846-.813a3.75 3.75 0 0 0 2.576-2.576l.813-2.846A.75.75 0 0 1 9 4.5ZM18 1.5a.75.75 0 0 1 .728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 0 1 0 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 0 1-1.456 0l-.258-1.036a2.625 2.625 0 0 0-1.91-1.91l-1.036-.258a.75.75 0 0 1 0-1.456l1.036-.258a2.625 2.625 0 0 0 1.91-1.91l.258-1.036A.75.75 0 0 1 18 1.5ZM16.5 15a.75.75 0 0 1 .712.513l.394 1.183c.15.447.5.799.948.948l1.183.395a.75.75 0 0 1 0 1.422l-1.183.395c-.447.15-.799.5-.948.948l-.395 1.183a.75.75 0 0 1-1.422 0l-.395-1.183a1.5 1.5 0 0 0-.948-.948l-1.183-.395a.75.75 0 0 1 0-1.422l1.183-.395c.447-.15.799-.5.948-.948l.395-1.183A.75.75 0 0 1 16.5 15Z" clipRule="evenodd" /></svg>}
-                            value={enthusiasm} 
-                            onChange={setEnthusiasm} 
-                            options={INTENSITY_OPTIONS} 
-                            disabled={disabled} 
-                        />
-                        <SegmentedControl 
-                            label="Formatting" 
-                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-blue-500"><path fillRule="evenodd" d="M3 6a3 3 0 0 1 3-3h2.25a3 3 0 0 1 3 3v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V6Zm9.75 0a3 3 0 0 1 3-3H18a3 3 0 0 1 3 3v2.25a3 3 0 0 1-3 3h-2.25a3 3 0 0 1-3-3V6ZM3 15.75a3 3 0 0 1 3-3h2.25a3 3 0 0 1 3 3V18a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3v-2.25Zm9.75 0a3 3 0 0 1 3-3H18a3 3 0 0 1 3 3V18a3 3 0 0 1-3 3h-2.25a3 3 0 0 1-3-3v-2.25Z" clipRule="evenodd" /></svg>}
-                            value={structure} 
-                            onChange={setStructure} 
-                            options={INTENSITY_OPTIONS} 
-                            disabled={disabled} 
-                        />
-                        <SegmentedControl 
-                            label="Emoji Usage" 
-                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-teal-500"><path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-2.625 6c-.54 0-.828.419-.936.634a.75.75 0 0 0 1.342.674c.05-.099.125-.183.195-.183h3.75c.07 0 .144.084.195.183a.75.75 0 0 0 1.342-.674c-.108-.215-.396-.634-.936-.634h-4.5Zm.857 6.476c-.321.34-.349.883-.02 1.238.342.368.903.368 1.246 0l1.368-1.468a.747.747 0 0 1 1.048 0l1.368 1.468c.343.368.904.368 1.246 0 .329-.355.301-.898-.02-1.238L13.593 15.3c-.85-.912-2.336-.912-3.186 0l-2.174 2.333-.003.004Z" clipRule="evenodd" /></svg>}
-                            value={emoji} 
-                            onChange={setEmoji} 
-                            options={INTENSITY_OPTIONS} 
-                            disabled={disabled} 
-                        />
-                    </div>
 
-                    <div className="pt-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
+                            <SegmentedControl 
+                                label="Warmth" 
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-orange-500"><path d="M19 14c1.49-1.28 3.6-1.28 5.09 0 1.49 1.28 1.49 3.36 0 4.63s-3.6 1.28-5.09 0c-1.49-1.28-1.49-3.36 0-4.63z"/><path d="M11.23 8.8c-2.73-1.53-2.92-3.8-2.92-3.8s-3.23 2-1.72 6.8c1.33 4.2 3.64 6.7 9.42 7.2 4.47.38 6.75-2.26 6.75-2.26s-1.57 3.53-7.51 3.26c-5.7-.26-7.82-3.66-9.15-7.87C4.7 8.1 7.21 4.7 7.21 4.7s2.21 2.37 4.02 4.1z"/></svg>}
+                                value={warmth} 
+                                onChange={setWarmth} 
+                                options={INTENSITY_OPTIONS} 
+                                disabled={disabled} 
+                            />
+                            <SegmentedControl 
+                                label="Enthusiasm" 
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-yellow-500"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>}
+                                value={enthusiasm} 
+                                onChange={setEnthusiasm} 
+                                options={INTENSITY_OPTIONS} 
+                                disabled={disabled} 
+                            />
+                            <SegmentedControl 
+                                label="Formatting" 
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-blue-500"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>}
+                                value={structure} 
+                                onChange={setStructure} 
+                                options={INTENSITY_OPTIONS} 
+                                disabled={disabled} 
+                            />
+                            <SegmentedControl 
+                                label="Emoji Usage" 
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-teal-500"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>}
+                                value={emoji} 
+                                onChange={setEmoji} 
+                                options={INTENSITY_OPTIONS} 
+                                disabled={disabled} 
+                            />
+                        </div>
+
                         <TextInput 
                             label="Custom System Instructions" 
                             value={customInstructions} 
@@ -395,50 +413,50 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                             placeholder="Add specific rules... (e.g. 'Always answer in French', 'Use bullet points', 'Be sarcastic')"
                             multiline
                             disabled={disabled}
-                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-purple-500"><path fillRule="evenodd" d="M11.03 3.97a.75.75 0 0 1 0 1.06l-6.22 6.22H21a.75.75 0 0 1 0 1.5H4.81l6.22 6.22a.75.75 0 1 1-1.06 1.06l-7.5-7.5a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /><path d="M12 2.25a.75.75 0 0 1 .75.75v18a.75.75 0 0 1-1.5 0v-18a.75.75 0 0 1 .75-.75Z" /></svg>}
+                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-purple-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>}
                         />
                     </div>
                 </div>
 
                 {/* Column 2: User Context */}
-                <div className="space-y-8">
-                    <div className="flex items-center gap-3 border-b border-pink-100 dark:border-white/5 pb-3">
-                        <div className="p-2 rounded-xl bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clipRule="evenodd" /></svg>
-                        </div>
-                        <div>
-                            <h4 className="text-base font-bold text-slate-800 dark:text-slate-100">User Profile</h4>
-                            <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Context about you</p>
-                        </div>
+                <div className="flex flex-col gap-10">
+                    <SectionHeader 
+                        title="User Profile" 
+                        subtitle="Your Context" 
+                        icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
+                        color="text-cyan-600 dark:text-cyan-400" 
+                        bg="bg-cyan-50 dark:bg-cyan-500/10" 
+                    />
+
+                    <div className="space-y-10 pl-1">
+                        <TextInput 
+                            label="Nickname" 
+                            value={nickname} 
+                            onChange={setNickname} 
+                            placeholder="How should I address you?"
+                            disabled={disabled}
+                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-cyan-500"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>}
+                        />
+
+                        <TextInput 
+                            label="Occupation / Role" 
+                            value={occupation} 
+                            onChange={setOccupation} 
+                            placeholder="Work context (e.g. Student, Engineer)"
+                            disabled={disabled}
+                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-emerald-500"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>}
+                        />
+
+                        <TextInput 
+                            label="Additional Context" 
+                            value={moreAboutUser} 
+                            onChange={setMoreAboutUser} 
+                            placeholder="I prefer concise answers... I am learning Python... Explain like I'm 5..."
+                            multiline
+                            disabled={disabled}
+                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-rose-500"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>}
+                        />
                     </div>
-
-                    <TextInput 
-                        label="Nickname" 
-                        value={nickname} 
-                        onChange={setNickname} 
-                        placeholder="How should I address you?"
-                        disabled={disabled}
-                        icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-blue-500"><path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" /></svg>}
-                    />
-
-                    <TextInput 
-                        label="Occupation / Role" 
-                        value={occupation} 
-                        onChange={setOccupation} 
-                        placeholder="Work context (e.g. Student, Engineer)"
-                        disabled={disabled}
-                        icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-amber-500"><path fillRule="evenodd" d="M6 3.75A2.75 2.75 0 0 1 8.75 1h2.5A2.75 2.75 0 0 1 14 3.75v.443c.572.055 1.14.122 1.706.2C17.053 4.582 18 5.75 18 7.07v3.469c0 1.126-.694 2.191-1.83 2.54-1.952.599-4.024.921-6.17.921s-4.219-.322-6.17-.921C2.694 12.73 2 11.665 2 10.539V7.07c0-1.321.947-2.489 2.294-2.676A41.047 41.047 0 0 1 6 4.193V3.75Zm6.5 0v.325a41.622 41.622 0 0 0-5 0V3.75c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25Z" clipRule="evenodd" /><path d="M12 15h3.764c.822 0 1.589.44 1.953 1.152 1.757 3.436 1.164 4.382-.063 4.522-2.312.27-4.816.326-7.654.326-2.839 0-5.342-.056-7.654-.326-1.227-.14-1.82-.986-.063-4.522C2.647 15.44 3.414 15 4.236 15H8v1.5a.75.75 0 0 0 1.5 0V15Z" /></svg>}
-                    />
-
-                    <TextInput 
-                        label="Additional Context" 
-                        value={moreAboutUser} 
-                        onChange={setMoreAboutUser} 
-                        placeholder="I prefer concise answers... I am learning Python... Explain like I'm 5..."
-                        multiline
-                        disabled={disabled}
-                        icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-purple-500"><path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 0 1.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 1 1-.671-1.34l.041-.022ZM12 9a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" /></svg>}
-                    />
                 </div>
             </div>
         </div>
