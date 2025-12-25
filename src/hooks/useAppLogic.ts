@@ -282,16 +282,10 @@ export const useAppLogic = () => {
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
 
   const chatSettings = useMemo(() => {
-    const parts = [];
-    if (aboutUser.trim()) {
-        parts.push(`## User Context\n${aboutUser.trim()}`);
-    }
-    if (aboutResponse.trim()) {
-        parts.push(`## Response Preferences\n${aboutResponse.trim()}`);
-    }
-    
     return {
-        systemPrompt: parts.join('\n\n'),
+        // We do not combine them here anymore to avoid duplication in the backend.
+        // The backend handles the structuring and prioritization.
+        systemPrompt: '', 
         aboutUser: aboutUser.trim(),
         aboutResponse: aboutResponse.trim(),
         temperature,

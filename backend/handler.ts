@@ -411,31 +411,43 @@ export const apiHandler = async (req: any, res: any) => {
                 );
 
                 // --- SYSTEM PROMPT CONSTRUCTION ---
-                // Combine the core persona (Agent/Chat) with user's custom instructions from settings.
-                
                 const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
-                
                 const { systemPrompt, aboutUser, aboutResponse } = settings;
-                let personalContext = '';
                 
-                // Structured Context Injection - Enforce Persona
+                let personalizationSection = "";
+                
+                // Build the Personalization Block
                 if (aboutUser && aboutUser.trim()) {
-                    personalContext += `\n\n=== USER PROFILE & CONTEXT ===\nThe following details describe the user you are interacting with. Tailor your responses to their background:\n${aboutUser.trim()}\n`;
+                    personalizationSection += `\n## 👤 User Profile & Context\n${aboutUser.trim()}\n`;
                 }
                 if (aboutResponse && aboutResponse.trim()) {
-                    personalContext += `\n\n=== OPERATIONAL PERSONA & STYLE ===\nYOU MUST ADOPT THE FOLLOWING PERSONA:\n${aboutResponse.trim()}\n\nMaintain this persona throughout the entire conversation.`;
+                    personalizationSection += `\n## 🎭 Response Style Preferences\n${aboutResponse.trim()}\n`;
                 }
-                
-                // Legacy Fallback
-                if (!personalContext && systemPrompt) {
-                    personalContext = `\n\n=== USER CUSTOM INSTRUCTIONS ===\nThe user has provided the following specific context and preferences. You MUST adhere to these overrides:\n\n${systemPrompt}`;
+                // Legacy system prompt or explicit custom instructions
+                if (systemPrompt && systemPrompt.trim()) {
+                    personalizationSection += `\n## 🔧 Custom Directives\n${systemPrompt.trim()}\n`;
                 }
 
-                const combinedInstruction = `${coreInstruction}${personalContext}`;
+                let finalSystemInstruction = coreInstruction;
+
+                // If personalization exists, inject it AT THE TOP (Prioritized)
+                if (personalizationSection) {
+                    finalSystemInstruction = `
+# 🟢 PRIORITY CONTEXT: USER PERSONALIZATION
+The following instructions regarding user context and response style MUST be prioritized. Adapt your persona accordingly.
+
+${personalizationSection}
+
+================================================================================
+
+# ⚙️ CORE SYSTEM DIRECTIVES
+${coreInstruction}
+`.trim();
+                }
 
                 const finalSettings = {
                     ...settings,
-                    systemInstruction: combinedInstruction,
+                    systemInstruction: finalSystemInstruction,
                     // In Agent Mode, full tools. In Chat Mode, only Google Search.
                     tools: settings.isAgentMode 
                         ? [{ functionDeclarations: toolDeclarations }] 
