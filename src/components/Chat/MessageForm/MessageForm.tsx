@@ -264,14 +264,13 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
       </div>
 
       {/* Footer Info */}
-      <div className="flex justify-center items-center py-3">
+      <div className="flex justify-center items-center pt-3 pb-0">
           <motion.p 
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.5 }}
-            className="text-[11px] font-medium text-content-tertiary/70 flex items-center gap-2 select-none backdrop-blur-sm"
+            className="text-[11px] font-medium text-content-tertiary/70 select-none backdrop-blur-sm"
           >
-             <span className="w-1.5 h-1.5 rounded-full bg-primary-main/40"></span>
              Agentic AI can make mistakes.
           </motion.p>
       </div>
