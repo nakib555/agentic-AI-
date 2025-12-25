@@ -122,7 +122,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                 atBottomThreshold={60} 
                 className="custom-scrollbar"
                 itemContent={(index, msg) => (
-                    <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-4">
+                    <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4">
                         <MessageWrapper 
                             msg={msg}
                             index={index}
@@ -136,8 +136,11 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                     </div>
                 )}
                 components={{
-                    Header: () => <div className="h-4" />,
-                    Footer: () => <div className="h-4" />
+                    // Added extra height to header for breathability
+                    Header: () => <div className="h-6 md:h-10" />,
+                    // SIGNIFICANT CHANGE: Large footer spacer allows the last message to be scrolled
+                    // well above the bottom input bar, mimicking premium AI interfaces.
+                    Footer: () => <div className="h-32 md:h-48" />
                 }}
             />
         </div>
@@ -146,26 +149,26 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
       <AnimatePresence>
         {showScrollButton && (
           <motion.div
-             initial={{ opacity: 0, y: 20, scale: 0.9 }}
+             initial={{ opacity: 0, y: 10, scale: 0.9 }}
              animate={{ opacity: 1, y: 0, scale: 1 }}
-             exit={{ opacity: 0, y: 20, scale: 0.9 }}
+             exit={{ opacity: 0, y: 10, scale: 0.9 }}
              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-             className="absolute bottom-6 inset-x-0 flex justify-center pointer-events-none z-30 pb-2"
+             className="absolute bottom-4 inset-x-0 flex justify-center pointer-events-none z-30"
           >
             <button
                 onClick={handleScrollToBottom}
-                className="pointer-events-auto group flex items-center gap-2 px-4 py-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md text-sm font-medium text-gray-700 dark:text-gray-200 shadow-lg hover:shadow-xl border border-gray-200/50 dark:border-white/10 rounded-full transition-all transform hover:-translate-y-0.5 active:scale-95 ring-1 ring-black/5 dark:ring-white/5"
+                className="pointer-events-auto group flex items-center gap-2 px-4 py-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-xl hover:shadow-2xl border border-gray-200/50 dark:border-white/10 rounded-full transition-all transform hover:-translate-y-1 active:scale-95 ring-1 ring-black/5 dark:ring-white/5"
                 aria-label="Scroll to latest messages"
             >
                 {!atBottom && isLoading && (
-                    <span className="relative flex h-2 w-2 mr-1">
+                    <span className="relative flex h-2 w-2 mr-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
                     </span>
                 )}
-                <span>Latest Messages</span>
+                <span>Scroll to Bottom</span>
                 <svg className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                 </svg>
             </button>
           </motion.div>
