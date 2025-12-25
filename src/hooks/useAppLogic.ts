@@ -281,13 +281,23 @@ export const useAppLogic = () => {
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
 
-  const chatSettings = useMemo(() => ({
-    systemPrompt: `About me: ${aboutUser}\nHow to respond: ${aboutResponse}`,
-    temperature,
-    maxOutputTokens: maxTokens,
-    imageModel,
-    videoModel,
-  }), [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel]);
+  const chatSettings = useMemo(() => {
+    const parts = [];
+    if (aboutUser.trim()) {
+        parts.push(`## User Context\n${aboutUser.trim()}`);
+    }
+    if (aboutResponse.trim()) {
+        parts.push(`## Response Preferences\n${aboutResponse.trim()}`);
+    }
+    
+    return {
+        systemPrompt: parts.join('\n\n'),
+        temperature,
+        maxOutputTokens: maxTokens,
+        imageModel,
+        videoModel,
+    };
+  }, [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel]);
 
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, apiKey, showToast);
   const { updateChatModel, updateChatSettings } = chat;

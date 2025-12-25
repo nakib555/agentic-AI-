@@ -410,9 +410,19 @@ export const apiHandler = async (req: any, res: any) => {
                     onToolUpdate 
                 );
 
+                // --- SYSTEM PROMPT CONSTRUCTION ---
+                // Combine the core persona (Agent/Chat) with user's custom instructions from settings.
+                
+                const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
+                const userCustomInstruction = settings.systemPrompt || '';
+
+                const combinedInstruction = userCustomInstruction.trim()
+                    ? `${coreInstruction}\n\n=== USER CUSTOM INSTRUCTIONS ===\nThe user has provided the following specific context and preferences. You MUST adhere to these overrides:\n\n${userCustomInstruction}`
+                    : coreInstruction;
+
                 const finalSettings = {
                     ...settings,
-                    systemInstruction: settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction,
+                    systemInstruction: combinedInstruction,
                     // In Agent Mode, full tools. In Chat Mode, only Google Search.
                     tools: settings.isAgentMode 
                         ? [{ functionDeclarations: toolDeclarations }] 
