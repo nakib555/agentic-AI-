@@ -378,14 +378,16 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
         
         const finalString = parts.join('\n');
         
-        // Only trigger update if content effectively changes
         if (finalString !== aboutUser) {
             setSaveState('saving');
             setAboutUser(finalString);
+        } else if (saveState === 'saving') {
+            // If contents match and we were saving, it means the prop updated from the parent.
+            // We can now transition to 'saved'.
             const timer = setTimeout(() => setSaveState('saved'), 500);
             return () => clearTimeout(timer);
         }
-    }, [debouncedNickname, debouncedOccupation, debouncedMore, isLoaded, aboutUser]);
+    }, [debouncedNickname, debouncedOccupation, debouncedMore, isLoaded, aboutUser, saveState, setAboutUser]);
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -406,10 +408,11 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
         if (finalString !== aboutResponse) {
             setSaveState('saving');
             setAboutResponse(finalString);
+        } else if (saveState === 'saving') {
             const timer = setTimeout(() => setSaveState('saved'), 500);
             return () => clearTimeout(timer);
         }
-    }, [debouncedInstructions, tone, warmth, enthusiasm, structure, emoji, isLoaded, aboutResponse]);
+    }, [debouncedInstructions, tone, warmth, enthusiasm, structure, emoji, isLoaded, aboutResponse, saveState, setAboutResponse]);
 
 
     const handleToneChange = (val: string) => setTone(val);
