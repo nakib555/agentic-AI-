@@ -301,6 +301,9 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     const [customInstructions, setCustomInstructions] = useState('');
     const [moreAboutUser, setMoreAboutUser] = useState('');
 
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+
     // --- Parsing Logic (Executed Once on Mount) ---
     useEffect(() => {
         // Parse "About User"
@@ -373,11 +376,26 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     const handleStructureChange = (val: string) => { setStructure(val); updateAboutResponse(tone, warmth, enthusiasm, val, emoji, customInstructions); };
     const handleEmojiChange = (val: string) => { setEmoji(val); updateAboutResponse(tone, warmth, enthusiasm, structure, val, customInstructions); };
 
+    // Explicit Save Handler
+    const handleManualSave = async () => {
+        setIsSaving(true);
+        // Force commit updates from local state
+        updateAboutUser(nickname, occupation, moreAboutUser);
+        updateAboutResponse(tone, warmth, enthusiasm, structure, emoji, customInstructions);
+        
+        // Artificial delay to show process (updates are usually instant)
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
+        setIsSaving(false);
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 2000);
+    };
+
     return (
         <div className="pb-10 max-w-6xl mx-auto">
-            {/* Header */}
-            <div className="mb-12 border-b border-gray-100 dark:border-white/5 pb-8">
-                <div className="flex items-center gap-4 mb-2">
+            {/* Header with Save Button */}
+            <div className="mb-12 border-b border-gray-100 dark:border-white/5 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                <div className="flex items-center gap-4">
                     <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M12 11l4 4"/><path d="M16 11l-4 4"/></svg>
                     </div>
@@ -386,6 +404,36 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Customize the AI's personality and your profile.</p>
                     </div>
                 </div>
+
+                <button 
+                    onClick={handleManualSave}
+                    disabled={disabled || isSaving}
+                    className={`
+                        flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md active:scale-95
+                        ${isSaved 
+                            ? 'bg-green-500 text-white hover:bg-green-600' 
+                            : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-lg'
+                        }
+                        disabled:opacity-50 disabled:cursor-not-allowed
+                    `}
+                >
+                    {isSaving ? (
+                        <>
+                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <span>Saving...</span>
+                        </>
+                    ) : isSaved ? (
+                        <>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
+                            <span>Saved</span>
+                        </>
+                    ) : (
+                        <>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            <span>Save Changes</span>
+                        </>
+                    )}
+                </button>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 lg:gap-20 items-start">
