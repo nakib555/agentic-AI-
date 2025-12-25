@@ -18,6 +18,9 @@
   },
   "dependencies": {
     "@google/genai": "1.29.1",
+    "@openrouter/sdk": "^1.0.0",
+    "openrouter-model-picker": "^1.0.0",
+    "openai": "^4.28.0",
     "ai": "^3.2.18",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

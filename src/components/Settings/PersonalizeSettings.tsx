@@ -286,6 +286,7 @@ const SectionHeader: React.FC<{
 const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     aboutUser, setAboutUser, aboutResponse, setAboutResponse, disabled
 }) => {
+    // Local state for UI controls
     const [tone, setTone] = useState('default');
     const [warmth, setWarmth] = useState('default');
     const [enthusiasm, setEnthusiasm] = useState('default');
@@ -297,10 +298,13 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     const [customInstructions, setCustomInstructions] = useState('');
     const [moreAboutUser, setMoreAboutUser] = useState('');
 
-    // --- Parser ---
+    // --- Parsing Logic (Executed Once on Mount) ---
     useEffect(() => {
+        // Parse "About User"
         const nicknameMatch = aboutUser.match(/Nickname:\s*(.*?)(?:\n|$)/);
         const occupationMatch = aboutUser.match(/Occupation:\s*(.*?)(?:\n|$)/);
+        
+        // Remove parsed keys to find the "rest" of the content
         let cleanAbout = aboutUser
             .replace(/Nickname:\s*(.*?)(?:\n|$)/, '')
             .replace(/Occupation:\s*(.*?)(?:\n|$)/, '')
@@ -310,6 +314,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
         if (occupationMatch) setOccupation(occupationMatch[1]);
         if (cleanAbout) setMoreAboutUser(cleanAbout);
 
+        // Parse "About Response"
         const toneMatch = aboutResponse.match(/Tone:\s*(.*?)(?:\n|$)/);
         const warmthMatch = aboutResponse.match(/Warmth:\s*(.*?)(?:,|$)/);
         const enthMatch = aboutResponse.match(/Enthusiasm:\s*(.*?)(?:,|$)/);
@@ -327,31 +332,45 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
         if (structMatch) setStructure(structMatch[1].toLowerCase());
         if (emojiMatch) setEmoji(emojiMatch[1].toLowerCase());
         if (cleanInstructions) setCustomInstructions(cleanInstructions);
-    }, []); 
+    }, []); // Empty dependency array = run once on mount
 
-    // --- Serializer ---
-    useEffect(() => {
+    // --- Update Logic (Event Driven) ---
+
+    const updateAboutUser = (newNickname: string, newOccupation: string, newMore: string) => {
         const parts = [];
-        if (nickname) parts.push(`Nickname: ${nickname}`);
-        if (occupation) parts.push(`Occupation: ${occupation}`);
-        if (moreAboutUser) parts.push(moreAboutUser);
+        if (newNickname.trim()) parts.push(`Nickname: ${newNickname.trim()}`);
+        if (newOccupation.trim()) parts.push(`Occupation: ${newOccupation.trim()}`);
+        if (newMore.trim()) parts.push(newMore.trim());
         setAboutUser(parts.join('\n'));
-    }, [nickname, occupation, moreAboutUser, setAboutUser]);
+    };
 
-    useEffect(() => {
+    const updateAboutResponse = (t: string, w: string, e: string, s: string, em: string, ci: string) => {
         const traits = [];
-        if (warmth !== 'default') traits.push(`Warmth: ${warmth}`);
-        if (enthusiasm !== 'default') traits.push(`Enthusiasm: ${enthusiasm}`);
-        if (structure !== 'default') traits.push(`Structure: ${structure}`);
-        if (emoji !== 'default') traits.push(`Emoji: ${emoji}`);
+        if (w !== 'default') traits.push(`Warmth: ${w}`);
+        if (e !== 'default') traits.push(`Enthusiasm: ${e}`);
+        if (s !== 'default') traits.push(`Structure: ${s}`);
+        if (em !== 'default') traits.push(`Emoji: ${em}`);
 
         const parts = [];
-        if (tone !== 'default') parts.push(`Tone: ${tone}`);
+        if (t !== 'default') parts.push(`Tone: ${t}`);
         if (traits.length > 0) parts.push(`Traits: ${traits.join(', ')}`);
-        if (customInstructions) parts.push(customInstructions);
+        if (ci.trim()) parts.push(ci.trim());
 
         setAboutResponse(parts.join('\n'));
-    }, [tone, warmth, enthusiasm, structure, emoji, customInstructions, setAboutResponse]);
+    };
+
+    // Handlers for User Context
+    const handleNicknameChange = (val: string) => { setNickname(val); updateAboutUser(val, occupation, moreAboutUser); };
+    const handleOccupationChange = (val: string) => { setOccupation(val); updateAboutUser(nickname, val, moreAboutUser); };
+    const handleMoreChange = (val: string) => { setMoreAboutUser(val); updateAboutUser(nickname, occupation, val); };
+
+    // Handlers for Response Style
+    const handleToneChange = (val: string) => { setTone(val); updateAboutResponse(val, warmth, enthusiasm, structure, emoji, customInstructions); };
+    const handleWarmthChange = (val: string) => { setWarmth(val); updateAboutResponse(tone, val, enthusiasm, structure, emoji, customInstructions); };
+    const handleEnthusiasmChange = (val: string) => { setEnthusiasm(val); updateAboutResponse(tone, warmth, val, structure, emoji, customInstructions); };
+    const handleStructureChange = (val: string) => { setStructure(val); updateAboutResponse(tone, warmth, enthusiasm, val, emoji, customInstructions); };
+    const handleEmojiChange = (val: string) => { setEmoji(val); updateAboutResponse(tone, warmth, enthusiasm, structure, val, customInstructions); };
+    const handleInstructionsChange = (val: string) => { setCustomInstructions(val); updateAboutResponse(tone, warmth, enthusiasm, structure, emoji, val); };
 
     return (
         <div className="pb-10 max-w-6xl mx-auto">
@@ -385,7 +404,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                             label="Primary Persona" 
                             icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-fuchsia-500"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>}
                             value={tone} 
-                            onChange={setTone} 
+                            onChange={handleToneChange} 
                             options={TONE_OPTIONS} 
                             disabled={disabled}
                         />
@@ -395,7 +414,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                                 label="Warmth" 
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-orange-500"><path d="M19 14c1.49-1.28 3.6-1.28 5.09 0 1.49 1.28 1.49 3.36 0 4.63s-3.6 1.28-5.09 0c-1.49-1.28-1.49-3.36 0-4.63z"/><path d="M11.23 8.8c-2.73-1.53-2.92-3.8-2.92-3.8s-3.23 2-1.72 6.8c1.33 4.2 3.64 6.7 9.42 7.2 4.47.38 6.75-2.26 6.75-2.26s-1.57 3.53-7.51 3.26c-5.7-.26-7.82-3.66-9.15-7.87C4.7 8.1 7.21 4.7 7.21 4.7s2.21 2.37 4.02 4.1z"/></svg>}
                                 value={warmth} 
-                                onChange={setWarmth} 
+                                onChange={handleWarmthChange} 
                                 options={INTENSITY_OPTIONS} 
                                 disabled={disabled} 
                             />
@@ -403,7 +422,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                                 label="Enthusiasm" 
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-yellow-500"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>}
                                 value={enthusiasm} 
-                                onChange={setEnthusiasm} 
+                                onChange={handleEnthusiasmChange} 
                                 options={INTENSITY_OPTIONS} 
                                 disabled={disabled} 
                             />
@@ -411,7 +430,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                                 label="Formatting" 
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-blue-500"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>}
                                 value={structure} 
-                                onChange={setStructure} 
+                                onChange={handleStructureChange} 
                                 options={INTENSITY_OPTIONS} 
                                 disabled={disabled}
                                 className="pt-2"
@@ -420,7 +439,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                                 label="Emoji Usage" 
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-teal-500"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>}
                                 value={emoji} 
-                                onChange={setEmoji} 
+                                onChange={handleEmojiChange} 
                                 options={INTENSITY_OPTIONS} 
                                 disabled={disabled}
                                 className="pt-2"
@@ -430,7 +449,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <TextInput 
                             label="Custom System Instructions" 
                             value={customInstructions} 
-                            onChange={setCustomInstructions} 
+                            onChange={handleInstructionsChange} 
                             placeholder="Add specific rules... (e.g. 'Always answer in French', 'Use bullet points', 'Be sarcastic')"
                             multiline
                             disabled={disabled}
@@ -453,7 +472,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <TextInput 
                             label="Nickname" 
                             value={nickname} 
-                            onChange={setNickname} 
+                            onChange={handleNicknameChange} 
                             placeholder="How should I address you?"
                             disabled={disabled}
                             icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-cyan-500"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>}
@@ -462,7 +481,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <TextInput 
                             label="Occupation / Role" 
                             value={occupation} 
-                            onChange={setOccupation} 
+                            onChange={handleOccupationChange} 
                             placeholder="Work context (e.g. Student, Engineer)"
                             disabled={disabled}
                             icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-emerald-500"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>}
@@ -471,7 +490,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <TextInput 
                             label="Additional Context" 
                             value={moreAboutUser} 
-                            onChange={setMoreAboutUser} 
+                            onChange={handleMoreChange} 
                             placeholder="I prefer concise answers... I am learning Python... Explain like I'm 5..."
                             multiline
                             disabled={disabled}

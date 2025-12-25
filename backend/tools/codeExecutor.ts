@@ -39,7 +39,42 @@ export const executeCode = async (args: { language: string; code: string; packag
     }
 
     // Execute via Piston with all gathered files
-    return await executeWithPiston(language, files);
+    const output = await executeWithPiston(language, files);
+
+    // Construct the UI component data
+    // We attempt to create a visual representation (HTML) even for text output
+    // to allow the 'captureCodeOutputScreenshot' tool to work on the output.
+    let htmlOutput = '';
+    const trimmedOutput = output.trim();
+
+    if (trimmedOutput.startsWith('<!DOCTYPE html>') || trimmedOutput.startsWith('<html') || trimmedOutput.startsWith('<svg')) {
+        // It's already HTML/SVG, pass it through
+        htmlOutput = output;
+    } else {
+        // Wrap plain text in a terminal-like view for the visual iframe
+        const safeOutput = output.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        htmlOutput = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { margin: 0; padding: 16px; background-color: #121212; color: #e0e0e0; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+                </style>
+            </head>
+            <body>${safeOutput || '<span style="color: #666; font-style: italic;">No output</span>'}</body>
+            </html>
+        `;
+    }
+
+    const outputId = `code-output-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const componentData = {
+        outputId,
+        htmlOutput,
+        textOutput: output
+    };
+
+    return `[CODE_OUTPUT_COMPONENT]${JSON.stringify(componentData)}[/CODE_OUTPUT_COMPONENT]`;
+
   } catch (error) {
     const originalError = error instanceof Error ? error : new Error(String(error));
     if (error instanceof ToolError) throw error; // Re-throw tool errors

@@ -40,6 +40,8 @@ type AppModalsProps = {
   // API Keys
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
+  openRouterApiKey?: string; // New Prop
+  onSaveOpenRouterApiKey?: (key: string) => void; // New Prop
   suggestionApiKey: string;
   onSaveSuggestionApiKey: (key: string) => void;
   // Custom Instructions
@@ -142,6 +144,9 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           onShowDataStructure={props.onShowDataStructure}
           apiKey={props.apiKey}
           onSaveApiKey={props.onSaveApiKey}
+          // Pass OpenRouter Props
+          openRouterApiKey={props.openRouterApiKey}
+          onSaveOpenRouterApiKey={props.onSaveOpenRouterApiKey}
           suggestionApiKey={props.suggestionApiKey}
           onSaveSuggestionApiKey={props.onSaveSuggestionApiKey}
           aboutUser={props.aboutUser}

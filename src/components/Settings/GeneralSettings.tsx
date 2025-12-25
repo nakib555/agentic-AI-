@@ -16,6 +16,8 @@ type GeneralSettingsProps = {
   onShowDataStructure: () => void;
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
+  openRouterApiKey?: string;
+  onSaveOpenRouterApiKey?: (key: string) => void;
   suggestionApiKey?: string;
   onSaveSuggestionApiKey?: (key: string) => void;
   theme: Theme;
@@ -275,29 +277,39 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
     onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, apiKey, onSaveApiKey,
     suggestionApiKey, onSaveSuggestionApiKey,
     theme, setTheme,
-    serverUrl, onSaveServerUrl
+    serverUrl, onSaveServerUrl,
+    openRouterApiKey, onSaveOpenRouterApiKey
 }) => {
+  // Use explicit internal state to handle reading from localStorage for OpenRouter key
+  const [openRouterKey, setOpenRouterKey] = useState(openRouterApiKey || '');
+
+  // Keep local state in sync with prop if it changes
+  useEffect(() => {
+      setOpenRouterKey(openRouterApiKey || '');
+  }, [openRouterApiKey]);
 
   const handleMainApiKeySave = async (key: string) => {
-      const cleanKey = key.trim();
-      const cleanSuggestionKey = (suggestionApiKey || '').trim();
-
-      // Allow saving if suggestion key is empty, but if both exist, they must be different
-      if (cleanKey && cleanSuggestionKey && cleanKey === cleanSuggestionKey) {
-          throw new Error("Conflict: Main Key cannot be identical to Suggestion Key. Leave Suggestion Key empty to share the Main Key.");
-      }
-      await onSaveApiKey(cleanKey);
+      await onSaveApiKey(key);
   };
 
-  const handleSuggestionApiKeySave = async (key: string) => {
-      const cleanKey = key.trim();
-      const cleanMainKey = (apiKey || '').trim();
-
-      if (cleanKey && cleanMainKey && cleanKey === cleanMainKey) {
-          throw new Error("Conflict: Suggestion Key cannot be identical to Main Key. Leave this empty to use the Main Key.");
+  const handleOpenRouterKeySave = async (key: string) => {
+      // If parent provided a handler, use it (preferred)
+      if (onSaveOpenRouterApiKey) {
+          onSaveOpenRouterApiKey(key);
+          return;
       }
-      if (onSaveSuggestionApiKey) {
-          onSaveSuggestionApiKey(cleanKey);
+
+      // Fallback: direct fetch if parent didn't implement save
+      try {
+        await fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ openRouterApiKey: key })
+        });
+        setOpenRouterKey(key);
+      } catch (e) {
+          console.error("Failed to save OpenRouter key", e);
+          throw e;
       }
   };
 
@@ -309,10 +321,19 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
 
       <ApiKeyInput 
         label="Gemini API Key"
-        description="Required for main chat, reasoning, and tool execution."
+        description="Required for Google models (Gemini 1.5, 2.5)."
         value={apiKey}
         onSave={handleMainApiKeySave}
-        placeholder="Enter your primary Gemini API key"
+        placeholder="Enter Google API Key"
+      />
+
+      <ApiKeyInput 
+        label="OpenRouter API Key"
+        description="Optional. Access models from OpenAI, Anthropic, Meta, etc."
+        value={openRouterKey} 
+        onSave={handleOpenRouterKeySave}
+        placeholder="sk-or-..."
+        isOptional
       />
 
       {onSaveSuggestionApiKey && (
@@ -320,18 +341,22 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             label="AI Suggestion API Key (Optional)"
             description="Used for background tasks (titles, suggestions, memory) to save rate limits on your main key."
             value={suggestionApiKey || ''}
-            onSave={handleSuggestionApiKeySave}
+            onSave={(key) => onSaveSuggestionApiKey(key)}
             placeholder="Enter a secondary API key"
             isOptional
           />
       )}
 
       <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 pb-4 border-b border-gray-100 dark:border-white/5">
-         <span>Need a key?</span>
-         <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
-             Get API Key 
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
-         </a>
+         <span>Need keys?</span>
+         <div className="flex gap-4">
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+                Get Gemini Key
+            </a>
+            <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+                Get OpenRouter Key
+            </a>
+         </div>
       </div>
 
       <SettingItem label="Theme" description="Choose your preferred visual style." layout="col">

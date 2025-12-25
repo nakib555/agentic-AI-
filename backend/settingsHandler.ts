@@ -24,14 +24,23 @@ export const updateSettings = async (req: any, res: any) => {
         const newSettings = { ...currentSettings, ...updates };
         await writeData(SETTINGS_FILE_PATH, newSettings);
 
-        // If API Key is updated, fetch and return models
-        if (updates.apiKey && updates.apiKey !== currentSettings.apiKey) {
+        // If either API Key is updated, fetch and return merged models
+        if (
+            (updates.apiKey && updates.apiKey !== currentSettings.apiKey) ||
+            (updates.openRouterApiKey && updates.openRouterApiKey !== currentSettings.openRouterApiKey)
+        ) {
             try {
-                const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(updates.apiKey, true);
+                // Pass both keys to the model listing service
+                const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(
+                    updates.apiKey || currentSettings.apiKey,
+                    updates.openRouterApiKey || currentSettings.openRouterApiKey,
+                    true // Force refresh
+                );
                 res.status(200).json({ ...newSettings, models: chatModels, imageModels, videoModels, ttsModels });
                 return;
             } catch (error) {
-                // If fetching models fails (invalid key), just return settings
+                // If fetching models fails, just return settings
+                console.warn("[Settings] Model fetch failed after key update");
             }
         }
 
@@ -48,6 +57,15 @@ export const getApiKey = async (): Promise<string | undefined> => {
         return settings.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
     } catch (error) {
         return process.env.API_KEY || process.env.GEMINI_API_KEY;
+    }
+};
+
+export const getOpenRouterApiKey = async (): Promise<string | undefined> => {
+    try {
+        const settings: any = await readData(SETTINGS_FILE_PATH);
+        return settings.openRouterApiKey || process.env.OPENROUTER_API_KEY;
+    } catch (error) {
+        return process.env.OPENROUTER_API_KEY;
     }
 };
 

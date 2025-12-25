@@ -4,18 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getApiKey } from './settingsHandler.js';
+import { getApiKey, getOpenRouterApiKey } from './settingsHandler.js';
 import { listAvailableModels } from './services/modelService.js';
 
 export const getAvailableModelsHandler = async (req: any, res: any) => {
     const apiKey = await getApiKey();
-    if (!apiKey) {
+    const openRouterKey = await getOpenRouterApiKey();
+
+    if (!apiKey && !openRouterKey) {
         // If no key is configured, return empty lists without hitting the API.
         return res.status(200).json({ models: [], imageModels: [], videoModels: [], ttsModels: [] });
     }
 
     try {
-        const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(apiKey);
+        // Pass both keys (empty string if undefined)
+        const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(apiKey || '', openRouterKey || '');
         
         res.status(200).json({
             models: chatModels,

@@ -8,7 +8,7 @@ import type { Model as AppModel } from '../../src/types';
 
 // Cache structure
 type ModelCache = {
-    keyHash: string; // Store a simple identifier for the key to invalidate cache on key change
+    keyHash: string; // Store a combined hash of both keys
     data: {
         chatModels: AppModel[];
         imageModels: AppModel[];
@@ -26,155 +26,132 @@ const sortModelsByName = (models: AppModel[]): AppModel[] => {
     return models.sort((a, b) => a.name.localeCompare(b.name));
 };
 
-// Helper for fetching with retry on 429
-const fetchWithRetry = async (url: string, options: any, retries = 5, backoff = 1000): Promise<Response> => {
+// Helper for fetching with retry
+const fetchWithRetry = async (url: string, options: any, retries = 3, backoff = 1000): Promise<Response> => {
     for (let i = 0; i < retries; i++) {
         try {
             const response = await fetch(url, options);
             if (response.status === 429) {
-                const delay = backoff * Math.pow(2, i) + (Math.random() * 500);
-                console.warn(`[ModelService] Rate limit hit fetching models. Retrying in ${delay.toFixed(0)}ms...`);
+                const delay = backoff * Math.pow(2, i);
                 await new Promise(r => setTimeout(r, delay));
                 continue;
             }
             return response;
         } catch (e) {
-            // If it's a network error (not a status code error), retry as well
             if (i === retries - 1) throw e;
             const delay = backoff * Math.pow(2, i);
             await new Promise(r => setTimeout(r, delay));
         }
     }
-    // Final attempt
     return await fetch(url, options);
 };
 
+// Fetch Google Models
+async function fetchGoogleModels(apiKey: string): Promise<AppModel[]> {
+    if (!apiKey) return [];
+    try {
+        const response = await fetchWithRetry('https://generativelanguage.googleapis.com/v1beta/models', {
+            headers: { 'x-goog-api-key': apiKey }
+        });
+        if (!response.ok) throw new Error(response.statusText);
+        const data = await response.json();
+        return (data.models || []).map((m: any) => ({
+            id: m.name.replace('models/', ''),
+            name: m.displayName || m.name,
+            description: m.description || '',
+            tags: ['google']
+        }));
+    } catch (e) {
+        console.warn('[ModelService] Failed to fetch Google models:', e);
+        return [];
+    }
+}
+
+// Fetch OpenRouter Models
+async function fetchOpenRouterModels(apiKey: string): Promise<AppModel[]> {
+    if (!apiKey) return [];
+    try {
+        const response = await fetchWithRetry('https://openrouter.ai/api/v1/models', {
+            headers: { 
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!response.ok) throw new Error(response.statusText);
+        const data = await response.json();
+        return (data.data || []).map((m: any) => ({
+            id: m.id, // OpenRouter IDs are typically "vendor/model-name"
+            name: m.name,
+            description: m.description || '',
+            tags: ['openrouter']
+        }));
+    } catch (e) {
+        console.warn('[ModelService] Failed to fetch OpenRouter models:', e);
+        return [];
+    }
+}
+
 /**
- * Fetches the list of available Gemini models using the REST API directly.
- * @param apiKey The Gemini API key.
- * @param forceRefresh If true, bypasses cache and hits the API.
- * @returns An object containing categorized lists of available models.
+ * Fetches the list of available models from Google and OpenRouter.
  */
-export async function listAvailableModels(apiKey: string, forceRefresh = false): Promise<{
+export async function listAvailableModels(googleApiKey: string, openRouterApiKey: string, forceRefresh = false): Promise<{
     chatModels: AppModel[];
     imageModels: AppModel[];
     videoModels: AppModel[];
     ttsModels: AppModel[];
 }> {
-    // Simple hash check (using last 8 chars is usually enough to detect a change in the session context)
-    const currentKeyHash = apiKey.trim().slice(-8);
+    const currentKeyHash = `${googleApiKey?.slice(-8)}_${openRouterApiKey?.slice(-8)}`;
     const now = Date.now();
 
     // Check cache first
-    if (
-        !forceRefresh &&
-        modelCache && 
-        modelCache.keyHash === currentKeyHash &&
-        (now - modelCache.timestamp < CACHE_TTL)
-    ) {
+    if (!forceRefresh && modelCache && modelCache.keyHash === currentKeyHash && (now - modelCache.timestamp < CACHE_TTL)) {
         console.log('[ModelService] Returning cached models.');
         return modelCache.data;
     }
 
-    try {
-        console.log('[ModelService] Fetching models from Google API...');
-        // Using fetch with the REST API endpoint to get the list of models.
-        // We pass the API key in the header for security.
-        const response = await fetchWithRetry('https://generativelanguage.googleapis.com/v1beta/models', {
-            headers: {
-                'x-goog-api-key': apiKey
-            }
-        });
-        
-        if (!response.ok) {
-            const errorBody = await response.text();
-            console.error(`[ModelService] API Request Failed. Status: ${response.status}, Cause: ${errorBody}`);
-            throw new Error(`Failed to fetch models: ${response.status} ${response.statusText} - ${errorBody}`);
-        }
+    console.log('[ModelService] Fetching models...');
+    const [googleModels, openRouterModels] = await Promise.all([
+        fetchGoogleModels(googleApiKey),
+        fetchOpenRouterModels(openRouterApiKey)
+    ]);
 
-        const data = await response.json();
-        const modelList = data.models || [];
-        console.log(`[ModelService] Fetched ${modelList.length} models.`);
+    const allModels = [...googleModels, ...openRouterModels];
+    
+    const availableChatModels: AppModel[] = [];
+    const availableImageModels: AppModel[] = [];
+    const availableVideoModels: AppModel[] = [];
+    const availableTtsModels: AppModel[] = [];
 
-        const availableChatModels: AppModel[] = [];
-        const availableImageModels: AppModel[] = [];
-        const availableVideoModels: AppModel[] = [];
-        const availableTtsModels: AppModel[] = [];
+    // Filter Google Models
+    googleModels.forEach(m => {
+        const lowerId = m.id.toLowerCase();
+        if (lowerId.includes('veo') || lowerId.includes('video')) availableVideoModels.push(m);
+        else if (lowerId.includes('tts')) availableTtsModels.push(m);
+        else if (lowerId.includes('imagen') || lowerId.includes('flash-image')) availableImageModels.push(m);
+        else if (!lowerId.includes('embedding') && !lowerId.includes('aqa')) availableChatModels.push(m);
+    });
 
-        for (const model of modelList) {
-            // The API returns names like "models/gemini-1.5-pro". We strip the prefix for the SDK.
-            const modelId = model.name.replace('models/', '');
-            const modelInfo: AppModel = {
-                id: modelId,
-                name: model.displayName || modelId,
-                description: model.description || '',
-            };
+    // Filter OpenRouter Models (mostly Chat, some might be multimodal but usually treated as chat models in standard listings)
+    openRouterModels.forEach(m => {
+        // Simple heuristic: Most OpenRouter models are for chat/completion
+        // unless explicitly marked otherwise (rare in standard list).
+        // We add them all to chat for now.
+        availableChatModels.push(m);
+    });
 
-            const methods = model.supportedGenerationMethods || [];
-            const lowerId = modelId.toLowerCase();
-
-            // 1. Video Models (Veo checking)
-            // Explicitly check for 'generateVideos' capability OR 'veo' in the name for dynamic detection.
-            if (methods.includes('generateVideos') || lowerId.includes('veo')) {
-                availableVideoModels.push(modelInfo);
-                continue; // Specialized model
-            }
-
-            // 2. Audio/TTS Models
-            if (lowerId.includes('tts')) {
-                availableTtsModels.push(modelInfo);
-                continue; // Specialized model
-            }
-
-            // 3. Image Models (Imagen checking)
-            // Checks for 'generateImages' capability OR specific naming conventions like 'imagen' or 'flash-image'
-            if (methods.includes('generateImages') || lowerId.includes('imagen') || lowerId.includes('flash-image')) {
-                availableImageModels.push(modelInfo);
-                
-                // If the model *also* supports content generation (like flash-image might in future),
-                // we might want it in chat, but generally dedicated image models are separate.
-                if (lowerId.includes('imagen')) {
-                    continue;
-                }
-            }
-
-            // 4. Chat/Text Models (Default bucket for generateContent)
-            // Exclude specialized models (embeddings, aqa) that aren't for general chat.
-            if (methods.includes('generateContent') && !lowerId.includes('embedding') && !lowerId.includes('aqa')) {
-                availableChatModels.push(modelInfo);
-            }
-        }
-
-        // --- Manual Injection of Known Models ---
-        // Sometimes the listModels API doesn't return preview or experimental models immediately.
-        // We ensure critical models are available for selection.
-
-        const knownTtsModelId = 'gemini-2.5-flash-preview-tts';
-        if (!availableTtsModels.some(m => m.id === knownTtsModelId)) {
-             availableTtsModels.push({
-                id: knownTtsModelId,
-                name: 'Gemini 2.5 Flash TTS',
-                description: 'Text-to-speech capabilities',
-            });
-        }
-
-        const result = {
-            chatModels: sortModelsByName(availableChatModels),
-            imageModels: sortModelsByName(availableImageModels),
-            videoModels: sortModelsByName(availableVideoModels),
-            ttsModels: sortModelsByName(availableTtsModels),
-        };
-
-        // Update cache
-        modelCache = {
-            keyHash: currentKeyHash,
-            data: result,
-            timestamp: now
-        };
-
-        return result;
-    } catch (error: any) {
-        console.warn('[ModelService] Model fetch failed with error:', error.message);
-        throw error;
+    // Ensure known critical models are present
+    const knownTtsModelId = 'gemini-2.5-flash-preview-tts';
+    if (!availableTtsModels.some(m => m.id === knownTtsModelId)) {
+         availableTtsModels.push({ id: knownTtsModelId, name: 'Gemini 2.5 Flash TTS', description: 'Text-to-speech capabilities' });
     }
+
+    const result = {
+        chatModels: sortModelsByName(availableChatModels),
+        imageModels: sortModelsByName(availableImageModels),
+        videoModels: sortModelsByName(availableVideoModels),
+        ttsModels: sortModelsByName(availableTtsModels),
+    };
+
+    modelCache = { keyHash: currentKeyHash, data: result, timestamp: now };
+    return result;
 }
