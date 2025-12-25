@@ -299,10 +299,10 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
             setCustomInstructions('');
             setMoreAboutUser('');
             
-            // Force immediate update to parent
-            setAboutUser('');
-            setAboutResponse('');
-            setSaveState('saved');
+            // Allow useEffects to handle the backend sync naturally.
+            // When local state changes (e.g. nickname -> ''), the useDebounce hook updates,
+            // the useEffect fires, detects change against parent prop, and calls setAboutUser(''),
+            // which saves to the backend. This prevents race conditions.
         }
     };
 
