@@ -45,8 +45,7 @@ export async function initDataStore() {
     // from the dynamically fetched list if the setting is empty.
     const defaultSettings = {
         apiKey: '',
-        openRouterApiKey: '', // New Field
-        suggestionApiKey: '', 
+        suggestionApiKey: '', // Secondary key for background tasks
         aboutUser: '',
         aboutResponse: '',
         temperature: 0.7,
@@ -57,7 +56,7 @@ export async function initDataStore() {
         ttsVoice: 'Kore',
         ttsModel: '', // Dynamic
         isAgentMode: false,
-        activeModel: '', 
+        activeModel: '', // Add this
     };
     await initDataFile(SETTINGS_FILE_PATH, defaultSettings);
     

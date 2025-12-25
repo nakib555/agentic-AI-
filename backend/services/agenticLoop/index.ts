@@ -31,7 +31,6 @@ type RunAgenticLoopParams = {
     settings: any;
     signal: AbortSignal;
     threadId: string;
-    customGenerator?: (params: any) => AsyncGenerator<any>; // New param for OpenRouter
 };
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -39,7 +38,7 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 // --- Custom Agentic Loop Implementation ---
 
 export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void> => {
-    const { ai, model, history: initialHistory, toolExecutor, callbacks, settings, signal, threadId, customGenerator } = params;
+    const { ai, model, history: initialHistory, toolExecutor, callbacks, settings, signal, threadId } = params;
     
     console.log(`[AGENT_LOOP] Starting Custom Orchestration for Thread ID: ${threadId}`);
 
@@ -61,47 +60,27 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             let groundingMetadata: any = undefined;
 
             // 1. Generate Content (Streaming)
-            console.log('[AGENT_LOOP] Invoking Model Stream...');
-            
-            let streamResult;
-            
-            if (customGenerator) {
-                // Use custom generator (OpenRouter/OpenAI)
-                streamResult = customGenerator({
-                    model,
-                    contents: history,
-                    config: {
-                        ...settings,
-                        systemInstruction: settings.systemInstruction
-                    },
-                });
-            } else {
-                // Default Gemini
-                streamResult = await generateContentStreamWithRetry(ai, {
-                    model,
-                    contents: history,
-                    config: {
-                        ...settings,
-                        systemInstruction: settings.systemInstruction
-                    },
-                });
-            }
+            console.log('[AGENT_LOOP] Invoking Gemini Stream...');
+            const streamResult = await generateContentStreamWithRetry(ai, {
+                model,
+                contents: history,
+                config: {
+                    ...settings,
+                    systemInstruction: settings.systemInstruction
+                },
+            });
 
             for await (const chunk of streamResult) {
                 if (signal.aborted) throw new Error("AbortError");
 
-                // Check for safety blocking (Gemini specific, optional check)
+                // Check for safety blocking
                 const candidate = chunk.candidates?.[0];
                 if (candidate?.finishReason === FinishReason.SAFETY) {
                     throw new Error("Response was blocked due to safety policy.");
                 }
-                
-                // Handle Function Calls from stream (if yielded by adapter)
-                if (chunk.functionCalls) {
-                    toolCalls = chunk.functionCalls;
-                }
 
                 // Robust text extraction
+                // getText in geminiUtils is now safe, but we double-check handling here implicitly
                 const chunkText = getText(chunk);
                 if (chunkText) {
                     fullTextResponse += chunkText;
@@ -110,14 +89,10 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 }
             }
 
-            // For Gemini SDK, we wait for the promise to get final aggregation.
-            // For custom generator, we rely on what was yielded.
-            if (!customGenerator) {
-                const response = await (streamResult as any).response;
-                toolCalls = response?.functionCalls || [];
-                groundingMetadata = response?.candidates?.[0]?.groundingMetadata;
-                if (groundingMetadata) finalGroundingMetadata = groundingMetadata;
-            }
+            const response = await streamResult.response;
+            toolCalls = response?.functionCalls || [];
+            groundingMetadata = response?.candidates?.[0]?.groundingMetadata;
+            if (groundingMetadata) finalGroundingMetadata = groundingMetadata;
 
             // 2. Add Model Response to History
             const newContentParts: Part[] = [];

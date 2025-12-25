@@ -16,11 +16,10 @@ import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./too
 import { runAgenticLoop } from './services/agenticLoop/index.js';
 import { createToolExecutor } from './tools/index.js';
 import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations.js'; // Imported codeExecutorDeclaration
-import { getApiKey, getSuggestionApiKey, getOpenRouterApiKey } from './settingsHandler.js';
+import { getApiKey, getSuggestionApiKey } from './settingsHandler.js';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils.js';
 import { historyControl } from './services/historyControl.js';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer.js';
-import { generateContentStreamOpenRouter } from './utils/openRouterUtils.js'; // New Import
 
 // Store promises for frontend tool requests that the backend is waiting on
 const frontendToolRequests = new Map<string, (result: any) => void>();
@@ -235,8 +234,7 @@ class ChatPersistenceManager {
 export const apiHandler = async (req: any, res: any) => {
     const task = req.query.task as string;
     
-    const googleApiKey = await getApiKey();
-    const openRouterApiKey = await getOpenRouterApiKey();
+    const mainApiKey = await getApiKey();
     const suggestionApiKey = await getSuggestionApiKey();
 
     // Determine which key to use
@@ -245,39 +243,34 @@ export const apiHandler = async (req: any, res: any) => {
     const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate'];
     const isSuggestionTask = SUGGESTION_TASKS.includes(task);
     
-    let activeGoogleKey = googleApiKey;
+    let activeApiKey = mainApiKey;
     if (isSuggestionTask && suggestionApiKey) {
-        // console.log(`[HANDLER] Using Suggestion API Key for task: "${task}"`);
-        activeGoogleKey = suggestionApiKey;
+        console.log(`[HANDLER] Using Suggestion API Key for task: "${task}"`);
+        activeApiKey = suggestionApiKey;
+    } else {
+        console.log(`[HANDLER] Using Main API Key for task: "${task}"`);
     }
 
     // Tasks that are allowed to run without an API key
     // 'debug_data_tree' must be here to allow checking file structure without a valid key setup
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree'];
 
-    // For general chat tasks, we need at least one valid key (Google OR OpenRouter)
-    if (!activeGoogleKey && !openRouterApiKey && !BYPASS_TASKS.includes(task)) {
-        console.error(`[HANDLER] No API keys configured on server. Blocking task: "${task}"`);
+    if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
+        console.error(`[HANDLER] API key not configured on server. Blocking task: "${task}"`);
         return res.status(401).json({ error: "API key not configured on the server." });
     }
     
-    const ai = activeGoogleKey ? new GoogleGenAI({ apiKey: activeGoogleKey }) : null;
+    const ai = activeApiKey ? new GoogleGenAI({ apiKey: activeApiKey }) : null;
 
     try {
         switch (task) {
             case 'chat': 
             case 'regenerate': {
+                if (!ai) throw new Error("GoogleGenAI not initialized.");
+                
                 const { chatId, model, settings, newMessage, messageId } = req.body;
                 
-                // Determine Provider
-                // If model ID does not look like a Google model, assume OpenRouter
-                const isGoogleModel = ['gemini', 'veo', 'imagen'].some(prefix => model.toLowerCase().includes(prefix));
-                const isOpenRouter = !isGoogleModel;
-
-                if (isGoogleModel && !ai) throw new Error("Google GenAI key missing but Google model selected.");
-                if (isOpenRouter && !openRouterApiKey) throw new Error("OpenRouter key missing but OpenRouter model selected.");
-
-                console.log(`[HANDLER] Starting ${task} task for chatId: ${chatId}. Provider: ${isOpenRouter ? 'OpenRouter' : 'Google'}`);
+                console.log(`[HANDLER] Starting ${task} task for chatId: ${chatId}`);
 
                 // 1. Initial Persistence & History Fetch
                 // We MUST save the user message and model placeholder immediately to disk.
@@ -406,14 +399,11 @@ export const apiHandler = async (req: any, res: any) => {
                     // For now, we only persist the final result or major state changes in the main loop callbacks.
                 };
                 
-                // Use Google API Key for backend tools (like Image gen/Video gen) even if main model is OpenRouter,
-                // if possible. Though strictly, tools often depend on the model context.
-                // We'll stick to passing `activeGoogleKey` to tools so if a user has both, Google tools work.
                 const toolExecutor = createToolExecutor(
-                    ai!, // AI might be null if using OpenRouter only, tools check inside if they need it
+                    ai, 
                     settings.imageModel, 
                     settings.videoModel, 
-                    activeGoogleKey!, 
+                    activeApiKey!, 
                     chatId, 
                     requestFrontendExecution, 
                     false, 
@@ -456,7 +446,7 @@ export const apiHandler = async (req: any, res: any) => {
 
                 try {
                     await runAgenticLoop({
-                        ai: ai!,
+                        ai,
                         model,
                         history: fullHistory, 
                         toolExecutor,
@@ -498,6 +488,9 @@ export const apiHandler = async (req: any, res: any) => {
                                     // Save plan to history so it's visible if user reloads
                                     persistence.update((response) => {
                                         response.plan = { plan, callId };
+                                        // We don't have direct access to 'executionState' on the message here easily without refetching parent,
+                                        // but the frontend handles the UI state based on the presence of the plan.
+                                        // Ideally, we'd update the message metadata too.
                                     });
 
                                     frontendToolRequests.set(callId, resolve);
@@ -506,6 +499,9 @@ export const apiHandler = async (req: any, res: any) => {
                                 });
                             },
                             // @ts-ignore
+                            // FIX: Add missing onFrontendToolRequest callback to satisfy the type.
+                            // This appears to be a stale requirement from a previous refactor, as the
+                            // toolExecutor now handles this logic. We add a warning to detect if it's ever called.
                             onFrontendToolRequest: (callId, name, args) => {
                                 console.warn(`[HANDLER] onFrontendToolRequest called, but this path is deprecated. Tool: ${name}`);
                             },
@@ -531,11 +527,6 @@ export const apiHandler = async (req: any, res: any) => {
                         settings: finalSettings,
                         signal: abortController.signal,
                         threadId: requestId,
-                        // --- Dependency Injection for Provider ---
-                        // If OpenRouter, pass the specific generation function and key
-                        customGenerator: isOpenRouter ? 
-                            (params: any) => generateContentStreamOpenRouter(openRouterApiKey!, params.model, params.contents, params.config) 
-                            : undefined
                     });
                 } catch (loopError) {
                     console.error(`[HANDLER] Agentic loop crashed for ${requestId}:`, loopError);
@@ -711,7 +702,7 @@ export const apiHandler = async (req: any, res: any) => {
                     ai, 
                     '', 
                     '', 
-                    activeGoogleKey!, 
+                    activeApiKey!, 
                     chatId, 
                     async () => ({error: 'Frontend execution not supported in this context'}), 
                     true // skipFrontendCheck

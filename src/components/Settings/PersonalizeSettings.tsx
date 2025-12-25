@@ -233,10 +233,11 @@ const TextInput: React.FC<{
     placeholder: string;
     value: string;
     onChange: (val: string) => void;
+    onBlur: () => void;
     multiline?: boolean;
     disabled?: boolean;
     icon?: React.ReactNode;
-}> = ({ label, placeholder, value, onChange, multiline, disabled, icon }) => (
+}> = ({ label, placeholder, value, onChange, onBlur, multiline, disabled, icon }) => (
     <div className="flex flex-col gap-3">
         <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2.5 px-1">
             {icon && <span className="flex-shrink-0">{icon}</span>}
@@ -247,6 +248,7 @@ const TextInput: React.FC<{
                 <textarea
                     value={value}
                     onChange={e => onChange(e.target.value)}
+                    onBlur={onBlur}
                     placeholder={placeholder}
                     disabled={disabled}
                     className="w-full px-4 py-3 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 min-h-[120px] resize-none leading-relaxed"
@@ -256,6 +258,7 @@ const TextInput: React.FC<{
                     type="text"
                     value={value}
                     onChange={e => onChange(e.target.value)}
+                    onBlur={onBlur}
                     placeholder={placeholder}
                     disabled={disabled}
                     className="w-full py-2.5 px-4 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400"
@@ -306,8 +309,8 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
         
         // Remove parsed keys to find the "rest" of the content
         let cleanAbout = aboutUser
-            .replace(/Nickname:\s*(.*?)(?:\n|$)/, '')
-            .replace(/Occupation:\s*(.*?)(?:\n|$)/, '')
+            .replace(/^Nickname:.*$/m, '')
+            .replace(/^Occupation:.*$/m, '')
             .trim();
         
         if (nicknameMatch) setNickname(nicknameMatch[1]);
@@ -316,21 +319,21 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
 
         // Parse "About Response"
         const toneMatch = aboutResponse.match(/Tone:\s*(.*?)(?:\n|$)/);
-        const warmthMatch = aboutResponse.match(/Warmth:\s*(.*?)(?:,|$)/);
-        const enthMatch = aboutResponse.match(/Enthusiasm:\s*(.*?)(?:,|$)/);
-        const structMatch = aboutResponse.match(/Structure:\s*(.*?)(?:,|$)/);
-        const emojiMatch = aboutResponse.match(/Emoji:\s*(.*?)(?:,|$)/);
+        const warmthMatch = aboutResponse.match(/Warmth:\s*([^,]+)/);
+        const enthMatch = aboutResponse.match(/Enthusiasm:\s*([^,]+)/);
+        const structMatch = aboutResponse.match(/Structure:\s*([^,]+)/);
+        const emojiMatch = aboutResponse.match(/Emoji:\s*([^,]+)/);
         
         let cleanInstructions = aboutResponse
-            .replace(/Tone:.*?\n/, '')
-            .replace(/Traits:.*?\n/, '')
+            .replace(/^Tone:.*$/m, '')
+            .replace(/^Traits:.*$/m, '')
             .trim();
 
-        if (toneMatch) setTone(toneMatch[1].toLowerCase());
-        if (warmthMatch) setWarmth(warmthMatch[1].toLowerCase());
-        if (enthMatch) setEnthusiasm(enthMatch[1].toLowerCase());
-        if (structMatch) setStructure(structMatch[1].toLowerCase());
-        if (emojiMatch) setEmoji(emojiMatch[1].toLowerCase());
+        if (toneMatch) setTone(toneMatch[1].toLowerCase().trim());
+        if (warmthMatch) setWarmth(warmthMatch[1].toLowerCase().trim());
+        if (enthMatch) setEnthusiasm(enthMatch[1].toLowerCase().trim());
+        if (structMatch) setStructure(structMatch[1].toLowerCase().trim());
+        if (emojiMatch) setEmoji(emojiMatch[1].toLowerCase().trim());
         if (cleanInstructions) setCustomInstructions(cleanInstructions);
     }, []); // Empty dependency array = run once on mount
 
@@ -359,18 +362,16 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
         setAboutResponse(parts.join('\n'));
     };
 
-    // Handlers for User Context
-    const handleNicknameChange = (val: string) => { setNickname(val); updateAboutUser(val, occupation, moreAboutUser); };
-    const handleOccupationChange = (val: string) => { setOccupation(val); updateAboutUser(nickname, val, moreAboutUser); };
-    const handleMoreChange = (val: string) => { setMoreAboutUser(val); updateAboutUser(nickname, occupation, val); };
+    // Commits for TextInputs (onBlur)
+    const commitUserChanges = () => updateAboutUser(nickname, occupation, moreAboutUser);
+    const commitResponseChanges = () => updateAboutResponse(tone, warmth, enthusiasm, structure, emoji, customInstructions);
 
-    // Handlers for Response Style
+    // Handlers for Selects/Segmented Controls (Immediate Update)
     const handleToneChange = (val: string) => { setTone(val); updateAboutResponse(val, warmth, enthusiasm, structure, emoji, customInstructions); };
     const handleWarmthChange = (val: string) => { setWarmth(val); updateAboutResponse(tone, val, enthusiasm, structure, emoji, customInstructions); };
     const handleEnthusiasmChange = (val: string) => { setEnthusiasm(val); updateAboutResponse(tone, warmth, val, structure, emoji, customInstructions); };
     const handleStructureChange = (val: string) => { setStructure(val); updateAboutResponse(tone, warmth, enthusiasm, val, emoji, customInstructions); };
     const handleEmojiChange = (val: string) => { setEmoji(val); updateAboutResponse(tone, warmth, enthusiasm, structure, val, customInstructions); };
-    const handleInstructionsChange = (val: string) => { setCustomInstructions(val); updateAboutResponse(tone, warmth, enthusiasm, structure, emoji, val); };
 
     return (
         <div className="pb-10 max-w-6xl mx-auto">
@@ -449,7 +450,8 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <TextInput 
                             label="Custom System Instructions" 
                             value={customInstructions} 
-                            onChange={handleInstructionsChange} 
+                            onChange={setCustomInstructions} 
+                            onBlur={commitResponseChanges}
                             placeholder="Add specific rules... (e.g. 'Always answer in French', 'Use bullet points', 'Be sarcastic')"
                             multiline
                             disabled={disabled}
@@ -472,7 +474,8 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <TextInput 
                             label="Nickname" 
                             value={nickname} 
-                            onChange={handleNicknameChange} 
+                            onChange={setNickname} 
+                            onBlur={commitUserChanges}
                             placeholder="How should I address you?"
                             disabled={disabled}
                             icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-cyan-500"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>}
@@ -481,7 +484,8 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <TextInput 
                             label="Occupation / Role" 
                             value={occupation} 
-                            onChange={handleOccupationChange} 
+                            onChange={setOccupation} 
+                            onBlur={commitUserChanges}
                             placeholder="Work context (e.g. Student, Engineer)"
                             disabled={disabled}
                             icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-emerald-500"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>}
@@ -490,7 +494,8 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <TextInput 
                             label="Additional Context" 
                             value={moreAboutUser} 
-                            onChange={handleMoreChange} 
+                            onChange={setMoreAboutUser} 
+                            onBlur={commitUserChanges}
                             placeholder="I prefer concise answers... I am learning Python... Explain like I'm 5..."
                             multiline
                             disabled={disabled}

@@ -33,8 +33,6 @@ type SettingsModalProps = {
   onShowDataStructure: () => void;
   apiKey: string;
   onSaveApiKey: (key: string) => Promise<void>;
-  openRouterApiKey?: string; // Added
-  onSaveOpenRouterApiKey?: (key: string) => void; // Added
   suggestionApiKey: string;
   onSaveSuggestionApiKey: (key: string) => void;
   aboutUser: string;
@@ -207,9 +205,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                             onShowDataStructure={props.onShowDataStructure} 
                                             apiKey={props.apiKey} 
                                             onSaveApiKey={props.onSaveApiKey} 
-                                            // Pass the new props
-                                            openRouterApiKey={props.openRouterApiKey}
-                                            onSaveOpenRouterApiKey={props.onSaveOpenRouterApiKey}
                                             suggestionApiKey={props.suggestionApiKey}
                                             onSaveSuggestionApiKey={props.onSaveSuggestionApiKey}
                                             theme={props.theme} 

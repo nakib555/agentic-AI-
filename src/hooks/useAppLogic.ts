@@ -101,7 +101,6 @@ export const useAppLogic = () => {
 
   // --- Settings State ---
   const [apiKey, setApiKey] = useState('');
-  const [openRouterApiKey, setOpenRouterApiKey] = useState('');
   const [suggestionApiKey, setSuggestionApiKey] = useState('');
   const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
@@ -206,7 +205,6 @@ export const useAppLogic = () => {
             setSettingsLoading(true);
             const settings = await getSettings();
             setApiKey(settings.apiKey);
-            setOpenRouterApiKey(settings.openRouterApiKey);
             setSuggestionApiKey(settings.suggestionApiKey);
             setAboutUser(settings.aboutUser);
             setAboutResponse(settings.aboutResponse);
@@ -247,22 +245,6 @@ export const useAppLogic = () => {
         }
     } catch (error) {
         setAvailableModels([]);
-        throw error;
-    }
-  }, [processModelData, fetchModels]);
-
-  const handleSetOpenRouterApiKey = useCallback(async (newApiKey: string) => {
-    setOpenRouterApiKey(newApiKey);
-    try {
-        const response: UpdateSettingsResponse = await updateSettings({ openRouterApiKey: newApiKey });
-        if (response.models) {
-            processModelData(response);
-        } else {
-            fetchModels(); 
-        }
-    } catch (error) {
-        // Don't clear models on OR failure, just warn
-        console.warn("Failed to update OpenRouter key or fetch models", error);
         throw error;
     }
   }, [processModelData, fetchModels]);
@@ -543,9 +525,7 @@ export const useAppLogic = () => {
     toast, closeToast, showToast,
     availableModels, availableImageModels, availableVideoModels, availableTtsModels,
     modelsLoading, activeModel, onModelChange: handleModelChange,
-    apiKey, onSaveApiKey: handleSetApiKey, 
-    openRouterApiKey, onSaveOpenRouterApiKey: handleSetOpenRouterApiKey, // Add OpenRouter Key handler
-    suggestionApiKey, onSaveSuggestionApiKey: handleSetSuggestionApiKey,
+    apiKey, onSaveApiKey: handleSetApiKey, suggestionApiKey, onSaveSuggestionApiKey: handleSetSuggestionApiKey,
     aboutUser, setAboutUser: handleSetAboutUser,
     aboutResponse, setAboutResponse: handleSetAboutResponse, temperature, setTemperature: handleSetTemperature,
     maxTokens, setMaxTokens: handleSetMaxTokens, imageModel, onImageModelChange: handleSetImageModel,
