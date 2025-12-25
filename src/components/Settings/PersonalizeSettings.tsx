@@ -125,7 +125,7 @@ const TextInput: React.FC<{
                     onBlur={onBlur}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 min-h-[120px] resize-none leading-relaxed"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 h-[160px] overflow-y-auto custom-scrollbar resize-none leading-relaxed"
                 />
             ) : (
                 <input
@@ -177,6 +177,9 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
 
     const [isLoaded, setIsLoaded] = useState(false);
     const [saveState, setSaveState] = useState<'saved' | 'saving' | 'pending'>('saved');
+    
+    // Ref to block effect-based updates during a reset operation
+    const isResetting = useRef(false);
 
     // Debounce state only for free-form text inputs to prevent typing lag
     const debouncedNickname = useDebounce(nickname, 300);
@@ -229,7 +232,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
 
     // 1. Text Inputs (Auto-Save on Debounce)
     useEffect(() => {
-        if (!isLoaded) return;
+        if (!isLoaded || isResetting.current) return;
         
         const parts = [];
         if (debouncedNickname.trim()) parts.push(`Nickname: ${debouncedNickname.trim()}`);
@@ -242,15 +245,13 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
             setSaveState('saving');
             setAboutUser(finalString);
         } else if (saveState === 'saving') {
-            // If contents match and we were saving, it means the prop updated from the parent.
-            // We can now transition to 'saved'.
             const timer = setTimeout(() => setSaveState('saved'), 500);
             return () => clearTimeout(timer);
         }
     }, [debouncedNickname, debouncedOccupation, debouncedMore, isLoaded, aboutUser, saveState, setAboutUser]);
 
     useEffect(() => {
-        if (!isLoaded) return;
+        if (!isLoaded || isResetting.current) return;
         
         const traits = [];
         if (warmth !== 'default') traits.push(`Warmth: ${warmth}`);
@@ -260,7 +261,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
 
         const parts = [];
         if (tone !== 'default') parts.push(`Tone: ${tone}`);
-        if (traits.length > 0) parts.push(`Traits: ${traits.join(', ')}`);
+        if (traits.length > 0) traits.push(`Traits: ${traits.join(', ')}`);
         if (debouncedInstructions.trim()) parts.push(debouncedInstructions.trim());
 
         const finalString = parts.join('\n');
@@ -287,8 +288,11 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     const handleCustomChange = (val: string) => { setCustomInstructions(val); setSaveState('pending'); };
 
     const handleReset = () => {
-        if (confirm("Reset all personalization settings to default? This will clear your custom instructions and profile.")) {
-            // Reset local state
+        if (confirm("Reset only personalization settings to default? This will clear your custom instructions and user profile, but will not affect chat history or other data files.")) {
+            // Flag to block useEffects from reverting changes due to stale debounced values
+            isResetting.current = true;
+
+            // 1. Reset local state
             setTone('default');
             setWarmth('default');
             setEnthusiasm('default');
@@ -299,10 +303,17 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
             setCustomInstructions('');
             setMoreAboutUser('');
             
-            // Allow useEffects to handle the backend sync naturally.
-            // When local state changes (e.g. nickname -> ''), the useDebounce hook updates,
-            // the useEffect fires, detects change against parent prop, and calls setAboutUser(''),
-            // which saves to the backend. This prevents race conditions.
+            // 2. Force immediate backend save
+            // This ensures data is saved even if the user closes the modal immediately
+            setSaveState('saving');
+            setAboutUser('');
+            setAboutResponse('');
+            
+            // 3. Clear the flag after debounce duration + buffer
+            setTimeout(() => {
+                isResetting.current = false;
+                setSaveState('saved');
+            }, 400);
         }
     };
 
@@ -431,7 +442,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                     <SectionHeader 
                         title="User Profile" 
                         subtitle="Your Context" 
-                        icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
+                        icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
                         color="text-cyan-600 dark:text-cyan-400" 
                         bg="bg-cyan-50 dark:bg-cyan-500/10" 
                     />

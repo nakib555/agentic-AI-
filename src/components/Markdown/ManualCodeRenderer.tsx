@@ -61,8 +61,12 @@ interface MarkdownErrorBoundaryState {
 }
 
 // Internal Error Boundary to catch Markdown/Rehype parsing crashes during streaming
+// Fix: Use named Component import and explicit constructor to resolve "Property 'props' does not exist" errors
 class MarkdownErrorBoundary extends Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
-  state: MarkdownErrorBoundaryState = { hasError: false };
+  constructor(props: MarkdownErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
   static getDerivedStateFromError(error: any) {
     // console.warn("Markdown parsing error caught:", error);
