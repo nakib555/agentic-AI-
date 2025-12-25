@@ -77,10 +77,10 @@ export const App = () => {
           {!logic.isDesktop && !logic.isSidebarOpen && (
             <button
               onClick={() => logic.setIsSidebarOpen(true)}
-              className="absolute top-3 left-4 z-50 p-2.5 rounded-xl bg-white/80 dark:bg-black/50 backdrop-blur-md border border-gray-200 dark:border-white/10 text-slate-600 dark:text-slate-300 shadow-sm active:scale-95 transition-transform"
+              className="absolute top-3 left-4 z-50 p-2 rounded-lg bg-white/80 dark:bg-black/50 backdrop-blur-md border border-gray-200 dark:border-white/10 text-slate-600 dark:text-slate-300 shadow-sm"
               aria-label="Open sidebar"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
           )}
 

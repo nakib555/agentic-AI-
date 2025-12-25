@@ -49,7 +49,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
               relative flex flex-col
               bg-white dark:bg-[#0a0a0a] /* Deep dark background */
               border-2 border-slate-200 dark:border-white/10
-              rounded-2xl sm:rounded-[32px] /* Adapt border radius for mobile */
+              rounded-[32px] /* Large rounded corners */
               transition-all duration-300
               ${logic.isFocused ? 'border-indigo-500/50 dark:border-indigo-400/50 shadow-lg shadow-indigo-500/10' : 'shadow-sm'}
             `}
@@ -86,9 +86,9 @@ export const MessageForm = forwardRef<MessageFormHandle, {
             <input type="file" ref={logic.folderInputRef} onChange={logic.handleFileChange} className="hidden" {...{ webkitdirectory: "", directory: "" }} multiple />
             
             {/* --- Main Input Area --- */}
-            <div className="flex items-start gap-2 sm:gap-4 p-3 sm:p-4 min-h-[80px] sm:min-h-[88px]">
+            <div className="flex items-start gap-4 p-4 min-h-[88px]">
                 {/* Left: Plus Button */}
-                <div className="relative flex-shrink-0 pt-1.5 sm:pt-2">
+                <div className="relative flex-shrink-0 pt-2">
                     <button 
                         ref={logic.attachButtonRef} 
                         type="button" 
@@ -111,7 +111,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                 </div>
 
                 {/* Center: Text Input */}
-                <div className="flex-grow relative pt-1.5 sm:pt-2">
+                <div className="flex-grow relative pt-2">
                   <AnimatePresence mode="popLayout">
                     {!hasInput && !logic.isFocused && (
                         <motion.div
@@ -119,7 +119,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0, transition: { duration: 0 } }}
-                            className="absolute inset-0 text-slate-400 dark:text-slate-500 pointer-events-none select-none text-base sm:text-lg"
+                            className="absolute inset-0 text-slate-400 dark:text-slate-500 pointer-events-none select-none text-lg"
                         >
                             <TextType
                                 text={logic.placeholder}
@@ -142,14 +142,14 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     onBlur={() => logic.setIsFocused(false)}
                     aria-label="Chat input"
                     disabled={!hasApiKey}
-                    className={`w-full bg-transparent text-slate-800 dark:text-slate-200 text-base sm:text-lg focus:outline-none resize-none leading-relaxed placeholder:text-transparent max-h-[250px] sm:max-h-[300px] overflow-y-auto overscroll-y-contain custom-scrollbar ${logic.isEnhancing ? 'opacity-50' : ''}`}
+                    className={`w-full bg-transparent text-slate-800 dark:text-slate-200 text-lg focus:outline-none resize-none leading-relaxed placeholder:text-transparent max-h-[300px] overflow-y-auto overscroll-y-contain custom-scrollbar ${logic.isEnhancing ? 'opacity-50' : ''}`}
                     rows={1}
                     style={{ minHeight: '32px' }}
                   />
                 </div>
 
                 {/* Right: Actions */}
-                <div className="flex items-center gap-2 sm:gap-3 pt-0.5 sm:pt-1 flex-shrink-0">
+                <div className="flex items-center gap-3 pt-1 flex-shrink-0">
                     {/* Enhance Prompt */}
                     <AnimatePresence>
                       {hasText && (
@@ -203,7 +203,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         disabled={!isGeneratingResponse && isSendDisabled}
                         aria-label={isGeneratingResponse ? "Stop generating" : "Send message"}
                         className={`
-                            w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md
+                            w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md
                             ${isGeneratingResponse 
                                 ? 'bg-white border-2 border-red-500 text-red-500 hover:bg-red-50 dark:bg-slate-800 dark:hover:bg-red-900/20' 
                                 : isSendDisabled 
@@ -213,9 +213,9 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                         `}
                     >
                         {isGeneratingResponse ? ( 
-                           <div className="w-3 h-3 sm:w-4 sm:h-4 bg-current rounded-sm"></div>
+                           <div className="w-4 h-4 bg-current rounded-sm"></div>
                         ) : ( 
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 ml-0.5">
                                 <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
                             </svg>
                          )}
@@ -234,8 +234,8 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     />
                 </div>
                 
-                {/* Version Text - Bottom Right (Hidden on mobile to save space) */}
-                <div className="hidden sm:block absolute right-6 top-3 text-xs font-medium text-slate-400 dark:text-white/20 select-none">
+                {/* Version Text - Bottom Right */}
+                <div className="absolute right-6 top-3 text-xs font-medium text-slate-400 dark:text-white/20 select-none">
                     Agentic AI v1.0
                 </div>
             </div>
