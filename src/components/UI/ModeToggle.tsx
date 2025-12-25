@@ -39,7 +39,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
   return (
     <div
       className={`
-        relative grid grid-cols-2 p-1 rounded-xl bg-slate-100/80 dark:bg-[#151515] border border-slate-200 dark:border-white/5 
+        relative grid grid-cols-2 p-1 rounded-xl bg-layer-2 border border-border-subtle 
         transition-opacity ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
       `}
       style={{ width: 'fit-content' }}
@@ -55,15 +55,15 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
             className={`
               relative z-10 flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-bold transition-colors duration-200 rounded-lg select-none
               ${isActive 
-                ? 'text-indigo-600 dark:text-indigo-300' 
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                ? 'text-primary-main' 
+                : 'text-content-tertiary hover:text-content-secondary'
               }
             `}
           >
             {isActive && (
               <motion.div
                 layoutId="mode-pill"
-                className="absolute inset-0 bg-white dark:bg-[#2d2d2d] shadow-sm rounded-lg border border-slate-200/50 dark:border-white/10"
+                className="absolute inset-0 bg-layer-1 shadow-sm rounded-lg border border-border-subtle"
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
             )}
