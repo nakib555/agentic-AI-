@@ -18,31 +18,47 @@ type UploadMenuProps = {
 export const UploadMenu: React.FC<UploadMenuProps> = ({ menuRef, onFileClick, onFolderClick }) => (
   <motion.div
     ref={menuRef}
-    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+    initial={{ opacity: 0, y: 15, scale: 0.95 }}
     animate={{ opacity: 1, y: 0, scale: 1 }}
-    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-    transition={{ duration: 0.1, ease: 'easeOut' }}
-    className="absolute bottom-full mb-2 w-40 bg-white dark:bg-[#2D2D2D] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1 z-20"
+    exit={{ opacity: 0, y: 15, scale: 0.95 }}
+    transition={{ duration: 0.2, type: "spring", stiffness: 300, damping: 25 }}
+    className="absolute bottom-full left-0 mb-3 w-64 bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 p-2 z-30 overflow-hidden"
   >
-    <ul className="text-sm">
-      <li>
-        <button
-          onClick={onFileClick}
-          className="w-full text-left flex items-center gap-2 px-3 py-1.5 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M4.75 2A1.75 1.75 0 0 0 3 3.75v8.5A1.75 1.75 0 0 0 4.75 14h6.5A1.75 1.75 0 0 0 13 12.25v-6.5L9.25 2H4.75ZM8.5 2.75V6H12v6.25a.25.25 0 0 1-.25.25h-6.5a.25.25 0 0 1-.25-.25v-8.5a.25.25 0 0 1 .25-.25H8.5Z" /></svg>
-          <span>Files</span>
-        </button>
-      </li>
-      <li>
-        <button
-          onClick={onFolderClick}
-          className="w-full text-left flex items-center gap-2 px-3 py-1.5 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M2 3.75C2 3.06 2.56 2.5 3.25 2.5h3.57a.75.75 0 0 1 .62.35l.38 1.12H12a1.5 1.5 0 0 1 1.5 1.5V12A1.5 1.5 0 0 1 12 13.5H4A1.5 1.5 0 0 1 2.5 12V3.75Zm1.5 0v8.25c0 .14.11.25.25.25h8a.25.25 0 0 0 .25-.25V5.47a.25.25 0 0 0-.25-.25H7.72a.75.75 0 0 1-.62-.35L6.72 3.75H3.5Z" /></svg>
-          <span>Folder</span>
-        </button>
-      </li>
-    </ul>
+    <div className="px-3 py-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+        Upload
+    </div>
+    
+    <div className="flex flex-col gap-1">
+      <button
+        onClick={onFileClick}
+        className="group flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-200 hover:bg-slate-50 dark:hover:bg-white/5 text-left"
+      >
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform border border-blue-100 dark:border-blue-500/30">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <path fillRule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625ZM7.5 15a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 7.5 15Zm.75 2.25a.75.75 0 0 0 0 1.5h7.5a.75.75 0 0 0 0-1.5h-7.5Z" clipRule="evenodd" />
+                <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
+            </svg>
+        </div>
+        <div>
+            <span className="block font-semibold text-slate-700 dark:text-slate-200 text-sm">Files</span>
+            <span className="block text-xs text-slate-500 dark:text-slate-400">Upload documents or images</span>
+        </div>
+      </button>
+
+      <button
+        onClick={onFolderClick}
+        className="group flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-200 hover:bg-slate-50 dark:hover:bg-white/5 text-left"
+      >
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform border border-amber-100 dark:border-amber-500/30">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <path d="M19.5 21a3 3 0 0 0 3-3v-4.5a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3V18a3 3 0 0 0 3 3h15ZM1.5 10.146V6a3 3 0 0 1 3-3h5.379a2.25 2.25 0 0 1 1.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 0 1 3 3v1.146A4.483 4.483 0 0 0 19.5 9h-15a4.483 4.483 0 0 0-3 1.146Z" />
+            </svg>
+        </div>
+        <div>
+            <span className="block font-semibold text-slate-700 dark:text-slate-200 text-sm">Folder</span>
+            <span className="block text-xs text-slate-500 dark:text-slate-400">Upload entire directories</span>
+        </div>
+      </button>
+    </div>
   </motion.div>
 );

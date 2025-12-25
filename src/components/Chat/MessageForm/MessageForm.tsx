@@ -269,7 +269,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.5 }}
-            className="text-[11px] font-medium text-content-tertiary/70 select-none backdrop-blur-sm"
+            className="text-[11px] font-medium text-content-tertiary/70 select-none"
           >
              Agentic AI can make mistakes.
           </motion.p>
