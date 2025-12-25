@@ -386,6 +386,7 @@ export const useChat = (
     };
     
     const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean; isThinkingModeEnabled?: boolean } = {}) => {
+        console.log('[Frontend] sendMessage called:', { userMessage, options });
         if (isLoading) {
             return;
         }
