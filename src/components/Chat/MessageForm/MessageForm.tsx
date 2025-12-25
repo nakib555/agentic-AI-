@@ -14,6 +14,7 @@ import { VoiceVisualizer } from '../../UI/VoiceVisualizer';
 import { ModeToggle } from '../../UI/ModeToggle';
 import { MessageFormHandle } from './types';
 import { Message } from '../../../types';
+import { TextType } from '../../UI/TextType';
 
 type MessageFormProps = {
   onSubmit: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
@@ -118,6 +119,21 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
 
         {/* Text Input */}
         <div className="flex flex-col relative">
+            {/* Animated Placeholder Overlay */}
+            {!logic.inputValue && (
+               <div className="absolute inset-0 px-4 py-4 pointer-events-none select-none opacity-50 z-0 overflow-hidden">
+                  <TextType 
+                    text={logic.placeholder} 
+                    className="text-content-tertiary text-base leading-relaxed"
+                    loop 
+                    cursorCharacter="|"
+                    typingSpeed={30}
+                    deletingSpeed={15}
+                    pauseDuration={4000}
+                  />
+               </div>
+            )}
+            
             <textarea
                 ref={logic.inputRef}
                 value={logic.inputValue}
@@ -126,16 +142,15 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                 onPaste={logic.handlePaste}
                 onFocus={() => logic.setIsFocused(true)}
                 onBlur={() => logic.setIsFocused(false)}
-                placeholder={logic.placeholder[1]} // Use current placeholder
                 disabled={isGeneratingResponse}
                 rows={1}
-                className="w-full bg-transparent text-content-primary px-4 py-4 max-h-[200px] focus:outline-none resize-none overflow-y-auto leading-relaxed custom-scrollbar placeholder:text-content-tertiary"
+                className="w-full bg-transparent text-content-primary px-4 py-4 max-h-[200px] focus:outline-none resize-none overflow-y-auto leading-relaxed custom-scrollbar placeholder:text-transparent z-10"
                 style={{ minHeight: '3.5rem' }}
             />
         </div>
 
         {/* Bottom Toolbar */}
-        <div className="flex items-center justify-between px-3 pb-3 pt-1 gap-3">
+        <div className="flex items-center justify-between px-3 pb-3 pt-1 gap-3 relative z-10">
             <div className="flex items-center gap-1">
                 {/* Upload Button */}
                 <button
@@ -256,7 +271,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
             className="text-[11px] font-medium text-content-tertiary/70 flex items-center gap-2 select-none backdrop-blur-sm"
           >
              <span className="w-1.5 h-1.5 rounded-full bg-primary-main/40"></span>
-             Agentic AI can make mistakes. Please verify important information.
+             Agentic AI can make mistakes.
           </motion.p>
       </div>
     </div>

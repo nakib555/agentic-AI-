@@ -1,13 +1,10 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-
-// Time in milliseconds to wait before fetching a new placeholder
-// Reduced to 10s for better interactivity since it's local now
-const PLACEHOLDER_INTERVAL = 10000;
+import { useMemo } from 'react';
 
 // Custom-made fallback placeholders for Chat mode
 const CHAT_FALLBACK_PLACEHOLDERS = [
@@ -201,47 +198,14 @@ const AGENT_FALLBACK_PLACEHOLDERS = [
 
 /**
  * A custom hook to manage a dynamic placeholder for an input field.
- * This version uses locally defined fallbacks instead of an AI generation step.
- * @param isEnabled - Whether the placeholder functionality should be active.
- * @param conversationContext - (Unused) Kept for signature compatibility.
- * @param isAgentMode - Whether the app is in Agent mode, to tailor suggestions.
- * @param hasApiKey - (Unused) Kept for signature compatibility.
- * @returns An array of strings for the TextType component [previous, current].
+ * Returns a shuffled list of placeholders appropriate for the current mode.
+ * The consuming component (MessageForm) uses this list to render the typing effect.
  */
 export const usePlaceholder = (isEnabled: boolean, conversationContext: string, isAgentMode: boolean, hasApiKey: boolean) => {
-    const [placeholder, setPlaceholder] = useState<string[]>(['Ask anything, or drop a file']);
-    
-    // We use a ref to access the latest isAgentMode in the interval closure without restarting it
-    const contextRef = useRef({ isAgentMode });
-
-    useEffect(() => {
-        contextRef.current = { isAgentMode };
+    // Return a shuffled list of placeholders based on the current mode
+    return useMemo(() => {
+        const list = isAgentMode ? AGENT_FALLBACK_PLACEHOLDERS : CHAT_FALLBACK_PLACEHOLDERS;
+        // Simple shuffle
+        return [...list].sort(() => 0.5 - Math.random());
     }, [isAgentMode]);
-
-    const fetchNewPlaceholder = useCallback(() => {
-        const { isAgentMode: currentAgentMode } = contextRef.current;
-
-        const fallbacks = currentAgentMode ? AGENT_FALLBACK_PLACEHOLDERS : CHAT_FALLBACK_PLACEHOLDERS;
-        
-        setPlaceholder(prev => {
-            const current = prev[prev.length - 1];
-            let next = current;
-            // Prevent picking the same one twice
-            while (next === current && fallbacks.length > 1) {
-                next = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-            }
-            return [current, next];
-        });
-    }, []);
-
-    useEffect(() => {
-        if (isEnabled) {
-            // Initial fetch to move away from default if preferred, 
-            // or just start the interval.
-            const id = window.setInterval(fetchNewPlaceholder, PLACEHOLDER_INTERVAL);
-            return () => clearInterval(id);
-        }
-    }, [isEnabled, fetchNewPlaceholder]);
-
-    return placeholder;
 };
