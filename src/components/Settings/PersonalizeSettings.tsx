@@ -35,6 +35,20 @@ const INTENSITY_OPTIONS = [
     { id: 'more', label: 'More' },
 ];
 
+// --- Hook for Debouncing ---
+function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+    return debouncedValue;
+}
+
 // --- UI Components ---
 
 const SegmentedControl: React.FC<{
@@ -104,8 +118,8 @@ const SelectDropdown: React.FC<{
     const updatePosition = useCallback(() => {
         if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
-            const viewportHeight = window.innerHeight;
-            const spaceBelow = viewportHeight - rect.bottom;
+            const windowHeight = window.innerHeight;
+            const spaceBelow = windowHeight - rect.bottom;
             const spaceAbove = rect.top;
             
             // Prefer showing below, but flip to top if cramped (< 220px) and there is more space above
@@ -120,7 +134,7 @@ const SelectDropdown: React.FC<{
                 left: rect.left,
                 width: rect.width,
                 top: showOnTop ? undefined : rect.bottom + padding,
-                bottom: showOnTop ? viewportHeight - rect.top + padding : undefined,
+                bottom: showOnTop ? windowHeight - rect.top + padding : undefined,
                 maxHeight: Math.max(100, maxHeight)
             });
         }
@@ -233,7 +247,7 @@ const TextInput: React.FC<{
     placeholder: string;
     value: string;
     onChange: (val: string) => void;
-    onBlur: () => void;
+    onBlur?: () => void; // Made optional
     multiline?: boolean;
     disabled?: boolean;
     icon?: React.ReactNode;
@@ -301,8 +315,14 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     const [customInstructions, setCustomInstructions] = useState('');
     const [moreAboutUser, setMoreAboutUser] = useState('');
 
-    const [isSaving, setIsSaving] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [saveState, setSaveState] = useState<'saved' | 'saving' | 'pending'>('saved');
+
+    // Debounce state for text inputs
+    const debouncedNickname = useDebounce(nickname, 1000);
+    const debouncedOccupation = useDebounce(occupation, 1000);
+    const debouncedMore = useDebounce(moreAboutUser, 1000);
+    const debouncedInstructions = useDebounce(customInstructions, 1000);
 
     // --- Parsing Logic (Executed Once on Mount) ---
     useEffect(() => {
@@ -310,7 +330,6 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
         const nicknameMatch = aboutUser.match(/Nickname:\s*(.*?)(?:\n|$)/);
         const occupationMatch = aboutUser.match(/Occupation:\s*(.*?)(?:\n|$)/);
         
-        // Remove parsed keys to find the "rest" of the content
         let cleanAbout = aboutUser
             .replace(/^Nickname:.*$/m, '')
             .replace(/^Occupation:.*$/m, '')
@@ -338,66 +357,80 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
         if (structMatch) setStructure(structMatch[1].toLowerCase().trim());
         if (emojiMatch) setEmoji(emojiMatch[1].toLowerCase().trim());
         if (cleanInstructions) setCustomInstructions(cleanInstructions);
-    }, []); // Empty dependency array = run once on mount
 
-    // --- Update Logic (Event Driven) ---
+        setIsLoaded(true);
+    }, []); 
 
-    const updateAboutUser = (newNickname: string, newOccupation: string, newMore: string) => {
+    // --- Update Logic ---
+
+    // 1. Text Inputs (Auto-Save on Debounce)
+    useEffect(() => {
+        if (!isLoaded) return;
+        
+        setSaveState('saving');
+        
         const parts = [];
-        if (newNickname.trim()) parts.push(`Nickname: ${newNickname.trim()}`);
-        if (newOccupation.trim()) parts.push(`Occupation: ${newOccupation.trim()}`);
-        if (newMore.trim()) parts.push(newMore.trim());
-        setAboutUser(parts.join('\n'));
-    };
+        if (debouncedNickname.trim()) parts.push(`Nickname: ${debouncedNickname.trim()}`);
+        if (debouncedOccupation.trim()) parts.push(`Occupation: ${debouncedOccupation.trim()}`);
+        if (debouncedMore.trim()) parts.push(debouncedMore.trim());
+        
+        const finalString = parts.join('\n');
+        
+        // Only trigger update if content effectively changes to prevent loops
+        // Note: comparing strings is cheap enough here
+        if (finalString !== aboutUser) {
+            setAboutUser(finalString);
+        }
+        
+        // Simulate save completion delay for UI feedback
+        const timer = setTimeout(() => setSaveState('saved'), 600);
+        return () => clearTimeout(timer);
+    }, [debouncedNickname, debouncedOccupation, debouncedMore, isLoaded]); // Explicitly depend on debounced values
 
-    const updateAboutResponse = (t: string, w: string, e: string, s: string, em: string, ci: string) => {
+    useEffect(() => {
+        if (!isLoaded) return;
+        
+        setSaveState('saving');
+        
         const traits = [];
-        if (w !== 'default') traits.push(`Warmth: ${w}`);
-        if (e !== 'default') traits.push(`Enthusiasm: ${e}`);
-        if (s !== 'default') traits.push(`Structure: ${s}`);
-        if (em !== 'default') traits.push(`Emoji: ${em}`);
+        if (warmth !== 'default') traits.push(`Warmth: ${warmth}`);
+        if (enthusiasm !== 'default') traits.push(`Enthusiasm: ${enthusiasm}`);
+        if (structure !== 'default') traits.push(`Structure: ${structure}`);
+        if (emoji !== 'default') traits.push(`Emoji: ${emoji}`);
 
         const parts = [];
-        if (t !== 'default') parts.push(`Tone: ${t}`);
+        if (tone !== 'default') parts.push(`Tone: ${tone}`);
         if (traits.length > 0) parts.push(`Traits: ${traits.join(', ')}`);
-        if (ci.trim()) parts.push(ci.trim());
+        if (debouncedInstructions.trim()) parts.push(debouncedInstructions.trim());
 
-        setAboutResponse(parts.join('\n'));
-    };
+        const finalString = parts.join('\n');
+        
+        if (finalString !== aboutResponse) {
+            setAboutResponse(finalString);
+        }
 
-    // Commits for TextInputs (onBlur)
-    const commitUserChanges = () => updateAboutUser(nickname, occupation, moreAboutUser);
-    const commitResponseChanges = () => updateAboutResponse(tone, warmth, enthusiasm, structure, emoji, customInstructions);
+        const timer = setTimeout(() => setSaveState('saved'), 600);
+        return () => clearTimeout(timer);
+    }, [debouncedInstructions, tone, warmth, enthusiasm, structure, emoji, isLoaded]);
+
 
     // Handlers for Selects/Segmented Controls (Immediate Update)
-    const handleToneChange = (val: string) => { setTone(val); updateAboutResponse(val, warmth, enthusiasm, structure, emoji, customInstructions); };
-    const handleWarmthChange = (val: string) => { setWarmth(val); updateAboutResponse(tone, val, enthusiasm, structure, emoji, customInstructions); };
-    const handleEnthusiasmChange = (val: string) => { setEnthusiasm(val); updateAboutResponse(tone, warmth, val, structure, emoji, customInstructions); };
-    const handleStructureChange = (val: string) => { setStructure(val); updateAboutResponse(tone, warmth, enthusiasm, val, emoji, customInstructions); };
-    const handleEmojiChange = (val: string) => { setEmoji(val); updateAboutResponse(tone, warmth, enthusiasm, structure, val, customInstructions); };
+    // These update local state, which triggers the useEffect above naturally.
+    const handleToneChange = (val: string) => setTone(val);
+    const handleWarmthChange = (val: string) => setWarmth(val);
+    const handleEnthusiasmChange = (val: string) => setEnthusiasm(val);
+    const handleStructureChange = (val: string) => setStructure(val);
+    const handleEmojiChange = (val: string) => setEmoji(val);
 
-    // Explicit Save Handler
-    const handleManualSave = async () => {
-        if (isSaving) return;
-        setIsSaving(true);
-        setIsSaved(false);
-        
-        // Force commit updates from local state to ensure synchronization
-        // Note: These calls update the parent state which triggers a backend sync.
-        updateAboutUser(nickname, occupation, moreAboutUser);
-        updateAboutResponse(tone, warmth, enthusiasm, structure, emoji, customInstructions);
-        
-        // Artificial delay to show visual process and allow backend sync to initiate
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        setIsSaving(false);
-        setIsSaved(true);
-        setTimeout(() => setIsSaved(false), 2500);
-    };
+    // Text input handlers just update local state
+    const handleNicknameChange = (val: string) => { setNickname(val); setSaveState('pending'); };
+    const handleOccupationChange = (val: string) => { setOccupation(val); setSaveState('pending'); };
+    const handleMoreChange = (val: string) => { setMoreAboutUser(val); setSaveState('pending'); };
+    const handleCustomChange = (val: string) => { setCustomInstructions(val); setSaveState('pending'); };
 
     return (
         <div className="pb-10 max-w-6xl mx-auto">
-            {/* Header with Save Button */}
+            {/* Header with Auto-Save Indicator */}
             <div className="mb-12 border-b border-gray-100 dark:border-white/5 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 text-white">
@@ -409,35 +442,29 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                     </div>
                 </div>
 
-                <button 
-                    onClick={handleManualSave}
-                    disabled={disabled || isSaving}
-                    className={`
-                        flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md active:scale-95
-                        ${isSaved 
-                            ? 'bg-green-500 text-white hover:bg-green-600 shadow-green-500/20' 
-                            : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-indigo-500/20'
-                        }
-                        disabled:opacity-50 disabled:cursor-not-allowed
-                    `}
-                >
-                    {isSaving ? (
+                <div className="flex items-center gap-2 px-4 py-2 bg-slate-100/50 dark:bg-white/5 rounded-full border border-slate-200/50 dark:border-white/5">
+                    {saveState === 'saved' ? (
                         <>
-                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            <span>Saving...</span>
+                            <svg className="w-4 h-4 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">All changes saved</span>
                         </>
-                    ) : isSaved ? (
+                    ) : saveState === 'saving' ? (
                         <>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
-                            <span>Saved</span>
+                            <svg className="animate-spin w-3.5 h-3.5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Saving...</span>
                         </>
                     ) : (
                         <>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                            <span>Save Changes</span>
+                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Typing...</span>
                         </>
                     )}
-                </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 lg:gap-20 items-start">
@@ -502,8 +529,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <TextInput 
                             label="Custom System Instructions" 
                             value={customInstructions} 
-                            onChange={setCustomInstructions} 
-                            onBlur={commitResponseChanges}
+                            onChange={handleCustomChange} 
                             placeholder="Add specific rules... (e.g. 'Always answer in French', 'Use bullet points', 'Be sarcastic')"
                             multiline
                             disabled={disabled}
@@ -526,8 +552,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <TextInput 
                             label="Nickname" 
                             value={nickname} 
-                            onChange={setNickname} 
-                            onBlur={commitUserChanges}
+                            onChange={handleNicknameChange} 
                             placeholder="How should I address you?"
                             disabled={disabled}
                             icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-cyan-500"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>}
@@ -536,8 +561,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <TextInput 
                             label="Occupation / Role" 
                             value={occupation} 
-                            onChange={setOccupation} 
-                            onBlur={commitUserChanges}
+                            onChange={handleOccupationChange} 
                             placeholder="Work context (e.g. Student, Engineer)"
                             disabled={disabled}
                             icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-emerald-500"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>}
@@ -546,8 +570,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         <TextInput 
                             label="Additional Context" 
                             value={moreAboutUser} 
-                            onChange={setMoreAboutUser} 
-                            onBlur={commitUserChanges}
+                            onChange={handleMoreChange} 
                             placeholder="I prefer concise answers... I am learning Python... Explain like I'm 5..."
                             multiline
                             disabled={disabled}
