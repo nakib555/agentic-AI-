@@ -205,6 +205,9 @@ export const App = () => {
           setTheme={logic.setTheme}
           serverUrl={logic.serverUrl}
           onSaveServerUrl={logic.onSaveServerUrl}
+          provider={logic.provider}
+          openRouterApiKey={logic.openRouterApiKey}
+          onProviderChange={logic.onProviderChange}
         />
 
         {logic.isTestMode && (
