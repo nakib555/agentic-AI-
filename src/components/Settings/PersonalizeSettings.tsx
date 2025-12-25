@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -44,11 +43,12 @@ const SegmentedControl: React.FC<{
     value: string;
     onChange: (val: string) => void;
     disabled?: boolean;
-}> = ({ label, icon, options, value, onChange, disabled }) => {
+    className?: string;
+}> = ({ label, icon, options, value, onChange, disabled, className }) => {
     const id = React.useId();
     
     return (
-        <div className="flex flex-col gap-3">
+        <div className={`flex flex-col gap-3 ${className || ''}`}>
             <div className="flex items-center gap-2.5 px-1">
                 {icon && <span className="flex-shrink-0">{icon}</span>}
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{label}</span>
@@ -394,7 +394,8 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                                 value={structure} 
                                 onChange={setStructure} 
                                 options={INTENSITY_OPTIONS} 
-                                disabled={disabled} 
+                                disabled={disabled}
+                                className="pt-2"
                             />
                             <SegmentedControl 
                                 label="Emoji Usage" 
@@ -402,7 +403,8 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                                 value={emoji} 
                                 onChange={setEmoji} 
                                 options={INTENSITY_OPTIONS} 
-                                disabled={disabled} 
+                                disabled={disabled}
+                                className="pt-2"
                             />
                         </div>
 
