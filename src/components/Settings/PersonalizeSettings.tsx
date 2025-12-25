@@ -247,7 +247,7 @@ const TextInput: React.FC<{
     placeholder: string;
     value: string;
     onChange: (val: string) => void;
-    onBlur?: () => void; // Made optional
+    onBlur?: () => void;
     multiline?: boolean;
     disabled?: boolean;
     icon?: React.ReactNode;
@@ -318,11 +318,12 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     const [isLoaded, setIsLoaded] = useState(false);
     const [saveState, setSaveState] = useState<'saved' | 'saving' | 'pending'>('saved');
 
-    // Debounce state for text inputs
-    const debouncedNickname = useDebounce(nickname, 1000);
-    const debouncedOccupation = useDebounce(occupation, 1000);
-    const debouncedMore = useDebounce(moreAboutUser, 1000);
-    const debouncedInstructions = useDebounce(customInstructions, 1000);
+    // Debounce state only for free-form text inputs to prevent typing lag
+    // Reduced debounce to 300ms for snappier feel
+    const debouncedNickname = useDebounce(nickname, 300);
+    const debouncedOccupation = useDebounce(occupation, 300);
+    const debouncedMore = useDebounce(moreAboutUser, 300);
+    const debouncedInstructions = useDebounce(customInstructions, 300);
 
     // --- Parsing Logic (Executed Once on Mount) ---
     useEffect(() => {
@@ -377,15 +378,14 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
         const finalString = parts.join('\n');
         
         // Only trigger update if content effectively changes to prevent loops
-        // Note: comparing strings is cheap enough here
         if (finalString !== aboutUser) {
             setAboutUser(finalString);
         }
         
-        // Simulate save completion delay for UI feedback
-        const timer = setTimeout(() => setSaveState('saved'), 600);
+        // Fast completion for responsiveness
+        const timer = setTimeout(() => setSaveState('saved'), 200);
         return () => clearTimeout(timer);
-    }, [debouncedNickname, debouncedOccupation, debouncedMore, isLoaded]); // Explicitly depend on debounced values
+    }, [debouncedNickname, debouncedOccupation, debouncedMore, isLoaded]);
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -409,7 +409,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
             setAboutResponse(finalString);
         }
 
-        const timer = setTimeout(() => setSaveState('saved'), 600);
+        const timer = setTimeout(() => setSaveState('saved'), 200);
         return () => clearTimeout(timer);
     }, [debouncedInstructions, tone, warmth, enthusiasm, structure, emoji, isLoaded]);
 
@@ -448,7 +448,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                             <svg className="w-4 h-4 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
                             </svg>
-                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">All changes saved</span>
+                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Saved</span>
                         </>
                     ) : saveState === 'saving' ? (
                         <>

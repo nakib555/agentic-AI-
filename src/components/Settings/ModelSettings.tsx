@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Model } from '../../types';
 import { ModelSelector } from '../UI/ModelSelector';
 import { SettingItem } from './SettingItem';
@@ -14,14 +14,34 @@ const PhotoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 
 const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="m22 8-6 4 6 4V8Z" /><rect width="14" height="12" x="2" y="6" rx="2" ry="2" /></svg>;
 const SpeakerIcon = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></svg>;
 
-// Modern Temperature Control with animated visual feedback
+// Modern Temperature Control with animated visual feedback and local state buffering
 const TemperatureControl = ({ value, onChange, disabled }: { value: number, onChange: (v: number) => void, disabled?: boolean }) => {
+    // Local state for immediate UI feedback during drag
+    const [localValue, setLocalValue] = useState(value);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Sync local state if external prop changes (e.g. reset/load settings)
+    useEffect(() => {
+        setLocalValue(value);
+    }, [value]);
+
+    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = parseFloat(e.target.value);
+        setLocalValue(newValue);
+
+        // Debounce the parent update to prevent API flooding
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+            onChange(newValue);
+        }, 300); // 300ms delay before saving/updating global state
+    };
+
     const getLabel = (v: number) => {
         if (v < 0.3) return { text: "Precise", color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/10", desc: "Factual & Deterministic" };
         if (v < 0.7) return { text: "Balanced", color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10", desc: "Natural & Engaging" };
         return { text: "Creative", color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10", desc: "Imaginative & Diverse" };
     };
-    const label = getLabel(value);
+    const label = getLabel(localValue);
 
     return (
         <div className="w-full bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 transition-all hover:border-indigo-300 dark:hover:border-indigo-500/30">
@@ -36,7 +56,7 @@ const TemperatureControl = ({ value, onChange, disabled }: { value: number, onCh
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">{label.desc}</p>
                 </div>
                 <div className="font-mono text-xl font-bold text-slate-700 dark:text-slate-200 tracking-tight">
-                    {value.toFixed(1)}
+                    {localValue.toFixed(1)}
                 </div>
             </div>
             
@@ -46,7 +66,7 @@ const TemperatureControl = ({ value, onChange, disabled }: { value: number, onCh
                     {/* Gradient Fill */}
                     <div 
                         className="h-full bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-600 transition-all duration-100 ease-out origin-left" 
-                        style={{ width: `${value * 100}%` }} 
+                        style={{ width: `${localValue * 100}%` }} 
                     />
                 </div>
                 
@@ -56,8 +76,8 @@ const TemperatureControl = ({ value, onChange, disabled }: { value: number, onCh
                     min="0"
                     max="1"
                     step="0.1"
-                    value={value}
-                    onChange={(e) => onChange(parseFloat(e.target.value))}
+                    value={localValue}
+                    onChange={handleSliderChange}
                     disabled={disabled}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                     aria-label="Temperature"
@@ -66,16 +86,25 @@ const TemperatureControl = ({ value, onChange, disabled }: { value: number, onCh
                 {/* Animated Thumb */}
                 <div 
                     className="absolute top-1/2 -translate-y-1/2 h-7 w-7 bg-white dark:bg-slate-200 shadow-[0_4px_10px_rgba(0,0,0,0.2)] border-2 border-transparent rounded-full pointer-events-none transition-all duration-100 ease-out z-10 flex items-center justify-center"
-                    style={{ left: `calc(${value * 100}% - 14px)` }}
+                    style={{ left: `calc(${localValue * 100}% - 14px)` }}
                 >
-                    <div className={`w-2 h-2 rounded-full ${value > 0.7 ? 'bg-purple-500' : value > 0.3 ? 'bg-blue-500' : 'bg-emerald-500'}`} />
+                    <div className={`w-2 h-2 rounded-full ${localValue > 0.7 ? 'bg-purple-500' : localValue > 0.3 ? 'bg-blue-500' : 'bg-emerald-500'}`} />
                 </div>
             </div>
             
             <div className="flex justify-between mt-2 px-1">
                 {[0, 0.5, 1].map((tick) => (
-                    <div key={tick} className="flex flex-col items-center gap-1 cursor-pointer" onClick={() => !disabled && onChange(tick)}>
-                        <div className={`w-1 h-1 rounded-full ${Math.abs(value - tick) < 0.1 ? 'bg-slate-800 dark:bg-slate-200 scale-150' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                    <div 
+                        key={tick} 
+                        className="flex flex-col items-center gap-1 cursor-pointer" 
+                        onClick={() => {
+                            if (!disabled) {
+                                setLocalValue(tick);
+                                onChange(tick);
+                            }
+                        }}
+                    >
+                        <div className={`w-1 h-1 rounded-full ${Math.abs(localValue - tick) < 0.1 ? 'bg-slate-800 dark:bg-slate-200 scale-150' : 'bg-slate-300 dark:bg-slate-600'}`} />
                     </div>
                 ))}
             </div>
