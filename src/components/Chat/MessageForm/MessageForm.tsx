@@ -49,7 +49,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
               relative flex flex-col
               bg-white dark:bg-[#0a0a0a] /* Deep dark background */
               border-2 border-slate-200 dark:border-white/10
-              rounded-[32px] /* Large rounded corners */
+              rounded-2xl
               transition-all duration-300
               ${logic.isFocused ? 'border-indigo-500/50 dark:border-indigo-400/50 shadow-lg shadow-indigo-500/10' : 'shadow-sm'}
             `}
