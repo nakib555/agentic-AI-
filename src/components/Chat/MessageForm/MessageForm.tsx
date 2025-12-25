@@ -115,7 +115,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                   <AnimatePresence mode="popLayout">
                     {!hasInput && !logic.isFocused && (
                         <motion.div
-                            key="placeholder"
+                            key={logic.placeholder.join('')}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0, transition: { duration: 0 } }}
@@ -142,7 +142,7 @@ export const MessageForm = forwardRef<MessageFormHandle, {
                     onBlur={() => logic.setIsFocused(false)}
                     aria-label="Chat input"
                     disabled={!hasApiKey}
-                    className={`w-full bg-transparent text-slate-800 dark:text-slate-200 text-lg focus:outline-none resize-none leading-relaxed placeholder:text-transparent max-h-[300px] overflow-y-auto custom-scrollbar ${logic.isEnhancing ? 'opacity-50' : ''}`}
+                    className={`w-full bg-transparent text-slate-800 dark:text-slate-200 text-lg focus:outline-none resize-none leading-relaxed placeholder:text-transparent max-h-[300px] overflow-y-auto overscroll-y-contain custom-scrollbar ${logic.isEnhancing ? 'opacity-50' : ''}`}
                     rows={1}
                     style={{ minHeight: '32px' }}
                   />
