@@ -450,6 +450,20 @@ Remember to apply the User Profile and Response Style defined above to your fina
 `.trim();
                 }
 
+                console.log('\n🔵 [DEBUG] Final System Instruction Construction:');
+                console.log('---------------------------------------------------');
+                console.log(finalSystemInstruction);
+                console.log('---------------------------------------------------\n');
+
+                if (newMessage) {
+                    console.log('🔵 [DEBUG] User Input Payload:');
+                    console.log('---------------------------------------------------');
+                    console.log(typeof newMessage === 'string' ? newMessage : JSON.stringify(newMessage, null, 2));
+                    console.log('---------------------------------------------------\n');
+                } else {
+                    console.log('🔵 [DEBUG] User Input: (Regeneration - No new input)\n');
+                }
+
                 const finalSettings = {
                     ...settings,
                     systemInstruction: finalSystemInstruction,
