@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -100,7 +99,9 @@ export const useAppLogic = () => {
   const [activeModel, setActiveModel] = useState('');
 
   // --- Settings State ---
+  const [provider, setProvider] = useState<'gemini' | 'openrouter'>('gemini');
   const [apiKey, setApiKey] = useState('');
+  const [openRouterApiKey, setOpenRouterApiKey] = useState('');
   const [suggestionApiKey, setSuggestionApiKey] = useState('');
   const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
@@ -116,14 +117,6 @@ export const useAppLogic = () => {
   // Memory state is managed by its own hook
   const [isMemoryEnabled, setIsMemoryEnabledState] = useState(false);
   const memory = useMemory(isMemoryEnabled);
-
-  // --- Ambient Theme Logic ---
-  // Analyzes the last message to subtle shift colors. 
-  // Simple heuristic: Code=Blue, Error=Red, Success=Green, Default=Indigo
-  useEffect(() => {
-      // Access chat messages via the hook instance below (need to break circular dependency mentally, but here we access state)
-      // We'll rely on `chat.messages` being updated.
-  }, []);
 
   // --- Initialization ---
   useEffect(() => {
@@ -162,6 +155,8 @@ export const useAppLogic = () => {
         if (!currentActiveModel) setActiveModel('');
     }
     
+    // For specialized models, keep existing unless invalid/empty
+    // Note: If provider switches to OpenRouter, these lists will be empty and these checks handle that gracefully
     const currentImageModel = imageModelRef.current;
     if (newImageModels.length > 0) {
         if (!currentImageModel || !newImageModels.some((m: Model) => m.id === currentImageModel)) {
@@ -204,7 +199,9 @@ export const useAppLogic = () => {
         try {
             setSettingsLoading(true);
             const settings = await getSettings();
+            setProvider(settings.provider || 'gemini');
             setApiKey(settings.apiKey);
+            setOpenRouterApiKey(settings.openRouterApiKey);
             setSuggestionApiKey(settings.suggestionApiKey);
             setAboutUser(settings.aboutUser);
             setAboutResponse(settings.aboutResponse);
@@ -234,10 +231,14 @@ export const useAppLogic = () => {
     }, [setter, key]);
   };
   
-  const handleSetApiKey = useCallback(async (newApiKey: string) => {
-    setApiKey(newApiKey);
+  const handleSetApiKey = useCallback(async (newApiKey: string, providerType: 'gemini' | 'openrouter') => {
+    const isGemini = providerType === 'gemini';
+    if (isGemini) setApiKey(newApiKey);
+    else setOpenRouterApiKey(newApiKey);
+
     try {
-        const response: UpdateSettingsResponse = await updateSettings({ apiKey: newApiKey });
+        const payload = isGemini ? { apiKey: newApiKey, provider: providerType } : { openRouterApiKey: newApiKey, provider: providerType };
+        const response: UpdateSettingsResponse = await updateSettings(payload);
         if (response.models) {
             processModelData(response);
         } else {
@@ -248,6 +249,17 @@ export const useAppLogic = () => {
         throw error;
     }
   }, [processModelData, fetchModels]);
+
+  const handleProviderChange = useCallback((newProvider: 'gemini' | 'openrouter') => {
+      setProvider(newProvider);
+      // We don't save immediately, wait for API key save or handle it via a separate effect if needed.
+      // But typically user selects provider then enters key then saves.
+      // Or we can save just the provider switch.
+      updateSettings({ provider: newProvider }).then(response => {
+          if (response.models) processModelData(response);
+          else fetchModels();
+      });
+  }, [fetchModels, processModelData]);
 
   const handleSaveServerUrl = useCallback(async (newUrl: string): Promise<boolean> => {
       if (typeof window !== 'undefined') {
@@ -295,7 +307,10 @@ export const useAppLogic = () => {
     };
   }, [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel]);
 
-  const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, apiKey, showToast);
+  // Pass active API key based on provider for client-side tools if necessary (though most are backend now)
+  const effectiveClientKey = provider === 'gemini' ? apiKey : openRouterApiKey;
+  
+  const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, effectiveClientKey, showToast);
   const { updateChatModel, updateChatSettings } = chat;
 
   const handleSetTemperature = useCallback((val: number) => {
@@ -537,6 +552,8 @@ export const useAppLogic = () => {
     serverUrl, onSaveServerUrl: handleSaveServerUrl,
     // Artifact Props
     isArtifactOpen, setIsArtifactOpen, artifactContent, artifactLanguage, 
-    artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing
+    artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing,
+    // New Props for Provider
+    provider, openRouterApiKey, onProviderChange: handleProviderChange
   };
 };

@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -104,15 +103,17 @@ type ModelSettingsProps = {
   defaultTemperature: number;
   defaultMaxTokens: number;
   disabled: boolean;
+  provider: 'gemini' | 'openrouter';
 };
 
 const ModelSettings: React.FC<ModelSettingsProps> = ({
     models, imageModels, videoModels, ttsModels, selectedModel, onModelChange,
     temperature, setTemperature, maxTokens, setMaxTokens,
     imageModel, onImageModelChange, videoModel, onVideoModelChange, ttsModel, onTtsModelChange,
-    disabled
+    disabled, provider
 }) => {
     const noModelsAvailable = models.length === 0;
+    const isGemini = provider === 'gemini';
 
     return (
         <div className="space-y-10 pb-12">
@@ -147,7 +148,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                 <div className="space-y-6">
                     <SettingItem 
                         label="Primary Reasoning Model" 
-                        description="The main model used for chat, reasoning, and planning."
+                        description={isGemini ? "The main model used for chat, reasoning, and planning." : "Selected OpenRouter model for reasoning."}
                     >
                         <div className="w-full sm:w-[320px]">
                             <ModelSelector 
@@ -172,7 +173,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
             <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/10 to-transparent w-full" />
 
             {/* Multimodal Capabilities Section */}
-            <section className="space-y-6">
+            <section className={`space-y-6 ${!isGemini ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
                 <div className="flex items-center gap-3 mb-2">
                     <div className="p-2 rounded-lg bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400">
                         <div className="flex -space-x-1">
@@ -180,7 +181,10 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                             <VideoIcon />
                         </div>
                     </div>
-                    <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">Multimodal Suite</h4>
+                    <div className="flex-1">
+                        <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">Multimodal Suite</h4>
+                        {!isGemini && <p className="text-xs text-slate-500">Only available with Gemini models</p>}
+                    </div>
                 </div>
 
                 <div className="space-y-6">
@@ -190,7 +194,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 models={imageModels} 
                                 selectedModel={imageModel} 
                                 onModelChange={onImageModelChange} 
-                                disabled={disabled || noModelsAvailable} 
+                                disabled={disabled || noModelsAvailable || !isGemini} 
                                 placeholder="Select image model"
                                 icon={<PhotoIcon />}
                             />
@@ -203,7 +207,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 models={videoModels} 
                                 selectedModel={videoModel} 
                                 onModelChange={onVideoModelChange} 
-                                disabled={disabled || noModelsAvailable} 
+                                disabled={disabled || noModelsAvailable || !isGemini} 
                                 placeholder="Select video model"
                                 icon={<VideoIcon />}
                             />
@@ -216,7 +220,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 models={ttsModels} 
                                 selectedModel={ttsModel} 
                                 onModelChange={onTtsModelChange} 
-                                disabled={disabled || noModelsAvailable} 
+                                disabled={disabled || noModelsAvailable || !isGemini} 
                                 placeholder="Select TTS model"
                                 icon={<SpeakerIcon />}
                             />

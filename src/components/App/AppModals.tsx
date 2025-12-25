@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -39,9 +38,13 @@ type AppModalsProps = {
   clearAllChats: () => void;
   // API Keys
   apiKey: string;
-  onSaveApiKey: (key: string) => Promise<void>;
+  onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter') => Promise<void>;
   suggestionApiKey: string;
   onSaveSuggestionApiKey: (key: string) => void;
+  // Provider Settings
+  provider: 'gemini' | 'openrouter';
+  openRouterApiKey: string;
+  onProviderChange: (provider: 'gemini' | 'openrouter') => void;
   // Custom Instructions
   aboutUser: string;
   setAboutUser: (value: string) => void;
@@ -169,6 +172,10 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           setTheme={props.setTheme}
           serverUrl={props.serverUrl}
           onSaveServerUrl={props.onSaveServerUrl}
+          // Provider props
+          provider={props.provider}
+          openRouterApiKey={props.openRouterApiKey}
+          onProviderChange={props.onProviderChange}
         />
       )}
 

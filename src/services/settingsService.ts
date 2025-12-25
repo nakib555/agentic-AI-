@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,7 +7,9 @@ import { fetchFromApi } from '../utils/api';
 import type { Model } from '../types';
 
 export type AppSettings = {
+    provider: 'gemini' | 'openrouter';
     apiKey: string;
+    openRouterApiKey: string;
     suggestionApiKey: string; // Secondary key
     aboutUser: string;
     aboutResponse: string;

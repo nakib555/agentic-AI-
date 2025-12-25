@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -15,7 +14,7 @@ type GeneralSettingsProps = {
   onDownloadLogs: () => void;
   onShowDataStructure: () => void;
   apiKey: string;
-  onSaveApiKey: (key: string) => Promise<void>;
+  onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter') => Promise<void>;
   suggestionApiKey?: string;
   onSaveSuggestionApiKey?: (key: string) => void;
   theme: Theme;
@@ -46,19 +45,23 @@ const ActionButton = ({
 );
 
 const ApiKeyInput = ({ 
-    label, 
     value, 
     onSave, 
     placeholder, 
     description,
-    isOptional = false
+    isOptional = false,
+    provider = 'gemini',
+    onProviderChange,
+    label
 }: { 
-    label: string, 
     value: string, 
-    onSave: (key: string) => Promise<void> | void, 
+    onSave: (key: string, provider: 'gemini' | 'openrouter') => Promise<void> | void, 
     placeholder: string,
     description: string,
-    isOptional?: boolean
+    isOptional?: boolean,
+    provider: 'gemini' | 'openrouter',
+    onProviderChange?: (provider: 'gemini' | 'openrouter') => void,
+    label?: string
 }) => {
     const [localValue, setLocalValue] = useState(value);
     const [showKey, setShowKey] = useState(false);
@@ -83,7 +86,7 @@ const ApiKeyInput = ({
         setSaveError(null);
         
         try {
-            await onSave(localValue);
+            await onSave(localValue, provider);
             if (isMounted.current) {
                 setSaveStatus('saved');
                 setTimeout(() => {
@@ -98,8 +101,32 @@ const ApiKeyInput = ({
         }
     };
 
+    const labelComponent = label ? (
+        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{label}</span>
+    ) : (
+        <div className="flex items-center gap-2">
+            <select 
+                value={provider}
+                onChange={(e) => onProviderChange?.(e.target.value as 'gemini' | 'openrouter')}
+                className="bg-transparent font-bold text-sm text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 rounded px-1 -ml-1 transition-colors"
+                disabled={!onProviderChange}
+            >
+                <option value="gemini">Gemini</option>
+                <option value="openrouter">OpenRouter</option>
+            </select>
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">API Key</span>
+        </div>
+    );
+
     return (
-        <SettingItem label={label} description={description} layout="col">
+        <SettingItem 
+            label="" // Empty label prop as we render custom header
+            description={description} 
+            layout="col"
+        >
+            {/* Custom Header Injection to replace standard label */}
+            <div className="-mt-10 mb-4">{labelComponent}</div>
+
             <form onSubmit={handleSave} className="space-y-4">
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -271,31 +298,32 @@ const ServerUrlInput = ({
     );
 };
 
-const GeneralSettings: React.FC<GeneralSettingsProps> = ({ 
+const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'openrouter', openRouterApiKey: string, onProviderChange: (p: 'gemini' | 'openrouter') => void }> = ({ 
     onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, apiKey, onSaveApiKey,
     suggestionApiKey, onSaveSuggestionApiKey,
     theme, setTheme,
-    serverUrl, onSaveServerUrl
+    serverUrl, onSaveServerUrl,
+    provider, openRouterApiKey, onProviderChange
 }) => {
 
-  const handleMainApiKeySave = async (key: string) => {
+  const handleMainApiKeySave = async (key: string, savedProvider: 'gemini' | 'openrouter') => {
       const cleanKey = key.trim();
       const cleanSuggestionKey = (suggestionApiKey || '').trim();
 
-      // Allow saving if suggestion key is empty, but if both exist, they must be different
-      if (cleanKey && cleanSuggestionKey && cleanKey === cleanSuggestionKey) {
-          throw new Error("Conflict: Main Key cannot be identical to Suggestion Key. Leave Suggestion Key empty to share the Main Key.");
+      // Check conflict only if we are using Gemini provider for the main key
+      if (savedProvider === 'gemini' && cleanKey && cleanSuggestionKey && cleanKey === cleanSuggestionKey) {
+          throw new Error("Conflict: Main Key cannot be identical to Suggestion Key.");
       }
-      await onSaveApiKey(cleanKey);
+      
+      // Save logic: If provider changed, update provider state too
+      if (savedProvider !== provider) {
+          onProviderChange(savedProvider);
+      }
+      await onSaveApiKey(cleanKey, savedProvider);
   };
 
   const handleSuggestionApiKeySave = async (key: string) => {
       const cleanKey = key.trim();
-      const cleanMainKey = (apiKey || '').trim();
-
-      if (cleanKey && cleanMainKey && cleanKey === cleanMainKey) {
-          throw new Error("Conflict: Suggestion Key cannot be identical to Main Key. Leave this empty to use the Main Key.");
-      }
       if (onSaveSuggestionApiKey) {
           onSaveSuggestionApiKey(cleanKey);
       }
@@ -308,19 +336,25 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
       </div>
 
       <ApiKeyInput 
-        label="Gemini API Key"
-        description="Required for main chat, reasoning, and tool execution."
-        value={apiKey}
+        provider={provider}
+        onProviderChange={onProviderChange}
+        description={provider === 'gemini' 
+            ? "Required for main chat, reasoning, and tool execution." 
+            : "Required for accessing OpenRouter models."
+        }
+        value={provider === 'gemini' ? apiKey : openRouterApiKey}
         onSave={handleMainApiKeySave}
-        placeholder="Enter your primary Gemini API key"
+        placeholder={provider === 'gemini' ? "Enter your Gemini API key" : "Enter your OpenRouter API key"}
       />
 
-      {onSaveSuggestionApiKey && (
+      {provider === 'gemini' && onSaveSuggestionApiKey && (
           <ApiKeyInput 
+            provider="gemini"
+            // No provider change for suggestion key
             label="AI Suggestion API Key (Optional)"
             description="Used for background tasks (titles, suggestions, memory) to save rate limits on your main key."
             value={suggestionApiKey || ''}
-            onSave={handleSuggestionApiKeySave}
+            onSave={(k) => handleSuggestionApiKeySave(k)}
             placeholder="Enter a secondary API key"
             isOptional
           />
@@ -328,10 +362,17 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
 
       <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 pb-4 border-b border-gray-100 dark:border-white/5">
          <span>Need a key?</span>
-         <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
-             Get API Key 
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
-         </a>
+         {provider === 'gemini' ? (
+             <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
+                 Get Gemini Key 
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
+             </a>
+         ) : (
+             <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
+                 Get OpenRouter Key 
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
+             </a>
+         )}
       </div>
 
       <SettingItem label="Theme" description="Choose your preferred visual style." layout="col">

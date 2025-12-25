@@ -44,7 +44,9 @@ export async function initDataStore() {
     // The frontend application logic automatically selects the first available model 
     // from the dynamically fetched list if the setting is empty.
     const defaultSettings = {
+        provider: 'gemini', // 'gemini' | 'openrouter'
         apiKey: '',
+        openRouterApiKey: '',
         suggestionApiKey: '', // Secondary key for background tasks
         aboutUser: '',
         aboutResponse: '',

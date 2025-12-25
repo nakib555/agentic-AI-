@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -16,10 +15,11 @@ import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./too
 import { runAgenticLoop } from './services/agenticLoop/index.js';
 import { createToolExecutor } from './tools/index.js';
 import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations.js'; // Imported codeExecutorDeclaration
-import { getApiKey, getSuggestionApiKey } from './settingsHandler.js';
+import { getApiKey, getSuggestionApiKey, getProvider } from './settingsHandler.js';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils.js';
 import { historyControl } from './services/historyControl.js';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer.js';
+import { streamOpenRouter } from './utils/openRouterUtils.js';
 
 // Store promises for frontend tool requests that the backend is waiting on
 const frontendToolRequests = new Map<string, (result: any) => void>();
@@ -234,12 +234,10 @@ class ChatPersistenceManager {
 export const apiHandler = async (req: any, res: any) => {
     const task = req.query.task as string;
     
-    const mainApiKey = await getApiKey();
+    const activeProvider = await getProvider();
+    const mainApiKey = await getApiKey(); // This gets either Gemini key or OpenRouter key based on provider
     const suggestionApiKey = await getSuggestionApiKey();
 
-    // Determine which key to use
-    // If it's a suggestion task and we have a specific key for it, use that.
-    // Otherwise fallback to main key.
     const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate'];
     const isSuggestionTask = SUGGESTION_TASKS.includes(task);
     
@@ -248,11 +246,9 @@ export const apiHandler = async (req: any, res: any) => {
         console.log(`[HANDLER] Using Suggestion API Key for task: "${task}"`);
         activeApiKey = suggestionApiKey;
     } else {
-        console.log(`[HANDLER] Using Main API Key for task: "${task}"`);
+        console.log(`[HANDLER] Using Main API Key for task: "${task}" (Provider: ${activeProvider})`);
     }
 
-    // Tasks that are allowed to run without an API key
-    // 'debug_data_tree' must be here to allow checking file structure without a valid key setup
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree'];
 
     if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
@@ -260,26 +256,24 @@ export const apiHandler = async (req: any, res: any) => {
         return res.status(401).json({ error: "API key not configured on the server." });
     }
     
-    const ai = activeApiKey ? new GoogleGenAI({ apiKey: activeApiKey }) : null;
+    // Only initialize Gemini client if we are in Gemini mode or using suggestion key (which assumes Gemini for now)
+    // OR if the task specifically requires Gemini capabilities (like TTS currently implemented via Gemini)
+    // Note: If using OpenRouter, 'ai' might be null here if we strictly separate, but keeping it simple.
+    const ai = (activeProvider === 'gemini' || isSuggestionTask) && activeApiKey 
+        ? new GoogleGenAI({ apiKey: activeApiKey }) 
+        : null;
 
     try {
         switch (task) {
             case 'chat': 
             case 'regenerate': {
-                if (!ai) throw new Error("GoogleGenAI not initialized.");
-                
                 const { chatId, model, settings, newMessage, messageId } = req.body;
                 
                 console.log(`[HANDLER] Starting ${task} task for chatId: ${chatId}`);
 
                 // 1. Initial Persistence & History Fetch
-                // We MUST save the user message and model placeholder immediately to disk.
-                // This ensures that if the user refreshes instantly, the chat state is recovered.
-                
                 let savedChat = await historyControl.getChat(chatId);
                 if (!savedChat) {
-                    // Recover: If chat ID doesn't exist (race condition?), try create it?
-                    // For now, assume valid ID or error.
                     return res.status(404).json({ error: "Chat not found" });
                 }
 
@@ -288,16 +282,12 @@ export const apiHandler = async (req: any, res: any) => {
                 if (task === 'regenerate' && messageId) {
                     const targetIndex = historyMessages.findIndex((m: any) => m.id === messageId);
                     if (targetIndex !== -1) {
-                        // Truncate history up to the user message before this one
                         historyMessages = historyMessages.slice(0, targetIndex);
                     }
                 }
 
                 if (task === 'chat' && newMessage) {
-                    // Append User Message
                     historyMessages.push(newMessage);
-                    
-                    // Create and Append Model Placeholder
                     const modelPlaceholder = {
                         id: messageId,
                         role: 'model' as const,
@@ -308,11 +298,8 @@ export const apiHandler = async (req: any, res: any) => {
                         activeResponseIndex: 0
                     };
                     historyMessages.push(modelPlaceholder);
-
-                    // SAVE NOW
                     savedChat = await historyControl.updateChat(chatId, { messages: historyMessages });
                 } else if (task === 'regenerate') {
-                     // Re-append a fresh model placeholder for the regeneration
                      const modelPlaceholder = {
                         id: messageId,
                         role: 'model' as const,
@@ -328,19 +315,8 @@ export const apiHandler = async (req: any, res: any) => {
 
                 if (!savedChat) throw new Error("Failed to initialize chat persistence");
 
-                // Initialize Persistence Manager for this run
                 const persistence = new ChatPersistenceManager(chatId, messageId);
-
-                // Prepare History for Gemini (excluding the empty placeholder we just added)
-                // The transformer now handles truncation and compression of tool outputs
                 const historyForAI = historyMessages.slice(0, -1);
-                let fullHistory = transformHistoryToGeminiFormat(historyForAI);
-
-                console.log('[HANDLER] Context Ready:', { 
-                    model, 
-                    historyLength: fullHistory.length, 
-                    isAgentMode: settings.isAgentMode 
-                });
 
                 res.setHeader('Content-Type', 'application/json');
                 res.setHeader('Transfer-Encoding', 'chunked');
@@ -353,36 +329,90 @@ export const apiHandler = async (req: any, res: any) => {
 
                 const pingInterval = setInterval(() => writeEvent(res, 'ping', {}), 10000);
                 
-                const sessionCallIds = new Set<string>();
-
-                // handle client disconnect WITHOUT aborting the AI loop
                 req.on('close', () => {
-                    console.log(`[HANDLER] Client disconnected for request ${requestId}. Continuing execution in background...`);
-                    // We DO NOT call abortController.abort() here.
-                    // We DO clear the ping interval as the response stream is dead.
+                    console.log(`[HANDLER] Client disconnected for request ${requestId}.`);
                     clearInterval(pingInterval);
-                    
-                    // Note: We leave sessionCallIds/frontendToolRequests active. 
-                    // If the AI calls a frontend tool while user is gone, it will hit the check below.
                 });
+
+                // --- OPENROUTER PATH ---
+                if (activeProvider === 'openrouter') {
+                    console.log(`[HANDLER] Routing to OpenRouter for model ${model}`);
+                    
+                    const openRouterMessages = historyForAI.map((msg: any) => ({
+                        role: msg.role === 'model' ? 'assistant' : 'user',
+                        content: msg.text || ''
+                    }));
+
+                    // Add system prompt if available
+                    if (settings.systemPrompt) {
+                        openRouterMessages.unshift({ role: 'system', content: settings.systemPrompt });
+                    }
+
+                    try {
+                        await streamOpenRouter(
+                            activeApiKey!,
+                            model,
+                            openRouterMessages,
+                            {
+                                onTextChunk: (text) => {
+                                    writeEvent(res, 'text-chunk', text);
+                                    persistence.addText(text);
+                                },
+                                onComplete: (fullText) => {
+                                    writeEvent(res, 'complete', { finalText: fullText });
+                                    persistence.complete((response) => {
+                                        response.endTime = Date.now();
+                                    });
+                                },
+                                onError: (error) => {
+                                    writeEvent(res, 'error', { message: error.message || 'OpenRouter Error' });
+                                    persistence.complete((response) => {
+                                        response.error = { message: error.message || 'OpenRouter Error' };
+                                    });
+                                }
+                            },
+                            {
+                                temperature: settings.temperature,
+                                maxTokens: settings.maxOutputTokens
+                            }
+                        );
+                    } catch (e: any) {
+                        console.error("[HANDLER] OpenRouter Error:", e);
+                        writeEvent(res, 'error', { message: e.message });
+                        persistence.complete((response) => { response.error = { message: e.message }; });
+                    } finally {
+                        clearInterval(pingInterval);
+                        activeAgentLoops.delete(requestId);
+                        if (!res.writableEnded) res.end();
+                    }
+                    return; // Exit handler for OpenRouter path
+                }
+
+                // --- GEMINI PATH (Existing Logic) ---
+                
+                if (!ai) {
+                    throw new Error("Gemini AI not initialized (Check provider settings).");
+                }
+
+                // Prepare History for Gemini 
+                let fullHistory = transformHistoryToGeminiFormat(historyForAI);
+
+                const sessionCallIds = new Set<string>();
 
                 const requestFrontendExecution = (callId: string, toolName: string, toolArgs: any) => {
                     return new Promise<string | { error: string }>((resolve) => {
-                        // Check if client is still connected
                         if (res.writableEnded || res.closed || res.destroyed) {
                             console.warn(`[HANDLER] Frontend tool ${toolName} requested but client disconnected.`);
                             resolve({ error: "Client disconnected. Cannot execute frontend tool." });
                             return;
                         }
-
-                        // Set a timeout for frontend tools to prevent eternal hanging
                         const timeoutId = setTimeout(() => {
                             if (frontendToolRequests.has(callId)) {
                                 console.warn(`[HANDLER] Frontend tool ${toolName} timed out.`);
                                 frontendToolRequests.delete(callId);
                                 resolve({ error: "Tool execution timed out (User did not respond)." });
                             }
-                        }, 60000); // 60s timeout
+                        }, 60000); 
 
                         frontendToolRequests.set(callId, (result) => {
                             clearTimeout(timeoutId);
@@ -395,8 +425,6 @@ export const apiHandler = async (req: any, res: any) => {
                 
                 const onToolUpdate = (callId: string, data: any) => {
                     writeEvent(res, 'tool-update', { id: callId, ...data });
-                    // We could persist detailed tool logs here if needed, but it might be too verbose for the main chat file.
-                    // For now, we only persist the final result or major state changes in the main loop callbacks.
                 };
                 
                 const toolExecutor = createToolExecutor(
@@ -410,27 +438,15 @@ export const apiHandler = async (req: any, res: any) => {
                     onToolUpdate 
                 );
 
-                // --- SYSTEM PROMPT CONSTRUCTION ---
                 const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
                 const { systemPrompt, aboutUser, aboutResponse } = settings;
                 
                 let personalizationSection = "";
-                
-                // Build the Personalization Block
-                if (aboutUser && aboutUser.trim()) {
-                    personalizationSection += `\n## 👤 User Profile & Context\n${aboutUser.trim()}\n`;
-                }
-                if (aboutResponse && aboutResponse.trim()) {
-                    personalizationSection += `\n## 🎭 Response Style Preferences\n${aboutResponse.trim()}\n`;
-                }
-                // Legacy system prompt or explicit custom instructions
-                if (systemPrompt && systemPrompt.trim()) {
-                    personalizationSection += `\n## 🔧 Custom Directives\n${systemPrompt.trim()}\n`;
-                }
+                if (aboutUser && aboutUser.trim()) personalizationSection += `\n## 👤 User Profile & Context\n${aboutUser.trim()}\n`;
+                if (aboutResponse && aboutResponse.trim()) personalizationSection += `\n## 🎭 Response Style Preferences\n${aboutResponse.trim()}\n`;
+                if (systemPrompt && systemPrompt.trim()) personalizationSection += `\n## 🔧 Custom Directives\n${systemPrompt.trim()}\n`;
 
                 let finalSystemInstruction = coreInstruction;
-
-                // If personalization exists, inject it AT THE TOP (Prioritized) AND AT THE BOTTOM (Recency)
                 if (personalizationSection) {
                     finalSystemInstruction = `
 # 🟢 PRIORITY CONTEXT: USER PERSONALIZATION
@@ -450,24 +466,9 @@ Remember to apply the User Profile and Response Style defined above to your fina
 `.trim();
                 }
 
-                console.log('\n🔵 [DEBUG] Final System Instruction Construction:');
-                console.log('---------------------------------------------------');
-                console.log(finalSystemInstruction);
-                console.log('---------------------------------------------------\n');
-
-                if (newMessage) {
-                    console.log('🔵 [DEBUG] User Input Payload:');
-                    console.log('---------------------------------------------------');
-                    console.log(typeof newMessage === 'string' ? newMessage : JSON.stringify(newMessage, null, 2));
-                    console.log('---------------------------------------------------\n');
-                } else {
-                    console.log('🔵 [DEBUG] User Input: (Regeneration - No new input)\n');
-                }
-
                 const finalSettings = {
                     ...settings,
                     systemInstruction: finalSystemInstruction,
-                    // In Agent Mode, full tools. In Chat Mode, only Google Search.
                     tools: settings.isAgentMode 
                         ? [{ functionDeclarations: toolDeclarations }] 
                         : [{ googleSearch: {} }],
@@ -489,7 +490,6 @@ Remember to apply the User Profile and Response Style defined above to your fina
                             onNewToolCalls: (toolCallEvents) => {
                                 writeEvent(res, 'tool-call-start', toolCallEvents);
                                 persistence.update((response) => {
-                                    // Append new events
                                     response.toolCallEvents = [...(response.toolCallEvents || []), ...toolCallEvents];
                                 });
                             },
@@ -508,34 +508,19 @@ Remember to apply the User Profile and Response Style defined above to your fina
                             onPlanReady: (plan) => {
                                 return new Promise((resolve) => {
                                     if (res.writableEnded || res.closed) {
-                                        // If user disconnected during plan, auto-deny or abort?
-                                        // Safety: Deny execution if user isn't there to approve.
                                         resolve(false); 
                                         return;
                                     }
-
                                     const callId = `plan-approval-${generateId()}`;
-                                    
-                                    // Save plan to history so it's visible if user reloads
                                     persistence.update((response) => {
                                         response.plan = { plan, callId };
-                                        // We don't have direct access to 'executionState' on the message here easily without refetching parent,
-                                        // but the frontend handles the UI state based on the presence of the plan.
-                                        // Ideally, we'd update the message metadata too.
                                     });
-
                                     frontendToolRequests.set(callId, resolve);
                                     sessionCallIds.add(callId);
                                     writeEvent(res, 'plan-ready', { plan, callId });
                                 });
                             },
-                            // @ts-ignore
-                            // FIX: Add missing onFrontendToolRequest callback to satisfy the type.
-                            // This appears to be a stale requirement from a previous refactor, as the
-                            // toolExecutor now handles this logic. We add a warning to detect if it's ever called.
-                            onFrontendToolRequest: (callId, name, args) => {
-                                console.warn(`[HANDLER] onFrontendToolRequest called, but this path is deprecated. Tool: ${name}`);
-                            },
+                            onFrontendToolRequest: (callId, name, args) => { /* handled via stream events */ },
                             onComplete: (finalText, groundingMetadata) => {
                                 writeEvent(res, 'complete', { finalText, groundingMetadata });
                                 persistence.complete((response) => {
@@ -545,7 +530,7 @@ Remember to apply the User Profile and Response Style defined above to your fina
                             },
                             onCancel: () => {
                                 writeEvent(res, 'cancel', {});
-                                persistence.complete(); // Ensure we save whatever we have
+                                persistence.complete();
                             },
                             onError: (error) => {
                                 writeEvent(res, 'error', error);
@@ -565,7 +550,6 @@ Remember to apply the User Profile and Response Style defined above to your fina
                         response.error = parseApiError(loopError);
                     });
                 } finally {
-                    console.log(`[HANDLER] Finished processing for ${requestId}.`);
                     clearInterval(pingInterval);
                     activeAgentLoops.delete(requestId);
                     if (!res.writableEnded) {
@@ -602,7 +586,10 @@ Remember to apply the User Profile and Response Style defined above to your fina
             }
 
             case 'title': {
-                if (!ai) throw new Error("GoogleGenAI not initialized.");
+                if (!ai) {
+                    // Skip title generation if not Gemini for now (or implement generic one)
+                    return res.status(200).json({ title: '' });
+                }
                 const { messages } = req.body;
                 const historyText = messages.slice(0, 3).map((m: any) => `${m.role}: ${m.text}`).join('\n');
                 const prompt = `You are a helpful assistant. Generate a short, concise title (max 6 words) for this conversation. Do not use quotes or markdown. Just the title text.\n\nCONVERSATION:\n${historyText}\n\nTITLE:`;
@@ -614,14 +601,13 @@ Remember to apply the User Profile and Response Style defined above to your fina
                     });
                     res.status(200).json({ title: response.text?.trim() ?? '' });
                 } catch (e) {
-                    console.warn(`[HANDLER] Title generation failed (skipping):`, e);
                     res.status(200).json({ title: '' });
                 }
                 break;
             }
 
             case 'suggestions': {
-                if (!ai) throw new Error("GoogleGenAI not initialized.");
+                if (!ai) return res.status(200).json({ suggestions: [] });
                 const { conversation } = req.body;
                 const recentHistory = conversation.slice(-5).map((m: any) => `${m.role}: ${(m.text || '').substring(0, 200)}`).join('\n');
                 const prompt = `Based on the conversation below, suggest 3 short, relevant follow-up questions or actions the user might want to take next. Return ONLY a JSON array of strings. Example: ["Tell me a more", "Explain the code", "Generate an image"].\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
@@ -639,7 +625,6 @@ Remember to apply the User Profile and Response Style defined above to your fina
                     } catch (e) { /* ignore parse error */ }
                     res.status(200).json({ suggestions });
                 } catch (e) {
-                    console.warn(`[HANDLER] Suggestion generation failed (skipping):`, e);
                     res.status(200).json({ suggestions: [] });
                 }
                 break;
@@ -653,7 +638,6 @@ Remember to apply the User Profile and Response Style defined above to your fina
                     res.status(200).json({ audio });
                 } catch (e) {
                     console.error("TTS Failed:", e);
-                    // Parse the specific error from executeTextToSpeech to send suggestions
                     const parsedError = parseApiError(e);
                     res.status(500).json({ error: parsedError });
                 }
@@ -661,7 +645,7 @@ Remember to apply the User Profile and Response Style defined above to your fina
             }
             
             case 'enhance': {
-                if (!ai) throw new Error("GoogleGenAI not initialized.");
+                if (!ai) return res.status(200).send(req.body.userInput); // Pass through
                 const { userInput } = req.body;
                 
                 const prompt = `You are a professional prompt engineer. Your goal is to optimize the user's input for a large language model (LLM) to ensure the best possible response.
@@ -690,7 +674,6 @@ Remember to apply the User Profile and Response Style defined above to your fina
                         if (text) res.write(text);
                     }
                 } catch (e) {
-                    console.error("Prompt enhance failed:", e);
                     res.write(userInput); // Fallback to original
                 }
                 res.end();
@@ -698,27 +681,25 @@ Remember to apply the User Profile and Response Style defined above to your fina
             }
 
             case 'memory_suggest': {
-                if (!ai) throw new Error("GoogleGenAI not initialized.");
+                if (!ai) return res.status(200).json({ suggestions: [] });
                 const { conversation } = req.body;
                 try {
                     const suggestions = await executeExtractMemorySuggestions(ai, conversation);
                     res.status(200).json({ suggestions });
                 } catch (e) {
-                    console.warn(`[HANDLER] Memory suggest failed (skipping):`, e);
                     res.status(200).json({ suggestions: [] });
                 }
                 break;
             }
 
             case 'memory_consolidate': {
-                if (!ai) throw new Error("GoogleGenAI not initialized.");
+                if (!ai) return res.status(200).json({ memory: [req.body.currentMemory, ...req.body.suggestions].filter(Boolean).join('\n') });
                 const { currentMemory, suggestions } = req.body;
                 try {
                     const memory = await executeConsolidateMemory(ai, currentMemory, suggestions);
                     res.status(200).json({ memory });
                 } catch (e) {
-                    console.warn(`[HANDLER] Memory consolidate failed:`, e);
-                    // Fallback to simple append
+                    // Fallback: simple append
                     res.status(200).json({ memory: [currentMemory, ...suggestions].filter(Boolean).join('\n') });
                 }
                 break;

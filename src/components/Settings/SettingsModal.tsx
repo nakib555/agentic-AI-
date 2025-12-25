@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -32,7 +31,7 @@ type SettingsModalProps = {
   onDownloadLogs: () => void;
   onShowDataStructure: () => void;
   apiKey: string;
-  onSaveApiKey: (key: string) => Promise<void>;
+  onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter') => Promise<void>;
   suggestionApiKey: string;
   onSaveSuggestionApiKey: (key: string) => void;
   aboutUser: string;
@@ -61,6 +60,9 @@ type SettingsModalProps = {
   setTheme: (theme: Theme) => void;
   serverUrl: string;
   onSaveServerUrl: (url: string) => Promise<boolean>;
+  provider: 'gemini' | 'openrouter';
+  openRouterApiKey: string;
+  onProviderChange: (provider: 'gemini' | 'openrouter') => void;
 };
 
 const CATEGORIES = [
@@ -211,6 +213,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                             setTheme={props.setTheme} 
                                             serverUrl={props.serverUrl}
                                             onSaveServerUrl={props.onSaveServerUrl}
+                                            provider={props.provider}
+                                            openRouterApiKey={props.openRouterApiKey}
+                                            onProviderChange={props.onProviderChange}
                                         />
                                     )}
                                     {activeCategory === 'personalize' && <PersonalizeSettings {...props} />}
@@ -235,6 +240,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                             defaultTemperature={props.defaultTemperature}
                                             defaultMaxTokens={props.defaultMaxTokens}
                                             disabled={props.disabled}
+                                            provider={props.provider}
                                         />
                                     )}
                                     {activeCategory === 'speech' && (
