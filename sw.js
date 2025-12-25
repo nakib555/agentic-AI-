@@ -1,10 +1,12 @@
 
 const CACHE_NAME = 'agentic-ai-cache-{{VERSION}}';
 
+// We precache the core shell. Note: We do NOT precache index.js/tsx here because
+// Vite generates hashed filenames (e.g. assets/index.243.js).
+// The HTML file (fetched via Network First) will point to the correct hashed assets.
 const PRECACHE_ASSETS = [
     '/',
     '/index.html',
-    '/index.js',
     '/styles/main.css',
     '/favicon.svg',
     '/manifest.json',
@@ -20,7 +22,7 @@ self.addEventListener('install', event => {
                 return cache.put(url, res);
             }).catch(err => {
                 console.error(`[SW] Failed to cache ${url}:`, err);
-                throw err;
+                // We don't throw here to allow partial installation if an asset fails
             });
         }));
       })
@@ -46,24 +48,49 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
+  // Skip non-GET, API calls, and extensions
   if (event.request.method !== 'GET' || url.pathname.startsWith('/api/') || url.protocol === 'chrome-extension:') {
     return;
   }
 
-  event.respondWith(
-    caches.open(CACHE_NAME).then(async cache => {
-      const cachedResponse = await cache.match(event.request);
-      
-      const networkFetch = fetch(event.request).then(response => {
-        if (response && response.status === 200 && response.type === 'basic') {
-          cache.put(event.request, response.clone());
-        }
-        return response;
-      }).catch(() => {
-        // Network failed, rely on cache if available
-      });
+  // STRATEGY: Network First for HTML/Navigation, Cache First for Assets
+  // This ensures users always get the latest version of the app structure.
+  
+  const isNavigation = event.request.mode === 'navigate';
+  const isStaticAsset = url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|ico|json|woff|woff2|ttf|eot)$/);
 
-      return cachedResponse || networkFetch;
+  if (isNavigation) {
+    event.respondWith(
+      fetch(event.request)
+        .then(networkResponse => {
+          return caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
+          });
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Cache First for static assets
+  event.respondWith(
+    caches.match(event.request).then(cachedResponse => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request).then(networkResponse => {
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          return networkResponse;
+        }
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, responseToCache);
+        });
+        return networkResponse;
+      });
     })
   );
 });

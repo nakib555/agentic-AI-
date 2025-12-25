@@ -19,8 +19,8 @@ const staticAssetsPlugin = (appVersion: string) => ({
       fs.mkdirSync(stylesDir, { recursive: true });
     }
     
-    // 1. Copy Manifest, Favicon, and Cloudflare Redirects
-    const filesToCopy = ['manifest.json', 'favicon.svg', '_redirects'];
+    // 1. Copy Manifest, Favicon, Cloudflare Redirects AND Headers
+    const filesToCopy = ['manifest.json', 'favicon.svg', '_redirects', '_headers'];
     for (const file of filesToCopy) {
       if (fs.existsSync(file)) {
         fs.copyFileSync(file, path.join(distDir, file));
