@@ -21,9 +21,53 @@ type ModelCache = {
 let modelCache: ModelCache | null = null;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-// Helper to sort models alphabetically by display name for a consistent UI.
-const sortModelsByName = (models: AppModel[]): AppModel[] => {
-    return models.sort((a, b) => a.name.localeCompare(b.name));
+// Priority list for sorting. Models containing these strings (in order) get bumped to the top.
+const MODEL_PRIORITY_KEYWORDS = [
+    'claude-3.5-sonnet',
+    'claude-3.7-sonnet',
+    'gpt-4o',
+    'gemini-2.0-pro',
+    'gemini-2.0-flash',
+    'llama-3.1-405b',
+    'llama-3.3-70b',
+    'mistral-large',
+    'deepseek-r1'
+];
+
+// Helper to calculate a score for sorting
+const getModelScore = (modelId: string): number => {
+    const lowerId = modelId.toLowerCase();
+    
+    // 1. Check Priority List (Highest Score)
+    const priorityIndex = MODEL_PRIORITY_KEYWORDS.findIndex(k => lowerId.includes(k));
+    if (priorityIndex !== -1) {
+        return 1000 - priorityIndex; // Earlier in list = higher score
+    }
+
+    // 2. Check Provider Reputation
+    if (lowerId.includes('anthropic')) return 500;
+    if (lowerId.includes('openai')) return 450;
+    if (lowerId.includes('google')) return 400;
+    if (lowerId.includes('meta-llama')) return 350;
+    if (lowerId.includes('mistral')) return 300;
+    
+    // 3. Penalty for "free" or low-tier models if desirable, or kept neutral
+    if (lowerId.includes(':free')) return 10; 
+
+    return 100;
+};
+
+// Helper to sort models by score then name
+const sortModelsSmartly = (models: AppModel[]): AppModel[] => {
+    return models.sort((a, b) => {
+        const scoreA = getModelScore(a.id);
+        const scoreB = getModelScore(b.id);
+        
+        if (scoreA !== scoreB) {
+            return scoreB - scoreA; // Higher score first
+        }
+        return a.name.localeCompare(b.name); // Alphabetical fallback
+    });
 };
 
 // Helper for fetching with retry
@@ -115,8 +159,6 @@ export async function listAvailableModels(googleApiKey: string, openRouterApiKey
         fetchOpenRouterModels(openRouterApiKey)
     ]);
 
-    const allModels = [...googleModels, ...openRouterModels];
-    
     const availableChatModels: AppModel[] = [];
     const availableImageModels: AppModel[] = [];
     const availableVideoModels: AppModel[] = [];
@@ -131,11 +173,11 @@ export async function listAvailableModels(googleApiKey: string, openRouterApiKey
         else if (!lowerId.includes('embedding') && !lowerId.includes('aqa')) availableChatModels.push(m);
     });
 
-    // Filter OpenRouter Models (mostly Chat, some might be multimodal but usually treated as chat models in standard listings)
+    // Filter OpenRouter Models
     openRouterModels.forEach(m => {
-        // Simple heuristic: Most OpenRouter models are for chat/completion
-        // unless explicitly marked otherwise (rare in standard list).
-        // We add them all to chat for now.
+        const lowerId = m.id.toLowerCase();
+        // Skip obvious embedding or non-chat models if strictly identifiable, 
+        // but OpenRouter mostly serves chat models.
         availableChatModels.push(m);
     });
 
@@ -146,10 +188,10 @@ export async function listAvailableModels(googleApiKey: string, openRouterApiKey
     }
 
     const result = {
-        chatModels: sortModelsByName(availableChatModels),
-        imageModels: sortModelsByName(availableImageModels),
-        videoModels: sortModelsByName(availableVideoModels),
-        ttsModels: sortModelsByName(availableTtsModels),
+        chatModels: sortModelsSmartly(availableChatModels),
+        imageModels: sortModelsSmartly(availableImageModels),
+        videoModels: sortModelsSmartly(availableVideoModels),
+        ttsModels: sortModelsSmartly(availableTtsModels),
     };
 
     modelCache = { keyHash: currentKeyHash, data: result, timestamp: now };
