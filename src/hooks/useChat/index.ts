@@ -18,6 +18,8 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 
 type ChatSettings = { 
     systemPrompt: string; 
+    aboutUser?: string;
+    aboutResponse?: string;
     temperature: number; 
     maxOutputTokens: number; 
     imageModel: string;
@@ -225,6 +227,8 @@ export const useChat = (
                     settings: {
                         isAgentMode: runtimeSettings.isAgentMode,
                         systemPrompt: runtimeSettings.systemPrompt,
+                        aboutUser: runtimeSettings.aboutUser,
+                        aboutResponse: runtimeSettings.aboutResponse,
                         temperature: chatConfig.temperature,
                         maxOutputTokens: chatConfig.maxOutputTokens || undefined,
                         imageModel: runtimeSettings.imageModel,

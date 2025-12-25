@@ -414,11 +414,24 @@ export const apiHandler = async (req: any, res: any) => {
                 // Combine the core persona (Agent/Chat) with user's custom instructions from settings.
                 
                 const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
-                const userCustomInstruction = settings.systemPrompt || '';
+                
+                const { systemPrompt, aboutUser, aboutResponse } = settings;
+                let personalContext = '';
+                
+                // Structured Context Injection
+                if (aboutUser && aboutUser.trim()) {
+                    personalContext += `\n\n=== USER PROFILE & CONTEXT ===\nThe following details describe the user you are interacting with. Tailor your responses to their background:\n${aboutUser.trim()}\n`;
+                }
+                if (aboutResponse && aboutResponse.trim()) {
+                    personalContext += `\n\n=== RESPONSE STYLE & PERSONALITY ===\nAdhere strictly to these style preferences:\n${aboutResponse.trim()}\n`;
+                }
+                
+                // Legacy Fallback
+                if (!personalContext && systemPrompt) {
+                    personalContext = `\n\n=== USER CUSTOM INSTRUCTIONS ===\nThe user has provided the following specific context and preferences. You MUST adhere to these overrides:\n\n${systemPrompt}`;
+                }
 
-                const combinedInstruction = userCustomInstruction.trim()
-                    ? `${coreInstruction}\n\n=== USER CUSTOM INSTRUCTIONS ===\nThe user has provided the following specific context and preferences. You MUST adhere to these overrides:\n\n${userCustomInstruction}`
-                    : coreInstruction;
+                const combinedInstruction = `${coreInstruction}${personalContext}`;
 
                 const finalSettings = {
                     ...settings,

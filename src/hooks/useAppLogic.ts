@@ -292,6 +292,8 @@ export const useAppLogic = () => {
     
     return {
         systemPrompt: parts.join('\n\n'),
+        aboutUser: aboutUser.trim(),
+        aboutResponse: aboutResponse.trim(),
         temperature,
         maxOutputTokens: maxTokens,
         imageModel,
