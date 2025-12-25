@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -7,6 +8,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SettingItem } from './SettingItem';
 import { ThemeToggle } from '../Sidebar/ThemeToggle';
 import type { Theme } from '../../hooks/useTheme';
+import { SelectDropdown } from '../UI/SelectDropdown';
 
 type GeneralSettingsProps = {
   onClearAllChats: () => void;
@@ -22,6 +24,11 @@ type GeneralSettingsProps = {
   serverUrl: string;
   onSaveServerUrl: (url: string) => Promise<boolean>;
 };
+
+const PROVIDER_OPTIONS = [
+    { id: 'gemini', label: 'Google Gemini', desc: 'Default' },
+    { id: 'openrouter', label: 'OpenRouter', desc: 'Access to Claude, GPT, etc.' }
+];
 
 const ActionButton = ({ 
     icon, 
@@ -104,16 +111,15 @@ const ApiKeyInput = ({
     const labelComponent = label ? (
         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{label}</span>
     ) : (
-        <div className="flex items-center gap-2">
-            <select 
+        <div className="flex items-center gap-3">
+            <SelectDropdown
                 value={provider}
-                onChange={(e) => onProviderChange?.(e.target.value as 'gemini' | 'openrouter')}
-                className="bg-transparent font-bold text-sm text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 rounded px-1 -ml-1 transition-colors"
+                onChange={(val) => onProviderChange?.(val as 'gemini' | 'openrouter')}
+                options={PROVIDER_OPTIONS}
                 disabled={!onProviderChange}
-            >
-                <option value="gemini">Gemini</option>
-                <option value="openrouter">OpenRouter</option>
-            </select>
+                className="w-48"
+                triggerClassName="flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors shadow-sm"
+            />
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">API Key</span>
         </div>
     );
