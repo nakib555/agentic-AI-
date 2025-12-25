@@ -54,17 +54,14 @@ export const TtsButton = ({
       );
     }
     if (isPlaying) {
+      // Stop/Pause Icon
       return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 16 16"
-          fill="currentColor"
-          className="w-5 h-5"
-        >
-          <path d="M2.5 3.5A1.5 1.5 0 0 1 4 2h8a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 12.5v-9Z" />
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+            <rect x="6" y="6" width="12" height="12" rx="2" />
         </svg>
       );
     }
+    // Play Icon
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
