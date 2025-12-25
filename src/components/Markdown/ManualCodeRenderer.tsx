@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { memo, useMemo, ReactNode } from 'react';
+import React, { memo, useMemo, ReactNode, Component } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
@@ -31,7 +31,7 @@ const processHighlights = (content: string): string => {
     if (!hasHighlight && !hasCurrency) return content;
     
     // Split content by code blocks, inline code, display math, and inline math to protect them
-    // Note: The regex `\$[^$\n]+\$` captures valid inline math (single line).
+    // Note: the regex `\$[^$\n]+\$` captures valid inline math (single line).
     const parts = content.split(/(`{3}[\s\S]*?`{3}|`[^`]+`|\$\$[\s\S]*?\$\$|\$[^$\n]+\$)/g);
     
     return parts.map(part => {
@@ -61,7 +61,7 @@ interface MarkdownErrorBoundaryState {
 }
 
 // Internal Error Boundary to catch Markdown/Rehype parsing crashes during streaming
-class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
+class MarkdownErrorBoundary extends Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
   state: MarkdownErrorBoundaryState = { hasError: false };
 
   static getDerivedStateFromError(error: any) {
