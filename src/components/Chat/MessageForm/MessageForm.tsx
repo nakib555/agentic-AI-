@@ -7,7 +7,6 @@
 import React, { forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMessageForm } from './useMessageForm';
-import { useTokenCounter } from './useTokenCounter';
 import { AttachedFilePreview } from './AttachedFilePreview';
 import { UploadMenu } from './UploadMenu';
 import { VoiceVisualizer } from '../../UI/VoiceVisualizer';
@@ -46,16 +45,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
     messages,
     isAgentMode,
     hasApiKey
-  );
-
-  const { formattedCount, isCounting } = useTokenCounter(
-    logic.inputValue,
-    logic.processedFiles,
-    isAgentMode,
-    activeModel,
-    currentChatId,
-    hasApiKey,
-    messages.length
   );
 
   const isGeneratingResponse = isLoading;
@@ -174,13 +163,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
             </div>
 
             <div className="flex items-center gap-2">
-                {/* Token Counter */}
-                {(formattedCount || isCounting) && (
-                    <div className="text-xs font-mono text-content-tertiary px-2 select-none">
-                        {isCounting ? '...' : `${formattedCount} tok`}
-                    </div>
-                )}
-
                 {/* Voice Input */}
                 <button
                     onClick={logic.handleMicClick}
