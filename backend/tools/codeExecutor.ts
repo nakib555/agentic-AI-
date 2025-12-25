@@ -51,8 +51,13 @@ export const executeCode = async (args: { language: string; code: string; packag
         // It's already HTML/SVG, pass it through
         htmlOutput = output;
     } else {
+        // Strip ANSI codes from HTML output to prevent garbage characters in the visual preview
+        // Regex to match ANSI escape codes
+        const ansiRegex = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g;
+        const cleanHtmlOutput = output.replace(ansiRegex, '');
+
         // Wrap plain text in a terminal-like view for the visual iframe
-        const safeOutput = output.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const safeOutput = cleanHtmlOutput.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         htmlOutput = `
             <!DOCTYPE html>
             <html>

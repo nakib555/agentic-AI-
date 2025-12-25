@@ -71,6 +71,10 @@ export const fileStore = {
             }
             
             const entries = await fs.readdir(realPath, { withFileTypes: true });
+            
+            // Sort files alphabetically for consistent output
+            entries.sort((a, b) => a.name.localeCompare(b.name));
+
             return entries.map(entry => entry.name + (entry.isDirectory() ? '/' : ''));
         } catch (error: any) {
             if (error.code === 'ENOENT') return [];

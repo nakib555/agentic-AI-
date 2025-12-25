@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -53,6 +54,14 @@ async function generateAsciiTree(dirPath: string, prefix: string = ''): Promise<
     // Filter out hidden files/dirs if necessary, e.g. .DS_Store
     entries = entries.filter(e => !e.name.startsWith('.'));
 
+    // Sort entries: Directories first, then alphabetical by name
+    entries.sort((a, b) => {
+        if (a.isDirectory() === b.isDirectory()) {
+            return a.name.localeCompare(b.name);
+        }
+        return a.isDirectory() ? -1 : 1;
+    });
+
     for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
         const isLast = i === entries.length - 1;
@@ -86,6 +95,15 @@ async function generateDirectoryStructure(dirPath: string): Promise<any> {
         
         // Filter hidden
         const children = [];
+        
+        // Sort for JSON structure as well
+        entries.sort((a, b) => {
+            if (a.isDirectory() === b.isDirectory()) {
+                return a.name.localeCompare(b.name);
+            }
+            return a.isDirectory() ? -1 : 1;
+        });
+
         for (const entry of entries) {
             if (entry.name.startsWith('.')) continue;
             const childPath = path.join(dirPath, entry.name);
