@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// PART 1 of 4 from src/components/App.tsx
-// Lines 40-46
-
 // Default values for settings
 export const DEFAULT_ABOUT_USER = '';
 export const DEFAULT_ABOUT_RESPONSE = '';

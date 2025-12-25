@@ -319,48 +319,51 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     const [saveState, setSaveState] = useState<'saved' | 'saving' | 'pending'>('saved');
 
     // Debounce state only for free-form text inputs to prevent typing lag
-    // Reduced debounce to 300ms for snappier feel
     const debouncedNickname = useDebounce(nickname, 300);
     const debouncedOccupation = useDebounce(occupation, 300);
     const debouncedMore = useDebounce(moreAboutUser, 300);
     const debouncedInstructions = useDebounce(customInstructions, 300);
 
-    // --- Parsing Logic (Executed Once on Mount) ---
-    useEffect(() => {
-        // Parse "About User"
-        const nicknameMatch = aboutUser.match(/Nickname:\s*(.*?)(?:\n|$)/);
-        const occupationMatch = aboutUser.match(/Occupation:\s*(.*?)(?:\n|$)/);
+    const parseAboutUser = useCallback((text: string) => {
+        const nicknameMatch = text.match(/Nickname:\s*(.*?)(?:\n|$)/);
+        const occupationMatch = text.match(/Occupation:\s*(.*?)(?:\n|$)/);
         
-        let cleanAbout = aboutUser
+        let cleanAbout = text
             .replace(/^Nickname:.*$/m, '')
             .replace(/^Occupation:.*$/m, '')
             .trim();
         
-        if (nicknameMatch) setNickname(nicknameMatch[1]);
-        if (occupationMatch) setOccupation(occupationMatch[1]);
-        if (cleanAbout) setMoreAboutUser(cleanAbout);
+        setNickname(nicknameMatch ? nicknameMatch[1] : '');
+        setOccupation(occupationMatch ? occupationMatch[1] : '');
+        setMoreAboutUser(cleanAbout);
+    }, []);
 
-        // Parse "About Response"
-        const toneMatch = aboutResponse.match(/Tone:\s*(.*?)(?:\n|$)/);
-        const warmthMatch = aboutResponse.match(/Warmth:\s*([^,]+)/);
-        const enthMatch = aboutResponse.match(/Enthusiasm:\s*([^,]+)/);
-        const structMatch = aboutResponse.match(/Structure:\s*([^,]+)/);
-        const emojiMatch = aboutResponse.match(/Emoji:\s*([^,]+)/);
+    const parseAboutResponse = useCallback((text: string) => {
+        const toneMatch = text.match(/Tone:\s*(.*?)(?:\n|$)/);
+        const warmthMatch = text.match(/Warmth:\s*([^,]+)/);
+        const enthMatch = text.match(/Enthusiasm:\s*([^,]+)/);
+        const structMatch = text.match(/Structure:\s*([^,]+)/);
+        const emojiMatch = text.match(/Emoji:\s*([^,]+)/);
         
-        let cleanInstructions = aboutResponse
+        let cleanInstructions = text
             .replace(/^Tone:.*$/m, '')
             .replace(/^Traits:.*$/m, '')
             .trim();
 
-        if (toneMatch) setTone(toneMatch[1].toLowerCase().trim());
-        if (warmthMatch) setWarmth(warmthMatch[1].toLowerCase().trim());
-        if (enthMatch) setEnthusiasm(enthMatch[1].toLowerCase().trim());
-        if (structMatch) setStructure(structMatch[1].toLowerCase().trim());
-        if (emojiMatch) setEmoji(emojiMatch[1].toLowerCase().trim());
-        if (cleanInstructions) setCustomInstructions(cleanInstructions);
+        setTone(toneMatch ? toneMatch[1].toLowerCase().trim() : 'default');
+        setWarmth(warmthMatch ? warmthMatch[1].toLowerCase().trim() : 'default');
+        setEnthusiasm(enthMatch ? enthMatch[1].toLowerCase().trim() : 'default');
+        setStructure(structMatch ? structMatch[1].toLowerCase().trim() : 'default');
+        setEmoji(emojiMatch ? emojiMatch[1].toLowerCase().trim() : 'default');
+        setCustomInstructions(cleanInstructions);
+    }, []);
 
+    // --- Parsing Logic (Executed on Mount) ---
+    useEffect(() => {
+        parseAboutUser(aboutUser);
+        parseAboutResponse(aboutResponse);
         setIsLoaded(true);
-    }, []); 
+    }, []); // Run once on mount
 
     // --- Update Logic ---
 
@@ -375,7 +378,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
         
         const finalString = parts.join('\n');
         
-        // Only trigger update and visual feedback if content effectively changes
+        // Only trigger update if content effectively changes
         if (finalString !== aboutUser) {
             setSaveState('saving');
             setAboutUser(finalString);
@@ -409,19 +412,36 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     }, [debouncedInstructions, tone, warmth, enthusiasm, structure, emoji, isLoaded, aboutResponse]);
 
 
-    // Handlers for Selects/Segmented Controls (Immediate Update)
-    // These update local state, which triggers the useEffect above naturally.
     const handleToneChange = (val: string) => setTone(val);
     const handleWarmthChange = (val: string) => setWarmth(val);
     const handleEnthusiasmChange = (val: string) => setEnthusiasm(val);
     const handleStructureChange = (val: string) => setStructure(val);
     const handleEmojiChange = (val: string) => setEmoji(val);
 
-    // Text input handlers just update local state
     const handleNicknameChange = (val: string) => { setNickname(val); setSaveState('pending'); };
     const handleOccupationChange = (val: string) => { setOccupation(val); setSaveState('pending'); };
     const handleMoreChange = (val: string) => { setMoreAboutUser(val); setSaveState('pending'); };
     const handleCustomChange = (val: string) => { setCustomInstructions(val); setSaveState('pending'); };
+
+    const handleReset = () => {
+        if (confirm("Reset all personalization settings to default? This will clear your custom instructions and profile.")) {
+            // Reset local state
+            setTone('default');
+            setWarmth('default');
+            setEnthusiasm('default');
+            setStructure('default');
+            setEmoji('default');
+            setNickname('');
+            setOccupation('');
+            setCustomInstructions('');
+            setMoreAboutUser('');
+            
+            // Force immediate update to parent
+            setAboutUser('');
+            setAboutResponse('');
+            setSaveState('saved');
+        }
+    };
 
     return (
         <div className="pb-10 max-w-6xl mx-auto">
@@ -437,28 +457,38 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 px-4 py-2 bg-slate-100/50 dark:bg-white/5 rounded-full border border-slate-200/50 dark:border-white/5">
-                    {saveState === 'saved' ? (
-                        <>
-                            <svg className="w-4 h-4 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-                            </svg>
-                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Saved</span>
-                        </>
-                    ) : saveState === 'saving' ? (
-                        <>
-                            <svg className="animate-spin w-3.5 h-3.5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Saving...</span>
-                        </>
-                    ) : (
-                        <>
-                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Typing...</span>
-                        </>
-                    )}
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={handleReset}
+                        className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-red-500 hover:bg-red-50 dark:text-slate-400 dark:hover:bg-red-900/10 rounded-full transition-colors"
+                        disabled={disabled}
+                    >
+                        Reset to Defaults
+                    </button>
+                    
+                    <div className="flex items-center gap-2 px-4 py-2 bg-slate-100/50 dark:bg-white/5 rounded-full border border-slate-200/50 dark:border-white/5">
+                        {saveState === 'saved' ? (
+                            <>
+                                <svg className="w-4 h-4 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Saved</span>
+                            </>
+                        ) : saveState === 'saving' ? (
+                            <>
+                                <svg className="animate-spin w-3.5 h-3.5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Saving...</span>
+                            </>
+                        ) : (
+                            <>
+                                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Typing...</span>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 
