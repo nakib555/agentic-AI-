@@ -13,7 +13,7 @@ type AudioWaveProps = {
     barColor?: string;
 };
 
-export const AudioWave: React.FC<AudioWaveProps> = ({ isPlaying, className = "", barColor = "bg-indigo-500 dark:bg-indigo-400" }) => {
+export const AudioWave: React.FC<AudioWaveProps> = ({ isPlaying, className = "", barColor = "bg-primary-main" }) => {
     if (!isPlaying) return null;
     
     return (

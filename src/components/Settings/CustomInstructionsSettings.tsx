@@ -46,7 +46,7 @@ const InfoIcon = () => (
 
 // --- Components ---
 
-const InstructionCard: React.FC<{
+const InstructionBlock: React.FC<{
     icon: React.ReactNode;
     title: string;
     description: string;
@@ -54,42 +54,62 @@ const InstructionCard: React.FC<{
     onChange: (value: string) => void;
     disabled: boolean;
     placeholder: string;
-    colorClass: string;
-}> = ({ icon, title, description, value, onChange, disabled, placeholder, colorClass }) => (
-    <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="group relative bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl p-1 sm:p-5 transition-all hover:border-indigo-300 dark:hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/5"
-    >
-        <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-4 px-3 pt-3 sm:px-0 sm:pt-0">
-            <div className={`p-3 rounded-xl flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 ${colorClass}`}>
-                {icon}
+    themeColor: 'blue' | 'purple';
+}> = ({ icon, title, description, value, onChange, disabled, placeholder, themeColor }) => {
+    
+    const colors = {
+        blue: {
+            bg: "bg-blue-100 dark:bg-blue-500/20",
+            text: "text-blue-600 dark:text-blue-400",
+            focus: "focus-within:ring-blue-500/20",
+            border: "group-hover:border-blue-200 dark:group-hover:border-blue-500/20"
+        },
+        purple: {
+            bg: "bg-purple-100 dark:bg-purple-500/20",
+            text: "text-purple-600 dark:text-purple-400",
+            focus: "focus-within:ring-purple-500/20",
+            border: "group-hover:border-purple-200 dark:group-hover:border-purple-500/20"
+        }
+    };
+
+    const theme = colors[themeColor];
+
+    return (
+        <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col h-full"
+        >
+            <div className="flex items-start gap-3 mb-3 px-1">
+                <div className={`p-2.5 rounded-xl flex-shrink-0 ${theme.bg} ${theme.text}`}>
+                    {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
+                </div>
+                <div>
+                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">{title}</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed opacity-90">
+                        {description}
+                    </p>
+                </div>
             </div>
-            <div className="flex-1">
-                <h4 className="text-base font-bold text-slate-800 dark:text-slate-100">{title}</h4>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed opacity-90">
-                    {description}
-                </p>
-            </div>
-        </div>
-        
-        <div className="relative">
-            <textarea
-                value={value}
-                onChange={e => onChange(e.target.value)}
-                disabled={disabled}
-                placeholder={placeholder}
-                className="w-full min-h-[220px] p-4 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:bg-white dark:focus:bg-black/40 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-y leading-relaxed custom-scrollbar font-sans"
-                spellCheck={false}
-            />
             
-            {/* Character Count Indicator */}
-            <div className="absolute bottom-3 right-3 pointer-events-none px-2 py-1 rounded-md bg-white/80 dark:bg-black/60 text-[10px] font-mono text-slate-400 backdrop-blur-sm border border-slate-100 dark:border-white/5">
-                {value.length} chars
+            <div className={`relative flex-1 group rounded-2xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 transition-all duration-300 ${theme.border} shadow-sm overflow-hidden`}>
+                <textarea
+                    value={value}
+                    onChange={e => onChange(e.target.value)}
+                    disabled={disabled}
+                    placeholder={placeholder}
+                    className={`w-full h-full min-h-[280px] p-5 bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-4 ${theme.focus} transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-none leading-relaxed custom-scrollbar font-mono`}
+                    spellCheck={false}
+                />
+                
+                {/* Character Count Indicator */}
+                <div className="absolute bottom-3 right-3 pointer-events-none px-2 py-1 rounded-md bg-slate-100/80 dark:bg-white/5 text-[10px] font-mono text-slate-400 border border-slate-200/50 dark:border-white/5">
+                    {value.length} chars
+                </div>
             </div>
-        </div>
-    </motion.div>
-);
+        </motion.div>
+    );
+};
 
 const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProps> = ({
     aboutUser,
@@ -99,8 +119,8 @@ const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProps> = ({
     disabled
 }) => {
     return (
-        <div className="space-y-8 pb-10">
-             <div className="mb-8">
+        <div className="space-y-6 pb-6">
+             <div className="mb-6">
                 <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">System Persona</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 flex items-center gap-2 max-w-2xl leading-relaxed">
                     <span className="p-1 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"><InfoIcon /></span>
@@ -108,27 +128,27 @@ const CustomInstructionsSettings: React.FC<CustomInstructionsSettingsProps> = ({
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-6">
-                <InstructionCard
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+                <InstructionBlock
                     icon={<UserPersonaIcon />}
                     title="User Context"
-                    description="What should the AI know about you to provide better responses? Include your profession, expertise level, location, or preferences."
+                    description="What should the AI know about you? (Profession, location, etc.)"
                     value={aboutUser}
                     onChange={setAboutUser}
                     disabled={disabled}
                     placeholder="E.g., I'm a senior software engineer specializing in Python and React. I prefer technical explanations over simplifications. I live in London."
-                    colorClass="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                    themeColor="blue"
                 />
 
-                <InstructionCard
+                <InstructionBlock
                     icon={<ResponseStyleIcon />}
                     title="Response Preferences"
-                    description="How would you like the AI to respond? Define the tone, format, length, and style of the output."
+                    description="How should the AI respond? (Tone, format, verbosity)"
                     value={aboutResponse}
                     onChange={setAboutResponse}
                     disabled={disabled}
-                    placeholder="E.g., Be concise and direct. Always format code blocks with language tags. Avoid conversational filler. Use analogies to explain complex topics. When solving math, show step-by-step reasoning."
-                    colorClass="bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                    placeholder="E.g., Be concise and direct. Always format code blocks with language tags. Avoid conversational filler. Use analogies to explain complex topics."
+                    themeColor="purple"
                 />
             </div>
         </div>
