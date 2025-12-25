@@ -1,9 +1,10 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -98,7 +99,32 @@ const SelectDropdown: React.FC<{
     const selected = options.find(o => o.id === value) || options[0];
     const containerRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
-    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+    const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number; width: number; maxHeight: number }>({ left: 0, width: 0, maxHeight: 300 });
+
+    const updatePosition = useCallback(() => {
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const spaceBelow = viewportHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            
+            // Prefer showing below, but flip to top if cramped (< 220px) and there is more space above
+            const showOnTop = spaceBelow < 220 && spaceAbove > spaceBelow;
+            
+            const padding = 8;
+            const maxHeight = showOnTop 
+                ? Math.min(spaceAbove - padding * 2, 300) 
+                : Math.min(spaceBelow - padding * 2, 300);
+
+            setCoords({
+                left: rect.left,
+                width: rect.width,
+                top: showOnTop ? undefined : rect.bottom + padding,
+                bottom: showOnTop ? viewportHeight - rect.top + padding : undefined,
+                maxHeight: Math.max(100, maxHeight)
+            });
+        }
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -110,35 +136,22 @@ const SelectDropdown: React.FC<{
             }
         };
         
-        const handleResize = () => setIsOpen(false);
-
         if (isOpen) {
+            updatePosition();
             document.addEventListener('mousedown', handleClickOutside);
-            window.addEventListener('resize', handleResize);
-            window.addEventListener('scroll', handleResize, true);
+            window.addEventListener('resize', updatePosition);
+            window.addEventListener('scroll', updatePosition, true); // Capture phase handles scroll in parents
         }
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('scroll', handleResize, true);
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
         };
-    }, [isOpen]);
+    }, [isOpen, updatePosition]);
 
     const toggleOpen = () => {
         if (disabled) return;
-        if (isOpen) {
-            setIsOpen(false);
-            return;
-        }
-        if (containerRef.current) {
-            const rect = containerRef.current.getBoundingClientRect();
-            setCoords({
-                top: rect.bottom + window.scrollY + 8,
-                left: rect.left + window.scrollX,
-                width: rect.width
-            });
-            setIsOpen(true);
-        }
+        setIsOpen(prev => !prev);
     };
 
     return (
@@ -175,31 +188,37 @@ const SelectDropdown: React.FC<{
                     {isOpen && (
                         <motion.div
                             ref={menuRef}
-                            initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                            initial={{ opacity: 0, y: coords.bottom ? 10 : -10, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                            exit={{ opacity: 0, y: coords.bottom ? 10 : -10, scale: 0.98 }}
                             transition={{ duration: 0.15, ease: "easeOut" }}
                             style={{ 
-                                position: 'absolute',
+                                position: 'fixed',
                                 top: coords.top,
+                                bottom: coords.bottom,
                                 left: coords.left,
                                 width: coords.width,
-                                zIndex: 9999
+                                zIndex: 99999
                             }}
-                            className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-72 overflow-y-auto custom-scrollbar ring-1 ring-black/5"
+                            className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/5"
                         >
-                            {options.map((opt) => (
-                                <button
-                                    key={opt.id}
-                                    onClick={() => { onChange(opt.id); setIsOpen(false); }}
-                                    className={`w-full flex flex-col items-start px-4 py-3 text-left transition-colors border-b border-gray-100 dark:border-white/5 last:border-0 ${value === opt.id ? 'bg-indigo-50/50 dark:bg-indigo-500/10' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`}
-                                >
-                                    <span className={`text-sm font-bold ${value === opt.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-200'}`}>
-                                        {opt.label}
-                                    </span>
-                                    {opt.desc && <span className="text-xs text-slate-500 dark:text-slate-500 mt-0.5 font-medium">{opt.desc}</span>}
-                                </button>
-                            ))}
+                            <div 
+                                className="overflow-y-auto custom-scrollbar"
+                                style={{ maxHeight: coords.maxHeight }}
+                            >
+                                {options.map((opt) => (
+                                    <button
+                                        key={opt.id}
+                                        onClick={() => { onChange(opt.id); setIsOpen(false); }}
+                                        className={`w-full flex flex-col items-start px-4 py-3 text-left transition-colors border-b border-gray-100 dark:border-white/5 last:border-0 ${value === opt.id ? 'bg-indigo-50/50 dark:bg-indigo-500/10' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                    >
+                                        <span className={`text-sm font-bold ${value === opt.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                                            {opt.label}
+                                        </span>
+                                        {opt.desc && <span className="text-xs text-slate-500 dark:text-slate-500 mt-0.5 font-medium">{opt.desc}</span>}
+                                    </button>
+                                ))}
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>,
