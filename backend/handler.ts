@@ -430,7 +430,7 @@ export const apiHandler = async (req: any, res: any) => {
 
                 let finalSystemInstruction = coreInstruction;
 
-                // If personalization exists, inject it AT THE TOP (Prioritized)
+                // If personalization exists, inject it AT THE TOP (Prioritized) AND AT THE BOTTOM (Recency)
                 if (personalizationSection) {
                     finalSystemInstruction = `
 # 🟢 PRIORITY CONTEXT: USER PERSONALIZATION
@@ -442,6 +442,11 @@ ${personalizationSection}
 
 # ⚙️ CORE SYSTEM DIRECTIVES
 ${coreInstruction}
+
+================================================================================
+
+# 🟢 REINFORCEMENT: PERSONALIZATION
+Remember to apply the User Profile and Response Style defined above to your final output.
 `.trim();
                 }
 

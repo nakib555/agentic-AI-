@@ -378,17 +378,21 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
 
     // Explicit Save Handler
     const handleManualSave = async () => {
+        if (isSaving) return;
         setIsSaving(true);
-        // Force commit updates from local state
+        setIsSaved(false);
+        
+        // Force commit updates from local state to ensure synchronization
+        // Note: These calls update the parent state which triggers a backend sync.
         updateAboutUser(nickname, occupation, moreAboutUser);
         updateAboutResponse(tone, warmth, enthusiasm, structure, emoji, customInstructions);
         
-        // Artificial delay to show process (updates are usually instant)
-        await new Promise(resolve => setTimeout(resolve, 600));
+        // Artificial delay to show visual process and allow backend sync to initiate
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         setIsSaving(false);
         setIsSaved(true);
-        setTimeout(() => setIsSaved(false), 2000);
+        setTimeout(() => setIsSaved(false), 2500);
     };
 
     return (
@@ -411,8 +415,8 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                     className={`
                         flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md active:scale-95
                         ${isSaved 
-                            ? 'bg-green-500 text-white hover:bg-green-600' 
-                            : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-lg'
+                            ? 'bg-green-500 text-white hover:bg-green-600 shadow-green-500/20' 
+                            : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-indigo-500/20'
                         }
                         disabled:opacity-50 disabled:cursor-not-allowed
                     `}
