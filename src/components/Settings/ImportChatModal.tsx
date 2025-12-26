@@ -114,7 +114,7 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 dark:bg-black/70 backdrop-blur-md z-[70] flex items-center justify-center p-0 md:p-4"
+          className="fixed inset-0 bg-black/60 dark:bg-black/70 backdrop-blur-md z-[70] flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="import-chat-title"
@@ -124,7 +124,7 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="bg-slate-50 dark:bg-layer-1 rounded-none md:rounded-2xl shadow-2xl w-full max-w-2xl h-[100dvh] md:h-[600px] md:max-h-[85vh] border-0 md:border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
+            className="bg-slate-50 dark:bg-layer-1 rounded-2xl shadow-2xl w-full max-w-2xl h-[600px] max-h-[85vh] border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -147,7 +147,7 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
             </div>
             
             {/* Tab Bar */}
-            <div className="flex items-center px-6 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-layer-1 gap-4 shrink-0">
+            <div className="flex items-center px-6 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-layer-1 gap-4">
                 <TabButton label="Import File" isActive={activeTab === 'import'} onClick={() => setActiveTab('import')} />
                 <TabButton label="JSON Structure" isActive={activeTab === 'structure'} onClick={() => setActiveTab('structure')} />
             </div>
