@@ -119,6 +119,7 @@ export const App = () => {
                 backendError={logic.backendError}
                 onRetryConnection={logic.retryConnection}
                 hasApiKey={!!logic.apiKey}
+                onEditMessage={logic.editMessage}
              />
           </div>
         </main>

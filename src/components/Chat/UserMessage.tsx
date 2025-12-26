@@ -150,13 +150,13 @@ export const UserMessage = ({ msg, onEdit }: { msg: Message, onEdit?: (newText: 
                 </div>
             </motion.div>
 
-            {/* Actions Row - Positioned at bottom right. Always visible now for better UX. */}
-            <div className="flex items-center gap-1 mt-1 mr-1 transition-opacity duration-200">
+            {/* Actions Row */}
+            <div className="flex items-center gap-1 mt-1 mr-1">
                 {/* Copy Button */}
                 <button 
                     type="button"
                     onClick={handleCopy}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-white/10 dark:hover:text-slate-200 transition-all focus:opacity-100"
+                    className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors focus:opacity-100"
                     title="Copy text"
                     aria-label="Copy message text"
                 >
@@ -191,7 +191,7 @@ export const UserMessage = ({ msg, onEdit }: { msg: Message, onEdit?: (newText: 
                 {onEdit && (
                     <button 
                         type="button"
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-white/10 dark:hover:text-slate-200 transition-all focus:opacity-100"
+                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors focus:opacity-100"
                         title="Edit and Branch"
                         aria-label="Edit message"
                         onClick={() => setIsEditing(true)}
