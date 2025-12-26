@@ -413,7 +413,7 @@ ${coreInstruction}
                 // Safe logger to truncate base64 data for cleaner console output
                 const safeHistoryLog = fullHistory.map(h => ({
                     role: h.role,
-                    parts: h.parts.map(p => {
+                    parts: (h.parts || []).map(p => {
                         if (p.inlineData) return { inlineData: { mimeType: p.inlineData.mimeType, data: '[BASE64_DATA_TRUNCATED]' } };
                         return p;
                     })
