@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { ErrorInfo, ReactNode, Component } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children?: ReactNode;
@@ -15,8 +15,8 @@ interface State {
   error: Error | null;
 }
 
-// Fix: Inherit from Component to ensure type definitions for props and state are correctly inherited
-export class ErrorBoundary extends Component<Props, State> {
+// Fix: Inherit from React.Component to ensure type definitions for props and state are correctly inherited
+export class ErrorBoundary extends React.Component<Props, State> {
   // Fix: Explicitly initialize state at class level to avoid property not found errors
   public state: State = {
     hasError: false,
