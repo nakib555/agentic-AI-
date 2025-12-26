@@ -316,7 +316,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
                           exit={{ opacity: 0, height: 0, marginTop: 0 }}
                           className="overflow-hidden"
                         >
-                          <div className={`p-4 rounded-xl border text-xs whitespace-pre-wrap font-['Fira_Code',_monospace] overflow-x-auto touch-pan-x shadow-inner ${styles.detailsBox}`}>
+                          <div className={`p-4 rounded-xl border text-xs whitespace-pre-wrap font-['Fira_Code',_monospace] overflow-x-auto shadow-inner ${styles.detailsBox}`}>
                             {error.details}
                           </div>
                         </motion.div>

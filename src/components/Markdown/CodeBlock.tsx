@@ -113,7 +113,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         </div>
         
         {/* Editor Body */}
-        <div className="relative overflow-x-auto text-[13px] leading-6 scrollbar-thin touch-pan-x">
+        <div className="relative overflow-x-auto text-[13px] leading-6 scrollbar-thin">
             <SyntaxHighlighter
               language={highlighterLang}
               style={isDarkMode ? vscDarkPlus : oneLight}
