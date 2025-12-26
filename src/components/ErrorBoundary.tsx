@@ -14,7 +14,7 @@ interface State {
   error: Error | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends React.Component<Props, State> {
   state: State = {
     hasError: false,
     error: null
@@ -26,6 +26,13 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
+  }
+
+  public componentDidUpdate(prevProps: Props) {
+    // Automatically reset error state if children change (e.g., due to HMR, code edits, or parent re-render)
+    if (this.state.hasError && this.props.children !== prevProps.children) {
+      this.setState({ hasError: false, error: null });
+    }
   }
 
   private handleReload = async () => {
@@ -43,26 +50,38 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   };
 
+  private handleDismiss = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="fixed inset-0 flex items-center justify-center bg-page p-4 text-center">
+        <div className="fixed inset-0 flex items-center justify-center bg-page p-4 text-center z-[9999]">
           <div className="bg-white dark:bg-layer-1 p-8 rounded-2xl shadow-xl border border-border max-w-md w-full">
             <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4 text-red-600 dark:text-red-400">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-content-primary mb-2">Failed to load the app</h2>
-            <p className="text-content-secondary mb-6 text-sm">
-              An unexpected error occurred. This might be due to a network issue or a cached update.
+            <h2 className="text-xl font-bold text-content-primary mb-2">Something went wrong</h2>
+            <p className="text-content-secondary mb-6 text-xs font-mono break-words bg-slate-100 dark:bg-black/20 p-2 rounded">
+              {this.state.error?.message || "An unexpected error occurred."}
             </p>
-            <button
-              onClick={this.handleReload}
-              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition-colors shadow-sm"
-            >
-              Reload Application
-            </button>
+            <div className="flex flex-col gap-3">
+                <button
+                  onClick={this.handleDismiss}
+                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition-colors shadow-sm w-full"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={this.handleReload}
+                  className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 rounded-xl font-semibold transition-colors w-full"
+                >
+                  Reload Page
+                </button>
+            </div>
           </div>
         </div>
       );
