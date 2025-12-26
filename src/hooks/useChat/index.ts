@@ -591,4 +591,66 @@ export const useChat = (
         };
 
         // 4. Reconstruct Timeline
-        const newMessages
+        const newMessages = [...currentChat.messages.slice(0, messageIndex), updatedMessage, ...restoredFuture];
+
+        // 5. Sync & Update
+        try {
+            // Optimistic update
+            chatHistoryHook.updateChatProperty(chatId, { messages: newMessages });
+
+            await fetchFromApi(`/api/chats/${chatId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: newMessages })
+            });
+        } catch (e) {
+            console.error("Failed to switch branch:", e);
+            if (onShowToast) onShowToast("Failed to switch branch", 'error');
+            // Revert on error? For now, we trust optimistic update is visually fine even if save fails briefly.
+        }
+
+    }, [isLoading, chatHistoryHook, onShowToast]);
+
+    const sendMessageForTest = (userMessage: string, options?: { isThinkingModeEnabled?: boolean }): Promise<Message> => {
+        return new Promise((resolve) => {
+            testResolverRef.current = resolve;
+            sendMessage(userMessage, undefined, options);
+        });
+    };
+
+    const regenerateResponse = useCallback(async (aiMessageId: string) => {
+        if (isLoading) cancelGeneration();
+        if (!currentChatId) return;
+
+        requestIdRef.current = null; // Reset before new message
+
+        const currentChat = chatHistory.find(c => c.id === currentChatId);
+        if (!currentChat || !currentChat.messages) return;
+
+        const messageIndex = currentChat.messages.findIndex(m => m.id === aiMessageId);
+        if (messageIndex < 1 || currentChat.messages[messageIndex-1].role !== 'user') {
+            console.error("Cannot regenerate: AI message is not preceded by a user message.");
+            return;
+        }
+        
+        // Add new response entry
+        const newResponse: ModelResponse = { text: '', toolCallEvents: [], startTime: Date.now() };
+        chatHistoryHook.addModelResponse(currentChatId, aiMessageId, newResponse);
+        chatHistoryHook.setChatLoadingState(currentChatId, true);
+        chatHistoryHook.updateMessage(currentChatId, aiMessageId, { isThinking: true });
+
+        // Use 'regenerate' task
+        await startBackendChat(
+            'regenerate',
+            currentChatId, 
+            aiMessageId, 
+            null, // No new user message
+            currentChat, 
+            { ...settings, isAgentMode: isAgentMode }
+        );
+
+    }, [isLoading, currentChatId, chatHistory, cancelGeneration, chatHistoryHook, initialModel, settings, memoryContent, isAgentMode]);
+    
+  
+  return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse, sendMessageForTest, editMessage, navigateBranch };
+};
