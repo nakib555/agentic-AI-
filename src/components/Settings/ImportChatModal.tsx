@@ -15,32 +15,45 @@ type ImportChatModalProps = {
 };
 
 const jsonStructureExample = `{
-  "id": "string (will be replaced)",
+  "id": "string (optional)",
   "title": "string",
   "messages": [
     {
-      "id": "string (will be replaced)",
-      "role": "'user' or 'model'",
-      "text": "string (for user messages)",
-      "attachments": [ 
+      "role": "user",
+      "text": "string (current active text)",
+      "activeVersionIndex": 0,
+      "versions": [
         {
-          "name": "string",
-          "mimeType": "string",
-          "data": "base64 string"
+          "text": "string (v1)",
+          "attachments": [],
+          "createdAt": 1720000000000
+        },
+        {
+          "text": "string (v2)",
+          "attachments": [],
+          "createdAt": 1720000000100,
+          "historyPayload": [] // Optional: Future messages for this branch
         }
-      ],
+      ]
+    },
+    {
+      "role": "model",
+      "activeResponseIndex": 0,
       "responses": [
         {
-          "text": "string (for model messages)",
-          "toolCallEvents": "array (optional)",
-          "error": "object (optional)"
+          "text": "string (response option 1)",
+          "toolCallEvents": [],
+          "error": null
+        },
+        {
+          "text": "string (response option 2)",
+          "toolCallEvents": []
         }
-      ],
-      "activeResponseIndex": "number"
+      ]
     }
   ],
   "model": "string (e.g., 'gemini-2.5-pro')",
-  "createdAt": "number (timestamp, will be replaced)"
+  "createdAt": 1720000000000
 }`;
 
 // Simple function to add syntax highlighting spans to a JSON string
