@@ -123,6 +123,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                             style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
                             customStyle={{ margin: 0, padding: '1.5rem', minHeight: '100%', fontSize: '13px' }}
                             showLineNumbers={true}
+                            wrapLines={false} // Disable wrapping for better code readability in sidebar
                         >
                             {content}
                         </SyntaxHighlighter>

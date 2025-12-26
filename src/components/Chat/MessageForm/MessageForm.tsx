@@ -91,7 +91,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="px-4 pt-3 flex flex-col gap-2"
+              className="px-4 pt-3 flex flex-col gap-2 max-h-32 overflow-y-auto custom-scrollbar"
             >
               {logic.processedFiles.map(file => (
                 <AttachedFilePreview

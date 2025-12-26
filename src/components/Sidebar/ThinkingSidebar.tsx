@@ -126,7 +126,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
         }
 
         return (
-            <div className="space-y-6 px-4 pb-12">
+            <div className="space-y-6 px-4 pb-12 break-words">
                 {plan && (
                     <section>
                         <div className="flex items-center gap-2 mb-3">

@@ -113,13 +113,13 @@ export const UserMessage = ({
   
   return (
     <div className="w-full flex justify-end group/userMsg pb-2">
-        <div className="w-fit max-w-[85%] sm:max-w-[80%] flex flex-col items-end">
+        <div className="w-fit max-w-[85%] sm:max-w-[80%] flex flex-col items-end min-w-0">
             <motion.div 
                 {...animationProps} 
-                className="bg-message-user text-content-primary rounded-2xl rounded-tr-md shadow-sm border border-border-subtle origin-bottom-right overflow-hidden relative z-0"
+                className="bg-message-user text-content-primary rounded-2xl rounded-tr-md shadow-sm border border-border-subtle origin-bottom-right overflow-hidden relative z-0 max-w-full"
             >
                 {/* Content Section */}
-                <div className="px-5 py-3.5 flex flex-col gap-3">
+                <div className="px-5 py-3.5 flex flex-col gap-3 min-w-0">
                     {attachments && attachments.length > 0 && (
                         <div className="flex flex-wrap gap-2 p-1">
                             {attachments.map((attachment, index) => {
@@ -155,7 +155,7 @@ export const UserMessage = ({
                         </div>
                     )}
                     {text && (
-                        <div className="markdown-content markdown-content-user text-base leading-relaxed text-content-primary">
+                        <div className="markdown-content markdown-content-user text-base leading-relaxed text-content-primary break-words whitespace-pre-wrap min-w-0">
                             <ManualCodeRenderer text={text} components={MarkdownComponents} isStreaming={false} />
                         </div>
                     )}

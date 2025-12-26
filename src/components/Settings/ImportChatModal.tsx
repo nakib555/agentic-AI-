@@ -183,7 +183,7 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
                                 onDragLeave={handleDragLeave}
                                 onDrop={handleDrop}
                                 animate={isDragging ? { scale: 1.02, borderColor: 'var(--primary-main)', backgroundColor: 'rgba(var(--primary-main), 0.05)' } : { scale: 1, borderColor: 'var(--border-strong)', backgroundColor: 'transparent' }}
-                                className={`group w-full h-full flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-2xl transition-all duration-300 cursor-pointer
+                                className={`group w-full h-full flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden
                                   ${isDragging 
                                       ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-500/10' 
                                       : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 hover:border-indigo-400 dark:hover:border-indigo-400 hover:shadow-lg'
@@ -246,7 +246,7 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
                                   </button>
                                 </div>
                                 <div className="flex-1 overflow-auto custom-scrollbar bg-slate-50 dark:bg-black/20">
-                                    <pre className="p-4 text-[11px] font-mono leading-relaxed text-slate-600 dark:text-slate-400 whitespace-pre">
+                                    <pre className="p-4 text-[11px] font-mono leading-relaxed text-slate-600 dark:text-slate-400 whitespace-pre overflow-x-auto">
                                       <code dangerouslySetInnerHTML={getHighlightedJson(jsonStructureExample.trim())} />
                                     </pre>
                                 </div>

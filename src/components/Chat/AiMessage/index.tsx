@@ -126,7 +126,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   return (
     <motion.div 
         {...animationProps} 
-        className="w-full flex flex-col items-start gap-3 origin-bottom-left group/message"
+        className="w-full flex flex-col items-start gap-3 origin-bottom-left group/message min-w-0"
     >
       {logic.hasThinkingText && (
           <ThinkingProcess 
@@ -136,11 +136,11 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
       
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer) && (
-        <div className="w-full flex flex-col gap-3">
+        <div className="w-full flex flex-col gap-3 min-w-0">
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} onRetry={() => onRegenerate(id)} />}
           
-          <div className="markdown-content max-w-none w-full text-slate-800 dark:text-gray-100 leading-relaxed">
+          <div className="markdown-content max-w-none w-full text-slate-800 dark:text-gray-100 leading-relaxed break-words min-w-0">
             {displaySegments.map((segment: any, index: number) => {
                 const key = `${id}-${index}`;
                 if (segment.type === 'component') {

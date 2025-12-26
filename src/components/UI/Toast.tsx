@@ -32,7 +32,7 @@ export const Toast: React.FC<ToastProps> = ({ message, type = 'info', onClose, d
                     animate={{ opacity: 1, y: 0, x: '-50%' }}
                     exit={{ opacity: 0, y: -20, x: '-50%' }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
-                    className={`fixed top-6 left-1/2 z-[200] px-4 py-2.5 rounded-full shadow-xl border backdrop-blur-md text-sm font-medium flex items-center gap-2.5 pointer-events-none select-none
+                    className={`fixed top-6 left-1/2 z-[200] px-4 py-2.5 rounded-full shadow-xl border backdrop-blur-md text-sm font-medium flex items-center gap-2.5 pointer-events-none select-none max-w-[calc(100vw-2rem)]
                         ${type === 'error' 
                             ? 'bg-red-50/95 text-red-700 border-red-200 dark:bg-red-900/90 dark:text-red-200 dark:border-red-800' 
                             : type === 'success' 
@@ -51,7 +51,7 @@ export const Toast: React.FC<ToastProps> = ({ message, type = 'info', onClose, d
                             <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
                         </svg>
                     )}
-                    <span>{message}</span>
+                    <span className="truncate">{message}</span>
                 </motion.div>
             )}
         </AnimatePresence>

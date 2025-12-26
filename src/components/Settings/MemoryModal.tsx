@@ -56,9 +56,9 @@ const FileEditor: React.FC<{
     };
 
     return (
-        <div className="flex flex-col h-full bg-slate-50 dark:bg-[#09090b]">
+        <div className="flex flex-col h-full bg-slate-50 dark:bg-[#09090b] overflow-hidden">
             {/* Editor Header */}
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white dark:bg-[#121212] sticky top-0 z-10">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white dark:bg-[#121212] z-10 flex-shrink-0">
                  <button onClick={onCancel} className="text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
                     <Icons.Back />
                     Back
@@ -76,8 +76,8 @@ const FileEditor: React.FC<{
             </div>
 
             {/* Editor Input Area */}
-            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 max-w-4xl mx-auto w-full">
-                <div className="space-y-2">
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 max-w-4xl mx-auto w-full custom-scrollbar">
+                <div className="space-y-2 flex-shrink-0">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ml-1">Title</label>
                     <input
                         type="text"
@@ -88,7 +88,7 @@ const FileEditor: React.FC<{
                         autoFocus
                     />
                 </div>
-                <div className="flex-1 flex flex-col space-y-2 min-h-0">
+                <div className="flex-1 flex flex-col space-y-2 min-h-[300px]">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ml-1">Content</label>
                     <div className="flex-1 relative rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:border-indigo-500 transition-all bg-white dark:bg-[#121212]">
                         <textarea
@@ -235,14 +235,14 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-0 sm:p-6 overflow-hidden"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            className="bg-slate-50 dark:bg-[#09090b] rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
+            className="bg-slate-50 dark:bg-[#09090b] w-full h-full sm:h-[85vh] sm:rounded-2xl sm:shadow-2xl sm:max-w-4xl border-0 sm:border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
           >
             {editingFile ? (
                 <FileEditor 
@@ -253,7 +253,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
             ) : (
             <>
                 {/* Modal Header */}
-                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-[#121212] z-10">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-[#121212] z-10 flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="p-2.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl text-indigo-600 dark:text-indigo-400">
                             <Icons.MemoryChip />
@@ -275,9 +275,9 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 flex flex-col min-h-0 relative">
+                <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
                         {/* Toolbar */}
-                        <div className="px-6 py-4 flex flex-col sm:flex-row items-center gap-4 bg-slate-50/50 dark:bg-white/[0.02]">
+                        <div className="px-6 py-4 flex flex-col sm:flex-row items-center gap-4 bg-slate-50/50 dark:bg-white/[0.02] flex-shrink-0">
                             <div className="relative flex-1 w-full group">
                                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                                     <Icons.Search />
@@ -361,7 +361,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#121212] flex flex-col-reverse sm:flex-row items-center justify-between gap-3 z-10">
+                <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#121212] flex flex-col-reverse sm:flex-row items-center justify-between gap-3 z-10 flex-shrink-0">
                     <div className="flex gap-2 w-full sm:w-auto">
                         <div className="relative flex-1 sm:flex-initial" ref={exportMenuRef}>
                             <button
