@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -24,14 +25,16 @@ const MessageComponentRaw: React.FC<{
     onSetActiveResponseIndex: (messageId: string, index: number) => void;
     isAgentMode: boolean;
     userQuery?: string; // New optional prop
+    onEditMessage?: (messageId: string, newText: string) => void;
 }> = ({ 
     msg, isLoading, sendMessage, ttsVoice, ttsModel, currentChatId, 
     onShowSources, approveExecution, denyExecution, messageFormRef,
-    onRegenerate, onSetActiveResponseIndex, isAgentMode, userQuery
+    onRegenerate, onSetActiveResponseIndex, isAgentMode, userQuery,
+    onEditMessage
 }) => {
   const messageContent = () => {
     if (msg.role === 'user') {
-        return <UserMessage msg={msg} />;
+        return <UserMessage msg={msg} onEdit={onEditMessage ? (newText) => onEditMessage(msg.id, newText) : undefined} />;
     }
     
     if (msg.role === 'model') {

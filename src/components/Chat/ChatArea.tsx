@@ -34,6 +34,7 @@ type ChatAreaProps = {
   backendError: string | null;
   onRetryConnection: () => void;
   hasApiKey: boolean;
+  onEditMessage?: (messageId: string, newText: string) => void;
 };
 
 export const ChatArea = ({ 
@@ -41,7 +42,8 @@ export const ChatArea = ({
     ttsVoice, ttsModel, setTtsVoice, currentChatId, activeModel,
     onShowSources, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
-    isAgentMode, setIsAgentMode, backendStatus, backendError, onRetryConnection, hasApiKey
+    isAgentMode, setIsAgentMode, backendStatus, backendError, onRetryConnection, hasApiKey,
+    onEditMessage
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -128,6 +130,7 @@ export const ChatArea = ({
           onRegenerate={onRegenerate}
           onSetActiveResponseIndex={handleSetActiveResponseIndex}
           isAgentMode={isAgentMode}
+          onEditMessage={onEditMessage}
       />
 
       <AnimatePresence>

@@ -481,6 +481,44 @@ export const useChat = (
 
     }, [isLoading, currentChatId, chatHistory, cancelGeneration, chatHistoryHook, initialModel, settings, memoryContent, isAgentMode]);
     
+    // Feature to edit and branch from a user message
+    const editMessage = useCallback(async (messageId: string, newText: string) => {
+        if (isLoading) cancelGeneration();
+        const chatId = currentChatIdRef.current;
+        if (!chatId) return;
+
+        const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+        if (!currentChat) return;
+
+        const messageIndex = currentChat.messages.findIndex(m => m.id === messageId);
+        if (messageIndex === -1) return;
+
+        // Truncate messages (remove target message + all subsequent)
+        // This effectively "rewinds" time to just before this message was sent
+        const truncatedMessages = currentChat.messages.slice(0, messageIndex);
+
+        try {
+            // 1. Sync to backend
+            await fetchFromApi(`/api/chats/${chatId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: truncatedMessages })
+            });
+            
+            // 2. Update local state
+            chatHistoryHook.updateChatProperty(chatId, { messages: truncatedMessages });
+            
+            // 3. Send new message
+            // We use a small timeout to ensure state/ref updates propagate
+            setTimeout(() => {
+                sendMessage(newText);
+            }, 50);
+
+        } catch (e) {
+            console.error("Failed to edit message:", e);
+            if (onShowToast) onShowToast("Failed to edit message", 'error');
+        }
+    }, [isLoading, chatHistoryHook, sendMessage, cancelGeneration, onShowToast]);
   
-  return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse, sendMessageForTest };
+  return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse, sendMessageForTest, editMessage };
 };

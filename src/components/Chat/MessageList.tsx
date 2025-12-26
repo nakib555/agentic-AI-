@@ -34,6 +34,7 @@ type MessageListProps = {
   onRegenerate: (messageId: string) => void;
   onSetActiveResponseIndex: (messageId: string, index: number) => void;
   isAgentMode: boolean;
+  onEditMessage?: (messageId: string, newText: string) => void;
 };
 
 // Wrapper to inject context (like previous user message)
@@ -71,7 +72,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
     messages, sendMessage, isLoading, ttsVoice, ttsModel, currentChatId, 
     onShowSources, approveExecution, 
     denyExecution, messageFormRef, onRegenerate, onSetActiveResponseIndex,
-    isAgentMode
+    isAgentMode, onEditMessage
 }, ref) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -130,7 +131,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                             props={{
                                 sendMessage, isLoading, ttsVoice, ttsModel, currentChatId,
                                 onShowSources, approveExecution, denyExecution, messageFormRef,
-                                onRegenerate, onSetActiveResponseIndex, isAgentMode
+                                onRegenerate, onSetActiveResponseIndex, isAgentMode, onEditMessage
                             }}
                         />
                     </div>

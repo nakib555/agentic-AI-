@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -311,7 +312,7 @@ export const useAppLogic = () => {
   const effectiveClientKey = provider === 'gemini' ? apiKey : openRouterApiKey;
   
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, effectiveClientKey, showToast);
-  const { updateChatModel, updateChatSettings } = chat;
+  const { updateChatModel, updateChatSettings, editMessage } = chat; // Destructure editMessage
 
   const handleSetTemperature = useCallback((val: number) => {
       setTemperature(val);
@@ -554,6 +555,8 @@ export const useAppLogic = () => {
     isArtifactOpen, setIsArtifactOpen, artifactContent, artifactLanguage, 
     artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing,
     // New Props for Provider
-    provider, openRouterApiKey, onProviderChange: handleProviderChange
+    provider, openRouterApiKey, onProviderChange: handleProviderChange,
+    // Edit Message
+    editMessage
   };
 };
