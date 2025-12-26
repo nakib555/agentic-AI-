@@ -64,7 +64,10 @@ export class VectorMemory {
                 model: "text-embedding-004",
                 contents: [{ parts: [{ text }] }]
             });
-            return result.embedding?.values || [];
+            // Fix for TS2551: Handle potential API type mismatch (embedding vs embeddings)
+            const response = result as any;
+            const embedding = response.embedding || (response.embeddings && response.embeddings[0]);
+            return embedding?.values || [];
         } catch (e) {
             console.error("Embedding failed:", e);
             return [];
