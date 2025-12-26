@@ -51,15 +51,19 @@ const groupChatsByMonth = (chats: ChatSession[]): { [key: string]: ChatSession[]
 };
 
 
-const NoItems = ({ message }: { message: string }) => (
+const NoItems = ({ message, subtext }: { message: string, subtext?: string }) => (
     <motion.div 
-        className="text-sm text-slate-500 dark:text-slate-400 text-center py-4"
+        className="flex flex-col items-center justify-center text-center py-8 px-4 opacity-60"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
     >
-        <p className="font-medium">{message}</p>
+        <div className="w-12 h-12 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-3 text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <p className="font-medium text-sm text-slate-600 dark:text-slate-300">{message}</p>
+        {subtext && <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">{subtext}</p>}
     </motion.div>
 );
 
@@ -202,7 +206,12 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                     })}
                 </div>
             ) : (
-                !shouldCollapse && <NoItems message={searchQuery ? 'No conversations found' : 'No conversations yet'} />
+                !shouldCollapse && (
+                    <NoItems 
+                        message={searchQuery ? 'No conversations found' : 'No conversations yet'} 
+                        subtext={searchQuery ? 'Try a different search term.' : 'Start a new chat to begin.'}
+                    />
+                )
             )}
         </div>
     );
