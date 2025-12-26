@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { motion as motionTyped } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import { MarkdownComponents } from '../Markdown/markdownComponents';
 import type { Message } from '../../types';
@@ -22,9 +22,15 @@ const animationProps = {
 export const UserMessage = ({ msg }: { msg: Message }) => {
   const { text, attachments } = msg;
   const [isHovered, setIsHovered] = useState(false);
-  
-  // Note: Actual editing logic requires parent callback (not implemented in this minimal view),
-  // but this sets the stage for the UI.
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = () => {
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000);
+      }).catch(err => console.error('Failed to copy text: ', err));
+  };
   
   return (
     <div 
@@ -33,19 +39,42 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
         onMouseLeave={() => setIsHovered(false)}
     >
         <div className="w-fit max-w-[80%] flex flex-col items-end relative">
-            {/* Edit Button (Visible on Hover) */}
-            {isHovered && (
+            {/* Actions (Visible on Hover) */}
+            <div 
+                className={`absolute top-2 right-full mr-2 flex items-center gap-1 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            >
+                {/* Copy Button */}
                 <button 
-                    className="absolute -left-10 top-2 p-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 opacity-0 group-hover/userMsg:opacity-100 transition-opacity shadow-sm"
+                    onClick={handleCopy}
+                    className="p-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 shadow-sm transition-colors"
+                    title="Copy text"
+                >
+                    <AnimatePresence mode='wait' initial={false}>
+                        {isCopied ? (
+                            <motion.svg key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-green-500">
+                                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                            </motion.svg>
+                        ) : (
+                            <motion.svg key="copy" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                                <path d="M7 3.5A1.5 1.5 0 0 1 8.5 2h3.879a1.5 1.5 0 0 1 1.06.44l3.122 3.12A1.5 1.5 0 0 1 17 6.622V12.5a1.5 1.5 0 0 1-1.5 1.5h-1v-3.379a3 3 0 0 0-.879-2.121L10.5 5.379A3 3 0 0 0 8.379 4.5H7v-1Z" />
+                                <path d="M4.5 6A1.5 1.5 0 0 0 3 7.5v9A1.5 1.5 0 0 0 4.5 18h7a1.5 1.5 0 0 0 1.5-1.5v-5.879a1.5 1.5 0 0 0-.44-1.06L9.44 6.439A1.5 1.5 0 0 0 8.378 6H4.5Z" />
+                            </motion.svg>
+                        )}
+                    </AnimatePresence>
+                </button>
+
+                {/* Edit Button */}
+                <button 
+                    className="p-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 shadow-sm transition-colors"
                     title="Edit and Branch"
                     onClick={() => alert("Branching feature: This would allow editing this message to fork the conversation.")}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
                         <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
                         <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
                     </svg>
                 </button>
-            )}
+            </div>
 
             <motion.div 
                 {...animationProps} 
