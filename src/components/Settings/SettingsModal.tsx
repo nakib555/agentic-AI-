@@ -78,18 +78,6 @@ const CATEGORIES = [
     ) 
   },
   { 
-    id: 'personalize', 
-    label: 'Personalize', 
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
-        <path d="M12 11l4 4" /> 
-        <path d="M16 11l-4 4" />
-      </svg>
-    ) 
-  },
-  { 
     id: 'model', 
     label: 'Model & AI', 
     icon: (
@@ -104,6 +92,18 @@ const CATEGORIES = [
         <path d="M18 12h4" />
         <path d="M4.93 19.07l2.83-2.83" />
         <path d="M16.24 7.76l2.83-2.83" />
+      </svg>
+    ) 
+  },
+  { 
+    id: 'personalize', 
+    label: 'Personalize', 
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+        <path d="M12 11l4 4" /> 
+        <path d="M16 11l-4 4" />
       </svg>
     ) 
   },
