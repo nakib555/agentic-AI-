@@ -169,11 +169,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
               </button>
             </div>
             
-            <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-layer-2/50">
+            <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-layer-2/50 overflow-hidden">
                 {/* Navigation Sidebar */}
-                <nav className="flex-shrink-0 p-4 md:p-6 md:pr-0 md:w-64 bg-layer-1/50 z-10 md:border-r border-border">
+                <nav className="flex-shrink-0 p-4 md:p-6 md:w-72 bg-layer-1/50 z-10 md:border-r border-border backdrop-blur-xl flex flex-col gap-6">
+                    
+                    <div className="hidden md:block px-2">
+                        <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Configuration</h3>
+                    </div>
+
                     <LayoutGroup id="settings-nav">
-                        <ul className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar">
+                        <ul className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar">
                             {CATEGORIES.map(cat => (
                                 <li key={cat.id} className="flex-shrink-0">
                                     <SettingsCategoryButton
