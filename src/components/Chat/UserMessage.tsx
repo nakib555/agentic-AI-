@@ -21,7 +21,6 @@ const animationProps = {
 
 export const UserMessage = ({ msg }: { msg: Message }) => {
   const { text, attachments } = msg;
-  const [isHovered, setIsHovered] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = () => {
@@ -33,20 +32,17 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
   };
   
   return (
-    <div 
-        className="w-full flex justify-end group/userMsg"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-    >
-        <div className="w-fit max-w-[80%] flex flex-col items-end relative">
-            {/* Actions (Visible on Hover) */}
+    <div className="w-full flex justify-end group/userMsg">
+        <div className="w-fit max-w-[85%] sm:max-w-[80%] flex flex-col items-end relative">
+            {/* Actions (Visible on Hover via CSS) */}
             <div 
-                className={`absolute top-2 right-full mr-2 flex items-center gap-1 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                className="absolute top-2 right-full mr-2 flex items-center gap-1 opacity-0 group-hover/userMsg:opacity-100 transition-opacity duration-200 z-10"
             >
                 {/* Copy Button */}
                 <button 
+                    type="button"
                     onClick={handleCopy}
-                    className="p-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 shadow-sm transition-colors"
+                    className="p-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 shadow-sm transition-colors backdrop-blur-sm border border-gray-200/50 dark:border-white/5"
                     title="Copy text"
                 >
                     <AnimatePresence mode='wait' initial={false}>
@@ -65,7 +61,8 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
 
                 {/* Edit Button */}
                 <button 
-                    className="p-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 shadow-sm transition-colors"
+                    type="button"
+                    className="p-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 shadow-sm transition-colors backdrop-blur-sm border border-gray-200/50 dark:border-white/5"
                     title="Edit and Branch"
                     onClick={() => alert("Branching feature: This would allow editing this message to fork the conversation.")}
                 >
@@ -78,7 +75,7 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
 
             <motion.div 
                 {...animationProps} 
-                className="bg-message-user text-content-primary rounded-xl shadow-sm border border-border-subtle origin-bottom-right overflow-hidden"
+                className="bg-message-user text-content-primary rounded-xl shadow-sm border border-border-subtle origin-bottom-right overflow-hidden relative z-0"
             >
                 {/* Content Section */}
                 <div className="px-5 py-3.5 flex flex-col gap-3">
