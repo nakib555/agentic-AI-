@@ -32,50 +32,11 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
   };
   
   return (
-    <div className="w-full flex justify-end group/userMsg">
-        <div className="w-fit max-w-[85%] sm:max-w-[80%] flex flex-col items-end relative">
-            {/* Actions (Always visible) */}
-            <div 
-                className="absolute top-2 right-full mr-2 flex items-center gap-1 z-10"
-            >
-                {/* Copy Button */}
-                <button 
-                    type="button"
-                    onClick={handleCopy}
-                    className="p-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 shadow-sm transition-colors backdrop-blur-sm border border-gray-200/50 dark:border-white/5"
-                    title="Copy text"
-                >
-                    <AnimatePresence mode='wait' initial={false}>
-                        {isCopied ? (
-                            <motion.svg key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-green-500">
-                                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-                            </motion.svg>
-                        ) : (
-                            <motion.svg key="copy" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-                                <path d="M7 3.5A1.5 1.5 0 0 1 8.5 2h3.879a1.5 1.5 0 0 1 1.06.44l3.122 3.12A1.5 1.5 0 0 1 17 6.622V12.5a1.5 1.5 0 0 1-1.5 1.5h-1v-3.379a3 3 0 0 0-.879-2.121L10.5 5.379A3 3 0 0 0 8.379 4.5H7v-1Z" />
-                                <path d="M4.5 6A1.5 1.5 0 0 0 3 7.5v9A1.5 1.5 0 0 0 4.5 18h7a1.5 1.5 0 0 0 1.5-1.5v-5.879a1.5 1.5 0 0 0-.44-1.06L9.44 6.439A1.5 1.5 0 0 0 8.378 6H4.5Z" />
-                            </motion.svg>
-                        )}
-                    </AnimatePresence>
-                </button>
-
-                {/* Edit Button */}
-                <button 
-                    type="button"
-                    className="p-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 shadow-sm transition-colors backdrop-blur-sm border border-gray-200/50 dark:border-white/5"
-                    title="Edit and Branch"
-                    onClick={() => alert("Branching feature: This would allow editing this message to fork the conversation.")}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-                        <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
-                        <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
-                    </svg>
-                </button>
-            </div>
-
+    <div className="w-full flex justify-end group/userMsg pb-2">
+        <div className="w-fit max-w-[85%] sm:max-w-[80%] flex flex-col items-end">
             <motion.div 
                 {...animationProps} 
-                className="bg-message-user text-content-primary rounded-xl shadow-sm border border-border-subtle origin-bottom-right overflow-hidden relative z-0"
+                className="bg-message-user text-content-primary rounded-2xl rounded-tr-md shadow-sm border border-border-subtle origin-bottom-right overflow-hidden relative z-0"
             >
                 {/* Content Section */}
                 <div className="px-5 py-3.5 flex flex-col gap-3">
@@ -120,6 +81,58 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
                     )}
                 </div>
             </motion.div>
+
+            {/* Actions Row - Positioned at bottom right */}
+            <div className="flex items-center gap-1 mt-1 mr-1 opacity-0 group-hover/userMsg:opacity-100 transition-opacity duration-200">
+                {/* Copy Button */}
+                <button 
+                    type="button"
+                    onClick={handleCopy}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-white/10 dark:hover:text-slate-200 transition-all focus:opacity-100"
+                    title="Copy text"
+                    aria-label="Copy message text"
+                >
+                    <AnimatePresence mode='wait' initial={false}>
+                        {isCopied ? (
+                            <motion.svg 
+                                key="check" 
+                                initial={{ scale: 0.5, opacity: 0 }} 
+                                animate={{ scale: 1, opacity: 1 }} 
+                                exit={{ scale: 0.5, opacity: 0 }} 
+                                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
+                                className="text-green-500"
+                            >
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </motion.svg>
+                        ) : (
+                            <motion.svg 
+                                key="copy" 
+                                initial={{ scale: 0.5, opacity: 0 }} 
+                                animate={{ scale: 1, opacity: 1 }} 
+                                exit={{ scale: 0.5, opacity: 0 }} 
+                                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                            >
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </motion.svg>
+                        )}
+                    </AnimatePresence>
+                </button>
+
+                {/* Edit Button */}
+                <button 
+                    type="button"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-white/10 dark:hover:text-slate-200 transition-all focus:opacity-100"
+                    title="Edit and Branch"
+                    aria-label="Edit message"
+                    onClick={() => alert("Branching feature: This would allow editing this message to fork the conversation.")}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
   );
