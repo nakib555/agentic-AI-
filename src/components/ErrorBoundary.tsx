@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children?: ReactNode;
@@ -15,16 +15,14 @@ interface State {
   error: Error | null;
 }
 
-// Fix: Inherit from React.Component to ensure type definitions for props and state are correctly inherited
-export class ErrorBoundary extends React.Component<Props, State> {
-  // Fix: Explicitly initialize state at class level to avoid property not found errors
-  public state: State = {
-    hasError: false,
-    error: null
-  };
-
+// Fix: Inherit from Component to ensure type definitions for props and state are correctly inherited
+export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
+    this.state = {
+      hasError: false,
+      error: null
+    };
   }
 
   public static getDerivedStateFromError(error: Error): State {
@@ -51,7 +49,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
   };
 
   public render() {
-    // Fix: Access this.state which is now correctly inherited from Component
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 flex items-center justify-center bg-page p-4 text-center">
@@ -76,7 +73,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Fix: Access this.props which is now correctly inherited from Component
     return this.props.children;
   }
 }

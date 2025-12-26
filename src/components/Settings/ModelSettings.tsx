@@ -202,7 +202,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
             <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/10 to-transparent w-full" />
 
             {/* Multimodal Capabilities Section */}
-            <section className={`space-y-6 ${!isGemini ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+            <section className="space-y-6">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="p-2 rounded-lg bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400">
                         <div className="flex -space-x-1">
@@ -212,7 +212,6 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                     </div>
                     <div className="flex-1">
                         <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">Multimodal Suite</h4>
-                        {!isGemini && <p className="text-xs text-slate-500">Only available with Gemini models</p>}
                     </div>
                 </div>
 
@@ -223,7 +222,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 models={imageModels} 
                                 selectedModel={imageModel} 
                                 onModelChange={onImageModelChange} 
-                                disabled={disabled || noModelsAvailable || !isGemini} 
+                                disabled={disabled || noModelsAvailable} 
                                 placeholder="Select image model"
                                 icon={<PhotoIcon />}
                             />
@@ -236,7 +235,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 models={videoModels} 
                                 selectedModel={videoModel} 
                                 onModelChange={onVideoModelChange} 
-                                disabled={disabled || noModelsAvailable || !isGemini} 
+                                disabled={disabled || noModelsAvailable} 
                                 placeholder="Select video model"
                                 icon={<VideoIcon />}
                             />
@@ -249,7 +248,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 models={ttsModels} 
                                 selectedModel={ttsModel} 
                                 onModelChange={onTtsModelChange} 
-                                disabled={disabled || noModelsAvailable || !isGemini} 
+                                disabled={disabled || noModelsAvailable} 
                                 placeholder="Select TTS model"
                                 icon={<SpeakerIcon />}
                             />

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { memo, useMemo, ReactNode } from 'react';
+import React, { memo, useMemo, ReactNode, Component } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
@@ -62,13 +62,11 @@ interface MarkdownErrorBoundaryState {
 }
 
 // Internal Error Boundary to catch Markdown/Rehype parsing crashes during streaming
-// Fix: Inherit from React.Component to ensure type definitions for props and state are correctly inherited
-class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
-  // Fix: Explicitly initialize state at class level to avoid property not found errors
-  public state: MarkdownErrorBoundaryState = { hasError: false };
-
+// Fix: Inherit from Component to ensure type definitions for props and state are correctly inherited
+class MarkdownErrorBoundary extends Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
   constructor(props: MarkdownErrorBoundaryProps) {
     super(props);
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(_: any): MarkdownErrorBoundaryState {
@@ -78,14 +76,12 @@ class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, 
   componentDidUpdate(prevProps: MarkdownErrorBoundaryProps) {
     // If the text input has changed, try to recover. 
     // The stream likely added more tokens that fixed the malformed syntax.
-    // Fix: Access this.props and this.state which are now correctly inherited from Component
     if (prevProps.text !== this.props.text && this.state.hasError) {
       this.setState({ hasError: false });
     }
   }
 
   render() {
-    // Fix: Access this.state and this.props which are now correctly inherited from Component
     if (this.state.hasError) {
       return this.props.fallback;
     }
