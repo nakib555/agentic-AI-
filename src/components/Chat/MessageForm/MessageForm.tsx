@@ -139,7 +139,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         </div>
 
         {/* Bottom Toolbar */}
-        <div className="flex items-center justify-between px-3 pb-3 pt-1 gap-3 relative z-10">
+        <div className="flex items-center justify-between px-2 sm:px-3 pb-3 pt-1 gap-2 relative z-10">
             <div className="flex items-center gap-1">
                 {/* Upload Button */}
                 <button
@@ -162,7 +162,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                 />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
                 {/* Voice Input */}
                 <button
                     onClick={logic.handleMicClick}

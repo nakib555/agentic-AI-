@@ -143,7 +143,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 style={{
                     height: '100%',
                     position: isDesktop ? 'relative' : 'absolute',
-                    width: isDesktop ? 'auto' : 300, // Fixed width on mobile for consistency
+                    width: isDesktop ? 'auto' : 300, // Fixed base width on mobile
+                    maxWidth: isDesktop ? 'none' : '85vw', // Constraint for very small screens
                     left: 0,
                     top: 0,
                     pointerEvents: 'auto',

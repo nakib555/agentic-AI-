@@ -137,18 +137,19 @@ export const ChatHeader = ({ onImportChat, onExportChat, onShareChat, isChatActi
     return (
         <header className="py-3 px-4 sm:px-6 md:px-8 flex items-center justify-center sticky top-0 z-10 gap-4 w-full">
             <div className="w-full max-w-4xl flex items-center justify-between">
-                {/* --- Left Spacer (balanced) --- */}
+                {/* --- Left Spacer (balanced with menu button) --- */}
+                {/* On mobile, this space might be taken by the sidebar toggle, but keeping it ensures centering if sidebar toggle is absolute */}
                 <div className="flex-shrink-0 w-11 h-11" />
 
                 {/* --- Centered Title --- */}
-                <div className="flex-1 min-w-0 text-center">
+                <div className="flex-1 min-w-0 text-center px-1">
                     <AnimatePresence>
                         {chatTitle && (
                             <motion.div
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 border border-slate-200/80 dark:border-white/10 shadow-sm min-h-[32px]" title={chatTitle}>
+                                className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 border border-slate-200/80 dark:border-white/10 shadow-sm min-h-[32px] max-w-full" title={chatTitle}>
                                 
                                 {isAnimatingTitle && animationKey ? (
                                     <TextType
@@ -158,7 +159,7 @@ export const ChatHeader = ({ onImportChat, onExportChat, onShareChat, isChatActi
                                         onSequenceComplete={() => setIsAnimatingTitle(false)}
                                     />
                                 ) : (
-                                    <span className="truncate max-w-[200px] sm:max-w-sm md:max-w-md inline-block align-middle">
+                                    <span className="truncate block max-w-[150px] sm:max-w-xs md:max-w-md">
                                         {chatTitle}
                                     </span>
                                 )}
