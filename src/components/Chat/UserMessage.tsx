@@ -34,9 +34,9 @@ export const UserMessage = ({ msg }: { msg: Message }) => {
   return (
     <div className="w-full flex justify-end group/userMsg">
         <div className="w-fit max-w-[85%] sm:max-w-[80%] flex flex-col items-end relative">
-            {/* Actions (Visible on Hover via CSS) */}
+            {/* Actions (Always visible) */}
             <div 
-                className="absolute top-2 right-full mr-2 flex items-center gap-1 opacity-0 group-hover/userMsg:opacity-100 transition-opacity duration-200 z-10"
+                className="absolute top-2 right-full mr-2 flex items-center gap-1 z-10"
             >
                 {/* Copy Button */}
                 <button 
