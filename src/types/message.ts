@@ -47,13 +47,24 @@ export type ModelResponse = {
   workflow?: ParsedWorkflow;
 };
 
+export type UserMessageVersion = {
+    text: string;
+    attachments?: Attachment[];
+    createdAt: number;
+    historyPayload?: Message[]; // Snapshot of the conversation "future" relative to this version
+};
+
 export type Message = {
   id: string;
   role: 'user' | 'model';
 
   // --- User Message Properties ---
-  text: string; // For user role, this is the primary content.
+  text: string; // For user role, this is the primary content (or active version content).
   attachments?: Attachment[];
+  
+  // Branching support for User messages
+  versions?: UserMessageVersion[];
+  activeVersionIndex?: number;
   
   // --- Model Message Properties ---
   responses?: ModelResponse[]; // An array of all generated responses.

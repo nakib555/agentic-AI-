@@ -11,6 +11,7 @@ import { MarkdownComponents } from '../Markdown/markdownComponents';
 import type { Message } from '../../types';
 import { FileIcon } from '../UI/FileIcon';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
+import { BranchSwitcher } from '../UI/BranchSwitcher';
 
 // Optimized spring physics for performance
 const animationProps = {
@@ -19,12 +20,23 @@ const animationProps = {
   transition: { type: "spring", stiffness: 200, damping: 25 },
 };
 
-export const UserMessage = ({ msg, onEdit }: { msg: Message, onEdit?: (newText: string) => void }) => {
-  const { text, attachments } = msg;
+export const UserMessage = ({ 
+    msg, 
+    onEdit,
+    onBranchSwitch 
+}: { 
+    msg: Message, 
+    onEdit?: (newText: string) => void,
+    onBranchSwitch?: (direction: 'next' | 'prev') => void
+}) => {
+  const { text, attachments, versions, activeVersionIndex } = msg;
   const [isCopied, setIsCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(text);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const versionCount = versions ? versions.length : 1;
+  const currentVersionIdx = activeVersionIndex ?? 0;
 
   useEffect(() => {
       if (isEditing && textareaRef.current) {
@@ -151,7 +163,17 @@ export const UserMessage = ({ msg, onEdit }: { msg: Message, onEdit?: (newText: 
             </motion.div>
 
             {/* Actions Row */}
-            <div className="flex items-center gap-1 mt-1 mr-1">
+            <div className="flex items-center gap-2 mt-1 mr-1 select-none">
+                {/* Branch Switcher */}
+                {versionCount > 1 && onBranchSwitch && (
+                    <BranchSwitcher 
+                        count={versionCount} 
+                        activeIndex={currentVersionIdx} 
+                        onChange={(idx) => onBranchSwitch(idx > currentVersionIdx ? 'next' : 'prev')}
+                        className="mr-1" 
+                    />
+                )}
+
                 {/* Copy Button */}
                 <button 
                     type="button"

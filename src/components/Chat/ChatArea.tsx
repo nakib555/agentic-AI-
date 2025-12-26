@@ -35,6 +35,7 @@ type ChatAreaProps = {
   onRetryConnection: () => void;
   hasApiKey: boolean;
   onEditMessage?: (messageId: string, newText: string) => void;
+  onNavigateBranch?: (messageId: string, direction: 'next' | 'prev') => void;
 };
 
 export const ChatArea = ({ 
@@ -43,7 +44,7 @@ export const ChatArea = ({
     onShowSources, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
     isAgentMode, setIsAgentMode, backendStatus, backendError, onRetryConnection, hasApiKey,
-    onEditMessage
+    onEditMessage, onNavigateBranch
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -131,6 +132,7 @@ export const ChatArea = ({
           onSetActiveResponseIndex={handleSetActiveResponseIndex}
           isAgentMode={isAgentMode}
           onEditMessage={onEditMessage}
+          onNavigateBranch={onNavigateBranch}
       />
 
       <AnimatePresence>

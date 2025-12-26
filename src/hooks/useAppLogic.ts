@@ -312,7 +312,7 @@ export const useAppLogic = () => {
   const effectiveClientKey = provider === 'gemini' ? apiKey : openRouterApiKey;
   
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, effectiveClientKey, showToast);
-  const { updateChatModel, updateChatSettings, editMessage } = chat; // Destructure editMessage
+  const { updateChatModel, updateChatSettings, editMessage, navigateBranch } = chat; // Destructure new functions
 
   const handleSetTemperature = useCallback((val: number) => {
       setTemperature(val);
@@ -556,7 +556,7 @@ export const useAppLogic = () => {
     artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing,
     // New Props for Provider
     provider, openRouterApiKey, onProviderChange: handleProviderChange,
-    // Edit Message
-    editMessage
+    // Edit Message and Branch Navigation
+    editMessage, navigateBranch
   };
 };

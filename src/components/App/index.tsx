@@ -120,6 +120,7 @@ export const App = () => {
                 onRetryConnection={logic.retryConnection}
                 hasApiKey={!!logic.apiKey}
                 onEditMessage={logic.editMessage}
+                onNavigateBranch={logic.navigateBranch}
              />
           </div>
         </main>

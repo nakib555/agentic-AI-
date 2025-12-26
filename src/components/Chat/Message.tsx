@@ -26,15 +26,22 @@ const MessageComponentRaw: React.FC<{
     isAgentMode: boolean;
     userQuery?: string; // New optional prop
     onEditMessage?: (messageId: string, newText: string) => void;
+    onNavigateBranch?: (messageId: string, direction: 'next' | 'prev') => void;
 }> = ({ 
     msg, isLoading, sendMessage, ttsVoice, ttsModel, currentChatId, 
     onShowSources, approveExecution, denyExecution, messageFormRef,
     onRegenerate, onSetActiveResponseIndex, isAgentMode, userQuery,
-    onEditMessage
+    onEditMessage, onNavigateBranch
 }) => {
   const messageContent = () => {
     if (msg.role === 'user') {
-        return <UserMessage msg={msg} onEdit={onEditMessage ? (newText) => onEditMessage(msg.id, newText) : undefined} />;
+        return (
+            <UserMessage 
+                msg={msg} 
+                onEdit={onEditMessage ? (newText) => onEditMessage(msg.id, newText) : undefined} 
+                onBranchSwitch={onNavigateBranch ? (dir) => onNavigateBranch(msg.id, dir) : undefined}
+            />
+        );
     }
     
     if (msg.role === 'model') {
@@ -79,7 +86,9 @@ export const MessageComponent = memo(MessageComponentRaw, (prevProps, nextProps)
         prevMsg.text !== nextMsg.text ||
         prevMsg.isThinking !== nextMsg.isThinking ||
         prevMsg.activeResponseIndex !== nextMsg.activeResponseIndex ||
+        prevMsg.activeVersionIndex !== nextMsg.activeVersionIndex ||
         prevMsg.responses?.length !== nextMsg.responses?.length ||
+        prevMsg.versions?.length !== nextMsg.versions?.length ||
         prevMsg.executionState !== nextMsg.executionState ||
         // CRITICAL FIX: Check if the content of the active response has changed (streaming text, tools, errors)
         prevActiveResponse !== nextActiveResponse;

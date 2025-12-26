@@ -11,7 +11,7 @@ import { useChatHistory } from '../useChatHistory';
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
 import { fetchFromApi } from '../../utils/api';
 import { toolImplementations as frontendToolImplementations } from '../../tools';
-import { processBackendStream } from '../../services/agenticLoop/stream-processor';
+import { processBackendStream } from '../../services/agenticLoop/stream-processor.ts';
 import { parseAgenticWorkflow } from '../../utils/workflowParsing';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -208,7 +208,7 @@ export const useChat = (
         task: 'chat' | 'regenerate',
         chatId: string,
         messageId: string, // The ID of the model message to update
-        newMessage: Message | null, // The new user message (null for regenerate)
+        newMessage: Message | null, // The new user message (null for regenerate or explicit null if user message already in history)
         chatConfig: Pick<ChatSession, 'model' | 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>,
         runtimeSettings: { isAgentMode: boolean } & ChatSettings
     ) => {
@@ -441,6 +441,173 @@ export const useChat = (
         );
     };
 
+    // --- Branching Logic for User Messages ---
+    const editMessage = useCallback(async (messageId: string, newText: string) => {
+        if (isLoading) cancelGeneration();
+        const chatId = currentChatIdRef.current;
+        if (!chatId) return;
+
+        const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+        if (!currentChat) return;
+
+        const messageIndex = currentChat.messages.findIndex(m => m.id === messageId);
+        if (messageIndex === -1) return;
+
+        const originalMessage = currentChat.messages[messageIndex];
+        
+        // 1. Snapshot the "future" (all messages after this one) to preserve the old branch
+        // Note: The original message itself is part of the old branch, but we store the *subsequent* flow in the payload.
+        const futureMessages = currentChat.messages.slice(messageIndex + 1);
+        
+        // 2. Prepare Version Objects if they don't exist
+        // Use implicit v1 if versions array is empty
+        const currentVersionIndex = originalMessage.activeVersionIndex ?? 0;
+        let versions = originalMessage.versions || [];
+        
+        if (versions.length === 0) {
+            versions.push({
+                text: originalMessage.text,
+                attachments: originalMessage.attachments,
+                createdAt: Date.now(), // Estimate
+                historyPayload: futureMessages
+            });
+        } else {
+            // Update the current version with the current future before switching
+            // This ensures if we switch back, we get the state as we left it
+            versions[currentVersionIndex] = {
+                ...versions[currentVersionIndex],
+                historyPayload: futureMessages
+            };
+        }
+
+        // 3. Create New Version
+        const newVersionIndex = versions.length;
+        versions.push({
+            text: newText,
+            // We copy attachments for now, assuming edit doesn't change attachments (simplification)
+            attachments: originalMessage.attachments, 
+            createdAt: Date.now(),
+            historyPayload: [] // New branch has no future yet
+        });
+
+        // 4. Update the Message Object locally
+        const updatedUserMessage: Message = {
+            ...originalMessage,
+            text: newText,
+            versions: versions,
+            activeVersionIndex: newVersionIndex,
+        };
+
+        // 5. Construct new message list: [..., PreviousMsgs, UpdatedUserMsg]
+        // We truncate the future because we are about to generate a NEW future.
+        const truncatedMessages = [...currentChat.messages.slice(0, messageIndex), updatedUserMessage];
+
+        // 6. Sync to Backend & Update Local State
+        try {
+            await fetchFromApi(`/api/chats/${chatId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: truncatedMessages })
+            });
+            
+            chatHistoryHook.updateChatProperty(chatId, { messages: truncatedMessages });
+            
+            // 7. Trigger AI Response generation
+            // We need to add a model placeholder for the new response
+            const modelPlaceholder: Message = { 
+                id: generateId(), 
+                role: 'model', 
+                text: '', 
+                responses: [{ text: '', toolCallEvents: [], startTime: Date.now() }], 
+                activeResponseIndex: 0, 
+                isThinking: true 
+            };
+            
+            chatHistoryHook.addMessagesToChat(chatId, [modelPlaceholder]);
+            chatHistoryHook.setChatLoadingState(chatId, true);
+
+            // 8. Start Stream (using 'chat' task with newMessage=null because we manually updated history)
+            // Wait: backend 'chat' task appends newMessage. If null, it just appends placeholder? 
+            // Actually 'chat' logic appends newMessage if provided. If not provided, it just appends placeholder.
+            // So we can pass null for newMessage since we already updated the history via PUT.
+            await startBackendChat(
+                'chat',
+                chatId,
+                modelPlaceholder.id,
+                null, 
+                currentChat, 
+                { ...settings, isAgentMode }
+            );
+
+        } catch (e) {
+            console.error("Failed to edit message:", e);
+            if (onShowToast) onShowToast("Failed to edit message branch", 'error');
+        }
+    }, [isLoading, chatHistoryHook, startBackendChat, cancelGeneration, onShowToast, settings, isAgentMode]);
+
+    const navigateBranch = useCallback(async (messageId: string, direction: 'next' | 'prev') => {
+        if (isLoading) return; // Prevent switching while generating
+        const chatId = currentChatIdRef.current;
+        if (!chatId) return;
+
+        const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+        if (!currentChat) return;
+
+        const messageIndex = currentChat.messages.findIndex(m => m.id === messageId);
+        if (messageIndex === -1) return;
+
+        const message = currentChat.messages[messageIndex];
+        if (!message.versions || message.versions.length < 2) return;
+
+        const currentIndex = message.activeVersionIndex ?? 0;
+        let newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+        
+        // Clamp index
+        if (newIndex < 0) newIndex = 0;
+        if (newIndex >= message.versions.length) newIndex = message.versions.length - 1;
+        
+        if (newIndex === currentIndex) return;
+
+        // --- SWITCH LOGIC ---
+        // 1. Save current future to the *current* version
+        const currentFuture = currentChat.messages.slice(messageIndex + 1);
+        const versions = [...message.versions];
+        versions[currentIndex] = { ...versions[currentIndex], historyPayload: currentFuture };
+
+        // 2. Restore future from the *target* version
+        const targetVersion = versions[newIndex];
+        const restoredFuture = targetVersion.historyPayload || [];
+
+        // 3. Update Message
+        const updatedMessage = {
+            ...message,
+            text: targetVersion.text,
+            attachments: targetVersion.attachments,
+            activeVersionIndex: newIndex,
+            versions: versions
+        };
+
+        // 4. Reconstruct Timeline
+        const newMessages = [...currentChat.messages.slice(0, messageIndex), updatedMessage, ...restoredFuture];
+
+        // 5. Sync & Update
+        try {
+            // Optimistic update
+            chatHistoryHook.updateChatProperty(chatId, { messages: newMessages });
+
+            await fetchFromApi(`/api/chats/${chatId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: newMessages })
+            });
+        } catch (e) {
+            console.error("Failed to switch branch:", e);
+            if (onShowToast) onShowToast("Failed to switch branch", 'error');
+            // Revert on error? For now, we trust optimistic update is visually fine even if save fails briefly.
+        }
+
+    }, [isLoading, chatHistoryHook, onShowToast]);
+
     const sendMessageForTest = (userMessage: string, options?: { isThinkingModeEnabled?: boolean }): Promise<Message> => {
         return new Promise((resolve) => {
             testResolverRef.current = resolve;
@@ -481,44 +648,6 @@ export const useChat = (
 
     }, [isLoading, currentChatId, chatHistory, cancelGeneration, chatHistoryHook, initialModel, settings, memoryContent, isAgentMode]);
     
-    // Feature to edit and branch from a user message
-    const editMessage = useCallback(async (messageId: string, newText: string) => {
-        if (isLoading) cancelGeneration();
-        const chatId = currentChatIdRef.current;
-        if (!chatId) return;
-
-        const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-        if (!currentChat) return;
-
-        const messageIndex = currentChat.messages.findIndex(m => m.id === messageId);
-        if (messageIndex === -1) return;
-
-        // Truncate messages (remove target message + all subsequent)
-        // This effectively "rewinds" time to just before this message was sent
-        const truncatedMessages = currentChat.messages.slice(0, messageIndex);
-
-        try {
-            // 1. Sync to backend
-            await fetchFromApi(`/api/chats/${chatId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: truncatedMessages })
-            });
-            
-            // 2. Update local state
-            chatHistoryHook.updateChatProperty(chatId, { messages: truncatedMessages });
-            
-            // 3. Send new message
-            // We use a small timeout to ensure state/ref updates propagate
-            setTimeout(() => {
-                sendMessage(newText);
-            }, 50);
-
-        } catch (e) {
-            console.error("Failed to edit message:", e);
-            if (onShowToast) onShowToast("Failed to edit message", 'error');
-        }
-    }, [isLoading, chatHistoryHook, sendMessage, cancelGeneration, onShowToast]);
   
-  return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse, sendMessageForTest, editMessage };
+  return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse, sendMessageForTest, editMessage, navigateBranch };
 };
