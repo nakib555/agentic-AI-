@@ -19,6 +19,7 @@ const ChatHeader = React.lazy(() => import('../Chat/ChatHeader').then(module => 
 const ChatArea = React.lazy(() => import('../Chat/ChatArea').then(module => ({ default: module.ChatArea })));
 const SourcesSidebar = React.lazy(() => import('../AI/SourcesSidebar').then(module => ({ default: module.SourcesSidebar })));
 const ArtifactSidebar = React.lazy(() => import('../Sidebar/ArtifactSidebar').then(module => ({ default: module.ArtifactSidebar })));
+const ThinkingSidebar = React.lazy(() => import('../Sidebar/ThinkingSidebar').then(module => ({ default: module.ThinkingSidebar })));
 const AppModals = React.lazy(() => import('./AppModals').then(module => ({ default: module.AppModals })));
 const TestRunner = React.lazy(() => import('../Testing').then(module => ({ default: module.TestRunner })));
 
@@ -29,6 +30,13 @@ export const App = () => {
     ? logic.chatHistory.find(c => c.id === logic.currentChatId)
     : null;
   const chatTitle = currentChat ? currentChat.title : null;
+  
+  // Find the currently active message for thinking sidebar logic if needed
+  // (Usually passed down via messageList, but sidebar needs context)
+  // For now, we assume ThinkingSidebar uses internal logic or props if we were to fully wire it for a specific message selection.
+  // Based on current architecture, ThinkingSidebar seems to rely on an external selection state or just shows the latest.
+  // We'll pass the last message as a fallback or leave it to the component to handle null.
+  const activeMessage = currentChat?.messages.length ? currentChat.messages[currentChat.messages.length - 1] : null;
 
   // Mobile viewport height fix for iOS
   useEffect(() => {
@@ -44,7 +52,7 @@ export const App = () => {
   return (
     <div 
         ref={logic.appContainerRef} 
-        className={`flex h-full h-[calc(var(--vh,1vh)*100)] bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isResizing ? 'pointer-events-none' : ''}`}
+        className={`flex h-full h-[calc(var(--vh,1vh)*100)] bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
     >
       {logic.versionMismatch && <VersionMismatchOverlay />}
       
@@ -133,6 +141,18 @@ export const App = () => {
           setWidth={logic.handleSetSourcesSidebarWidth}
           isResizing={logic.isSourcesResizing}
           setIsResizing={logic.setIsSourcesResizing}
+        />
+
+        <ThinkingSidebar
+            isOpen={false} // Placeholder: Logic to toggle this sidebar not fully exposed in prompt, defaulting to false/hidden or controlled by logic if implemented
+            onClose={() => {}} 
+            message={activeMessage}
+            sendMessage={logic.sendMessage}
+            width={logic.thinkingSidebarWidth}
+            setWidth={logic.handleSetThinkingSidebarWidth}
+            isResizing={logic.isThinkingResizing}
+            setIsResizing={logic.setIsThinkingResizing}
+            onRegenerate={logic.regenerateResponse}
         />
 
         <ArtifactSidebar

@@ -81,6 +81,27 @@ export const useAppLogic = () => {
       return () => window.removeEventListener('open-artifact', handleOpenArtifact as EventListener);
   }, [isDesktop, sidebar]);
 
+  // Global Resize Logic
+  // Aggregates resizing state from all sidebars to enforce global UI locks (cursor, pointer-events)
+  const isAnyResizing = sidebar.isResizing || sidebar.isThinkingResizing || sidebar.isSourcesResizing || isArtifactResizing;
+
+  useEffect(() => {
+      if (isAnyResizing) {
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+          document.body.style.webkitUserSelect = 'none'; // Safari
+      } else {
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+          document.body.style.webkitUserSelect = '';
+      }
+      return () => {
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+          document.body.style.webkitUserSelect = '';
+      };
+  }, [isAnyResizing]);
+
   // Toast Notification State
   const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
 
@@ -527,6 +548,7 @@ export const useAppLogic = () => {
   
   return {
     appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, ...memory,
+    isAnyResizing, // Export aggregated state
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
     isImportModalOpen, setIsImportModalOpen, isSourcesSidebarOpen, sourcesForSidebar,
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading, versionMismatch,
