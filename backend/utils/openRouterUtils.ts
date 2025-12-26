@@ -20,14 +20,15 @@ export const streamOpenRouter = async (
     }
 ) => {
     try {
-        if (!apiKey) {
-            throw new Error("OpenRouter API key is missing. Please check your settings.");
+        const cleanKey = apiKey ? apiKey.trim() : "";
+        if (!cleanKey) {
+            throw new Error("OpenRouter API key is missing or empty. Please check your settings.");
         }
 
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${apiKey}`,
+                "Authorization": `Bearer ${cleanKey}`,
                 "Content-Type": "application/json",
                 "HTTP-Referer": "https://agentic-ai-chat.local", // Provides context to OpenRouter
                 "X-Title": "Agentic AI Chat",
