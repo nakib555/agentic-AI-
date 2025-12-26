@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -136,12 +137,12 @@ type ModelSettingsProps = {
 };
 
 const ModelSettings: React.FC<ModelSettingsProps> = ({
-    models, imageModels, videoModels, ttsModels, selectedModel, onModelChange,
+    models = [], imageModels = [], videoModels = [], ttsModels = [], selectedModel, onModelChange,
     temperature, setTemperature, maxTokens, setMaxTokens,
     imageModel, onImageModelChange, videoModel, onVideoModelChange, ttsModel, onTtsModelChange,
     disabled, provider
 }) => {
-    const noModelsAvailable = models.length === 0;
+    const noModelsAvailable = !models || models.length === 0;
     const isGemini = provider === 'gemini';
 
     return (

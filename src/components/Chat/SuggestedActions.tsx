@@ -30,6 +30,8 @@ const itemVariants = {
 };
 
 export const SuggestedActions: React.FC<SuggestedActionsProps> = ({ actions, onActionClick }) => {
+  if (!actions || !Array.isArray(actions) || actions.length === 0) return null;
+
   return (
     <AnimatePresence>
       <motion.div

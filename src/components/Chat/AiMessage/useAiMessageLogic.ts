@@ -68,7 +68,7 @@ export const useAiMessageLogic = (
         }
         
         // From groundingMetadata (Chat mode search)
-        if (activeResponse?.groundingMetadata?.groundingChunks) {
+        if (activeResponse?.groundingMetadata?.groundingChunks && Array.isArray(activeResponse.groundingMetadata.groundingChunks)) {
             for (const chunk of activeResponse.groundingMetadata.groundingChunks) {
                 if (chunk.web?.uri) {
                     allSources.push({

@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -31,6 +32,14 @@ const IncorrectIcon = () => (
 export const McqComponent: React.FC<McqComponentProps> = ({ question, options, answer, explanation }) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const isAnswered = selectedOption !== null;
+
+  if (!options || !Array.isArray(options) || options.length === 0) {
+      return (
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg text-sm text-red-600 dark:text-red-400">
+              Invalid MCQ data: Options are missing.
+          </div>
+      );
+  }
 
   const handleSelect = (option: string) => {
     if (isAnswered) return;

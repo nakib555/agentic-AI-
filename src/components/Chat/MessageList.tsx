@@ -80,7 +80,8 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   const [atBottom, setAtBottom] = useState(true);
   const { isDesktop } = useViewport();
 
-  const visibleMessages = useMemo(() => messages.filter(msg => !msg.isHidden), [messages]);
+  // Safeguard against undefined messages prop
+  const visibleMessages = useMemo(() => (messages || []).filter(msg => !msg.isHidden), [messages]);
 
   // Expose scroll methods to parent via ref
   useImperativeHandle(ref, () => ({
