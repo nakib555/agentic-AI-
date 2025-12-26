@@ -164,16 +164,6 @@ export const UserMessage = ({
 
             {/* Actions Row */}
             <div className="flex items-center gap-2 mt-1 mr-1 select-none">
-                {/* Branch Switcher */}
-                {versionCount > 1 && onBranchSwitch && (
-                    <BranchSwitcher 
-                        count={versionCount} 
-                        activeIndex={currentVersionIdx} 
-                        onChange={(idx) => onBranchSwitch(idx > currentVersionIdx ? 'next' : 'prev')}
-                        className="mr-1" 
-                    />
-                )}
-
                 {/* Copy Button */}
                 <button 
                     type="button"
@@ -223,6 +213,16 @@ export const UserMessage = ({
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
+                )}
+
+                {/* Branch Switcher (Moved to end) */}
+                {versionCount > 1 && onBranchSwitch && (
+                    <BranchSwitcher 
+                        count={versionCount} 
+                        activeIndex={currentVersionIdx} 
+                        onChange={(idx) => onBranchSwitch(idx > currentVersionIdx ? 'next' : 'prev')}
+                        className="ml-1" 
+                    />
                 )}
             </div>
         </div>

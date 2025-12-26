@@ -73,9 +73,6 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
     return (
         <div className="w-full flex flex-wrap items-center justify-between gap-y-3 pt-4 mt-2 select-none border-t border-slate-100 dark:border-white/5">
             <div className="flex items-center gap-1">
-                {/* Branching Navigation / Pagination */}
-                <BranchSwitcher count={responseCount} activeIndex={activeResponseIndex} onChange={onResponseChange} className="mr-2" />
-                
                 <IconButton title={isCopied ? 'Copied!' : 'Copy'} onClick={handleCopy}>
                     <AnimatePresence mode="wait" initial={false}>
                         {isCopied ? (
@@ -165,6 +162,8 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
             
             <div className="flex items-center gap-3">
                  <SourcesPills sources={sources} onShowSources={() => onShowSources(sources)} />
+                 {/* Branching Navigation / Pagination - Moved to right side */}
+                 <BranchSwitcher count={responseCount} activeIndex={activeResponseIndex} onChange={onResponseChange} />
             </div>
         </div>
     );
