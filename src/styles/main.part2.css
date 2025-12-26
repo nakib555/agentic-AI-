@@ -89,22 +89,29 @@ html, body, #root {
 
 /* Mobile Performance Overrides (Battery Saver & GPU Optimization) */
 @media screen and (max-width: 768px) {
-  /* 1. Disable Glassmorphism / Blurs */
+  /* 1. Disable Glassmorphism on Panels (Force Solid for Content) */
   .glass-panel, 
-  .glass-input,
+  .glass-input {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    /* Use solid backgrounds for panels/inputs to ensure text readability */
+    background-color: var(--bg-layer-1) !important;
+    /* Replace depth/blur with subtle border */
+    border: 1px solid var(--border-default) !important;
+  }
+
+  /* 2. Disable Blur on Overlays (Keep Transparency for Modals) */
+  /* This fixes the "white space" issue on mobile settings/sidebar */
   .backdrop-blur-md,
   .backdrop-blur-sm,
   .backdrop-blur-xl,
   [class*="backdrop-blur"] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    /* Use solid backgrounds */
-    background-color: var(--bg-layer-1) !important;
-    /* Replace depth/blur with subtle border */
-    border: 1px solid var(--border-default) !important;
+    /* CRITICAL: Do NOT force background color here. */
   }
   
-  /* 2. Flatten Shadows */
+  /* 3. Flatten Shadows */
   .shadow-2xl, .shadow-xl, .shadow-lg, .shadow-md, .shadow-sm,
   [class*="shadow-"] {
     box-shadow: none !important;
@@ -112,7 +119,7 @@ html, body, #root {
     border: 1px solid var(--border-subtle) !important;
   }
 
-  /* 3. Disable Expensive Text Animations */
+  /* 4. Disable Expensive Text Animations */
   .shimmer-text {
     animation: none !important;
     background: none !important;
@@ -120,13 +127,13 @@ html, body, #root {
     color: var(--text-tertiary) !important;
   }
 
-  /* 4. Disable Decorative Pulses */
+  /* 5. Disable Decorative Pulses */
   .animate-pulse {
     animation: none !important;
     opacity: 0.7;
   }
 
-  /* 5. Disable CSS Filters */
+  /* 6. Disable CSS Filters */
   [class*="filter"], 
   [class*="drop-shadow"] {
     filter: none !important;
