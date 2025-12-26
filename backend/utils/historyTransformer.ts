@@ -52,9 +52,29 @@ export const transformHistoryToGeminiFormat = (messages: Message[]): Content[] =
 
         if (msg.role === 'user') {
             const parts: Part[] = [];
-            if (msg.text) parts.push({ text: msg.text });
-            if (msg.attachments) {
-                msg.attachments.forEach(att => parts.push({
+            
+            // --- Versioning Logic ---
+            // Prioritize active version content if available, otherwise fallback to root props
+            let textContent = msg.text;
+            let attachments = msg.attachments;
+
+            if (msg.versions && typeof msg.activeVersionIndex === 'number') {
+                const activeVersion = msg.versions[msg.activeVersionIndex];
+                if (activeVersion) {
+                    textContent = activeVersion.text;
+                    // If the version has specific attachments, use them. 
+                    // Otherwise keep root attachments (legacy behavior/simplification).
+                    if (activeVersion.attachments) {
+                        attachments = activeVersion.attachments;
+                    }
+                }
+            }
+            // ------------------------
+
+            if (textContent) parts.push({ text: textContent });
+            
+            if (attachments) {
+                attachments.forEach(att => parts.push({
                     inlineData: { mimeType: att.mimeType, data: att.data }
                 }));
             }

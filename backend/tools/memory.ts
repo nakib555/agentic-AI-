@@ -11,7 +11,21 @@ import { generateContentWithRetry } from "../utils/geminiUtils.js";
 export const executeExtractMemorySuggestions = async (ai: GoogleGenAI, conversation: Message[]): Promise<string[]> => {
     const conversationTranscript = conversation
         .filter(msg => !msg.isHidden)
-        .map(msg => `${msg.role}: ${(msg.responses?.[msg.activeResponseIndex]?.text || msg.text || '').substring(0, 300)}`)
+        .map(msg => {
+            let text = '';
+            if (msg.role === 'user') {
+                // Handle versioning for user messages
+                text = msg.text;
+                if (msg.versions && msg.activeVersionIndex !== undefined && msg.versions[msg.activeVersionIndex]) {
+                    text = msg.versions[msg.activeVersionIndex].text;
+                }
+            } else {
+                // Handle model responses
+                text = msg.responses?.[msg.activeResponseIndex]?.text || msg.text || '';
+            }
+            // Truncate individual messages to keep context focused
+            return `${msg.role}: ${text.substring(0, 300)}`;
+        })
         .join('\n');
     
     const prompt = `You are an expert at identifying key, long-term facts a user might want an AI to remember. From the following conversation, extract up to 3 specific facts, preferences, or details about the user or their goals that would be useful to remember in future conversations. Focus on personal details, work context, and explicit preferences. Output MUST be a valid JSON array of strings. For example: ["The user is a software engineer in London.", "The user prefers TypeScript for code examples."]. If no memorable facts are found, return an empty array [].\n\nCONVERSATION:\n${conversationTranscript}\n\nJSON OUTPUT:`;
