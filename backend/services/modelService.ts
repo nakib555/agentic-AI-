@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -50,15 +51,25 @@ const fetchWithRetry = async (url: string, options: any, retries = 5, backoff = 
     return await fetch(url, options);
 };
 
-async function fetchOpenRouterModels(): Promise<AppModel[]> {
+async function fetchOpenRouterModels(apiKey?: string): Promise<AppModel[]> {
     try {
         console.log('[ModelService] Fetching models from OpenRouter API...');
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json'
+        };
+        
+        if (apiKey) {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
         const response = await fetchWithRetry('https://openrouter.ai/api/v1/models', {
             method: 'GET',
+            headers
         });
 
         if (!response.ok) {
-            throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+            const errorText = await response.text();
+            throw new Error(`OpenRouter API error: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
         const data = await response.json();
@@ -186,7 +197,7 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
 
     let result;
     if (provider === 'openrouter') {
-        const chatModels = await fetchOpenRouterModels();
+        const chatModels = await fetchOpenRouterModels(apiKey);
         // OpenRouter currently doesn't standardise image/video models in the same list easily, 
         // essentially it's mostly LLMs. We leave others empty.
         result = {

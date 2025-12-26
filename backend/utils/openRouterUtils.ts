@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -19,13 +20,17 @@ export const streamOpenRouter = async (
     }
 ) => {
     try {
+        if (!apiKey) {
+            throw new Error("OpenRouter API key is missing. Please check your settings.");
+        }
+
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${apiKey}`,
                 "Content-Type": "application/json",
-                // "HTTP-Referer": "YOUR_SITE_URL", // Optional
-                // "X-Title": "YOUR_SITE_NAME", // Optional
+                "HTTP-Referer": "https://agentic-ai-chat.local", // Provides context to OpenRouter
+                "X-Title": "Agentic AI Chat",
             },
             body: JSON.stringify({
                 model: model,
@@ -39,7 +44,17 @@ export const streamOpenRouter = async (
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`OpenRouter API Error: ${response.status} - ${errorText}`);
+            let parsedError;
+            try {
+                parsedError = JSON.parse(errorText);
+            } catch (e) {
+                parsedError = { error: { message: errorText } };
+            }
+            
+            const message = parsedError.error?.message || errorText;
+            const code = parsedError.error?.code || response.status;
+            
+            throw new Error(`OpenRouter Error (${code}): ${message}`);
         }
 
         if (!response.body) throw new Error("No response body from OpenRouter");
