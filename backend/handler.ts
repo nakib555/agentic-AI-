@@ -403,6 +403,25 @@ ${coreInstruction}
                     tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }],
                 };
                 
+                // --- DEBUG LOGGING ---
+                console.log('\n\x1b[36m%s\x1b[0m', '╔═══════════════════════ FULL AI PROMPT CONTEXT ═══════════════════════╗');
+                console.log('\x1b[1m%s\x1b[0m', '▶ MODEL:', model);
+                console.log('\x1b[33m%s\x1b[0m', '\n▶ SYSTEM INSTRUCTION (Internal + Personalization + RAG):');
+                console.log(finalSystemInstruction);
+                console.log('\x1b[33m%s\x1b[0m', '\n▶ CONVERSATION HISTORY (Gemini Format):');
+                
+                // Safe logger to truncate base64 data for cleaner console output
+                const safeHistoryLog = fullHistory.map(h => ({
+                    role: h.role,
+                    parts: h.parts.map(p => {
+                        if (p.inlineData) return { inlineData: { mimeType: p.inlineData.mimeType, data: '[BASE64_DATA_TRUNCATED]' } };
+                        return p;
+                    })
+                }));
+                console.log(JSON.stringify(safeHistoryLog, null, 2));
+                console.log('\x1b[36m%s\x1b[0m', '╚══════════════════════════════════════════════════════════════════════╝\n');
+                // --- END DEBUG LOGGING ---
+
                 try {
                     await runAgenticLoop({
                         ai,

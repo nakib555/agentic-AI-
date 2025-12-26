@@ -215,27 +215,32 @@ export const useChat = (
         abortControllerRef.current = new AbortController();
 
         try {
+            const requestPayload = {
+                chatId: chatId,
+                messageId: messageId,
+                model: chatConfig.model,
+                newMessage: newMessage, // Send message object or null
+                settings: {
+                    isAgentMode: runtimeSettings.isAgentMode,
+                    systemPrompt: runtimeSettings.systemPrompt,
+                    aboutUser: runtimeSettings.aboutUser,
+                    aboutResponse: runtimeSettings.aboutResponse,
+                    temperature: chatConfig.temperature,
+                    maxOutputTokens: chatConfig.maxOutputTokens || undefined,
+                    imageModel: runtimeSettings.imageModel,
+                    videoModel: runtimeSettings.videoModel,
+                    memoryContent,
+                }
+            };
+
+            // Log payload for debugging
+            console.log('[Frontend] 📤 Outgoing Chat Request:', requestPayload);
+
             const response = await fetchFromApi(`/api/handler?task=${task}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 signal: abortControllerRef.current.signal,
-                body: JSON.stringify({
-                    chatId: chatId,
-                    messageId: messageId,
-                    model: chatConfig.model,
-                    newMessage: newMessage, // Send message object or null
-                    settings: {
-                        isAgentMode: runtimeSettings.isAgentMode,
-                        systemPrompt: runtimeSettings.systemPrompt,
-                        aboutUser: runtimeSettings.aboutUser,
-                        aboutResponse: runtimeSettings.aboutResponse,
-                        temperature: chatConfig.temperature,
-                        maxOutputTokens: chatConfig.maxOutputTokens || undefined,
-                        imageModel: runtimeSettings.imageModel,
-                        videoModel: runtimeSettings.videoModel,
-                        memoryContent,
-                    }
-                }),
+                body: JSON.stringify(requestPayload),
             });
 
             if (!response.ok || !response.body) throw new Error(await response.text() || `Request failed with status ${response.status}`);
