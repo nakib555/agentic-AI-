@@ -122,7 +122,12 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
     const isPreviewable = ['html', 'svg', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language);
 
     const getPreviewContent = () => {
-        if (language === 'html' || language === 'svg') return content;
+        // Sanitize content: remove markdown code block fences if present
+        // This is crucial because models often wrap the artifact code in ```html ... ``` even inside the JSON payload.
+        let cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
+
+        if (language === 'html' || language === 'svg') return cleanContent;
+        
         // Basic wrapping for JS/TS to run in browser
         if (['javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language)) {
             return `
@@ -147,7 +152,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                             }
                         };
                         try {
-                            ${content}
+                            ${cleanContent}
                         } catch (e) {
                             console.error(e);
                         }

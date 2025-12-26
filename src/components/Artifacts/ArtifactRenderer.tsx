@@ -73,9 +73,12 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
 
         // Code Preview (HTML/SVG/JS)
         if (language === 'html' || language === 'svg' || language === 'javascript') {
+            // Strip potential markdown wrappers from content if the model output them inside the JSON payload
+            const cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
+
             const srcDoc = language === 'javascript' 
-                ? `<html><body><script>${content}</script></body></html>`
-                : content;
+                ? `<html><body><script>${cleanContent}</script></body></html>`
+                : cleanContent;
             
             return (
                 <iframe 

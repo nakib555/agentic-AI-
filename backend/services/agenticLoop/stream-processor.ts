@@ -27,8 +27,10 @@ export const processBackendStream = async (response: Response, callbacks: Stream
     const decoder = new TextDecoder();
     let buffer = '';
 
-    // Optimization: More frequent flushes (8ms) to make typing feel instantaneous
-    const FLUSH_INTERVAL_MS = 8; 
+    // Optimization: Buffered State Updates
+    // Increased flush interval to ~30ms to prevent flooding the React render cycle on the frontend.
+    // 8ms was too aggressive causing UI locking on slower devices.
+    const FLUSH_INTERVAL_MS = 30; 
     const WATCHDOG_TIMEOUT_MS = 45000;
 
     let pendingText: string | null = null;

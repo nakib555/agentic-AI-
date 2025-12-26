@@ -50,19 +50,23 @@ export const TextType = ({
   const stateRef = useRef({
     phase: 'initial' as 'initial' | 'typing' | 'pausing' | 'deleting',
     sequenceIndex: 0,
-    currentText: '', // The text actively being typed/deleted
+    currentText: '',
     textArray: Array.isArray(text) ? text : [text],
     timeoutId: null as number | null,
   });
 
+  // Keep props in refs to access fresh values inside timeout closures
+  const propsRef = useRef({ typingSpeed, deletingSpeed, initialDelay, pauseDuration, loop, onSequenceComplete });
+  useEffect(() => {
+      propsRef.current = { typingSpeed, deletingSpeed, initialDelay, pauseDuration, loop, onSequenceComplete };
+  }, [typingSpeed, deletingSpeed, initialDelay, pauseDuration, loop, onSequenceComplete]);
+
   // CRITICAL OPTIMIZATION: Abort any pending updates immediately if text prop changes.
-  // This prevents "ghost" typing from a previous placeholder if props swap rapidly.
   useEffect(() => {
     const newState = stateRef.current;
     newState.textArray = Array.isArray(text) ? text : [text];
     
     // Reset logic: If the prop changed, kill the current loop and restart fresh.
-    // This ensures strict synchronization with the parent component.
     if (newState.timeoutId) window.clearTimeout(newState.timeoutId);
     
     newState.phase = 'initial';
@@ -78,21 +82,18 @@ export const TextType = ({
 
   const runLoop = useCallback(() => {
     const state = stateRef.current;
-    
-    // Safety check: If the component is unmounted, the effect cleanup will have
-    // cleared the timeout, but we double check here to be safe.
-    // Note: we rely on the cleanup function to actually stop the loop.
+    const p = propsRef.current;
 
     const currentTarget = state.textArray[state.sequenceIndex] || '';
     let delay = 0;
 
-    // Safety check: prevent infinite loops if text array is empty
+    // Safety check
     if (state.textArray.length === 0) return;
 
     switch (state.phase) {
       case 'initial':
         state.phase = 'typing';
-        delay = initialDelay;
+        delay = p.initialDelay;
         break;
 
       case 'typing':
@@ -104,21 +105,21 @@ export const TextType = ({
 
           // Add a longer pause after spaces or punctuation for realism
           const isWordEnd = nextChar === ' ' || nextChar === ',' || nextChar === '.';
-          delay = getTypingDelay(isWordEnd ? typingSpeed * 3 : typingSpeed);
+          delay = getTypingDelay(isWordEnd ? p.typingSpeed * 3 : p.typingSpeed);
         } else {
           state.phase = 'pausing';
-          delay = 0; // Immediate transition to pause logic, handled in next tick
+          delay = 0; // Immediate transition
         }
         break;
 
       case 'pausing':
         const isLastItem = state.sequenceIndex === state.textArray.length - 1;
-        if (!isLastItem || loop) {
+        if (!isLastItem || p.loop) {
           state.phase = 'deleting';
-          delay = pauseDuration;
+          delay = p.pauseDuration;
         } else {
           // Sequence complete
-          if (onSequenceComplete) onSequenceComplete();
+          if (p.onSequenceComplete) p.onSequenceComplete();
           return; // Stop the loop
         }
         break;
@@ -127,29 +128,29 @@ export const TextType = ({
         if (state.currentText.length > 0) {
           state.currentText = state.currentText.slice(0, -1);
           setDisplayedText(state.currentText);
-          delay = getTypingDelay(deletingSpeed, 0.6);
+          delay = getTypingDelay(p.deletingSpeed, 0.6);
         } else {
           // Finished deleting
           const nextIndex = state.sequenceIndex + 1;
           if (nextIndex < state.textArray.length) {
             state.sequenceIndex = nextIndex;
             state.phase = 'typing';
-          } else if (loop) {
+          } else if (p.loop) {
             state.sequenceIndex = 0;
             state.phase = 'typing';
           } else {
-             if (onSequenceComplete) onSequenceComplete();
+             if (p.onSequenceComplete) p.onSequenceComplete();
              return;
           }
-          delay = typingSpeed;
+          delay = p.typingSpeed;
         }
         break;
     }
 
     state.timeoutId = window.setTimeout(runLoop, delay);
-  }, [typingSpeed, deletingSpeed, initialDelay, pauseDuration, loop, onSequenceComplete]);
+  }, []);
 
-  // Cleanup effect: Ensures strictly that no timeouts fire after unmount
+  // Cleanup effect
   useEffect(() => {
     return () => {
       if (stateRef.current.timeoutId) {
@@ -158,11 +159,10 @@ export const TextType = ({
     };
   }, []);
 
-  // Separate effect for cursor blinking to avoid re-rendering the main loop
+  // Cursor blink effect
   useEffect(() => {
       if (!showCursor) return;
       const interval = setInterval(() => {
-          // Use function update to avoid stale state issues
           setIsCursorVisible(v => !v);
       }, cursorBlinkDuration * 1000);
       
@@ -175,8 +175,9 @@ export const TextType = ({
     <span className="inline">{displayedText}</span>,
     showCursor && (
       <span
-        className={`ml-px inline-block ${cursorClassName}`}
+        className={`ml-px inline-block whitespace-nowrap ${cursorClassName}`}
         style={{ opacity: isCursorVisible ? 1 : 0, transition: 'opacity 0.1s' }}
+        aria-hidden="true"
       >
         {cursorCharacter}
       </span>
