@@ -169,129 +169,139 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
             animate={isOpen ? (isDesktop ? { width } : { y: 0 }) : (isDesktop ? { width: 0 } : { y: '100%' })}
             transition={{ type: isResizing ? 'tween' : 'spring', stiffness: 300, damping: 30 }}
             className={`
-                flex-shrink-0 bg-gray-50 dark:bg-[#0c0c0c] overflow-hidden flex flex-col z-30
+                flex-shrink-0 bg-gray-50 dark:bg-[#0c0c0c] overflow-hidden flex flex-col
                 ${isDesktop 
-                    ? 'relative border-l border-gray-200 dark:border-white/10 h-full' 
-                    : 'fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 dark:border-white/10 h-[85vh] rounded-t-2xl shadow-2xl'
+                    ? 'relative border-l border-gray-200 dark:border-white/10 h-full z-30' 
+                    : 'fixed inset-x-0 bottom-0 z-[60] border-t border-gray-200 dark:border-white/10 h-[85vh] rounded-t-2xl shadow-2xl'
                 }
             `}
         >
-            {/* Header Toolbar */}
-            <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-white/5 flex-shrink-0">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-white/5 rounded-md border border-gray-200 dark:border-white/5">
-                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider font-mono">
-                            {language || 'TXT'}
-                        </span>
+            <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%' }}>
+                
+                {/* Drag handle for mobile */}
+                {!isDesktop && (
+                    <div className="flex justify-center pt-3 pb-1 flex-shrink-0 bg-white dark:bg-[#121212]" aria-hidden="true">
+                        <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
                     </div>
-                    {isPreviewable && (
-                        <div className="flex bg-gray-100 dark:bg-black/40 p-0.5 rounded-lg border border-gray-200 dark:border-white/5">
-                            <button 
-                                onClick={() => setActiveTab('code')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                                    activeTab === 'code' 
-                                    ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                }`}
+                )}
+
+                {/* Header Toolbar */}
+                <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-white/5 flex-shrink-0">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-white/5 rounded-md border border-gray-200 dark:border-white/5">
+                            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider font-mono">
+                                {language || 'TXT'}
+                            </span>
+                        </div>
+                        {isPreviewable && (
+                            <div className="flex bg-gray-100 dark:bg-black/40 p-0.5 rounded-lg border border-gray-200 dark:border-white/5">
+                                <button 
+                                    onClick={() => setActiveTab('code')}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                                        activeTab === 'code' 
+                                        ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
+                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                    }`}
+                                >
+                                    <CodeIcon />
+                                    Code
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('preview')}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                                        activeTab === 'preview' 
+                                        ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
+                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                    }`}
+                                >
+                                    <EyeIcon />
+                                    Preview
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={handleCopy}
+                            className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                            title="Copy code"
+                        >
+                            {isCopied ? <CheckIcon /> : <CopyIcon />}
+                        </button>
+                        <button 
+                            onClick={onClose} 
+                            className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                            title="Close artifact"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-2.72 2.72a.75.75 0 1 0 1.06 1.06L10 11.06l2.72 2.72a.75.75 0 0 0 1.06-1.06L10 8.94 6.28 5.22Z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="flex-1 overflow-hidden relative group/content">
+                    {activeTab === 'code' ? (
+                        <div className="absolute inset-0 overflow-auto custom-scrollbar bg-white dark:bg-[#0d0d0d]">
+                            <SyntaxHighlighter
+                                language={language}
+                                style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
+                                customStyle={{ 
+                                    margin: 0, 
+                                    padding: '1.5rem', 
+                                    minHeight: '100%', 
+                                    fontSize: '13px', 
+                                    lineHeight: '1.5',
+                                    fontFamily: "'Fira Code', monospace",
+                                    backgroundColor: 'transparent'
+                                }}
+                                showLineNumbers={true}
+                                wrapLines={false} 
+                                lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
                             >
-                                <CodeIcon />
-                                Code
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab('preview')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                                    activeTab === 'preview' 
-                                    ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                }`}
-                            >
-                                <EyeIcon />
-                                Preview
-                            </button>
+                                {content}
+                            </SyntaxHighlighter>
+                        </div>
+                    ) : (
+                        <div className="absolute inset-0 bg-gray-100 dark:bg-[#1a1a1a] flex flex-col">
+                            <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#202020] border-b border-gray-200 dark:border-white/5">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setIframeKey(k => k + 1)} 
+                                        className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
+                                        title="Reload Preview"
+                                    >
+                                        <RefreshIcon />
+                                    </button>
+                                    <button 
+                                        onClick={handleOpenNewTab}
+                                        className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
+                                        title="Open in New Tab"
+                                    >
+                                        <ExternalLinkIcon />
+                                    </button>
+                                </div>
+                            </div>
+                            <iframe 
+                                key={iframeKey}
+                                srcDoc={getPreviewContent()}
+                                className="flex-1 w-full h-full border-none bg-white"
+                                sandbox="allow-scripts allow-modals allow-forms allow-popups"
+                                title="Artifact Preview"
+                            />
                         </div>
                     )}
                 </div>
-                
-                <div className="flex items-center gap-2">
-                    <button 
-                        onClick={handleCopy}
-                        className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-                        title="Copy code"
-                    >
-                        {isCopied ? <CheckIcon /> : <CopyIcon />}
-                    </button>
-                    <button 
-                        onClick={onClose} 
-                        className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-                        title="Close artifact"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-2.72 2.72a.75.75 0 1 0 1.06 1.06L10 11.06l2.72 2.72a.75.75 0 0 0 1.06-1.06L10 8.94 6.28 5.22Z" />
-                        </svg>
-                    </button>
-                </div>
             </div>
 
-            {/* Main Content Area */}
-            <div className="flex-1 overflow-hidden relative group/content">
-                {activeTab === 'code' ? (
-                    <div className="absolute inset-0 overflow-auto custom-scrollbar bg-white dark:bg-[#0d0d0d]">
-                        <SyntaxHighlighter
-                            language={language}
-                            style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
-                            customStyle={{ 
-                                margin: 0, 
-                                padding: '1.5rem', 
-                                minHeight: '100%', 
-                                fontSize: '13px', 
-                                lineHeight: '1.5',
-                                fontFamily: "'Fira Code', monospace",
-                                backgroundColor: 'transparent'
-                            }}
-                            showLineNumbers={true}
-                            wrapLines={false} 
-                            lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
-                        >
-                            {content}
-                        </SyntaxHighlighter>
-                    </div>
-                ) : (
-                    <div className="absolute inset-0 bg-gray-100 dark:bg-[#1a1a1a] flex flex-col">
-                        <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#202020] border-b border-gray-200 dark:border-white/5">
-                            <div className="flex items-center gap-2">
-                                <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                                <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button 
-                                    onClick={() => setIframeKey(k => k + 1)} 
-                                    className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
-                                    title="Reload Preview"
-                                >
-                                    <RefreshIcon />
-                                </button>
-                                <button 
-                                    onClick={handleOpenNewTab}
-                                    className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
-                                    title="Open in New Tab"
-                                >
-                                    <ExternalLinkIcon />
-                                </button>
-                            </div>
-                        </div>
-                        <iframe 
-                            key={iframeKey}
-                            srcDoc={getPreviewContent()}
-                            className="flex-1 w-full h-full border-none bg-white"
-                            sandbox="allow-scripts allow-modals allow-forms allow-popups"
-                            title="Artifact Preview"
-                        />
-                    </div>
-                )}
-            </div>
-
-            {/* Resize Handle */}
+            {/* Resize Handle (Desktop only) */}
             {isDesktop && (
                 <div 
                     onMouseDown={startResizing} 
