@@ -11,7 +11,7 @@ import { useChatHistory } from '../useChatHistory';
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
 import { fetchFromApi } from '../../utils/api';
 import { toolImplementations as frontendToolImplementations } from '../../tools';
-import { processBackendStream } from '../../services/agenticLoop/stream-processor';
+import { processBackendStream } from '../../services/agenticLoop/stream-processor.ts';
 import { parseAgenticWorkflow } from '../../utils/workflowParsing';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -63,7 +63,7 @@ export const useChat = (
     useEffect(() => {
         if (!isLoading && testResolverRef.current && currentChatId) {
             const chat = chatHistory.find(c => c.id === currentChatId);
-            if (chat && chat.messages.length > 0) {
+            if (chat && chat.messages && chat.messages.length > 0) {
                 const lastMessage = chat.messages[chat.messages.length - 1];
                 if (lastMessage.role === 'model') {
                     testResolverRef.current(lastMessage);
@@ -161,7 +161,8 @@ export const useChat = (
         const chatId = currentChatIdRef.current;
         if (chatId) {
             const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-            if (currentChat?.messages.length) {
+            // Safe access check for messages array
+            if (currentChat?.messages?.length) {
                 const lastMessage = currentChat.messages[currentChat.messages.length - 1];
                 if (lastMessage.executionState === 'pending_approval') {
                      const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
@@ -178,7 +179,8 @@ export const useChat = (
         const chatId = currentChatIdRef.current;
         if (chatId) {
             const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-            if (currentChat?.messages.length) {
+            // Safe access check for messages array
+            if (currentChat?.messages?.length) {
                 const lastMessage = currentChat.messages[currentChat.messages.length - 1];
                 const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
                 const callId = activeResponse?.plan?.callId || 'plan-approval';
@@ -193,7 +195,8 @@ export const useChat = (
         const chatId = currentChatIdRef.current;
         if (chatId) {
             const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-            if (currentChat?.messages.length) {
+            // Safe access check for messages array
+            if (currentChat?.messages?.length) {
                 const lastMessage = currentChat.messages[currentChat.messages.length - 1];
                 const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
                 const callId = activeResponse?.plan?.callId || 'plan-approval';
@@ -350,7 +353,7 @@ export const useChat = (
                 
                 // --- POST-STREAMING OPERATIONS ---
                 
-                if (finalChatState && apiKey) {
+                if (finalChatState && apiKey && finalChatState.messages) {
                     // 1. Generate Title (Only for new chats, only once, only after stream complete)
                     if (finalChatState.title === "New Chat" && finalChatState.messages.length >= 2 && !titleGenerationAttemptedRef.current.has(chatId)) {
                         titleGenerationAttemptedRef.current.add(chatId);
@@ -373,7 +376,7 @@ export const useChat = (
                 // Force sync state
                 setTimeout(() => {
                     const chatToPersist = chatHistoryRef.current.find(c => c.id === chatId);
-                    if (chatToPersist) {
+                    if (chatToPersist && chatToPersist.messages) {
                         const cleanMessages = chatToPersist.messages.map(m => 
                             m.id === messageId ? { ...m, isThinking: false } : m
                         );
@@ -448,7 +451,7 @@ export const useChat = (
         if (!chatId) return;
 
         const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-        if (!currentChat) return;
+        if (!currentChat || !currentChat.messages) return;
 
         const messageIndex = currentChat.messages.findIndex(m => m.id === messageId);
         if (messageIndex === -1) return;
@@ -551,7 +554,7 @@ export const useChat = (
         if (!chatId) return;
 
         const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-        if (!currentChat) return;
+        if (!currentChat || !currentChat.messages) return;
 
         const messageIndex = currentChat.messages.findIndex(m => m.id === messageId);
         if (messageIndex === -1) return;
@@ -622,7 +625,7 @@ export const useChat = (
         requestIdRef.current = null; // Reset before new message
 
         const currentChat = chatHistory.find(c => c.id === currentChatId);
-        if (!currentChat) return;
+        if (!currentChat || !currentChat.messages) return;
 
         const messageIndex = currentChat.messages.findIndex(m => m.id === aiMessageId);
         if (messageIndex < 1 || currentChat.messages[messageIndex-1].role !== 'user') {
