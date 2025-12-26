@@ -150,8 +150,8 @@ export const UserMessage = ({ msg, onEdit }: { msg: Message, onEdit?: (newText: 
                 </div>
             </motion.div>
 
-            {/* Actions Row - Positioned at bottom right */}
-            <div className="flex items-center gap-1 mt-1 mr-1 opacity-0 group-hover/userMsg:opacity-100 transition-opacity duration-200">
+            {/* Actions Row - Positioned at bottom right. Always visible now for better UX. */}
+            <div className="flex items-center gap-1 mt-1 mr-1 transition-opacity duration-200">
                 {/* Copy Button */}
                 <button 
                     type="button"
