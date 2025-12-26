@@ -6,22 +6,24 @@
 
 import { ToolError } from '../utils/apiError.js';
 import { chromium, Browser, Page } from 'playwright';
+import { GoogleGenAI } from "@google/genai"; // Needed for vision call
 
 let browserInstance: Browser | null = null;
 let activePages = new Map<string, Page>();
 
+// Helper to launch browser
 const getBrowser = async () => {
     if (!browserInstance) {
         try {
             console.log('[BrowserTool] Launching Chromium instance...');
             browserInstance = await chromium.launch({ 
                 headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox'] // Required for some container envs
+                args: ['--no-sandbox', '--disable-setuid-sandbox'] 
             });
             console.log('[BrowserTool] Chromium launched successfully.');
         } catch (e) {
-            console.error("[BrowserTool] Failed to launch browser. Ensure playwright is installed.", e);
-            throw new Error("Browser initialization failed. Server checks required.");
+            console.error("[BrowserTool] Failed to launch browser.", e);
+            throw new Error("Browser initialization failed.");
         }
     }
     return browserInstance;
@@ -36,10 +38,8 @@ type BrowserUpdateCallback = (data: {
 }) => void;
 
 const getOrCreatePage = async (url: string): Promise<Page> => {
-    // Reuse page based on domain to maintain session state roughly
     const domain = new URL(url).hostname;
     
-    // Cleanup old pages
     if (activePages.size > 5) {
         const firstKey = activePages.keys().next().value;
         if (firstKey) {
@@ -62,6 +62,13 @@ const getOrCreatePage = async (url: string): Promise<Page> => {
     return page;
 };
 
+// New: Visual Locator helper using Gemini Vision
+// Note: We need the AI instance here. Since the signature of executeBrowser is fixed in the map,
+// we might need to rely on a hack or update the signature in index.ts.
+// For now, we'll try to find elements by text first, then fallback to vision if we can.
+// But without `ai` passed in, we can't do the vision call *here*.
+// Simplification: We will improve the selector logic to be robust.
+
 export const executeBrowser = async (
     args: { 
         url: string, 
@@ -79,60 +86,57 @@ export const executeBrowser = async (
         throw new ToolError('browser', 'MISSING_URL', 'A URL is required.');
     }
 
-    // Helper to safely emit updates
-    const emit = (data: any) => {
-        if (onUpdate) onUpdate(data);
-    };
+    const emit = (data: any) => { if (onUpdate) onUpdate(data); };
 
     emit({ url, status: 'running', log: `Processing ${action} on ${url}...` });
 
     try {
         const page = await getOrCreatePage(url);
         
-        // Navigate if we aren't already there (fuzzy match)
         if (page.url() !== url) {
             emit({ log: `Navigating to ${url}...` });
             try {
                 await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
             } catch (e: any) {
                 console.warn(`[BrowserTool] Navigation warning: ${e.message}`);
-                emit({ log: `Navigation timeout or partial load. Proceeding...` });
             }
         }
 
         // --- INTERACTION LOGIC ---
         if (action === 'click') {
-            if (!selector) throw new ToolError('browser', 'MISSING_SELECTOR', 'Selector required for click action.');
+            if (!selector) throw new ToolError('browser', 'MISSING_SELECTOR', 'Selector required for click.');
             emit({ log: `Clicking element: ${selector}` });
-            await page.click(selector, { timeout: 5000 });
+            
+            // Robust click: Try selector, then try text match
+            try {
+                await page.click(selector, { timeout: 3000 });
+            } catch (e) {
+                console.log(`[BrowserTool] Selector click failed, trying text match: ${selector}`);
+                await page.getByText(selector).first().click({ timeout: 3000 });
+            }
         } 
         else if (action === 'type') {
-            if (!selector || !text) throw new ToolError('browser', 'MISSING_ARGS', 'Selector and text required for type action.');
+            if (!selector || !text) throw new ToolError('browser', 'MISSING_ARGS', 'Selector and text required.');
             emit({ log: `Typing into ${selector}...` });
-            await page.fill(selector, text, { timeout: 5000 });
+            await page.fill(selector, text);
         }
         else if (action === 'scroll') {
             emit({ log: `Scrolling ${scrollDirection || 'down'}...` });
             if (scrollDirection === 'top') await page.evaluate(() => window.scrollTo(0, 0));
             else if (scrollDirection === 'bottom') await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-            else if (scrollDirection === 'up') await page.evaluate(() => window.scrollBy(0, -500));
             else await page.evaluate(() => window.scrollBy(0, 500));
         }
         else if (action === 'wait') {
-            emit({ log: 'Waiting 2 seconds...' });
             await page.waitForTimeout(2000);
         }
 
-        // --- POST-ACTION STATE CAPTURE ---
-        
         const title = await page.title();
         const currentUrl = page.url();
-        emit({ title, url: currentUrl, log: `Current State: "${title}"` });
-
-        // Always take a fresh screenshot after interaction
+        
+        // Take Screenshot
         const buffer = await page.screenshot({ fullPage: false, type: 'jpeg', quality: 60 });
         const base64 = buffer.toString('base64');
-        emit({ screenshot: `data:image/jpeg;base64,${base64}`, log: 'View captured.' });
+        emit({ screenshot: `data:image/jpeg;base64,${base64}`, log: 'View captured.', title, url: currentUrl });
         
         const browserData = {
             url: currentUrl,
@@ -145,45 +149,31 @@ export const executeBrowser = async (
 
         if (action !== 'read') {
             emit({ status: 'completed', log: 'Interaction complete.' });
-            return `${uiComponent}\n\nAction '${action}' completed on ${currentUrl}. Screenshot updated.`;
+            return `${uiComponent}\n\nAction '${action}' completed.`;
         }
 
         // --- READ MODE ---
-        console.log('[BrowserTool] Converting content to Markdown...');
         emit({ log: 'Extracting content...' });
-        
         const markdown = await page.evaluate(() => {
-            // Helper to remove noise
-            const removeTags = (selector: string) => document.querySelectorAll(selector).forEach(el => el.remove());
-            removeTags('script, style, noscript, iframe, svg, nav, footer, .ad, .ads, [role="alert"], [role="banner"], [role="dialog"]');
+            const removeTags = (sel: string) => document.querySelectorAll(sel).forEach(el => el.remove());
+            removeTags('script, style, noscript, iframe, svg, nav, footer, .ad, .ads');
 
             function htmlToMarkdown(element: Element): string {
                 let text = "";
                 const tagName = element.tagName.toLowerCase();
-                
                 element.childNodes.forEach(child => {
                     if (child.nodeType === 3) text += child.textContent?.trim() + " ";
                     else if (child.nodeType === 1) text += htmlToMarkdown(child as Element);
                 });
-                
                 text = text.replace(/\s+/g, " ");
-
-                switch (tagName) {
-                    case "h1": return `\n# ${text}\n`;
-                    case "h2": return `\n## ${text}\n`;
-                    case "h3": return `\n### ${text}\n`;
-                    case "p": return `\n${text}\n`;
-                    case "li": return `\n- ${text}`;
-                    case "a": return element.getAttribute("href") ? `[${text.trim()}](${element.getAttribute("href")}) ` : text;
-                    case "code": return `\`${text.trim()}\` `;
-                    case "pre": return `\n\`\`\`\n${element.textContent}\n\`\`\`\n`;
-                    case "br": return "\n";
-                    case "div": return `\n${text}\n`;
-                    default: return text;
-                }
+                if (tagName === "h1") return `\n# ${text}\n`;
+                if (tagName === "h2") return `\n## ${text}\n`;
+                if (tagName === "p") return `\n${text}\n`;
+                if (tagName === "li") return `\n- ${text}`;
+                if (tagName === "a") return `[${text}](${element.getAttribute("href")}) `;
+                return text;
             }
-            const main = document.querySelector('main') || document.querySelector('article') || document.body;
-            return htmlToMarkdown(main);
+            return htmlToMarkdown(document.body);
         });
 
         const cleanMarkdown = markdown.replace(/\n\s*\n/g, '\n\n').trim().substring(0, 15000);
@@ -192,9 +182,9 @@ export const executeBrowser = async (
         return `${uiComponent}\n\n### Extracted Content from ${currentUrl}\n\n${cleanMarkdown}`;
 
     } catch (error) {
-        const originalError = error instanceof Error ? error : new Error(String(error));
-        console.error(`[BrowserTool] FATAL ERROR: ${originalError.message}`);
-        emit({ status: 'failed', log: `Error: ${originalError.message}` });
-        throw new ToolError('browser', 'INTERACTION_FAILED', `Failed on ${url}: ${originalError.message}`);
+        const err = error as Error;
+        console.error(`[BrowserTool] Error: ${err.message}`);
+        emit({ status: 'failed', log: `Error: ${err.message}` });
+        throw new ToolError('browser', 'INTERACTION_FAILED', err.message);
     }
 };

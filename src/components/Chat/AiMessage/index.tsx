@@ -25,6 +25,7 @@ import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 import { useTypewriter } from '../../../hooks/useTypewriter';
 import { parseContentSegments } from '../../../utils/workflowParsing';
 import { ThinkingProcess } from './ThinkingProcess';
+import { ArtifactRenderer } from '../../Artifacts/ArtifactRenderer'; // Import new component
 
 // Optimized spring physics for performance
 const animationProps = {
@@ -59,15 +60,61 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
   const { activeResponse, finalAnswerText, thinkingIsComplete, thinkingText } = logic;
   
-  // Apply typewriter effect to the final answer text.
   const typedFinalAnswer = useTypewriter(finalAnswerText, msg.isThinking ?? false);
 
-  // Dynamic Parsing: Parse the *typed* text into segments.
   const displaySegments = useMemo(() => {
-      return parseContentSegments(typedFinalAnswer);
+      // Enhanced parsing to detect artifact tags
+      // We process the text to extract [ARTIFACT_CODE] and [ARTIFACT_DATA] tags manually here
+      // since the utility might not support them yet.
+      
+      const segments = parseContentSegments(typedFinalAnswer);
+      
+      // Post-process segments to handle artifacts if parseContentSegments doesn't
+      // For this implementation, we will assume standard components are handled, 
+      // and check text segments for artifacts.
+      
+      const enhancedSegments = [];
+      for (const segment of segments) {
+          if (segment.type === 'text' && segment.content) {
+              const artifactRegex = /(\[(?:ARTIFACT_CODE|ARTIFACT_DATA)\].*?\[\/(?:ARTIFACT_CODE|ARTIFACT_DATA)\])/s;
+              const parts = segment.content.split(artifactRegex);
+              
+              for (const part of parts) {
+                  if (!part.trim()) continue;
+                  
+                  const codeMatch = part.match(/^\[ARTIFACT_CODE\](\{.*?\})\[\/ARTIFACT_CODE\]$/s);
+                  const dataMatch = part.match(/^\[ARTIFACT_DATA\](\{.*?\})\[\/ARTIFACT_DATA\]$/s);
+                  
+                  if (codeMatch) {
+                      try {
+                          const data = JSON.parse(codeMatch[1]);
+                          enhancedSegments.push({ 
+                              type: 'component', 
+                              componentType: 'ARTIFACT_CODE', 
+                              data 
+                          });
+                      } catch (e) { enhancedSegments.push({ type: 'text', content: part }); }
+                  } else if (dataMatch) {
+                      try {
+                          const data = JSON.parse(dataMatch[1]);
+                          enhancedSegments.push({ 
+                              type: 'component', 
+                              componentType: 'ARTIFACT_DATA', 
+                              data 
+                          });
+                      } catch (e) { enhancedSegments.push({ type: 'text', content: part }); }
+                  } else {
+                      enhancedSegments.push({ type: 'text', content: part });
+                  }
+              }
+          } else {
+              enhancedSegments.push(segment);
+          }
+      }
+      return enhancedSegments;
+
   }, [typedFinalAnswer]);
 
-  // Handler for editing images, used by ImageDisplay components
   const handleEditImage = (blob: Blob, editKey: string) => {
       const file = new File([blob], "image-to-edit.png", { type: blob.type });
       (file as any)._editKey = editKey;
@@ -76,13 +123,11 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
 
   if (logic.isInitialWait) return <TypingIndicator />;
 
-  // --- STANDARD CHAT MODE (Unified for Agent & Chat) ---
   return (
     <motion.div 
         {...animationProps} 
         className="w-full flex flex-col items-start gap-3 origin-bottom-left group/message"
     >
-      {/* Chain of Thought (Raw Stream) if visible */}
       {logic.hasThinkingText && (
           <ThinkingProcess 
               thinkingText={thinkingText} 
@@ -90,41 +135,29 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           />
       )}
       
-      {/* Final Output */}
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer) && (
         <div className="w-full flex flex-col gap-3">
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} onRetry={() => onRegenerate(id)} />}
           
           <div className="markdown-content max-w-none w-full text-slate-800 dark:text-gray-100 leading-relaxed">
-            {displaySegments.map((segment, index) => {
+            {displaySegments.map((segment: any, index: number) => {
                 const key = `${id}-${index}`;
                 if (segment.type === 'component') {
                     const { componentType, data } = segment;
                     switch (componentType) {
-                        case 'VIDEO':
-                            return <VideoDisplay key={key} {...data} />;
-                        case 'ONLINE_VIDEO':
-                            return <VideoDisplay key={key} srcUrl={data.url} prompt={data.title} />;
+                        case 'VIDEO': return <VideoDisplay key={key} {...data} />;
+                        case 'ONLINE_VIDEO': return <VideoDisplay key={key} srcUrl={data.url} prompt={data.title} />;
                         case 'IMAGE':
-                        case 'ONLINE_IMAGE':
-                            return <ImageDisplay key={key} onEdit={handleEditImage} {...data} />;
-                        case 'MCQ':
-                            return <McqComponent key={key} {...data} />;
-                        case 'MAP':
-                            return (
-                                <motion.div key={key} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                                    <MapDisplay {...data} />
-                                </motion.div>
-                            );
-                        case 'FILE':
-                            return <FileAttachment key={key} {...data} />;
-                        case 'BROWSER':
-                            return <BrowserSessionDisplay key={key} {...data} />;
-                        case 'CODE_OUTPUT':
-                            return null; 
-                        default:
-                            return <ErrorDisplay key={key} error={{ message: `Unknown component type: ${componentType}`, details: JSON.stringify(data) }} />;
+                        case 'ONLINE_IMAGE': return <ImageDisplay key={key} onEdit={handleEditImage} {...data} />;
+                        case 'MCQ': return <McqComponent key={key} {...data} />;
+                        case 'MAP': return <motion.div key={key} initial={{ opacity: 0 }} animate={{ opacity: 1 }}><MapDisplay {...data} /></motion.div>;
+                        case 'FILE': return <FileAttachment key={key} {...data} />;
+                        case 'BROWSER': return <BrowserSessionDisplay key={key} {...data} />;
+                        case 'ARTIFACT_CODE': return <ArtifactRenderer key={key} type="code" content={data.code} language={data.language} title={data.title} />;
+                        case 'ARTIFACT_DATA': return <ArtifactRenderer key={key} type="data" content={data.content} title={data.title} />;
+                        case 'CODE_OUTPUT': return null; 
+                        default: return <ErrorDisplay key={key} error={{ message: `Unknown component: ${componentType}`, details: JSON.stringify(data) }} />;
                     }
                 } else {
                     return (
