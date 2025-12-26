@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { SelectDropdown } from '../UI/SelectDropdown';
 
 type PersonalizeSettingsProps = {
@@ -185,29 +184,30 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     const debouncedInstructions = useDebounce(customInstructions, 300);
 
     const parseAboutUser = useCallback((text: string) => {
-        const nicknameMatch = text.match(/Nickname:\s*(.*?)(?:\n|$)/);
-        const occupationMatch = text.match(/Occupation:\s*(.*?)(?:\n|$)/);
+        const nicknameMatch = text.match(/Nickname:\s*([^\n]+)/);
+        const occupationMatch = text.match(/Occupation:\s*([^\n]+)/);
         
         let cleanAbout = text
-            .replace(/^Nickname:.*$/m, '')
-            .replace(/^Occupation:.*$/m, '')
+            .replace(/^Nickname:.*$/gm, '')
+            .replace(/^Occupation:.*$/gm, '')
             .trim();
         
-        setNickname(nicknameMatch ? nicknameMatch[1] : '');
-        setOccupation(occupationMatch ? occupationMatch[1] : '');
+        setNickname(nicknameMatch ? nicknameMatch[1].trim() : '');
+        setOccupation(occupationMatch ? occupationMatch[1].trim() : '');
         setMoreAboutUser(cleanAbout);
     }, []);
 
     const parseAboutResponse = useCallback((text: string) => {
-        const toneMatch = text.match(/Tone:\s*(.*?)(?:\n|$)/);
-        const warmthMatch = text.match(/Warmth:\s*([^,]+)/);
-        const enthMatch = text.match(/Enthusiasm:\s*([^,]+)/);
-        const structMatch = text.match(/Structure:\s*([^,]+)/);
-        const emojiMatch = text.match(/Emoji:\s*([^,]+)/);
+        // Updated regex to ensure we stop at comma OR newline to avoid swallowing subsequent lines
+        const toneMatch = text.match(/Tone:\s*([^\n]+)/);
+        const warmthMatch = text.match(/Warmth:\s*([^,\n]+)/);
+        const enthMatch = text.match(/Enthusiasm:\s*([^,\n]+)/);
+        const structMatch = text.match(/Structure:\s*([^,\n]+)/);
+        const emojiMatch = text.match(/Emoji:\s*([^,\n]+)/);
         
         let cleanInstructions = text
-            .replace(/^Tone:.*$/m, '')
-            .replace(/^Traits:.*$/m, '')
+            .replace(/^Tone:.*$/gm, '')
+            .replace(/^Traits:.*$/gm, '')
             .trim();
 
         setTone(toneMatch ? toneMatch[1].toLowerCase().trim() : 'default');
@@ -227,7 +227,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
 
     // --- Update Logic ---
 
-    // 1. Text Inputs (Auto-Save on Debounce)
+    // 1. User Profile Sync
     useEffect(() => {
         if (!isLoaded) return;
         
@@ -242,13 +242,12 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
             setSaveState('saving');
             setAboutUser(finalString);
         } else if (saveState === 'saving') {
-            // If contents match and we were saving, it means the prop updated from the parent.
-            // We can now transition to 'saved'.
             const timer = setTimeout(() => setSaveState('saved'), 500);
             return () => clearTimeout(timer);
         }
     }, [debouncedNickname, debouncedOccupation, debouncedMore, isLoaded, aboutUser, saveState, setAboutUser]);
 
+    // 2. Response Style Sync
     useEffect(() => {
         if (!isLoaded) return;
         
@@ -299,10 +298,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
             setCustomInstructions('');
             setMoreAboutUser('');
             
-            // Allow useEffects to handle the backend sync naturally.
-            // When local state changes (e.g. nickname -> ''), the useDebounce hook updates,
-            // the useEffect fires, detects change against parent prop, and calls setAboutUser(''),
-            // which saves to the backend. This prevents race conditions.
+            // Allow useEffects to handle the backend sync naturally
         }
     };
 
