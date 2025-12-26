@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { memo, useMemo, ReactNode } from 'react';
+import React, { memo, useMemo, ReactNode, Component } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
@@ -63,7 +63,7 @@ interface MarkdownErrorBoundaryState {
 
 // Internal Error Boundary to catch Markdown/Rehype parsing crashes during streaming
 // Fix: Inherit from Component to ensure type definitions for props and state are correctly inherited
-class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
+class MarkdownErrorBoundary extends Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
   constructor(props: MarkdownErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
