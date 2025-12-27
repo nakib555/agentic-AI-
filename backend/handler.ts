@@ -371,10 +371,12 @@ export const apiHandler = async (req: any, res: any) => {
                 const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
                 const { systemPrompt, aboutUser, aboutResponse } = settings;
                 
+                // CRITICAL: Personalization Injection
+                // We ensure this is prepended forcefully
                 let personalizationSection = "";
-                if (aboutUser && aboutUser.trim()) personalizationSection += `\n## 👤 User Profile & Context\n${aboutUser.trim()}\n`;
-                if (aboutResponse && aboutResponse.trim()) personalizationSection += `\n## 🎭 Response Style Preferences\n${aboutResponse.trim()}\n`;
-                if (systemPrompt && systemPrompt.trim()) personalizationSection += `\n## 🔧 Custom Directives\n${systemPrompt.trim()}\n`;
+                if (aboutUser && aboutUser.trim()) personalizationSection += `\n## 👤 USER PROFILE & CONTEXT\n${aboutUser.trim()}\n`;
+                if (aboutResponse && aboutResponse.trim()) personalizationSection += `\n## 🎭 RESPONSE STYLE & PERSONA PREFERENCES\n${aboutResponse.trim()}\n`;
+                if (systemPrompt && systemPrompt.trim()) personalizationSection += `\n## 🔧 CUSTOM USER DIRECTIVES\n${systemPrompt.trim()}\n`;
 
                 // Inject RAG Context into System Instruction
                 if (ragContext) {
@@ -384,14 +386,14 @@ export const apiHandler = async (req: any, res: any) => {
                 let finalSystemInstruction = coreInstruction;
                 if (personalizationSection) {
                     finalSystemInstruction = `
-# 🟢 PRIORITY CONTEXT: USER PERSONALIZATION & MEMORY
-The following instructions MUST be prioritized.
+# 🟢 PRIORITY 1: USER PERSONALIZATION & MEMORY
+The following instructions are ABSOLUTE. They override any default persona traits defined later.
 
 ${personalizationSection}
 
 ================================================================================
 
-# ⚙️ CORE SYSTEM DIRECTIVES
+# ⚙️ CORE SYSTEM DIRECTIVES (Secondary to Personalization)
 ${coreInstruction}
 `.trim();
                 }
@@ -406,7 +408,7 @@ ${coreInstruction}
                 console.log('\n\x1b[36m%s\x1b[0m', '╔═══════════════════════ FULL AI PROMPT CONTEXT ═══════════════════════╗');
                 console.log('\x1b[1m%s\x1b[0m', '▶ MODEL:', model);
                 console.log('\x1b[33m%s\x1b[0m', '\n▶ SYSTEM INSTRUCTION (Internal + Personalization + RAG):');
-                console.log(finalSystemInstruction);
+                // console.log(finalSystemInstruction);
                 console.log('\x1b[33m%s\x1b[0m', '\n▶ CONVERSATION HISTORY (Gemini Format):');
                 
                 // Safe logger to truncate base64 data for cleaner console output
@@ -417,7 +419,7 @@ ${coreInstruction}
                         return p;
                     })
                 }));
-                console.log(JSON.stringify(safeHistoryLog, null, 2));
+                // console.log(JSON.stringify(safeHistoryLog, null, 2));
                 console.log('\x1b[36m%s\x1b[0m', '╚══════════════════════════════════════════════════════════════════════╝\n');
                 // --- END DEBUG LOGGING ---
 

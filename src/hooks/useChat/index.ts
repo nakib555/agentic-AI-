@@ -10,7 +10,7 @@ import { useChatHistory } from '../useChatHistory';
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
 import { fetchFromApi } from '../../utils/api';
 import { toolImplementations as frontendToolImplementations } from '../../tools';
-import { processBackendStream } from '../../services/agenticLoop/stream-processor';
+import { processBackendStream } from '../../services/agenticLoop/stream-processor.ts';
 import { parseAgenticWorkflow } from '../../utils/workflowParsing';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -464,7 +464,7 @@ export const useChat = (
         // 2. Prepare Version Objects if they don't exist
         // Use implicit v1 if versions array is empty
         const currentVersionIndex = originalMessage.activeVersionIndex ?? 0;
-        let versions = originalMessage.versions || [];
+        let versions = originalMessage.versions ? [...originalMessage.versions] : [];
         
         if (versions.length === 0) {
             versions.push({
@@ -533,7 +533,7 @@ export const useChat = (
                 'chat',
                 chatId,
                 modelPlaceholder.id,
-                null, 
+                null, // Passing null since user message is already in history (updated above)
                 currentChat, 
                 { ...settings, isAgentMode }
             );
@@ -578,7 +578,7 @@ export const useChat = (
         const restoredFuture = targetVersion.historyPayload || [];
 
         // 3. Update Message
-        const updatedMessage = {
+        const updatedMessage: Message = {
             ...message,
             text: targetVersion.text,
             attachments: targetVersion.attachments,
@@ -627,7 +627,6 @@ export const useChat = (
         const currentIndex = originalMessage.activeResponseIndex;
 
         // 1. Snapshot Future: Save what came AFTER this message into the current response's payload
-        // This ensures if we switch back to this response later, we can restore the conversation that followed it.
         const futureMessages = currentChat.messages.slice(messageIndex + 1);
         chatHistoryHook.updateActiveResponseOnMessage(currentChatId, aiMessageId, (res) => ({ ...res, historyPayload: futureMessages }));
 
@@ -677,18 +676,18 @@ export const useChat = (
         const currentFuture = currentChat.messages.slice(messageIndex + 1);
         const currentResponse = message.responses[currentIndex];
         
-        // We can't mutate safely, so we update via hook first? 
-        // No, we need to construct the full new state atomcially to avoid jitter.
-        
-        const updatedResponses = [...message.responses];
-        updatedResponses[currentIndex] = { ...currentResponse, historyPayload: currentFuture };
+        // Use map to create new array for immutability
+        const updatedResponses = message.responses.map((resp, idx) => {
+            if (idx === currentIndex) return { ...resp, historyPayload: currentFuture };
+            return resp;
+        });
 
         // 2. Restore future from the *target* response
         const targetResponse = updatedResponses[index];
         const restoredFuture = targetResponse.historyPayload || [];
 
         // 3. Update Message
-        const updatedMessage = {
+        const updatedMessage: Message = {
             ...message,
             activeResponseIndex: index,
             responses: updatedResponses
