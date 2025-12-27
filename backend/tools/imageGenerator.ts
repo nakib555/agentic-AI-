@@ -4,10 +4,10 @@
  */
 
 import { GoogleGenAI, Modality } from "@google/genai";
-import { ToolError } from "../utils/apiError.ts";
-import { fileStore } from "../services/fileStore.ts";
+import { ToolError } from "../utils/apiError";
+import { fileStore } from "../services/fileStore";
 import { Buffer } from 'buffer';
-import { generateContentWithRetry, generateImagesWithRetry } from "../utils/geminiUtils.ts";
+import { generateContentWithRetry, generateImagesWithRetry } from "../utils/geminiUtils";
 
 export const executeImageGenerator = async (ai: GoogleGenAI, args: { prompt: string, numberOfImages?: number, model: string, aspectRatio?: string }, chatId: string): Promise<string> => {
   const defaultAspectRatio = '1:1';

@@ -5,7 +5,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import type { Message } from '../../src/types';
-import { generateContentWithRetry } from "../utils/geminiUtils.ts";
+import { generateContentWithRetry } from "../utils/geminiUtils";
 
 export const executeExtractMemorySuggestions = async (ai: GoogleGenAI, conversation: Message[]): Promise<string[]> => {
     const conversationTranscript = conversation

@@ -4,9 +4,9 @@
  */
 
 import { GoogleGenAI, Part, FunctionCall, FinishReason, Content } from "@google/genai";
-import { parseApiError } from "../../utils/apiError.ts";
-import { ToolCallEvent } from "../../types.ts";
-import { getText, generateContentStreamWithRetry } from "../../utils/geminiUtils.ts";
+import { parseApiError } from "../../utils/apiError";
+import { ToolCallEvent } from "../../types";
+import { getText, generateContentStreamWithRetry } from "../../utils/geminiUtils";
 
 // --- Types & Interfaces ---
 

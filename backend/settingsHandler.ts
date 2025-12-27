@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SETTINGS_FILE_PATH, readData, writeData } from './data-store.ts';
-import { listAvailableModels } from './services/modelService.ts';
+import { SETTINGS_FILE_PATH, readData, writeData } from './data-store';
+import { listAvailableModels } from './services/modelService';
 
 export const getSettings = async (req: any, res: any) => {
     try {

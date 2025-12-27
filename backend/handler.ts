@@ -7,20 +7,20 @@ import { Request as ExpressRequest, Response as ExpressResponse } from 'express'
 import { GoogleGenAI } from "@google/genai";
 import { promises as fs } from 'fs';
 import path from 'path';
-import { systemInstruction as agenticSystemInstruction } from "./prompts/system.ts";
-import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.ts';
-import { parseApiError } from './utils/apiError.ts';
-import { executeTextToSpeech } from "./tools/tts.ts";
-import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory.ts";
-import { runAgenticLoop } from './services/agenticLoop/index.ts';
-import { createToolExecutor } from './tools/index.ts';
-import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations.ts'; 
-import { getApiKey, getSuggestionApiKey, getProvider } from './settingsHandler.ts';
-import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils.ts';
-import { historyControl } from './services/historyControl.ts';
-import { transformHistoryToGeminiFormat } from './utils/historyTransformer.ts';
-import { streamOpenRouter } from './utils/openRouterUtils.ts';
-import { vectorMemory } from './services/vectorMemory.ts'; // Import Vector Memory
+import { systemInstruction as agenticSystemInstruction } from "./prompts/system";
+import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona';
+import { parseApiError } from './utils/apiError';
+import { executeTextToSpeech } from "./tools/tts";
+import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory";
+import { runAgenticLoop } from './services/agenticLoop/index';
+import { createToolExecutor } from './tools/index';
+import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations'; 
+import { getApiKey, getSuggestionApiKey, getProvider } from './settingsHandler';
+import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils';
+import { historyControl } from './services/historyControl';
+import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
+import { streamOpenRouter } from './utils/openRouterUtils';
+import { vectorMemory } from './services/vectorMemory'; // Import Vector Memory
 
 // Store promises for frontend tool requests that the backend is waiting on
 const frontendToolRequests = new Map<string, (result: any) => void>();

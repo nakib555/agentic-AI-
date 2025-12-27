@@ -4,10 +4,10 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { ToolError } from "../utils/apiError.ts";
-import { fileStore } from "../services/fileStore.ts";
+import { ToolError } from "../utils/apiError";
+import { fileStore } from "../services/fileStore";
 import { Buffer } from 'buffer';
-import { generateVideosWithRetry } from "../utils/geminiUtils.ts";
+import { generateVideosWithRetry } from "../utils/geminiUtils";
 
 export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }, apiKey: string, chatId: string): Promise<string> => {
     const { prompt, aspectRatio = '16:9', resolution = '720p', model } = args;

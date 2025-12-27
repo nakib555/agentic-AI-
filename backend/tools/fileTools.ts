@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ToolError } from '../utils/apiError.ts';
-import { fileStore } from '../services/fileStore.ts';
+import { ToolError } from '../utils/apiError';
+import { fileStore } from '../services/fileStore';
 
 export const executeListFiles = async (args: { path: string }, chatId: string): Promise<string> => {
     try {

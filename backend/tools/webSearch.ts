@@ -4,8 +4,8 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { ToolError } from '../utils/apiError.ts';
-import { generateContentWithRetry } from '../utils/geminiUtils.ts';
+import { ToolError } from '../utils/apiError';
+import { generateContentWithRetry } from '../utils/geminiUtils';
 
 function hasProperty<K extends PropertyKey>(obj: unknown, prop: K): obj is Record<K, unknown> {
   return typeof obj === 'object' && obj !== null && prop in obj;

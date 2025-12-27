@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { historyControl } from './services/historyControl.ts';
+import { historyControl } from './services/historyControl';
 import type { ChatSession } from '../src/types';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);

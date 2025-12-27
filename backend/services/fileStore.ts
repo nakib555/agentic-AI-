@@ -6,8 +6,8 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { Buffer } from 'buffer';
-import { ToolError } from '../utils/apiError.ts';
-import { historyControl } from './historyControl.ts';
+import { ToolError } from '../utils/apiError';
+import { historyControl } from './historyControl';
 
 const ensureDir = async (dirPath: string) => {
     try {

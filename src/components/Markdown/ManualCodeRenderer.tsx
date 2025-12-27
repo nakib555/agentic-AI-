@@ -71,8 +71,7 @@ class MarkdownErrorBoundary extends Component<MarkdownErrorBoundaryProps, Markdo
     return { hasError: true };
   }
 
-  // FIX: Converted to arrow function to ensure `this` context.
-  componentDidUpdate = (prevProps: MarkdownErrorBoundaryProps) => {
+  componentDidUpdate(prevProps: MarkdownErrorBoundaryProps) {
     // If the text input has changed, try to recover. 
     // The stream likely added more tokens that fixed the malformed syntax.
     // Also reset if children changed (e.g. HMR or code edits).
@@ -83,8 +82,7 @@ class MarkdownErrorBoundary extends Component<MarkdownErrorBoundaryProps, Markdo
     }
   }
 
-  // FIX: Converted to arrow function to ensure `this` context.
-  render = () => {
+  render() {
     if (this.state.hasError) {
       return this.props.fallback;
     }

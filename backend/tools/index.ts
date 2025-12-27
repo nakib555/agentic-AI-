@@ -3,16 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { GoogleGenAI } from "@google/genai";
-import { ToolError } from "../utils/apiError.ts";
-import { executeImageGenerator } from './imageGenerator.ts';
-import { executeWebSearch } from './webSearch.ts';
-import { executeAnalyzeMapVisually, executeAnalyzeImageVisually } from './visualAnalysis.ts';
-import { executeCode } from "./codeExecutor.ts";
-import { executeVideoGenerator } from "./videoGenerator.ts";
-import { executeCalculator } from "./calculator.ts";
-import { executeListFiles, executeDisplayFile, executeDeleteFile, executeWriteFile } from "./fileTools.ts";
-import { executeDisplayMap } from "./map.ts";
-import { executeBrowser } from "./browser.ts";
+import { ToolError } from "../utils/apiError";
+import { executeImageGenerator } from './imageGenerator';
+import { executeWebSearch } from './webSearch';
+import { executeAnalyzeMapVisually, executeAnalyzeImageVisually } from './visualAnalysis';
+import { executeCode } from "./codeExecutor";
+import { executeVideoGenerator } from "./videoGenerator";
+import { executeCalculator } from "./calculator";
+import { executeListFiles, executeDisplayFile, executeDeleteFile, executeWriteFile } from "./fileTools";
+import { executeDisplayMap } from "./map";
+import { executeBrowser } from "./browser";
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 

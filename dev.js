@@ -91,7 +91,7 @@ try {
     'nodemon',
     '--watch', 'backend',
     '--ext', 'ts',
-    '--exec', 'node --loader ts-node/esm backend/server.ts'
+    '--exec', 'node --loader ts-node/esm --experimental-specifier-resolution=node backend/server.ts'
   ], {
     stdio: 'inherit',
     shell: true,

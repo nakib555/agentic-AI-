@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { PREAMBLE } from './preamble.ts';
-import { AGENTIC_WORKFLOW } from './agenticWorkflow.ts';
-import { PERSONA_AND_UI_FORMATTING } from './persona.ts';
-import { TOOLS_OVERVIEW } from './tools.ts';
+import { PREAMBLE } from './preamble';
+import { AGENTIC_WORKFLOW } from './agenticWorkflow';
+import { PERSONA_AND_UI_FORMATTING } from './persona';
+import { TOOLS_OVERVIEW } from './tools';
 
 // =================================================================================================
 // MASTER PROMPT: CORE DIRECTIVES FOR THE AGENTIC AI

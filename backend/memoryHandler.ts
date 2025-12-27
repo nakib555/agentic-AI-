@@ -5,7 +5,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { MEMORY_CONTENT_PATH, MEMORY_FILES_DIR, readData, writeData } from './data-store.ts';
+import { MEMORY_CONTENT_PATH, MEMORY_FILES_DIR, readData, writeData } from './data-store';
 
 // Helper to generate human-readable filenames
 // Format: {Sanitized-Title}-{ShortID}.tsx

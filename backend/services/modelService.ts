@@ -4,7 +4,7 @@
  */
 
 import type { Model as AppModel } from '../../src/types';
-import { readData, SETTINGS_FILE_PATH } from '../data-store.ts';
+import { readData, SETTINGS_FILE_PATH } from '../data-store';
 
 // Cache structure
 type ModelCache = {

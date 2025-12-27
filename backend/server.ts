@@ -4,12 +4,12 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { apiHandler } from './handler.ts';
-import * as crudHandler from './crudHandler.ts';
-import { getSettings, updateSettings } from './settingsHandler.ts';
-import { getMemory, updateMemory, clearMemory } from './memoryHandler.ts';
-import { getAvailableModelsHandler } from './modelsHandler.ts';
-import { initDataStore, HISTORY_PATH } from './data-store.ts';
+import { apiHandler } from './handler';
+import * as crudHandler from './crudHandler';
+import { getSettings, updateSettings } from './settingsHandler';
+import { getMemory, updateMemory, clearMemory } from './memoryHandler';
+import { getAvailableModelsHandler } from './modelsHandler';
+import { initDataStore, HISTORY_PATH } from './data-store';
 
 // Determine directory for static files safely across ESM (Dev) and CJS (Prod)
 let serverDir: string;

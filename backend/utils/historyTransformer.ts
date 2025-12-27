@@ -5,7 +5,7 @@
 
 import { Content, Part } from "@google/genai";
 import { Message } from '../../src/types';
-import { parseMessageText } from '../../src/utils/messageParser.ts';
+import { parseMessageText } from '../../src/utils/messageParser';
 
 // Maximum number of previous exchange turns to send to the model.
 // 20 turns = ~40 messages (User + AI).

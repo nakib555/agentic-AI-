@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getApiKey } from './settingsHandler.ts';
-import { listAvailableModels } from './services/modelService.ts';
+import { getApiKey } from './settingsHandler';
+import { listAvailableModels } from './services/modelService';
 
 export const getAvailableModelsHandler = async (req: any, res: any) => {
     const apiKey = await getApiKey();
