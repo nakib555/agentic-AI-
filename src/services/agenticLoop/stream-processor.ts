@@ -33,8 +33,9 @@ export const processBackendStream = async (response: Response, callbacks: Stream
 
     // --- Performance Optimization: Buffered State Updates ---
     // Use setTimeout to buffer rapid text chunks. 
-    // 16ms approximates 60fps, ensuring smooth updates without overloading React.
-    const FLUSH_INTERVAL_MS = 16; 
+    // 50ms (~20fps) ensures the main thread has ample time to render complex UI
+    // between state updates, preventing input locking and scroll jitter.
+    const FLUSH_INTERVAL_MS = 50; 
     // Watchdog timeout: If no data received for 45s, assume connection died
     const WATCHDOG_TIMEOUT_MS = 45000;
 
@@ -86,8 +87,11 @@ export const processBackendStream = async (response: Response, callbacks: Stream
                         // ACCUMULATE deltas instead of replacing
                         pendingText = (pendingText || '') + event.payload; 
                         
-                        // Schedule a flush if one isn't already pending
-                        if (flushTimeoutId === null) {
+                        // Check for artifact tags in the pending text to trigger immediate flush
+                        // This ensures the renderer sees the opening tag ASAP for faster feedback
+                        if (pendingText && (pendingText.includes('[ARTIFACT') || pendingText.includes('[/ARTIFACT'))) {
+                            flushTextUpdates();
+                        } else if (flushTimeoutId === null) {
                             flushTimeoutId = setTimeout(flushTextUpdates, FLUSH_INTERVAL_MS);
                         }
                         continue;

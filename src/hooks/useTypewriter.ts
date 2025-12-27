@@ -43,13 +43,10 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
           return;
       }
 
-      // Throttle frame rate for heavy text
-      // For very long text, we limit FPS to 30 to avoid blocking the main thread 
-      // during heavy Markdown rendering (rehype/remark are synchronous).
-      // Short text gets 60fps for smoothness.
-      const isLongText = targetLen > 1500;
-      const fps = isLongText ? 30 : 60;
-      const interval = 1000 / fps;
+      // Throttle frame rate for heavy text rendering (Markdown/MathJax).
+      // 60fps (16ms) leaves no time for the main thread to render complex components.
+      // 30fps (33ms) is visually smooth for text but gives the browser 2x time to work.
+      const interval = 33; 
       
       if (timestamp - lastUpdateRef.current < interval) {
           rafRef.current = requestAnimationFrame(loop);
@@ -57,15 +54,17 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       }
 
       // Dynamic Speed Calculation (Catch-up logic)
-      // The further behind we are, the larger the jump.
+      // The further behind we are, the larger the jump to ensure we don't fall behind the stream forever.
       const distance = targetLen - currentLength.current;
       let jump = 1;
       
-      if (distance > 1000) jump = 100;     // Massive catch-up
+      if (distance > 3000) jump = 250;     // Critical catch-up
+      else if (distance > 1000) jump = 100;
       else if (distance > 500) jump = 50;
-      else if (distance > 200) jump = 20;
+      else if (distance > 200) jump = 25;
+      else if (distance > 100) jump = 10;
       else if (distance > 50) jump = 5;
-      else if (distance > 10) jump = 2;
+      else if (distance > 15) jump = 2;
 
       currentLength.current += jump;
       
