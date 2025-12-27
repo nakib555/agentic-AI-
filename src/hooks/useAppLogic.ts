@@ -333,7 +333,7 @@ export const useAppLogic = () => {
   const effectiveClientKey = provider === 'gemini' ? apiKey : openRouterApiKey;
   
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, effectiveClientKey, showToast);
-  const { updateChatModel, updateChatSettings, editMessage, navigateBranch } = chat; // Destructure new functions
+  const { updateChatModel, updateChatSettings, editMessage, navigateBranch, setResponseIndex } = chat; // Destructure new functions
 
   const handleSetTemperature = useCallback((val: number) => {
       setTemperature(val);
@@ -579,6 +579,8 @@ export const useAppLogic = () => {
     // New Props for Provider
     provider, openRouterApiKey, onProviderChange: handleProviderChange,
     // Edit Message and Branch Navigation
-    editMessage, navigateBranch
+    editMessage, navigateBranch,
+    // Explicitly expose setResponseIndex as the main handler for response switching
+    setActiveResponseIndex: setResponseIndex
   };
 };

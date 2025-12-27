@@ -529,10 +529,7 @@ export const useChat = (
             chatHistoryHook.addMessagesToChat(chatId, [modelPlaceholder]);
             chatHistoryHook.setChatLoadingState(chatId, true);
 
-            // 8. Start Stream (using 'chat' task with newMessage=null because we manually updated history)
-            // Wait: backend 'chat' task appends newMessage. If null, it just appends placeholder? 
-            // Actually 'chat' logic appends newMessage if provided. If not provided, it just appends placeholder.
-            // So we can pass null for newMessage since we already updated the history via PUT.
+            // 8. Start Stream
             await startBackendChat(
                 'chat',
                 chatId,
@@ -606,17 +603,11 @@ export const useChat = (
         } catch (e) {
             console.error("Failed to switch branch:", e);
             if (onShowToast) onShowToast("Failed to switch branch", 'error');
-            // Revert on error? For now, we trust optimistic update is visually fine even if save fails briefly.
         }
 
     }, [isLoading, chatHistoryHook, onShowToast]);
 
-    const sendMessageForTest = (userMessage: string, options?: { isThinkingModeEnabled?: boolean }): Promise<Message> => {
-        return new Promise((resolve) => {
-            testResolverRef.current = resolve;
-            sendMessage(userMessage, undefined, options);
-        });
-    };
+    // --- Branching Logic for AI Responses (Regeneration & Navigation) ---
 
     const regenerateResponse = useCallback(async (aiMessageId: string) => {
         if (isLoading) cancelGeneration();
@@ -624,7 +615,7 @@ export const useChat = (
 
         requestIdRef.current = null; // Reset before new message
 
-        const currentChat = chatHistory.find(c => c.id === currentChatId);
+        const currentChat = chatHistoryRef.current.find(c => c.id === currentChatId); // Use ref for latest state
         if (!currentChat || !currentChat.messages) return;
 
         const messageIndex = currentChat.messages.findIndex(m => m.id === aiMessageId);
@@ -633,7 +624,20 @@ export const useChat = (
             return;
         }
         
-        // Add new response entry
+        const originalMessage = currentChat.messages[messageIndex];
+        const currentIndex = originalMessage.activeResponseIndex;
+
+        // 1. Snapshot Future: Save what came AFTER this message into the current response's payload
+        // This ensures if we switch back to this response later, we can restore the conversation that followed it.
+        const futureMessages = currentChat.messages.slice(messageIndex + 1);
+        chatHistoryHook.updateActiveResponseOnMessage(currentChatId, aiMessageId, (res) => ({ ...res, historyPayload: futureMessages }));
+
+        // 2. Truncate Future in UI immediately (start fresh branch)
+        // We must remove future messages because we are generating a new path from this point.
+        const truncatedMessages = currentChat.messages.slice(0, messageIndex + 1);
+        chatHistoryHook.updateChatProperty(currentChatId, { messages: truncatedMessages });
+
+        // 3. Add new response entry
         const newResponse: ModelResponse = { text: '', toolCallEvents: [], startTime: Date.now() };
         chatHistoryHook.addModelResponse(currentChatId, aiMessageId, newResponse);
         chatHistoryHook.setChatLoadingState(currentChatId, true);
@@ -649,8 +653,86 @@ export const useChat = (
             { ...settings, isAgentMode: isAgentMode }
         );
 
-    }, [isLoading, currentChatId, chatHistory, cancelGeneration, chatHistoryHook, initialModel, settings, memoryContent, isAgentMode]);
-    
+    }, [isLoading, currentChatId, chatHistoryHook, cancelGeneration, startBackendChat, settings, isAgentMode]);
+
+    const setResponseIndex = useCallback(async (messageId: string, index: number) => {
+        if (isLoading) return; 
+        const chatId = currentChatIdRef.current;
+        if (!chatId) return;
+
+        const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+        if (!currentChat || !currentChat.messages) return;
+
+        const messageIndex = currentChat.messages.findIndex(m => m.id === messageId);
+        if (messageIndex === -1) return;
+
+        const message = currentChat.messages[messageIndex];
+        if (!message.responses || message.responses.length < 2) return;
+
+        const currentIndex = message.activeResponseIndex;
+        if (index < 0 || index >= message.responses.length) return;
+        if (index === currentIndex) return;
+
+        // --- RESPONSE SWITCH LOGIC ---
+        // 1. Save current future to the *current* response
+        const currentFuture = currentChat.messages.slice(messageIndex + 1);
+        const currentResponse = message.responses[currentIndex];
+        
+        // We can't mutate safely, so we update via hook first? 
+        // No, we need to construct the full new state atomcially to avoid jitter.
+        
+        const updatedResponses = [...message.responses];
+        updatedResponses[currentIndex] = { ...currentResponse, historyPayload: currentFuture };
+
+        // 2. Restore future from the *target* response
+        const targetResponse = updatedResponses[index];
+        const restoredFuture = targetResponse.historyPayload || [];
+
+        // 3. Update Message
+        const updatedMessage = {
+            ...message,
+            activeResponseIndex: index,
+            responses: updatedResponses
+        };
+
+        // 4. Reconstruct Timeline
+        const newMessages = [...currentChat.messages.slice(0, messageIndex), updatedMessage, ...restoredFuture];
+
+        // 5. Sync & Update
+        try {
+            // Optimistic update
+            chatHistoryHook.updateChatProperty(chatId, { messages: newMessages });
+
+            await fetchFromApi(`/api/chats/${chatId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: newMessages })
+            });
+        } catch (e) {
+            console.error("Failed to switch response branch:", e);
+            if (onShowToast) onShowToast("Failed to switch response branch", 'error');
+        }
+    }, [isLoading, chatHistoryHook, onShowToast]);
+
+    const sendMessageForTest = (userMessage: string, options?: { isThinkingModeEnabled?: boolean }): Promise<Message> => {
+        return new Promise((resolve) => {
+            testResolverRef.current = resolve;
+            sendMessage(userMessage, undefined, options);
+        });
+    };
   
-  return { ...chatHistoryHook, messages, sendMessage, isLoading, cancelGeneration, approveExecution, denyExecution, regenerateResponse, sendMessageForTest, editMessage, navigateBranch };
+  return { 
+      ...chatHistoryHook, 
+      messages, 
+      sendMessage, 
+      isLoading, 
+      cancelGeneration, 
+      approveExecution, 
+      denyExecution, 
+      regenerateResponse, 
+      sendMessageForTest, 
+      editMessage, 
+      navigateBranch,
+      setResponseIndex 
+  };
 };

@@ -45,6 +45,7 @@ export type ModelResponse = {
   plan?: { plan: string; callId?: string }; // Updated to support callId
   groundingMetadata?: any;
   workflow?: ParsedWorkflow;
+  historyPayload?: Message[]; // Snapshot of the conversation "future" relative to this response
 };
 
 export type UserMessageVersion = {
