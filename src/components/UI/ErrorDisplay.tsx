@@ -1,10 +1,9 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import type { MessageError } from '../../types';
 
@@ -95,19 +94,47 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [retryCountdown, setRetryCountdown] = useState<number | null>(null);
     
-    const suggestion = error.suggestion || getErrorMessageSuggestion(error.code);
-    const variant = getErrorVariant(error.code);
+    const parsedError = useMemo(() => {
+        let newCode = error.code;
+        let newSuggestion = error.suggestion;
+        const lowerMessage = (error.message || '').toLowerCase();
+
+        if (!newCode) { // If backend didn't provide a code, try to infer one
+            if (lowerMessage.includes('openrouter') && (lowerMessage.includes('401') || lowerMessage.includes('user not found'))) {
+                newCode = 'INVALID_API_KEY';
+                newSuggestion = 'Your OpenRouter API key appears to be invalid. Please check it in Settings.';
+            } else if (lowerMessage.includes('api key not valid') || lowerMessage.includes('invalid api key')) {
+                newCode = 'INVALID_API_KEY';
+            } else if (lowerMessage.includes('rate limit') || lowerMessage.includes('429')) {
+                newCode = 'RATE_LIMIT_EXCEEDED';
+            } else if (lowerMessage.includes('network error') || lowerMessage.includes('failed to fetch')) {
+                newCode = 'NETWORK_ERROR';
+            }
+        }
+        
+        // Use the generated suggestion, or fall back to the one derived from the code
+        const finalSuggestion = newSuggestion || getErrorMessageSuggestion(newCode);
+
+        return {
+            ...error,
+            code: newCode,
+            suggestion: finalSuggestion,
+        };
+    }, [error]);
+    
+    const { code, message, suggestion, details } = parsedError;
+    const variant = getErrorVariant(code);
 
     // Initialize countdown if applicable
     useEffect(() => {
         // Only check for rate limits or resource exhaustion
-        if (error.code === 'RATE_LIMIT_EXCEEDED' || error.code === 'RESOURCE_EXHAUSTED' || error.message.includes('429')) {
-            const delay = extractRetryDelay(error.details) || extractRetryDelay(error.message);
+        if (code === 'RATE_LIMIT_EXCEEDED' || code === 'RESOURCE_EXHAUSTED' || (message && message.includes('429'))) {
+            const delay = extractRetryDelay(details) || extractRetryDelay(message);
             if (delay && delay > 0) {
                 setRetryCountdown(delay);
             }
         }
-    }, [error]);
+    }, [code, details, message]);
 
     // Timer logic
     useEffect(() => {
@@ -126,7 +153,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
     const isRateLimited = retryCountdown !== null && retryCountdown > 0;
 
     // Define distinct styles for each variant
-    const variantStyles = {
+    const variantStyles: Record<ErrorVariant, any> = {
         critical: {
             container: "bg-red-50/80 dark:bg-red-900/10 border-red-200/80 dark:border-red-800/50",
             iconBg: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
@@ -215,7 +242,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
     };
 
     const styles = variantStyles[variant];
-    const hasActions = error.details || onRetry;
+    const hasActions = details || onRetry;
 
     return (
       <motion.div 
@@ -231,11 +258,11 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
           <div className="flex-1 min-w-0 pt-0.5">
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
               <p className={`font-bold text-base ${styles.title} break-words leading-tight`}>
-                  {error.message}
+                  {message}
               </p>
-              {error.code && (
+              {code && (
                 <span className={`text-[10px] tracking-wider font-mono font-bold px-2 py-1 rounded-md border uppercase ${styles.code}`}>
-                  {error.code}
+                  {code}
                 </span>
               )}
             </div>
@@ -250,7 +277,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
               <div className="mt-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                        {error.details && (
+                        {details && (
                             <button
                             onClick={() => setIsDetailsOpen(!isDetailsOpen)}
                             className={`text-xs font-semibold flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all ${styles.detailsBtn}`}
@@ -267,9 +294,9 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
                             </button>
                         )}
                         
-                        {error.details && (
+                        {details && (
                             <button
-                                onClick={() => navigator.clipboard.writeText(JSON.stringify(error, null, 2))}
+                                onClick={() => navigator.clipboard.writeText(JSON.stringify(parsedError, null, 2))}
                                 className={`text-xs font-semibold flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 ${styles.detailsBtn}`}
                                 title="Copy error details to clipboard"
                             >
@@ -307,7 +334,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
                     )}
                 </div>
                 
-                {error.details && (
+                {details && (
                     <AnimatePresence>
                       {isDetailsOpen && (
                         <motion.div
@@ -317,7 +344,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
                           className="overflow-hidden"
                         >
                           <div className={`p-4 rounded-xl border text-xs whitespace-pre-wrap font-['Fira_Code',_monospace] overflow-x-auto shadow-inner ${styles.detailsBox}`}>
-                            {error.details}
+                            {details}
                           </div>
                         </motion.div>
                       )}

@@ -14,7 +14,7 @@ interface State {
   error: Error | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends React.Component<Props, State> {
   state: State = {
     hasError: false,
     error: null
@@ -30,9 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidUpdate(prevProps: Props) {
     // Automatically reset error state if children change (e.g., due to HMR, code edits, or parent re-render)
-    // FIX: In a class component, props are accessed via `this.props`.
     if (this.state.hasError && this.props.children !== prevProps.children) {
-      // FIX: In a class component, state is updated with `this.setState`.
       this.setState({ hasError: false, error: null });
     }
   }
@@ -53,7 +51,6 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   private handleDismiss = () => {
-    // FIX: In a class component, state is updated with `this.setState`.
     this.setState({ hasError: false, error: null });
   };
 
@@ -80,9 +77,9 @@ export class ErrorBoundary extends Component<Props, State> {
                 </button>
                 <button
                   onClick={this.handleReload}
-                  className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 rounded-xl font-semibold transition-colors w-full"
+                  className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-content-primary rounded-xl font-semibold transition-colors w-full"
                 >
-                  Reload Page
+                  Reload App
                 </button>
             </div>
           </div>
@@ -90,7 +87,6 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // FIX: In a class component, props are accessed via `this.props`.
     return this.props.children;
   }
 }

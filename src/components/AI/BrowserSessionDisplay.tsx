@@ -14,7 +14,7 @@ type BrowserSessionDisplayProps = {
     logs: string[];
 };
 
-export const BrowserSessionDisplay: React.FC<BrowserSessionDisplayProps> = ({ url, title, screenshot, logs }) => {
+export const BrowserSessionDisplay: React.FC<BrowserSessionDisplayProps> = ({ url, title, screenshot, logs = [] }) => {
     const [isLogsOpen, setIsLogsOpen] = useState(true); // Auto-open logs if live
     const [hostname, setHostname] = useState(url);
 
@@ -25,12 +25,13 @@ export const BrowserSessionDisplay: React.FC<BrowserSessionDisplayProps> = ({ ur
     }, [url]);
 
     // Determine if "live" based on logs (if last log is not "Session finished")
-    const lastLog = logs[logs.length - 1] || '';
+    const lastLog = logs && logs.length > 0 ? logs[logs.length - 1] : '';
     const isFinished = lastLog.includes('Session finished') || lastLog.includes('Extracted');
     const isLoading = !isFinished;
 
     // Optimization: Limit visible logs to last 100 to prevent excessive DOM nodes
     const displayedLogs = useMemo(() => {
+        if (!logs) return [];
         if (logs.length > 100) {
             return logs.slice(logs.length - 100);
         }
@@ -122,7 +123,7 @@ export const BrowserSessionDisplay: React.FC<BrowserSessionDisplayProps> = ({ ur
                         ) : (
                              <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
                         )}
-                        <span>Activity Log ({logs.length})</span>
+                        <span>Activity Log ({logs ? logs.length : 0})</span>
                     </div>
                     <svg 
                         xmlns="http://www.w3.org/2000/svg" 
