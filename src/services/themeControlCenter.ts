@@ -74,7 +74,14 @@ class ThemeControlCenterService {
           root.style.setProperty(key, String(value));
         });
 
-        // 2. Toggle Tailwind Class (The Utilities)
+        // 2. Update Browser Theme Color
+        // This ensures the mobile status bar / browser chrome matches the theme background
+        const pageBg = (themeTokens as any)['--bg-page'];
+        if (pageBg) {
+            this.updateMetaThemeColor(pageBg);
+        }
+
+        // 3. Toggle Tailwind Class (The Utilities)
         // Spocke is fundamentally a dark theme, so we enable the 'dark' class
         // to utilize dark-mode Tailwind variants (e.g. dark:bg-...).
         if (theme === 'dark' || theme === 'spocke') {
@@ -84,6 +91,21 @@ class ThemeControlCenterService {
           root.classList.remove('dark');
           root.classList.add('light');
         }
+    }
+  }
+
+  /**
+   * Updates the <meta name="theme-color"> tag dynamically
+   */
+  private updateMetaThemeColor(color: string) {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+        meta.setAttribute('content', color);
+    } else {
+        const newMeta = document.createElement('meta');
+        newMeta.name = "theme-color";
+        newMeta.content = color;
+        document.head.appendChild(newMeta);
     }
   }
 
