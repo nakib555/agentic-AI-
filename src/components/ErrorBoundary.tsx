@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children?: ReactNode;
@@ -14,8 +14,7 @@ interface State {
   error: Error | null;
 }
 
-// FIX: Changed React.Component to Component to align with import and fix typing issues.
-export class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends React.Component<Props, State> {
   state: State = {
     hasError: false,
     error: null
@@ -40,7 +39,6 @@ export class ErrorBoundary extends Component<Props, State> {
     // Attempt to unregister service workers before reloading to fix potential cache issues
     try {
       if ('serviceWorker' in navigator) {
-        // FIX: `service-worker` is a typo, it should be `serviceWorker`
         const registrations = await navigator.serviceWorker.getRegistrations();
         await Promise.all(registrations.map(registration => registration.unregister()));
       }
