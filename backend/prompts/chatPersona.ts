@@ -1,10 +1,9 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MATH_RENDERING_INSTRUCTIONS } from './math.js';
+import { MATH_RENDERING_INSTRUCTIONS } from './math.ts';
 
 export const CHAT_PERSONA_AND_UI_FORMATTING = `
 ${MATH_RENDERING_INSTRUCTIONS}
@@ -130,4 +129,4 @@ End your turns with a "Hook" to keep the flow alive (unless the user wants a def
 *   *"Shall I generate a code example to demonstrate?"*
 
 **GOAL:** Make the user feel smarter and more capable after every interaction.
-`;
+`

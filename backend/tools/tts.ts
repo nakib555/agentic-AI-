@@ -1,12 +1,11 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { GoogleGenAI, Modality } from "@google/genai";
-import { ToolError } from "../utils/apiError.js";
-import { generateContentWithRetry } from "../utils/geminiUtils.js";
+import { ToolError } from "../utils/apiError.ts";
+import { generateContentWithRetry } from "../utils/geminiUtils.ts";
 
 /**
  * Cleans text for Text-to-Speech by removing markdown, component tags, and excess whitespace.

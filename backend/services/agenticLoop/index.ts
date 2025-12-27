@@ -1,13 +1,12 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { GoogleGenAI, Part, FunctionCall, FinishReason, Content } from "@google/genai";
-import { parseApiError } from "../../utils/apiError.js";
-import { ToolCallEvent } from "../../types.js";
-import { getText, generateContentStreamWithRetry } from "../../utils/geminiUtils.js";
+import { parseApiError } from "../../utils/apiError.ts";
+import { ToolCallEvent } from "../../types.ts";
+import { getText, generateContentStreamWithRetry } from "../../utils/geminiUtils.ts";
 
 // --- Types & Interfaces ---
 

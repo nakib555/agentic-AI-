@@ -1,16 +1,15 @@
-
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { apiHandler } from './handler.js';
-import * as crudHandler from './crudHandler.js';
-import { getSettings, updateSettings } from './settingsHandler.js';
-import { getMemory, updateMemory, clearMemory } from './memoryHandler.js';
-import { getAvailableModelsHandler } from './modelsHandler.js';
-import { initDataStore, HISTORY_PATH } from './data-store.js';
+import { apiHandler } from './handler.ts';
+import * as crudHandler from './crudHandler.ts';
+import { getSettings, updateSettings } from './settingsHandler.ts';
+import { getMemory, updateMemory, clearMemory } from './memoryHandler.ts';
+import { getAvailableModelsHandler } from './modelsHandler.ts';
+import { initDataStore, HISTORY_PATH } from './data-store.ts';
 
 // Determine directory for static files safely across ESM (Dev) and CJS (Prod)
 let serverDir: string;

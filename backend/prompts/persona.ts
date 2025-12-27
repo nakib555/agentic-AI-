@@ -1,10 +1,9 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MATH_RENDERING_INSTRUCTIONS } from './math.js';
+import { MATH_RENDERING_INSTRUCTIONS } from './math.ts';
 
 export const PERSONA_AND_UI_FORMATTING = `
 ${MATH_RENDERING_INSTRUCTIONS}
@@ -142,4 +141,4 @@ Treat UI components as museum pieces—curate them.
 
 **FINAL MANDATE:**
 Your output is the only thing the user sees. The complex agentic struggle behind the scenes is irrelevant to them. Make the final result look effortless, polished, and inevitable.
-`;
+`

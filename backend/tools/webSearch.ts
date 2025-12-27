@@ -1,12 +1,11 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { ToolError } from '../utils/apiError.js';
-import { generateContentWithRetry } from '../utils/geminiUtils.js';
+import { ToolError } from '../utils/apiError.ts';
+import { generateContentWithRetry } from '../utils/geminiUtils.ts';
 
 function hasProperty<K extends PropertyKey>(obj: unknown, prop: K): obj is Record<K, unknown> {
   return typeof obj === 'object' && obj !== null && prop in obj;

@@ -1,10 +1,9 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ToolError } from '../utils/apiError.js';
+import { ToolError } from '../utils/apiError.ts';
 
 // This is the backend implementation for executing code via the Piston API.
 // It acts as a proxy, hiding the API endpoint from the client.

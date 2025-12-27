@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,7 +5,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { HISTORY_PATH, HISTORY_INDEX_PATH, TIME_GROUPS_PATH, readData, writeData } from '../data-store.js';
+import { HISTORY_PATH, HISTORY_INDEX_PATH, TIME_GROUPS_PATH, readData, writeData } from '../data-store.ts';
 import type { ChatSession } from '../../src/types';
 
 // Minimal metadata stored in the master index for fast listing

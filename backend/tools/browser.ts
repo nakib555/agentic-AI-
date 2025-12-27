@@ -1,10 +1,9 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ToolError } from '../utils/apiError.js';
+import { ToolError } from '../utils/apiError.ts';
 import { chromium, Browser, Page } from 'playwright';
 import { GoogleGenAI } from "@google/genai"; // Needed for vision call
 

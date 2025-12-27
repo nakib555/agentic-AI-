@@ -1,11 +1,10 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import type { Model as AppModel } from '../../src/types';
-import { readData, SETTINGS_FILE_PATH } from '../data-store.js';
+import { readData, SETTINGS_FILE_PATH } from '../data-store.ts';
 
 // Cache structure
 type ModelCache = {

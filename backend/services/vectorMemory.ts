@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -7,7 +6,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { promises as fs } from 'fs';
 import path from 'path';
-import { DATA_DIR } from '../data-store.js';
+import { DATA_DIR } from '../data-store.ts';
 
 const VECTOR_STORE_PATH = path.join(DATA_DIR, 'vector_store.json');
 

@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,20 +7,20 @@ import { Request as ExpressRequest, Response as ExpressResponse } from 'express'
 import { GoogleGenAI } from "@google/genai";
 import { promises as fs } from 'fs';
 import path from 'path';
-import { systemInstruction as agenticSystemInstruction } from "./prompts/system.js";
-import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.js';
-import { parseApiError } from './utils/apiError.js';
-import { executeTextToSpeech } from "./tools/tts.js";
-import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory.js";
-import { runAgenticLoop } from './services/agenticLoop/index.js';
-import { createToolExecutor } from './tools/index.js';
-import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations.js'; 
-import { getApiKey, getSuggestionApiKey, getProvider } from './settingsHandler.js';
-import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils.js';
-import { historyControl } from './services/historyControl.js';
-import { transformHistoryToGeminiFormat } from './utils/historyTransformer.js';
-import { streamOpenRouter } from './utils/openRouterUtils.js';
-import { vectorMemory } from './services/vectorMemory.js'; // Import Vector Memory
+import { systemInstruction as agenticSystemInstruction } from "./prompts/system.ts";
+import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona.ts';
+import { parseApiError } from './utils/apiError.ts';
+import { executeTextToSpeech } from "./tools/tts.ts";
+import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory.ts";
+import { runAgenticLoop } from './services/agenticLoop/index.ts';
+import { createToolExecutor } from './tools/index.ts';
+import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations.ts'; 
+import { getApiKey, getSuggestionApiKey, getProvider } from './settingsHandler.ts';
+import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils.ts';
+import { historyControl } from './services/historyControl.ts';
+import { transformHistoryToGeminiFormat } from './utils/historyTransformer.ts';
+import { streamOpenRouter } from './utils/openRouterUtils.ts';
+import { vectorMemory } from './services/vectorMemory.ts'; // Import Vector Memory
 
 // Store promises for frontend tool requests that the backend is waiting on
 const frontendToolRequests = new Map<string, (result: any) => void>();

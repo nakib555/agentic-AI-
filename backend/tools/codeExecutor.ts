@@ -1,12 +1,11 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ToolError } from '../utils/apiError.js';
-import { fileStore } from '../services/fileStore.js';
-import { executeWithPiston } from './piston.js';
+import { ToolError } from '../utils/apiError.ts';
+import { fileStore } from '../services/fileStore.ts';
+import { executeWithPiston } from './piston.ts';
 
 export const executeCode = async (args: { language: string; code: string; packages?: string[]; input_filenames?: string[] }, chatId: string): Promise<string> => {
   const { language, code, input_filenames } = args;

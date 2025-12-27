@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ToolError } from '../utils/apiError.js';
+import { ToolError } from '../utils/apiError.ts';
 
 export const executeDisplayMap = (args: { latitude: number; longitude: number; zoom?: number, markerText?: string }): string => {
   const { latitude, longitude, zoom = 13, markerText } = args;

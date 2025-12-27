@@ -4,9 +4,9 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { ToolError } from "../utils/apiError";
-import { fileStore } from '../services/fileStore';
-import { generateContentWithRetry } from "../utils/geminiUtils.js";
+import { ToolError } from "../utils/apiError.ts";
+import { fileStore } from '../services/fileStore.ts';
+import { generateContentWithRetry } from "../utils/geminiUtils.ts";
 
 export const executeAnalyzeMapVisually = async (ai: GoogleGenAI, args: { latitude: number, longitude: number }): Promise<string> => {
     const { latitude, longitude } = args;

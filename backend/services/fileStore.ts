@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -7,8 +6,8 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { Buffer } from 'buffer';
-import { ToolError } from '../utils/apiError.js';
-import { historyControl } from './historyControl.js';
+import { ToolError } from '../utils/apiError.ts';
+import { historyControl } from './historyControl.ts';
 
 const ensureDir = async (dirPath: string) => {
     try {

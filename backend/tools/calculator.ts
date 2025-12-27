@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ToolError } from '../utils/apiError';
+import { ToolError } from '../utils/apiError.ts';
 
 export const executeCalculator = (args: { expression: string }): string => {
   try {

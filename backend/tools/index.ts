@@ -1,19 +1,18 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 import { GoogleGenAI } from "@google/genai";
-import { ToolError } from "../utils/apiError.js";
-import { executeImageGenerator } from './imageGenerator.js';
-import { executeWebSearch } from './webSearch.js';
-import { executeAnalyzeMapVisually, executeAnalyzeImageVisually } from './visualAnalysis.js';
-import { executeCode } from "./codeExecutor.js";
-import { executeVideoGenerator } from "./videoGenerator.js";
-import { executeCalculator } from "./calculator.js";
-import { executeListFiles, executeDisplayFile, executeDeleteFile, executeWriteFile } from "./fileTools.js";
-import { executeDisplayMap } from "./map.js";
-import { executeBrowser } from "./browser.js";
+import { ToolError } from "../utils/apiError.ts";
+import { executeImageGenerator } from './imageGenerator.ts';
+import { executeWebSearch } from './webSearch.ts';
+import { executeAnalyzeMapVisually, executeAnalyzeImageVisually } from './visualAnalysis.ts';
+import { executeCode } from "./codeExecutor.ts";
+import { executeVideoGenerator } from "./videoGenerator.ts";
+import { executeCalculator } from "./calculator.ts";
+import { executeListFiles, executeDisplayFile, executeDeleteFile, executeWriteFile } from "./fileTools.ts";
+import { executeDisplayMap } from "./map.ts";
+import { executeBrowser } from "./browser.ts";
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 

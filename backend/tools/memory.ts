@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,7 +5,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import type { Message } from '../../src/types';
-import { generateContentWithRetry } from "../utils/geminiUtils.js";
+import { generateContentWithRetry } from "../utils/geminiUtils.ts";
 
 export const executeExtractMemorySuggestions = async (ai: GoogleGenAI, conversation: Message[]): Promise<string[]> => {
     const conversationTranscript = conversation

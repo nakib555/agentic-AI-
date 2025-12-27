@@ -61,7 +61,7 @@ interface MarkdownErrorBoundaryState {
 }
 
 // Internal Error Boundary to catch Markdown/Rehype parsing crashes during streaming
-class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
+class MarkdownErrorBoundary extends Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
   constructor(props: MarkdownErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -71,7 +71,8 @@ class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, 
     return { hasError: true };
   }
 
-  componentDidUpdate(prevProps: MarkdownErrorBoundaryProps) {
+  // FIX: Converted to arrow function to ensure `this` context.
+  componentDidUpdate = (prevProps: MarkdownErrorBoundaryProps) => {
     // If the text input has changed, try to recover. 
     // The stream likely added more tokens that fixed the malformed syntax.
     // Also reset if children changed (e.g. HMR or code edits).
@@ -82,7 +83,8 @@ class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, 
     }
   }
 
-  render() {
+  // FIX: Converted to arrow function to ensure `this` context.
+  render = () => {
     if (this.state.hasError) {
       return this.props.fallback;
     }
