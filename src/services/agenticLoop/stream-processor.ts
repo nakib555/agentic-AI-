@@ -32,11 +32,12 @@ export const processBackendStream = async (response: Response, callbacks: Stream
     let buffer = '';
 
     // --- Performance Optimization: Buffered State Updates ---
-    // Use setTimeout to buffer rapid text chunks. 
-    // 50ms (~20fps) ensures the main thread has ample time to render complex UI
-    // between state updates, preventing input locking and scroll jitter.
-    const FLUSH_INTERVAL_MS = 50; 
-    // Watchdog timeout: If no data received for 45s, assume connection died
+    // Increased flush interval to 60ms.
+    // Why? The typewriter hook runs at ~33ms (30fps).
+    // Feeding it data faster than it can render just builds up a React state queue.
+    // 60ms ensures we send larger chunks of text fewer times per second, 
+    // freeing up the JS Event Loop for UI interactions (scrolling, clicking).
+    const FLUSH_INTERVAL_MS = 60; 
     const WATCHDOG_TIMEOUT_MS = 45000;
 
     let pendingText: string | null = null;

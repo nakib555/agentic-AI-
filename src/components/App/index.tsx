@@ -32,11 +32,8 @@ export const App = () => {
   const chatTitle = currentChat ? currentChat.title : null;
   
   // Find the currently active message for thinking sidebar logic if needed
-  // (Usually passed down via messageList, but sidebar needs context)
-  // For now, we assume ThinkingSidebar uses internal logic or props if we were to fully wire it for a specific message selection.
-  // Based on current architecture, ThinkingSidebar seems to rely on an external selection state or just shows the latest.
-  // We'll pass the last message as a fallback or leave it to the component to handle null.
-  const activeMessage = currentChat?.messages.length ? currentChat.messages[currentChat.messages.length - 1] : null;
+  // Use optional chaining for messages array as it might be undefined during initial load
+  const activeMessage = currentChat?.messages?.length ? currentChat.messages[currentChat.messages.length - 1] : null;
 
   // Mobile viewport height fix for iOS
   useEffect(() => {
