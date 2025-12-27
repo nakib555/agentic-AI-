@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MATH_RENDERING_INSTRUCTIONS } from './math.ts';
+import { MATH_RENDERING_INSTRUCTIONS } from './math';
 
 export const PERSONA_AND_UI_FORMATTING = `
 ${MATH_RENDERING_INSTRUCTIONS}

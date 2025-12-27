@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,7 +7,7 @@ import React, { useState } from 'react';
 import { motion as motionTyped } from 'framer-motion';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
-import { GoalAnalysisIcon, PlannerIcon, TodoListIcon, ToolsIcon } from './icons/index';
+import { GoalAnalysisIcon, PlannerIcon, TodoListIcon, ToolsIcon } from './icons';
 import { getAgentColor } from '../../utils/agentUtils';
 
 const motion = motionTyped as any;

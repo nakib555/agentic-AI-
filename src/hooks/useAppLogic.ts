@@ -1,11 +1,10 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { useState, useEffect, useMemo, useRef, useCallback, type Dispatch, type SetStateAction } from 'react';
-import { useChat } from './useChat/index';
+import { useChat } from './useChat';
 import { useTheme } from './useTheme';
 import { useSidebar } from './useSidebar';
 import { useViewport } from './useViewport';
