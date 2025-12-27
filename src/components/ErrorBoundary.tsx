@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -31,7 +30,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidUpdate(prevProps: Props) {
     // Automatically reset error state if children change (e.g., due to HMR, code edits, or parent re-render)
+    // FIX: In a class component, props are accessed via `this.props`.
     if (this.state.hasError && this.props.children !== prevProps.children) {
+      // FIX: In a class component, state is updated with `this.setState`.
       this.setState({ hasError: false, error: null });
     }
   }
@@ -52,6 +53,7 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   private handleDismiss = () => {
+    // FIX: In a class component, state is updated with `this.setState`.
     this.setState({ hasError: false, error: null });
   };
 
@@ -88,6 +90,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
+    // FIX: In a class component, props are accessed via `this.props`.
     return this.props.children;
   }
 }

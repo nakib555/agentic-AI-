@@ -27,7 +27,7 @@ type ChatAreaProps = {
   denyExecution: () => void;
   messageListRef: React.RefObject<MessageListHandle>;
   onRegenerate: (messageId: string) => void;
-  onSetActiveResponseIndex: (chatId: string, messageId: string, index: number) => void;
+  onSetActiveResponseIndex: (messageId: string, index: number) => void;
   isAgentMode: boolean;
   setIsAgentMode: (isAgent: boolean) => void;
   backendStatus: 'online' | 'offline' | 'checking';
@@ -89,8 +89,10 @@ export const ChatArea = ({
   };
 
   const handleSetActiveResponseIndex = useCallback((messageId: string, index: number) => {
+    // The currentChatId check is still useful to ensure we are in an active chat
+    // before allowing any action.
     if (currentChatId) {
-      onSetActiveResponseIndex(currentChatId, messageId, index);
+      onSetActiveResponseIndex(messageId, index);
     }
   }, [currentChatId, onSetActiveResponseIndex]);
 
