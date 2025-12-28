@@ -8,6 +8,8 @@ services:
     # If you use 'free', remove the 'disk' section, but chat history will be lost on restarts.
     plan: starter
     # Build both client (Vite) and server (Node)
+    # Using 'npm install' without flags since we moved build tools to dependencies
+    # ensuring they install even with NODE_ENV=production
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
