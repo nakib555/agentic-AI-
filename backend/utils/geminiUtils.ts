@@ -79,8 +79,9 @@ async function executeOperationWithRetry<T>(
 
 export async function generateContentWithRetry(ai: GoogleGenAI, request: GenerateContentParameters): Promise<GenerateContentResponse> {
   const operation = async () => {
-    const streamResult = (await ai.models.generateContentStream(request)) as unknown as GenerateContentStreamResult;
-    return await streamResult.response;
+    // DIRECT call to generateContent (non-streaming).
+    // This is required for TTS and other models that do not support streaming or where atomic response is preferred.
+    return await ai.models.generateContent(request);
   };
   return await executeOperationWithRetry(operation);
 }

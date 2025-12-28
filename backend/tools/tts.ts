@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -91,9 +92,14 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
         }
 
         // Use the model provided by the frontend request, or fallback to the standard TTS model
+        // Update default model to current version
         const targetModel = model || "gemini-2.5-flash-preview-tts";
 
+        console.log(`[TTS] Generating speech with model: ${targetModel}, voice: ${voice || 'Puck'}`);
+
         // Use Modality.AUDIO enum as required by SDK
+        // IMPORTANT: We use generateContentWithRetry which now uses generateContent (non-streaming)
+        // This is critical for audio generation stability.
         const response = await generateContentWithRetry(ai, {
             model: targetModel,
             contents: [{ parts: [{ text: cleanedText }] }],
