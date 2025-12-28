@@ -102,7 +102,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
 
                 <div className="w-px h-3 bg-slate-300 dark:bg-white/20 mx-2"></div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center">
                     <TtsButton 
                         isPlaying={ttsState === 'playing'} 
                         isLoading={ttsState === 'loading'} 
@@ -121,23 +121,29 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                                 transition={{ duration: 0.2 }}
                                 className="overflow-hidden"
                             >
-                                <AudioWave isPlaying={true} className="ml-1 mr-2" barColor="bg-indigo-500 dark:bg-indigo-400" />
+                                <AudioWave isPlaying={true} className="ml-2 mr-2" barColor="bg-indigo-500 dark:bg-indigo-400" />
                             </motion.div>
                         )}
                         {ttsState === 'error' && (
                             <motion.div
-                                initial={{ opacity: 0, width: 0, x: -10 }}
-                                animate={{ opacity: 1, width: 'auto', x: 0 }}
-                                exit={{ opacity: 0, width: 0, x: -10 }}
-                                transition={{ duration: 0.2 }}
-                                className="flex items-center overflow-hidden ml-1"
+                                initial={{ opacity: 0, x: -5, scale: 0.95 }}
+                                animate={{ opacity: 1, x: 0, scale: 1 }}
+                                exit={{ opacity: 0, x: -5, scale: 0.95 }}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                className="ml-2"
                             >
-                                <span 
-                                    className="text-[10px] font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/30 whitespace-nowrap max-w-[200px] truncate"
+                                <div 
+                                    className="flex items-center gap-1.5 px-3 py-1 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-full shadow-sm cursor-help group/error hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
                                     title={ttsErrorMessage}
+                                    role="alert"
                                 >
-                                    {ttsErrorMessage || 'Audio Failed'}
-                                </span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 text-red-500">
+                                        <path fillRule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14ZM8 4a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-1.5 0v-3A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+                                    </svg>
+                                    <span className="text-[10px] font-medium text-red-600 dark:text-red-400 max-w-[150px] truncate group-hover/error:max-w-[300px] transition-all duration-300">
+                                        {ttsErrorMessage || 'Audio Unavailable'}
+                                    </span>
+                                </div>
                             </motion.div>
                         )}
                     </AnimatePresence>

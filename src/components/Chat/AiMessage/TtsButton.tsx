@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { motion } from 'framer-motion';
 
 export const TtsButton = ({
   isPlaying,
@@ -24,9 +25,17 @@ export const TtsButton = ({
   const getButtonContent = () => {
     if (error) {
       return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-red-500">
+        <motion.svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 20 20" 
+            fill="currentColor" 
+            className="w-5 h-5 text-red-500"
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 500, damping: 15 }}
+        >
           <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clipRule="evenodd" />
-        </svg>
+        </motion.svg>
       );
     }
     if (isLoading) {
@@ -76,7 +85,7 @@ export const TtsButton = ({
   };
 
   const getTitle = () => {
-    if (error) return errorMessage || 'Failed to load audio';
+    if (error) return errorMessage || 'Failed to load audio. Click to retry.';
     if (isLoading) return 'Generating audio...';
     if (isPlaying) return 'Stop audio';
     if (disabled) return 'No text available to read';
@@ -90,7 +99,7 @@ export const TtsButton = ({
         group flex items-center justify-center w-8 h-8
         rounded-lg transition-all duration-200
         ${error 
-            ? 'hover:bg-red-50 dark:hover:bg-red-900/20' 
+            ? 'bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30' 
             : isPlaying 
                 ? 'bg-indigo-100 dark:bg-indigo-500/20' 
                 : 'hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-white/10 dark:hover:text-slate-200 text-slate-500 dark:text-slate-400'
