@@ -112,6 +112,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
         <div className="h-full" role="log" aria-live="polite">
             <Virtuoso
                 ref={virtuosoRef}
+                style={{ width: '100%', display: 'flex', flexDirection: 'column' }} // Explicitly override default style to remove height: 100%
                 data={visibleMessages}
                 // 'auto' works well, but for code blocks, slightly higher threshold avoids jitter
                 followOutput={atBottom ? "auto" : false} 
