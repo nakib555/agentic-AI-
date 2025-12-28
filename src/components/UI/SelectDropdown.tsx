@@ -35,6 +35,7 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
     const selected = options.find(o => o.id === value) || options[0];
     const containerRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+    const selectedItemRef = useRef<HTMLButtonElement>(null);
     const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number; width: number; maxHeight: number }>({ left: 0, width: 0, maxHeight: 300 });
 
     const updatePosition = useCallback(() => {
@@ -74,6 +75,14 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
         
         if (isOpen) {
             updatePosition();
+            
+            // Auto-scroll to selected item
+            if (selectedItemRef.current) {
+                setTimeout(() => {
+                    selectedItemRef.current?.scrollIntoView({ block: 'center', behavior: 'instant' });
+                }, 0);
+            }
+
             document.addEventListener('mousedown', handleClickOutside);
             window.addEventListener('resize', updatePosition);
             window.addEventListener('scroll', updatePosition, true);
@@ -152,6 +161,7 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
                                     <button
                                         type="button"
                                         key={opt.id}
+                                        ref={value === opt.id ? selectedItemRef : null}
                                         onClick={() => { onChange(opt.id); setIsOpen(false); }}
                                         className={`w-full flex flex-col items-start px-4 py-3 text-left transition-colors border-b border-gray-100 dark:border-white/5 last:border-0 ${value === opt.id ? 'bg-indigo-50/50 dark:bg-indigo-500/10' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`}
                                     >

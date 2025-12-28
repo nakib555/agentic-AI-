@@ -51,6 +51,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+    const selectedItemRef = useRef<HTMLButtonElement>(null);
     const selected = TTS_VOICES.find(v => v.id === selectedVoice) || TTS_VOICES[0];
     
     // State to hold the calculated position of the menu
@@ -71,6 +72,13 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         };
 
         if (isOpen) {
+            // Auto-scroll to selected item
+            if (selectedItemRef.current) {
+                setTimeout(() => {
+                    selectedItemRef.current?.scrollIntoView({ block: 'center', behavior: 'instant' });
+                }, 0);
+            }
+
             document.addEventListener('mousedown', handleClickOutside);
             window.addEventListener('resize', handleScrollOrResize);
             window.addEventListener('scroll', handleScrollOrResize, true);
@@ -167,6 +175,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                                 {TTS_VOICES.map(voice => (
                                     <button
                                         key={voice.id}
+                                        ref={selectedVoice === voice.id ? selectedItemRef : null}
                                         onClick={() => {
                                             onVoiceChange(voice.id);
                                             setIsOpen(false);

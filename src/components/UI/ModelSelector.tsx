@@ -48,6 +48,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const selectedItemRef = useRef<HTMLButtonElement>(null);
   const selectedModelData = models.find(m => m.id === selectedModel);
 
   // State to calculate dynamic position
@@ -135,6 +136,13 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 
     if (isOpen) {
         updatePosition(); // Initial position calculation
+        
+        // Auto-scroll to selected item
+        if (selectedItemRef.current) {
+            setTimeout(() => {
+                selectedItemRef.current?.scrollIntoView({ block: 'center', behavior: 'instant' });
+            }, 0);
+        }
         
         document.addEventListener('mousedown', handleClickOutside);
         // Using capture phase for scroll to detect scrolling in any parent container
@@ -243,6 +251,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                             return (
                                 <button
                                     key={model.id}
+                                    ref={isSelected ? selectedItemRef : null}
                                     onClick={() => handleSelect(model.id)}
                                     className={`
                                         relative w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all duration-200 group
