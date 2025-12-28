@@ -169,6 +169,58 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         setIsOpen(prev => !prev);
     };
 
+    // Split voices into groups
+    const personas = TTS_VOICES.slice(0, 10);
+    const accents = TTS_VOICES.slice(10);
+
+    const renderVoiceItem = (voice: typeof TTS_VOICES[0]) => {
+        const isSelected = selectedVoice === voice.id;
+        return (
+            <button
+                type="button"
+                key={voice.id}
+                ref={isSelected ? selectedItemRef : null}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onVoiceChange(voice.id);
+                    setIsOpen(false);
+                }}
+                className={`
+                    relative w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all duration-200 group
+                    ${isSelected 
+                        ? 'bg-indigo-50 dark:bg-indigo-500/20' 
+                        : 'hover:bg-slate-100 dark:hover:bg-white/5'
+                    }
+                `}
+            >
+                <div className={`
+                    w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-colors flex-shrink-0
+                    ${isSelected 
+                        ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/40 dark:text-indigo-200' 
+                        : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'
+                    }
+                `}>
+                    {voice.name[0]}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                        <span className={`text-sm font-medium truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-700 dark:text-slate-200'}`}>
+                            {voice.name}
+                        </span>
+                        {isSelected && (
+                            <div className="text-indigo-600 dark:text-indigo-400 flex-shrink-0">
+                                <CheckIcon />
+                            </div>
+                        )}
+                    </div>
+                    <p className={`text-[10px] font-medium truncate ${isSelected ? 'text-indigo-700/70 dark:text-indigo-300/70' : 'text-slate-400'}`}>
+                        {voice.desc}
+                    </p>
+                </div>
+            </button>
+        );
+    };
+
     return (
         <div className={`relative ${className}`} ref={containerRef}>
             <button
@@ -238,59 +290,20 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                             className="bg-white dark:bg-[#1a1a1a] border border-gray-200/50 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/5"
                         >
                             <div 
-                                className="flex flex-col gap-0.5 overflow-y-auto custom-scrollbar p-1.5"
+                                className="overflow-y-auto custom-scrollbar"
                                 style={{ maxHeight: coords.maxHeight }}
                             >
-                                <div className="px-2 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-[#1a1a1a] z-10 flex justify-between border-b border-gray-100 dark:border-white/5 mb-1 select-none">
-                                    <span>Gemini Personas</span>
+                                <div className="p-1.5 flex flex-col gap-0.5">
+                                    <div className="px-2 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">
+                                        Gemini Personas
+                                    </div>
+                                    {personas.map(renderVoiceItem)}
+                                    
+                                    <div className="mt-2 px-2 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none border-t border-gray-100 dark:border-white/5 pt-3">
+                                        Accents & Styles
+                                    </div>
+                                    {accents.map(renderVoiceItem)}
                                 </div>
-                                {TTS_VOICES.map(voice => {
-                                    const isSelected = selectedVoice === voice.id;
-                                    return (
-                                        <button
-                                            type="button"
-                                            key={voice.id}
-                                            ref={isSelected ? selectedItemRef : null}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onVoiceChange(voice.id);
-                                                setIsOpen(false);
-                                            }}
-                                            className={`
-                                                relative w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all duration-200 group
-                                                ${isSelected 
-                                                    ? 'bg-indigo-50 dark:bg-indigo-500/20' 
-                                                    : 'hover:bg-slate-100 dark:hover:bg-white/5'
-                                                }
-                                            `}
-                                        >
-                                            <div className={`
-                                                w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-colors flex-shrink-0
-                                                ${isSelected 
-                                                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/40 dark:text-indigo-200' 
-                                                    : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'
-                                                }
-                                            `}>
-                                                {voice.name[0]}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <span className={`text-sm font-medium truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-700 dark:text-slate-200'}`}>
-                                                        {voice.name}
-                                                    </span>
-                                                    {isSelected && (
-                                                        <div className="text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-                                                            <CheckIcon />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <p className={`text-[10px] font-medium truncate ${isSelected ? 'text-indigo-700/70 dark:text-indigo-300/70' : 'text-slate-400'}`}>
-                                                    {voice.desc}
-                                                </p>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
                             </div>
                         </motion.div>
                     )}
