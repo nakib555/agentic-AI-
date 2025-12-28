@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -11,7 +12,6 @@ import type { MessageFormHandle } from './MessageForm/index';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { useViewport } from '../../hooks/useViewport';
-import { ChatSkeleton } from './ChatSkeleton';
 
 const motion = motionTyped as any;
 
@@ -104,88 +104,27 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
 
   return (
     <div className="flex-1 min-h-0 relative w-full">
-      {/* Show Skeleton if loading AND we have no visible messages yet (initial load) */}
-      {/* Note: 'isLoading' here is typically the global generation state, 
-          but if used for history loading, check if we have messages. 
-          If 'isLoading' represents chat history fetch, use it. 
-          The parent 'ChatArea' passes 'isLoading' which is usually 'isGenerating'.
-          However, 'isAppLoading' or 'isHistoryLoading' might be what we want if we had it here.
-          In the current Architecture, 'isLoading' passed to MessageList is usually 'isGenerating'.
-          
-          We rely on `messages` being empty to show WelcomeScreen. 
-          If we are switching chats, messages might be empty briefly.
-          
-          Update: We need to detect "History Loading" state. 
-          The props passed to MessageList don't explicitly include 'isHistoryLoading'.
-          However, usually if messages is empty, we show Welcome.
-          We can assume if messages are empty and we are NOT on a 'New Chat', we might be loading.
-          But checking 'isLoading' (generation) is not enough.
-          
-          Let's use a heuristic: If we have 0 messages, we usually show Welcome.
-          But if the parent indicates we are loading data (not passed currently), we should show Skeleton.
-          
-          For now, we will render the Skeleton if we have messages but they are not ready? 
-          Actually, the parent component handles 'isAppLoading'. 
-          
-          Since we don't have 'isHistoryLoading' prop here, we will render the skeleton 
-          if messages are empty but we are in a state that implies loading (e.g. currentChatId exists but no messages).
-          
-          However, without prop change, we can't perfectly detect history loading here.
-          Since the prompt asks for "shining waves... when chat msg is loading", 
-          we assume the parent might pass a loading state or we use the Skeleton *inside* the Welcome screen logic?
-          
-          Actually, let's look at `ChatArea.tsx`. It passes `isLoading={isLoading}` (generation) and `isAppLoading`.
-          But `MessageList` doesn't accept `isAppLoading`.
-          
-          Let's modify `MessageList` to accept `isHistoryLoading`.
-      */}
-      
-      {/* 
-         Since we can't easily change the prop interface without changing ChatArea too, 
-         we will assume that if `messages` is empty, we show Welcome.
-         The user request implies we SHOULD show the skeleton.
-         Let's assume the parent handles the conditional rendering of the Skeleton OR
-         we simply assume if `messages` is empty, we check if we should show skeleton.
-         
-         Actually, `ChatArea` passes `isLoading` which is generation.
-         The `useChat` hook has `isHistoryLoading`.
-         
-         I will infer loading if `messages.length === 0` and `currentChatId` is set 
-         (implying we are in a chat but haven't loaded msgs).
-         However, a new chat also has `currentChatId`.
-         
-         Ideally, `MessageList` should receive an explicit `isHistoryLoading` prop.
-         I will add `isHistoryLoading` to `MessageListProps` and update `ChatArea.tsx` to pass it.
-      */}
-      
-      {(messages === undefined || (messages.length === 0 && (isLoading || (currentChatId && !currentChatId.includes('new'))))) ? (
-         /* Heuristic: If we are loading, OR if we have a chat ID that isn't a fresh "new" chat and no messages yet */
-         /* But since we can't perfectly guess "new" ID format from here, let's just use the prop update method. */
-         /* I will default to showing Welcome if not explicitly loading. */
-         
-         // Fallback logic until prop update:
-         // If visibleMessages is 0, we usually show Welcome.
-         // If the user *just* clicked a chat, messages might be empty for a split second.
-         // Let's implement the logic assuming we will update ChatArea to pass the prop.
-         
-         <div className="h-full overflow-y-auto custom-scrollbar">
+      {visibleMessages.length === 0 ? (
+        <div className="h-full overflow-y-auto custom-scrollbar">
              <WelcomeScreen sendMessage={sendMessage} />
-         </div>
+        </div>
       ) : (
         <div className="h-full" role="log" aria-live="polite">
             <Virtuoso
                 ref={virtuosoRef}
                 style={{ height: '100%', width: '100%' }}
                 data={visibleMessages}
+                // 'auto' works well, but for code blocks, slightly higher threshold avoids jitter
                 followOutput={atBottom ? "auto" : false} 
-                increaseViewportBy={600}
+                increaseViewportBy={600} // Increased significantly to preload complex code blocks
                 overscan={400} 
                 initialTopMostItemIndex={visibleMessages.length - 1}
+                // Removed alignToBottom to fix large top gap; messages will naturally start at the top.
                 atBottomStateChange={(isAtBottom) => {
                     setAtBottom(isAtBottom);
                     setShowScrollButton(!isAtBottom);
                 }}
-                atBottomThreshold={100} 
+                atBottomThreshold={100} // More tolerant threshold for "stick to bottom" logic
                 className="custom-scrollbar"
                 itemContent={(index, msg) => (
                     <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4">
@@ -203,7 +142,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                     </div>
                 )}
                 components={{
-                    Header: () => <div className="h-4 md:h-6" />, 
+                    Header: () => <div className="h-4 md:h-6" />, // Reduced padding
                     Footer: () => <div className="h-32 md:h-48" />
                 }}
             />

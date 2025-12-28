@@ -33,9 +33,6 @@ export const App = () => {
   // Find the currently active message for thinking sidebar logic if needed
   // Use optional chaining for messages array as it might be undefined during initial load
   const activeMessage = currentChat?.messages?.length ? currentChat.messages[currentChat.messages.length - 1] : null;
-  
-  // Explicitly check for history loading state of the CURRENT chat to trigger skeleton
-  const isCurrentChatLoading = currentChat?.isLoading || false;
 
   // Mobile viewport height fix for iOS
   useEffect(() => {
@@ -107,7 +104,6 @@ export const App = () => {
                 messageListRef={logic.messageListRef}
                 messages={logic.messages}
                 isLoading={logic.isLoading}
-                isHistoryLoading={isCurrentChatLoading} // Pass the specific loading state
                 isAppLoading={logic.modelsLoading || logic.settingsLoading}
                 sendMessage={logic.sendMessage}
                 onCancel={logic.cancelGeneration}
@@ -144,7 +140,7 @@ export const App = () => {
         />
 
         <ThinkingSidebar
-            isOpen={false} // Placeholder
+            isOpen={false} // Placeholder: Logic to toggle this sidebar not fully exposed in prompt, defaulting to false/hidden or controlled by logic if implemented
             onClose={() => {}} 
             message={activeMessage}
             sendMessage={logic.sendMessage}
