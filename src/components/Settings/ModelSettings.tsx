@@ -161,7 +161,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
             if (id.includes('embedding') || id.includes('embed')) return false;
             
             // Exclude pure TTS/Audio models
-            if (id.includes('tts') || id.includes('whisper') || name.includes('text-to-speech') || id.includes('eleven-labs') || id.includes('playht')) return false;
+            if (id.includes('tts') || id.includes('whisper') || name.includes('text-to-speech') || id.includes('eleven-labs') || id.includes('playht') || id.includes('audio')) return false;
             
             // Exclude Image/Video Generation models (Expanded list for OpenRouter)
             if (
@@ -187,7 +187,10 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                 id.includes('haiper') ||
                 id.includes('minimax') ||
                 id.includes('auraflow') ||
-                id.includes('shakker')
+                id.includes('shakker') ||
+                // New keywords
+                id.includes('video') ||
+                id.includes('image')
             ) return false;
             
             return true;

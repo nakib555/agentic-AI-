@@ -223,7 +223,8 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
                 id.includes('animatediff') ||
                 id.includes('vidu') ||
                 id.includes('haiper') ||
-                id.includes('minimax')
+                id.includes('minimax') ||
+                id.includes('video')
             ) {
                 videoModels.push(m);
                 continue;
@@ -241,7 +242,8 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
                 id.includes('ideogram') || 
                 id.includes('recraft') ||
                 id.includes('auraflow') ||
-                id.includes('shakker')
+                id.includes('shakker') ||
+                id.includes('image')
             ) {
                 imageModels.push(m);
                 continue;
