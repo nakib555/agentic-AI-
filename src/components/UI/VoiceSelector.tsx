@@ -70,31 +70,35 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
             const rect = containerRef.current.getBoundingClientRect();
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
-            const padding = 8; // Safety padding
+            const padding = 10; // Increased padding for mobile edge safety
 
             // Vertical positioning logic
             const spaceBelow = viewportHeight - rect.bottom - padding;
             const spaceAbove = rect.top - padding;
-            const desiredMaxHeight = 320; 
+            const desiredMaxHeight = 350; 
             
             // Prefer bottom, flip to top if cramped below (<220px) and more room above
             const showOnTop = spaceBelow < 220 && spaceAbove > spaceBelow;
             const maxHeight = Math.min(desiredMaxHeight, showOnTop ? spaceAbove : spaceBelow);
 
             // Width Logic
-            // Ensure min width for readability on very small triggering buttons
-            let width = Math.max(rect.width, 200);
+            // 1. Start with the trigger width
+            // 2. Expand to at least 280px to ensure descriptions aren't cut off
+            // 3. Constrain to viewport width minus padding (critical for small mobile screens)
+            const optimalWidth = Math.max(rect.width, 280);
+            const maxWidth = viewportWidth - (padding * 2);
+            const width = Math.min(optimalWidth, maxWidth);
             
-            // Clamp width if screen is extremely small
-            if (width > viewportWidth - (padding * 2)) {
-                width = viewportWidth - (padding * 2);
-            }
-            
-            // Handle horizontal overflow (keep within screen)
+            // Horizontal positioning
+            // Default to aligning left edge with trigger
             let left = rect.left;
+            
+            // If extending right goes off-screen, shift left
             if (left + width > viewportWidth - padding) {
                 left = viewportWidth - width - padding;
             }
+            
+            // If shifting left puts it off-screen left, clamp to padding
             if (left < padding) left = padding;
 
             setCoords({
@@ -102,7 +106,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                 width,
                 top: showOnTop ? undefined : rect.bottom + 6,
                 bottom: showOnTop ? viewportHeight - rect.top + 6 : undefined,
-                maxHeight: Math.max(100, maxHeight) // Ensure at least 100px height
+                maxHeight: Math.max(100, maxHeight) // Ensure at least 100px height for usability
             });
         }
     }, []);
