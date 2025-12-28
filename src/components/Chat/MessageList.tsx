@@ -1,10 +1,9 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
+import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo, Suspense } from 'react';
 import type { Message, Source } from '../../types';
 import { MessageComponent } from './Message';
 import { WelcomeScreen } from './WelcomeScreen/index';
@@ -14,6 +13,9 @@ import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { useViewport } from '../../hooks/useViewport';
 
 const motion = motionTyped as any;
+
+// Lazy load the skeleton to reduce initial bundle size and support suspense
+const ChatSkeleton = React.lazy(() => import('../UI/ChatSkeleton').then(m => ({ default: m.ChatSkeleton })));
 
 export type MessageListHandle = {
   scrollToBottom: () => void;
@@ -105,9 +107,16 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   return (
     <div className="flex-1 min-h-0 relative w-full">
       {visibleMessages.length === 0 ? (
-        <div className="h-full overflow-y-auto custom-scrollbar">
-             <WelcomeScreen sendMessage={sendMessage} />
-        </div>
+        isLoading ? (
+            // Show Skeleton when loading a chat (messages are empty but isLoading is true)
+            <Suspense fallback={<div className="h-full w-full bg-transparent" />}>
+                <ChatSkeleton />
+            </Suspense>
+        ) : (
+            <div className="h-full overflow-y-auto custom-scrollbar">
+                 <WelcomeScreen sendMessage={sendMessage} />
+            </div>
+        )
       ) : (
         <div className="h-full" role="log" aria-live="polite">
             <Virtuoso
