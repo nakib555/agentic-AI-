@@ -245,7 +245,27 @@ export const useChat = (
                 body: JSON.stringify(requestPayload),
             });
 
-            if (!response.ok || !response.body) throw new Error(await response.text() || `Request failed with status ${response.status}`);
+            if (!response.ok) {
+                let errorMessage = `Request failed with status ${response.status}`;
+                let errorDetails: any = null;
+                try {
+                    const errorJson = await response.json();
+                    const struct = errorJson.error || errorJson;
+                    errorMessage = struct.message || errorMessage;
+                    errorDetails = struct;
+                } catch (e) {
+                    errorMessage = await response.text() || errorMessage;
+                }
+                const error = new Error(errorMessage);
+                if (errorDetails) {
+                    (error as any).code = errorDetails.code;
+                    (error as any).details = errorDetails.details;
+                    (error as any).suggestion = errorDetails.suggestion;
+                }
+                throw error;
+            }
+            
+            if (!response.body) throw new Error("Response body is missing");
             
             // Delegate to the stream processor service
             await processBackendStream(

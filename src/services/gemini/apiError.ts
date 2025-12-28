@@ -11,6 +11,11 @@ import { MessageError, ToolError } from '../../types';
  * @returns A structured MessageError with user-friendly content.
  */
 export const parseApiError = (error: any): MessageError => {
+    // If it's already a well-formed MessageError (e.g. from backend pass-through), use it.
+    if (error && typeof error === 'object' && 'code' in error && 'message' in error && !('stack' in error)) {
+         return error as MessageError;
+    }
+
     if (error instanceof ToolError) {
         return {
             code: error.code,
@@ -18,6 +23,18 @@ export const parseApiError = (error: any): MessageError => {
             details: error.cause ? `${error.originalMessage}\n\nCause:\n${error.cause.stack}` : error.originalMessage,
             suggestion: error.suggestion,
         };
+    }
+    
+    // Check if the Error object has attached metadata (from src/hooks/useChat/index.ts or src/utils/api.ts logic)
+    if (error instanceof Error) {
+        if ((error as any).code) {
+            return {
+                code: (error as any).code,
+                message: error.message,
+                details: (error as any).details || error.stack,
+                suggestion: (error as any).suggestion
+            };
+        }
     }
     
     // Extract message, details, and status for robust classification

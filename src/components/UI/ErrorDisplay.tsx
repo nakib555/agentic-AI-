@@ -12,24 +12,33 @@ const motion = motionTyped as any;
 export const getErrorMessageSuggestion = (code?: string): string | null => {
     switch (code) {
         case 'MODEL_NOT_FOUND':
-            return 'The selected model could not be found. Please choose a different model from the selector at the top.';
+            return 'The selected model could not be found or is not available. Please try selecting a different model from the top menu.';
         case 'INVALID_API_KEY':
-            return 'Your API key is invalid or missing. Please ensure it is configured correctly in Settings.';
+            return 'Your API key is invalid, missing, or has expired. Please check your configuration in Settings > General.';
         case 'RATE_LIMIT_EXCEEDED':
-            return 'You have sent too many requests. Please wait a moment before trying again.';
+        case 'RESOURCE_EXHAUSTED':
+            return 'You have reached the request limit for this model. Please wait a moment before trying again, or switch to a different model.';
         case 'UNAVAILABLE':
-            return 'The AI model is currently experiencing high traffic. This is temporary - please try again in a few seconds.';
+        case 'OVERLOADED':
+            return 'The AI service is currently experiencing high traffic. This is usually temporary - please try again in a few seconds.';
         case 'CONTENT_BLOCKED':
-            return 'The response was blocked by the safety filter. Try rephrasing your request to be less sensitive.';
+        case 'SAFETY':
+            return 'The response was blocked by safety filters. Try rephrasing your request to be less sensitive or ambiguous.';
         case 'TOOL_EXECUTION_FAILED':
-            return 'A tool required by the AI failed to execute correctly. See details for more information.';
+            return 'One of the AI tools failed to execute. This might be due to bad input or a temporary service glitch. You can try regenerating the response.';
         case 'NETWORK_ERROR':
-            return 'A network problem occurred. Please check your internet connection and try again.';
+        case 'FETCH_FAILED':
+            return 'A network error occurred. Please check your internet connection. If the problem persists, check the Backend Server URL in Settings.';
+        case 'CONTEXT_LENGTH_EXCEEDED':
+            return 'The conversation has become too long for the model to process. Try clearing the chat or starting a new topic.';
         default:
             if (code?.startsWith('TOOL_')) {
-                return 'An error occurred while the AI was using one of its tools. Check the details for more technical information.';
+                return 'An error occurred while the AI was using one of its tools. Check the details below for more information.';
             }
-            return 'There was an unexpected error. Please try your request again.';
+            if (code?.includes('OPENROUTER')) {
+                return 'An error occurred with the OpenRouter service. Please check your OpenRouter API key and credit balance.';
+            }
+            return 'There was an unexpected error processing your request. Please try again.';
     }
 };
 
@@ -47,7 +56,7 @@ const getErrorVariant = (code?: string): ErrorVariant => {
     
     const codeUpper = code.toUpperCase();
 
-    if (['INVALID_API_KEY', 'CONTENT_BLOCKED', 'PERMISSION_DENIED', 'ACCESS_DENIED'].some(c => codeUpper.includes(c))) {
+    if (['INVALID_API_KEY', 'CONTENT_BLOCKED', 'PERMISSION_DENIED', 'ACCESS_DENIED', 'SAFETY'].some(c => codeUpper.includes(c))) {
         return 'security';
     }
     
@@ -55,7 +64,7 @@ const getErrorVariant = (code?: string): ErrorVariant => {
         return 'connection';
     }
 
-    if (['RATE_LIMIT_EXCEEDED', 'UNAVAILABLE', 'QUOTA_EXCEEDED', 'RESOURCE_EXHAUSTED'].some(c => codeUpper.includes(c))) {
+    if (['RATE_LIMIT_EXCEEDED', 'UNAVAILABLE', 'QUOTA_EXCEEDED', 'RESOURCE_EXHAUSTED', 'OVERLOADED', 'CONTEXT_LENGTH_EXCEEDED'].some(c => codeUpper.includes(c))) {
         return 'warning';
     }
     
@@ -98,6 +107,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
         let newCode = error.code;
         let newSuggestion = error.suggestion;
         const lowerMessage = (error.message || '').toLowerCase();
+        const lowerDetails = (error.details || '').toLowerCase();
 
         if (!newCode) { // If backend didn't provide a code, try to infer one
             if (lowerMessage.includes('openrouter') && (lowerMessage.includes('401') || lowerMessage.includes('user not found'))) {
@@ -105,10 +115,12 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
                 newSuggestion = 'Your OpenRouter API key appears to be invalid. Please check it in Settings.';
             } else if (lowerMessage.includes('api key not valid') || lowerMessage.includes('invalid api key')) {
                 newCode = 'INVALID_API_KEY';
-            } else if (lowerMessage.includes('rate limit') || lowerMessage.includes('429')) {
+            } else if (lowerMessage.includes('rate limit') || lowerMessage.includes('429') || lowerMessage.includes('quota')) {
                 newCode = 'RATE_LIMIT_EXCEEDED';
             } else if (lowerMessage.includes('network error') || lowerMessage.includes('failed to fetch')) {
                 newCode = 'NETWORK_ERROR';
+            } else if (lowerMessage.includes('context length') || lowerDetails.includes('context length')) {
+                newCode = 'CONTEXT_LENGTH_EXCEEDED';
             }
         }
         

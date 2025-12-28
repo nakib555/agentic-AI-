@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -80,20 +79,25 @@ export const fetchFromApi = async (url: string, options: ApiOptions = {}): Promi
             throw new Error('Version mismatch');
         }
 
-        if (!response.ok && !silent) {
-             let errorDetails = 'Unknown error';
+        if (!response.ok) {
+             let errorData: any = {};
              try {
-                 errorDetails = await response.clone().text();
+                 errorData = await response.clone().json();
              } catch (e) {
-                 errorDetails = 'Could not read response body';
+                 errorData = { error: { message: response.statusText } };
              }
 
-             console.error(`[API Error] ❌ ${method} ${url} failed`, {
-                 status: response.status,
-                 statusText: response.statusText,
-                 cause: errorDetails,
-                 how: 'Server responded with non-2xx status code'
-             });
+             if (!silent) {
+                 console.error(`[API Error] ❌ ${method} ${url} failed`, {
+                     status: response.status,
+                     statusText: response.statusText,
+                     errorData
+                 });
+             }
+             
+             // We do NOT throw here because existing callers rely on checking response.ok manually.
+             // However, we ensure the body is consumable by cloning above if needed, 
+             // but here we just let the caller handle the response body reading.
         }
         
         return response;
