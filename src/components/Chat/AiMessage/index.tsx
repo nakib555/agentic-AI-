@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -13,7 +12,7 @@ import { ErrorDisplay } from '../../UI/ErrorDisplay';
 import { ImageDisplay } from '../../AI/ImageDisplay';
 import { VideoDisplay } from '../../AI/VideoDisplay';
 import { ManualCodeRenderer } from '../../Markdown/ManualCodeRenderer';
-import { Skeleton } from '../../UI/Skeleton';
+import { TypingIndicator } from '../TypingIndicator';
 import { McqComponent } from '../../AI/McqComponent';
 import { MapDisplay } from '../../AI/MapDisplay';
 import { FileAttachment } from '../../AI/FileAttachment';
@@ -121,26 +120,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       messageFormRef.current?.attachFiles([file]);
   };
 
-  if (logic.isInitialWait) {
-      return (
-        <motion.div 
-            {...animationProps}
-            className="w-full max-w-3xl"
-        >
-            <div className="flex flex-col gap-4 py-2">
-                <div className="flex items-center gap-3 opacity-50">
-                    <Skeleton className="w-6 h-6 rounded-lg bg-layer-3/50 dark:bg-white/10" />
-                    <Skeleton className="h-4 w-24 rounded bg-layer-3/50 dark:bg-white/10" />
-                </div>
-                <div className="space-y-3 pl-2">
-                    <Skeleton className="h-4 w-3/4 rounded bg-layer-2/80 dark:bg-white/5" />
-                    <Skeleton className="h-4 w-full rounded bg-layer-2/80 dark:bg-white/5" />
-                    <Skeleton className="h-4 w-5/6 rounded bg-layer-2/80 dark:bg-white/5" />
-                </div>
-            </div>
-        </motion.div>
-      );
-  }
+  if (logic.isInitialWait) return <TypingIndicator />;
 
   return (
     <motion.div 
@@ -170,6 +150,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer) && (
         <div className="w-full flex flex-col gap-3 min-w-0">
+          {logic.isWaitingForFinalAnswer && <TypingIndicator />}
           {activeResponse?.error && <ErrorDisplay error={activeResponse.error} onRetry={() => onRegenerate(id)} />}
           
           <div className="markdown-content max-w-none w-full text-slate-800 dark:text-gray-100 leading-relaxed break-words min-w-0">
