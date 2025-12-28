@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -55,7 +55,55 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
     const selected = TTS_VOICES.find(v => v.id === selectedVoice) || TTS_VOICES[0];
     
     // State to hold the calculated position of the menu
-    const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number; width: number }>({ left: 0, width: 0 });
+    const [coords, setCoords] = useState<{ 
+        top?: number; 
+        bottom?: number; 
+        left: number; 
+        width: number; 
+        maxHeight: number 
+    }>({ left: 0, width: 0, maxHeight: 300 });
+
+    const updatePosition = useCallback(() => {
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const padding = 8; // Safety padding
+
+            // Vertical positioning logic
+            const spaceBelow = viewportHeight - rect.bottom - padding;
+            const spaceAbove = rect.top - padding;
+            const desiredMaxHeight = 320; 
+            
+            // Prefer bottom, flip to top if cramped below (<220px) and more room above
+            const showOnTop = spaceBelow < 220 && spaceAbove > spaceBelow;
+            const maxHeight = Math.min(desiredMaxHeight, showOnTop ? spaceAbove : spaceBelow);
+
+            // Width Logic
+            // Ensure min width for readability on very small triggering buttons
+            let width = Math.max(rect.width, 200);
+            
+            // Clamp width if screen is extremely small
+            if (width > viewportWidth - (padding * 2)) {
+                width = viewportWidth - (padding * 2);
+            }
+            
+            // Handle horizontal overflow (keep within screen)
+            let left = rect.left;
+            if (left + width > viewportWidth - padding) {
+                left = viewportWidth - width - padding;
+            }
+            if (left < padding) left = padding;
+
+            setCoords({
+                left,
+                width,
+                top: showOnTop ? undefined : rect.bottom + 6,
+                bottom: showOnTop ? viewportHeight - rect.top + 6 : undefined,
+                maxHeight: Math.max(100, maxHeight) // Ensure at least 100px height
+            });
+        }
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -67,11 +115,9 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
             }
         };
         
-        const handleScrollOrResize = () => {
-            if (isOpen) setIsOpen(false);
-        };
-
         if (isOpen) {
+            updatePosition();
+            
             // Auto-scroll to selected item
             if (selectedItemRef.current) {
                 setTimeout(() => {
@@ -80,44 +126,20 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
             }
 
             document.addEventListener('mousedown', handleClickOutside);
-            window.addEventListener('resize', handleScrollOrResize);
-            window.addEventListener('scroll', handleScrollOrResize, true);
+            window.addEventListener('resize', updatePosition);
+            window.addEventListener('scroll', updatePosition, true);
         }
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
-            window.removeEventListener('resize', handleScrollOrResize);
-            window.removeEventListener('scroll', handleScrollOrResize, true);
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
         };
-    }, [isOpen]);
+    }, [isOpen, updatePosition]);
 
     const toggleOpen = () => {
         if (disabled) return;
-        
-        if (isOpen) {
-            setIsOpen(false);
-            return;
-        }
-
-        if (containerRef.current) {
-            const rect = containerRef.current.getBoundingClientRect();
-            const windowHeight = window.innerHeight;
-            const spaceBelow = windowHeight - rect.bottom;
-            const spaceAbove = rect.top;
-            const menuHeight = 320; 
-
-            // Intelligent placement
-            const showOnTop = spaceBelow < menuHeight && spaceAbove > spaceBelow;
-
-            setCoords({
-                left: rect.left,
-                width: rect.width,
-                top: showOnTop ? undefined : rect.bottom + 8,
-                bottom: showOnTop ? windowHeight - rect.top + 8 : undefined
-            });
-            
-            setIsOpen(true);
-        }
+        setIsOpen(prev => !prev);
     };
 
     return (
@@ -167,8 +189,11 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                             }}
                             className="bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-xl border border-gray-200 dark:border-white/10 overflow-hidden p-1.5"
                         >
-                            <div className="flex flex-col gap-0.5 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-[#1e1e1e] z-10 flex justify-between">
+                            <div 
+                                className="flex flex-col gap-0.5 overflow-y-auto custom-scrollbar"
+                                style={{ maxHeight: coords.maxHeight }}
+                            >
+                                <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-[#1e1e1e] z-10 flex justify-between border-b border-gray-100 dark:border-white/5 mb-1">
                                     <span>Gemini Personas</span>
                                     <span className="text-[10px] font-normal opacity-70">Multilingual</span>
                                 </div>
