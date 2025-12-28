@@ -238,5 +238,6 @@ export const UserMessage = ({
                 )}
             </div>
         </div>
-    );
+    </div>
+  );
 };
