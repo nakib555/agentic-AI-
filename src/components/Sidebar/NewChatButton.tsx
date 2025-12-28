@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
 
@@ -17,12 +18,17 @@ type NewChatButtonProps = {
 
 export const NewChatButton = ({ isCollapsed, isDesktop, onClick, disabled }: NewChatButtonProps) => {
   const shouldCollapse = isDesktop && isCollapsed;
+  const [isHovered, setIsHovered] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div className="mb-2 px-2">
         <button
+            ref={buttonRef}
             onClick={onClick}
             disabled={disabled}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             className={`
                 group relative w-full flex items-center transition-colors duration-200
                 ${disabled 
@@ -36,7 +42,6 @@ export const NewChatButton = ({ isCollapsed, isDesktop, onClick, disabled }: New
                     : 'px-3 py-2'
                 }
             `}
-            title={disabled ? "Already in a new chat" : "New chat"}
             aria-label="New chat"
             aria-disabled={disabled}
         >
@@ -61,6 +66,21 @@ export const NewChatButton = ({ isCollapsed, isDesktop, onClick, disabled }: New
                 New chat
             </motion.span>
         </button>
+
+        {shouldCollapse && !disabled && isHovered && buttonRef.current && createPortal(
+            <div 
+                className="fixed z-[100] px-2.5 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-md shadow-xl whitespace-nowrap pointer-events-none animate-in fade-in zoom-in-95 duration-200"
+                style={{ 
+                    top: buttonRef.current.getBoundingClientRect().top + buttonRef.current.getBoundingClientRect().height / 2, 
+                    left: buttonRef.current.getBoundingClientRect().right + 12,
+                    transform: 'translateY(-50%)'
+                }}
+            >
+                New Chat
+                <div className="absolute top-1/2 right-full -translate-y-1/2 -mr-[1px] border-4 border-transparent border-r-slate-800"></div>
+            </div>,
+            document.body
+        )}
     </div>
   );
 };
