@@ -71,7 +71,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
     };
 
     return (
-        <div className="w-full flex flex-wrap items-center justify-between gap-y-3 pt-4 mt-2 select-none border-t border-slate-100 dark:border-white/5">
+        <div className="w-full flex flex-wrap items-center justify-between gap-y-3 pt-3 mt-1 select-none border-t border-slate-100 dark:border-white/5">
             <div className="flex items-center gap-1">
                 <IconButton title={isCopied ? 'Copied!' : 'Copy'} onClick={handleCopy}>
                     <AnimatePresence mode="wait" initial={false}>
@@ -102,41 +102,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
 
                 <div className="w-px h-3 bg-slate-300 dark:bg-white/20 mx-2"></div>
 
-                <IconButton title="Helpful" onClick={() => setFeedback('up')} active={feedback === 'up'}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-                    </svg>
-                </IconButton>
-
-                <IconButton title="Not helpful" onClick={() => setFeedback('down')} active={feedback === 'down'}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
-                    </svg>
-                </IconButton>
-
-                <div className="w-px h-3 bg-slate-300 dark:bg-white/20 mx-2"></div>
-
                 <div className="flex items-center gap-1">
-                    {/* Explicit Error Message for TTS */}
-                    <AnimatePresence>
-                        {ttsState === 'error' && (
-                            <motion.div
-                                initial={{ opacity: 0, width: 0, x: 10 }}
-                                animate={{ opacity: 1, width: 'auto', x: 0 }}
-                                exit={{ opacity: 0, width: 0, x: 10 }}
-                                transition={{ duration: 0.2 }}
-                                className="flex items-center overflow-hidden mr-2"
-                            >
-                                <span 
-                                    className="text-[10px] font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/30 whitespace-nowrap max-w-[150px] truncate"
-                                    title={ttsErrorMessage}
-                                >
-                                    {ttsErrorMessage || 'Audio Failed'}
-                                </span>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
                     <TtsButton 
                         isPlaying={ttsState === 'playing'} 
                         isLoading={ttsState === 'loading'} 
@@ -145,6 +111,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                         disabled={!messageText}
                         onClick={onTtsClick} 
                     />
+                    
                     <AnimatePresence>
                         {ttsState === 'playing' && (
                             <motion.div
@@ -152,8 +119,25 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                                 animate={{ width: 'auto', opacity: 1 }}
                                 exit={{ width: 0, opacity: 0 }}
                                 transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
                             >
-                                <AudioWave isPlaying={true} className="ml-1" barColor="bg-slate-500 dark:bg-slate-400" />
+                                <AudioWave isPlaying={true} className="ml-1 mr-2" barColor="bg-indigo-500 dark:bg-indigo-400" />
+                            </motion.div>
+                        )}
+                        {ttsState === 'error' && (
+                            <motion.div
+                                initial={{ opacity: 0, width: 0, x: -10 }}
+                                animate={{ opacity: 1, width: 'auto', x: 0 }}
+                                exit={{ opacity: 0, width: 0, x: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex items-center overflow-hidden ml-1"
+                            >
+                                <span 
+                                    className="text-[10px] font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/30 whitespace-nowrap max-w-[200px] truncate"
+                                    title={ttsErrorMessage}
+                                >
+                                    {ttsErrorMessage || 'Audio Failed'}
+                                </span>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -162,7 +146,6 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
             
             <div className="flex items-center gap-3">
                  <SourcesPills sources={sources} onShowSources={() => onShowSources(sources)} />
-                 {/* Branching Navigation / Pagination - Moved to right side */}
                  <BranchSwitcher count={responseCount} activeIndex={activeResponseIndex} onChange={onResponseChange} />
             </div>
         </div>
