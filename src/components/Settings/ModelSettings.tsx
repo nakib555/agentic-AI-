@@ -161,7 +161,14 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
             if (id.includes('embedding') || id.includes('embed')) return false;
             
             // Exclude pure TTS/Audio models
-            if (id.includes('tts') || id.includes('whisper') || name.includes('text-to-speech') || id.includes('eleven-labs') || id.includes('playht') || id.includes('audio')) return false;
+            if (
+                id.includes('tts') || 
+                id.includes('whisper') || 
+                name.includes('text-to-speech') || 
+                id.includes('eleven-labs') || 
+                id.includes('playht') || 
+                (id.includes('audio') && !id.includes('gpt-4o') && !id.includes('gemini') && !id.includes('claude'))
+            ) return false;
             
             // Exclude Image/Video Generation models (Expanded list for OpenRouter)
             if (

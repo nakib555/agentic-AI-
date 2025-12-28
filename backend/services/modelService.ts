@@ -250,19 +250,20 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
             }
 
             // TTS / Audio
+            // Exceptions: Some chat models have 'audio' in the name (e.g. gpt-4o-audio-preview), keep those in Chat.
             if (
                 id.includes('tts') || 
                 id.includes('whisper') || 
                 id.includes('eleven') || 
                 id.includes('playht') || 
                 id.includes('speech') ||
-                (id.includes('audio') && !id.includes('claude') && !id.includes('gemini')) // Exclude multimodal inputs unless specialized
+                (id.includes('audio') && !id.includes('gpt-4o') && !id.includes('gemini') && !id.includes('claude'))
             ) {
                 ttsModels.push(m);
                 continue;
             }
 
-            // Default to Chat/Reasoning
+            // Default to Chat/Reasoning (e.g. aion-labs/aion-1.0)
             chatModels.push(m);
         }
 
