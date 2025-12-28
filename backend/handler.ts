@@ -275,6 +275,38 @@ export const apiHandler = async (req: any, res: any) => {
                     }
                 }
 
+                // --- SYSTEM PROMPT CONSTRUCTION ---
+                // We construct this logic BEFORE the provider check so OpenRouter also gets the full prompt context.
+                const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
+                const { systemPrompt, aboutUser, aboutResponse } = settings;
+                
+                // CRITICAL: Personalization Injection
+                // We ensure this is prepended forcefully
+                let personalizationSection = "";
+                if (aboutUser && aboutUser.trim()) personalizationSection += `\n## 👤 USER PROFILE & CONTEXT\n${aboutUser.trim()}\n`;
+                if (aboutResponse && aboutResponse.trim()) personalizationSection += `\n## 🎭 RESPONSE STYLE & PERSONA PREFERENCES\n${aboutResponse.trim()}\n`;
+                if (systemPrompt && systemPrompt.trim()) personalizationSection += `\n## 🔧 CUSTOM USER DIRECTIVES\n${systemPrompt.trim()}\n`;
+
+                // Inject RAG Context into System Instruction
+                if (ragContext) {
+                    personalizationSection += ragContext;
+                }
+
+                let finalSystemInstruction = coreInstruction;
+                if (personalizationSection) {
+                    finalSystemInstruction = `
+# 🟢 PRIORITY 1: USER PERSONALIZATION & MEMORY
+The following instructions are ABSOLUTE. They override any default persona traits defined later.
+
+${personalizationSection}
+
+================================================================================
+
+# ⚙️ CORE SYSTEM DIRECTIVES (Secondary to Personalization)
+${coreInstruction}
+`.trim();
+                }
+
                 res.setHeader('Content-Type', 'application/json');
                 res.setHeader('Transfer-Encoding', 'chunked');
                 res.flushHeaders();
@@ -291,15 +323,13 @@ export const apiHandler = async (req: any, res: any) => {
                 });
 
                 if (activeProvider === 'openrouter') {
-                    // ... OpenRouter Logic (omitted for brevity, assume similar injection of ragContext into system prompt) ...
-                    // Since OpenRouter messages array usually starts with system prompt, we'd prepend it there.
                     const openRouterMessages = historyForAI.map((msg: any) => ({
                         role: msg.role === 'model' ? 'assistant' : 'user',
                         content: msg.text || ''
                     }));
-                    if (settings.systemPrompt || ragContext) {
-                        openRouterMessages.unshift({ role: 'system', content: (settings.systemPrompt || "") + ragContext });
-                    }
+                    // Inject the fully constructed system instruction
+                    openRouterMessages.unshift({ role: 'system', content: finalSystemInstruction });
+
                     try {
                         await streamOpenRouter(
                             activeApiKey!,
@@ -367,36 +397,6 @@ export const apiHandler = async (req: any, res: any) => {
                 };
                 
                 const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, activeApiKey!, chatId, requestFrontendExecution, false, onToolUpdate);
-
-                const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
-                const { systemPrompt, aboutUser, aboutResponse } = settings;
-                
-                // CRITICAL: Personalization Injection
-                // We ensure this is prepended forcefully
-                let personalizationSection = "";
-                if (aboutUser && aboutUser.trim()) personalizationSection += `\n## 👤 USER PROFILE & CONTEXT\n${aboutUser.trim()}\n`;
-                if (aboutResponse && aboutResponse.trim()) personalizationSection += `\n## 🎭 RESPONSE STYLE & PERSONA PREFERENCES\n${aboutResponse.trim()}\n`;
-                if (systemPrompt && systemPrompt.trim()) personalizationSection += `\n## 🔧 CUSTOM USER DIRECTIVES\n${systemPrompt.trim()}\n`;
-
-                // Inject RAG Context into System Instruction
-                if (ragContext) {
-                    personalizationSection += ragContext;
-                }
-
-                let finalSystemInstruction = coreInstruction;
-                if (personalizationSection) {
-                    finalSystemInstruction = `
-# 🟢 PRIORITY 1: USER PERSONALIZATION & MEMORY
-The following instructions are ABSOLUTE. They override any default persona traits defined later.
-
-${personalizationSection}
-
-================================================================================
-
-# ⚙️ CORE SYSTEM DIRECTIVES (Secondary to Personalization)
-${coreInstruction}
-`.trim();
-                }
 
                 const finalSettings = {
                     ...settings,
