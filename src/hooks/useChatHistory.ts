@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -131,19 +130,45 @@ export const useChatHistory = () => {
     }
   }, [currentChatId, isHistoryLoading, chatHistory]);
 
-  const startNewChat = useCallback(async (model: string, settings: any): Promise<ChatSession | null> => {
+  const startNewChat = useCallback(async (model: string, settings: any, optimisticId?: string): Promise<ChatSession | null> => {
+    // 1. Prepare Data
+    const newId = optimisticId || Math.random().toString(36).substring(2, 9);
+    const timestamp = Date.now();
+    
+    const newChat: ChatSession = {
+        id: newId,
+        title: "New Chat",
+        messages: [],
+        model: model,
+        isLoading: false,
+        createdAt: timestamp,
+        ...settings // Spread settings (temperature, etc)
+    };
+
+    // 2. Optimistic Update
+    setChatHistory(prev => [newChat, ...prev]);
+    setCurrentChatId(newId);
+
+    // 3. Network Request
     try {
-        const newChat: ChatSession = await fetchApi('/api/chats/new', {
+        const createdChat: ChatSession = await fetchApi('/api/chats/new', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model, ...settings }),
+            body: JSON.stringify({ id: newId, model, ...settings }),
         });
-        setChatHistory(prev => [newChat, ...prev]);
-        setCurrentChatId(newChat.id);
-        return newChat;
+        
+        // Confirm server state (optional, essentially redundant if optimistic worked, but good for sync)
+        setChatHistory(prev => prev.map(c => c.id === newId ? { ...c, ...createdChat, messages: c.messages } : c));
+        
+        return createdChat;
     } catch (error) {
         if (!isVersionMismatch(error)) {
             console.error("Failed to create new chat:", error);
+        }
+        // Rollback on failure
+        setChatHistory(prev => prev.filter(c => c.id !== newId));
+        if (currentChatIdRef.current === newId) {
+            setCurrentChatId(null);
         }
         return null;
     }

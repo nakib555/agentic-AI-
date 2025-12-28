@@ -446,20 +446,33 @@ export const useChat = (
         const activeChatIdFromRef = currentChatIdRef.current;
         
         let activeChatId = activeChatIdFromRef;
-        const currentChat = activeChatId ? currentHistory.find(c => c.id === activeChatId) : undefined;
+        let currentChat = activeChatId ? currentHistory.find(c => c.id === activeChatId) : undefined;
+        let chatCreationPromise: Promise<ChatSession | null> | null = null;
 
         if (!activeChatId || !currentChat) {
-            const newChatSession = await chatHistoryHook.startNewChat(initialModel, {
+            const optimisticId = generateId(); 
+            activeChatId = optimisticId;
+            
+            const settingsToUse = {
                 temperature: settings.temperature,
                 maxOutputTokens: settings.maxOutputTokens,
                 imageModel: settings.imageModel,
                 videoModel: settings.videoModel,
-            });
-            if (!newChatSession) {
-                console.error("Failed to start a new chat, aborting message send.");
-                return;
-            }
-            activeChatId = newChatSession.id;
+            };
+
+            // Start creation optimistically (does NOT await network for UI update)
+            chatCreationPromise = chatHistoryHook.startNewChat(initialModel, settingsToUse, optimisticId);
+            
+            // We manually construct the chat object for the `startBackendChat` call below
+            // so we don't have to wait for state update to propagate to `currentChat` variable
+            currentChat = {
+                id: optimisticId,
+                title: "New Chat",
+                messages: [],
+                model: initialModel,
+                createdAt: Date.now(),
+                ...settingsToUse
+            } as ChatSession;
         }
     
         const attachmentsData = files?.length ? await Promise.all(files.map(async f => ({ name: f.name, mimeType: f.type, data: await fileToBase64(f) }))) : undefined;
@@ -472,6 +485,16 @@ export const useChat = (
         chatHistoryHook.setChatLoadingState(activeChatId, true);
     
         const chatForSettings = currentChat || { model: initialModel, ...settings };
+
+        // Ensure backend creation finishes before streaming starts
+        // We wait here to prevent the handler from 404ing on the chat ID
+        if (chatCreationPromise) {
+            const created = await chatCreationPromise;
+            if (!created) {
+                // Creation failed (rollback handled in startNewChat), so we stop here
+                return;
+            }
+        }
 
         // Use 'chat' task for new messages
         await startBackendChat(

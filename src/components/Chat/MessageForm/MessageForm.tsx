@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -81,7 +80,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
       />
 
       <div className={`
-        relative bg-layer-2 border transition-all duration-200 rounded-3xl overflow-hidden shadow-sm
+        relative bg-transparent border transition-all duration-200 rounded-2xl overflow-hidden shadow-sm
         ${logic.isFocused ? 'border-primary-main shadow-md ring-1 ring-primary-main/20' : 'border-border-default hover:border-border-strong'}
       `}>
         {/* File Previews */}

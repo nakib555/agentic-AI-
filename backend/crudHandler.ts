@@ -34,8 +34,9 @@ export const getChat = async (req: any, res: any) => {
 
 export const createNewChat = async (req: any, res: any) => {
     try {
-        const { model, temperature, maxOutputTokens, imageModel, videoModel } = req.body;
-        const newChatId = generateId();
+        // Accept optional 'id' from client for optimistic updates
+        const { id, model, temperature, maxOutputTokens, imageModel, videoModel } = req.body;
+        const newChatId = id || generateId();
         const newChat: ChatSession = {
             id: newChatId,
             title: "New Chat",
