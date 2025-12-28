@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TabButton } from '../UI/TabButton';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTheme } from '../../hooks/useTheme';
@@ -24,6 +23,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     const [iframeKey, setIframeKey] = useState(0);
     const [logs, setLogs] = useState<{level: string, message: string, timestamp: number}[]>([]);
     const [showConsole, setShowConsole] = useState(false);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
 
     // Refresh iframe when content changes
     useEffect(() => {
@@ -34,6 +34,10 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     // Listen for console logs from the iframe
     useEffect(() => {
         const handler = (e: MessageEvent) => {
+            // Validate source to ensure we only catch logs from OUR iframe
+            if (iframeRef.current && e.source !== iframeRef.current.contentWindow) {
+                return;
+            }
             if (e.data && e.data.type === 'ARTIFACT_LOG') {
                 setLogs(prev => [...prev, { level: e.data.level, message: e.data.message, timestamp: Date.now() }]);
                 if (e.data.level === 'error') setShowConsole(true);
@@ -99,7 +103,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                             try {
                                 const msg = args.map(a => {
                                     if (typeof a === 'object') {
-                                        try { return JSON.stringify(a, null, 2); } catch(e) { return String(a); }
+                                        try { return JSON.stringify(a, null, 2); } catch(e) { return '[Circular]'; }
                                     }
                                     return String(a);
                                 }).join(' ');
@@ -113,9 +117,12 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                             warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
                             error: (...args) => { originalConsole.error(...args); send('error', args); },
                         };
-                        window.onerror = (msg, url, line, col, error) => {
-                            send('error', [msg]);
-                        };
+                        window.addEventListener('error', (e) => {
+                            send('error', [e.message]);
+                        });
+                        window.addEventListener('unhandledrejection', (e) => {
+                            send('error', ['Unhandled Rejection: ' + (e.reason ? e.reason.toString() : 'Unknown')]);
+                        });
                     })();
                 </script>
             `;
@@ -125,17 +132,22 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                 srcDoc = `<html><head>${consoleScript}<style>body{font-family:sans-serif;padding:20px;}</style></head><body><script>${cleanContent}</script></body></html>`;
             } else {
                 // Inject script into head for HTML
-                srcDoc = cleanContent.replace('<head>', `<head>${consoleScript}`);
+                if (cleanContent.includes('<head>')) {
+                    srcDoc = cleanContent.replace('<head>', `<head>${consoleScript}`);
+                } else {
+                    srcDoc = `${consoleScript}${cleanContent}`;
+                }
             }
             
             return (
                 <div className="flex flex-col h-full min-h-[400px]">
-                    <div className="flex-1 relative">
+                    <div className="flex-1 relative bg-white">
                         <iframe 
+                            ref={iframeRef}
                             key={iframeKey}
                             srcDoc={srcDoc}
                             className="absolute inset-0 w-full h-full border-none bg-white"
-                            sandbox="allow-scripts"
+                            sandbox="allow-scripts allow-modals allow-forms allow-popups"
                             title="Artifact"
                         />
                     </div>

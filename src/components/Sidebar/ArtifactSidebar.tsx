@@ -10,6 +10,7 @@ import { useViewport } from '../../hooks/useViewport';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTheme } from '../../hooks/useTheme';
+import { Skeleton } from '../UI/Skeleton';
 
 type ArtifactSidebarProps = {
     isOpen: boolean;
@@ -65,6 +66,30 @@ const EyeIcon = () => (
     </svg>
 );
 
+// Loading Skeleton Component
+const ArtifactSkeleton = () => (
+    <div className="p-6 space-y-4 w-full h-full bg-white dark:bg-[#0d0d0d] overflow-hidden">
+        <div className="flex items-center gap-2 mb-6">
+            <Skeleton className="h-3 w-3 rounded-full bg-red-400/20" />
+            <Skeleton className="h-3 w-3 rounded-full bg-yellow-400/20" />
+            <Skeleton className="h-3 w-3 rounded-full bg-green-400/20" />
+        </div>
+        <div className="space-y-3">
+            <Skeleton className="h-4 w-3/4 rounded-md" />
+            <Skeleton className="h-4 w-1/2 rounded-md" />
+            <Skeleton className="h-4 w-5/6 rounded-md" />
+            <Skeleton className="h-4 w-2/3 rounded-md" />
+            <div className="h-4"></div>
+            <Skeleton className="h-4 w-1/3 rounded-md" />
+            <Skeleton className="h-4 w-full rounded-md" />
+            <Skeleton className="h-4 w-4/5 rounded-md" />
+        </div>
+        <div className="mt-8 space-y-3">
+             <Skeleton className="h-32 w-full rounded-xl opacity-50" />
+        </div>
+    </div>
+);
+
 export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({ 
     isOpen, onClose, content, language, width, setWidth, isResizing, setIsResizing 
 }) => {
@@ -75,6 +100,9 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
     const [isCopied, setIsCopied] = useState(false);
     const [logs, setLogs] = useState<{level: string, message: string, timestamp: number}[]>([]);
     const [showConsole, setShowConsole] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    
+    const iframeRef = useRef<HTMLIFrameElement>(null);
 
     // Auto-switch to preview for visual languages
     useEffect(() => {
@@ -83,17 +111,25 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
         } else {
             setActiveTab('code');
         }
-    }, [language, content]);
+    }, [language]);
 
-    // Force iframe refresh when content changes
+    // Force iframe refresh and simulate loading when content changes
     useEffect(() => {
         setIframeKey(prev => prev + 1);
         setLogs([]); // Clear logs on reload
-    }, [content]);
+        setIsLoading(true);
+        // Short artificial delay to show the ghost element (UX) and allow syntax highlighter to prep
+        const timer = setTimeout(() => setIsLoading(false), 600);
+        return () => clearTimeout(timer);
+    }, [content, activeTab]);
 
     // Listen for console logs from the iframe
     useEffect(() => {
         const handler = (e: MessageEvent) => {
+            // Validate source to ensure we only catch logs from OUR iframe
+            if (iframeRef.current && e.source !== iframeRef.current.contentWindow) {
+                return;
+            }
             if (e.data && e.data.type === 'ARTIFACT_LOG') {
                 setLogs(prev => [...prev, { level: e.data.level, message: e.data.message, timestamp: Date.now() }]);
                 if (e.data.level === 'error') setShowConsole(true);
@@ -140,7 +176,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
         // Sanitize content: remove markdown code block fences if present
         let cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
 
-        // Basic wrapping for JS/TS to run in browser with Console Capture
+        // Robust Console Capture Script
         const consoleScript = `
             <script>
                 (function() {
@@ -149,7 +185,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                         try {
                             const msg = args.map(a => {
                                 if (typeof a === 'object') {
-                                    try { return JSON.stringify(a, null, 2); } catch(e) { return String(a); }
+                                    try { return JSON.stringify(a, null, 2); } catch(e) { return '[Circular]'; }
                                 }
                                 return String(a);
                             }).join(' ');
@@ -163,16 +199,23 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                         warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
                         error: (...args) => { originalConsole.error(...args); send('error', args); },
                     };
-                    window.onerror = (msg, url, line, col, error) => {
-                        send('error', [msg]);
-                    };
+                    window.addEventListener('error', (e) => {
+                        send('error', [e.message]);
+                    });
+                    window.addEventListener('unhandledrejection', (e) => {
+                        send('error', ['Unhandled Rejection: ' + (e.reason ? e.reason.toString() : 'Unknown')]);
+                    });
                 })();
             </script>
         `;
 
         if (language === 'html' || language === 'svg') {
             // Inject console script into HTML
-            return cleanContent.replace('<head>', `<head>${consoleScript}`);
+            if (cleanContent.includes('<head>')) {
+                return cleanContent.replace('<head>', `<head>${consoleScript}`);
+            } else {
+                return `${consoleScript}${cleanContent}`;
+            }
         }
         
         if (['javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language)) {
@@ -186,7 +229,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                 <body>
                     <div id="root"></div>
                     <div id="output"></div>
-                    <script>
+                    <script type="module">
                         try {
                             ${cleanContent}
                         } catch (e) {
@@ -286,24 +329,26 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                 <div className="flex-1 overflow-hidden relative group/content">
                     {activeTab === 'code' ? (
                         <div className="absolute inset-0 overflow-auto custom-scrollbar bg-white dark:bg-[#0d0d0d]">
-                            <SyntaxHighlighter
-                                language={language}
-                                style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
-                                customStyle={{ 
-                                    margin: 0, 
-                                    padding: '1.5rem', 
-                                    minHeight: '100%', 
-                                    fontSize: '13px', 
-                                    lineHeight: '1.5',
-                                    fontFamily: "'Fira Code', monospace",
-                                    backgroundColor: 'transparent'
-                                }}
-                                showLineNumbers={true}
-                                wrapLines={false} 
-                                lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
-                            >
-                                {content}
-                            </SyntaxHighlighter>
+                            {isLoading ? <ArtifactSkeleton /> : (
+                                <SyntaxHighlighter
+                                    language={language}
+                                    style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
+                                    customStyle={{ 
+                                        margin: 0, 
+                                        padding: '1.5rem', 
+                                        minHeight: '100%', 
+                                        fontSize: '13px', 
+                                        lineHeight: '1.5',
+                                        fontFamily: "'Fira Code', monospace",
+                                        backgroundColor: 'transparent'
+                                    }}
+                                    showLineNumbers={true}
+                                    wrapLines={false} 
+                                    lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
+                                >
+                                    {content}
+                                </SyntaxHighlighter>
+                            )}
                         </div>
                     ) : (
                         <div className="absolute inset-0 bg-gray-100 dark:bg-[#1a1a1a] flex flex-col">
@@ -340,15 +385,23 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                                 </div>
                             </div>
                             <div className="flex-1 relative flex flex-col overflow-hidden">
-                                <div className="flex-1 bg-white relative">
-                                    <iframe 
-                                        key={iframeKey}
-                                        srcDoc={getPreviewContent()}
-                                        className="absolute inset-0 w-full h-full border-none bg-white"
-                                        sandbox="allow-scripts allow-modals allow-forms allow-popups"
-                                        title="Artifact Preview"
-                                    />
-                                </div>
+                                {isLoading ? (
+                                    <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
+                                        <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 bg-white relative">
+                                        <iframe 
+                                            ref={iframeRef}
+                                            key={iframeKey}
+                                            srcDoc={getPreviewContent()}
+                                            className="absolute inset-0 w-full h-full border-none bg-white"
+                                            sandbox="allow-scripts allow-modals allow-forms allow-popups"
+                                            title="Artifact Preview"
+                                        />
+                                    </div>
+                                )}
                                 
                                 {/* Console Terminal Panel */}
                                 <AnimatePresence>
