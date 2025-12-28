@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -367,18 +368,25 @@ export const useAppLogic = () => {
   const prevChatIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (chat.currentChatId === prevChatIdRef.current) return;
-    prevChatIdRef.current = chat.currentChatId;
+    // Only update prevChatIdRef if it actually changed
+    if (chat.currentChatId !== prevChatIdRef.current) {
+        prevChatIdRef.current = chat.currentChatId;
+    }
 
     const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
     if (currentChat) {
-        if (currentChat.model) setActiveModel(currentChat.model);
+        // Force sync activeModel with chat model if they differ
+        // This ensures visual consistency if the backend/hook updates independently
+        if (currentChat.model && currentChat.model !== activeModel) {
+            setActiveModel(currentChat.model);
+        }
+        
         if (currentChat.temperature !== undefined) setTemperature(currentChat.temperature);
         if (currentChat.maxOutputTokens !== undefined) setMaxTokens(currentChat.maxOutputTokens);
         if (currentChat.imageModel) setImageModel(currentChat.imageModel);
         if (currentChat.videoModel) setVideoModel(currentChat.videoModel);
     }
-  }, [chat.currentChatId, chat.chatHistory]); 
+  }, [chat.currentChatId, chat.chatHistory, activeModel]); 
 
   const checkBackendStatusTimeoutRef = useRef<number | null>(null);
 
