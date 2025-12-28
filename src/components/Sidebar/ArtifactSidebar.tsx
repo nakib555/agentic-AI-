@@ -73,6 +73,8 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
     const [activeTab, setActiveTab] = useState<'code' | 'preview'>('code');
     const [iframeKey, setIframeKey] = useState(0);
     const [isCopied, setIsCopied] = useState(false);
+    const [logs, setLogs] = useState<{level: string, message: string, timestamp: number}[]>([]);
+    const [showConsole, setShowConsole] = useState(false);
 
     // Auto-switch to preview for visual languages
     useEffect(() => {
@@ -86,7 +88,20 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
     // Force iframe refresh when content changes
     useEffect(() => {
         setIframeKey(prev => prev + 1);
+        setLogs([]); // Clear logs on reload
     }, [content]);
+
+    // Listen for console logs from the iframe
+    useEffect(() => {
+        const handler = (e: MessageEvent) => {
+            if (e.data && e.data.type === 'ARTIFACT_LOG') {
+                setLogs(prev => [...prev, { level: e.data.level, message: e.data.message, timestamp: Date.now() }]);
+                if (e.data.level === 'error') setShowConsole(true);
+            }
+        };
+        window.addEventListener('message', handler);
+        return () => window.removeEventListener('message', handler);
+    }, []);
 
     const startResizing = (mouseDownEvent: React.MouseEvent) => {
         mouseDownEvent.preventDefault();
@@ -123,34 +138,55 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
 
     const getPreviewContent = () => {
         // Sanitize content: remove markdown code block fences if present
-        // This is crucial because models often wrap the artifact code in ```html ... ``` even inside the JSON payload.
         let cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
 
-        if (language === 'html' || language === 'svg') return cleanContent;
+        // Basic wrapping for JS/TS to run in browser with Console Capture
+        const consoleScript = `
+            <script>
+                (function() {
+                    const originalConsole = window.console;
+                    function send(level, args) {
+                        try {
+                            const msg = args.map(a => {
+                                if (typeof a === 'object') {
+                                    try { return JSON.stringify(a, null, 2); } catch(e) { return String(a); }
+                                }
+                                return String(a);
+                            }).join(' ');
+                            window.parent.postMessage({ type: 'ARTIFACT_LOG', level, message: msg }, '*');
+                        } catch(e) {}
+                    }
+                    window.console = {
+                        ...originalConsole,
+                        log: (...args) => { originalConsole.log(...args); send('info', args); },
+                        info: (...args) => { originalConsole.info(...args); send('info', args); },
+                        warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
+                        error: (...args) => { originalConsole.error(...args); send('error', args); },
+                    };
+                    window.onerror = (msg, url, line, col, error) => {
+                        send('error', [msg]);
+                    };
+                })();
+            </script>
+        `;
+
+        if (language === 'html' || language === 'svg') {
+            // Inject console script into HTML
+            return cleanContent.replace('<head>', `<head>${consoleScript}`);
+        }
         
-        // Basic wrapping for JS/TS to run in browser
         if (['javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language)) {
             return `
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <style>body { font-family: system-ui, sans-serif; padding: 20px; }</style>
+                    <style>body { font-family: system-ui, sans-serif; padding: 20px; color: #333; } @media (prefers-color-scheme: dark) { body { color: #eee; } }</style>
+                    ${consoleScript}
                 </head>
                 <body>
                     <div id="root"></div>
                     <div id="output"></div>
                     <script>
-                        const root = document.getElementById('root');
-                        const console = {
-                            log: (...args) => {
-                                const output = document.getElementById('output');
-                                output.innerHTML += '<div>' + args.join(' ') + '</div>';
-                            },
-                            error: (...args) => {
-                                const output = document.getElementById('output');
-                                output.innerHTML += '<div style="color: red">' + args.join(' ') + '</div>';
-                            }
-                        };
                         try {
                             ${cleanContent}
                         } catch (e) {
@@ -190,16 +226,16 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                     </div>
                 )}
 
-                {/* Header Toolbar */}
-                <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-white/5 flex-shrink-0">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-white/5 rounded-md border border-gray-200 dark:border-white/5">
+                {/* Header Toolbar - Responsive */}
+                <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-3 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-white/5 flex-shrink-0">
+                    <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-full">
+                        <div className="flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-white/5 rounded-md border border-gray-200 dark:border-white/5 flex-shrink-0">
                             <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider font-mono">
                                 {language || 'TXT'}
                             </span>
                         </div>
                         {isPreviewable && (
-                            <div className="flex bg-gray-100 dark:bg-black/40 p-0.5 rounded-lg border border-gray-200 dark:border-white/5">
+                            <div className="flex bg-gray-100 dark:bg-black/40 p-0.5 rounded-lg border border-gray-200 dark:border-white/5 flex-shrink-0">
                                 <button 
                                     onClick={() => setActiveTab('code')}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
@@ -226,7 +262,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                         )}
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 ml-auto">
                         <button 
                             onClick={handleCopy}
                             className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
@@ -271,13 +307,22 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                         </div>
                     ) : (
                         <div className="absolute inset-0 bg-gray-100 dark:bg-[#1a1a1a] flex flex-col">
-                            <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#202020] border-b border-gray-200 dark:border-white/5">
+                            <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#202020] border-b border-gray-200 dark:border-white/5 flex-shrink-0">
                                 <div className="flex items-center gap-2">
                                     <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
                                     <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
                                     <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setShowConsole(!showConsole)}
+                                        className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5'}`}
+                                        title="Toggle Console"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                                        Console {logs.length > 0 && <span className="bg-gray-200 dark:bg-white/10 px-1 rounded-sm text-[10px]">{logs.length}</span>}
+                                    </button>
+                                    <div className="w-px h-3 bg-gray-300 dark:bg-white/10 mx-1" />
                                     <button 
                                         onClick={() => setIframeKey(k => k + 1)} 
                                         className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
@@ -294,13 +339,52 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                                     </button>
                                 </div>
                             </div>
-                            <iframe 
-                                key={iframeKey}
-                                srcDoc={getPreviewContent()}
-                                className="flex-1 w-full h-full border-none bg-white"
-                                sandbox="allow-scripts allow-modals allow-forms allow-popups"
-                                title="Artifact Preview"
-                            />
+                            <div className="flex-1 relative flex flex-col overflow-hidden">
+                                <div className="flex-1 bg-white relative">
+                                    <iframe 
+                                        key={iframeKey}
+                                        srcDoc={getPreviewContent()}
+                                        className="absolute inset-0 w-full h-full border-none bg-white"
+                                        sandbox="allow-scripts allow-modals allow-forms allow-popups"
+                                        title="Artifact Preview"
+                                    />
+                                </div>
+                                
+                                {/* Console Terminal Panel */}
+                                <AnimatePresence>
+                                    {showConsole && (
+                                        <motion.div
+                                            initial={{ height: 0 }}
+                                            animate={{ height: '35%' }}
+                                            exit={{ height: 0 }}
+                                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                            className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col"
+                                        >
+                                            <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
+                                                <span>Terminal</span>
+                                                <button onClick={() => setLogs([])} className="hover:text-white transition-colors">Clear</button>
+                                            </div>
+                                            <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
+                                                {logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
+                                                {logs.map((log, i) => (
+                                                    <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
+                                                        <span className={`flex-shrink-0 font-bold ${
+                                                            log.level === 'error' ? 'text-red-400' :
+                                                            log.level === 'warn' ? 'text-yellow-400' :
+                                                            'text-blue-400'
+                                                        }`}>
+                                                            {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
+                                                        </span>
+                                                        <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
+                                                            {log.message}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </div>
                     )}
                 </div>
