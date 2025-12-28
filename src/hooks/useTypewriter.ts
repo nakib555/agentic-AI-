@@ -29,7 +29,21 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
   useEffect(() => {
     targetTextRef.current = targetText;
     
-    // If target text shrinks (e.g. regeneration/branch switch), snap to it immediately
+    // If not thinking (generation complete or branch switch), snap immediately.
+    // This prevents the "re-typing" effect when navigating history or switching versions.
+    if (!isThinking) {
+        if (currentLength.current !== targetText.length) {
+            currentLength.current = targetText.length;
+            setDisplayedText(targetText);
+        }
+        if (rafRef.current) {
+            cancelAnimationFrame(rafRef.current);
+            rafRef.current = null;
+        }
+        return;
+    }
+    
+    // If target text shrinks (e.g. regeneration start), snap to it immediately
     if (targetText.length < currentLength.current) {
         currentLength.current = targetText.length;
         setDisplayedText(targetText);
@@ -39,7 +53,7 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
     if (rafRef.current === null && currentLength.current < targetText.length) {
         rafRef.current = requestAnimationFrame(loop);
     }
-  }, [targetText]);
+  }, [targetText, isThinking]);
 
   const loop = useCallback((timestamp: number) => {
       const targetLen = targetTextRef.current.length;
