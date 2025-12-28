@@ -6,104 +6,108 @@
 
 /**
  * Splits text into optimal chunks for TTS generation.
- * Uses Intl.Segmenter for linguistically accurate sentence boundaries where available.
- * Balances between low latency (short chunks) and natural flow (complete sentences).
- * Now supports multi-language segmentation by defaulting to system locale and
- * expanding regex fallback for international punctuation.
+ * 
+ * LOGIC:
+ * 1. Structural Split: Splits by double newlines (\n\n) first. This ensures that paragraphs 
+ *    are treated as distinct audio events, providing natural pauses and preventing 
+ *    the merging of unrelated sections (e.g., an intro line merging with a list item).
+ * 2. Sentence Segmentation: Within each paragraph, uses Intl.Segmenter (or fallback) 
+ *    to find linguistically correct sentence boundaries.
+ * 3. Accumulation: Merges short sentences to reduce API calls, but NEVER merges 
+ *    across paragraph boundaries.
  */
 export const splitTextIntoChunks = (text: string, targetLength: number = 250): string[] => {
   if (!text) return [];
-  if (text.length <= targetLength) return [text];
+  if (text.length <= targetLength && !text.includes('\n')) return [text];
 
-  let sentences: string[] = [];
+  const finalChunks: string[] = [];
 
-  // Strategy 1: Modern Intl.Segmenter (Preferred)
-  if (typeof Intl !== 'undefined' && (Intl as any).Segmenter) {
-    try {
-      // Use undefined locale to let the browser use the system default or auto-detect from text.
-      // This provides the broadest support for mixed-language content (English, CJK, etc.)
-      const segmenter = new (Intl as any).Segmenter(undefined, { granularity: 'sentence' });
-      const segments = segmenter.segment(text);
-      for (const seg of segments) {
-        sentences.push(seg.segment);
+  // Step 1: Split by "Hard" Boundaries (Paragraphs/Gaps)
+  // We split by double newlines to identify distinct blocks of thought.
+  const paragraphs = text.split(/\n\s*\n/);
+
+  for (const paragraph of paragraphs) {
+      if (!paragraph.trim()) continue;
+
+      // Step 2: Segment sentences within this paragraph
+      const sentences = getSentences(paragraph);
+
+      // Step 3: Accumulate sentences into chunks
+      let currentChunk = '';
+
+      for (const sentence of sentences) {
+          // Handle very long single sentences (force split)
+          if (sentence.length > targetLength * 2) {
+              if (currentChunk.trim()) {
+                  finalChunks.push(currentChunk);
+                  currentChunk = '';
+              }
+              const subChunks = sentence.match(new RegExp(`.{1,${targetLength}}\\b`, 'g')) || [sentence];
+              finalChunks.push(...subChunks);
+              continue;
+          }
+
+          // Accumulate
+          if (currentChunk.length + sentence.length > targetLength && currentChunk.trim().length > 0) {
+              finalChunks.push(currentChunk);
+              currentChunk = sentence;
+          } else {
+              currentChunk += sentence;
+          }
       }
-    } catch (e) {
-      console.warn("Intl.Segmenter failed, falling back to regex splitting.", e);
-      sentences = splitWithRegex(text);
-    }
-  } else {
-    // Strategy 2: Fallback Regex
-    sentences = splitWithRegex(text);
+
+      // Step 4: Force Flush at Paragraph End
+      // This guarantees a pause between paragraphs
+      if (currentChunk.trim().length > 0) {
+          finalChunks.push(currentChunk);
+      }
   }
 
-  // Combine sentences into chunks
-  const chunks: string[] = [];
-  let currentChunk = '';
+  return finalChunks;
+};
 
-  for (const sentence of sentences) {
-    // Handling for very long single sentences (e.g. code or lists without punctuation)
-    if (sentence.length > targetLength * 2) {
-        if (currentChunk.trim()) {
-            chunks.push(currentChunk); // Preserve whitespace for natural pause in TTS
-            currentChunk = '';
+/**
+ * Helper to get sentences from a text block using Intl.Segmenter or Regex Fallback.
+ */
+const getSentences = (text: string): string[] => {
+    const sentences: string[] = [];
+
+    if (typeof Intl !== 'undefined' && (Intl as any).Segmenter) {
+        try {
+            // Use undefined locale to let browser detect language (supports CJK, etc.)
+            const segmenter = new (Intl as any).Segmenter(undefined, { granularity: 'sentence' });
+            const segments = segmenter.segment(text);
+            for (const seg of segments) {
+                sentences.push(seg.segment);
+            }
+            return sentences;
+        } catch (e) {
+            console.warn("Intl.Segmenter failed, falling back to regex.", e);
         }
-        
-        // Force split the long sentence by character length
-        // We use a safe split that doesn't break words if possible
-        const subChunks = sentence.match(new RegExp(`.{1,${targetLength}}\\b`, 'g')) || [sentence];
-        // If regex fails to split (e.g. huge string with no breaks or CJK characters where \b might fail), hard split
-        if (subChunks.length === 1 && sentence.length > targetLength) {
-             const hardSplit = sentence.match(new RegExp(`.{1,${targetLength}}`, 'g')) || [sentence];
-             chunks.push(...hardSplit);
-        } else {
-             chunks.push(...subChunks);
-        }
-        continue;
     }
 
-    // Accumulate sentences until target length is reached
-    // Note: We use length of combined string to check limit
-    if (currentChunk.length + sentence.length > targetLength && currentChunk.trim().length > 0) {
-      chunks.push(currentChunk);
-      currentChunk = sentence;
-    } else {
-      currentChunk += sentence;
-    }
-  }
-
-  if (currentChunk.trim().length > 0) {
-    chunks.push(currentChunk);
-  }
-
-  return chunks;
+    return splitWithRegex(text);
 };
 
 /**
  * Robust fallback splitter that attempts to preserve all text content.
- * Includes support for CJK and other international punctuation.
+ * Includes support for CJK, Hindi, and explicit newline handling.
  */
 const splitWithRegex = (text: string): string[] => {
-    // This regex splits on sentence terminators followed by whitespace or end of line.
-    // We capture the delimiter to re-attach it.
-    // Includes:
-    // - Standard: . ! ?
-    // - CJK: 。 (Ideographic Full Stop), ？ (Fullwidth Question Mark), ！ (Fullwidth Exclamation Mark)
-    // - Hindi/Sanskrit: । (Danda)
-    // - Newlines (\n) to respect paragraph breaks
+    // Splits on:
+    // 1. Terminators (.!?) followed by whitespace or EOL
+    // 2. CJK/Hindi terminators
+    // 3. Explicit single newlines (often used for lists) to ensure they aren't merged
     
-    // Pattern: ([Terminators])(Optional Quote)(Whitespace OR EndOfLine)
-    const splitRegex = /([.!?。？！।]+['"]?(?:\s+|$)|(?:\r?\n)+)/;
+    const splitRegex = /([.!?。？！।]+['"]?(?:\s+|$)|[\r\n]+)/;
     
     const parts = text.split(splitRegex);
     const sentences: string[] = [];
     
-    // The split will result in: [Content, Delimiter, Content, Delimiter...]
-    // We iterate by 2 to recombine Content + Delimiter.
     for (let i = 0; i < parts.length; i += 2) {
         const content = parts[i];
-        const delimiter = parts[i + 1] || ''; // Delimiter is next, might be undefined at end
+        const delimiter = parts[i + 1] || ''; 
         
-        // Only push if there is actual content or a significant delimiter
         if (content || delimiter) {
             sentences.push(content + delimiter);
         }
