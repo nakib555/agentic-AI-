@@ -80,7 +80,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
       />
 
       <div className={`
-        relative bg-input-main border transition-all duration-200 rounded-2xl overflow-hidden shadow-sm
+        relative bg-transparent border transition-all duration-200 rounded-2xl overflow-hidden shadow-sm
         ${logic.isFocused ? 'border-primary-main shadow-md ring-1 ring-primary-main/20' : 'border-border-default hover:border-border-strong'}
       `}>
         {/* File Previews */}
