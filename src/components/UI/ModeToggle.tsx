@@ -39,7 +39,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ isAgentMode, onToggle, d
   return (
     <div
       className={`
-        relative grid grid-cols-2 p-1 rounded-xl bg-layer-2 border border-border-subtle 
+        relative grid grid-cols-2 p-1 rounded-xl bg-transparent
         transition-opacity ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
       `}
       style={{ width: 'fit-content' }}
