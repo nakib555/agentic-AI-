@@ -244,14 +244,14 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-0 sm:p-6 overflow-hidden"
+          className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 sm:p-6 overflow-hidden"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            className="bg-slate-50 dark:bg-[#09090b] w-full h-full sm:h-[85vh] sm:rounded-2xl sm:shadow-2xl sm:max-w-4xl border-0 sm:border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
+            className="bg-slate-50 dark:bg-[#09090b] w-full max-w-4xl h-[85vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
           >
             {editingFile ? (
                 <FileEditor 
