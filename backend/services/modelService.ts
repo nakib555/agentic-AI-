@@ -196,14 +196,73 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
 
     let result;
     if (provider === 'openrouter') {
-        const chatModels = await fetchOpenRouterModels(apiKey);
-        // OpenRouter currently doesn't standardise image/video models in the same list easily, 
-        // essentially it's mostly LLMs. We leave others empty.
+        const allModels = await fetchOpenRouterModels(apiKey);
+        
+        // Categorize OpenRouter models based on ID keywords
+        const chatModels: AppModel[] = [];
+        const imageModels: AppModel[] = [];
+        const videoModels: AppModel[] = [];
+        const ttsModels: AppModel[] = [];
+
+        for (const m of allModels) {
+            const id = m.id.toLowerCase();
+            
+            // Exclude Embeddings
+            if (id.includes('embedding') || id.includes('embed')) continue;
+
+            // Image Generation
+            if (
+                id.includes('stable-diffusion') || 
+                id.includes('flux') || 
+                id.includes('dall-e') || 
+                id.includes('midjourney') || 
+                id.includes('imagen') || 
+                id.includes('kandinsky') || 
+                id.includes('playground') ||
+                id.includes('ideogram') || 
+                id.includes('recraft')
+            ) {
+                imageModels.push(m);
+                continue;
+            }
+
+            // Video Generation
+            if (
+                id.includes('veo') || 
+                id.includes('sora') || 
+                id.includes('luma') || 
+                id.includes('runway') || 
+                id.includes('svd') || 
+                id.includes('cogvideo') || 
+                id.includes('kling') ||
+                id.includes('animatediff')
+            ) {
+                videoModels.push(m);
+                continue;
+            }
+
+            // TTS / Audio
+            if (
+                id.includes('tts') || 
+                id.includes('whisper') || 
+                id.includes('eleven') || 
+                id.includes('playht') || 
+                id.includes('speech') ||
+                (id.includes('audio') && !id.includes('claude')) // Exclude multimodal input models like Claude 3.5 Sonnet Audio unless output is audio
+            ) {
+                ttsModels.push(m);
+                continue;
+            }
+
+            // Default to Chat/Reasoning
+            chatModels.push(m);
+        }
+
         result = {
-            chatModels,
-            imageModels: [],
-            videoModels: [],
-            ttsModels: []
+            chatModels: sortModelsByName(chatModels),
+            imageModels: sortModelsByName(imageModels),
+            videoModels: sortModelsByName(videoModels),
+            ttsModels: sortModelsByName(ttsModels)
         };
     } else {
         result = await fetchGeminiModels(apiKey);

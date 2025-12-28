@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -143,8 +142,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
     disabled, provider
 }) => {
     // Filter models to ensure "Primary Reasoning Model" only shows text/reasoning models.
-    // This handles cases where specialized models (Image/Video/TTS) might be returned in the main list,
-    // especially for providers like OpenRouter where categorization might be less strict or flat.
+    // This logic runs on the frontend as a secondary check, even if the backend also buckets them.
     const filteredReasoningModels = useMemo(() => {
         const specializedIds = new Set([
             ...imageModels.map(m => m.id),
@@ -156,18 +154,34 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
             // 1. Exclude if present in specialized lists
             if (specializedIds.has(m.id)) return false;
 
-            // 2. Keyword filtering for models that might be misclassified
+            // 2. Keyword filtering for models that might be misclassified or just pure noise
             const id = m.id.toLowerCase();
             const name = m.name.toLowerCase();
             
             // Exclude embedding models
-            if (id.includes('embedding')) return false;
+            if (id.includes('embedding') || id.includes('embed')) return false;
             
             // Exclude pure TTS/Audio models
-            if (id.includes('tts') || id.includes('whisper') || name.includes('text-to-speech')) return false;
+            if (id.includes('tts') || id.includes('whisper') || name.includes('text-to-speech') || id.includes('eleven-labs') || id.includes('playht')) return false;
             
-            // Exclude Image/Video Generation models
-            if (id.includes('stable-diffusion') || id.includes('dall-e') || id.includes('midjourney') || id.includes('flux') || id.includes('imagen') || id.includes('veo') || id.includes('luma') || id.includes('runway') || id.includes('sora')) return false;
+            // Exclude Image/Video Generation models (Expanded list for OpenRouter)
+            if (
+                id.includes('stable-diffusion') || 
+                id.includes('dall-e') || 
+                id.includes('midjourney') || 
+                id.includes('flux') || 
+                id.includes('imagen') || 
+                id.includes('veo') || 
+                id.includes('luma') || 
+                id.includes('runway') || 
+                id.includes('sora') || 
+                id.includes('kandinsky') ||
+                id.includes('playground') ||
+                id.includes('ideogram') ||
+                id.includes('svd') ||
+                id.includes('cogvideo') ||
+                id.includes('animatediff')
+            ) return false;
             
             return true;
         });
