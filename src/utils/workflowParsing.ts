@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -9,6 +8,23 @@ import type { MessageError, ToolCallEvent, WorkflowNodeData, WorkflowNodeType, P
 const GENERIC_STEP_KEYWORDS = new Set(['observe', 'adapt', 'system']);
 const ACTION_KEYWORDS = new Set(['act', 'action', 'tool call']);
 
+// Centralized list of supported UI components to ensure consistent regex generation
+const SUPPORTED_COMPONENTS = [
+    'VIDEO_COMPONENT', 
+    'ONLINE_VIDEO_COMPONENT', 
+    'IMAGE_COMPONENT', 
+    'ONLINE_IMAGE_COMPONENT', 
+    'MCQ_COMPONENT', 
+    'MAP_COMPONENT', 
+    'FILE_ATTACHMENT_COMPONENT', 
+    'BROWSER_COMPONENT', 
+    'CODE_OUTPUT_COMPONENT',
+    'VEO_API_KEY_SELECTION_COMPONENT',
+    'LOCATION_PERMISSION_REQUEST',
+    'ARTIFACT_CODE',
+    'ARTIFACT_DATA'
+];
+
 /**
  * Parses raw text into component segments (e.g. text vs [IMAGE_COMPONENT]...[/...]).
  * This is used by the frontend to render components dynamically as text is typed.
@@ -16,16 +32,24 @@ const ACTION_KEYWORDS = new Set(['act', 'action', 'tool call']);
 export const parseContentSegments = (text: string): RenderSegment[] => {
     if (!text) return [];
 
-    // Regex to capture component tags and their content
-    const componentRegex = /(\[(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\].*?\[\/(?:VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\])/s;
+    // Create a dynamic regex based on supported components
+    // Matches: [TAG]{...}[/TAG]
+    const tagsPattern = SUPPORTED_COMPONENTS.join('|');
+    const componentRegex = new RegExp(`(\\[(?:${tagsPattern})\\][\\s\\S]*?\\[\\/(?:${tagsPattern})\\])`, 'g');
     
     const parts = text.split(componentRegex).filter(part => part);
 
     return parts.map((part): RenderSegment | null => {
-        const componentMatch = part.match(/^\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\](\{.*?\})\[\/\1\]$/s);
+        // Regex to identify which specific tag this part is
+        const matchPattern = new RegExp(`^\\[(${tagsPattern})\\]([\\s\\S]*?)\\[\\/\\1\\]$`);
+        const componentMatch = part.match(matchPattern);
         
         if (componentMatch) {
+            const tagType = componentMatch[1];
+            const contentString = componentMatch[2];
+
             try {
+                // Map internal component tags to the RenderSegment types expected by the UI
                 const typeMap: Record<string, string> = {
                     'VIDEO_COMPONENT': 'VIDEO',
                     'ONLINE_VIDEO_COMPONENT': 'ONLINE_VIDEO',
@@ -35,25 +59,45 @@ export const parseContentSegments = (text: string): RenderSegment[] => {
                     'MAP_COMPONENT': 'MAP',
                     'FILE_ATTACHMENT_COMPONENT': 'FILE',
                     'BROWSER_COMPONENT': 'BROWSER',
-                    'CODE_OUTPUT_COMPONENT': 'CODE_OUTPUT'
+                    'CODE_OUTPUT_COMPONENT': 'CODE_OUTPUT',
+                    'VEO_API_KEY_SELECTION_COMPONENT': 'VEO_API_KEY', // UI specific
+                    'LOCATION_PERMISSION_REQUEST': 'LOCATION_PERMISSION', // UI specific
+                    'ARTIFACT_CODE': 'ARTIFACT_CODE',
+                    'ARTIFACT_DATA': 'ARTIFACT_DATA'
                 };
+
+                // Special handling for simple text-wrapped components vs JSON components
+                if (['VEO_API_KEY_SELECTION_COMPONENT', 'LOCATION_PERMISSION_REQUEST'].includes(tagType)) {
+                     return {
+                        type: 'component',
+                        componentType: typeMap[tagType] as any,
+                        data: { text: contentString } // Pass string content directly
+                    };
+                }
+
                 return {
                     type: 'component',
-                    componentType: typeMap[componentMatch[1]] as any,
-                    data: JSON.parse(componentMatch[2])
+                    componentType: typeMap[tagType] as any,
+                    data: JSON.parse(contentString)
                 };
             } catch (e) {
-                // Fallback if JSON parse fails
+                console.warn(`Failed to parse component data for ${tagType}`, e);
+                // Fallback: treat as plain text if JSON parse fails to prevent crash
                 return { type: 'text', content: part };
             }
         }
         
-        // Handle any incomplete tags at the end of the stream
-        // We strip partial tags to prevent UI glitching during streaming/typing
-        const incompleteTagRegex = /\[(VIDEO_COMPONENT|ONLINE_VIDEO_COMPONENT|IMAGE_COMPONENT|ONLINE_IMAGE_COMPONENT|MCQ_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\].*$/s;
+        // Handle incomplete tags at the very end of the stream (during typing)
+        // We strip the opening tag to prevent the user seeing raw "[IMAGE_COMPONENT]" text before data arrives
+        const incompleteTagRegex = new RegExp(`\\[(?:${tagsPattern})\\]$`);
         const cleanedPart = part.replace(incompleteTagRegex, '');
         
-        if (!cleanedPart.trim()) return null; // Skip empty parts
+        // Preserve whitespace-only segments (like newlines) to maintain markdown structure
+        if (cleanedPart.length === 0 && part.length > 0 && !part.match(incompleteTagRegex)) {
+             return null;
+        }
+        
+        if (cleanedPart.length === 0) return null;
 
         return { type: 'text', content: cleanedPart };
     }).filter((s): s is RenderSegment => s !== null);
@@ -191,7 +235,8 @@ export const parseAgenticWorkflow = (
   const executionLog: WorkflowNodeData[] = [];
   let lastAgentName: string | undefined;
 
-  // Interleave text steps and tool steps
+  // Interleave text steps and tool steps logic
+  // We assume tools generally happen inside 'Act' steps, or immediately follow a step that requested them.
   for (const textNode of textNodes) {
     if (textNode.agentName) {
         lastAgentName = textNode.agentName;
@@ -199,6 +244,8 @@ export const parseAgenticWorkflow = (
 
     if (textNode.type === 'act_marker') {
         if (toolNodesQueue.length > 0) {
+            // Assign one or more tools to this Act block
+            // Heuristic: Assign all currently active or pending tools, or the next completed one
             const toolNode = toolNodesQueue.shift();
             if (toolNode) {
                 toolNode.agentName = lastAgentName;
@@ -210,14 +257,16 @@ export const parseAgenticWorkflow = (
     }
   }
   
-  // Append remaining tools
+  // Append any remaining tools that didn't match an explicit 'Act' block
+  // This handles cases where the model calls a tool without an explicit [STEP] Act marker
   for (const toolNode of toolNodesQueue) {
-      toolNode.agentName = lastAgentName;
+      toolNode.agentName = lastAgentName || 'System';
       executionLog.push(toolNode);
   }
 
   // Post-processing for status updates
   if (error) {
+    // If global error, mark the last active item as failed
     let failureAssigned = false;
     for (let i = executionLog.length - 1; i >= 0; i--) {
         const node = executionLog[i];
@@ -233,7 +282,7 @@ export const parseAgenticWorkflow = (
         executionLog[executionLog.length - 1].details = error;
     }
     
-    // Mark previous as done
+    // Mark everything before the failure as done
     let failurePointReached = false;
     executionLog.forEach(node => {
         if (node.status === 'failed') failurePointReached = true;
@@ -241,19 +290,26 @@ export const parseAgenticWorkflow = (
     });
 
   } else if (isThinkingComplete) {
+    // If thinking is done, everything should be marked done
     executionLog.forEach(node => {
       if (node.status !== 'failed') node.status = 'done';
     });
   } else {
-    // Mark active/pending
+    // Determine active state for ongoing stream
     let lastActiveNodeFound = false;
     for (let i = executionLog.length - 1; i >= 0; i--) {
         const node = executionLog[i];
+        
+        // The last non-done node is the active one
         if (!lastActiveNodeFound && node.status !== 'done') {
             node.status = 'active';
             lastActiveNodeFound = true;
-        } else if (node.status === 'pending') {
-            node.status = 'done';
+        } else if (node.status === 'active') {
+            // If we found a newer active node, previous actives are done
+            node.status = 'done'; 
+        } else if (node.status === 'pending' && !lastActiveNodeFound) {
+             // If we haven't found an active node yet, this pending one might be next
+             // but we leave it pending until the stream progresses or finishes
         }
     }
   }

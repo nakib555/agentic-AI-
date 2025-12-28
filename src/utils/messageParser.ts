@@ -54,7 +54,7 @@ export const parseMessageText = (text: string, isThinking: boolean, hasError: bo
     // HEURISTIC: Prevent flicker for the first few characters if they look like they might start a tag.
     // Buffer output that starts with '[' until it's long enough to disambiguate or confirms it's not a step.
     // This prevents a brief flash of the thinking box if the chat starts with a link like "[Google]".
-    if (trimmed.startsWith('[') && trimmed.length < 10) {
+    if (trimmed.startsWith('[') && trimmed.length < 15 && !trimmed.includes(']')) {
         // Return empty to show typing indicator, effectively buffering the stream
         return { thinkingText: '', finalAnswerText: '' };
     }
@@ -64,8 +64,8 @@ export const parseMessageText = (text: string, isThinking: boolean, hasError: bo
   }
 
   // Rule 4: At this point, thinking is complete and there is no error.
-  // If the text contains any STEP markers but no Final Answer marker, it's an incomplete thought process.
-  // Treat the entire text as thinking to keep it in the thought bubble.
+  // If the text contains any STEP markers but no Final Answer marker, it's an incomplete thought process
+  // or a stuck chain. Treat the entire text as thinking to keep it in the thought bubble/log.
   if (text.includes('[STEP]')) {
       return { thinkingText: text, finalAnswerText: '' };
   }
