@@ -195,9 +195,11 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                 id.includes('minimax') ||
                 id.includes('auraflow') ||
                 id.includes('shakker') ||
-                // New keywords
+                // New keywords including tts and audio to ensure they are filtered if missed above
                 id.includes('video') ||
-                id.includes('image')
+                id.includes('image') ||
+                id.includes('tts') || 
+                (id.includes('audio') && !id.includes('gpt-4o') && !id.includes('gemini') && !id.includes('claude'))
             ) return false;
             
             return true;

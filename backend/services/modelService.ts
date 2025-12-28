@@ -130,7 +130,8 @@ async function fetchGeminiModels(apiKey: string): Promise<{
                 continue; 
             }
 
-            if (lowerId.includes('tts')) {
+            // Enhanced TTS detection: Include 'tts' AND 'audio' but exclude known native-audio chat models
+            if (lowerId.includes('tts') || (lowerId.includes('audio') && !lowerId.includes('flash-native-audio') && !lowerId.includes('pro-native-audio'))) {
                 availableTtsModels.push(modelInfo);
                 continue; 
             }
