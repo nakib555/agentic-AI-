@@ -50,6 +50,8 @@ export const useTts = (text: string, voice: string, model: string) => {
 
   // Helper to fetch and decode audio for a specific text chunk
   const fetchAudioBuffer = useCallback(async (chunkText: string, signal: AbortSignal): Promise<AudioBuffer | null> => {
+      if (!chunkText || !chunkText.trim()) return null;
+
       const cacheKey = audioCache.createKey(chunkText, voice, model);
       const cachedBuffer = audioCache.get(cacheKey);
       
@@ -107,8 +109,8 @@ export const useTts = (text: string, voice: string, model: string) => {
 
           if (isCancelledRef.current) return;
 
+          // If current chunk failed, skip to next immediately
           if (!currentBuffer) {
-              // Skip failed chunks or handle error
               queueIndexRef.current++;
               processQueue();
               return;
@@ -117,12 +119,17 @@ export const useTts = (text: string, voice: string, model: string) => {
           // 2. Start pre-fetching the NEXT chunk while this one prepares to play
           const nextIndex = currentIndex + 1;
           if (nextIndex < chunks.length) {
-              nextBufferPromiseRef.current = fetchAudioBuffer(chunks[nextIndex], abortControllerRef.current!.signal);
+              // Ensure we don't overwrite an existing pending promise
+              if (!nextBufferPromiseRef.current) {
+                  nextBufferPromiseRef.current = fetchAudioBuffer(chunks[nextIndex], abortControllerRef.current!.signal);
+              }
           }
 
           // 3. Play the current buffer
           setAudioState('playing');
           await audioManager.play(currentBuffer, () => {
+              // This callback runs when audio finishes.
+              // Check mount/cancel status again before advancing.
               if (isMounted.current && !isCancelledRef.current) {
                   queueIndexRef.current++;
                   processQueue(); // Recursive call for next chunk
