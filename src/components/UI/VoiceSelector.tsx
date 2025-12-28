@@ -52,7 +52,6 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
             }
         };
         
-        // Close menu on scroll or resize to prevent it from floating detached
         const handleScrollOrResize = () => {
             if (isOpen) setIsOpen(false);
         };
@@ -60,7 +59,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
             window.addEventListener('resize', handleScrollOrResize);
-            window.addEventListener('scroll', handleScrollOrResize, true); // Capture phase to detect scrolling in parents
+            window.addEventListener('scroll', handleScrollOrResize, true);
         }
 
         return () => {
@@ -83,10 +82,9 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
             const windowHeight = window.innerHeight;
             const spaceBelow = windowHeight - rect.bottom;
             const spaceAbove = rect.top;
-            const menuHeight = 320; // Estimated max height including padding
+            const menuHeight = 320; 
 
-            // Intelligent placement:
-            // Default to bottom. If not enough space below AND there is enough space above, flip to top.
+            // Intelligent placement
             const showOnTop = spaceBelow < menuHeight && spaceAbove > spaceBelow;
 
             setCoords({
@@ -114,7 +112,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                     }
                     ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
                 `}
-                title="Select Voice"
+                title="Select Voice Persona"
             >
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${disabled ? 'bg-gray-400' : 'bg-indigo-500'}`} />
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate flex-1 text-left">{selected.name}</span>
@@ -128,7 +126,6 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                 </svg>
             </button>
 
-            {/* Render the menu in a Portal to break out of overflow-hidden parents */}
             {createPortal(
                 <AnimatePresence>
                     {isOpen && (
@@ -144,13 +141,14 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                                 width: coords.width,
                                 top: coords.top,
                                 bottom: coords.bottom,
-                                zIndex: 99999, // Ensure it sits on top of everything
+                                zIndex: 99999,
                             }}
                             className="bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-xl border border-gray-200 dark:border-white/10 overflow-hidden p-1.5"
                         >
                             <div className="flex flex-col gap-0.5 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-[#1e1e1e] z-10">
-                                    Gemini Voices
+                                <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-[#1e1e1e] z-10 flex justify-between">
+                                    <span>Gemini Personas</span>
+                                    <span className="text-[10px] font-normal opacity-70">Multilingual</span>
                                 </div>
                                 {TTS_VOICES.map(voice => (
                                     <button
