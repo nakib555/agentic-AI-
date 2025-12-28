@@ -112,14 +112,14 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
         <div className="h-full" role="log" aria-live="polite">
             <Virtuoso
                 ref={virtuosoRef}
-                style={{ width: '100%', display: 'flex', flexDirection: 'column' }} // Explicitly override default style to remove height: 100%
+                style={{ height: '100%', width: '100%' }}
                 data={visibleMessages}
                 // 'auto' works well, but for code blocks, slightly higher threshold avoids jitter
                 followOutput={atBottom ? "auto" : false} 
                 increaseViewportBy={600} // Increased significantly to preload complex code blocks
                 overscan={400} 
                 initialTopMostItemIndex={visibleMessages.length - 1}
-                alignToBottom={true} // Stick to bottom initially
+                // Removed alignToBottom to fix large top gap; messages will naturally start at the top.
                 atBottomStateChange={(isAtBottom) => {
                     setAtBottom(isAtBottom);
                     setShowScrollButton(!isAtBottom);
@@ -142,7 +142,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                     </div>
                 )}
                 components={{
-                    Header: () => <div className="h-6 md:h-10" />,
+                    Header: () => <div className="h-4 md:h-6" />, // Reduced padding
                     Footer: () => <div className="h-32 md:h-48" />
                 }}
             />
