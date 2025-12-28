@@ -171,6 +171,8 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                 id.includes('midjourney') || 
                 id.includes('flux') || 
                 id.includes('imagen') || 
+                id.includes('flash-image') || 
+                id.includes('image-preview') || 
                 id.includes('veo') || 
                 id.includes('luma') || 
                 id.includes('runway') || 
@@ -178,6 +180,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                 id.includes('kandinsky') ||
                 id.includes('playground') ||
                 id.includes('ideogram') ||
+                id.includes('recraft') ||
                 id.includes('svd') ||
                 id.includes('cogvideo') ||
                 id.includes('animatediff')

@@ -135,9 +135,10 @@ async function fetchGeminiModels(apiKey: string): Promise<{
                 continue; 
             }
 
-            if (methods.includes('generateImages') || lowerId.includes('imagen') || lowerId.includes('flash-image')) {
+            if (methods.includes('generateImages') || lowerId.includes('imagen') || lowerId.includes('flash-image') || lowerId.includes('image-preview')) {
                 availableImageModels.push(modelInfo);
-                if (lowerId.includes('imagen')) {
+                // Exclude pure image generation models from the chat list
+                if (lowerId.includes('imagen') || lowerId.includes('flash-image') || lowerId.includes('image-preview')) {
                     continue;
                 }
             }
