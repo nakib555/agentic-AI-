@@ -107,6 +107,10 @@ try {
 }
 
 try {
+  // Determine API Base URL from env or default to provided Render URL if not in dev mode logic
+  // For local dev, we usually want localhost, but we allow override via env var.
+  const apiBaseUrl = process.env.VITE_API_BASE_URL || process.env.API_BASE_URL || '';
+
   const frontendBuilder = await esbuild.context({
     entryPoints: ['src/index.tsx'],
     bundle: true,
@@ -124,6 +128,7 @@ try {
     define: {
       'process.env.NODE_ENV': '"development"',
       'process.env.APP_VERSION': JSON.stringify(process.env.APP_VERSION),
+      'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
     },
   });
   await frontendBuilder.watch();
