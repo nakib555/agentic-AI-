@@ -10,7 +10,7 @@ import { useChatHistory } from '../useChatHistory';
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
 import { fetchFromApi } from '../../utils/api';
 import { toolImplementations as frontendToolImplementations } from '../../tools';
-import { processBackendStream } from '../../services/agenticLoop/stream-processor.ts';
+import { processBackendStream } from '../../services/agenticLoop/stream-processor';
 import { parseAgenticWorkflow } from '../../utils/workflowParsing';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);

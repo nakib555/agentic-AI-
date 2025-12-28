@@ -127,6 +127,20 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
         {...animationProps} 
         className="w-full flex flex-col items-start gap-3 origin-bottom-left group/message min-w-0"
     >
+      {/* NEW: Render attachments on the message object if present */}
+      {msg.attachments && msg.attachments.length > 0 && (
+          <div className="w-full flex flex-col gap-2 mb-2">
+              {msg.attachments.map((attachment, index) => (
+                  <FileAttachment 
+                      key={`msg-att-${index}`}
+                      filename={attachment.name}
+                      srcUrl={`data:${attachment.mimeType};base64,${attachment.data}`}
+                      mimeType={attachment.mimeType}
+                  />
+              ))}
+          </div>
+      )}
+
       {logic.hasThinkingText && (
           <ThinkingProcess 
               thinkingText={thinkingText} 
