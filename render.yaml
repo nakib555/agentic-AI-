@@ -1,18 +1,20 @@
 services:
-  # Backend Service
+  # Full Stack Service (Monolith)
+  # Serves both the Node.js API and the React Frontend
   - type: web
-    name: agentic-ai-backend
+    name: agentic-ai-chat
     env: node
-    plan: free
-    buildCommand: npm install && npm run build:server
+    # 'starter' plan is required to use Persistent Disks.
+    # If you use 'free', remove the 'disk' section, but chat history will be lost on restarts.
+    plan: starter
+    # Build both client (Vite) and server (Node)
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
       - key: GEMINI_API_KEY
-        sync: false # User must set this in dashboard
+        sync: false # You will be prompted to enter this in the Render Dashboard
       - key: DATA_DIR
         value: /var/lib/data
     disk:

@@ -62,10 +62,7 @@ interface MarkdownErrorBoundaryState {
 
 // Internal Error Boundary to catch Markdown/Rehype parsing crashes during streaming
 class MarkdownErrorBoundary extends Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
-  constructor(props: MarkdownErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
+  public state: MarkdownErrorBoundaryState = { hasError: false };
 
   static getDerivedStateFromError(_: any): MarkdownErrorBoundaryState {
     return { hasError: true };
