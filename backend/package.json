@@ -19,7 +19,7 @@
     "build": "npm run build:npm run build:server",
     "build:server": "esbuild backend/server.ts --bundle --platform=node --format=cjs --outfile=dist/server.cjs --external:playwright",
     "start": "node dist/server.cjs",
-    "dev": "node dev.js",
+    "dev": "node dev.js"
   
   },
   "dependencies": {
