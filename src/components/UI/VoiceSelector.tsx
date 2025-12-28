@@ -6,7 +6,9 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+
+const motion = motionTyped as any;
 
 export const TTS_VOICES = [
     // Standard Personas
@@ -146,7 +148,10 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         <div className={`relative ${className}`} ref={containerRef}>
             <button
                 type="button"
-                onClick={toggleOpen}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    toggleOpen();
+                }}
                 disabled={disabled}
                 className={`
                     w-full flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-200
@@ -199,9 +204,11 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                                 </div>
                                 {TTS_VOICES.map(voice => (
                                     <button
+                                        type="button"
                                         key={voice.id}
                                         ref={selectedVoice === voice.id ? selectedItemRef : null}
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                            e.stopPropagation();
                                             onVoiceChange(voice.id);
                                             setIsOpen(false);
                                         }}
