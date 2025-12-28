@@ -112,11 +112,12 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
         // Handling Custom Accents / Personas not natively supported
         if (!STANDARD_GEMINI_VOICES.has(targetVoice)) {
             console.log(`[TTS] Custom accent requested: ${targetVoice}`);
-            // Use Aoede as a neutral professional base
+            // Use Aoede as a neutral professional base for custom accents
             const baseVoice = 'Aoede'; 
             
-            // We prepend a system-like instruction to the text itself for the model to follow
-            promptText = `(Speak in a ${targetVoice} accent) ${cleanedText}`;
+            // We prepend a system-like instruction to the text itself for the model to follow.
+            // "Speak with a native X accent" prompts the model to adopt the original/native prosody.
+            promptText = `(Speak with a native ${targetVoice} accent) ${cleanedText}`;
             targetVoice = baseVoice;
         }
 
