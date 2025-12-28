@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -62,7 +63,6 @@ const MessageWrapper: React.FC<{
             msg={msg} 
             {...props}
             // Pass the custom prop to AiMessage via MessageComponent
-            // (Note: MessageComponent needs to be updated to accept and pass this)
             {...({ userQuery } as any)} 
         />
     );
@@ -85,6 +85,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   // Expose scroll methods to parent via ref
   useImperativeHandle(ref, () => ({
     scrollToBottom: () => {
+      // Use smooth scrolling only when triggered manually
       virtuosoRef.current?.scrollToIndex({ index: visibleMessages.length - 1, behavior: 'smooth', align: 'end' });
     },
     scrollToMessage: (messageId: string) => {
@@ -112,16 +113,17 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
             <Virtuoso
                 ref={virtuosoRef}
                 data={visibleMessages}
-                followOutput="auto"
-                // Mobile Optimization: Significantly reduce overscan to save memory on 4GB devices.
-                increaseViewportBy={isDesktop ? 200 : 100}
-                overscan={isDesktop ? 200 : 50} 
+                // 'auto' works well, but for code blocks, slightly higher threshold avoids jitter
+                followOutput={atBottom ? "auto" : false} 
+                increaseViewportBy={600} // Increased significantly to preload complex code blocks
+                overscan={400} 
                 initialTopMostItemIndex={visibleMessages.length - 1}
+                alignToBottom={true} // Stick to bottom initially
                 atBottomStateChange={(isAtBottom) => {
                     setAtBottom(isAtBottom);
                     setShowScrollButton(!isAtBottom);
                 }}
-                atBottomThreshold={60} 
+                atBottomThreshold={100} // More tolerant threshold for "stick to bottom" logic
                 className="custom-scrollbar"
                 itemContent={(index, msg) => (
                     <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4">
@@ -139,10 +141,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                     </div>
                 )}
                 components={{
-                    // Added extra height to header for breathability
                     Header: () => <div className="h-6 md:h-10" />,
-                    // SIGNIFICANT CHANGE: Large footer spacer allows the last message to be scrolled
-                    // well above the bottom input bar, mimicking premium AI interfaces.
                     Footer: () => <div className="h-32 md:h-48" />
                 }}
             />

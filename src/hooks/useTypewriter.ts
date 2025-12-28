@@ -11,7 +11,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
  * 
  * PERFORMANCE OPTIMIZATION:
  * This hook uses a "Time Budget" strategy.
- * 1. It limits React state updates to ~30fps (33ms) to prevent blocking the main thread.
+ * 1. It limits React state updates to ~30fps (32ms) to prevent blocking the main thread.
  * 2. It calculates how many characters to add based on the remaining queue size.
  *    If the queue is large (AI generated a lot of text), it types faster.
  *    If the queue is small, it types at a natural reading speed.
@@ -51,8 +51,8 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       }
 
       // --- PERFORMANCE THROTTLE ---
-      // We cap updates to ~30fps (33ms). 
-      // Rendering Markdown/MathJax is expensive. Doing it 60fps (16ms) freezes the UI.
+      // We cap updates to ~30fps (32ms). 
+      // Rendering Markdown/MathJax is expensive. Doing it 60fps (16ms) freezes the UI during long code blocks.
       const MIN_RENDER_INTERVAL = 32; 
       
       if (timestamp - lastUpdateRef.current < MIN_RENDER_INTERVAL) {
@@ -63,16 +63,18 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       // --- ADAPTIVE SPEED CALCULATION ---
       const remainingChars = targetLen - currentLength.current;
       
-      // Base speed: Minimum characters to add per frame (e.g., 2 chars per 33ms = ~60 chars/sec)
-      let charsToAdd = 2;
+      // Base speed: Minimum characters to add per frame (e.g., 3 chars per 32ms = ~90 chars/sec)
+      let charsToAdd = 3;
 
       // Acceleration: The further behind we are, the faster we type.
-      // This ensures we never lag behind the AI stream indefinitely.
-      if (remainingChars > 1500) charsToAdd = 150;      // Instant catch-up for massive blocks
-      else if (remainingChars > 500) charsToAdd = 50;   // Very fast for code blocks
-      else if (remainingChars > 100) charsToAdd = 15;   // Fast reading speed
-      else if (remainingChars > 50) charsToAdd = 5;     // Natural typing speed
-      else if (remainingChars > 20) charsToAdd = 3;     // Deceleration
+      // This is crucial for large code blocks or copy-pastes from backend.
+      if (remainingChars > 2000) charsToAdd = 500;      // Instant catch-up for massive blocks
+      else if (remainingChars > 1000) charsToAdd = 250; // Very fast
+      else if (remainingChars > 500) charsToAdd = 100;  // Fast code block streaming
+      else if (remainingChars > 200) charsToAdd = 40;   // Fast reading speed
+      else if (remainingChars > 100) charsToAdd = 15;   // Moderate
+      else if (remainingChars > 50) charsToAdd = 8;     // Natural
+      else if (remainingChars > 20) charsToAdd = 4;     // Deceleration
 
       currentLength.current += charsToAdd;
       

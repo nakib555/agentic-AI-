@@ -28,9 +28,10 @@ export const processBackendStream = async (response: Response, callbacks: Stream
     let buffer = '';
 
     // Optimization: Buffered State Updates
-    // Increased flush interval to ~30ms to prevent flooding the React render cycle on the frontend.
-    // 8ms was too aggressive causing UI locking on slower devices.
-    const FLUSH_INTERVAL_MS = 30; 
+    // A flush interval of 65ms (~15fps) is the sweet spot. 
+    // It reduces React Reconciliation overhead on the frontend significantly for 
+    // massive text/code blocks while still feeling "real-time" to the human eye.
+    const FLUSH_INTERVAL_MS = 65; 
     const WATCHDOG_TIMEOUT_MS = 45000;
 
     let pendingText: string | null = null;
