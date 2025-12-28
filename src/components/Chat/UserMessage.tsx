@@ -32,19 +32,29 @@ export const UserMessage = ({
   const { text, attachments, versions, activeVersionIndex } = msg;
   const [isCopied, setIsCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(text);
+  const [editText, setEditedText] = useState(text);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const versionCount = versions ? versions.length : 1;
   const currentVersionIdx = activeVersionIndex ?? 0;
 
   useEffect(() => {
-      if (isEditing && textareaRef.current) {
-          textareaRef.current.style.height = 'auto';
-          textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-          textareaRef.current.focus();
+      if (isEditing) {
+          setEditedText(text); // Reset text when entering edit mode to ensure fresh state
+          if (textareaRef.current) {
+              // Defer focus slightly to ensure DOM is ready
+              setTimeout(() => {
+                  if (textareaRef.current) {
+                      textareaRef.current.style.height = 'auto';
+                      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+                      textareaRef.current.focus();
+                      // Move cursor to end
+                      textareaRef.current.setSelectionRange(textareaRef.current.value.length, textareaRef.current.value.length);
+                  }
+              }, 0);
+          }
       }
-  }, [isEditing]);
+  }, [isEditing, text]);
 
   const handleCopy = () => {
       if (!text) return;
@@ -55,14 +65,15 @@ export const UserMessage = ({
   };
 
   const handleEditSave = () => {
-      if (editText.trim() !== text) {
-          onEdit?.(editText);
-      }
+      // Allow saving even if text hasn't changed to trigger regeneration/new branch if desired
+      if (editText.trim().length === 0) return; // Prevent empty messages
+      
+      onEdit?.(editText);
       setIsEditing(false);
   };
 
   const handleEditCancel = () => {
-      setEditText(text);
+      setEditedText(text);
       setIsEditing(false);
   };
 
@@ -79,12 +90,12 @@ export const UserMessage = ({
   if (isEditing) {
       return (
         <div className="w-full flex justify-end pb-2">
-            <div className="w-full max-w-[85%] sm:max-w-[80%] bg-white dark:bg-layer-2 rounded-2xl border border-primary-main shadow-md p-3 flex flex-col gap-2">
+            <div className="w-full max-w-[85%] sm:max-w-[80%] bg-layer-2 rounded-2xl border border-primary-main shadow-md p-3 flex flex-col gap-2">
                <textarea 
                     ref={textareaRef}
                     value={editText}
                     onChange={(e) => {
-                        setEditText(e.target.value);
+                        setEditedText(e.target.value);
                         e.target.style.height = 'auto';
                         e.target.style.height = `${e.target.scrollHeight}px`;
                     }}
@@ -95,13 +106,14 @@ export const UserMessage = ({
                <div className="flex justify-end gap-2 mt-1">
                    <button 
                         onClick={handleEditCancel}
-                        className="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                        className="px-3 py-1.5 text-xs font-semibold text-content-secondary hover:text-content-primary hover:bg-layer-3 rounded-lg transition-colors"
                    >
                        Cancel
                    </button>
                    <button 
                         onClick={handleEditSave}
-                        className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-main hover:bg-primary-hover rounded-lg transition-colors shadow-sm"
+                        disabled={editText.trim().length === 0}
+                        className="px-3 py-1.5 text-xs font-semibold text-text-inverted bg-primary-main hover:bg-primary-hover rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                    >
                        Save & Submit
                    </button>
@@ -168,7 +180,7 @@ export const UserMessage = ({
                 <button 
                     type="button"
                     onClick={handleCopy}
-                    className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors focus:opacity-100"
+                    className="p-1.5 rounded-lg text-content-tertiary hover:text-content-primary hover:bg-layer-2 transition-colors focus:opacity-100"
                     title="Copy text"
                     aria-label="Copy message text"
                 >
@@ -180,7 +192,7 @@ export const UserMessage = ({
                                 animate={{ scale: 1, opacity: 1 }} 
                                 exit={{ scale: 0.5, opacity: 0 }} 
                                 width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
-                                className="text-green-500"
+                                className="text-status-success-text"
                             >
                                 <polyline points="20 6 9 17 4 12"></polyline>
                             </motion.svg>
@@ -203,7 +215,7 @@ export const UserMessage = ({
                 {onEdit && (
                     <button 
                         type="button"
-                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors focus:opacity-100"
+                        className="p-1.5 rounded-lg text-content-tertiary hover:text-content-primary hover:bg-layer-2 transition-colors focus:opacity-100"
                         title="Edit and Branch"
                         aria-label="Edit message"
                         onClick={() => setIsEditing(true)}
@@ -226,6 +238,5 @@ export const UserMessage = ({
                 )}
             </div>
         </div>
-    </div>
-  );
+    );
 };
