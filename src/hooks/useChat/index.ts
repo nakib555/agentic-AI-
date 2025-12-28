@@ -389,10 +389,31 @@ export const useChat = (
                     const suggestions = await generateFollowUpSuggestions(finalChatState.messages);
                      if (suggestions.length > 0) {
                         chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
+                        
+                        // FIX: Explicitly persist suggestions to backend
+                        const currentChatSnapshot = chatHistoryRef.current.find(c => c.id === chatId);
+                        if (currentChatSnapshot && currentChatSnapshot.messages) {
+                            const updatedMessages = currentChatSnapshot.messages.map(m => {
+                                if (m.id === messageId) {
+                                    const responses = m.responses ? [...m.responses] : [];
+                                    if (responses[m.activeResponseIndex]) {
+                                        responses[m.activeResponseIndex] = {
+                                            ...responses[m.activeResponseIndex],
+                                            suggestedActions: suggestions
+                                        };
+                                    }
+                                    return { ...m, responses, isThinking: false };
+                                }
+                                return m;
+                            });
+                            updateChatProperty(chatId, { messages: updatedMessages });
+                        }
                     }
                 }
 
-                // Force sync state
+                // Force sync state (ensure isThinking is false even if suggestions didn't run)
+                // We do this check to avoid double-saving if the suggestion block already saved above.
+                // But updateChatProperty is cheap enough to call again for safety.
                 setTimeout(() => {
                     const chatToPersist = chatHistoryRef.current.find(c => c.id === chatId);
                     if (chatToPersist && chatToPersist.messages) {
@@ -401,7 +422,7 @@ export const useChat = (
                         );
                         updateChatProperty(chatId, { messages: cleanMessages });
                     }
-                }, 100);
+                }, 200); // Increased slightly to 200ms to allow suggestion fetch to potentially finish
 
             } else {
                 chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });

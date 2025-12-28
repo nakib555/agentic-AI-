@@ -211,7 +211,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
 
       {logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
-         <div className="w-full"><SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} /></div>
+         <div className="w-full pb-2"><SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} /></div>
       )}
     </motion.div>
   );
