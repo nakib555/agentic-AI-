@@ -189,7 +189,9 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
         </div>
       )}
       
-      {logic.thinkingIsComplete && logic.hasFinalAnswer && !activeResponse?.error && (
+      {/* Show toolbar if thinking is complete, AND (we have an answer OR an error) */}
+      {/* This allows regeneration and branch switching even if the current response failed */}
+      {logic.thinkingIsComplete && (logic.hasFinalAnswer || !!activeResponse?.error) && (
           <div className="w-full mt-2 transition-opacity duration-300">
             <MessageToolbar
                 messageId={id}

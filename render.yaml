@@ -13,8 +13,9 @@ services:
         value: 10000
       - key: GEMINI_API_KEY
         sync: false # User must set this in dashboard
-    # Optional: Attach a disk if you want persistent chats on Render
-    # disk:
-    #   name: agentic-data
-    #   mountPath: /usr/src/app/data
-    #   sizeGB: 1
+      - key: DATA_DIR
+        value: /var/lib/data
+    disk:
+      name: agentic-data
+      mountPath: /var/lib/data
+      sizeGB: 1

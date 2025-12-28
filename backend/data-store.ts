@@ -6,7 +6,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
-export const DATA_DIR = path.join((process as any).cwd(), 'data');
+export const DATA_DIR = process.env.DATA_DIR || path.join((process as any).cwd(), 'data');
 export const HISTORY_PATH = path.join(DATA_DIR, 'history');
 export const HISTORY_INDEX_PATH = path.join(DATA_DIR, 'history-index.json');
 export const TIME_GROUPS_PATH = path.join(DATA_DIR, 'time-groups.json');
