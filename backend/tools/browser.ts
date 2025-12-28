@@ -5,7 +5,6 @@
 
 import { ToolError } from '../utils/apiError';
 import { chromium, Browser, Page } from 'playwright';
-import { GoogleGenAI } from "@google/genai"; // Needed for vision call
 
 let browserInstance: Browser | null = null;
 let activePages = new Map<string, Page>();
@@ -60,13 +59,6 @@ const getOrCreatePage = async (url: string): Promise<Page> => {
     activePages.set(domain, page);
     return page;
 };
-
-// New: Visual Locator helper using Gemini Vision
-// Note: We need the AI instance here. Since the signature of executeBrowser is fixed in the map,
-// we might need to rely on a hack or update the signature in index.ts.
-// For now, we'll try to find elements by text first, then fallback to vision if we can.
-// But without `ai` passed in, we can't do the vision call *here*.
-// Simplification: We will improve the selector logic to be robust.
 
 export const executeBrowser = async (
     args: { 

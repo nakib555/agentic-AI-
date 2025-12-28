@@ -9,6 +9,7 @@ const motion = motionTyped as any;
 import { MessageList, type MessageListHandle } from './MessageList';
 import { MessageForm, type MessageFormHandle } from './MessageForm/index';
 import type { Message, Source } from '../../types';
+import { ChatSkeleton } from './ChatSkeleton';
 
 type ChatAreaProps = {
   messages: Message[];
@@ -35,6 +36,7 @@ type ChatAreaProps = {
   hasApiKey: boolean;
   onEditMessage?: (messageId: string, newText: string) => void;
   onNavigateBranch?: (messageId: string, direction: 'next' | 'prev') => void;
+  isHistoryLoading?: boolean; // Added prop
 };
 
 export const ChatArea = ({ 
@@ -43,7 +45,7 @@ export const ChatArea = ({
     onShowSources, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
     isAgentMode, setIsAgentMode, backendStatus, backendError, onRetryConnection, hasApiKey,
-    onEditMessage, onNavigateBranch
+    onEditMessage, onNavigateBranch, isHistoryLoading
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -94,6 +96,35 @@ export const ChatArea = ({
       onSetActiveResponseIndex(messageId, index);
     }
   }, [currentChatId, onSetActiveResponseIndex]);
+
+  // If chat history is loading (switching chats), show the skeleton overlay
+  if (isHistoryLoading) {
+      return (
+          <div className="flex-1 flex flex-col min-h-0 relative">
+              <ChatSkeleton />
+              <div className="flex-shrink-0 px-4 pt-2 pb-2 sm:px-6 md:px-8 z-20 max-w-4xl mx-auto w-full opacity-50 pointer-events-none">
+                <div className="relative w-full">
+                  <MessageForm 
+                    ref={messageFormRef}
+                    onSubmit={() => {}} 
+                    isLoading={false} 
+                    isAppLoading={true}
+                    backendStatus={backendStatus}
+                    onCancel={() => {}}
+                    isAgentMode={isAgentMode}
+                    setIsAgentMode={setIsAgentMode}
+                    messages={[]}
+                    hasApiKey={hasApiKey}
+                    ttsVoice={ttsVoice}
+                    setTtsVoice={setTtsVoice}
+                    currentChatId={currentChatId}
+                    activeModel={activeModel}
+                  />
+                </div>
+              </div>
+          </div>
+      );
+  }
 
   return (
     <div 
