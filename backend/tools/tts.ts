@@ -25,7 +25,7 @@ const cleanTextForTts = (text: string): string => {
         'MCQ_COMPONENT', 'MAP_COMPONENT', 
         'FILE_ATTACHMENT_COMPONENT', 'BROWSER_COMPONENT', 
         'CODE_OUTPUT_COMPONENT', 'VEO_API_KEY_SELECTION_COMPONENT',
-        'LOCATION_PERMISSION_REQUEST'
+        'LOCATION_PERMISSION_REQUEST', 'ARTIFACT_CODE', 'ARTIFACT_DATA'
     ];
 
     componentTags.forEach(tag => {
@@ -34,47 +34,56 @@ const cleanTextForTts = (text: string): string => {
     });
   
     // 2. Handle Code Blocks (```...```)
-    // Instead of silence, we insert a brief pause marker or phrase so the listener knows something was skipped.
+    // Replace with a spoken indicator instead of silence or reading code syntax.
     if (cleanedText.includes('```')) {
-        cleanedText = cleanedText.replace(/```[\s\S]*?```/g, ' . Code block omitted for brevity. ');
+        cleanedText = cleanedText.replace(/```[\s\S]*?```/g, ' ... [Code block] ... ');
     }
   
-    // 3. Remove Display Math ($$...$$) - Complex formulas are hard to parse via audio.
-    cleanedText = cleanedText.replace(/\$\$[\s\S]*?\$\$/g, ' a mathematical formula ');
+    // 3. Remove Display Math ($$...$$)
+    cleanedText = cleanedText.replace(/\$\$[\s\S]*?\$\$/g, ' ... [Mathematical formula] ... ');
 
-    // 4. Process Inline Math ($...$) - Remove delimiters, keep content (often variable names).
+    // 4. Process Inline Math ($...$)
     cleanedText = cleanedText.replace(/\$([^$\n]+)\$/g, '$1');
 
     // 5. Clean Markdown Links & Images
-    // Images: Keep alt text if present.
-    cleanedText = cleanedText.replace(/!\[(.*?)\]\(.*?\)/g, '$1');
-    // Links: Keep link text, discard URL.
-    cleanedText = cleanedText.replace(/\[(.*?)\]\(.*?\)/g, '$1');
+    cleanedText = cleanedText.replace(/!\[(.*?)\]\(.*?\)/g, '$1'); // Images -> alt text
+    cleanedText = cleanedText.replace(/\[(.*?)\]\(.*?\)/g, '$1'); // Links -> text
     
     // 6. Remove Raw URLs
-    // Prevents TTS from reading out "h t t p s colon slash slash..."
     cleanedText = cleanedText.replace(/(https?:\/\/[^\s]+)/g, ' link ');
 
     // 7. Remove HTML Tags
     cleanedText = cleanedText.replace(/<[^>]*>/g, '');
   
-    // 8. Standard Markdown Symbol Removal
-    cleanedText = cleanedText
-      .replace(/^#{1,6}\s/gm, '') // Headers
-      .replace(/(\*\*|__)(.*?)\1/g, '$2') // Bold
-      .replace(/(\*|_)(.*?)\1/g, '$2') // Italic
-      .replace(/~~(.*?)~~/g, '$1') // Strikethrough
-      .replace(/==(.*?)==/g, '$1') // Highlight
-      .replace(/`([^`]+)`/g, '$1') // Inline code
-      .replace(/^>\s/gm, '') // Blockquotes
-      .replace(/^-{3,}\s*$/gm, '') // Horizontal rules
-      .replace(/^\s*[-*+]\s/gm, '') // List bullets
-      .replace(/^\s*\d+\.\s/gm, ''); // Numbered list items
-  
-    // 9. Collapse multiple newlines/spaces to a single space and trim
+    // 8. Markdown Structure to Punctuation (CRITICAL for Prosody)
+    
+    // Headers -> Period + Pause
+    cleanedText = cleanedText.replace(/^#{1,6}\s+(.*)$/gm, '$1. '); 
+    
+    // Bold/Italic -> Just text
+    cleanedText = cleanedText.replace(/(\*\*|__)(.*?)\1/g, '$2');
+    cleanedText = cleanedText.replace(/(\*|_)(.*?)\1/g, '$2');
+    cleanedText = cleanedText.replace(/~~(.*?)~~/g, '$1');
+    
+    // List Bullets -> Replace with comma or period for pause
+    cleanedText = cleanedText.replace(/^\s*[-*+]\s+/gm, ', ');
+    cleanedText = cleanedText.replace(/^\s*\d+\.\s+/gm, ', '); 
+    
+    // Blockquotes
+    cleanedText = cleanedText.replace(/^>\s/gm, '');
+    
+    // Horizontal rules
+    cleanedText = cleanedText.replace(/^-{3,}\s*$/gm, '. ');
+
+    // 9. Consolidate Whitespace
+    // Replace newlines with a period if the previous line didn't end in punctuation
+    // This prevents "Header" and "Next Line" from merging into "HeaderNext Line"
+    cleanedText = cleanedText.replace(/([^\.\!\?])\n+/g, '$1. ');
+    
+    // Collapse multiple spaces
     cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
     
-    // Fallback if the cleaning removed everything (e.g., purely visual response)
+    // Fallback
     if (!cleanedText && text.length > 0) {
         return "I have generated the visual content you requested.";
     }
@@ -93,36 +102,26 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
         const cleanedText = cleanTextForTts(text);
         
         if (!cleanedText) {
-            // Throwing allows the UI to show an error or disable the button.
             throw new Error("No readable text found for speech synthesis.");
         }
 
-        // Use the model provided by the frontend request, or fallback to the standard TTS model
-        // Update default model to current version
         const targetModel = model || "gemini-2.5-flash-preview-tts";
-
         let targetVoice = voice || 'Puck';
         let promptText = cleanedText;
 
-        // Check if the requested voice is a valid prebuilt persona
+        // Handling Custom Accents / Personas not natively supported
         if (!STANDARD_GEMINI_VOICES.has(targetVoice)) {
-            // If it's a custom accent/language request (e.g. "British", "Japanese")
-            // we default to a high-quality base voice and instruct the model to adopt the accent.
             console.log(`[TTS] Custom accent requested: ${targetVoice}`);
-            
-            // Use 'Aoede' as a confident, professional base for custom accents, or 'Charon' for deeper tones.
-            // We'll default to 'Aoede' for better clarity in accents.
+            // Use Aoede as a neutral professional base
             const baseVoice = 'Aoede'; 
             
-            promptText = `Please read the following text with a ${targetVoice} accent or in the ${targetVoice} language style as appropriate: "${cleanedText}"`;
+            // We prepend a system-like instruction to the text itself for the model to follow
+            promptText = `(Speak in a ${targetVoice} accent) ${cleanedText}`;
             targetVoice = baseVoice;
         }
 
         console.log(`[TTS] Generating speech with model: ${targetModel}, voice: ${targetVoice}`);
 
-        // Use Modality.AUDIO enum as required by SDK
-        // IMPORTANT: We use generateContentWithRetry which now uses generateContent (non-streaming)
-        // This is critical for audio generation stability.
         const response = await generateContentWithRetry(ai, {
             model: targetModel,
             contents: [{ parts: [{ text: promptText }] }],
@@ -165,7 +164,7 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
         } else if (message.includes('safety') || message.includes('blocked')) {
             suggestion = "The generated audio was blocked by safety settings.";
         } else if (message.includes('No readable text')) {
-            suggestion = "The response contains only visual elements (images, maps) and no text to read.";
+            suggestion = "The response contains only visual elements and no text to read.";
         }
 
         throw new ToolError('textToSpeech', 'TTS_FAILED', message, originalError, suggestion);

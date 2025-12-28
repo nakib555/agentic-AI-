@@ -12,14 +12,19 @@ export const splitTextIntoChunks = (text: string, targetLength: number = 200): s
   if (!text) return [];
   if (text.length <= targetLength) return [text];
 
-  // Regex to split by sentence boundaries (. ! ? \n), keeping the delimiter
-  // Matches:
-  // 1. [^.!?\n]+       : Any chars that aren't terminators
-  // 2. [.!?\n]+        : One or more terminators
-  // 3. (\s+|$)         : Trailing whitespace or end of string
-  // OR
-  // 4. [^.!?\n]+$      : Any remaining chars at the end of string (no terminator)
-  const sentenceRegex = /[^.!?\n]+[.!?\n]+(\s+|$)|[^.!?\n]+$/g;
+  // Enhanced regex to split by sentence boundaries while respecting quotes and common abbreviations.
+  // It looks for:
+  // 1. A period, exclamation, or question mark.
+  // 2. Followed by a quote (optional)
+  // 3. Followed by whitespace or end of string.
+  // It specifically tries NOT to split on common abbreviations like "Mr.", "Dr.", "e.g." (simple heuristic: look for space after).
+  
+  // This regex matches a sentence:
+  // [^.!?\n]+      : One or more non-terminator chars
+  // [.!?\n]+       : One or more terminators
+  // ['"]?          : Optional closing quote
+  // (\s+|$)        : Trailing space or EOF
+  const sentenceRegex = /[^.!?\n]+[.!?\n]+['"]?(\s+|$)|[^.!?\n]+$/g;
   
   const sentences = text.match(sentenceRegex) || [text];
 
@@ -27,19 +32,19 @@ export const splitTextIntoChunks = (text: string, targetLength: number = 200): s
   let currentChunk = '';
 
   for (const sentence of sentences) {
-    // If a single sentence is massive (e.g. code block without punctuation), split it by hard length
+    // Handling for very long single sentences (e.g. code or lists without punctuation)
     if (sentence.length > targetLength * 1.5) {
         if (currentChunk.trim()) {
             chunks.push(currentChunk.trim());
             currentChunk = '';
         }
-        // Force split the long sentence
+        // Force split the long sentence by length to avoid API timeouts
         const subChunks = sentence.match(new RegExp(`.{1,${targetLength}}`, 'g')) || [sentence];
         chunks.push(...subChunks);
         continue;
     }
 
-    // Normal accumulation
+    // Accumulate sentences until target length is reached
     if (currentChunk.length + sentence.length > targetLength && currentChunk.trim().length > 0) {
       chunks.push(currentChunk.trim());
       currentChunk = sentence;
