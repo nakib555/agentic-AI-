@@ -142,7 +142,6 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
     disabled, provider
 }) => {
     // Filter models to ensure "Primary Reasoning Model" only shows text/reasoning models.
-    // This logic runs on the frontend as a secondary check, even if the backend also buckets them.
     const filteredReasoningModels = useMemo(() => {
         const specializedIds = new Set([
             ...imageModels.map(m => m.id),
@@ -179,11 +178,16 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                 id.includes('sora') || 
                 id.includes('kandinsky') ||
                 id.includes('playground') ||
-                id.includes('ideogram') ||
+                id.includes('ideogram') || 
                 id.includes('recraft') ||
                 id.includes('svd') ||
                 id.includes('cogvideo') ||
-                id.includes('animatediff')
+                id.includes('animatediff') ||
+                id.includes('vidu') ||
+                id.includes('haiper') ||
+                id.includes('minimax') ||
+                id.includes('auraflow') ||
+                id.includes('shakker')
             ) return false;
             
             return true;

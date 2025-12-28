@@ -211,6 +211,24 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
             // Exclude Embeddings
             if (id.includes('embedding') || id.includes('embed')) continue;
 
+            // Video Generation
+            if (
+                id.includes('veo') || 
+                id.includes('sora') || 
+                id.includes('luma') || 
+                id.includes('runway') || 
+                id.includes('svd') || 
+                id.includes('cogvideo') || 
+                id.includes('kling') ||
+                id.includes('animatediff') ||
+                id.includes('vidu') ||
+                id.includes('haiper') ||
+                id.includes('minimax')
+            ) {
+                videoModels.push(m);
+                continue;
+            }
+
             // Image Generation
             if (
                 id.includes('stable-diffusion') || 
@@ -221,24 +239,11 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
                 id.includes('kandinsky') || 
                 id.includes('playground') ||
                 id.includes('ideogram') || 
-                id.includes('recraft')
+                id.includes('recraft') ||
+                id.includes('auraflow') ||
+                id.includes('shakker')
             ) {
                 imageModels.push(m);
-                continue;
-            }
-
-            // Video Generation
-            if (
-                id.includes('veo') || 
-                id.includes('sora') || 
-                id.includes('luma') || 
-                id.includes('runway') || 
-                id.includes('svd') || 
-                id.includes('cogvideo') || 
-                id.includes('kling') ||
-                id.includes('animatediff')
-            ) {
-                videoModels.push(m);
                 continue;
             }
 
@@ -249,7 +254,7 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
                 id.includes('eleven') || 
                 id.includes('playht') || 
                 id.includes('speech') ||
-                (id.includes('audio') && !id.includes('claude')) // Exclude multimodal input models like Claude 3.5 Sonnet Audio unless output is audio
+                (id.includes('audio') && !id.includes('claude') && !id.includes('gemini')) // Exclude multimodal inputs unless specialized
             ) {
                 ttsModels.push(m);
                 continue;
