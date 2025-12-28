@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -11,7 +12,7 @@ import { generateContentWithRetry } from "../utils/geminiUtils";
 export const executeAnalyzeMapVisually = async (ai: GoogleGenAI, args: { latitude: number, longitude: number }): Promise<string> => {
     const { latitude, longitude } = args;
     if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-      throw new ToolError('analyzeMapVisually', 'INVALID_COORDINATES', 'Latitude and longitude must be numbers.');
+      throw new ToolError('analyzeMapVisually', 'INVALID_COORDINATES', 'Latitude and longitude must be numbers.', undefined, 'Please ensure valid coordinates are provided.');
     }
   
     try {
@@ -29,20 +30,25 @@ export const executeAnalyzeMapVisually = async (ai: GoogleGenAI, args: { latitud
 export const executeAnalyzeImageVisually = async (ai: GoogleGenAI, args: { filePath?: string, imageBase64?: string }, chatId: string): Promise<string> => {
     const { filePath, imageBase64 } = args;
     if (!filePath && !imageBase64) {
-      throw new ToolError('analyzeImageVisually', 'MISSING_ARGUMENT', 'Either filePath or imageBase64 must be provided.');
+      throw new ToolError('analyzeImageVisually', 'MISSING_ARGUMENT', 'Either filePath or imageBase64 must be provided.', undefined, 'To analyze an image, you must provide its file path or base64 data.');
     }
     
     let imageData = imageBase64;
     if (filePath) {
-        const fileBuffer = await fileStore.getFile(chatId, filePath);
-        if (!fileBuffer) {
-            throw new ToolError('analyzeImageVisually', 'FILE_NOT_FOUND', `File not found at path: ${filePath}`);
+        try {
+            const fileBuffer = await fileStore.getFile(chatId, filePath);
+            if (!fileBuffer) {
+                throw new ToolError('analyzeImageVisually', 'FILE_NOT_FOUND', `File not found at path: ${filePath}`, undefined, `The file '${filePath}' does not exist in the virtual filesystem. Did you check 'listFiles'?`);
+            }
+            imageData = fileBuffer.toString('base64');
+        } catch (e) {
+            if (e instanceof ToolError) throw e;
+            throw new ToolError('analyzeImageVisually', 'FILE_READ_ERROR', `Failed to read file: ${filePath}`);
         }
-        imageData = fileBuffer.toString('base64');
     }
   
     if (!imageData) {
-        throw new ToolError('analyzeImageVisually', 'MISSING_DATA', 'Backend image analysis requires image data.');
+        throw new ToolError('analyzeImageVisually', 'MISSING_DATA', 'Could not retrieve image data from the provided arguments.');
     }
   
     try {
@@ -58,6 +64,6 @@ export const executeAnalyzeImageVisually = async (ai: GoogleGenAI, args: { fileP
   
     } catch (err) {
       const originalError = err instanceof Error ? err : new Error(String(err));
-      throw new ToolError('analyzeImageVisually', 'ANALYSIS_FAILED', originalError.message, originalError);
+      throw new ToolError('analyzeImageVisually', 'ANALYSIS_FAILED', originalError.message, originalError, "The model failed to analyze the image. It might be corrupted or the format is unsupported.");
     }
 };

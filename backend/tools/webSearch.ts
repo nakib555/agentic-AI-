@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -12,6 +13,10 @@ function hasProperty<K extends PropertyKey>(obj: unknown, prop: K): obj is Recor
 }
 
 export const executeWebSearch = async (ai: GoogleGenAI, args: { query: string }): Promise<string> => {
+  if (!args.query || !args.query.trim()) {
+      throw new ToolError('duckduckgoSearch', 'MISSING_QUERY', 'Search query cannot be empty.');
+  }
+
   try {
     let prompt: string;
     let isUrl = false;
@@ -34,6 +39,10 @@ export const executeWebSearch = async (ai: GoogleGenAI, args: { query: string })
     const summary = response.text?.trim() ?? '';
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
     
+    if (!summary && groundingChunks.length === 0) {
+        throw new ToolError('duckduckgoSearch', 'NO_RESULTS', 'The search returned no text summary and no grounding sources.', undefined, 'Try rephrasing your search query to be more specific or use general keywords.');
+    }
+
     const sources: { uri: string; title: string }[] = [];
     for (const chunk of groundingChunks) {
       if (!hasProperty(chunk, 'web') || typeof chunk.web !== 'object' || chunk.web === null) continue;
@@ -56,7 +65,8 @@ export const executeWebSearch = async (ai: GoogleGenAI, args: { query: string })
     
     return `Search successful. Here is a summary of the findings:\n\n${summary}\n\n[SOURCES_PILLS]\n${sourcesMarkdown}\n[/SOURCES_PILLS]`;
   } catch (err) {
+    if (err instanceof ToolError) throw err;
     const originalError = err instanceof Error ? err : new Error(String(err));
-    throw new ToolError('duckduckgoSearch', 'SEARCH_FAILED', originalError.message, originalError);
+    throw new ToolError('duckduckgoSearch', 'SEARCH_FAILED', originalError.message, originalError, 'The search grounding request failed. This may be a temporary API issue.');
   }
 };

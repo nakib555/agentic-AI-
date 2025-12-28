@@ -12,11 +12,11 @@ import { FunctionDeclaration, Type } from "@google/genai";
 
 export const calculatorDeclaration: FunctionDeclaration = {
     name: 'calculator',
-    description: 'Evaluates a mathematical expression. Supports basic arithmetic operators (+, -, *, /), parentheses, and numbers.',
+    description: 'Evaluates a mathematical expression. Supports basic arithmetic operators (+, -, *, /), parentheses, and numbers. Does not support variables or advanced functions (sin, cos).',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        expression: { type: Type.STRING, description: 'The mathematical expression to evaluate (e.g., "2 * (3 + 4)").' },
+        expression: { type: Type.STRING, description: 'The mathematical expression to evaluate (e.g., "2 * (3 + 4) / 1.5"). Must only contain numbers, operators, and parentheses.' },
       },
       required: ['expression'],
     },
@@ -28,11 +28,10 @@ export const codeExecutorDeclaration: FunctionDeclaration = {
     parameters: {
       type: Type.OBJECT,
       properties: {
-        language: { type: Type.STRING, description: 'The programming language of the code to execute.' },
-        code: { type: Type.STRING, description: 'The code snippet to execute.' },
-        packages: { type: Type.ARRAY, description: '(Python only) A list of PyPI packages to install before running the code (e.g., ["numpy", "pandas", "requests"]).', items: { type: Type.STRING } },
-        cdn_urls: { type: Type.ARRAY, description: '(JavaScript only) A list of CDN URLs for external libraries to import.', items: { type: Type.STRING } },
-        input_filenames: { type: Type.ARRAY, description: '(Python only) A list of filenames from the virtual filesystem to be used as input.', items: { type: Type.STRING } }
+        language: { type: Type.STRING, description: 'The programming language. Supported: "python", "javascript", "typescript", "bash", "go", "java".' },
+        code: { type: Type.STRING, description: 'The complete source code to execute. Must be self-contained.' },
+        packages: { type: Type.ARRAY, description: '(Python only) A list of PyPI packages to install before running the code (e.g., ["numpy", "pandas", "requests"]). Do not include standard library modules.', items: { type: Type.STRING } },
+        input_filenames: { type: Type.ARRAY, description: '(Python only) A list of exact filenames (e.g. "data.csv") from the virtual filesystem that the code needs to read. These files must already exist via `writeFile` or uploads.', items: { type: Type.STRING } }
       },
       required: ['language', 'code'],
     },
@@ -40,27 +39,27 @@ export const codeExecutorDeclaration: FunctionDeclaration = {
 
 export const duckduckgoSearchDeclaration: FunctionDeclaration = {
     name: 'duckduckgoSearch',
-    description: 'Dual-function tool. For general queries, it performs a web search. If the query provided is a valid URL, it will fetch and summarize the content of that specific webpage.',
+    description: 'Dual-function tool. 1) Search: If query is a search term, returns web results. 2) Summarize: If query is a URL, fetches and summarizes that specific page.',
     parameters: {
       type: Type.OBJECT,
-      properties: { query: { type: Type.STRING, description: 'The search query or a URL to summarize.' } },
+      properties: { query: { type: Type.STRING, description: 'The search keywords (e.g. "current CEO of Google") or a specific URL (e.g. "https://example.com") to read.' } },
       required: ['query'],
     },
 };
 
 export const browserDeclaration: FunctionDeclaration = {
     name: 'browser',
-    description: 'A headless web browser that can visit websites to read content, take screenshots, or interact with elements (click, type, scroll). Use this for deep research, validating visual layouts, or navigating dynamic sites.',
+    description: 'A headless web browser. Use this to read documentation, verify facts on specific pages, or inspect visual layouts of websites.',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        url: { type: Type.STRING, description: 'The URL to visit or interact with. Required for the initial visit.' },
+        url: { type: Type.STRING, description: 'The fully qualified URL to visit (must start with http:// or https://).' },
         action: { 
             type: Type.STRING, 
-            description: 'The action to perform. "read" extracts text. "screenshot" captures view. "click" clicks an element. "type" enters text. "scroll" moves the page. "wait" pauses.', 
+            description: 'Action to perform. "read": extract text content. "screenshot": take a picture of the page. "click"/"type"/"scroll": interact with dynamic elements.', 
             enum: ['read', 'screenshot', 'click', 'type', 'scroll', 'wait'] 
         },
-        selector: { type: Type.STRING, description: 'CSS selector for "click" or "type" actions (e.g., "button#submit", "input[name=\'q\']").' },
+        selector: { type: Type.STRING, description: 'CSS selector for "click" or "type" actions (e.g., "button#submit", ".search-input"). Required if action is click/type.' },
         text: { type: Type.STRING, description: 'Text to type for the "type" action.' },
         scrollDirection: { type: Type.STRING, description: 'Direction for "scroll" action.', enum: ['up', 'down', 'top', 'bottom'] }
       },
@@ -70,13 +69,13 @@ export const browserDeclaration: FunctionDeclaration = {
 
 export const imageGeneratorDeclaration: FunctionDeclaration = {
     name: 'generateImage',
-    description: 'Generates one or more images based on a textual description. Use for creating static visual content like photos, illustrations, and graphics.',
+    description: 'Generates images based on a textual description using an AI model. Best for creating illustrations, diagrams, or photorealistic scenes.',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        prompt: { type: Type.STRING, description: 'A detailed description of the image to generate.' },
-        numberOfImages: { type: Type.NUMBER, description: 'The number of images to generate. Must be between 1 and 5. Defaults to 1. This is only supported by Imagen models.'},
-        aspectRatio: { type: Type.STRING, description: 'The aspect ratio for the image. Supported for Imagen models: "1:1", "3:4", "4:3", "9:16", "16:9". Defaults to a responsive ratio (9:16 on mobile, 16:9 on desktop).' },
+        prompt: { type: Type.STRING, description: 'A highly detailed visual description of the image. Include style, lighting, mood, and composition details.' },
+        numberOfImages: { type: Type.NUMBER, description: 'Number of images (1-4). Defaults to 1. Only supported by Imagen models.'},
+        aspectRatio: { type: Type.STRING, description: 'The aspect ratio. Options: "1:1" (square), "3:4" (portrait), "4:3" (landscape), "16:9" (wide), "9:16" (mobile).' },
       },
       required: ['prompt'],
     },
@@ -84,26 +83,26 @@ export const imageGeneratorDeclaration: FunctionDeclaration = {
 
 export const getCurrentLocationDeclaration: FunctionDeclaration = {
     name: 'getCurrentLocation',
-    description: "Gets the user's current geographical location (latitude and longitude).",
+    description: "Gets the user's current geographical location (latitude and longitude) from their device.",
     parameters: { type: Type.OBJECT, properties: {} },
 };
   
 export const requestLocationPermissionDeclaration: FunctionDeclaration = {
     name: 'requestLocationPermission',
-    description: "Asks the user for location permission after it was previously denied. This will render a special UI prompt for the user.",
+    description: "Requests UI permission from the user to access their location. Use this if `getCurrentLocation` fails with a permission error.",
     parameters: { type: Type.OBJECT, properties: {} },
 };
 
 export const displayMapDeclaration: FunctionDeclaration = {
     name: 'displayMap',
-    description: 'Displays an interactive map centered on a specific geographical location.',
+    description: 'Displays an interactive map widget centered on specific coordinates.',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        latitude: { type: Type.NUMBER, description: 'The latitude for the center of the map.' },
-        longitude: { type: Type.NUMBER, description: 'The longitude for the center of the map.' },
-        zoom: { type: Type.NUMBER, description: 'The zoom level of the map, from 1 (world) to 18 (street level). Default is 13.' },
-        markerText: { type: Type.STRING, description: 'Optional text to display in a popup on a marker at the specified location.' }
+        latitude: { type: Type.NUMBER, description: 'The decimal latitude.' },
+        longitude: { type: Type.NUMBER, description: 'The decimal longitude.' },
+        zoom: { type: Type.NUMBER, description: 'Zoom level (1-18). 1=World, 10=City, 15=Street. Default 13.' },
+        markerText: { type: Type.STRING, description: 'Text label for the location marker.' }
       },
       required: ['latitude', 'longitude'],
     },
@@ -111,12 +110,12 @@ export const displayMapDeclaration: FunctionDeclaration = {
   
 export const analyzeMapVisuallyDeclaration: FunctionDeclaration = {
     name: 'analyzeMapVisually',
-    description: 'Analyzes the map area at a given latitude and longitude and returns a textual description of visible landmarks, parks, and road layouts. Use this after displaying a map if you need to "see" what is on it.',
+    description: 'Analyzes a map at specific coordinates to describe landmarks, geography, and road layout. Use this if you need to "see" the map context.',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        latitude: { type: Type.NUMBER, description: 'The latitude of the map area to analyze.' },
-        longitude: { type: Type.NUMBER, description: 'The longitude of the map area to analyze.' },
+        latitude: { type: Type.NUMBER, description: 'The latitude to analyze.' },
+        longitude: { type: Type.NUMBER, description: 'The longitude to analyze.' },
       },
       required: ['latitude', 'longitude'],
     },
@@ -124,25 +123,25 @@ export const analyzeMapVisuallyDeclaration: FunctionDeclaration = {
 
 export const analyzeImageVisuallyDeclaration: FunctionDeclaration = {
     name: 'analyzeImageVisually',
-    description: 'Analyzes a visual image and returns a detailed textual description. Use this to "see" and validate the content of images generated by `generateImage` or screenshots from `captureCodeOutputScreenshot`.',
+    description: 'Analyzes a visual image file to describe its contents. Essential for verifying generated images or analyzing uploaded files.',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        filePath: { type: Type.STRING, description: 'The full path of the image file in the virtual filesystem to analyze (e.g., "/main/output/image-xyz.png").' },
-        imageBase64: { type: Type.STRING, description: 'A base64 encoded string of an image to analyze. Typically used with the output from `captureCodeOutputScreenshot`.' },
+        filePath: { type: Type.STRING, description: 'The path of an image in the virtual filesystem (e.g. "/main/output/chart.png").' },
+        imageBase64: { type: Type.STRING, description: 'Raw base64 image data (used internally for screenshot analysis).' },
       },
     },
 };
 
 export const captureCodeOutputScreenshotDeclaration: FunctionDeclaration = {
     name: 'captureCodeOutputScreenshot',
-    description: 'Takes a screenshot of the visual output generated by the `executeCode` tool. This allows you to "see" and analyze plots, tables, and other HTML-based results.',
+    description: 'Captures a screenshot of HTML/JS output rendered by `executeCode`. Use this to "see" plots, graphs, or interactive widgets generated by code.',
     parameters: {
       type: Type.OBJECT,
       properties: {
         outputId: {
           type: Type.STRING,
-          description: 'The unique ID of the code output component to capture. This ID is provided in the result of an `executeCode` call that generated a visual output.',
+          description: 'The unique ID returned in the `executeCode` result when it renders HTML content.',
         },
       },
       required: ['outputId'],
@@ -151,13 +150,13 @@ export const captureCodeOutputScreenshotDeclaration: FunctionDeclaration = {
   
 export const videoGeneratorDeclaration: FunctionDeclaration = {
     name: 'generateVideo',
-    description: 'Generates a short video based on a textual description. Use for creating dynamic, animated content. Note: Video generation can take several minutes. You MUST inform the user of this potential delay in your thinking process before calling the tool.',
+    description: 'Generates a short video clip (seconds) from a text prompt. **Warning: This process is slow (2-5 mins). Inform the user before proceeding.**',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        prompt: { type: Type.STRING, description: 'A detailed description of the video to generate.' },
-        aspectRatio: { type: Type.STRING, description: 'The aspect ratio of the video. Supported values are "16:9" (landscape) and "9:16" (portrait). Defaults to a responsive ratio (9:16 on mobile, 16:9 on desktop).' },
-        resolution: { type: Type.STRING, description: 'The resolution of the video. Supported values are "720p" and "1080p". Defaults to "720p".' }
+        prompt: { type: Type.STRING, description: 'Detailed visual description of the scene and motion.' },
+        aspectRatio: { type: Type.STRING, description: 'Aspect ratio: "16:9" (Landscape) or "9:16" (Portrait).' },
+        resolution: { type: Type.STRING, description: 'Resolution: "720p" or "1080p".' }
       },
       required: ['prompt'],
     },
@@ -165,11 +164,11 @@ export const videoGeneratorDeclaration: FunctionDeclaration = {
 
 export const listFilesDeclaration: FunctionDeclaration = {
     name: 'listFiles',
-    description: 'Lists the files and directories at a given path in the virtual filesystem. Essential for keeping track of generated files.',
+    description: 'Lists all files currently stored in the virtual filesystem directory.',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        path: { type: Type.STRING, description: 'The path of the directory to list (e.g., "/main/output").' },
+        path: { type: Type.STRING, description: 'Directory path (usually "/main/output").' },
       },
       required: ['path'],
     },
@@ -177,11 +176,11 @@ export const listFilesDeclaration: FunctionDeclaration = {
   
 export const displayFileDeclaration: FunctionDeclaration = {
     name: 'displayFile',
-    description: 'Renders a file from the virtual filesystem for the user to see. After generating an image, video, or downloadable file, use this tool to display it.',
+    description: 'Renders a file (image, video, PDF) in the chat UI for the user.',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        path: { type: Type.STRING, description: 'The full path of the file to display (e.g., "/main/output/image-xyz.png").' },
+        path: { type: Type.STRING, description: 'The full path of the file to show (e.g. "/main/output/result.png").' },
       },
       required: ['path'],
     },
@@ -189,11 +188,11 @@ export const displayFileDeclaration: FunctionDeclaration = {
   
 export const deleteFileDeclaration: FunctionDeclaration = {
     name: 'deleteFile',
-    description: 'Deletes a file from the virtual filesystem. Use this to remove temporary, flawed, or unwanted files.',
+    description: 'Permanently deletes a file from the virtual filesystem.',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        path: { type: Type.STRING, description: 'The full path of the file to delete (e.g., "/main/output/flawed-image.png").' },
+        path: { type: Type.STRING, description: 'The full path of the file to delete.' },
       },
       required: ['path'],
     },
@@ -201,21 +200,20 @@ export const deleteFileDeclaration: FunctionDeclaration = {
   
 export const writeFileDeclaration: FunctionDeclaration = {
     name: 'writeFile',
-    description: 'Saves text content to a new file in the virtual filesystem. Useful for creating notes, saving generated code, or storing intermediate results from research.',
+    description: 'Creates or overwrites a text file in the virtual filesystem.',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        path: { type: Type.STRING, description: 'The full path where the file will be saved (e.g., "/main/output/my_note.md"). Must be in a writable directory.' },
-        content: { type: Type.STRING, description: 'The text content to write into the file.' },
+        path: { type: Type.STRING, description: 'The full destination path (e.g. "/main/output/summary.md").' },
+        content: { type: Type.STRING, description: 'The text content to write.' },
       },
       required: ['path', 'content'],
     },
 };
 
-// Export all tool declarations for the model in a single array
 export const toolDeclarations = [
     duckduckgoSearchDeclaration,
-    browserDeclaration, // Added
+    browserDeclaration,
     getCurrentLocationDeclaration,
     imageGeneratorDeclaration,
     videoGeneratorDeclaration,
