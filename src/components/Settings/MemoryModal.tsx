@@ -45,6 +45,14 @@ const FileEditor: React.FC<{
     const [title, setTitle] = useState(file?.title || '');
     const [content, setContent] = useState(file?.content || '');
 
+    // Sync state when file prop changes (e.g. after first save of 'new' file)
+    useEffect(() => {
+        if (file) {
+            setTitle(file.title);
+            setContent(file.content);
+        }
+    }, [file]);
+
     const handleSave = () => {
         if (!title.trim()) return alert('Title is required');
         onSave({
@@ -154,7 +162,8 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
           return [...prev, file];
       });
       setHasUnsavedChanges(true);
-      setEditingFile(null);
+      // Don't close the editor, but update the reference to the saved file so further edits work
+      setEditingFile(file);
   };
 
   const handleFileDelete = (id: string) => {

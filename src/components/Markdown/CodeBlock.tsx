@@ -113,7 +113,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         </div>
         
         {/* Editor Body */}
-        <div className="relative overflow-x-auto text-[13px] leading-6 scrollbar-thin">
+        <div className="relative overflow-x-auto text-[13px] leading-6 scrollbar-thin text-code-text">
             <SyntaxHighlighter
               language={highlighterLang}
               style={isDarkMode ? vscDarkPlus : oneLight}
@@ -122,9 +122,10 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
                 padding: '1.25rem',
                 backgroundColor: 'transparent',
                 fontFamily: "'Fira Code', 'Consolas', monospace",
+                color: 'inherit', // Force text color inheritance
               }}
               codeTagProps={{
-                  style: { fontFamily: "inherit" }
+                  style: { fontFamily: "inherit", color: 'inherit' }
               }}
               wrapLines={true}
               wrapLongLines={false}

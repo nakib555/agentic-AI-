@@ -120,11 +120,20 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                 {activeTab === 'preview' ? (
                     renderPreview()
                 ) : (
-                    <div className="max-h-[400px] overflow-auto custom-scrollbar">
+                    <div className="max-h-[400px] overflow-auto custom-scrollbar text-code-text">
                         <SyntaxHighlighter
                             language={language || 'text'}
                             style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
-                            customStyle={{ margin: 0, padding: '1rem', fontSize: '13px' }}
+                            customStyle={{ 
+                                margin: 0, 
+                                padding: '1rem', 
+                                fontSize: '13px', 
+                                backgroundColor: 'transparent',
+                                color: 'inherit' 
+                            }}
+                            codeTagProps={{
+                                style: { fontFamily: "inherit", color: 'inherit' }
+                            }}
                             showLineNumbers
                         >
                             {content}
