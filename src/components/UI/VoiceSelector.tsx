@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const TTS_VOICES = [
+    // Standard Personas
     { id: 'Puck', name: 'Puck', desc: 'Energetic & Clear' },
     { id: 'Charon', name: 'Charon', desc: 'Deep & Authoritative' },
     { id: 'Kore', name: 'Kore', desc: 'Calm & Soothing' },
@@ -19,6 +20,19 @@ export const TTS_VOICES = [
     { id: 'Leda', name: 'Leda', desc: 'Sophisticated & Balanced' },
     { id: 'Orpheus', name: 'Orpheus', desc: 'Rich & Expressive' },
     { id: 'Thalia', name: 'Thalia', desc: 'Bright & Engaging' },
+    
+    // International Accents / Styles
+    { id: 'British', name: 'British (UK)', desc: 'Distinctive UK Accent' },
+    { id: 'American', name: 'American (US)', desc: 'Standard US Accent' },
+    { id: 'French', name: 'French', desc: 'Français Accent' },
+    { id: 'Japanese', name: 'Japanese', desc: 'Nihongo Accent' },
+    { id: 'Chinese', name: 'Chinese', desc: 'Mandarin Accent' },
+    { id: 'German', name: 'German', desc: 'Deutsch Accent' },
+    { id: 'Spanish', name: 'Spanish', desc: 'Español Accent' },
+    { id: 'Italian', name: 'Italian', desc: 'Italiano Accent' },
+    { id: 'Russian', name: 'Russian', desc: 'Русский Accent' },
+    { id: 'Bengali', name: 'Bengali', desc: 'Bangladesh Accent' },
+    { id: 'Indonesian', name: 'Indonesian', desc: 'Bahasa Accent' },
 ];
 
 type VoiceSelectorProps = {

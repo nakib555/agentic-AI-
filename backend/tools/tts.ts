@@ -82,6 +82,12 @@ const cleanTextForTts = (text: string): string => {
     return cleanedText;
 };
 
+// Known valid prebuilt voices for Gemini 2.5 TTS
+const STANDARD_GEMINI_VOICES = new Set([
+    'Puck', 'Charon', 'Kore', 'Fenrir', 'Zephyr', 
+    'Aoede', 'Hestia', 'Leda', 'Orpheus', 'Thalia'
+]);
+
 export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: string, model: string): Promise<string> => {
     try {
         const cleanedText = cleanTextForTts(text);
@@ -95,17 +101,34 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
         // Update default model to current version
         const targetModel = model || "gemini-2.5-flash-preview-tts";
 
-        console.log(`[TTS] Generating speech with model: ${targetModel}, voice: ${voice || 'Puck'}`);
+        let targetVoice = voice || 'Puck';
+        let promptText = cleanedText;
+
+        // Check if the requested voice is a valid prebuilt persona
+        if (!STANDARD_GEMINI_VOICES.has(targetVoice)) {
+            // If it's a custom accent/language request (e.g. "British", "Japanese")
+            // we default to a high-quality base voice and instruct the model to adopt the accent.
+            console.log(`[TTS] Custom accent requested: ${targetVoice}`);
+            
+            // Use 'Aoede' as a confident, professional base for custom accents, or 'Charon' for deeper tones.
+            // We'll default to 'Aoede' for better clarity in accents.
+            const baseVoice = 'Aoede'; 
+            
+            promptText = `Please read the following text with a ${targetVoice} accent or in the ${targetVoice} language style as appropriate: "${cleanedText}"`;
+            targetVoice = baseVoice;
+        }
+
+        console.log(`[TTS] Generating speech with model: ${targetModel}, voice: ${targetVoice}`);
 
         // Use Modality.AUDIO enum as required by SDK
         // IMPORTANT: We use generateContentWithRetry which now uses generateContent (non-streaming)
         // This is critical for audio generation stability.
         const response = await generateContentWithRetry(ai, {
             model: targetModel,
-            contents: [{ parts: [{ text: cleanedText }] }],
+            contents: [{ parts: [{ text: promptText }] }],
             config: {
                 responseModalities: [Modality.AUDIO], 
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice || 'Puck' } } },
+                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: targetVoice } } },
             },
         });
 
