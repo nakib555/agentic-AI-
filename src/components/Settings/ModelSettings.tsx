@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { Model } from '../../types';
 import { ModelSelector } from '../UI/ModelSelector';
 import { SettingItem } from './SettingItem';
@@ -142,7 +142,38 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
     imageModel, onImageModelChange, videoModel, onVideoModelChange, ttsModel, onTtsModelChange,
     disabled, provider
 }) => {
-    const noModelsAvailable = !models || models.length === 0;
+    // Filter models to ensure "Primary Reasoning Model" only shows text/reasoning models.
+    // This handles cases where specialized models (Image/Video/TTS) might be returned in the main list,
+    // especially for providers like OpenRouter where categorization might be less strict or flat.
+    const filteredReasoningModels = useMemo(() => {
+        const specializedIds = new Set([
+            ...imageModels.map(m => m.id),
+            ...videoModels.map(m => m.id),
+            ...ttsModels.map(m => m.id)
+        ]);
+
+        return models.filter(m => {
+            // 1. Exclude if present in specialized lists
+            if (specializedIds.has(m.id)) return false;
+
+            // 2. Keyword filtering for models that might be misclassified
+            const id = m.id.toLowerCase();
+            const name = m.name.toLowerCase();
+            
+            // Exclude embedding models
+            if (id.includes('embedding')) return false;
+            
+            // Exclude pure TTS/Audio models
+            if (id.includes('tts') || id.includes('whisper') || name.includes('text-to-speech')) return false;
+            
+            // Exclude Image/Video Generation models
+            if (id.includes('stable-diffusion') || id.includes('dall-e') || id.includes('midjourney') || id.includes('flux') || id.includes('imagen') || id.includes('veo') || id.includes('luma') || id.includes('runway') || id.includes('sora')) return false;
+            
+            return true;
+        });
+    }, [models, imageModels, videoModels, ttsModels]);
+
+    const noModelsAvailable = !filteredReasoningModels || filteredReasoningModels.length === 0;
     const isGemini = provider === 'gemini';
 
     return (
@@ -182,7 +213,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                     >
                         <div className="w-full sm:w-[320px]">
                             <ModelSelector 
-                                models={models} 
+                                models={filteredReasoningModels} 
                                 selectedModel={selectedModel} 
                                 onModelChange={onModelChange} 
                                 disabled={disabled || noModelsAvailable} 
