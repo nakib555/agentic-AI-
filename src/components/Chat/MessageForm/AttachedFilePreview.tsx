@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -82,12 +81,12 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
             exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.15 } }}
             onClick={handleClick}
             className={`
-                relative group flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center md:shadow-sm transition-all duration-200 select-none
+                relative group flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center shadow-sm transition-all duration-200 select-none
                 ${hasFailed 
                     ? 'bg-red-50 dark:bg-red-900/10 cursor-default' 
                     : isProcessing 
-                        ? 'bg-transparent md:bg-white md:dark:bg-white/5 cursor-wait' 
-                        : 'bg-transparent md:bg-white md:dark:bg-white/5 cursor-pointer hover:shadow-md hover:bg-slate-50 dark:hover:bg-white/10'
+                        ? 'bg-white dark:bg-white/5 cursor-wait' 
+                        : 'bg-white dark:bg-white/5 cursor-pointer hover:shadow-md hover:bg-slate-50 dark:hover:bg-white/10'
                 }
             `}
             title={file.name}
