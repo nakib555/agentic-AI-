@@ -102,7 +102,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 ) : (
                     <div className={`w-full h-full rounded-lg flex flex-col items-center justify-center ${visuals.bg} shadow-inner`}>
                         <FileIcon filename={file.name} className={`w-6 h-6 ${visuals.text} opacity-90 drop-shadow-sm transform group-hover:scale-110 transition-transform duration-300`} />
-                        <span className="text-[8px] font-bold text-white/90 mt-0.5 uppercase tracking-wide drop-shadow-sm truncate max-w-[90%]">{visuals.label}</span>
+                        <span className="text-[8px] font-bold text-white/90 mt-0.5 uppercase tracking-wide drop-shadow-sm">{visuals.label}</span>
                     </div>
                 )}
 
@@ -163,9 +163,9 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 type="button"
                 onClick={handleRemove}
                 aria-label={`Remove ${file.name}`}
-                className="absolute -top-1.5 -right-1.5 bg-white dark:bg-[#303030] text-gray-400 hover:text-white hover:bg-red-500 dark:hover:text-white dark:hover:bg-red-500 rounded-full p-0.5 border border-gray-200 dark:border-black/50 shadow-md z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all transform scale-90 hover:scale-110 active:scale-95"
+                className="absolute -top-2 -right-2 bg-white dark:bg-[#303030] text-gray-400 hover:text-white hover:bg-red-500 dark:hover:text-white dark:hover:bg-red-500 rounded-full p-0.5 border border-gray-200 dark:border-black/50 shadow-md z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all transform scale-90 hover:scale-110"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 0 0 1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
             </button>
         </motion.div>
     );
