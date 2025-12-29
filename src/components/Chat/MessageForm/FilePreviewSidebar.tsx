@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -163,7 +162,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                         </div>
 
                         {/* Content Viewer */}
-                        <div className="flex-1 overflow-auto p-4 bg-page flex items-center justify-center relative">
+                        <div className="flex-1 overflow-auto p-4 bg-layer-1 flex items-center justify-center relative">
                             {previewType === 'image' && content && (
                                 <img src={content} alt={file.file.name} className="max-w-full max-h-full object-contain rounded shadow-sm" />
                             )}
@@ -173,11 +172,12 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                             )}
 
                             {previewType === 'text' && content && (
-                                <div className="w-full h-full bg-layer-1 rounded border border-border-default overflow-hidden text-sm shadow-sm absolute inset-0 m-4">
+                                <div className="w-full h-full bg-code-surface rounded-lg border border-border-default overflow-hidden text-sm shadow-sm absolute inset-0 m-4">
                                     <SyntaxHighlighter
                                         language="text"
                                         style={isDarkMode ? vscDarkPlus : oneLight}
-                                        customStyle={{ margin: 0, padding: '1.5rem', height: '100%', fontSize: '13px', backgroundColor: 'transparent' }}
+                                        customStyle={{ margin: 0, padding: '1.5rem', height: '100%', fontSize: '13px', backgroundColor: 'transparent', color: 'var(--text-code)' }}
+                                        codeTagProps={{ style: { fontFamily: "inherit", color: 'inherit' } }}
                                         wrapLongLines={true}
                                     >
                                         {content}
