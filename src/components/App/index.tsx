@@ -34,15 +34,43 @@ export const App = () => {
   // Use optional chaining for messages array as it might be undefined during initial load
   const activeMessage = currentChat?.messages?.length ? currentChat.messages[currentChat.messages.length - 1] : null;
 
-  // Mobile viewport height fix for iOS
+  // Mobile viewport height fix for iOS and Android keyboards
+  // This ensures the input bar stays firmly attached to the keyboard without pushing the header off-screen
   useEffect(() => {
     const setVh = () => {
-      const vh = window.innerHeight * 0.01;
+      // Use visualViewport if available (Modern Browsers) for precise keyboard handling
+      // visualViewport.height represents the height of the visible area *above* the keyboard
+      const viewport = window.visualViewport;
+      const height = viewport ? viewport.height : window.innerHeight;
+      const vh = height * 0.01;
+      
       document.documentElement.style.setProperty('--vh', `${vh}px`);
+      
+      // Force scroll to top to prevent the "whole page pan" effect on iOS
+      // which sometimes pushes the header out of view
+      if (viewport && window.scrollY !== 0) {
+         window.scrollTo(0, 0);
+      }
     };
+
     setVh();
+    
+    // Standard resize (desktop)
     window.addEventListener('resize', setVh);
-    return () => window.removeEventListener('resize', setVh);
+    
+    // Visual Viewport resize (Mobile Keyboards)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', setVh);
+      window.visualViewport.addEventListener('scroll', setVh);
+    }
+
+    return () => {
+      window.removeEventListener('resize', setVh);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', setVh);
+        window.visualViewport.removeEventListener('scroll', setVh);
+      }
+    };
   }, []);
 
   return (
