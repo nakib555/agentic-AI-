@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import { MessageList, type MessageListHandle } from './MessageList';
@@ -48,40 +48,9 @@ export const ChatArea = ({
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [keyboardPadding, setKeyboardPadding] = useState(0);
   
   // Use a counter to robustly handle drag enter/leave events on nested elements.
   const dragCounter = useRef(0);
-
-  // Monitor visual viewport to adjust for mobile keyboard
-  useEffect(() => {
-    if (!window.visualViewport) return;
-
-    const handleResize = () => {
-      const vv = window.visualViewport;
-      if (!vv) return;
-      
-      // Check if layout viewport is significantly larger than visual viewport (keyboard open)
-      const diff = window.innerHeight - vv.height;
-      // Use a threshold to ignore minor UI bars (address bar jitter)
-      if (diff > 100) { 
-          setKeyboardPadding(diff);
-      } else {
-          setKeyboardPadding(0);
-      }
-    };
-
-    window.visualViewport.addEventListener('resize', handleResize);
-    window.visualViewport.addEventListener('scroll', handleResize);
-    
-    // Initial check
-    handleResize();
-
-    return () => {
-        window.visualViewport?.removeEventListener('resize', handleResize);
-        window.visualViewport?.removeEventListener('scroll', handleResize);
-    };
-  }, []);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -134,7 +103,6 @@ export const ChatArea = ({
       onDragLeave={handleDragOut}
       onDragOver={handleDrag}
       onDrop={handleDrop}
-      style={{ paddingBottom: keyboardPadding }}
     >
       <AnimatePresence>
         {isDragging && (
