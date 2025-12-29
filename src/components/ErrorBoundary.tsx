@@ -15,7 +15,8 @@ interface ErrorBoundaryState {
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Fix: Initialize state in the constructor and bind event handlers to ensure correct `this` context.
+  // FIX: Added a constructor to initialize state and bind event handlers,
+  // resolving errors related to accessing `this.state`, `this.props`, and `this.setState`.
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -72,27 +73,4 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             </div>
             <h2 className="text-xl font-bold text-content-primary mb-2">Something went wrong</h2>
             <p className="text-content-secondary mb-6 text-xs font-mono break-words bg-slate-100 dark:bg-black/20 p-2 rounded">
-              {this.state.error?.message || "An unexpected error occurred."}
-            </p>
-            <div className="flex flex-col gap-3">
-                <button
-                  onClick={this.handleDismiss}
-                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition-colors shadow-sm w-full"
-                >
-                  Try Again
-                </button>
-                <button
-                  onClick={this.handleReload}
-                  className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-content-primary rounded-xl font-semibold transition-colors w-full"
-                >
-                  Reload App
-                </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
+              {this.state.error?.message || "An unexpected error occurred."
