@@ -31,7 +31,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
-  const triggerRef = useRef<HTMLElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updatePosition = () => {
@@ -106,15 +106,15 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
   // Clone element to attach event handlers and ref
   const trigger = React.cloneElement(children, {
-    ref: (node: HTMLElement) => {
+    ref: (node: HTMLElement | null) => {
       triggerRef.current = node;
       // Handle existing refs if any
-      const { ref } = children as any;
-      if (typeof ref === 'function') {
-        ref(node);
-      } else if (ref && typeof ref === 'object') {
-        // Cast to any to allow assignment, fixing TS2540 (read-only current)
-        (ref as any).current = node;
+      const childRef = (children as any).ref;
+      if (typeof childRef === 'function') {
+        childRef(node);
+      } else if (childRef && typeof childRef === 'object') {
+        // Fix TS2540: Cast to MutableRefObject to allow assignment to current
+        (childRef as React.MutableRefObject<any>).current = node;
       }
     },
     onMouseEnter: (e: React.MouseEvent) => {
