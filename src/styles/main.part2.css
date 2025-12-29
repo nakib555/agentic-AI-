@@ -119,8 +119,7 @@ html, body, #root {
   .shadow-2xl,
   .shadow-inner {
     box-shadow: none !important;
-    /* Add border to maintain component separation */
-    border: 1px solid var(--border-subtle) !important;
+    /* The border replacement was causing unwanted visual artifacts. It is now removed. */
   }
 }
 
