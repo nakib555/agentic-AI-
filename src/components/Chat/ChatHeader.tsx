@@ -7,6 +7,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { TextType } from '../UI/TextType';
+import { Tooltip } from '../UI/Tooltip';
 const motion = motionTyped as any;
 
 type ChatHeaderProps = {
@@ -171,17 +172,19 @@ export const ChatHeader = ({ onImportChat, onExportChat, onShareChat, isChatActi
                 {/* --- Right controls --- */}
                 <div className="flex-shrink-0">
                     <div className="relative">
-                        <button
-                            ref={buttonRef}
-                            onClick={() => setIsMenuOpen(prev => !prev)}
-                            className={moreOptionsButtonClasses}
-                            aria-label="Chat options"
-                            title="Chat options"
-                            aria-haspopup="true"
-                            aria-expanded={isMenuOpen}
-                        >
-                            <MoreOptionsIcon />
-                        </button>
+                        <Tooltip content="Options" position="bottom" delay={500}>
+                            <button
+                                ref={buttonRef}
+                                onClick={() => setIsMenuOpen(prev => !prev)}
+                                className={moreOptionsButtonClasses}
+                                aria-label="Chat options"
+                                aria-haspopup="true"
+                                aria-expanded={isMenuOpen}
+                            >
+                                <MoreOptionsIcon />
+                            </button>
+                        </Tooltip>
+                        
                         <AnimatePresence>
                             {isMenuOpen && (
                                 <motion.div

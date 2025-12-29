@@ -11,6 +11,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTheme } from '../../hooks/useTheme';
 import { Skeleton } from '../UI/Skeleton';
+import { Tooltip } from '../UI/Tooltip';
 
 type ArtifactSidebarProps = {
     isOpen: boolean;
@@ -306,23 +307,28 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                     </div>
                     
                     <div className="flex items-center gap-2 ml-auto">
-                        <button 
-                            onClick={handleCopy}
-                            className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-                            title="Copy code"
-                        >
-                            {isCopied ? <CheckIcon /> : <CopyIcon />}
-                        </button>
-                        <button 
-                            onClick={onClose} 
-                            className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-                            title="Close artifact"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
+                        <Tooltip content="Copy Code" position="bottom" delay={500}>
+                            <button 
+                                onClick={handleCopy}
+                                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                                aria-label="Copy code"
+                            >
+                                {isCopied ? <CheckIcon /> : <CopyIcon />}
+                            </button>
+                        </Tooltip>
+                        
+                        <Tooltip content="Close Panel" position="bottom" delay={500}>
+                            <button 
+                                onClick={onClose} 
+                                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                                aria-label="Close artifact"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </Tooltip>
                     </div>
                 </div>
 
@@ -369,20 +375,24 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                                         Console {logs.length > 0 && <span className="bg-gray-200 dark:bg-white/10 px-1 rounded-sm text-[10px]">{logs.length}</span>}
                                     </button>
                                     <div className="w-px h-3 bg-gray-300 dark:bg-white/10 mx-1" />
-                                    <button 
-                                        onClick={() => setIframeKey(k => k + 1)} 
-                                        className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
-                                        title="Reload Preview"
-                                    >
-                                        <RefreshIcon />
-                                    </button>
-                                    <button 
-                                        onClick={handleOpenNewTab}
-                                        className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
-                                        title="Open in New Tab"
-                                    >
-                                        <ExternalLinkIcon />
-                                    </button>
+                                    <Tooltip content="Reload Preview" position="bottom">
+                                        <button 
+                                            onClick={() => setIframeKey(k => k + 1)} 
+                                            className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
+                                            aria-label="Reload Preview"
+                                        >
+                                            <RefreshIcon />
+                                        </button>
+                                    </Tooltip>
+                                    <Tooltip content="Open in New Tab" position="bottom">
+                                        <button 
+                                            onClick={handleOpenNewTab}
+                                            className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
+                                            aria-label="Open in New Tab"
+                                        >
+                                            <ExternalLinkIcon />
+                                        </button>
+                                    </Tooltip>
                                 </div>
                             </div>
                             <div className="flex-1 relative flex flex-col overflow-hidden">

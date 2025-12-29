@@ -6,6 +6,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+import { Tooltip } from '../UI/Tooltip';
 const motion = motionTyped as any;
 
 const Highlight = ({ text, highlight }: { text: string, highlight: string }) => {
@@ -126,7 +127,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
     };
 
     return (
-        <div className="relative">
+        <div className="relative group/item">
             <button 
                 onClick={isEditing ? undefined : onClick} 
                 onDoubleClick={handleDoubleClick}
@@ -161,18 +162,18 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
                 )}
             </button>
             {!shouldCollapse && !isEditing && (
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center rounded-lg">
-                    <button
-                        ref={buttonRef}
-                        onClick={(e) => { e.stopPropagation(); setIsMenuOpen(prev => !prev); }}
-                        className="p-1 rounded-md text-slate-500 hover:bg-slate-300/60 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-600/60 dark:hover:text-slate-100"
-                        aria-label={`More options for chat: ${text}`}
-                        title={`More options for chat: ${text}`}
-                        aria-haspopup="true"
-                        aria-expanded={isMenuOpen}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8 3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM8 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM8 15a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z" /></svg>
-                    </button>
+                <div className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center rounded-lg ${isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'} transition-opacity`}>
+                    <Tooltip content="More options" position="top" delay={600}>
+                        <button
+                            ref={buttonRef}
+                            onClick={(e) => { e.stopPropagation(); setIsMenuOpen(prev => !prev); }}
+                            className="p-1 rounded-md text-slate-500 hover:bg-slate-300/60 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-600/60 dark:hover:text-slate-100"
+                            aria-haspopup="true"
+                            aria-expanded={isMenuOpen}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8 3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM8 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM8 15a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z" /></svg>
+                        </button>
+                    </Tooltip>
                 </div>
             )}
              <AnimatePresence>
@@ -183,7 +184,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -5, scale: 0.95 }}
                         transition={{ duration: 0.1 }}
-                        className="absolute right-2 top-10 z-20 w-36 bg-white dark:bg-[#2D2D2D] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1"
+                        className="absolute right-2 top-8 z-50 w-36 bg-white dark:bg-[#2D2D2D] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-1"
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
                         <ul className="text-sm">

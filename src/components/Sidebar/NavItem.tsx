@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState } from 'react';
 import { motion as motionTyped } from 'framer-motion';
+import { Tooltip } from '../UI/Tooltip';
 const motion = motionTyped as any;
 
 type NavItemProps = { 
@@ -21,8 +21,6 @@ type NavItemProps = {
 
 export const NavItem = ({ icon, text, active, isCollapsed, isDesktop, onClick, disabled }: NavItemProps) => {
     const shouldCollapse = isDesktop && isCollapsed;
-    const [isHovered, setIsHovered] = useState(false);
-    const buttonRef = useRef<HTMLButtonElement>(null);
     
     const baseClasses = `
         group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left 
@@ -39,50 +37,38 @@ export const NavItem = ({ icon, text, active, isCollapsed, isDesktop, onClick, d
     const disabledClasses = `opacity-50 cursor-not-allowed`;
     const layoutClasses = shouldCollapse ? 'justify-center px-2' : '';
 
-    return (
-        <>
-            <button 
-                ref={buttonRef}
-                onClick={onClick} 
-                disabled={disabled}
-                className={`${baseClasses} ${active ? activeClasses : inactiveClasses} ${layoutClasses} ${disabled ? disabledClasses : ''}`}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
+    const button = (
+        <button 
+            onClick={onClick} 
+            disabled={disabled}
+            className={`${baseClasses} ${active ? activeClasses : inactiveClasses} ${layoutClasses} ${disabled ? disabledClasses : ''}`}
+        >
+            <div className={`flex-shrink-0 w-5 h-5 flex items-center justify-center transition-colors ${active ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'}`}>
+                {icon}
+            </div>
+            
+            <motion.span 
+                className="text-sm truncate leading-none"
+                initial={false}
+                animate={{ 
+                    width: shouldCollapse ? 0 : 'auto', 
+                    opacity: shouldCollapse ? 0 : 1, 
+                    display: shouldCollapse ? 'none' : 'block'
+                }}
+                transition={{ duration: 0.2 }}
             >
-                <div className={`flex-shrink-0 w-5 h-5 flex items-center justify-center transition-colors ${active ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'}`}>
-                    {icon}
-                </div>
-                
-                <motion.span 
-                    className="text-sm truncate leading-none"
-                    initial={false}
-                    animate={{ 
-                        width: shouldCollapse ? 0 : 'auto', 
-                        opacity: shouldCollapse ? 0 : 1, 
-                        display: shouldCollapse ? 'none' : 'block'
-                    }}
-                    transition={{ duration: 0.2 }}
-                >
-                    {text}
-                </motion.span>
-            </button>
-
-            {/* Tooltip Portal */}
-            {shouldCollapse && !disabled && isHovered && buttonRef.current && createPortal(
-                <div 
-                    className="fixed z-[100] px-2.5 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-md shadow-xl whitespace-nowrap pointer-events-none animate-in fade-in zoom-in-95 duration-200"
-                    style={{ 
-                        top: buttonRef.current.getBoundingClientRect().top + buttonRef.current.getBoundingClientRect().height / 2, 
-                        left: buttonRef.current.getBoundingClientRect().right + 12,
-                        transform: 'translateY(-50%)'
-                    }}
-                >
-                    {text}
-                    {/* Tiny arrow */}
-                    <div className="absolute top-1/2 right-full -translate-y-1/2 -mr-[1px] border-4 border-transparent border-r-slate-800"></div>
-                </div>,
-                document.body
-            )}
-        </>
+                {text}
+            </motion.span>
+        </button>
     );
+
+    if (shouldCollapse && !disabled) {
+        return (
+            <Tooltip content={text} position="right" sideOffset={12}>
+                {button}
+            </Tooltip>
+        );
+    }
+
+    return button;
 };

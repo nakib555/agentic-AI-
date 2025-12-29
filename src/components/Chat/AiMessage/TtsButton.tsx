@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Tooltip } from '../../UI/Tooltip';
 
 export const TtsButton = ({
   isPlaying,
@@ -92,7 +93,7 @@ export const TtsButton = ({
     return 'Read aloud';
   };
 
-  return (
+  const button = (
     <button
       onClick={onClick}
       className={`
@@ -106,11 +107,16 @@ export const TtsButton = ({
         }
         disabled:opacity-40 disabled:cursor-not-allowed
       `}
-      title={getTitle()}
       disabled={disabled || isLoading}
       aria-label={getTitle()}
     >
       {getButtonContent()}
     </button>
+  );
+
+  return (
+    <Tooltip content={getTitle()} position="top" delay={600}>
+        {button}
+    </Tooltip>
   );
 };

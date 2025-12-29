@@ -11,6 +11,7 @@ import type { Source } from '../../../types';
 import { SourcesPills } from '../../AI/SourcesPills';
 import { BranchSwitcher } from '../../UI/BranchSwitcher';
 import { AudioWave } from '../../UI/AudioWave';
+import { Tooltip } from '../../UI/Tooltip';
 
 const motion = motionTyped as any;
 
@@ -37,24 +38,31 @@ const IconButton: React.FC<{
     disabled?: boolean;
     children: React.ReactNode;
     active?: boolean;
-}> = ({ title, onClick, disabled, children, active }) => (
-    <button
-        type="button"
-        title={title}
-        onClick={onClick}
-        disabled={disabled}
-        className={`
-            flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200 
-            ${active 
-                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' 
-                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'
-            }
-            disabled:opacity-40 disabled:cursor-not-allowed
-        `}
-    >
-        {children}
-    </button>
-);
+}> = ({ title, onClick, disabled, children, active }) => {
+    const button = (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className={`
+                flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200 
+                ${active 
+                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' 
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'
+                }
+                disabled:opacity-40 disabled:cursor-not-allowed
+            `}
+        >
+            {children}
+        </button>
+    );
+
+    return (
+        <Tooltip content={title} position="top" delay={600}>
+            {button}
+        </Tooltip>
+    );
+};
 
 export const MessageToolbar: React.FC<MessageToolbarProps> = ({
     messageText, sources, onShowSources, ttsState, ttsErrorMessage, onTtsClick, onRegenerate,
