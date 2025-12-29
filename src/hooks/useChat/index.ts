@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -171,9 +170,7 @@ export const useChat = (
                 }
             }
         }
-
-        if (onShowToast) onShowToast('Generation stopped', 'info');
-    }, [handleFrontendToolExecution, onShowToast]);
+    }, [handleFrontendToolExecution]);
     
     const { updateMessage } = chatHistoryHook;
     
@@ -428,7 +425,6 @@ export const useChat = (
                 }, 200); // Increased slightly to 200ms to allow suggestion fetch to potentially finish
 
             } else {
-                // Ensure UI updates to stopped state in case of abort
                 chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
                 chatHistoryHook.completeChatLoading(chatId);
                 abortControllerRef.current = null;

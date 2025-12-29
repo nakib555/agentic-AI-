@@ -54,29 +54,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
     <div className="w-full mx-auto max-w-4xl relative">
       <VoiceVisualizer isRecording={logic.isRecording} />
 
-      {/* Floating Stop Button */}
-      <AnimatePresence>
-        {isGeneratingResponse && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute -top-16 left-0 right-0 flex justify-center z-30 pointer-events-none"
-          >
-            <button
-              type="button"
-              onClick={onCancel}
-              className="pointer-events-auto flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-full shadow-lg text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-all transform hover:scale-105 active:scale-95"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
-                <rect x="6" y="6" width="12" height="12" rx="2" />
-              </svg>
-              <span>Stop generating</span>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <AnimatePresence>
         {logic.isUploadMenuOpen && (
           <UploadMenu 
