@@ -14,6 +14,8 @@ import { useInputEnhancements } from './useInputEnhancements';
 import type { Message } from '../../../types';
 import { usePlaceholder } from '../../../hooks/usePlaceholder';
 
+export type FormattingType = 'bold' | 'italic' | 'strike' | 'code' | 'codeblock' | 'bullet' | 'number';
+
 export const useMessageForm = (
   onSubmit: (message: string, files?: File[], options?: { isThinkingModeEnabled?: boolean }) => void,
   isLoading: boolean,
@@ -98,7 +100,8 @@ export const useMessageForm = (
     const scrollHeight = shadow.scrollHeight;
     document.body.removeChild(shadow);
 
-    const MAX_HEIGHT_PX = 192;
+    // Increased max height to support better multi-line editing experience
+    const MAX_HEIGHT_PX = 300;
     const SINGLE_LINE_THRESHOLD = 32; 
     
     setIsExpanded(scrollHeight > SINGLE_LINE_THRESHOLD || fileHandling.processedFiles.length > 0);
@@ -147,13 +150,73 @@ export const useMessageForm = (
     }
     
     if (!canSubmit) {
-        // Just return, no need to log a warning if it's just an empty enter press
         return;
     }
 
     onSubmit(inputValue, fileHandling.getFilesToSend());
     clearDraft();
   };
+
+  const handleFormatting = useCallback((format: FormattingType) => {
+      const textarea = inputRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = inputValue;
+      const selection = text.substring(start, end);
+      
+      let prefix = '';
+      let suffix = '';
+
+      switch (format) {
+          case 'bold':
+              prefix = '**';
+              suffix = '**';
+              break;
+          case 'italic':
+              prefix = '_';
+              suffix = '_';
+              break;
+          case 'strike':
+              prefix = '~~';
+              suffix = '~~';
+              break;
+          case 'code':
+              prefix = '`';
+              suffix = '`';
+              break;
+          case 'codeblock':
+              prefix = '\n```\n';
+              suffix = '\n```\n';
+              break;
+          case 'bullet':
+              prefix = '\n- ';
+              suffix = '';
+              break;
+          case 'number':
+              prefix = '\n1. ';
+              suffix = '';
+              break;
+      }
+
+      const newText = text.substring(0, start) + prefix + selection + suffix + text.substring(end);
+      setInputValue(newText);
+
+      // Restore focus and selection
+      requestAnimationFrame(() => {
+          if (inputRef.current) {
+              inputRef.current.focus();
+              if (selection.length > 0) {
+                  // If text was selected, select the text inside tags
+                  inputRef.current.setSelectionRange(start + prefix.length, end + prefix.length);
+              } else {
+                  // If no text, place cursor inside tags
+                  inputRef.current.setSelectionRange(start + prefix.length, start + prefix.length);
+              }
+          }
+      });
+  }, [inputValue]);
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     if (e.clipboardData.files?.length > 0) {
@@ -176,6 +239,18 @@ export const useMessageForm = (
             handleSubmit();
         }
     }
+
+    // Formatting Shortcuts
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey) {
+        if (e.key === 'b') {
+            e.preventDefault();
+            handleFormatting('bold');
+        }
+        if (e.key === 'i') {
+            e.preventDefault();
+            handleFormatting('italic');
+        }
+    }
   };
 
   return {
@@ -184,7 +259,7 @@ export const useMessageForm = (
     isFocused, setIsFocused,
     placeholder,
     inputRef, attachButtonRef, uploadMenuRef,
-    handleSubmit, handlePaste, handleKeyDown,
+    handleSubmit, handlePaste, handleKeyDown, handleFormatting,
     canSubmit, // Export validation state
     isProcessingFiles,
     ...fileHandling,
