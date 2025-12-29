@@ -86,9 +86,10 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
         open: { x: 0, opacity: 1 }
     };
 
+    // Updated mobile variants for bottom-sheet animation
     const mobileVariants = {
-        closed: { scale: 0.95, opacity: 0, y: 20 },
-        open: { scale: 1, opacity: 1, y: 0 }
+        closed: { y: '100%', opacity: 0 },
+        open: { y: 0, opacity: 1 }
     };
 
     return (
@@ -115,10 +116,17 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                             fixed z-[70] bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden
                             ${isDesktop 
                                 ? 'top-0 right-0 h-full w-[500px] max-w-[90vw] border-l' 
-                                : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-lg max-h-[85vh] rounded-2xl border'
+                                : 'bottom-0 left-0 right-0 h-[80vh] w-full rounded-t-2xl border-t'
                             }
                         `}
                     >
+                        {/* Drag Handle for Mobile */}
+                        {!isDesktop && (
+                            <div className="flex justify-center pt-3 pb-1 bg-gray-50/50 dark:bg-white/5 flex-shrink-0 cursor-pointer" onClick={onClose}>
+                                <div className="w-12 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+                            </div>
+                        )}
+
                         {/* Header */}
                         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 flex-shrink-0">
                             <div className="flex items-center gap-3 overflow-hidden">
