@@ -24,17 +24,17 @@ export const TTS_VOICES = [
     { id: 'Thalia', name: 'Thalia', desc: 'Bright & Engaging' },
     
     // International Accents / Styles
-    { id: 'British', name: 'British (UK)', desc: 'Distinctive UK Accent' },
-    { id: 'American', name: 'American (US)', desc: 'Standard US Accent' },
-    { id: 'French', name: 'French', desc: 'Français Accent' },
-    { id: 'Japanese', name: 'Japanese', desc: 'Nihongo Accent' },
-    { id: 'Chinese', name: 'Chinese', desc: 'Mandarin Accent' },
-    { id: 'German', name: 'German', desc: 'Deutsch Accent' },
-    { id: 'Spanish', name: 'Spanish', desc: 'Español Accent' },
-    { id: 'Italian', name: 'Italian', desc: 'Italiano Accent' },
-    { id: 'Russian', name: 'Russian', desc: 'Русский Accent' },
-    { id: 'Bengali', name: 'Bengali', desc: 'Bangladesh Accent' },
-    { id: 'Indonesian', name: 'Indonesian', desc: 'Bahasa Accent' },
+    { id: 'British', name: 'British', desc: 'Native UK Speaker' },
+    { id: 'American', name: 'American', desc: 'Native US Speaker' },
+    { id: 'French', name: 'French', desc: 'Native Français' },
+    { id: 'Japanese', name: 'Japanese', desc: 'Native Nihongo' },
+    { id: 'Chinese', name: 'Chinese', desc: 'Native Mandarin' },
+    { id: 'German', name: 'German', desc: 'Native Deutsch' },
+    { id: 'Spanish', name: 'Spanish', desc: 'Native Español' },
+    { id: 'Italian', name: 'Italian', desc: 'Native Italiano' },
+    { id: 'Russian', name: 'Russian', desc: 'Native Русский' },
+    { id: 'Bengali', name: 'Bengali', desc: 'Native Bengali' },
+    { id: 'Indonesian', name: 'Indonesian', desc: 'Native Bahasa' },
 ];
 
 type VoiceSelectorProps = {
@@ -300,7 +300,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                                     {personas.map(renderVoiceItem)}
                                     
                                     <div className="mt-2 px-2 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none border-t border-gray-100 dark:border-white/5 pt-3">
-                                        Accents & Styles
+                                        Native & International
                                     </div>
                                     {accents.map(renderVoiceItem)}
                                 </div>

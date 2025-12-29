@@ -43,7 +43,7 @@ const cleanTextForTts = (text: string): string => {
     cleanedText = cleanedText.replace(/\$\$[\s\S]*?\$\$/g, ' a mathematical formula ');
 
     // 4. Process Inline Math ($...$) - Remove delimiters, keep content (often variable names).
-    cleanedText = cleanedText.replace(/\$([^$\n]+)\$/g, '$1');
+    cleanedText = cleanedText.replace(/\$([^$\n]+\$)/g, '$1');
 
     // 5. Clean Markdown Links & Images
     // Images: Keep alt text if present.
@@ -107,14 +107,15 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
         // Check if the requested voice is a valid prebuilt persona
         if (!STANDARD_GEMINI_VOICES.has(targetVoice)) {
             // If it's a custom accent/language request (e.g. "British", "Japanese")
-            // we default to a high-quality base voice and instruct the model to adopt the accent.
+            // we default to a high-quality base voice and instruct the model to adopt the native persona.
             console.log(`[TTS] Custom accent requested: ${targetVoice}`);
             
-            // Use 'Aoede' as a confident, professional base for custom accents, or 'Charon' for deeper tones.
-            // We'll default to 'Aoede' for better clarity in accents.
+            // Use 'Aoede' as a confident, professional base for custom accents.
             const baseVoice = 'Aoede'; 
             
-            promptText = `Please read the following text with a ${targetVoice} accent or in the ${targetVoice} language style as appropriate: "${cleanedText}"`;
+            // Instruct the model to adopt the native characteristics of the requested language/region
+            promptText = `Speak the following text exactly as a native ${targetVoice} speaker would, with authentic intonation and accent: "${cleanedText}"`;
+            
             targetVoice = baseVoice;
         }
 
