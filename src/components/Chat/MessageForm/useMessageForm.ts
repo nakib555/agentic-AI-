@@ -7,14 +7,12 @@
 // This is the simplified main hook for the MessageForm component.
 // It composes smaller, more focused hooks for file handling and input enhancements.
 
-import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { type MessageFormHandle } from './types';
 import { useFileHandling } from './useFileHandling';
 import { useInputEnhancements } from './useInputEnhancements';
 import type { Message } from '../../../types';
 import { usePlaceholder } from '../../../hooks/usePlaceholder';
-
-export type FormattingType = 'bold' | 'italic' | 'strike' | 'code' | 'codeblock' | 'bullet' | 'number';
 
 export const useMessageForm = (
   onSubmit: (message: string, files?: File[], options?: { isThinkingModeEnabled?: boolean }) => void,
@@ -157,67 +155,6 @@ export const useMessageForm = (
     clearDraft();
   };
 
-  const handleFormatting = useCallback((format: FormattingType) => {
-      const textarea = inputRef.current;
-      if (!textarea) return;
-
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const text = inputValue;
-      const selection = text.substring(start, end);
-      
-      let prefix = '';
-      let suffix = '';
-
-      switch (format) {
-          case 'bold':
-              prefix = '**';
-              suffix = '**';
-              break;
-          case 'italic':
-              prefix = '_';
-              suffix = '_';
-              break;
-          case 'strike':
-              prefix = '~~';
-              suffix = '~~';
-              break;
-          case 'code':
-              prefix = '`';
-              suffix = '`';
-              break;
-          case 'codeblock':
-              prefix = '\n```\n';
-              suffix = '\n```\n';
-              break;
-          case 'bullet':
-              prefix = '\n- ';
-              suffix = '';
-              break;
-          case 'number':
-              prefix = '\n1. ';
-              suffix = '';
-              break;
-      }
-
-      const newText = text.substring(0, start) + prefix + selection + suffix + text.substring(end);
-      setInputValue(newText);
-
-      // Restore focus and selection
-      requestAnimationFrame(() => {
-          if (inputRef.current) {
-              inputRef.current.focus();
-              if (selection.length > 0) {
-                  // If text was selected, select the text inside tags
-                  inputRef.current.setSelectionRange(start + prefix.length, end + prefix.length);
-              } else {
-                  // If no text, place cursor inside tags
-                  inputRef.current.setSelectionRange(start + prefix.length, start + prefix.length);
-              }
-          }
-      });
-  }, [inputValue]);
-
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     if (e.clipboardData.files?.length > 0) {
       e.preventDefault();
@@ -239,18 +176,6 @@ export const useMessageForm = (
             handleSubmit();
         }
     }
-
-    // Formatting Shortcuts
-    if ((e.metaKey || e.ctrlKey) && !e.shiftKey) {
-        if (e.key === 'b') {
-            e.preventDefault();
-            handleFormatting('bold');
-        }
-        if (e.key === 'i') {
-            e.preventDefault();
-            handleFormatting('italic');
-        }
-    }
   };
 
   return {
@@ -259,7 +184,7 @@ export const useMessageForm = (
     isFocused, setIsFocused,
     placeholder,
     inputRef, attachButtonRef, uploadMenuRef,
-    handleSubmit, handlePaste, handleKeyDown, handleFormatting,
+    handleSubmit, handlePaste, handleKeyDown,
     canSubmit, // Export validation state
     isProcessingFiles,
     ...fileHandling,
