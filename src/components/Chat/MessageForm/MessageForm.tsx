@@ -243,7 +243,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                     >
                         {isGeneratingResponse ? ( 
                             <div className="relative w-6 h-6 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-full h-full absolute inset-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-full h-full">
                                     <circle cx="24" cy="24" r="16" fill="none" stroke="#4f46e5" strokeWidth="4.5" strokeLinecap="round" strokeDasharray="80 100" strokeDashoffset="0">
                                         <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="2.5s" repeatCount="indefinite" />
                                         <animate attributeName="stroke-dashoffset" values="0; -180" dur="2.5s" repeatCount="indefinite" />
