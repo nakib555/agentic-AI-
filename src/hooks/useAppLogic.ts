@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -283,14 +284,18 @@ export const useAppLogic = () => {
   }, [fetchModels, processModelData]);
 
   const handleSaveServerUrl = useCallback(async (newUrl: string): Promise<boolean> => {
+      // 1. Update Storage first so getApiBaseUrl() picks it up for the check
       if (typeof window !== 'undefined') {
           if (!newUrl) localStorage.removeItem('custom_server_url');
           else localStorage.setItem('custom_server_url', newUrl);
       }
+      
       try {
+          // 2. Verify connection
           const response = await fetchFromApi('/api/health');
           if (response.ok) {
-              setServerUrl(newUrl);
+              // 3. Update state with the EFFECTIVE url (handles reset to default/env var)
+              setServerUrl(getApiBaseUrl()); 
               setBackendStatus('online');
               setBackendError(null);
               fetchModels();
@@ -298,6 +303,7 @@ export const useAppLogic = () => {
           }
           throw new Error('Health check failed');
       } catch (error) {
+          // 4. Revert Storage on failure
           if (typeof window !== 'undefined') {
               if (serverUrl) localStorage.setItem('custom_server_url', serverUrl);
               else localStorage.removeItem('custom_server_url');

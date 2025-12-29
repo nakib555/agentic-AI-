@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -50,6 +49,13 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
   const isGeneratingResponse = isLoading;
   const isSendDisabled = !logic.canSubmit || isAppLoading || backendStatus === 'offline';
 
+  const handleContainerClick = () => {
+    // Ensure clicking anywhere in the container focuses the input if not disabled
+    if (!isGeneratingResponse && logic.inputRef.current) {
+        logic.inputRef.current.focus();
+    }
+  };
+
   return (
     <div className="w-full mx-auto max-w-4xl relative">
       <VoiceVisualizer isRecording={logic.isRecording} />
@@ -80,8 +86,10 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         {...({ webkitdirectory: "", directory: "" } as any)}
       />
 
-      <div className={`
-        relative bg-transparent border transition-all duration-200 rounded-2xl overflow-hidden shadow-sm flex flex-col
+      <div 
+        onClick={handleContainerClick}
+        className={`
+        relative bg-transparent border transition-all duration-200 rounded-2xl overflow-hidden shadow-sm flex flex-col cursor-text
         ${logic.isFocused ? 'border-primary-main shadow-md ring-1 ring-primary-main/20' : 'border-border-default hover:border-border-strong'}
       `}>
         {/* File Previews */}
@@ -139,7 +147,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         </div>
 
         {/* Bottom Toolbar */}
-        <div className="flex items-center justify-between px-3 pb-3 pt-1 gap-3 relative z-10 bg-transparent">
+        <div className="flex items-center justify-between px-3 pb-3 pt-1 gap-3 relative z-10 bg-transparent" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-1">
                 {/* Upload Button */}
                 <button

@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -93,6 +92,7 @@ export const UserMessage = ({
             <div className="w-full max-w-[85%] sm:max-w-[80%] bg-layer-2 rounded-2xl border border-primary-main shadow-md p-3 flex flex-col gap-2">
                <textarea 
                     ref={textareaRef}
+                    autoFocus
                     value={editText}
                     onChange={(e) => {
                         setEditedText(e.target.value);

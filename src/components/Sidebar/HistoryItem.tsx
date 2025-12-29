@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -142,6 +141,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
                     <input
                         ref={inputRef}
                         type="text"
+                        autoFocus
                         value={editedTitle}
                         onChange={(e) => setEditedTitle(e.target.value)}
                         onKeyDown={handleKeyDown}

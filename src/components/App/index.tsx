@@ -48,7 +48,7 @@ export const App = () => {
   return (
     <div 
         ref={logic.appContainerRef} 
-        className={`flex h-full h-[calc(var(--vh,1vh)*100)] bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
+        className={`flex h-full h-[calc(var(--vh,1vh)*100)] bg-transparent overflow-hidden ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
     >
       {logic.versionMismatch && <VersionMismatchOverlay />}
       
