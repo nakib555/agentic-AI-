@@ -113,8 +113,8 @@ export const Tooltip: React.FC<TooltipProps> = ({
       if (typeof ref === 'function') {
         ref(node);
       } else if (ref && typeof ref === 'object') {
-        // Cast to MutableRefObject to allow assignment, fixing TS2540
-        (ref as React.MutableRefObject<HTMLElement | null>).current = node;
+        // Cast to any to allow assignment, fixing TS2540 (read-only current)
+        (ref as any).current = node;
       }
     },
     onMouseEnter: (e: React.MouseEvent) => {
