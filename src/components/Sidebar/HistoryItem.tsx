@@ -162,12 +162,12 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, isCollapsed, isD
                 )}
             </button>
             {!shouldCollapse && !isEditing && (
-                <div className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center rounded-lg ${isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'} transition-opacity`}>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center rounded-lg opacity-100 transition-opacity">
                     <Tooltip content="More options" position="top" delay={600}>
                         <button
                             ref={buttonRef}
                             onClick={(e) => { e.stopPropagation(); setIsMenuOpen(prev => !prev); }}
-                            className="p-1 rounded-md text-slate-500 hover:bg-slate-300/60 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-600/60 dark:hover:text-slate-100"
+                            className={`p-1 rounded-md text-slate-400 hover:text-slate-800 dark:text-slate-500 dark:hover:text-slate-100 hover:bg-slate-300/60 dark:hover:bg-slate-600/60 transition-colors ${isMenuOpen ? 'bg-slate-300/60 dark:bg-slate-600/60 text-slate-800 dark:text-slate-100' : ''}`}
                             aria-haspopup="true"
                             aria-expanded={isMenuOpen}
                         >
