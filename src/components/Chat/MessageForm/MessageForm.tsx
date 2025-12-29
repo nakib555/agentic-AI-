@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -45,16 +46,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
     isAgentMode,
     hasApiKey
   );
-
-  useEffect(() => {
-    if (!window.visualViewport) return;
-    const handleResize = () => {
-      // Ensure input is visible when virtual keyboard resizes viewport
-      logic.inputRef.current?.scrollIntoView({ block: 'nearest' });
-    };
-    window.visualViewport.addEventListener('resize', handleResize);
-    return () => window.visualViewport?.removeEventListener('resize', handleResize);
-  }, []);
 
   const isGeneratingResponse = isLoading;
   const isSendDisabled = !logic.canSubmit || isAppLoading || backendStatus === 'offline';
