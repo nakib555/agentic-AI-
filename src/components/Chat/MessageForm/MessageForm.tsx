@@ -101,7 +101,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="flex flex-nowrap overflow-x-auto gap-2 p-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 scrollbar-hide"
+                    className="flex flex-nowrap overflow-x-auto gap-2 px-3 pb-3 pt-4 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 scrollbar-hide"
                     onWheel={(e) => {
                         if (e.deltaY !== 0) {
                             e.currentTarget.scrollLeft += e.deltaY;
@@ -149,7 +149,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                 onBlur={() => logic.setIsFocused(false)}
                 disabled={isGeneratingResponse}
                 rows={1}
-                className="w-full bg-transparent text-content-primary px-4 py-4 max-h-[300px] focus:outline-none resize-none overflow-y-auto leading-relaxed custom-scrollbar placeholder:text-transparent z-10"
+                className="w-full bg-transparent text-content-primary px-4 py-4 max-h-[120px] focus:outline-none resize-none overflow-y-auto leading-relaxed custom-scrollbar placeholder:text-transparent z-10"
                 style={{ minHeight: '3.5rem' }}
             />
         </div>

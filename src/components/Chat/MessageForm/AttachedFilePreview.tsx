@@ -77,7 +77,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
             exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.1 } }}
             onClick={handleClick}
             className={`
-                relative group flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center shadow-sm transition-all duration-200 overflow-hidden
+                relative group flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center shadow-sm transition-all duration-200
                 ${hasFailed 
                     ? 'bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/50 cursor-default' 
                     : isProcessing 
@@ -133,7 +133,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
 
                 {/* Preview Overlay (Desktop Hover) */}
                 {!hasFailed && !isProcessing && (
-                    <div className="absolute inset-0 bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 bg-black/40 rounded-lg opacity-0 lg:group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none hidden lg:flex">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-white drop-shadow-sm">
                             <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
                             <path fillRule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clipRule="evenodd" />
@@ -156,7 +156,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 type="button"
                 onClick={handleRemove}
                 aria-label={`Remove ${file.name}`}
-                className="absolute -top-2 -right-2 bg-white dark:bg-[#202020] text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-full p-0.5 border border-gray-200 dark:border-white/10 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                className="absolute -top-2 -right-2 bg-white dark:bg-[#202020] text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-full p-0.5 border border-gray-200 dark:border-white/10 shadow-sm z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
             </button>

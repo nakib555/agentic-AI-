@@ -100,7 +100,7 @@ export const useMessageForm = (
     document.body.removeChild(shadow);
 
     // Increased max height to support better multi-line editing experience
-    const MAX_HEIGHT_PX = 300;
+    const MAX_HEIGHT_PX = 120;
     const SINGLE_LINE_THRESHOLD = 32; 
     
     setIsExpanded(scrollHeight > SINGLE_LINE_THRESHOLD || fileHandling.processedFiles.length > 0);
