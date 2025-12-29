@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { useAppLogic } from '../../hooks/useAppLogic';
 import { Toast } from '../UI/Toast';
 import { AppSkeleton } from '../UI/AppSkeleton';
@@ -34,10 +34,21 @@ export const App = () => {
   // Use optional chaining for messages array as it might be undefined during initial load
   const activeMessage = currentChat?.messages?.length ? currentChat.messages[currentChat.messages.length - 1] : null;
 
+  // Mobile viewport height fix for iOS
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    setVh();
+    window.addEventListener('resize', setVh);
+    return () => window.removeEventListener('resize', setVh);
+  }, []);
+
   return (
     <div 
         ref={logic.appContainerRef} 
-        className={`flex w-full h-[100dvh] bg-transparent overflow-hidden ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
+        className={`flex h-full h-[calc(var(--vh,1vh)*100)] bg-transparent overflow-hidden transition-[height] duration-300 ease-in-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
     >
       {logic.versionMismatch && <VersionMismatchOverlay />}
       
@@ -65,7 +76,7 @@ export const App = () => {
           onSettingsClick={() => logic.setIsSettingsOpen(true)}
         />
 
-        <main className="relative z-10 flex-1 flex flex-col chat-background min-w-0 h-full">
+        <main className="relative z-10 flex-1 flex flex-col chat-background min-w-0">
           {/* Mobile Sidebar Toggle - Only visible on mobile when sidebar is closed */}
           {!logic.isDesktop && !logic.isSidebarOpen && (
             <button
@@ -77,7 +88,7 @@ export const App = () => {
             </button>
           )}
 
-          <div className="flex-1 flex flex-col w-full min-h-0 h-full">
+          <div className="flex-1 flex flex-col w-full min-h-0">
              <ChatHeader 
                 isDesktop={logic.isDesktop}
                 handleToggleSidebar={logic.handleToggleSidebar}

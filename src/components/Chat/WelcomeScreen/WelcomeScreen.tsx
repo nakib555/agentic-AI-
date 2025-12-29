@@ -15,7 +15,7 @@ type WelcomeScreenProps = {
 };
 
 export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
-    <div className="flex flex-col items-center justify-center min-h-full w-full text-center pb-12 px-4 relative">
+    <div className="flex flex-col items-center justify-center h-full text-center pb-12 px-4 relative overflow-y-auto custom-scrollbar">
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
