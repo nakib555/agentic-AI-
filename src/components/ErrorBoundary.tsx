@@ -15,10 +15,16 @@ interface ErrorBoundaryState {
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState = {
-    hasError: false,
-    error: null,
-  };
+  // Fix: Initialize state in the constructor and bind event handlers to ensure correct `this` context.
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+    };
+    this.handleReload = this.handleReload.bind(this);
+    this.handleDismiss = this.handleDismiss.bind(this);
+  }
 
   public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
@@ -35,7 +41,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     }
   }
 
-  private handleReload = async () => {
+  private async handleReload() {
     // Attempt to unregister service workers before reloading to fix potential cache issues
     try {
       if ('serviceWorker' in navigator) {
@@ -48,11 +54,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       // Always reload, even if SW cleanup fails
       window.location.reload();
     }
-  };
+  }
 
-  private handleDismiss = () => {
+  private handleDismiss() {
     this.setState({ hasError: false, error: null });
-  };
+  }
 
   public render() {
     if (this.state.hasError) {
