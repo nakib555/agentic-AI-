@@ -8,7 +8,7 @@
 // It composes smaller, more focused hooks for file handling and input enhancements.
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
-import { type MessageFormHandle } from './types';
+import { type MessageFormHandle, type ProcessedFile } from './types';
 import { useFileHandling } from './useFileHandling';
 import { useInputEnhancements } from './useInputEnhancements';
 import type { Message } from '../../../types';
@@ -26,7 +26,7 @@ export const useMessageForm = (
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUploadMenuOpen, setIsUploadMenuOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [isFilePreviewOpen, setIsFilePreviewOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState<ProcessedFile | null>(null);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const attachButtonRef = useRef<HTMLButtonElement>(null);
@@ -35,19 +35,6 @@ export const useMessageForm = (
   const fileHandling = useFileHandling(ref);
   const enhancements = useInputEnhancements(inputValue, setInputValue, fileHandling.processedFiles.length > 0, onSubmit);
   
-  // Auto-open sidebar when files are added
-  const prevFileCountRef = useRef(0);
-  useEffect(() => {
-      const currentCount = fileHandling.processedFiles.length;
-      if (currentCount > 0 && currentCount > prevFileCountRef.current) {
-          setIsFilePreviewOpen(true);
-      }
-      if (currentCount === 0) {
-          setIsFilePreviewOpen(false);
-      }
-      prevFileCountRef.current = currentCount;
-  }, [fileHandling.processedFiles.length]);
-
   const lastMessageText = useMemo(() => {
     const lastVisibleMessage = messages.filter(m => !m.isHidden).pop();
     if (!lastVisibleMessage) return '';
@@ -141,6 +128,7 @@ export const useMessageForm = (
   const clearDraft = () => {
     setInputValue('');
     fileHandling.clearFiles(); 
+    setPreviewFile(null);
     try {
         localStorage.removeItem('messageDraft_text');
         localStorage.removeItem('messageDraft_files');
@@ -196,7 +184,7 @@ export const useMessageForm = (
     inputValue, setInputValue,
     isExpanded, isUploadMenuOpen, setIsUploadMenuOpen,
     isFocused, setIsFocused,
-    isFilePreviewOpen, setIsFilePreviewOpen, // Exported state
+    previewFile, setPreviewFile, // Exported state for sidebar
     placeholder,
     inputRef, attachButtonRef, uploadMenuRef,
     handleSubmit, handlePaste, handleKeyDown,

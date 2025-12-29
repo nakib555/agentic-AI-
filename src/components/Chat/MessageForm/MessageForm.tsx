@@ -15,6 +15,7 @@ import { Message } from '../../../types';
 import { TextType } from '../../UI/TextType';
 import { Tooltip } from '../../UI/Tooltip';
 import { FilePreviewSidebar } from './FilePreviewSidebar';
+import { AttachedFilePreview } from './AttachedFilePreview';
 
 type MessageFormProps = {
   onSubmit: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
@@ -65,12 +66,11 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         )}
       </AnimatePresence>
 
-      {/* NEW: File Preview Sidebar / Floating Box */}
+      {/* Content Preview Sidebar (Desktop) / Modal (Mobile) */}
       <FilePreviewSidebar 
-        isOpen={logic.isFilePreviewOpen}
-        onClose={() => logic.setIsFilePreviewOpen(false)}
-        files={logic.processedFiles}
-        onRemove={logic.handleRemoveFile}
+        isOpen={!!logic.previewFile}
+        onClose={() => logic.setPreviewFile(null)}
+        file={logic.previewFile}
       />
 
       <input
@@ -94,6 +94,29 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         ${logic.isFocused ? 'border-primary-main shadow-md ring-1 ring-primary-main/20' : 'border-border-default hover:border-border-strong'}
       `}>
         
+        {/* File List Area - Moved "Input Bar Top" */}
+        <AnimatePresence>
+            {hasFiles && (
+                <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="flex flex-wrap gap-2 p-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20"
+                >
+                    {logic.processedFiles.map(file => (
+                        <AttachedFilePreview
+                            key={file.id}
+                            file={file.file}
+                            onRemove={() => logic.handleRemoveFile(file.id)}
+                            onPreview={() => logic.setPreviewFile(file)}
+                            progress={file.progress}
+                            error={file.error}
+                        />
+                    ))}
+                </motion.div>
+            )}
+        </AnimatePresence>
+
         {/* Text Input */}
         <div className="flex flex-col relative flex-1">
             {/* Animated Placeholder Overlay */}
@@ -141,29 +164,9 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                             <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                         </svg>
-                        
-                        {/* File Count Badge if closed but files exist */}
-                        {hasFiles && !logic.isFilePreviewOpen && (
-                            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-[#1e1e1e]">
-                                {logic.processedFiles.length}
-                            </span>
-                        )}
                     </button>
                 </Tooltip>
                 
-                {/* Trigger to reopen file sidebar if files exist */}
-                {hasFiles && (
-                    <Tooltip content="View attached files" position="top">
-                        <button
-                            onClick={() => logic.setIsFilePreviewOpen(!logic.isFilePreviewOpen)}
-                            className={`p-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 ${logic.isFilePreviewOpen ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:bg-layer-3'}`}
-                        >
-                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
-                            {logic.processedFiles.length} File{logic.processedFiles.length !== 1 ? 's' : ''}
-                        </button>
-                    </Tooltip>
-                )}
-
                 {/* Agent Mode Toggle */}
                 <Tooltip content={isAgentMode ? "Switch to Chat Mode" : "Switch to Agent Mode"} position="top">
                     <div>
