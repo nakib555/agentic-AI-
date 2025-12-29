@@ -6,7 +6,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { promises as fs } from 'fs';
 import path from 'path';
-import { DATA_DIR } from '../data-store';
+import { DATA_DIR, writeData } from '../data-store';
 
 const VECTOR_STORE_PATH = path.join(DATA_DIR, 'vector_store.json');
 
@@ -52,7 +52,7 @@ export class VectorMemory {
     }
 
     private async save() {
-        await fs.writeFile(VECTOR_STORE_PATH, JSON.stringify(this.store, null, 2));
+        await writeData(VECTOR_STORE_PATH, this.store);
     }
 
     private async getEmbedding(text: string): Promise<number[]> {

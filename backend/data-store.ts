@@ -5,6 +5,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
+import { Buffer } from 'buffer';
 
 export const DATA_DIR = process.env.DATA_DIR || path.join((process as any).cwd(), 'data');
 export const HISTORY_PATH = path.join(DATA_DIR, 'history');
@@ -20,29 +21,35 @@ export async function readData<T>(filePath: string): Promise<T> {
 }
 
 /**
- * Writes data to a file atomically to prevent corruption.
- * It writes to a temporary file first, then renames it to the target path.
- * This ensures the file is either fully written or not updated at all, never partially written.
+ * Writes content to a file atomically.
+ * Works with Strings (text/json) and Buffers (binary/images).
  */
-export async function writeData(filePath: string, data: any): Promise<void> {
+export async function writeFileAtomic(filePath: string, data: string | Buffer): Promise<void> {
     const tempPath = `${filePath}.tmp.${Date.now()}`;
     const dir = path.dirname(filePath);
 
     try {
-        // Ensure directory exists before writing
+        // Ensure directory exists
         await fs.mkdir(dir, { recursive: true });
         
         // Write to temp file
-        await fs.writeFile(tempPath, JSON.stringify(data, null, 2), 'utf-8');
+        await fs.writeFile(tempPath, data);
         
         // Atomic rename (replace)
         await fs.rename(tempPath, filePath);
     } catch (error) {
-        console.error(`[DataStore] Failed to write data atomically to ${filePath}:`, error);
-        // Attempt cleanup of temp file
+        console.error(`[DataStore] Failed to write file atomically to ${filePath}:`, error);
+        // Attempt cleanup
         try { await fs.unlink(tempPath); } catch (e) {}
         throw error;
     }
+}
+
+/**
+ * Wrapper for atomic JSON writing.
+ */
+export async function writeData(filePath: string, data: any): Promise<void> {
+    await writeFileAtomic(filePath, JSON.stringify(data, null, 2));
 }
 
 export async function initDataFile(filePath: string, defaultContent: any) {

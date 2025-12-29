@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { forwardRef, useEffect } from 'react';
+import React, { forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMessageForm } from './useMessageForm';
-import { AttachedFilePreview } from './AttachedFilePreview';
 import { UploadMenu } from './UploadMenu';
 import { VoiceVisualizer } from '../../UI/VoiceVisualizer';
 import { ModeToggle } from '../../UI/ModeToggle';
@@ -15,6 +14,7 @@ import { MessageFormHandle } from './types';
 import { Message } from '../../../types';
 import { TextType } from '../../UI/TextType';
 import { Tooltip } from '../../UI/Tooltip';
+import type { useFileHandling } from './useFileHandling';
 
 type MessageFormProps = {
   onSubmit: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
@@ -30,13 +30,14 @@ type MessageFormProps = {
   setTtsVoice: (voice: string) => void;
   currentChatId: string | null;
   activeModel: string;
+  fileHandling: ReturnType<typeof useFileHandling>;
 };
 
 export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((props, ref) => {
   const { 
     onSubmit, isLoading, isAppLoading, backendStatus, onCancel, 
     isAgentMode, setIsAgentMode, messages, hasApiKey, 
-    currentChatId, activeModel 
+    currentChatId, activeModel, fileHandling 
   } = props;
 
   const logic = useMessageForm(
@@ -45,11 +46,13 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
     ref,
     messages,
     isAgentMode,
-    hasApiKey
+    hasApiKey,
+    fileHandling
   );
 
   const isGeneratingResponse = isLoading;
   const isSendDisabled = !logic.canSubmit || isAppLoading || backendStatus === 'offline';
+  const attachedFileCount = fileHandling.processedFiles.length;
 
   return (
     <div className="w-full mx-auto max-w-4xl relative">
@@ -59,54 +62,18 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         {logic.isUploadMenuOpen && (
           <UploadMenu 
             menuRef={logic.uploadMenuRef}
-            onFileClick={() => logic.fileInputRef.current?.click()}
-            onFolderClick={() => logic.folderInputRef.current?.click()}
+            // Trigger the hidden inputs managed by AppLogic via refs
+            onFileClick={() => fileHandling.fileInputRef.current?.click()}
+            onFolderClick={() => fileHandling.folderInputRef.current?.click()}
           />
         )}
       </AnimatePresence>
-
-      <input
-        type="file"
-        ref={logic.fileInputRef}
-        onChange={logic.handleFileChange}
-        className="hidden"
-        multiple
-      />
-      <input
-        type="file"
-        ref={logic.folderInputRef}
-        onChange={logic.handleFileChange}
-        className="hidden"
-        multiple
-        {...({ webkitdirectory: "", directory: "" } as any)}
-      />
 
       <div className={`
         relative bg-transparent border transition-all duration-200 rounded-2xl overflow-hidden shadow-sm flex flex-col
         ${logic.isFocused ? 'border-primary-main shadow-md ring-1 ring-primary-main/20' : 'border-border-default hover:border-border-strong'}
       `}>
-        {/* File Previews */}
-        <AnimatePresence>
-          {logic.processedFiles.length > 0 && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="px-4 pt-3 flex flex-col gap-2 max-h-32 overflow-y-auto custom-scrollbar"
-            >
-              {logic.processedFiles.map(file => (
-                <AttachedFilePreview
-                  key={file.id}
-                  file={file.file}
-                  onRemove={() => logic.handleRemoveFile(file.id)}
-                  progress={file.progress}
-                  error={file.error}
-                />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
+        
         {/* Text Input */}
         <div className="flex flex-col relative flex-1">
             {/* Animated Placeholder Overlay */}
@@ -143,19 +110,26 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         <div className="flex items-center justify-between px-3 pb-3 pt-1 gap-3 relative z-10 bg-transparent">
             <div className="flex items-center gap-1">
                 {/* Upload Button */}
-                <Tooltip content="Attach files" position="top">
-                    <button
-                        ref={logic.attachButtonRef}
-                        onClick={() => logic.setIsUploadMenuOpen(!logic.isUploadMenuOpen)}
-                        disabled={isGeneratingResponse}
-                        className="p-2 rounded-xl text-content-secondary hover:text-content-primary hover:bg-layer-3 transition-colors disabled:opacity-50"
-                        aria-label="Attach files"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                            <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                        </svg>
-                    </button>
-                </Tooltip>
+                <div className="relative">
+                    <Tooltip content="Attach files" position="top">
+                        <button
+                            ref={logic.attachButtonRef}
+                            onClick={() => logic.setIsUploadMenuOpen(!logic.isUploadMenuOpen)}
+                            disabled={isGeneratingResponse}
+                            className="p-2 rounded-xl text-content-secondary hover:text-content-primary hover:bg-layer-3 transition-colors disabled:opacity-50 relative"
+                            aria-label="Attach files"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                            </svg>
+                            {attachedFileCount > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-bold text-white shadow-sm ring-1 ring-white dark:ring-black">
+                                    {attachedFileCount}
+                                </span>
+                            )}
+                        </button>
+                    </Tooltip>
+                </div>
 
                 {/* Agent Mode Toggle */}
                 <Tooltip content={isAgentMode ? "Switch to Chat Mode" : "Switch to Agent Mode"} position="top">

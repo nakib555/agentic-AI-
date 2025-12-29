@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -17,6 +18,7 @@ const Sidebar = React.lazy(() => import('../Sidebar/Sidebar').then(module => ({ 
 const ChatHeader = React.lazy(() => import('../Chat/ChatHeader').then(module => ({ default: module.ChatHeader })));
 const ChatArea = React.lazy(() => import('../Chat/ChatArea').then(module => ({ default: module.ChatArea })));
 const SourcesSidebar = React.lazy(() => import('../AI/SourcesSidebar').then(module => ({ default: module.SourcesSidebar })));
+const FilesSidebar = React.lazy(() => import('../Sidebar/FilesSidebar').then(module => ({ default: module.FilesSidebar })));
 const ArtifactSidebar = React.lazy(() => import('../Sidebar/ArtifactSidebar').then(module => ({ default: module.ArtifactSidebar })));
 const ThinkingSidebar = React.lazy(() => import('../Sidebar/ThinkingSidebar').then(module => ({ default: module.ThinkingSidebar })));
 const AppModals = React.lazy(() => import('./AppModals').then(module => ({ default: module.AppModals })));
@@ -31,7 +33,6 @@ export const App = () => {
   const chatTitle = currentChat ? currentChat.title : null;
   
   // Find the currently active message for thinking sidebar logic if needed
-  // Use optional chaining for messages array as it might be undefined during initial load
   const activeMessage = currentChat?.messages?.length ? currentChat.messages[currentChat.messages.length - 1] : null;
 
   return (
@@ -48,6 +49,23 @@ export const App = () => {
       
       {/* Global Suspense Boundary with Shimmering Skeleton Loader */}
       <Suspense fallback={<AppSkeleton />}>
+        {/* Hidden Inputs for File Upload - Rendered at App level to support Global Context */}
+        <input
+            type="file"
+            ref={logic.fileHandling.fileInputRef}
+            onChange={logic.fileHandling.handleFileChange}
+            className="hidden"
+            multiple
+        />
+        <input
+            type="file"
+            ref={logic.fileHandling.folderInputRef}
+            onChange={logic.fileHandling.handleFileChange}
+            className="hidden"
+            multiple
+            {...({ webkitdirectory: "", directory: "" } as any)}
+        />
+
         <Sidebar
           key={logic.isDesktop ? 'desktop' : 'mobile'}
           isDesktop={logic.isDesktop}
@@ -121,9 +139,23 @@ export const App = () => {
                 hasApiKey={!!logic.apiKey}
                 onEditMessage={logic.editMessage}
                 onNavigateBranch={logic.navigateBranch}
+                // Pass File Handling
+                fileHandling={logic.fileHandling}
              />
           </div>
         </main>
+
+        <FilesSidebar
+            isOpen={logic.isFilesSidebarOpen}
+            onClose={() => logic.setIsFilesSidebarOpen(false)}
+            files={logic.fileHandling.processedFiles}
+            onRemoveFile={logic.fileHandling.handleRemoveFile}
+            width={logic.filesSidebarWidth}
+            setWidth={logic.handleSetFilesSidebarWidth}
+            isResizing={logic.isFilesResizing}
+            setIsResizing={logic.setIsFilesResizing}
+            onAddFileClick={() => logic.fileHandling.fileInputRef.current?.click()}
+        />
 
         <SourcesSidebar
           isOpen={logic.isSourcesSidebarOpen}
@@ -136,7 +168,7 @@ export const App = () => {
         />
 
         <ThinkingSidebar
-            isOpen={false} // Placeholder: Logic to toggle this sidebar not fully exposed in prompt, defaulting to false/hidden or controlled by logic if implemented
+            isOpen={false} // Placeholder for future explicit toggle
             onClose={() => {}} 
             message={activeMessage}
             sendMessage={logic.sendMessage}

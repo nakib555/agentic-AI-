@@ -8,6 +8,7 @@ import path from 'path';
 import { Buffer } from 'buffer';
 import { ToolError } from '../utils/apiError';
 import { historyControl } from './historyControl';
+import { writeFileAtomic } from '../data-store';
 
 const ensureDir = async (dirPath: string) => {
     try {
@@ -43,9 +44,10 @@ const resolveChatFilePath = async (chatId: string, virtualPath: string): Promise
 export const fileStore = {
     async saveFile(chatId: string, virtualPath: string, data: Buffer | string): Promise<void> {
         const realPath = await resolveChatFilePath(chatId, virtualPath);
-        const dir = path.dirname(realPath);
-        await ensureDir(dir);
-        await fs.writeFile(realPath, data);
+        
+        // Use atomic write to prevent partial file creation
+        await writeFileAtomic(realPath, data);
+        
         console.log(`[FileStore] Saved file for chat ${chatId} to: ${realPath}`);
     },
 

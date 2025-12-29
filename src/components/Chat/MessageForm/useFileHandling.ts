@@ -11,7 +11,7 @@ import React, { useState, useRef, useEffect, useCallback, useImperativeHandle } 
 import { fileToBase64WithProgress, base64ToFile } from '../../../utils/fileUtils';
 import { type MessageFormHandle, type SavedFile, type ProcessedFile, type FileWithEditKey } from './types';
 
-export const useFileHandling = (ref: React.ForwardedRef<MessageFormHandle>) => {
+export const useFileHandling = (ref?: React.ForwardedRef<MessageFormHandle>) => {
   const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -41,8 +41,7 @@ export const useFileHandling = (ref: React.ForwardedRef<MessageFormHandle>) => {
     });
   }, []);
 
-  useImperativeHandle(ref, () => ({
-    attachFiles: (incomingFiles: File[]) => {
+  const attachFiles = useCallback((incomingFiles: File[]) => {
       if (!incomingFiles || incomingFiles.length === 0) return;
       
       const newFilesToAdd: FileWithEditKey[] = [];
@@ -62,7 +61,10 @@ export const useFileHandling = (ref: React.ForwardedRef<MessageFormHandle>) => {
       if (newFilesToAdd.length > 0) {
         processAndSetFiles(newFilesToAdd);
       }
-    }
+  }, [processedFiles, processAndSetFiles]);
+
+  useImperativeHandle(ref, () => ({
+    attachFiles
   }));
 
   // Restore file drafts from localStorage on initial load
@@ -138,5 +140,6 @@ export const useFileHandling = (ref: React.ForwardedRef<MessageFormHandle>) => {
     handleRemoveFile,
     getFilesToSend,
     clearFiles,
+    attachFiles // Export this for direct usage
   };
 };

@@ -5,7 +5,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { MEMORY_CONTENT_PATH, MEMORY_FILES_DIR, readData, writeData } from './data-store';
+import { MEMORY_CONTENT_PATH, MEMORY_FILES_DIR, readData, writeData, writeFileAtomic } from './data-store';
 
 // Helper to generate human-readable filenames
 // Format: {Sanitized-Title}-{ShortID}.tsx
@@ -72,7 +72,7 @@ export const updateMemory = async (req: any, res: any) => {
         
         // Update Core Content if provided
         if (content !== undefined) {
-            await fs.writeFile(MEMORY_CONTENT_PATH, content, 'utf-8');
+            await writeFileAtomic(MEMORY_CONTENT_PATH, content);
         }
 
         // Update Files if provided (Full sync strategy)
@@ -136,7 +136,7 @@ export const updateMemory = async (req: any, res: any) => {
 export const clearMemory = async (req: any, res: any) => {
     try {
         // Clear Content
-        await fs.writeFile(MEMORY_CONTENT_PATH, '', 'utf-8');
+        await writeFileAtomic(MEMORY_CONTENT_PATH, '');
 
         // Clear Files
         const files = await fs.readdir(MEMORY_FILES_DIR);

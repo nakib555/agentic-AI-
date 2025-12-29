@@ -6,9 +6,25 @@
 import { SETTINGS_FILE_PATH, readData, writeData } from './data-store';
 import { listAvailableModels } from './services/modelService';
 
+// In-memory cache for settings to avoid reading disk on every request
+let cachedSettings: any = null;
+
+const ensureSettingsLoaded = async () => {
+    if (!cachedSettings) {
+        try {
+            cachedSettings = await readData(SETTINGS_FILE_PATH);
+        } catch (error) {
+            console.error('Failed to load settings into cache:', error);
+            // Fallback or re-throw depending on severity, but here we likely want to know it failed.
+            throw error;
+        }
+    }
+    return cachedSettings;
+};
+
 export const getSettings = async (req: any, res: any) => {
     try {
-        const settings = await readData(SETTINGS_FILE_PATH);
+        const settings = await ensureSettingsLoaded();
         res.status(200).json(settings);
     } catch (error) {
         console.error('Failed to get settings:', error);
@@ -18,10 +34,15 @@ export const getSettings = async (req: any, res: any) => {
 
 export const updateSettings = async (req: any, res: any) => {
     try {
-        const currentSettings: any = await readData(SETTINGS_FILE_PATH);
+        const currentSettings = await ensureSettingsLoaded();
         const updates = req.body;
         
         const newSettings = { ...currentSettings, ...updates };
+        
+        // Update Cache Immediately
+        cachedSettings = newSettings;
+        
+        // Persist to Disk
         await writeData(SETTINGS_FILE_PATH, newSettings);
 
         // Check if critical settings changed (Provider or API Key)
@@ -53,7 +74,7 @@ export const updateSettings = async (req: any, res: any) => {
 
 export const getApiKey = async (): Promise<string | undefined> => {
     try {
-        const settings: any = await readData(SETTINGS_FILE_PATH);
+        const settings = await ensureSettingsLoaded();
         if (settings.provider === 'openrouter') {
             return settings.openRouterApiKey;
         }
@@ -65,7 +86,7 @@ export const getApiKey = async (): Promise<string | undefined> => {
 
 export const getSuggestionApiKey = async (): Promise<string | undefined> => {
     try {
-        const settings: any = await readData(SETTINGS_FILE_PATH);
+        const settings = await ensureSettingsLoaded();
         return settings.suggestionApiKey || process.env.SUGGESTION_API_KEY;
     } catch (error) {
         return process.env.SUGGESTION_API_KEY;
@@ -74,7 +95,7 @@ export const getSuggestionApiKey = async (): Promise<string | undefined> => {
 
 export const getProvider = async (): Promise<'gemini' | 'openrouter'> => {
     try {
-        const settings: any = await readData(SETTINGS_FILE_PATH);
+        const settings = await ensureSettingsLoaded();
         return settings.provider || 'gemini';
     } catch (error) {
         return 'gemini';

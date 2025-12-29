@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -9,6 +10,10 @@ const motion = motionTyped as any;
 import { MessageList, type MessageListHandle } from './MessageList';
 import { MessageForm, type MessageFormHandle } from './MessageForm/index';
 import type { Message, Source } from '../../types';
+import type { useFileHandling } from './MessageForm/useFileHandling'; // Adjust path if needed
+
+// Helper type to extract return type of the hook
+type FileHandlingState = ReturnType<typeof useFileHandling>;
 
 type ChatAreaProps = {
   messages: Message[];
@@ -35,6 +40,7 @@ type ChatAreaProps = {
   hasApiKey: boolean;
   onEditMessage?: (messageId: string, newText: string) => void;
   onNavigateBranch?: (messageId: string, direction: 'next' | 'prev') => void;
+  fileHandling: FileHandlingState;
 };
 
 export const ChatArea = ({ 
@@ -43,7 +49,7 @@ export const ChatArea = ({
     onShowSources, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
     isAgentMode, setIsAgentMode, backendStatus, backendError, onRetryConnection, hasApiKey,
-    onEditMessage, onNavigateBranch
+    onEditMessage, onNavigateBranch, fileHandling
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -82,8 +88,8 @@ export const ChatArea = ({
     dragCounter.current = 0;
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      // Use the ref to imperatively call the method on MessageForm
-      messageFormRef.current?.attachFiles(Array.from(files));
+      // Direct call to fileHandling
+      fileHandling.attachFiles(Array.from(files));
     }
   };
 
@@ -180,6 +186,7 @@ export const ChatArea = ({
             setTtsVoice={setTtsVoice}
             currentChatId={currentChatId}
             activeModel={activeModel}
+            fileHandling={fileHandling}
           />
         </div>
       </div>
