@@ -46,7 +46,7 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({ actions, onA
             key={index}
             variants={itemVariants}
             onClick={() => onActionClick(action)}
-            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors"
+            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300 border-0 md:border md:border-slate-200 md:dark:border-slate-700 transition-colors"
           >
             {action}
           </motion.button>

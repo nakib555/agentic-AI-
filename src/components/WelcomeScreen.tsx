@@ -11,7 +11,7 @@ const motion = motionTyped as any;
 
 const CapabilityCard = ({ icon, title, description, delay }: { icon: React.ReactNode, title: string, description: string, delay: number }) => (
     <motion.div 
-        className="bg-white dark:bg-black/20 p-4 rounded-xl border border-gray-200 dark:border-white/10 h-full"
+        className="bg-white dark:bg-black/20 p-4 rounded-xl border-0 md:border md:border-gray-200 md:dark:border-white/10 h-full"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut", delay }}

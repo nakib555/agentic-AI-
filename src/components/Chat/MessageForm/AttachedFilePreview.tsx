@@ -86,14 +86,14 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 ${hasFailed 
                     ? 'bg-red-50 dark:bg-red-900/10 cursor-default' 
                     : isProcessing 
-                        ? 'bg-white dark:bg-white/5 cursor-wait' 
-                        : 'bg-white dark:bg-white/5 cursor-pointer hover:shadow-md hover:bg-slate-50 dark:hover:bg-white/10'
+                        ? 'bg-transparent md:bg-white md:dark:bg-white/5 cursor-wait' 
+                        : 'bg-transparent md:bg-white md:dark:bg-white/5 cursor-pointer hover:shadow-md hover:bg-slate-50 dark:hover:bg-white/10'
                 }
             `}
             title={file.name}
         >
             {/* Content Area */}
-            <div className="relative w-full h-full p-1 overflow-hidden rounded-xl">
+            <div className="relative w-full h-full p-0 md:p-1 overflow-hidden rounded-xl">
                 {previewUrl ? (
                     <div className="w-full h-full rounded-lg overflow-hidden bg-gray-100 dark:bg-black/30 relative">
                         <img src={previewUrl} alt={file.name} className="w-full h-full object-cover" />
