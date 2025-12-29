@@ -102,6 +102,11 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     className="flex flex-nowrap overflow-x-auto gap-2 p-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 scrollbar-hide"
+                    onWheel={(e) => {
+                        if (e.deltaY !== 0) {
+                            e.currentTarget.scrollLeft += e.deltaY;
+                        }
+                    }}
                 >
                     {logic.processedFiles.map(file => (
                         <AttachedFilePreview

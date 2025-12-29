@@ -19,8 +19,8 @@ const lightTheme = {
   "--text-inverted": "#ffffff",
 
   // --- Borders ---
-  "--border-subtle": "#f1f5f9",
-  "--border-default": "#e2e8f0",
+  "--border-subtle": "#d9e6e8",
+  "--border-default": "#d9e6e8",
   "--border-strong": "#cbd5e1",
   "--border-focus": "#6366f1",
 
