@@ -26,6 +26,7 @@ export const useMessageForm = (
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUploadMenuOpen, setIsUploadMenuOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [isFilePreviewOpen, setIsFilePreviewOpen] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const attachButtonRef = useRef<HTMLButtonElement>(null);
@@ -34,6 +35,19 @@ export const useMessageForm = (
   const fileHandling = useFileHandling(ref);
   const enhancements = useInputEnhancements(inputValue, setInputValue, fileHandling.processedFiles.length > 0, onSubmit);
   
+  // Auto-open sidebar when files are added
+  const prevFileCountRef = useRef(0);
+  useEffect(() => {
+      const currentCount = fileHandling.processedFiles.length;
+      if (currentCount > 0 && currentCount > prevFileCountRef.current) {
+          setIsFilePreviewOpen(true);
+      }
+      if (currentCount === 0) {
+          setIsFilePreviewOpen(false);
+      }
+      prevFileCountRef.current = currentCount;
+  }, [fileHandling.processedFiles.length]);
+
   const lastMessageText = useMemo(() => {
     const lastVisibleMessage = messages.filter(m => !m.isHidden).pop();
     if (!lastVisibleMessage) return '';
@@ -182,6 +196,7 @@ export const useMessageForm = (
     inputValue, setInputValue,
     isExpanded, isUploadMenuOpen, setIsUploadMenuOpen,
     isFocused, setIsFocused,
+    isFilePreviewOpen, setIsFilePreviewOpen, // Exported state
     placeholder,
     inputRef, attachButtonRef, uploadMenuRef,
     handleSubmit, handlePaste, handleKeyDown,
