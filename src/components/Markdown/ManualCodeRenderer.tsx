@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { memo, useMemo, ReactNode } from 'react';
+import React, { Component, memo, useMemo, ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
@@ -61,6 +61,67 @@ interface MarkdownErrorBoundaryState {
 }
 
 // Internal Error Boundary to catch Markdown/Rehype parsing crashes during streaming
-class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
+class MarkdownErrorBoundary extends Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
   state: MarkdownErrorBoundaryState = { hasError: false };
 
+  static getDerivedStateFromError(_: any): MarkdownErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidUpdate(prevProps: MarkdownErrorBoundaryProps) {
+    // If the text input has changed, try to recover. 
+    // The stream likely added more tokens that fixed the malformed syntax.
+    // Also reset if children changed (e.g. HMR or code edits).
+    if (this.state.hasError) {
+        if (prevProps.text !== this.props.text || prevProps.children !== this.props.children) {
+            this.setState({ hasError: false });
+        }
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+export const ManualCodeRenderer = memo(({ text, components, isStreaming, onRunCode, isRunDisabled }: ManualCodeRendererProps) => {
+    // 1. Process custom syntax (highlights) before markdown parsing
+    // We memoize this to avoid regex overhead on every render if text hasn't changed
+    const processedText = useMemo(() => processHighlights(text), [text]);
+
+    // 2. Prepare components with handlers
+    // We merge the static components map with any dynamic handlers (like onRunCode)
+    // The `getMarkdownComponents` factory handles the binding.
+    const mergedComponents = useMemo(() => {
+        if (!onRunCode && !isRunDisabled) return components;
+        
+        // Re-create components with context if we have actions
+        return getMarkdownComponents({ onRunCode, isRunDisabled });
+    }, [components, onRunCode, isRunDisabled]);
+
+    return (
+        <MarkdownErrorBoundary 
+            text={text} 
+            fallback={
+                <div className="font-mono text-xs text-red-500 p-2 border border-red-200 rounded bg-red-50">
+                    Rendering paused (syntax incomplete)...
+                </div>
+            }
+        >
+            <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeRaw, rehypeKatex]}
+                components={mergedComponents}
+            >
+                {processedText}
+            </ReactMarkdown>
+        </MarkdownErrorBoundary>
+    );
+}, (prevProps, nextProps) => {
+    return prevProps.text === nextProps.text && 
+           prevProps.isStreaming === nextProps.isStreaming &&
+           prevProps.isRunDisabled === nextProps.isRunDisabled;
+});
