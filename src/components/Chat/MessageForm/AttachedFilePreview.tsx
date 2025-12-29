@@ -82,7 +82,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
             exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.15 } }}
             onClick={handleClick}
             className={`
-                relative group flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center shadow-sm transition-all duration-200 select-none
+                relative group flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center md:shadow-sm transition-all duration-200 select-none
                 ${hasFailed 
                     ? 'bg-red-50 dark:bg-red-900/10 cursor-default' 
                     : isProcessing 
@@ -97,10 +97,10 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 {previewUrl ? (
                     <div className="w-full h-full rounded-lg overflow-hidden bg-gray-100 dark:bg-black/30 relative">
                         <img src={previewUrl} alt={file.name} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 ring-1 ring-inset ring-black/5 dark:ring-white/10 rounded-lg"></div>
+                        <div className="absolute inset-0 md:ring-1 md:ring-inset md:ring-black/5 md:dark:ring-white/10 rounded-lg"></div>
                     </div>
                 ) : (
-                    <div className={`w-full h-full rounded-lg flex flex-col items-center justify-center ${visuals.bg} shadow-inner`}>
+                    <div className={`w-full h-full rounded-lg flex flex-col items-center justify-center ${visuals.bg} md:shadow-inner`}>
                         <FileIcon filename={file.name} className={`w-6 h-6 ${visuals.text} opacity-90 drop-shadow-sm transform group-hover:scale-110 transition-transform duration-300`} />
                         <span className="text-[8px] font-bold text-white/90 mt-0.5 uppercase tracking-wide drop-shadow-sm">{visuals.label}</span>
                     </div>

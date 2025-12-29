@@ -46,7 +46,7 @@ export const PromptButton: React.FC<PromptButtonProps> = ({ icon, text, onClick,
             type="button"
             onClick={onClick}
             className={`
-                group flex items-center justify-center gap-2 px-5 py-2 rounded-full shadow-sm backdrop-blur-sm transition-all duration-300
+                group flex items-center justify-center gap-2 px-5 py-2 rounded-full md:shadow-sm backdrop-blur-sm transition-all duration-300
                 ${colorClasses}
                 hover:shadow-md hover:-translate-y-0.5
             `}
