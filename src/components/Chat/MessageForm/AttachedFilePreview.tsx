@@ -84,10 +84,10 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
             className={`
                 relative group flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center shadow-sm transition-all duration-200 select-none
                 ${hasFailed 
-                    ? 'bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/50 cursor-default' 
+                    ? 'bg-red-50 dark:bg-red-900/10 cursor-default' 
                     : isProcessing 
-                        ? 'bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 cursor-wait' 
-                        : 'bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-indigo-300 dark:hover:border-indigo-500/50 cursor-pointer hover:shadow-md'
+                        ? 'bg-white dark:bg-white/5 cursor-wait' 
+                        : 'bg-white dark:bg-white/5 cursor-pointer hover:shadow-md hover:bg-slate-50 dark:hover:bg-white/10'
                 }
             `}
             title={file.name}
@@ -163,7 +163,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 type="button"
                 onClick={handleRemove}
                 aria-label={`Remove ${file.name}`}
-                className="absolute -top-2 -right-2 bg-white dark:bg-[#303030] text-gray-400 hover:text-white hover:bg-red-500 dark:hover:text-white dark:hover:bg-red-500 rounded-full p-0.5 border border-gray-200 dark:border-black/50 shadow-md z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all transform scale-90 hover:scale-110"
+                className="absolute -top-2 -right-2 bg-white dark:bg-[#303030] text-gray-400 hover:text-white hover:bg-red-500 dark:hover:text-white dark:hover:bg-red-500 rounded-full p-0.5 shadow-md z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all transform scale-90 hover:scale-110"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
             </button>
