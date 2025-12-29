@@ -37,7 +37,12 @@ export const App = () => {
   return (
     <div 
         ref={logic.appContainerRef} 
-        className={`flex h-full h-dvh bg-transparent overflow-hidden transition-[height] duration-200 ease-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
+        className={`flex h-full bg-transparent overflow-hidden transition-[height] duration-200 ease-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
+        // Apply visual viewport height constraint on mobile to ensure the entire app layout resizes 
+        // correctly when the virtual keyboard opens, preventing the UI from being pushed up or scrolling.
+        style={{ 
+            height: !logic.isDesktop && logic.visualViewportHeight ? `${logic.visualViewportHeight}px` : '100dvh' 
+        }}
     >
       {logic.versionMismatch && <VersionMismatchOverlay />}
       
@@ -66,9 +71,7 @@ export const App = () => {
         />
 
         <main 
-            className="relative z-10 flex-1 flex flex-col chat-background min-w-0"
-            // Apply visual viewport height constraint ONLY on mobile to ensure input stays visible above keyboard
-            style={{ height: !logic.isDesktop && logic.visualViewportHeight ? `${logic.visualViewportHeight}px` : '100%' }}
+            className="relative z-10 flex-1 flex flex-col chat-background min-w-0 h-full"
         >
           {/* Mobile Sidebar Toggle - Only visible on mobile when sidebar is closed */}
           {!logic.isDesktop && !logic.isSidebarOpen && (

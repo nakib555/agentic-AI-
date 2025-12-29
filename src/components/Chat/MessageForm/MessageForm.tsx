@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -241,7 +240,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                                     <animate attributeName="stroke" dur="10s" repeatCount="indefinite" values="#f87171; #fb923c; #facc15; #4ade80; #22d3ee; #3b82f6; #818cf8; #e879f9; #f472b6; #f87171" />
                                 </circle>
                             </svg>
-                            <div className="w-2 h-2 bg-slate-500 dark:bg-slate-400 rounded-[1px] relative z-10" />
                         </div>
                     ) : ( 
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 ml-0.5">
