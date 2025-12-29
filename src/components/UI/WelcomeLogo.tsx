@@ -53,10 +53,6 @@ export const WelcomeLogo: React.FC<LogoProps> = ({ className = "", size }) => {
               .spin-reverse-slow-${id} {
                 animation-duration: 60s; /* Slower on mobile to save battery */
               }
-              .pulse-${id}, 
-              .float-${id} {
-                animation: none !important; /* Disable subtle effects on mobile */
-              }
             }
           `}
         </style>

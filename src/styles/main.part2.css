@@ -118,29 +118,9 @@ html, body, #root {
     /* Add border to maintain component separation */
     border: 1px solid var(--border-subtle) !important;
   }
-
-  /* 4. Disable Expensive Text Animations */
-  .shimmer-text {
-    animation: none !important;
-    background: none !important;
-    -webkit-text-fill-color: initial !important;
-    color: var(--text-tertiary) !important;
-  }
-
-  /* 5. Disable Decorative Pulses */
-  .animate-pulse {
-    animation: none !important;
-    opacity: 0.7;
-  }
-
-  /* 6. Disable CSS Filters */
-  [class*="filter"], 
-  [class*="drop-shadow"] {
-    filter: none !important;
-  }
 }
 
-/* Shimmer Text Animation (Desktop Only via media query override above) */
+/* Shimmer Text Animation */
 @keyframes shimmer {
   to {
     background-position: 200% center;
