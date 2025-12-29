@@ -24,7 +24,7 @@ import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 import { useTypewriter } from '../../../hooks/useTypewriter';
 import { parseContentSegments } from '../../../utils/workflowParsing';
 import { ThinkingProcess } from './ThinkingProcess';
-import { ArtifactRenderer } from '../../Artifacts/ArtifactRenderer'; // Import new component
+import { ArtifactRenderer } from '../../Artifacts/ArtifactRenderer';
 
 // Optimized spring physics for performance
 const animationProps = {
@@ -50,6 +50,12 @@ type AiMessageProps = {
     userQuery?: string; // Optional prompt context
 };
 
+const StopIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+        <rect x="6" y="6" width="12" height="12" rx="1.5" />
+    </svg>
+);
+
 const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, ttsModel, currentChatId, 
           onShowSources, approveExecution, denyExecution, messageFormRef, onRegenerate,
@@ -63,14 +69,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
 
   const displaySegments = useMemo(() => {
       // Enhanced parsing to detect artifact tags
-      // We process the text to extract [ARTIFACT_CODE] and [ARTIFACT_DATA] tags manually here
-      // since the utility might not support them yet.
-      
       const segments = parseContentSegments(typedFinalAnswer);
-      
-      // Post-process segments to handle artifacts if parseContentSegments doesn't
-      // For this implementation, we will assume standard components are handled, 
-      // and check text segments for artifacts.
       
       const enhancedSegments = [];
       for (const segment of segments) {
@@ -120,6 +119,9 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       messageFormRef.current?.attachFiles([file]);
   };
 
+  const isStoppedByUser = activeResponse?.error?.code === 'STOPPED_BY_USER';
+  const showToolbar = logic.thinkingIsComplete && (logic.hasFinalAnswer || !!activeResponse?.error || isStoppedByUser);
+
   if (logic.isInitialWait) return <TypingIndicator />;
 
   return (
@@ -148,10 +150,14 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           />
       )}
       
-      {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer) && (
+      {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer || isStoppedByUser) && (
         <div className="w-full flex flex-col gap-3 min-w-0">
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
-          {activeResponse?.error && <ErrorDisplay error={activeResponse.error} onRetry={() => onRegenerate(id)} />}
+          
+          {/* Only show error if NOT stopped by user */}
+          {activeResponse?.error && !isStoppedByUser && (
+              <ErrorDisplay error={activeResponse.error} onRetry={() => onRegenerate(id)} />
+          )}
           
           <div className="markdown-content max-w-none w-full text-slate-800 dark:text-gray-100 leading-relaxed break-words min-w-0">
             {displaySegments.map((segment: any, index: number) => {
@@ -186,12 +192,25 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                 }
             })}
           </div>
+
+          {/* Stopped Indicator - Rendered below content */}
+          {isStoppedByUser && (
+              <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/30 rounded-lg w-fit"
+              >
+                  <div className="text-amber-500 dark:text-amber-400">
+                      <StopIcon />
+                  </div>
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Generation Stopped</span>
+              </motion.div>
+          )}
         </div>
       )}
       
-      {/* Show toolbar if thinking is complete, AND (we have an answer OR an error) */}
-      {/* This allows regeneration and branch switching even if the current response failed */}
-      {logic.thinkingIsComplete && (logic.hasFinalAnswer || !!activeResponse?.error) && (
+      {/* Show toolbar if thinking is complete AND we have something to show (text, error, or stopped state) */}
+      {showToolbar && (
           <div className="w-full mt-2 transition-opacity duration-300">
             <MessageToolbar
                 messageId={id}

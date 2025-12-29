@@ -156,13 +156,27 @@ export const useChat = (
             requestIdRef.current = null;
         }
         
-        // Fallback for plan approval state cancellation if we are stuck there
         const chatId = currentChatIdRef.current;
         if (chatId) {
             const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-            // Safe access check for messages array
+            
             if (currentChat?.messages?.length) {
                 const lastMessage = currentChat.messages[currentChat.messages.length - 1];
+                
+                // 1. Mark as not thinking
+                // 2. Mark with specific STOPPED code so UI renders "Stopped" instead of crashing or showing generic error
+                chatHistoryHook.updateActiveResponseOnMessage(chatId, lastMessage.id, () => ({
+                    error: { 
+                        code: 'STOPPED_BY_USER', 
+                        message: 'Generation stopped by user.',
+                        details: 'You interrupted the model.'
+                    },
+                    endTime: Date.now()
+                }));
+                chatHistoryHook.updateMessage(chatId, lastMessage.id, { isThinking: false });
+                chatHistoryHook.completeChatLoading(chatId);
+
+                // Fallback for plan approval state cancellation if we are stuck there
                 if (lastMessage.executionState === 'pending_approval') {
                      const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
                      const callId = activeResponse?.plan?.callId || 'plan-approval';
@@ -170,7 +184,7 @@ export const useChat = (
                 }
             }
         }
-    }, [handleFrontendToolExecution]);
+    }, [handleFrontendToolExecution, chatHistoryHook]);
     
     const { updateMessage } = chatHistoryHook;
     
@@ -425,6 +439,7 @@ export const useChat = (
                 }, 200); // Increased slightly to 200ms to allow suggestion fetch to potentially finish
 
             } else {
+                // Ensure state is cleaned up even if aborted manually (though handleCancel usually handles it)
                 chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
                 chatHistoryHook.completeChatLoading(chatId);
                 abortControllerRef.current = null;
@@ -522,7 +537,7 @@ export const useChat = (
         const originalMessage = currentChat.messages[messageIndex];
         
         // 1. Snapshot the "future" (all messages after this one) to preserve the old branch
-        // Note: The original message itself is part of the old branch, but we store the *subsequent* flow in the payload.
+        // Note: the original message itself is part of the old branch, but we store the *subsequent* flow in the payload.
         const futureMessages = currentChat.messages.slice(messageIndex + 1);
         
         // 2. Prepare Version Objects if they don't exist
