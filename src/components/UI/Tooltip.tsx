@@ -64,6 +64,12 @@ export const Tooltip: React.FC<TooltipProps> = ({
   };
 
   const handleMouseEnter = () => {
+    // Mobile Adjustment: Disable tooltips on devices that don't support hover (e.g., touchscreens)
+    // This prevents the "sticky tooltip" issue where tapping an element leaves the tooltip open.
+    if (typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches) {
+        return;
+    }
+
     if (disabled || !content) return;
     timerRef.current = setTimeout(() => {
       if (triggerRef.current) {
@@ -143,8 +149,9 @@ export const Tooltip: React.FC<TooltipProps> = ({
             >
                 <div 
                     className={`
-                        px-2.5 py-1.5 bg-slate-800 dark:bg-slate-700 text-white dark:text-slate-100 text-xs font-medium rounded-md shadow-lg whitespace-nowrap 
+                        px-2.5 py-1.5 bg-slate-800 dark:bg-slate-700 text-white dark:text-slate-100 text-xs font-medium rounded-md shadow-lg 
                         border border-slate-700/50 dark:border-slate-600/50 backdrop-blur-sm
+                        whitespace-nowrap max-w-[90vw] overflow-hidden text-ellipsis
                         ${className}
                     `}
                     style={{
