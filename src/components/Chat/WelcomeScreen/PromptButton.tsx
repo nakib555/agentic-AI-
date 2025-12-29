@@ -46,16 +46,17 @@ export const PromptButton: React.FC<PromptButtonProps> = ({ icon, text, onClick,
             type="button"
             onClick={onClick}
             className={`
-                group flex items-center justify-center gap-2 px-5 py-2 rounded-full border shadow-sm backdrop-blur-sm transition-all duration-300
+                group flex items-center justify-center gap-3 px-4 py-2.5 rounded-2xl border shadow-sm backdrop-blur-sm transition-all duration-300
                 ${colorClasses}
                 hover:shadow-md hover:-translate-y-0.5
+                w-auto max-w-full flex-grow-0 sm:flex-grow
             `}
             variants={itemVariants}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
         >
-            <span className="text-lg filter drop-shadow-sm group-hover:scale-110 transition-transform duration-300">{icon}</span>
-            <span className="text-sm font-semibold tracking-wide whitespace-nowrap">{text}</span>
+            <span className="text-xl flex-shrink-0 filter drop-shadow-sm group-hover:scale-110 transition-transform duration-300">{icon}</span>
+            <span className="text-sm font-semibold tracking-wide text-left leading-snug">{text}</span>
         </motion.button>
     );
 };
