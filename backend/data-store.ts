@@ -19,8 +19,30 @@ export async function readData<T>(filePath: string): Promise<T> {
     return JSON.parse(data) as T;
 }
 
+/**
+ * Writes data to a file atomically to prevent corruption.
+ * It writes to a temporary file first, then renames it to the target path.
+ * This ensures the file is either fully written or not updated at all, never partially written.
+ */
 export async function writeData(filePath: string, data: any): Promise<void> {
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    const tempPath = `${filePath}.tmp.${Date.now()}`;
+    const dir = path.dirname(filePath);
+
+    try {
+        // Ensure directory exists before writing
+        await fs.mkdir(dir, { recursive: true });
+        
+        // Write to temp file
+        await fs.writeFile(tempPath, JSON.stringify(data, null, 2), 'utf-8');
+        
+        // Atomic rename (replace)
+        await fs.rename(tempPath, filePath);
+    } catch (error) {
+        console.error(`[DataStore] Failed to write data atomically to ${filePath}:`, error);
+        // Attempt cleanup of temp file
+        try { await fs.unlink(tempPath); } catch (e) {}
+        throw error;
+    }
 }
 
 export async function initDataFile(filePath: string, defaultContent: any) {
@@ -40,9 +62,6 @@ export async function initDataStore() {
     await initDataFile(TIME_GROUPS_PATH, {});
     
     // Default settings
-    // Note: Model fields are initialized as empty strings. 
-    // The frontend application logic automatically selects the first available model 
-    // from the dynamically fetched list if the setting is empty.
     const defaultSettings = {
         provider: 'gemini', // 'gemini' | 'openrouter'
         apiKey: '',
@@ -58,7 +77,7 @@ export async function initDataStore() {
         ttsVoice: 'Kore',
         ttsModel: '', // Dynamic
         isAgentMode: false,
-        activeModel: '', // Add this
+        activeModel: '', 
     };
     await initDataFile(SETTINGS_FILE_PATH, defaultSettings);
     

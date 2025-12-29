@@ -38,7 +38,24 @@ class HistoryControlService {
         try {
             this.indexCache = await readData(HISTORY_INDEX_PATH);
             return this.indexCache!;
-        } catch (error) {
+        } catch (error: any) {
+            // Only return empty if file strictly doesn't exist
+            if (error.code === 'ENOENT') {
+                return [];
+            }
+            
+            console.error(`[HistoryControl] Critical Error: Failed to load history index.`, error);
+            
+            // If the file exists but is corrupt (SyntaxError) or unreadable, BACK IT UP before returning empty.
+            // This prevents the app from silently wiping the user's history file on the next save.
+            try {
+                const backupPath = `${HISTORY_INDEX_PATH}.corrupt.${Date.now()}.bak`;
+                await fs.copyFile(HISTORY_INDEX_PATH, backupPath);
+                console.warn(`[HistoryControl] CORRUPT INDEX DETECTED. Backed up to: ${backupPath}`);
+            } catch (backupError) {
+                console.error(`[HistoryControl] Failed to backup corrupt index:`, backupError);
+            }
+
             return [];
         }
     }
