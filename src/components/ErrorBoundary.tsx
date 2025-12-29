@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React from 'react';
 
 interface Props {
-  children?: ReactNode;
+  children?: React.ReactNode;
 }
 
 interface State {
@@ -14,21 +14,21 @@ interface State {
   error: Error | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
+export class ErrorBoundary extends React.Component<Props, State> {
+  state: State = {
     hasError: false,
     error: null
   };
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
   }
 
-  public componentDidUpdate(prevProps: Props) {
+  componentDidUpdate(prevProps: Props) {
     // Automatically reset error state if children change (e.g., due to HMR, code edits, or parent re-render)
     if (this.state.hasError && this.props.children !== prevProps.children) {
       this.setState({ hasError: false, error: null });
@@ -54,7 +54,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: null });
   };
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 flex items-center justify-center bg-page p-4 text-center z-[9999]">
