@@ -87,7 +87,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
     };
 
     const mobileVariants = {
-        closed: { scale: 0.9, opacity: 0, y: 20 },
+        closed: { scale: 0.95, opacity: 0, y: 20 },
         open: { scale: 1, opacity: 1, y: 0 }
     };
 
@@ -115,7 +115,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                             fixed z-[70] bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden
                             ${isDesktop 
                                 ? 'top-0 right-0 h-full w-[500px] max-w-[90vw] border-l' 
-                                : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm max-h-[85vh] rounded-2xl border'
+                                : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-lg max-h-[85vh] rounded-2xl border'
                             }
                         `}
                     >
