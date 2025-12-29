@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense } from 'react';
 import { useAppLogic } from '../../hooks/useAppLogic';
 import { Toast } from '../UI/Toast';
 import { AppSkeleton } from '../UI/AppSkeleton';
@@ -34,49 +34,10 @@ export const App = () => {
   // Use optional chaining for messages array as it might be undefined during initial load
   const activeMessage = currentChat?.messages?.length ? currentChat.messages[currentChat.messages.length - 1] : null;
 
-  // Mobile viewport height fix for iOS and Android keyboards
-  // This ensures the input bar stays firmly attached to the keyboard without pushing the header off-screen
-  useEffect(() => {
-    const setVh = () => {
-      // Use visualViewport if available (Modern Browsers) for precise keyboard handling
-      // visualViewport.height represents the height of the visible area *above* the keyboard
-      const viewport = window.visualViewport;
-      const height = viewport ? viewport.height : window.innerHeight;
-      const vh = height * 0.01;
-      
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-      
-      // Force scroll to top to prevent the "whole page pan" effect on iOS
-      // which sometimes pushes the header out of view
-      if (viewport && window.scrollY !== 0) {
-         window.scrollTo(0, 0);
-      }
-    };
-
-    setVh();
-    
-    // Standard resize (desktop)
-    window.addEventListener('resize', setVh);
-    
-    // Visual Viewport resize (Mobile Keyboards)
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', setVh);
-      window.visualViewport.addEventListener('scroll', setVh);
-    }
-
-    return () => {
-      window.removeEventListener('resize', setVh);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', setVh);
-        window.visualViewport.removeEventListener('scroll', setVh);
-      }
-    };
-  }, []);
-
   return (
     <div 
         ref={logic.appContainerRef} 
-        className={`flex h-full h-[calc(var(--vh,1vh)*100)] bg-transparent overflow-hidden ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
+        className={`flex w-full h-[100dvh] bg-transparent overflow-hidden ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
     >
       {logic.versionMismatch && <VersionMismatchOverlay />}
       
@@ -104,7 +65,7 @@ export const App = () => {
           onSettingsClick={() => logic.setIsSettingsOpen(true)}
         />
 
-        <main className="relative z-10 flex-1 flex flex-col chat-background min-w-0">
+        <main className="relative z-10 flex-1 flex flex-col chat-background min-w-0 h-full">
           {/* Mobile Sidebar Toggle - Only visible on mobile when sidebar is closed */}
           {!logic.isDesktop && !logic.isSidebarOpen && (
             <button
@@ -116,7 +77,7 @@ export const App = () => {
             </button>
           )}
 
-          <div className="flex-1 flex flex-col w-full min-h-0">
+          <div className="flex-1 flex flex-col w-full min-h-0 h-full">
              <ChatHeader 
                 isDesktop={logic.isDesktop}
                 handleToggleSidebar={logic.handleToggleSidebar}
