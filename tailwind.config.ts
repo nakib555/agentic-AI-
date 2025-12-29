@@ -63,13 +63,13 @@ const config: Config = {
         display: ['Space Grotesk', 'sans-serif'],
       },
       keyframes: {
-        shimmer: {
-          '0%': { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
+        'shimmer-wave': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
         },
       },
       animation: {
-        shimmer: 'shimmer 1.5s linear infinite',
+        'shimmer-wave': 'shimmer-wave 2s infinite linear',
       },
     },
   },

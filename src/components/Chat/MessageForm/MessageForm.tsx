@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -233,8 +232,9 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                     whileTap={{ scale: 0.95 }}
                 >
                     {isGeneratingResponse ? ( 
-                        <div className="w-5 h-5 flex items-center justify-center">
-                            <div className="w-3 h-3 bg-status-error-text rounded-sm animate-none" />
+                        <div className="relative w-5 h-5 flex items-center justify-center">
+                            <span className="absolute inset-0 border-2 border-status-error-text/30 border-t-status-error-text rounded-full animate-spin"></span>
+                            <div className="w-2 h-2 bg-status-error-text rounded-[1px]" />
                         </div>
                     ) : ( 
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 ml-0.5">

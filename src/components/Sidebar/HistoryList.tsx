@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -9,6 +8,7 @@ import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 const motion = motionTyped as any;
 import type { ChatSession } from '../../types';
 import { HistoryItem } from './HistoryItem';
+import { Skeleton } from '../UI/Skeleton';
 
 type HistoryListProps = {
   history: ChatSession[];
@@ -68,9 +68,9 @@ const NoItems = ({ message, subtext }: { message: string, subtext?: string }) =>
 );
 
 const HistorySkeleton = () => (
-    <div className="space-y-1 animate-pulse px-2">
+    <div className="space-y-1 px-2">
         {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-9 w-full bg-gray-100/60 dark:bg-violet-900/30 rounded-lg"></div>
+            <Skeleton key={i} className="h-9 w-full rounded-lg" />
         ))}
     </div>
 );
