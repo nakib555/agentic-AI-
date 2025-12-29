@@ -162,9 +162,9 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 type="button"
                 onClick={handleRemove}
                 aria-label={`Remove ${file.name}`}
-                className="absolute -top-2 -right-2 bg-white dark:bg-[#303030] text-gray-400 hover:text-white hover:bg-red-500 dark:hover:text-white dark:hover:bg-red-500 rounded-full p-0.5 shadow-md z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all transform scale-90 hover:scale-110"
+                className="absolute top-1 right-1 bg-white/50 dark:bg-black/50 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-red-500 dark:hover:text-white dark:hover:bg-red-500 rounded-full p-0.5 shadow-md z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all transform scale-90 hover:scale-110"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
             </button>
         </motion.div>
     );
