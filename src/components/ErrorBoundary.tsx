@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children?: ReactNode;
@@ -14,28 +14,28 @@ interface State {
   error: Error | null;
 }
 
-export class ErrorBoundary extends React.Component<Props, State> {
-  state: State = {
+export class ErrorBoundary extends Component<Props, State> {
+  public state: State = {
     hasError: false,
     error: null
   };
 
-  static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
   }
 
-  componentDidUpdate(prevProps: Props) {
+  public componentDidUpdate(prevProps: Props) {
     // Automatically reset error state if children change (e.g., due to HMR, code edits, or parent re-render)
     if (this.state.hasError && this.props.children !== prevProps.children) {
       this.setState({ hasError: false, error: null });
     }
   }
 
-  handleReload = async () => {
+  private handleReload = async () => {
     // Attempt to unregister service workers before reloading to fix potential cache issues
     try {
       if ('serviceWorker' in navigator) {
@@ -50,11 +50,11 @@ export class ErrorBoundary extends React.Component<Props, State> {
     }
   };
 
-  handleDismiss = () => {
+  private handleDismiss = () => {
     this.setState({ hasError: false, error: null });
   };
 
-  render() {
+  public render() {
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 flex items-center justify-center bg-page p-4 text-center z-[9999]">
