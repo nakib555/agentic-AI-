@@ -36,7 +36,7 @@ export const useAppLogic = () => {
 
   // --- Core Hooks ---
   const { theme, setTheme } = useTheme();
-  const { isDesktop } = useViewport();
+  const { isDesktop, visualViewportHeight } = useViewport();
   const sidebar = useSidebar();
   
   // --- UI State ---
@@ -553,7 +553,7 @@ export const useAppLogic = () => {
   }, [chat, startNewChat]);
   
   return {
-    appContainerRef, messageListRef, theme, setTheme, isDesktop, ...sidebar, isAgentMode, ...memory,
+    appContainerRef, messageListRef, theme, setTheme, isDesktop, visualViewportHeight, ...sidebar, isAgentMode, ...memory,
     isAnyResizing, // Export aggregated state
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
     isImportModalOpen, setIsImportModalOpen, isSourcesSidebarOpen, sourcesForSidebar,
