@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Component, memo, useMemo, ReactNode } from 'react';
+import React, { memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
@@ -51,3 +51,26 @@ const processHighlights = (content: string): string => {
             // This prevents "stuck" rendering when the model writes "$100" without a closing $.
             .replace(/\$(\d)/g, '\\$$$1');
     }).join('');
+};
+
+const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, onRunCode, isRunDisabled }) => {
+    const processedText = useMemo(() => processHighlights(text), [text]);
+    
+    // We memoize the components object to prevent unnecessary re-renders of ReactMarkdown
+    // created by getMarkdownComponents if the props haven't changed.
+    const customComponents = useMemo(() => {
+        return getMarkdownComponents({ onRunCode, isRunDisabled });
+    }, [onRunCode, isRunDisabled]);
+
+    return (
+        <ReactMarkdown
+            remarkPlugins={[remarkMath, remarkGfm]}
+            rehypePlugins={[rehypeKatex, rehypeRaw]}
+            components={customComponents}
+        >
+            {processedText}
+        </ReactMarkdown>
+    );
+};
+
+export const ManualCodeRenderer = memo(ManualCodeRendererRaw);
