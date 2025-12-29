@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense } from 'react';
 import { useAppLogic } from '../../hooks/useAppLogic';
 import { Toast } from '../UI/Toast';
 import { AppSkeleton } from '../UI/AppSkeleton';
@@ -34,32 +34,10 @@ export const App = () => {
   // Use optional chaining for messages array as it might be undefined during initial load
   const activeMessage = currentChat?.messages?.length ? currentChat.messages[currentChat.messages.length - 1] : null;
 
-  // Mobile viewport height fix for iOS & Android Keyboard
-  useEffect(() => {
-    const setVh = () => {
-      // Use visualViewport height if available to account for keyboard resizing
-      const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-      // We calculate 1vh based on the current visual viewport height
-      const vh = height * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-    };
-
-    setVh();
-    
-    // Listen to both window resize and visualViewport resize for robustness
-    window.addEventListener('resize', setVh);
-    window.visualViewport?.addEventListener('resize', setVh);
-    
-    return () => {
-        window.removeEventListener('resize', setVh);
-        window.visualViewport?.removeEventListener('resize', setVh);
-    };
-  }, []);
-
   return (
     <div 
         ref={logic.appContainerRef} 
-        className={`flex h-full h-[calc(var(--vh,1vh)*100)] bg-transparent overflow-hidden transition-[height] duration-200 ease-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
+        className={`flex h-full h-dvh bg-transparent overflow-hidden transition-[height] duration-200 ease-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
     >
       {logic.versionMismatch && <VersionMismatchOverlay />}
       
