@@ -99,25 +99,6 @@ export const useSidebar = () => {
     } catch (e) { /* ignore */ }
   }, []);
 
-  // --- State for Files Sidebar ---
-  const [isFilesResizing, setIsFilesResizing] = useState(false);
-  const [filesSidebarWidth, setFilesSidebarWidth] = useState(() => {
-    try {
-        const savedWidth = localStorage.getItem('filesSidebarWidth');
-        return savedWidth ? Math.max(280, Math.min(600, Number(savedWidth))) : 320; 
-    } catch (e) {
-        return 320;
-    }
-  });
-
-  const handleSetFilesSidebarWidth = useCallback((width: number) => {
-    const newWidth = Math.max(280, Math.min(600, width));
-    setFilesSidebarWidth(newWidth);
-    try {
-        localStorage.setItem('filesSidebarWidth', String(newWidth));
-    } catch (e) { /* ignore */ }
-  }, []);
-
 
   return {
     isSidebarOpen,
@@ -136,9 +117,5 @@ export const useSidebar = () => {
     setIsSourcesResizing,
     sourcesSidebarWidth,
     handleSetSourcesSidebarWidth,
-    isFilesResizing,
-    setIsFilesResizing,
-    filesSidebarWidth,
-    handleSetFilesSidebarWidth
   };
 };

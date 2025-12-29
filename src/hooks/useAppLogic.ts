@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -10,7 +9,6 @@ import { useTheme } from './useTheme';
 import { useSidebar } from './useSidebar';
 import { useViewport } from './useViewport';
 import { useMemory } from './useMemory';
-import { useFileHandling } from '../components/Chat/MessageForm/useFileHandling';
 import type { Model, Source } from '../types';
 import {
   exportChatToJson,
@@ -46,7 +44,6 @@ export const useAppLogic = () => {
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSourcesSidebarOpen, setIsSourcesSidebarOpen] = useState(false);
-  const [isFilesSidebarOpen, setIsFilesSidebarOpen] = useState(false); // New Sidebar State
   const [sourcesForSidebar, setSourcesForSidebar] = useState<Source[]>([]);
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [backendError, setBackendError] = useState<string | null>(null);
@@ -67,23 +64,6 @@ export const useAppLogic = () => {
   const [artifactWidth, setArtifactWidth] = useState(500);
   const [isArtifactResizing, setIsArtifactResizing] = useState(false);
 
-  // --- File Handling State ---
-  // We lift this state here so it can be shared between the Sidebar and the MessageForm
-  const fileHandling = useFileHandling();
-
-  // Auto-open Files sidebar when files are added
-  useEffect(() => {
-      if (fileHandling.processedFiles.length > 0 && !isFilesSidebarOpen) {
-          setIsFilesSidebarOpen(true);
-          // Close other sidebars if on mobile to avoid clutter
-          if (!isDesktop) {
-              sidebar.setIsSidebarOpen(false);
-              setIsSourcesSidebarOpen(false);
-              setIsArtifactOpen(false);
-          }
-      }
-  }, [fileHandling.processedFiles.length, isDesktop]);
-
   // Listen for Artifact open requests from deep within markdown
   useEffect(() => {
       const handleOpenArtifact = (e: CustomEvent) => {
@@ -94,7 +74,6 @@ export const useAppLogic = () => {
           if (!isDesktop) {
               sidebar.setIsSidebarOpen(false);
               setIsSourcesSidebarOpen(false);
-              setIsFilesSidebarOpen(false);
           }
       };
       window.addEventListener('open-artifact', handleOpenArtifact as EventListener);
@@ -103,7 +82,7 @@ export const useAppLogic = () => {
 
   // Global Resize Logic
   // Aggregates resizing state from all sidebars to enforce global UI locks (cursor, pointer-events)
-  const isAnyResizing = sidebar.isResizing || sidebar.isThinkingResizing || sidebar.isSourcesResizing || isArtifactResizing || sidebar.isFilesResizing;
+  const isAnyResizing = sidebar.isResizing || sidebar.isThinkingResizing || sidebar.isSourcesResizing || isArtifactResizing;
 
   useEffect(() => {
       if (isAnyResizing) {
@@ -391,14 +370,6 @@ export const useAppLogic = () => {
     // Only update prevChatIdRef if it actually changed
     if (chat.currentChatId !== prevChatIdRef.current) {
         prevChatIdRef.current = chat.currentChatId;
-        // Close file sidebar when chat changes to reset context
-        if (isFilesSidebarOpen && !isDesktop) {
-            setIsFilesSidebarOpen(false);
-        }
-        // Clear files when chat changes? 
-        // No, files are drafted in the input area, they should persist until sent or cleared by user.
-        // But if we load a new chat, we might want to clear the input area.
-        // `useMessageForm` handles text persistence via localStorage, files via hook state.
     }
 
     const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
@@ -414,7 +385,7 @@ export const useAppLogic = () => {
         if (currentChat.imageModel) setImageModel(currentChat.imageModel);
         if (currentChat.videoModel) setVideoModel(currentChat.videoModel);
     }
-  }, [chat.currentChatId, chat.chatHistory, activeModel, isFilesSidebarOpen, isDesktop]); 
+  }, [chat.currentChatId, chat.chatHistory, activeModel]); 
 
   const checkBackendStatusTimeoutRef = useRef<number | null>(null);
 
@@ -586,8 +557,6 @@ export const useAppLogic = () => {
     isAnyResizing, // Export aggregated state
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
     isImportModalOpen, setIsImportModalOpen, isSourcesSidebarOpen, sourcesForSidebar,
-    // File Sidebar Exports
-    isFilesSidebarOpen, setIsFilesSidebarOpen, fileHandling,
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading, versionMismatch,
     retryConnection: checkBackendStatus,
     confirmation, handleConfirm, handleCancel: () => setConfirmation(null),

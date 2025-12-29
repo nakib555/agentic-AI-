@@ -5,14 +5,14 @@
  */
 
 // This is the simplified main hook for the MessageForm component.
-// It composes smaller, more focused hooks for input enhancements.
+// It composes smaller, more focused hooks for file handling and input enhancements.
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { type MessageFormHandle } from './types';
+import { useFileHandling } from './useFileHandling';
 import { useInputEnhancements } from './useInputEnhancements';
 import type { Message } from '../../../types';
 import { usePlaceholder } from '../../../hooks/usePlaceholder';
-import type { useFileHandling } from './useFileHandling';
 
 export const useMessageForm = (
   onSubmit: (message: string, files?: File[], options?: { isThinkingModeEnabled?: boolean }) => void,
@@ -20,8 +20,7 @@ export const useMessageForm = (
   ref: React.ForwardedRef<MessageFormHandle>,
   messages: Message[],
   isAgentMode: boolean,
-  hasApiKey: boolean,
-  fileHandling: ReturnType<typeof useFileHandling> // Consumed from parent
+  hasApiKey: boolean
 ) => {
   const [inputValue, setInputValue] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -32,6 +31,7 @@ export const useMessageForm = (
   const attachButtonRef = useRef<HTMLButtonElement>(null);
   const uploadMenuRef = useRef<HTMLDivElement>(null);
 
+  const fileHandling = useFileHandling(ref);
   const enhancements = useInputEnhancements(inputValue, setInputValue, fileHandling.processedFiles.length > 0, onSubmit);
   
   const lastMessageText = useMemo(() => {
@@ -187,6 +187,7 @@ export const useMessageForm = (
     handleSubmit, handlePaste, handleKeyDown,
     canSubmit, // Export validation state
     isProcessingFiles,
+    ...fileHandling,
     ...enhancements,
   };
 };
