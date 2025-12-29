@@ -71,6 +71,10 @@ export const VoiceVisualizer: React.FC<VoiceVisualizerProps> = ({ isRecording })
 
             ctx.clearRect(0, 0, width, height);
 
+            // Add strong glow effect
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#818cf8'; // Indigo-400 for the shine
+
             const barWidth = (width / dataArray.length) * 2.5;
             let x = 0;
 
@@ -80,7 +84,8 @@ export const VoiceVisualizer: React.FC<VoiceVisualizerProps> = ({ isRecording })
                 // Gradient Color based on height (Volume)
                 const gradient = ctx.createLinearGradient(0, height, 0, height - barHeight);
                 gradient.addColorStop(0, '#6366f1'); // Indigo
-                gradient.addColorStop(1, '#a855f7'); // Purple
+                gradient.addColorStop(0.5, '#a855f7'); // Purple
+                gradient.addColorStop(1, '#ffffff'); // White tip for "shine"
 
                 ctx.fillStyle = gradient;
                 

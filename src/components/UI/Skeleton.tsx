@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -20,7 +21,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '' }) => {
       aria-hidden="true"
     >
       <div 
-        className="absolute inset-0 -translate-x-full animate-shimmer-wave bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent skew-x-12"
+        className="absolute inset-0 -translate-x-full animate-shimmer-wave bg-gradient-to-r from-transparent via-white/90 dark:via-indigo-400/20 to-transparent skew-x-12"
       />
     </div>
   );

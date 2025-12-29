@@ -36,6 +36,13 @@ export const WelcomeLogo: React.FC<LogoProps> = ({ className = "", size }) => {
             .pulse-${id} { animation: pulse-${id} 6s ease-in-out infinite; }
             .float-${id} { animation: float-${id} 8s ease-in-out infinite; }
             
+            /* Enhanced Radiating Waves */
+            .wave-${id} {
+              transform-origin: 128px 128px;
+              animation: wave-expand-${id} 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+              opacity: 0;
+            }
+
             @keyframes spin-${id} { 100% { transform: rotate(360deg); } }
             @keyframes pulse-${id} { 
               0%, 100% { opacity: 0.5; transform: scale(1); } 
@@ -44,6 +51,11 @@ export const WelcomeLogo: React.FC<LogoProps> = ({ className = "", size }) => {
             @keyframes float-${id} {
               0%, 100% { transform: translateY(0px); }
               50% { transform: translateY(-6px); }
+            }
+            @keyframes wave-expand-${id} {
+              0% { transform: scale(0.5); opacity: 0; stroke-width: 4px; }
+              30% { opacity: 0.8; }
+              100% { transform: scale(2.2); opacity: 0; stroke-width: 0px; }
             }
 
             /* Mobile Performance Optimization */
@@ -84,25 +96,32 @@ export const WelcomeLogo: React.FC<LogoProps> = ({ className = "", size }) => {
           </filter>
         </defs>
 
+        {/* --- STRONG SHINING WAVES --- */}
+        <g>
+             <circle cx="128" cy="128" r="60" stroke={`url(#grad_primary_${id})`} fill="none" className={`wave-${id}`} style={{ animationDelay: '0s' }} />
+             <circle cx="128" cy="128" r="60" stroke={`url(#grad_secondary_${id})`} fill="none" className={`wave-${id}`} style={{ animationDelay: '1s' }} />
+             <circle cx="128" cy="128" r="60" stroke={`url(#grad_primary_${id})`} fill="none" className={`wave-${id}`} style={{ animationDelay: '2s' }} />
+        </g>
+
         {/* Background Ambient Field */}
         <g className={`pulse-${id}`} style={{ transformOrigin: '128px 128px' }}>
-           <circle cx="128" cy="128" r="90" fill={`url(#grad_primary_${id})`} opacity="0.05" filter={`url(#glow_soft_${id})`} />
+           <circle cx="128" cy="128" r="90" fill={`url(#grad_primary_${id})`} opacity="0.1" filter={`url(#glow_soft_${id})`} />
         </g>
 
         {/* Outer Tech Ring */}
         <g className={`origin-center spin-slow-${id}`}>
             {/* Dashed Track */}
-            <circle cx="128" cy="128" r="110" stroke="currentColor" strokeWidth="1" strokeOpacity="0.08" strokeDasharray="4 8" />
+            <circle cx="128" cy="128" r="110" stroke="currentColor" strokeWidth="1" strokeOpacity="0.15" strokeDasharray="4 8" />
             
             {/* Rotating Arcs */}
-            <path d="M128 18 A110 110 0 0 1 238 128" stroke={`url(#grad_secondary_${id})`} strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-            <path d="M128 238 A110 110 0 0 1 18 128" stroke={`url(#grad_primary_${id})`} strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+            <path d="M128 18 A110 110 0 0 1 238 128" stroke={`url(#grad_secondary_${id})`} strokeWidth="2" strokeLinecap="round" opacity="0.6" filter={`url(#glow_intense_${id})`} />
+            <path d="M128 238 A110 110 0 0 1 18 128" stroke={`url(#grad_primary_${id})`} strokeWidth="2" strokeLinecap="round" opacity="0.6" filter={`url(#glow_intense_${id})`} />
             
             {/* Data Nodes on Ring */}
-            <circle cx="128" cy="18" r="2.5" fill={`url(#grad_secondary_${id})`} />
-            <circle cx="238" cy="128" r="2.5" fill={`url(#grad_secondary_${id})`} />
-            <circle cx="128" cy="238" r="2.5" fill={`url(#grad_primary_${id})`} />
-            <circle cx="18" cy="128" r="2.5" fill={`url(#grad_primary_${id})`} />
+            <circle cx="128" cy="18" r="3" fill={`url(#grad_secondary_${id})`} filter={`url(#glow_intense_${id})`} />
+            <circle cx="238" cy="128" r="3" fill={`url(#grad_secondary_${id})`} />
+            <circle cx="128" cy="238" r="3" fill={`url(#grad_primary_${id})`} filter={`url(#glow_intense_${id})`} />
+            <circle cx="18" cy="128" r="3" fill={`url(#grad_primary_${id})`} />
         </g>
 
         {/* Middle Geometric Layer - Hexagon & Connections */}
@@ -111,30 +130,30 @@ export const WelcomeLogo: React.FC<LogoProps> = ({ className = "", size }) => {
             <path 
               d="M128 48 L197 88 V168 L128 208 L59 168 V88 Z" 
               stroke={`url(#grad_primary_${id})`} 
-              strokeWidth="1" 
+              strokeWidth="1.5" 
               fill="none"
-              strokeOpacity="0.3"
+              strokeOpacity="0.4"
             />
             
             {/* Internal connecting lines (Neural Network metaphor) */}
-            <path d="M128 48 L128 100" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.1" />
-            <path d="M197 88 L152 114" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.1" />
-            <path d="M197 168 L152 142" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.1" />
-            <path d="M128 208 L128 156" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.1" />
-            <path d="M59 168 L104 142" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.1" />
-            <path d="M59 88 L104 114" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.1" />
+            <path d="M128 48 L128 100" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.2" />
+            <path d="M197 88 L152 114" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.2" />
+            <path d="M197 168 L152 142" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.2" />
+            <path d="M128 208 L128 156" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.2" />
+            <path d="M59 168 L104 142" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.2" />
+            <path d="M59 88 L104 114" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.2" />
         </g>
 
         {/* Inner Orbital System */}
         <g className={`origin-center spin-mid-${id}`}>
-             <ellipse cx="128" cy="128" rx="65" ry="25" stroke={`url(#grad_secondary_${id})`} strokeWidth="1" strokeOpacity="0.2" transform="rotate(45 128 128)" />
-             <ellipse cx="128" cy="128" rx="65" ry="25" stroke={`url(#grad_primary_${id})`} strokeWidth="1" strokeOpacity="0.2" transform="rotate(-45 128 128)" />
+             <ellipse cx="128" cy="128" rx="65" ry="25" stroke={`url(#grad_secondary_${id})`} strokeWidth="1" strokeOpacity="0.3" transform="rotate(45 128 128)" />
+             <ellipse cx="128" cy="128" rx="65" ry="25" stroke={`url(#grad_primary_${id})`} strokeWidth="1" strokeOpacity="0.3" transform="rotate(-45 128 128)" />
              
-             {/* Electrons */}
-             <circle cx="174" cy="82" r="3" fill="var(--primary-main)" transform="rotate(45 128 128)">
+             {/* Electrons - Glowing */}
+             <circle cx="174" cy="82" r="4" fill="var(--primary-main)" transform="rotate(45 128 128)" filter={`url(#glow_intense_${id})`}>
                 <animate attributeName="opacity" values="0.4;1;0.4" dur="4s" repeatCount="indefinite" />
              </circle>
-             <circle cx="82" cy="174" r="3" fill="var(--primary-main)" transform="rotate(45 128 128)">
+             <circle cx="82" cy="174" r="4" fill="var(--primary-main)" transform="rotate(45 128 128)" filter={`url(#glow_intense_${id})`}>
                 <animate attributeName="opacity" values="0.4;1;0.4" dur="4s" repeatCount="indefinite" begin="2s" />
              </circle>
         </g>
@@ -142,13 +161,13 @@ export const WelcomeLogo: React.FC<LogoProps> = ({ className = "", size }) => {
         {/* Central Cognitive Core */}
         <g className={`float-${id}`}>
             {/* Core Glow */}
-            <circle cx="128" cy="128" r="28" fill={`url(#grad_primary_${id})`} opacity="0.3" filter={`url(#glow_intense_${id})`} />
+            <circle cx="128" cy="128" r="28" fill={`url(#grad_primary_${id})`} opacity="0.4" filter={`url(#glow_intense_${id})`} />
             
             {/* Solid Core */}
             <circle cx="128" cy="128" r="16" fill={`url(#grad_core_${id})`} />
             
             {/* Iris/Lens detail */}
-            <circle cx="128" cy="128" r="10" stroke={`url(#grad_primary_${id})`} strokeWidth="1" fill="none" opacity="0.7" />
+            <circle cx="128" cy="128" r="10" stroke={`url(#grad_primary_${id})`} strokeWidth="1.5" fill="none" opacity="0.8" />
             <circle cx="128" cy="128" r="5" fill={`url(#grad_primary_${id})`} />
         </g>
       </svg>

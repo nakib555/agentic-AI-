@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMessageForm } from './useMessageForm';
 import { AttachedFilePreview } from './AttachedFilePreview';
@@ -45,6 +45,16 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
     isAgentMode,
     hasApiKey
   );
+
+  useEffect(() => {
+    if (!window.visualViewport) return;
+    const handleResize = () => {
+      // Ensure input is visible when virtual keyboard resizes viewport
+      logic.inputRef.current?.scrollIntoView({ block: 'nearest' });
+    };
+    window.visualViewport.addEventListener('resize', handleResize);
+    return () => window.visualViewport?.removeEventListener('resize', handleResize);
+  }, []);
 
   const isGeneratingResponse = isLoading;
   const isSendDisabled = !logic.canSubmit || isAppLoading || backendStatus === 'offline';
@@ -223,7 +233,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                     className={`
                         w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm
                         ${isGeneratingResponse 
-                            ? 'bg-layer-1 border-2 border-status-error-text/30 hover:bg-status-error-bg hover:border-status-error-text' 
+                            ? 'bg-layer-1 border-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800' 
                             : isSendDisabled 
                                 ? 'bg-layer-3 text-content-tertiary cursor-not-allowed shadow-none' 
                                 : 'bg-primary-main text-text-inverted hover:bg-primary-hover hover:scale-105 hover:shadow-md'
@@ -232,9 +242,15 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                     whileTap={{ scale: 0.95 }}
                 >
                     {isGeneratingResponse ? ( 
-                        <div className="relative w-5 h-5 flex items-center justify-center">
-                            <span className="absolute inset-0 border-2 border-status-error-text/30 border-t-status-error-text rounded-full animate-spin"></span>
-                            <div className="w-2 h-2 bg-status-error-text rounded-[1px]" />
+                        <div className="relative w-6 h-6 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-full h-full absolute inset-0">
+                                <circle cx="24" cy="24" r="16" fill="none" stroke="#4f46e5" strokeWidth="4.5" strokeLinecap="round" strokeDasharray="80 100" strokeDashoffset="0">
+                                    <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="2.5s" repeatCount="indefinite" />
+                                    <animate attributeName="stroke-dashoffset" values="0; -180" dur="2.5s" repeatCount="indefinite" />
+                                    <animate attributeName="stroke" dur="10s" repeatCount="indefinite" values="#f87171; #fb923c; #facc15; #4ade80; #22d3ee; #3b82f6; #818cf8; #e879f9; #f472b6; #f87171" />
+                                </circle>
+                            </svg>
+                            <div className="w-2 h-2 bg-slate-500 dark:bg-slate-400 rounded-[1px] relative z-10" />
                         </div>
                     ) : ( 
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 ml-0.5">

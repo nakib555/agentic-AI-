@@ -129,10 +129,12 @@ html, body, #root {
 
 .shimmer-text {
   background: linear-gradient(
-    to right,
-    var(--text-tertiary) 0%,
-    var(--text-primary) 50%,
-    var(--text-tertiary) 100%
+    110deg,
+    var(--text-secondary) 0%,
+    var(--text-primary) 40%,
+    var(--primary-main) 50%,
+    var(--text-primary) 60%,
+    var(--text-secondary) 100%
   );
   background-size: 200% auto;
   color: transparent;
