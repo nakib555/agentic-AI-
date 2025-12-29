@@ -17,11 +17,6 @@ export const TTS_VOICES = [
     { id: 'Kore', name: 'Kore', desc: 'Calm & Soothing' },
     { id: 'Fenrir', name: 'Fenrir', desc: 'Strong & Resonant' },
     { id: 'Zephyr', name: 'Zephyr', desc: 'Soft & Gentle' },
-    { id: 'Aoede', name: 'Aoede', desc: 'Confident & Professional' },
-    { id: 'Hestia', name: 'Hestia', desc: 'Warm & Composed' },
-    { id: 'Leda', name: 'Leda', desc: 'Sophisticated & Balanced' },
-    { id: 'Orpheus', name: 'Orpheus', desc: 'Rich & Expressive' },
-    { id: 'Thalia', name: 'Thalia', desc: 'Bright & Engaging' },
     
     // International Accents / Styles
     { id: 'British', name: 'British', desc: 'Native UK Speaker' },
@@ -170,8 +165,8 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
     };
 
     // Split voices into groups
-    const personas = TTS_VOICES.slice(0, 10);
-    const accents = TTS_VOICES.slice(10);
+    const personas = TTS_VOICES.slice(0, 5);
+    const accents = TTS_VOICES.slice(5);
 
     const renderVoiceItem = (voice: typeof TTS_VOICES[0]) => {
         const isSelected = selectedVoice === voice.id;

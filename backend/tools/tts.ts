@@ -84,8 +84,7 @@ const cleanTextForTts = (text: string): string => {
 
 // Known valid prebuilt voices for Gemini 2.5 TTS
 const STANDARD_GEMINI_VOICES = new Set([
-    'Puck', 'Charon', 'Kore', 'Fenrir', 'Zephyr', 
-    'Aoede', 'Hestia', 'Leda', 'Orpheus', 'Thalia'
+    'Puck', 'Charon', 'Kore', 'Fenrir', 'Zephyr'
 ]);
 
 export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: string, model: string): Promise<string> => {
@@ -110,8 +109,8 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
             // we default to a high-quality base voice and instruct the model to adopt the native persona.
             console.log(`[TTS] Custom accent requested: ${targetVoice}`);
             
-            // Use 'Aoede' as a confident, professional base for custom accents.
-            const baseVoice = 'Aoede'; 
+            // Use 'Zephyr' as a confident, professional base for custom accents.
+            const baseVoice = 'Zephyr'; 
             
             // Instruct the model to adopt the native characteristics of the requested language/region
             promptText = `Speak the following text exactly as a native ${targetVoice} speaker would, with authentic intonation and accent: "${cleanedText}"`;
