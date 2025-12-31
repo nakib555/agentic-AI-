@@ -97,10 +97,9 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 {previewUrl ? (
                     <div className="w-full h-full rounded-lg overflow-hidden bg-gray-100 dark:bg-black/30 relative">
                         <img src={previewUrl} alt={file.name} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 md:ring-1 md:ring-inset md:ring-black/5 md:dark:ring-white/10 rounded-lg"></div>
                     </div>
                 ) : (
-                    <div className={`w-full h-full rounded-lg flex flex-col items-center justify-center ${visuals.bg} md:shadow-inner`}>
+                    <div className={`w-full h-full rounded-lg flex flex-col items-center justify-center ${visuals.bg}`}>
                         <FileIcon filename={file.name} className={`w-6 h-6 ${visuals.text} opacity-90 drop-shadow-sm transform group-hover:scale-110 transition-transform duration-300`} />
                         <span className="text-[8px] font-bold text-white/90 mt-1 uppercase tracking-wide drop-shadow-sm">
                             {visuals.label}
