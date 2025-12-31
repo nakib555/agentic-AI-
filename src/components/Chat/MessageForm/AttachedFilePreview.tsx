@@ -6,7 +6,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
-import { FileIcon } from '../../UI/FileIcon';
 
 const motion = motionTyped as any;
 
@@ -132,7 +131,6 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                     </div>
                 ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
-                        <FileIcon filename={file.name} className={`w-7 h-7 ${visuals.text} drop-shadow-md mb-0.5 opacity-90`} />
                         <span className={`text-[9px] font-black tracking-wider uppercase ${visuals.text} opacity-90 drop-shadow-sm truncate max-w-full`}>
                             {visuals.label}
                         </span>
