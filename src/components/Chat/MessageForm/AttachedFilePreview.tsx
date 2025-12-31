@@ -82,26 +82,26 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
             exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.15 } }}
             onClick={handleClick}
             className={`
-                relative group flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center shadow-sm transition-all duration-200 select-none
+                relative group flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center transition-all duration-200 select-none
                 ${hasFailed 
                     ? 'bg-red-50 dark:bg-red-900/10 cursor-default' 
                     : isProcessing 
                         ? 'bg-white dark:bg-white/5 cursor-wait' 
-                        : 'bg-white dark:bg-white/5 cursor-pointer hover:shadow-md hover:bg-slate-50 dark:hover:bg-white/10'
+                        : 'cursor-pointer'
                 }
             `}
             title={file.name}
         >
             {/* Content Area */}
-            <div className="relative w-full h-full p-0 md:p-1 overflow-hidden rounded-xl">
+            <div className="relative w-full h-full overflow-hidden rounded-xl">
                 {previewUrl ? (
-                    <div className="w-full h-full rounded-lg overflow-hidden bg-gray-100 dark:bg-black/30 relative">
+                    <div className="w-full h-full rounded-xl overflow-hidden bg-gray-100 dark:bg-black/30 relative">
                         <img src={previewUrl} alt={file.name} className="w-full h-full object-cover" />
                     </div>
                 ) : (
-                    <div className={`w-full h-full rounded-lg flex flex-col items-center justify-center ${visuals.bg}`}>
-                        <FileIcon filename={file.name} className={`w-6 h-6 ${visuals.text} opacity-90 drop-shadow-sm transform group-hover:scale-110 transition-transform duration-300`} />
-                        <span className="text-[8px] font-bold text-white/90 mt-1 uppercase tracking-wide drop-shadow-sm">
+                    <div className={`w-full h-full rounded-xl flex flex-col items-center justify-center ${visuals.bg}`}>
+                        <FileIcon filename={file.name} className={`w-6 h-6 ${visuals.text} opacity-90 transform group-hover:scale-110 transition-transform duration-300`} />
+                        <span className="text-[8px] font-bold text-white/90 mt-1 uppercase tracking-wide">
                             {visuals.label}
                         </span>
                     </div>
@@ -114,7 +114,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/40 rounded-lg backdrop-blur-[1px] flex items-center justify-center z-10"
+                            className="absolute inset-0 bg-black/40 rounded-xl backdrop-blur-[1px] flex items-center justify-center z-10"
                         >
                             <svg className="w-6 h-6 -rotate-90 transform text-white" viewBox="0 0 36 36">
                                 <path
@@ -141,7 +141,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
 
                 {/* Preview Overlay (Eye Icon) */}
                 {!hasFailed && !isProcessing && (
-                    <div className="absolute inset-0 bg-black/20 opacity-0 lg:group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-10 hidden lg:flex backdrop-blur-[1px] rounded-lg">
+                    <div className="absolute inset-0 bg-black/20 opacity-0 lg:group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-10 hidden lg:flex backdrop-blur-[1px] rounded-xl">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-white drop-shadow-md transform scale-90 group-hover:scale-100 transition-transform">
                             <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
                             <path fillRule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clipRule="evenodd" />
@@ -151,7 +151,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
 
                 {/* Error Overlay */}
                 {hasFailed && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-black/60 rounded-lg z-10 backdrop-blur-[1px]">
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-black/60 rounded-xl z-10 backdrop-blur-[1px]">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6 text-red-500 drop-shadow-sm">
                             <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
                         </svg>
@@ -164,9 +164,9 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 type="button"
                 onClick={handleRemove}
                 aria-label={`Remove ${file.name}`}
-                className="absolute top-1 right-1 bg-white/50 dark:bg-black/50 text-gray-600 dark:text-gray-300 hover:text-white hover:bg-red-500 dark:hover:text-white dark:hover:bg-red-500 rounded-full p-0.5 shadow-md z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all transform scale-90 hover:scale-110"
+                className="absolute -top-1.5 -right-1.5 bg-white/80 dark:bg-black/80 backdrop-blur text-gray-600 dark:text-gray-300 hover:text-white hover:bg-red-500 dark:hover:text-white dark:hover:bg-red-500 rounded-full p-0.5 shadow-sm border border-black/5 dark:border-white/10 z-20 opacity-100 transition-all transform hover:scale-110"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
             </button>
         </motion.div>
     );
