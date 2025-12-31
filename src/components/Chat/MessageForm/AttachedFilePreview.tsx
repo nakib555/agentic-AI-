@@ -18,28 +18,33 @@ type AttachedFilePreviewProps = {
   error: string | null;
 };
 
-// Helper to determine visual style based on file type
+// Enhanced visual styles map
 const getFileVisuals = (file: File) => {
     const mime = file.type;
     const name = file.name.toLowerCase();
-    // Get extension without the dot, default to ? if none
-    const ext = name.split('.').pop()?.toUpperCase().substring(0, 4) || 'FILE';
+    // Shorter label for cleaner UI
+    const ext = name.split('.').pop()?.toUpperCase().substring(0, 3) || '???';
 
-    if (mime.startsWith('image/')) return { bg: 'bg-gradient-to-br from-blue-400 to-blue-600', text: 'text-white', label: 'IMG' };
-    if (mime.startsWith('video/')) return { bg: 'bg-gradient-to-br from-fuchsia-500 to-purple-600', text: 'text-white', label: 'VID' };
+    if (mime.startsWith('image/')) return { bg: 'bg-gradient-to-br from-indigo-400 to-cyan-400', text: 'text-white', label: 'IMG' };
+    if (mime.startsWith('video/')) return { bg: 'bg-gradient-to-br from-fuchsia-500 to-pink-500', text: 'text-white', label: 'VID' };
     if (mime.startsWith('audio/')) return { bg: 'bg-gradient-to-br from-amber-400 to-orange-500', text: 'text-white', label: 'AUD' };
-    if (mime === 'application/pdf') return { bg: 'bg-gradient-to-br from-red-400 to-red-600', text: 'text-white', label: 'PDF' };
+    if (mime === 'application/pdf') return { bg: 'bg-gradient-to-br from-rose-500 to-red-600', text: 'text-white', label: 'PDF' };
     
-    if (name.endsWith('.zip') || name.endsWith('.rar') || name.endsWith('.7z') || name.endsWith('.tar') || name.endsWith('.gz')) {
-        return { bg: 'bg-gradient-to-br from-yellow-500 to-yellow-600', text: 'text-white', label: 'ZIP' };
+    if (['zip', 'rar', '7z', 'tar', 'gz'].some(e => name.endsWith('.' + e))) {
+        return { bg: 'bg-gradient-to-br from-yellow-400 to-amber-500', text: 'text-white', label: 'ZIP' };
     }
 
-    const codeExtensions = ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'py', 'java', 'c', 'cpp', 'cs', 'go', 'sh', 'rb', 'swift', 'sql', 'xml', 'md', 'yml', 'yaml'];
+    const codeExtensions = ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'py', 'java', 'c', 'cpp', 'cs', 'go', 'sh', 'rb', 'swift', 'sql', 'xml', 'md', 'yml', 'yaml', 'rs'];
     if (codeExtensions.some(e => name.endsWith('.' + e))) {
-        return { bg: 'bg-gradient-to-br from-slate-700 to-slate-900', text: 'text-blue-200', label: ext };
+        return { bg: 'bg-gradient-to-br from-slate-700 to-slate-800', text: 'text-sky-300', label: ext };
     }
     
-    return { bg: 'bg-gradient-to-br from-gray-400 to-gray-500', text: 'text-gray-100', label: ext };
+    // Text / Document
+    if (['txt', 'md', 'doc', 'docx', 'rtf'].some(e => name.endsWith('.' + e))) {
+        return { bg: 'bg-gradient-to-br from-emerald-400 to-teal-500', text: 'text-white', label: ext };
+    }
+
+    return { bg: 'bg-gradient-to-br from-slate-400 to-slate-500', text: 'text-slate-100', label: ext };
 };
 
 export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, onRemove, onPreview, progress, error }) => {
@@ -49,18 +54,13 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        // Only generate preview URLs for images to save memory
         if (!file.type.startsWith('image/')) {
             setPreviewUrl(null);
             return;
         }
-
         const objectUrl = URL.createObjectURL(file);
         setPreviewUrl(objectUrl);
-
-        return () => {
-            URL.revokeObjectURL(objectUrl);
-        };
+        return () => URL.revokeObjectURL(objectUrl);
     }, [file]);
 
     const handleRemove = (e: React.MouseEvent) => {
@@ -77,59 +77,59 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
     return (
         <motion.div 
             layout
-            initial={{ opacity: 0, scale: 0.8, y: 5 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.15 } }}
-            onClick={handleClick}
-            className={`
-                relative group flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center transition-all duration-200 select-none
-                ${hasFailed 
-                    ? 'bg-red-50 dark:bg-red-900/10 cursor-default' 
-                    : isProcessing 
-                        ? 'bg-white dark:bg-white/5 cursor-wait' 
-                        : 'cursor-pointer'
-                }
-            `}
-            title={file.name}
+            initial={{ opacity: 0, scale: 0.8, width: 0 }}
+            animate={{ opacity: 1, scale: 1, width: 'auto' }}
+            exit={{ opacity: 0, scale: 0.5, width: 0, transition: { duration: 0.15 } }}
+            className="relative group py-1" 
         >
-            {/* Content Area */}
-            <div className="relative w-full h-full overflow-hidden rounded-xl">
+            <div 
+                onClick={handleClick}
+                className={`
+                    relative w-16 h-16 rounded-2xl overflow-hidden cursor-pointer
+                    shadow-sm border border-black/5 dark:border-white/5 
+                    transform transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-md
+                    ${hasFailed ? 'opacity-80 grayscale' : ''}
+                    ${visuals.bg}
+                `}
+                title={file.name}
+            >
+                {/* File Visual Content */}
                 {previewUrl ? (
-                    <div className="w-full h-full rounded-xl overflow-hidden bg-gray-100 dark:bg-black/30 relative">
+                    <div className="absolute inset-0 bg-white/10">
                         <img src={previewUrl} alt={file.name} className="w-full h-full object-cover" />
                     </div>
                 ) : (
-                    <div className={`w-full h-full rounded-xl flex flex-col items-center justify-center ${visuals.bg}`}>
-                        <FileIcon filename={file.name} className={`w-6 h-6 ${visuals.text} opacity-90 transform group-hover:scale-110 transition-transform duration-300`} />
-                        <span className="text-[8px] font-bold text-white/90 mt-1 uppercase tracking-wide">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
+                        <FileIcon filename={file.name} className={`w-7 h-7 ${visuals.text} drop-shadow-md mb-0.5 opacity-90`} />
+                        <span className={`text-[9px] font-black tracking-wider uppercase ${visuals.text} opacity-90 drop-shadow-sm`}>
                             {visuals.label}
                         </span>
                     </div>
                 )}
 
-                {/* Processing Spinner */}
+                {/* Processing Overlay */}
                 <AnimatePresence>
                     {isProcessing && (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/40 rounded-xl backdrop-blur-[1px] flex items-center justify-center z-10"
+                            className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-10"
                         >
-                            <svg className="w-6 h-6 -rotate-90 transform text-white" viewBox="0 0 36 36">
+                            <svg className="w-6 h-6 -rotate-90 text-white" viewBox="0 0 36 36">
                                 <path
-                                    className="text-white/30"
+                                    className="text-white/20"
                                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                                     fill="none"
                                     stroke="currentColor"
-                                    strokeWidth="4"
+                                    strokeWidth="3"
                                 />
                                 <motion.path
                                     className="text-white drop-shadow-md"
                                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                                     fill="none"
                                     stroke="currentColor"
-                                    strokeWidth="4"
+                                    strokeWidth="3"
                                     strokeDasharray="100, 100"
                                     initial={{ strokeDashoffset: 100 }}
                                     animate={{ strokeDashoffset: 100 - progress }}
@@ -139,34 +139,44 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                     )}
                 </AnimatePresence>
 
-                {/* Preview Overlay (Eye Icon) */}
-                {!hasFailed && !isProcessing && (
-                    <div className="absolute inset-0 bg-black/20 opacity-0 lg:group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-10 hidden lg:flex backdrop-blur-[1px] rounded-xl">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-white drop-shadow-md transform scale-90 group-hover:scale-100 transition-transform">
-                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                            <path fillRule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clipRule="evenodd" />
-                        </svg>
-                    </div>
-                )}
-
                 {/* Error Overlay */}
                 {hasFailed && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-black/60 rounded-xl z-10 backdrop-blur-[1px]">
+                    <div className="absolute inset-0 bg-white/80 dark:bg-black/60 flex items-center justify-center backdrop-blur-[1px]">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6 text-red-500 drop-shadow-sm">
                             <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
                         </svg>
                     </div>
                 )}
+
+                {/* Hover Eye Icon (Desktop) */}
+                {!hasFailed && !isProcessing && (
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-white drop-shadow-md">
+                            <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+                            <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                )}
             </div>
 
-            {/* Remove Button */}
+            {/* Floating Remove Button */}
             <button
                 type="button"
                 onClick={handleRemove}
                 aria-label={`Remove ${file.name}`}
-                className="absolute -top-1.5 -right-1.5 bg-white/80 dark:bg-black/80 backdrop-blur text-gray-600 dark:text-gray-300 hover:text-white hover:bg-red-500 dark:hover:text-white dark:hover:bg-red-500 rounded-full p-0.5 shadow-sm border border-black/5 dark:border-white/10 z-20 opacity-100 transition-all transform hover:scale-110"
+                className="
+                    absolute -top-1 -right-1 z-20 
+                    w-5 h-5 rounded-full 
+                    bg-white dark:bg-zinc-800 text-slate-400 hover:text-white dark:text-slate-500 dark:hover:text-white
+                    hover:bg-red-500 dark:hover:bg-red-500
+                    shadow-md border border-slate-100 dark:border-white/10 hover:border-red-500 dark:hover:border-red-500
+                    flex items-center justify-center transition-all duration-200
+                    opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100
+                "
             >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
+                    <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                </svg>
             </button>
         </motion.div>
     );

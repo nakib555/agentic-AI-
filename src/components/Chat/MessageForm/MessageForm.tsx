@@ -94,14 +94,14 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         ${logic.isFocused ? 'border-primary-main shadow-md ring-1 ring-primary-main/20' : 'border-border-default hover:border-border-strong'}
       `}>
         
-        {/* File List Area - Moved "Input Bar Top" */}
+        {/* File List Area */}
         <AnimatePresence>
             {hasFiles && (
                 <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="flex flex-nowrap overflow-x-auto gap-2 px-3 pb-3 pt-4 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 scrollbar-hide"
+                    className="flex flex-nowrap overflow-x-auto gap-3 px-4 pb-2 pt-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 scrollbar-hide"
                     onWheel={(e) => {
                         if (e.deltaY !== 0) {
                             e.currentTarget.scrollLeft += e.deltaY;
