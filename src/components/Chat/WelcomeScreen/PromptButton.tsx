@@ -54,7 +54,7 @@ export const PromptButton: React.FC<PromptButtonProps> = ({ icon, text, onClick,
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
         >
-            <span className="flex items-center justify-center w-8 h-8 rounded-full border border-black/10 dark:border-white/10 bg-transparent text-lg group-hover:scale-110 transition-transform duration-300">
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/40 dark:bg-black/10 border border-black/5 dark:border-white/10 text-lg filter drop-shadow-sm group-hover:scale-110 transition-transform duration-300">
                 {icon}
             </span>
             <span className="text-sm font-semibold tracking-wide whitespace-nowrap pr-1">{text}</span>
