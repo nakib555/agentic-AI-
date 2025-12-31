@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMessageForm } from './useMessageForm';
 import { UploadMenu } from './UploadMenu';
@@ -39,6 +39,8 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
     isAgentMode, setIsAgentMode, hasApiKey 
   } = props;
 
+  const [isDragging, setIsDragging] = useState(false);
+
   const logic = useMessageForm(
     (msg, files, options) => onSubmit(msg, files, { ...options, isThinkingModeEnabled: isAgentMode }),
     isLoading,
@@ -51,6 +53,37 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
   const isGeneratingResponse = isLoading;
   const isSendDisabled = !logic.canSubmit || isAppLoading || backendStatus === 'offline';
   const hasFiles = logic.processedFiles.length > 0;
+
+  // --- Drag & Drop Handlers ---
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Prevent flickering when entering children elements
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      logic.processAndSetFiles(Array.from(e.dataTransfer.files));
+    }
+  };
 
   return (
     <div className="w-full mx-auto max-w-4xl relative">
@@ -89,11 +122,43 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         {...({ webkitdirectory: "", directory: "" } as any)}
       />
 
-      <div className={`
-        relative bg-transparent border transition-all duration-200 rounded-2xl overflow-hidden shadow-sm flex flex-col
-        ${logic.isFocused ? 'border-primary-main shadow-md ring-1 ring-primary-main/20' : 'border-border-default hover:border-border-strong'}
-      `}>
+      <div 
+        className={`
+            relative bg-transparent border transition-all duration-200 rounded-2xl overflow-hidden shadow-sm flex flex-col
+            ${isDragging 
+                ? 'border-indigo-500 ring-2 ring-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-900/20 scale-[1.01]' 
+                : logic.isFocused 
+                    ? 'border-primary-main shadow-md ring-1 ring-primary-main/20' 
+                    : 'border-border-default hover:border-border-strong'
+            }
+        `}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
         
+        {/* Drop Indicator Overlay */}
+        <AnimatePresence>
+            {isDragging && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 dark:bg-black/80 backdrop-blur-[2px] pointer-events-none"
+                >
+                    <div className="text-center text-indigo-600 dark:text-indigo-400 font-bold text-lg flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 animate-bounce">
+                            <path d="M12 17V3"/>
+                            <path d="m6 11 6 6 6-6"/>
+                            <path d="M19 21H5"/>
+                        </svg>
+                        Drop to attach
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
         {/* File List Area */}
         <AnimatePresence>
             {hasFiles && (
@@ -125,7 +190,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         {/* Text Input */}
         <div className="flex flex-col relative flex-1">
             {/* Animated Placeholder Overlay */}
-            {!logic.inputValue && (
+            {!logic.inputValue && !isDragging && (
                <div className="absolute inset-0 px-4 py-4 pointer-events-none select-none opacity-50 z-0 overflow-hidden">
                   <TextType 
                     text={logic.placeholder} 
