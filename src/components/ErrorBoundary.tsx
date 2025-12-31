@@ -1,9 +1,5 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
-import React, { type ErrorInfo, type ReactNode } from 'react';
+import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
   children?: ReactNode;
@@ -14,18 +10,15 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // FIX: Added a constructor to initialize state and bind event handlers,
-  // resolving errors related to accessing `this.state`, `this.props`, and `this.setState`.
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-    };
-    this.handleReload = this.handleReload.bind(this);
-    this.handleDismiss = this.handleDismiss.bind(this);
-  }
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // FIX: Replaced the constructor with modern class property syntax for state
+  // initialization and arrow functions for event handlers. This automatically
+  // binds `this` and resolves errors related to accessing `this.state`,
+  // `this.props`, and `this.setState`.
+  public state: ErrorBoundaryState = {
+    hasError: false,
+    error: null,
+  };
 
   public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
@@ -42,7 +35,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     }
   }
 
-  private async handleReload() {
+  private handleReload = async () => {
     // Attempt to unregister service workers before reloading to fix potential cache issues
     try {
       if ('serviceWorker' in navigator) {
@@ -57,7 +50,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     }
   }
 
-  private handleDismiss() {
+  private handleDismiss = () => {
     this.setState({ hasError: false, error: null });
   }
 
