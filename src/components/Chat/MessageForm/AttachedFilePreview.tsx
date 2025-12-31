@@ -197,13 +197,14 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 onClick={handleRemove}
                 aria-label={`Remove ${file.name}`}
                 className="
-                    absolute -top-1 -right-1 z-20 
+                    absolute top-0 right-0 z-20 
                     w-5 h-5 rounded-full 
-                    bg-white dark:bg-zinc-800 text-slate-400 hover:text-white dark:text-slate-500 dark:hover:text-white
-                    hover:bg-red-500 dark:hover:bg-red-500
-                    shadow-md border border-slate-100 dark:border-white/10 hover:border-red-500 dark:hover:border-red-500
+                    bg-black/50 text-white hover:bg-red-500
+                    backdrop-blur-sm shadow-sm
+                    border border-white/20
                     flex items-center justify-center transition-all duration-200
                     opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100
+                    hover:scale-110
                 "
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
