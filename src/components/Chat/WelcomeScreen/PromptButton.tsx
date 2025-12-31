@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -45,7 +46,7 @@ export const PromptButton: React.FC<PromptButtonProps> = ({ icon, text, onClick,
             type="button"
             onClick={onClick}
             className={`
-                group flex items-center justify-center gap-2 px-5 py-2 rounded-full shadow-sm transition-all duration-300
+                group flex items-center justify-center gap-3 px-4 py-2 rounded-full shadow-sm transition-all duration-300
                 ${colorClasses}
                 hover:shadow-md hover:-translate-y-0.5
             `}
@@ -53,8 +54,10 @@ export const PromptButton: React.FC<PromptButtonProps> = ({ icon, text, onClick,
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
         >
-            <span className="text-lg filter drop-shadow-sm group-hover:scale-110 transition-transform duration-300">{icon}</span>
-            <span className="text-sm font-semibold tracking-wide whitespace-nowrap">{text}</span>
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/40 dark:bg-black/10 border border-black/5 dark:border-white/10 text-lg filter drop-shadow-sm group-hover:scale-110 transition-transform duration-300">
+                {icon}
+            </span>
+            <span className="text-sm font-semibold tracking-wide whitespace-nowrap pr-1">{text}</span>
         </motion.button>
     );
 };
