@@ -18,32 +18,64 @@ type AttachedFilePreviewProps = {
   error: string | null;
 };
 
-// Enhanced visual styles map
+// Enhanced visual styles map with better color coding for file types
 const getFileVisuals = (file: File) => {
     const mime = file.type;
     const name = file.name.toLowerCase();
-    // Shorter label for cleaner UI
-    const ext = name.split('.').pop()?.toUpperCase().substring(0, 3) || '???';
+    const ext = name.split('.').pop()?.toUpperCase().substring(0, 4) || 'FILE';
 
-    if (mime.startsWith('image/')) return { bg: 'bg-gradient-to-br from-indigo-400 to-cyan-400', text: 'text-white', label: 'IMG' };
-    if (mime.startsWith('video/')) return { bg: 'bg-gradient-to-br from-fuchsia-500 to-pink-500', text: 'text-white', label: 'VID' };
-    if (mime.startsWith('audio/')) return { bg: 'bg-gradient-to-br from-amber-400 to-orange-500', text: 'text-white', label: 'AUD' };
-    if (mime === 'application/pdf') return { bg: 'bg-gradient-to-br from-rose-500 to-red-600', text: 'text-white', label: 'PDF' };
+    // Image
+    if (mime.startsWith('image/')) {
+        return { bg: 'bg-gradient-to-br from-indigo-400 to-cyan-400', text: 'text-white', label: 'IMG' };
+    }
     
+    // Video
+    if (mime.startsWith('video/')) {
+        return { bg: 'bg-gradient-to-br from-fuchsia-500 to-pink-500', text: 'text-white', label: 'VID' };
+    }
+    
+    // Audio
+    if (mime.startsWith('audio/')) {
+        return { bg: 'bg-gradient-to-br from-amber-400 to-orange-500', text: 'text-white', label: 'AUD' };
+    }
+    
+    // PDF
+    if (mime === 'application/pdf') {
+        return { bg: 'bg-gradient-to-br from-rose-500 to-red-600', text: 'text-white', label: 'PDF' };
+    }
+    
+    // Word
+    if (['doc', 'docx'].some(e => name.endsWith('.' + e))) {
+        return { bg: 'bg-gradient-to-br from-blue-500 to-blue-600', text: 'text-white', label: 'DOC' };
+    }
+
+    // Excel
+    if (['xls', 'xlsx', 'csv'].some(e => name.endsWith('.' + e))) {
+        return { bg: 'bg-gradient-to-br from-emerald-500 to-green-600', text: 'text-white', label: 'XLS' };
+    }
+
+    // PowerPoint
+    if (['ppt', 'pptx'].some(e => name.endsWith('.' + e))) {
+        return { bg: 'bg-gradient-to-br from-orange-500 to-red-500', text: 'text-white', label: 'PPT' };
+    }
+    
+    // Archives
     if (['zip', 'rar', '7z', 'tar', 'gz'].some(e => name.endsWith('.' + e))) {
         return { bg: 'bg-gradient-to-br from-yellow-400 to-amber-500', text: 'text-white', label: 'ZIP' };
     }
 
+    // Code
     const codeExtensions = ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'py', 'java', 'c', 'cpp', 'cs', 'go', 'sh', 'rb', 'swift', 'sql', 'xml', 'md', 'yml', 'yaml', 'rs'];
     if (codeExtensions.some(e => name.endsWith('.' + e))) {
         return { bg: 'bg-gradient-to-br from-slate-700 to-slate-800', text: 'text-sky-300', label: ext };
     }
     
-    // Text / Document
-    if (['txt', 'md', 'doc', 'docx', 'rtf'].some(e => name.endsWith('.' + e))) {
-        return { bg: 'bg-gradient-to-br from-emerald-400 to-teal-500', text: 'text-white', label: ext };
+    // Text
+    if (['txt', 'md', 'rtf'].some(e => name.endsWith('.' + e))) {
+        return { bg: 'bg-gradient-to-br from-slate-400 to-slate-500', text: 'text-white', label: ext };
     }
 
+    // Default
     return { bg: 'bg-gradient-to-br from-slate-400 to-slate-500', text: 'text-slate-100', label: ext };
 };
 
@@ -101,7 +133,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
                         <FileIcon filename={file.name} className={`w-7 h-7 ${visuals.text} drop-shadow-md mb-0.5 opacity-90`} />
-                        <span className={`text-[9px] font-black tracking-wider uppercase ${visuals.text} opacity-90 drop-shadow-sm`}>
+                        <span className={`text-[9px] font-black tracking-wider uppercase ${visuals.text} opacity-90 drop-shadow-sm truncate max-w-full`}>
                             {visuals.label}
                         </span>
                     </div>
@@ -175,7 +207,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 "
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
-                    <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                    <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L10 8.94 6.28 5.22Z" />
                 </svg>
             </button>
         </motion.div>
