@@ -102,7 +102,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 ) : (
                     <div className={`w-full h-full rounded-lg flex flex-col items-center justify-center ${visuals.bg} md:shadow-inner`}>
                         <FileIcon filename={file.name} className={`w-6 h-6 ${visuals.text} opacity-90 drop-shadow-sm transform group-hover:scale-110 transition-transform duration-300`} />
-                        <span className="text-[8px] font-bold text-white/90 mt-1 px-1.5 py-0.5 rounded border border-white/30 bg-black/10 uppercase tracking-wide drop-shadow-sm">
+                        <span className="text-[8px] font-bold text-white/90 mt-1 uppercase tracking-wide drop-shadow-sm">
                             {visuals.label}
                         </span>
                     </div>
