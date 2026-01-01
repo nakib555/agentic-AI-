@@ -7,8 +7,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useTheme } from '../../hooks/useTheme';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
@@ -18,7 +17,6 @@ type ArtifactRendererProps = {
 };
 
 export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, content, language = 'html', title }) => {
-    const { theme } = useTheme();
     const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
     const [iframeKey, setIframeKey] = useState(0);
     const [logs, setLogs] = useState<{level: string, message: string, timestamp: number}[]>([]);
@@ -46,10 +44,6 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         window.addEventListener('message', handler);
         return () => window.removeEventListener('message', handler);
     }, []);
-
-    const effectiveTheme = theme === 'system' 
-        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') 
-        : theme;
 
     const renderPreview = () => {
         if (type === 'data') {
@@ -223,19 +217,19 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                 {activeTab === 'preview' ? (
                     renderPreview()
                 ) : (
-                    <div className="max-h-[400px] overflow-auto custom-scrollbar text-code-text">
+                    <div className="max-h-[400px] overflow-auto custom-scrollbar">
                         <SyntaxHighlighter
                             language={language || 'text'}
-                            style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
+                            style={vscDarkPlus}
                             customStyle={{ 
                                 margin: 0, 
                                 padding: '1rem', 
                                 fontSize: '13px', 
-                                backgroundColor: 'transparent',
-                                color: 'inherit' 
+                                lineHeight: '1.5',
+                                // Use theme default background
                             }}
                             codeTagProps={{
-                                style: { fontFamily: "inherit", color: 'inherit' }
+                                style: { fontFamily: "'Fira Code', monospace" }
                             }}
                             showLineNumbers
                         >

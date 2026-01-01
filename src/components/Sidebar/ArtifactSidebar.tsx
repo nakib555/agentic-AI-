@@ -8,8 +8,7 @@ import React, { useState, useEffect, useRef, useReducer, useTransition, useDefer
 import { motion, AnimatePresence } from 'framer-motion';
 import { useViewport } from '../../hooks/useViewport';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useTheme } from '../../hooks/useTheme';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Tooltip } from '../UI/Tooltip';
 
 type ArtifactSidebarProps = {
@@ -154,7 +153,6 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
     isOpen, onClose, content, language, width, setWidth, isResizing, setIsResizing 
 }) => {
     const { isDesktop } = useViewport();
-    const { theme } = useTheme();
     const iframeRef = useRef<HTMLIFrameElement>(null);
     
     // UI State managed by Reducer
@@ -280,9 +278,6 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
     }, []);
 
     const isPreviewable = ['html', 'svg', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language);
-    const effectiveTheme = theme === 'system' 
-        ? (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') 
-        : theme;
 
     return (
         <motion.aside
@@ -372,11 +367,11 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                 <div className="flex-1 overflow-hidden relative group/content">
                     {/* CODE VIEW */}
                     <div 
-                        className={`absolute inset-0 overflow-auto custom-scrollbar bg-white dark:bg-[#0d0d0d] ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
+                        className={`absolute inset-0 overflow-auto custom-scrollbar bg-[#1e1e1e] ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
                     >
                         <SyntaxHighlighter
                             language={language}
-                            style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
+                            style={vscDarkPlus}
                             customStyle={{ 
                                 margin: 0, 
                                 padding: '1.5rem', 
@@ -384,7 +379,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                                 fontSize: '13px', 
                                 lineHeight: '1.5',
                                 fontFamily: "'Fira Code', monospace",
-                                backgroundColor: 'transparent'
+                                // Use default dark bg
                             }}
                             showLineNumbers={true}
                             wrapLines={false} 

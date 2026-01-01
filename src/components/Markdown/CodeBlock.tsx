@@ -6,8 +6,7 @@
 
 import React, { useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useTheme } from '../../hooks/useTheme';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const languageMap: { [key: string]: string } = {
     js: 'javascript', jsx: 'javascript', ts: 'typescript', tsx: 'typescript',
@@ -29,7 +28,6 @@ type CodeBlockProps = {
 
 export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStreaming, onRunCode, isDisabled }) => {
     const [isCopied, setIsCopied] = useState(false);
-    const { theme } = useTheme();
 
     const codeContent = String(children).replace(/\n$/, '');
 
@@ -54,17 +52,15 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         }));
     };
     
-    const isDarkMode = theme === 'dark' || theme === 'spocke' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
     const rawLanguage = language ? language.toLowerCase() : 'plaintext';
     const highlighterLang = languageMap[rawLanguage] || rawLanguage;
     const formattedLanguage = language ? language.charAt(0).toUpperCase() + language.slice(1) : '';
     const isRunnable = onRunCode && runnableLanguages.includes(rawLanguage);
 
     return (
-      <div className="my-6 rounded-xl overflow-hidden border border-border-default bg-code-surface shadow-sm font-sans group">
+      <div className="my-6 rounded-xl overflow-hidden border border-border-default shadow-sm font-sans group bg-[#1e1e1e]">
         {/* Header */}
-        <div className="flex justify-between items-center px-4 py-2 bg-layer-2/50 border-b border-border-subtle select-none">
+        <div className="flex justify-between items-center px-4 py-2 bg-layer-2/50 border-b border-border-subtle select-none backdrop-blur-sm">
           <div className="flex items-center gap-3">
              <span className="text-xs font-semibold text-content-tertiary lowercase font-mono">
                 {formattedLanguage || 'text'}
@@ -113,19 +109,18 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         </div>
         
         {/* Editor Body */}
-        <div className="relative overflow-x-auto text-[13px] leading-6 scrollbar-thin text-code-text">
+        <div className="relative overflow-x-auto text-[13px] leading-6 scrollbar-thin">
             <SyntaxHighlighter
               language={highlighterLang}
-              style={isDarkMode ? vscDarkPlus : oneLight}
+              style={vscDarkPlus}
               customStyle={{
                 margin: 0,
                 padding: '1.25rem',
-                backgroundColor: 'transparent',
+                // Use default background from theme (usually dark)
                 fontFamily: "'Fira Code', 'Consolas', monospace",
-                color: 'inherit', // Force text color inheritance
               }}
               codeTagProps={{
-                  style: { fontFamily: "inherit", color: 'inherit' }
+                  style: { fontFamily: "inherit" }
               }}
               wrapLines={true}
               wrapLongLines={false}

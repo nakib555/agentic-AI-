@@ -9,8 +9,7 @@ import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { useViewport } from '../../../hooks/useViewport';
 import type { ProcessedFile } from './types';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useTheme } from '../../../hooks/useTheme';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 type FilePreviewSidebarProps = {
     isOpen: boolean;
@@ -24,7 +23,6 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
     file 
 }) => {
     const { isDesktop } = useViewport();
-    const { theme } = useTheme();
     const [content, setContent] = useState<string | null>(null);
     const [previewType, setPreviewType] = useState<'image' | 'text' | 'pdf' | 'other'>('other');
     const [isCopied, setIsCopied] = useState(false);
@@ -110,8 +108,6 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
             onClose();
         }
     };
-
-    const isDarkMode = theme === 'dark' || theme === 'spocke' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
     const desktopVariants = {
         closed: { x: '100%', opacity: 0 },
@@ -238,12 +234,19 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
 
                             {previewType === 'text' && content && (
                                 <div className="absolute inset-0 overflow-auto custom-scrollbar">
-                                    <div className="min-h-full w-full bg-code-surface text-sm">
+                                    <div className="min-h-full w-full bg-[#1e1e1e] text-sm text-[#d4d4d4]">
                                         <SyntaxHighlighter
                                             language="text"
-                                            style={isDarkMode ? vscDarkPlus : oneLight}
-                                            customStyle={{ margin: 0, padding: '1.5rem', minHeight: '100%', fontSize: '13px', backgroundColor: 'transparent', color: 'inherit' }}
-                                            codeTagProps={{ style: { fontFamily: "'Fira Code', monospace", color: 'inherit' } }}
+                                            style={vscDarkPlus}
+                                            customStyle={{ 
+                                                margin: 0, 
+                                                padding: '1.5rem', 
+                                                minHeight: '100%', 
+                                                fontSize: '13px', 
+                                                fontFamily: "'Fira Code', monospace",
+                                                // Let vscDarkPlus control the background for best contrast
+                                            }}
+                                            codeTagProps={{ style: { fontFamily: "inherit" } }}
                                             wrapLongLines={true}
                                         >
                                             {content}
