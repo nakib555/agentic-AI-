@@ -36,10 +36,10 @@ type SidebarProps = {
     isDesktop: boolean;
 };
 
-// Simplified mobile animation variants - Bottom Sheet Style
+// Side Drawer Style for Mobile (Slides from Left)
 const mobileVariants = {
-    open: { y: '0%' },
-    closed: { y: '100%' },
+    open: { x: '0%' },
+    closed: { x: '-100%' },
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -113,8 +113,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
         if (!isDesktop) {
-            // Close if dragged down sufficiently or flicked
-            if (info.offset.y > 100 || (info.velocity.y > 300 && info.offset.y > 0)) {
+            // Close if dragged left sufficiently
+            if (info.offset.x < -100 || (info.velocity.x < -300 && info.offset.x < 0)) {
                 setIsOpen(false);
             }
         }
@@ -149,44 +149,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     damping: 30,
                     mass: 0.8,
                 }}
-                drag={!isDesktop ? "y" : false}
-                dragListener={false} // Disable default drag to allow scrolling
+                // Enable X-axis dragging on mobile to close
+                drag={!isDesktop ? "x" : false}
+                dragListener={!isDesktop} 
                 dragControls={dragControls}
-                dragConstraints={{ top: 0, bottom: 0 }}
-                dragElastic={{ top: 0, bottom: 0.5 }}
+                dragConstraints={{ left: -300, right: 0 }} 
+                dragElastic={{ left: 0.5, right: 0.05 }} 
                 onDragEnd={onDragEnd}
                 style={{
-                    height: isDesktop ? '100%' : 'auto',
-                    maxHeight: isDesktop ? undefined : '85vh',
-                    position: isDesktop ? 'relative' : 'absolute',
-                    width: isDesktop ? 'auto' : '100%',
+                    height: '100%',
+                    position: isDesktop ? 'relative' : 'fixed',
+                    width: isDesktop ? 'auto' : '85%', // Adjusted for side drawer
+                    maxWidth: isDesktop ? undefined : '320px',
                     left: 0,
-                    top: isDesktop ? 0 : undefined,
-                    bottom: isDesktop ? undefined : 0,
+                    top: 0,
+                    bottom: 0,
                     pointerEvents: 'auto',
                     willChange: isResizing ? 'width' : 'transform, width',
+                    zIndex: isDesktop ? undefined : 50,
                 }}
                 className={`bg-layer-1 flex flex-col transform-gpu shadow-2xl md:shadow-none overflow-hidden ${
-                    isDesktop ? 'border-r border-border' : 'border-t border-border rounded-t-2xl'
+                    isDesktop ? 'border-r border-border' : 'border-r border-border'
                 }`}
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
-                {/* Drag Handle for Mobile */}
-                {!isDesktop && (
-                    <div 
-                        className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing flex-shrink-0 touch-none" 
-                        onPointerDown={(e) => dragControls.start(e)}
-                    >
-                        <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-600 rounded-full" />
-                    </div>
-                )}
-
                 <div 
                     className="p-3 flex flex-col h-full group min-h-0"
                     style={{ 
                         userSelect: isResizing ? 'none' : 'auto',
                         paddingBottom: !isDesktop ? 'env(safe-area-inset-bottom)' : '0.75rem', 
-                        paddingTop: !isDesktop ? '0' : '0.75rem'
+                        paddingTop: !isDesktop ? 'env(safe-area-inset-top)' : '0.75rem'
                     }}
                 >
                     <SidebarHeader 
@@ -237,10 +229,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     />
                 </div>
 
-                {/* Resize Handle */}
+                {/* Resize Handle - Adjusted position to overlap inside edge to avoid clipping */}
                 {isDesktop && !isCollapsed && (
                     <div
-                        className="group absolute top-0 right-0 h-full z-50 w-4 translate-x-2 cursor-col-resize flex justify-center hover:bg-transparent"
+                        className="group absolute top-0 right-0 h-full z-50 w-4 cursor-col-resize flex justify-center hover:bg-transparent"
                         onMouseDown={startResizing}
                     >
                         <div className={`w-[2px] h-full transition-colors duration-200 ${isResizing ? 'bg-indigo-500' : 'bg-transparent group-hover:bg-indigo-400/50'}`}></div>
