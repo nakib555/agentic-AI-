@@ -105,7 +105,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
     
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
-    // Auto-switch to preview for visual languages
+    // Auto-switch to preview for visual languages only once on mount or language change
     useEffect(() => {
         if (['html', 'svg'].includes(language)) {
             setActiveTab('preview');
@@ -114,7 +114,8 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
         }
     }, [language]);
 
-    // Force iframe refresh and simulate loading when content changes
+    // Force iframe refresh and simulate loading ONLY when content changes
+    // Removed activeTab from dependency array to prevent reload on switch
     useEffect(() => {
         setIframeKey(prev => prev + 1);
         setLogs([]); // Clear logs on reload
@@ -122,7 +123,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
         // Short artificial delay to show the ghost element (UX) and allow syntax highlighter to prep
         const timer = setTimeout(() => setIsLoading(false), 600);
         return () => clearTimeout(timer);
-    }, [content, activeTab]);
+    }, [content]);
 
     // Listen for console logs from the iframe
     useEffect(() => {
@@ -334,123 +335,130 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
 
                 {/* Main Content Area */}
                 <div className="flex-1 overflow-hidden relative group/content">
-                    {activeTab === 'code' ? (
-                        <div className="absolute inset-0 overflow-auto custom-scrollbar bg-white dark:bg-[#0d0d0d]">
-                            {isLoading ? <ArtifactSkeleton /> : (
-                                <SyntaxHighlighter
-                                    language={language}
-                                    style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
-                                    customStyle={{ 
-                                        margin: 0, 
-                                        padding: '1.5rem', 
-                                        minHeight: '100%', 
-                                        fontSize: '13px', 
-                                        lineHeight: '1.5',
-                                        fontFamily: "'Fira Code', monospace",
-                                        backgroundColor: 'transparent'
-                                    }}
-                                    showLineNumbers={true}
-                                    wrapLines={false} 
-                                    lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
+                    {/* 
+                        Use display: none instead of conditional rendering (activeTab === 'code' ? ... : ...)
+                        This preserves the iframe state and prevents reloads when switching tabs.
+                    */}
+                    
+                    {/* CODE VIEW */}
+                    <div 
+                        className={`absolute inset-0 overflow-auto custom-scrollbar bg-white dark:bg-[#0d0d0d] ${activeTab === 'code' ? 'block' : 'hidden'}`}
+                    >
+                        <SyntaxHighlighter
+                            language={language}
+                            style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
+                            customStyle={{ 
+                                margin: 0, 
+                                padding: '1.5rem', 
+                                minHeight: '100%', 
+                                fontSize: '13px', 
+                                lineHeight: '1.5',
+                                fontFamily: "'Fira Code', monospace",
+                                backgroundColor: 'transparent'
+                            }}
+                            showLineNumbers={true}
+                            wrapLines={false} 
+                            lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
+                        >
+                            {content}
+                        </SyntaxHighlighter>
+                    </div>
+
+                    {/* PREVIEW VIEW */}
+                    <div 
+                        className={`absolute inset-0 bg-gray-100 dark:bg-[#1a1a1a] flex flex-col ${activeTab === 'preview' ? 'block' : 'hidden'}`}
+                    >
+                        <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#202020] border-b border-gray-200 dark:border-white/5 flex-shrink-0">
+                            <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => setShowConsole(!showConsole)}
+                                    className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5'}`}
+                                    title="Toggle Console"
                                 >
-                                    {content}
-                                </SyntaxHighlighter>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="absolute inset-0 bg-gray-100 dark:bg-[#1a1a1a] flex flex-col">
-                            <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#202020] border-b border-gray-200 dark:border-white/5 flex-shrink-0">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                                    <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
-                                </div>
-                                <div className="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                                    Console {logs.length > 0 && <span className="bg-gray-200 dark:bg-white/10 px-1 rounded-sm text-[10px]">{logs.length}</span>}
+                                </button>
+                                <div className="w-px h-3 bg-gray-300 dark:bg-white/10 mx-1" />
+                                <Tooltip content="Reload Preview" position="bottom">
                                     <button 
-                                        onClick={() => setShowConsole(!showConsole)}
-                                        className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5'}`}
-                                        title="Toggle Console"
+                                        onClick={() => setIframeKey(k => k + 1)} 
+                                        className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
+                                        aria-label="Reload Preview"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-                                        Console {logs.length > 0 && <span className="bg-gray-200 dark:bg-white/10 px-1 rounded-sm text-[10px]">{logs.length}</span>}
+                                        <RefreshIcon />
                                     </button>
-                                    <div className="w-px h-3 bg-gray-300 dark:bg-white/10 mx-1" />
-                                    <Tooltip content="Reload Preview" position="bottom">
-                                        <button 
-                                            onClick={() => setIframeKey(k => k + 1)} 
-                                            className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
-                                            aria-label="Reload Preview"
-                                        >
-                                            <RefreshIcon />
-                                        </button>
-                                    </Tooltip>
-                                    <Tooltip content="Open in New Tab" position="bottom">
-                                        <button 
-                                            onClick={handleOpenNewTab}
-                                            className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
-                                            aria-label="Open in New Tab"
-                                        >
-                                            <ExternalLinkIcon />
-                                        </button>
-                                    </Tooltip>
-                                </div>
-                            </div>
-                            <div className="flex-1 relative flex flex-col overflow-hidden">
-                                {isLoading ? (
-                                    <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
-                                        <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 bg-white relative">
-                                        <iframe 
-                                            ref={iframeRef}
-                                            key={iframeKey}
-                                            srcDoc={getPreviewContent()}
-                                            className="absolute inset-0 w-full h-full border-none bg-white"
-                                            sandbox="allow-scripts allow-modals allow-forms allow-popups"
-                                            title="Artifact Preview"
-                                        />
-                                    </div>
-                                )}
-                                
-                                {/* Console Terminal Panel */}
-                                <AnimatePresence>
-                                    {showConsole && (
-                                        <motion.div
-                                            initial={{ height: 0 }}
-                                            animate={{ height: '35%' }}
-                                            exit={{ height: 0 }}
-                                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                            className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col"
-                                        >
-                                            <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
-                                                <span>Terminal</span>
-                                                <button onClick={() => setLogs([])} className="hover:text-white transition-colors">Clear</button>
-                                            </div>
-                                            <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
-                                                {logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
-                                                {logs.map((log, i) => (
-                                                    <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
-                                                        <span className={`flex-shrink-0 font-bold ${
-                                                            log.level === 'error' ? 'text-red-400' :
-                                                            log.level === 'warn' ? 'text-yellow-400' :
-                                                            'text-blue-400'
-                                                        }`}>
-                                                            {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
-                                                        </span>
-                                                        <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
-                                                            {log.message}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                </Tooltip>
+                                <Tooltip content="Open in New Tab" position="bottom">
+                                    <button 
+                                        onClick={handleOpenNewTab}
+                                        className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
+                                        aria-label="Open in New Tab"
+                                    >
+                                        <ExternalLinkIcon />
+                                    </button>
+                                </Tooltip>
                             </div>
                         </div>
-                    )}
+                        <div className="flex-1 relative flex flex-col overflow-hidden">
+                            {isLoading ? (
+                                <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
+                                    <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
+                                </div>
+                            ) : (
+                                <div className="flex-1 bg-white relative">
+                                    <iframe 
+                                        ref={iframeRef}
+                                        key={iframeKey}
+                                        srcDoc={getPreviewContent()}
+                                        className="absolute inset-0 w-full h-full border-none bg-white"
+                                        sandbox="allow-scripts allow-modals allow-forms allow-popups"
+                                        title="Artifact Preview"
+                                    />
+                                </div>
+                            )}
+                            
+                            {/* Console Terminal Panel */}
+                            <AnimatePresence>
+                                {showConsole && (
+                                    <motion.div
+                                        initial={{ height: 0 }}
+                                        animate={{ height: '35%' }}
+                                        exit={{ height: 0 }}
+                                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                        className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col"
+                                    >
+                                        <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
+                                            <span>Terminal</span>
+                                            <button onClick={() => setLogs([])} className="hover:text-white transition-colors">Clear</button>
+                                        </div>
+                                        <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
+                                            {logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
+                                            {logs.map((log, i) => (
+                                                <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
+                                                    <span className={`flex-shrink-0 font-bold ${
+                                                        log.level === 'error' ? 'text-red-400' :
+                                                        log.level === 'warn' ? 'text-yellow-400' :
+                                                        'text-blue-400'
+                                                    }`}>
+                                                        {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
+                                                    </span>
+                                                    <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
+                                                        {log.message}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </div>
                 </div>
             </div>
 
