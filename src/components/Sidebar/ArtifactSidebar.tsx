@@ -494,14 +494,11 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
 
             {/* Resize Handle (Desktop only) */}
             {isDesktop && (
-                <div 
-                    onMouseDown={startResizingHandler} 
-                    className={`
-                        absolute top-0 left-0 w-1 h-full cursor-col-resize z-50 transition-colors
-                        ${isResizing ? 'bg-indigo-500' : 'hover:bg-indigo-500/50 bg-transparent'}
-                    `}
+                <div
+                    className="group absolute top-0 left-0 h-full z-50 w-4 -translate-x-2 cursor-col-resize flex justify-center hover:bg-transparent"
+                    onMouseDown={startResizingHandler}
                 >
-                    <div className="absolute top-1/2 left-0 -translate-y-1/2 -ml-1 w-3 h-8 bg-black/20 dark:bg-white/20 rounded-full opacity-0 hover:opacity-100 transition-opacity" />
+                    <div className={`w-[2px] h-full transition-colors duration-200 ${isResizing ? 'bg-indigo-500' : 'bg-transparent group-hover:bg-indigo-400/50'}`}></div>
                 </div>
             )}
         </motion.aside>
