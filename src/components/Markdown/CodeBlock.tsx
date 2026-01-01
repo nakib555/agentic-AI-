@@ -4,8 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
-import hljs from 'highlight.js';
+import React, { useState } from 'react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useTheme } from '../../hooks/useTheme';
+
+const languageMap: { [key: string]: string } = {
+    js: 'javascript', jsx: 'javascript', ts: 'typescript', tsx: 'typescript',
+    py: 'python', shell: 'bash', bash: 'bash', sh: 'bash',
+    html: 'html', css: 'css', json: 'json', yaml: 'yaml', yml: 'yaml',
+    md: 'markdown', sql: 'sql', java: 'java', c: 'c', cpp: 'cpp',
+    csharp: 'csharp', go: 'go', rust: 'rust',
+};
+
+const runnableLanguages = ['javascript', 'js', 'jsx', 'python', 'py', 'typescript', 'ts', 'tsx'];
 
 type CodeBlockProps = {
     language?: string;
@@ -15,11 +27,9 @@ type CodeBlockProps = {
     isDisabled?: boolean;
 };
 
-// Common languages that support execution in this app context
-const runnableLanguages = ['javascript', 'js', 'jsx', 'python', 'py', 'typescript', 'ts', 'tsx'];
-
 export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStreaming, onRunCode, isDisabled }) => {
     const [isCopied, setIsCopied] = useState(false);
+    const { theme } = useTheme();
 
     const codeContent = String(children).replace(/\n$/, '');
 
@@ -44,22 +54,12 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         }));
     };
     
-    const formattedLanguage = language ? language.charAt(0).toUpperCase() + language.slice(1) : 'Auto';
-    const isRunnable = onRunCode && language && runnableLanguages.includes(language.toLowerCase());
-
-    const highlightedCode = useMemo(() => {
-        try {
-            if (language && hljs.getLanguage(language)) {
-                return hljs.highlight(codeContent, { language }).value;
-            }
-            // Auto detect
-            return hljs.highlightAuto(codeContent).value;
-        } catch (e) {
-            console.warn('Highlight.js failed:', e);
-            // Fallback to simple escaping if highlighting fails
-            return codeContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-    }, [codeContent, language]);
+    const isDarkMode = theme === 'dark' || theme === 'spocke' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    const rawLanguage = language ? language.toLowerCase() : 'plaintext';
+    const highlighterLang = languageMap[rawLanguage] || rawLanguage;
+    const formattedLanguage = language ? language.charAt(0).toUpperCase() + language.slice(1) : '';
+    const isRunnable = onRunCode && runnableLanguages.includes(rawLanguage);
 
     return (
       <div className="my-6 rounded-xl overflow-hidden border border-border-default bg-code-surface shadow-sm font-sans group">
@@ -67,7 +67,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         <div className="flex justify-between items-center px-4 py-2 bg-layer-2/50 border-b border-border-subtle select-none">
           <div className="flex items-center gap-3">
              <span className="text-xs font-semibold text-content-tertiary lowercase font-mono">
-                {formattedLanguage}
+                {formattedLanguage || 'text'}
              </span>
           </div>
           
@@ -113,14 +113,25 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         </div>
         
         {/* Editor Body */}
-        <div className="relative overflow-x-auto text-[13px] leading-6 scrollbar-thin text-code-text bg-[#282c34]">
-            <pre className="m-0 p-5 bg-transparent font-mono">
-                <code 
-                    className={`hljs ${language ? `language-${language}` : ''}`} 
-                    dangerouslySetInnerHTML={{ __html: highlightedCode }}
-                    style={{ background: 'transparent', padding: 0 }}
-                />
-            </pre>
+        <div className="relative overflow-x-auto text-[13px] leading-6 scrollbar-thin text-code-text">
+            <SyntaxHighlighter
+              language={highlighterLang}
+              style={isDarkMode ? vscDarkPlus : oneLight}
+              customStyle={{
+                margin: 0,
+                padding: '1.25rem',
+                backgroundColor: 'transparent',
+                fontFamily: "'Fira Code', 'Consolas', monospace",
+                color: 'inherit', // Force text color inheritance
+              }}
+              codeTagProps={{
+                  style: { fontFamily: "inherit", color: 'inherit' }
+              }}
+              wrapLines={true}
+              wrapLongLines={false}
+            >
+              {codeContent}
+            </SyntaxHighlighter>
         </div>
       </div>
     );

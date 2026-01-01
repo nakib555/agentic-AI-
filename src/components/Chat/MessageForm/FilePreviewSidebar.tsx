@@ -8,7 +8,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { useViewport } from '../../../hooks/useViewport';
 import type { ProcessedFile } from './types';
-import hljs from 'highlight.js';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useTheme } from '../../../hooks/useTheme';
 
 type FilePreviewSidebarProps = {
     isOpen: boolean;
@@ -22,10 +24,10 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
     file 
 }) => {
     const { isDesktop } = useViewport();
+    const { theme } = useTheme();
     const [content, setContent] = useState<string | null>(null);
     const [previewType, setPreviewType] = useState<'image' | 'text' | 'pdf' | 'other'>('other');
     const [isCopied, setIsCopied] = useState(false);
-    const [highlightedContent, setHighlightedContent] = useState('');
 
     useEffect(() => {
         if (!file || !file.file) {
@@ -59,35 +61,20 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
             rawFile.name.match(/\.(json|js|jsx|ts|tsx|css|html|md|py|rb|java|c|cpp|h|txt|csv|xml|yaml|yml|log|env|ini|conf)$/i)
         ) {
             setPreviewType('text');
-            const processText = (text: string) => {
-                setContent(text);
-                const ext = rawFile.name.split('.').pop();
-                try {
-                    if (ext && hljs.getLanguage(ext)) {
-                        setHighlightedContent(hljs.highlight(text, { language: ext }).value);
-                    } else {
-                        setHighlightedContent(hljs.highlightAuto(text).value);
-                    }
-                } catch (e) {
-                    setHighlightedContent(text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"));
-                }
-            };
-
             if (file.base64Data) {
                 try {
                     const decoded = new TextDecoder().decode(
                         Uint8Array.from(atob(file.base64Data), c => c.charCodeAt(0))
                     );
-                    processText(decoded);
+                    setContent(decoded);
                 } catch (e) {
                     setContent('Error decoding text content.');
-                    setHighlightedContent('Error decoding text content.');
                 }
             } else {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const result = e.target?.result;
-                    if (typeof result === 'string') processText(result);
+                    if (typeof result === 'string') setContent(result);
                 };
                 reader.readAsText(rawFile);
             }
@@ -123,6 +110,8 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
             onClose();
         }
     };
+
+    const isDarkMode = theme === 'dark' || theme === 'spocke' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
     const desktopVariants = {
         closed: { x: '100%', opacity: 0 },
@@ -248,14 +237,18 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                             )}
 
                             {previewType === 'text' && content && (
-                                <div className="absolute inset-0 overflow-auto custom-scrollbar bg-[#282c34] text-code-text">
-                                    <pre className="m-0 p-6 bg-transparent font-mono text-[13px] leading-relaxed">
-                                        <code 
-                                            className="hljs" 
-                                            dangerouslySetInnerHTML={{ __html: highlightedContent }}
-                                            style={{ background: 'transparent', padding: 0 }}
-                                        />
-                                    </pre>
+                                <div className="absolute inset-0 overflow-auto custom-scrollbar">
+                                    <div className="min-h-full w-full bg-code-surface text-sm">
+                                        <SyntaxHighlighter
+                                            language="text"
+                                            style={isDarkMode ? vscDarkPlus : oneLight}
+                                            customStyle={{ margin: 0, padding: '1.5rem', minHeight: '100%', fontSize: '13px', backgroundColor: 'transparent', color: 'inherit' }}
+                                            codeTagProps={{ style: { fontFamily: "'Fira Code', monospace", color: 'inherit' } }}
+                                            wrapLongLines={true}
+                                        >
+                                            {content}
+                                        </SyntaxHighlighter>
+                                    </div>
                                 </div>
                             )}
 

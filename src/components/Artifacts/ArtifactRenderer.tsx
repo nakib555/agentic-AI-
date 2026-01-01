@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import hljs from 'highlight.js';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useTheme } from '../../hooks/useTheme';
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
@@ -16,6 +18,7 @@ type ArtifactRendererProps = {
 };
 
 export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, content, language = 'html', title }) => {
+    const { theme } = useTheme();
     const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
     const [iframeKey, setIframeKey] = useState(0);
     const [logs, setLogs] = useState<{level: string, message: string, timestamp: number}[]>([]);
@@ -44,16 +47,9 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         return () => window.removeEventListener('message', handler);
     }, []);
 
-    const highlightedCode = useMemo(() => {
-        try {
-            if (language && hljs.getLanguage(language)) {
-                return hljs.highlight(content, { language }).value;
-            }
-            return hljs.highlightAuto(content).value;
-        } catch (e) {
-            return content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-    }, [content, language]);
+    const effectiveTheme = theme === 'system' 
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') 
+        : theme;
 
     const renderPreview = () => {
         if (type === 'data') {
@@ -227,14 +223,24 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                 {activeTab === 'preview' ? (
                     renderPreview()
                 ) : (
-                    <div className="max-h-[400px] overflow-auto custom-scrollbar text-code-text bg-[#282c34]">
-                        <pre className="m-0 p-4 bg-transparent font-mono text-[13px]">
-                            <code 
-                                className={`hljs ${language ? `language-${language}` : ''}`} 
-                                dangerouslySetInnerHTML={{ __html: highlightedCode }}
-                                style={{ background: 'transparent', padding: 0 }}
-                            />
-                        </pre>
+                    <div className="max-h-[400px] overflow-auto custom-scrollbar text-code-text">
+                        <SyntaxHighlighter
+                            language={language || 'text'}
+                            style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
+                            customStyle={{ 
+                                margin: 0, 
+                                padding: '1rem', 
+                                fontSize: '13px', 
+                                backgroundColor: 'transparent',
+                                color: 'inherit' 
+                            }}
+                            codeTagProps={{
+                                style: { fontFamily: "inherit", color: 'inherit' }
+                            }}
+                            showLineNumbers
+                        >
+                            {content}
+                        </SyntaxHighlighter>
                     </div>
                 )}
             </div>
