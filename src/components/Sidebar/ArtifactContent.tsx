@@ -160,9 +160,7 @@ const detectIsReact = (code: string, lang: string) => {
 };
 
 // Threshold for switching to virtualized plain text viewer
-// ~1000 lines or ~50KB is a safe bet for 4GB RAM devices to avoid React reconciliation lag
-const VIRTUALIZATION_THRESHOLD_LINES = 1000;
-const VIRTUALIZATION_THRESHOLD_SIZE = 50 * 1024; // 50KB
+const VIRTUALIZATION_THRESHOLD_SIZE = 20 * 1024; // 20KB (approx 500-1000 lines of dense code)
 
 type ArtifactContentProps = {
     content: string;
@@ -177,7 +175,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     const [state, dispatch] = useReducer(artifactReducer, initialState);
     const [isCopied, setIsCopied] = React.useState(false);
     
-    // Debounce content for Preview mode only to prevent iframe thrashing during streaming
+    // Debounce content to prevent UI blocking during streaming of large files
     const [debouncedContent, setDebouncedContent] = useState(content);
 
     // Theme detection
@@ -192,17 +190,22 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
 
     // Auto-switch tab based on language on mount
     useEffect(() => {
-        if (['html', 'svg', 'markup', 'xml'].includes(language) || detectIsReact(content, language)) {
+        if (content.length < 50000 && (['html', 'svg', 'markup', 'xml'].includes(language) || detectIsReact(content, language))) {
             dispatch({ type: 'SET_TAB', payload: 'preview' });
         } else {
             dispatch({ type: 'SET_TAB', payload: 'code' });
         }
-    }, [language, content]);
+    }, [language, content.length]); // Use length dependency to avoid expensive checks on every keystroke
 
-    // Update debounced content
+    // Update debounced content with variable delay based on size
     useEffect(() => {
-        // If the content is very large, debounce it more aggressively to keep UI responsive
-        const delay = content.length > 50000 ? 500 : 150;
+        // Dynamic debounce: Larger files update less frequently to save CPU
+        const length = content.length;
+        let delay = 100;
+        if (length > 1000000) delay = 1500; // 1MB+ -> 1.5s
+        else if (length > 100000) delay = 800; // 100KB+ -> 800ms
+        else if (length > 20000) delay = 300; // 20KB+ -> 300ms
+
         const handler = setTimeout(() => {
             setDebouncedContent(content);
         }, delay);
@@ -213,19 +216,17 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     useEffect(() => {
         if (state.activeTab === 'preview') {
             dispatch({ type: 'REFRESH_PREVIEW' });
-            // Small buffer to allow iframe mount, but much faster than before
             const timer = setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 100);
             return () => clearTimeout(timer);
         }
     }, [debouncedContent, state.activeTab]); 
 
-    // Handle updates for Code Mode (Instant)
+    // Handle updates for Code Mode
     useEffect(() => {
         if (state.activeTab === 'code') {
-            // Immediate update, no loading state needed for text/code
             dispatch({ type: 'SET_LOADING', payload: false });
         }
-    }, [content, state.activeTab]);
+    }, [debouncedContent, state.activeTab]);
 
     // Console Log Listener
     useEffect(() => {
@@ -244,9 +245,12 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => window.removeEventListener('message', handler);
     }, []);
 
-    const isReact = useMemo(() => detectIsReact(debouncedContent, language), [debouncedContent, language]);
+    const isReact = useMemo(() => {
+        if (debouncedContent.length > 50000) return false; // Optimization
+        return detectIsReact(debouncedContent, language);
+    }, [debouncedContent, language]);
 
-    // Memoized Preview Generation (Uses debouncedContent)
+    // Memoized Preview Generation
     const previewContent = useMemo(() => {
         if (!debouncedContent) return '';
         
@@ -302,7 +306,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 win.document.close();
             }
         } else {
-            // Can't open Sandpack in new tab easily as it runs inside React
             alert("Interactive previews are embedded and cannot be opened in a new tab yet.");
         }
     }, [previewContent, isReact]);
@@ -329,9 +332,10 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return language;
     }, [language]);
 
+    // Efficient check for large files without regex
     const useVirtualization = useMemo(() => {
-        return content.length > VIRTUALIZATION_THRESHOLD_SIZE || (content.match(/\n/g) || []).length > VIRTUALIZATION_THRESHOLD_LINES;
-    }, [content]);
+        return content.length > VIRTUALIZATION_THRESHOLD_SIZE;
+    }, [content.length]);
 
     return (
         <div className="flex flex-col h-full overflow-hidden w-full bg-layer-1">
@@ -344,7 +348,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                         </span>
                         {useVirtualization && state.activeTab === 'code' && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wide">
-                                LARGE FILE
+                                VIRTUALIZED
                             </span>
                         )}
                     </div>
@@ -410,7 +414,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 >
                     {useVirtualization ? (
                         <VirtualizedCodeViewer 
-                            content={content} 
+                            content={debouncedContent} 
                             language={language}
                             theme={syntaxStyle}
                         />
@@ -432,7 +436,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                             lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
                             fallbackLanguage="text"
                         >
-                            {content || ''}
+                            {debouncedContent || ''}
                         </SyntaxHighlighter>
                     )}
                 </div>
