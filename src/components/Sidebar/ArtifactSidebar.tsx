@@ -281,7 +281,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
     // Mobile Bottom Sheet Logic
     const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
     const minHeight = screenHeight * 0.45; // 45vh
-    const maxHeight = screenHeight * 0.95; // 95vh
+    const maxHeight = screenHeight * 0.85; // 85vh
     const dragRange = maxHeight - minHeight;
 
     const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -330,9 +330,9 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                     : 'fixed inset-x-0 bottom-0 z-[60] border-t rounded-t-2xl shadow-2xl'
                 }
             `}
-            // Important: Use fixed height on mobile to ensure flex children expand correctly.
-            // 'auto' height on mobile causes absolute children to collapse the container.
-            style={!isDesktop ? { height: '85vh', maxHeight: '95vh' } : undefined}
+            // Important: Use max-height on mobile to allow content to determine size but cap it at 85vh
+            // 'auto' height on mobile allows flex children to expand naturally
+            style={!isDesktop ? { height: 'auto', maxHeight: '85vh', display: 'flex', flexDirection: 'column' } : undefined}
         >
             <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%', height: '100%' }}>
                 
@@ -410,10 +410,10 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex-1 overflow-hidden relative group/content">
+                <div className={`flex-1 min-h-0 ${isDesktop ? 'relative overflow-hidden' : 'overflow-y-auto relative'}`}>
                     {/* CODE VIEW */}
                     <div 
-                        className={`absolute inset-0 overflow-auto custom-scrollbar bg-code-surface ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
+                        className={`${isDesktop ? 'absolute inset-0 overflow-auto custom-scrollbar' : ''} bg-code-surface ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
                     >
                         <SyntaxHighlighter
                             language={syntaxHighlighterLanguage || 'text'}
@@ -438,7 +438,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
 
                     {/* PREVIEW VIEW */}
                     <div 
-                        className={`absolute inset-0 bg-layer-2 flex flex-col ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
+                        className={`${isDesktop ? 'absolute inset-0' : 'h-[50vh]'} bg-layer-2 flex flex-col ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
                     >
                         <div className="flex items-center justify-between px-3 py-2 bg-layer-1 border-b border-border-default flex-shrink-0">
                             <div className="flex items-center gap-2">
