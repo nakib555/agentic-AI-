@@ -121,6 +121,7 @@ export const ChatArea = ({
         )}
       </AnimatePresence>
       <MessageList
+          key={currentChatId || 'empty'}
           ref={messageListRef}
           messages={messages} 
           sendMessage={sendMessage} 

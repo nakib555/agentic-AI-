@@ -1,14 +1,15 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useCallback, useRef, useLayoutEffect, Suspense } from 'react';
 import { motion, PanInfo, useDragControls, AnimatePresence, useMotionValue, animate } from 'framer-motion';
 import type { Source } from '../../types';
 import { useViewport } from '../../hooks/useViewport';
-import { SourceItem } from './SourceItem';
+
+// Lazy load content
+const SourcesContent = React.lazy(() => import('./SourcesContent').then(m => ({ default: m.SourcesContent })));
 
 type SourcesSidebarProps = {
     isOpen: boolean;
@@ -51,8 +52,9 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
         const MIN_H = vh * 0.45;
 
         if (isOpen) {
-            const actualHeight = contentRef.current?.scrollHeight || 0;
-            const targetHeight = Math.min(Math.max(actualHeight, MIN_H), MAX_H);
+            // Assume 50px per item approx
+            const estimatedHeight = (sources?.length || 0) * 60 + 60; 
+            const targetHeight = Math.min(Math.max(estimatedHeight, MIN_H), MAX_H);
             const targetY = MAX_H - targetHeight;
             
             animate(y, targetY, { type: "spring", damping: 30, stiffness: 300 });
@@ -145,15 +147,13 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-2 w-full">
-                        {sources && sources.length > 0 ? (
-                            <div className="space-y-1">
-                                {sources.map((source, index) => <SourceItem key={source.uri + index} source={source} />)}
-                            </div>
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-sm text-gray-500 dark:text-slate-400 p-4 text-center">No sources were provided for this response.</div>
-                        )}
-                    </div>
+                    <Suspense fallback={
+                        <div className="flex items-center justify-center h-full">
+                            <div className="animate-spin rounded-full h-6 w-6 border-2 border-indigo-500 border-t-transparent"></div>
+                        </div>
+                    }>
+                        <SourcesContent sources={sources} />
+                    </Suspense>
                 </div>
                 
                 {isDesktop && isOpen && (

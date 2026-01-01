@@ -1,19 +1,15 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, Suspense } from 'react';
 import { motion as motionTyped, AnimatePresence, PanInfo, useDragControls } from 'framer-motion';
 const motion = motionTyped as any;
-import { NavItem } from './NavItem';
 import type { ChatSession } from '../../types';
-import { SidebarHeader } from './SidebarHeader';
-import { SearchInput } from './SearchInput';
-import { NewChatButton } from './NewChatButton';
-import { HistoryList } from './HistoryList';
-import { SidebarFooter } from './SidebarFooter';
+
+// Lazy load content
+const SidebarContent = React.lazy(() => import('./SidebarContent').then(m => ({ default: m.SidebarContent })));
 
 type SidebarProps = {
     isOpen: boolean;
@@ -48,10 +44,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onDeleteChat, onUpdateChatTitle, onSettingsClick,
     isDesktop
 }) => {
-    const [searchQuery, setSearchQuery] = useState('');
     const prevIsDesktop = useRef(isDesktop);
     const [animationDisabledForResize, setAnimationDisabledForResize] = useState(false);
-    const searchInputRef = useRef<HTMLInputElement>(null);
     const dragControls = useDragControls();
 
     useEffect(() => {
@@ -83,20 +77,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         window.addEventListener('mouseup', handleMouseUp);
     }, [setWidth, setIsResizing]);
 
-    const handleNewChat = () => {
-        onNewChat();
-        setSearchQuery('');
-        if (!isDesktop) {
-            setIsOpen(false);
-        }
-    };
-
-    const handleLoadChat = (id: string) => {
-        onLoadChat(id);
-        if (!isDesktop) {
-            setIsOpen(false);
-        }
-    };
     
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -104,7 +84,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 event.preventDefault();
                 if (isCollapsed) setIsCollapsed(false);
                 if (!isOpen && !isDesktop) setIsOpen(true);
-                setTimeout(() => searchInputRef.current?.focus(), 100);
+                // Focusing handled inside SidebarContent logic now or requires forwarding ref if strictly needed
+                // Simplified here: Opening sidebar is primary action.
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -181,52 +162,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         paddingTop: !isDesktop ? 'env(safe-area-inset-top)' : '0.75rem'
                     }}
                 >
-                    <SidebarHeader 
-                        isCollapsed={isCollapsed}
-                        isDesktop={isDesktop}
-                        setIsOpen={setIsOpen} 
-                        setIsCollapsed={setIsCollapsed}
-                    />
-
-                    <SearchInput 
-                        ref={searchInputRef}
-                        isCollapsed={isCollapsed}
-                        isDesktop={isDesktop}
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
-                    />
-
-                    <NewChatButton
-                        isCollapsed={isCollapsed}
-                        isDesktop={isDesktop}
-                        onClick={handleNewChat}
-                        disabled={isNewChatDisabled}
-                    />
-                    
-                    <motion.div 
-                        className="mb-2 border-t border-border"
-                        initial={false}
-                        animate={{ opacity: isCollapsed ? 0 : 1, height: isCollapsed ? 0 : 'auto' }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    />
-
-                    <HistoryList 
-                        history={history}
-                        isHistoryLoading={isHistoryLoading}
-                        currentChatId={currentChatId}
-                        searchQuery={searchQuery}
-                        isCollapsed={isCollapsed}
-                        isDesktop={isDesktop}
-                        onLoadChat={handleLoadChat}
-                        onDeleteChat={onDeleteChat}
-                        onUpdateChatTitle={onUpdateChatTitle}
-                    />
-                    
-                    <SidebarFooter 
-                        isCollapsed={isCollapsed}
-                        isDesktop={isDesktop}
-                        onSettingsClick={onSettingsClick}
-                    />
+                    <Suspense fallback={
+                        <div className="flex flex-col gap-4 p-4 animate-pulse">
+                            <div className="h-8 bg-slate-200 dark:bg-white/5 rounded"></div>
+                            <div className="h-10 bg-slate-200 dark:bg-white/5 rounded"></div>
+                            <div className="h-40 bg-slate-200 dark:bg-white/5 rounded"></div>
+                        </div>
+                    }>
+                        <SidebarContent 
+                            isCollapsed={isCollapsed}
+                            isDesktop={isDesktop}
+                            setIsOpen={setIsOpen}
+                            setIsCollapsed={setIsCollapsed}
+                            history={history}
+                            isHistoryLoading={isHistoryLoading}
+                            currentChatId={currentChatId}
+                            onNewChat={onNewChat}
+                            isNewChatDisabled={isNewChatDisabled}
+                            onLoadChat={onLoadChat}
+                            onDeleteChat={onDeleteChat}
+                            onUpdateChatTitle={onUpdateChatTitle}
+                            onSettingsClick={onSettingsClick}
+                        />
+                    </Suspense>
                 </div>
 
                 {/* Resize Handle - Adjusted position to overlap inside edge to avoid clipping */}

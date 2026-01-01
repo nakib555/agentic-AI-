@@ -1,9 +1,10 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo, Suspense } from 'react';
+import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo, Suspense, useEffect } from 'react';
 import type { Message, Source } from '../../types';
 import { MessageComponent } from './Message';
 import { WelcomeScreen } from './WelcomeScreen/index';
@@ -83,6 +84,35 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
 
   // Safeguard against undefined messages prop
   const visibleMessages = useMemo(() => (messages || []).filter(msg => !msg.isHidden), [messages]);
+  
+  // Track previous length to detect new messages
+  const prevMessagesLength = useRef(visibleMessages.length);
+
+  // Auto-scroll on new message
+  useEffect(() => {
+      const currentLength = visibleMessages.length;
+      const prevLength = prevMessagesLength.current;
+
+      if (currentLength > prevLength) {
+          const lastMessage = visibleMessages[currentLength - 1];
+          // Scroll if it's a user message (always show what I just sent)
+          // OR if we were already at the bottom (standard sticky behavior)
+          const shouldScroll = lastMessage?.role === 'user' || atBottom;
+
+          if (shouldScroll) {
+              // Use setTimeout to ensure DOM has updated with the new item
+              setTimeout(() => {
+                  virtuosoRef.current?.scrollToIndex({ 
+                      index: currentLength - 1, 
+                      align: 'end',
+                      behavior: 'smooth' 
+                  });
+              }, 50);
+          }
+      }
+      
+      prevMessagesLength.current = currentLength;
+  }, [visibleMessages, atBottom]);
 
   // Expose scroll methods to parent via ref
   useImperativeHandle(ref, () => ({
