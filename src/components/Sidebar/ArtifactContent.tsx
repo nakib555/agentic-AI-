@@ -1,9 +1,10 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useReducer, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useReducer, useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
@@ -147,8 +148,11 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     // UI State managed by Reducer
     const [state, dispatch] = useReducer(artifactReducer, initialState);
     const [isCopied, setIsCopied] = React.useState(false);
+    
+    // Debounce content for Preview mode only to prevent iframe thrashing during streaming
+    const [debouncedContent, setDebouncedContent] = useState(content);
 
-    // Auto-switch tab based on language
+    // Auto-switch tab based on language on mount
     useEffect(() => {
         if (['html', 'svg', 'markup', 'xml'].includes(language)) {
             dispatch({ type: 'SET_TAB', payload: 'preview' });
@@ -157,12 +161,33 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         }
     }, [language]);
 
-    // Handle content updates
+    // Update debounced content
     useEffect(() => {
-        dispatch({ type: 'REFRESH_PREVIEW' });
-        const timer = setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 600);
-        return () => clearTimeout(timer);
-    }, [content]); 
+        // If the content is very large, debounce it more aggressively to keep UI responsive
+        const delay = content.length > 50000 ? 500 : 150;
+        const handler = setTimeout(() => {
+            setDebouncedContent(content);
+        }, delay);
+        return () => clearTimeout(handler);
+    }, [content]);
+
+    // Handle updates for Preview Mode (Expensive)
+    useEffect(() => {
+        if (state.activeTab === 'preview') {
+            dispatch({ type: 'REFRESH_PREVIEW' });
+            // Small buffer to allow iframe mount, but much faster than before
+            const timer = setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 100);
+            return () => clearTimeout(timer);
+        }
+    }, [debouncedContent, state.activeTab]); 
+
+    // Handle updates for Code Mode (Instant)
+    useEffect(() => {
+        if (state.activeTab === 'code') {
+            // Immediate update, no loading state needed for text/code
+            dispatch({ type: 'SET_LOADING', payload: false });
+        }
+    }, [content, state.activeTab]);
 
     // Console Log Listener
     useEffect(() => {
@@ -182,11 +207,11 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => window.removeEventListener('message', handler);
     }, []);
 
-    // Memoized Preview Generation
+    // Memoized Preview Generation (Uses debouncedContent)
     const previewContent = useMemo(() => {
-        if (!content) return '';
+        if (!debouncedContent) return '';
         
-        let cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
+        let cleanContent = debouncedContent.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
         const consoleScript = generateConsoleScript();
 
         if (language === 'html' || language === 'svg' || language === 'markup' || language === 'xml') {
@@ -220,7 +245,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
         return '';
-    }, [content, language]);
+    }, [debouncedContent, language]);
 
     const handleCopy = useCallback(() => {
         navigator.clipboard.writeText(content);
@@ -238,7 +263,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
 
     const handleRefresh = useCallback(() => {
         dispatch({ type: 'REFRESH_PREVIEW' });
-        setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 600);
+        setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 200);
     }, []);
 
     const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language);
