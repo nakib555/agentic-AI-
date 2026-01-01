@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -10,6 +9,7 @@ import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
 import Frame from 'react-frame-component';
+import { SandpackProvider, SandpackLayout, SandpackPreview } from "@codesandbox/sandpack-react";
 
 // --- Icons ---
 const CopyIcon = () => (
@@ -136,6 +136,19 @@ const generateConsoleScript = () => `
     </script>
 `;
 
+const detectIsReact = (code: string, lang: string) => {
+    if (lang === 'html' || lang === 'css' || lang === 'json') return false;
+    const clean = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
+    return (
+        lang === 'jsx' || 
+        lang === 'tsx' || 
+        /import\s+React/.test(clean) || 
+        /import\s+.*from\s+['"]react['"]/.test(clean) || 
+        /export\s+default\s+function/.test(clean) && /return\s*\(/.test(clean) ||
+        /<[A-Z][A-Za-z0-9]*\s/.test(clean)
+    );
+};
+
 type ArtifactContentProps = {
     content: string;
     language: string;
@@ -152,14 +165,24 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     // Debounce content for Preview mode only to prevent iframe thrashing during streaming
     const [debouncedContent, setDebouncedContent] = useState(content);
 
+    // Theme detection
+    const [isDark, setIsDark] = useState(false);
+    useEffect(() => {
+        const checkDark = () => setIsDark(document.documentElement.classList.contains('dark'));
+        checkDark();
+        const observer = new MutationObserver(checkDark);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
+    }, []);
+
     // Auto-switch tab based on language on mount
     useEffect(() => {
-        if (['html', 'svg', 'markup', 'xml'].includes(language)) {
+        if (['html', 'svg', 'markup', 'xml'].includes(language) || detectIsReact(content, language)) {
             dispatch({ type: 'SET_TAB', payload: 'preview' });
         } else {
             dispatch({ type: 'SET_TAB', payload: 'code' });
         }
-    }, [language]);
+    }, [language, content]);
 
     // Update debounced content
     useEffect(() => {
@@ -206,6 +229,8 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => window.removeEventListener('message', handler);
     }, []);
 
+    const isReact = useMemo(() => detectIsReact(debouncedContent, language), [debouncedContent, language]);
+
     // Memoized Preview Generation (Uses debouncedContent)
     const previewContent = useMemo(() => {
         if (!debouncedContent) return '';
@@ -216,6 +241,8 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         if (language === 'html' || language === 'svg' || language === 'markup' || language === 'xml') {
             if (cleanContent.includes('<head>')) {
                 return cleanContent.replace('<head>', `<head>${consoleScript}`);
+            } else if (cleanContent.includes('<html>')) {
+                return cleanContent.replace('<html>', `<html><head>${consoleScript}</head>`);
             }
             return `${consoleScript}${cleanContent}`;
         }
@@ -253,28 +280,35 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     }, [content]);
 
     const handleOpenNewTab = useCallback(() => {
-        const win = window.open('', '_blank');
-        if (win) {
-            win.document.write(previewContent);
-            win.document.close();
+        // We cannot open Sandpack previews in new tab easily as they are managed by the runner.
+        // For Frame/HTML, we can.
+        if (!isReact) {
+            const win = window.open('', '_blank');
+            if (win) {
+                win.document.write(previewContent);
+                win.document.close();
+            }
+        } else {
+            alert("Interactive Sandpack previews cannot be opened in a new tab yet.");
         }
-    }, [previewContent]);
+    }, [previewContent, isReact]);
 
     const handleRefresh = useCallback(() => {
         dispatch({ type: 'REFRESH_PREVIEW' });
         setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 200);
     }, []);
 
-    const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language);
+    const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || isReact;
     
     const displayLanguage = useMemo(() => {
         if (!language) return 'TXT';
         const raw = language.toLowerCase();
+        if (isReact) return 'REACT';
         if (['html', 'css', 'json', 'xml', 'sql', 'php', 'svg'].includes(raw)) return raw.toUpperCase();
         if (raw === 'javascript') return 'JavaScript';
         if (raw === 'typescript') return 'TypeScript';
         return raw.charAt(0).toUpperCase() + raw.slice(1);
-    }, [language]);
+    }, [language, isReact]);
 
     const syntaxHighlighterLanguage = useMemo(() => {
         if (language === 'html') return 'markup';
@@ -376,96 +410,119 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 <div 
                     className={`flex-1 relative flex flex-col bg-layer-2 ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
                 >
-                    <div className="flex items-center justify-between px-3 py-2 bg-layer-1 border-b border-border-default flex-shrink-0">
-                        <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                            <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button 
-                                onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
-                                className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${state.showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-content-secondary hover:text-content-primary hover:bg-layer-2'}`}
-                                title="Toggle Console"
+                    {isReact ? (
+                        <div className="flex-1 w-full h-full relative bg-white">
+                             <SandpackProvider 
+                                template="react"
+                                theme={isDark ? "dark" : "light"}
+                                files={{ "/App.js": debouncedContent }}
+                                options={{
+                                    externalResources: ["https://cdn.tailwindcss.com"]
+                                }}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-                                Console {state.logs.length > 0 && <span className="bg-layer-2 px-1 rounded-sm text-[10px]">{state.logs.length}</span>}
-                            </button>
-                            <div className="w-px h-3 bg-border-strong mx-1" />
-                            <Tooltip content="Reload Preview" position="bottom">
-                                <button 
-                                    onClick={handleRefresh} 
-                                    className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
-                                    aria-label="Reload Preview"
-                                >
-                                    <RefreshIcon />
-                                </button>
-                            </Tooltip>
-                            <Tooltip content="Open in New Tab" position="bottom">
-                                <button 
-                                    onClick={handleOpenNewTab}
-                                    className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
-                                    aria-label="Open in New Tab"
-                                >
-                                    <ExternalLinkIcon />
-                                </button>
-                            </Tooltip>
+                                <SandpackLayout style={{ height: '100%', border: 'none', borderRadius: 0 }}>
+                                    <SandpackPreview 
+                                        style={{ height: '100%' }} 
+                                        showOpenInCodeSandbox={false} 
+                                        showRefreshButton={true}
+                                    />
+                                </SandpackLayout>
+                            </SandpackProvider>
                         </div>
-                    </div>
-                    <div className="flex-1 relative flex flex-col overflow-hidden">
-                        {state.isLoading ? (
-                            <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
-                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
-                                <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
+                    ) : (
+                        <>
+                            <div className="flex items-center justify-between px-3 py-2 bg-layer-1 border-b border-border-default flex-shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
+                                        className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${state.showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-content-secondary hover:text-content-primary hover:bg-layer-2'}`}
+                                        title="Toggle Console"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                                        Console {state.logs.length > 0 && <span className="bg-layer-2 px-1 rounded-sm text-[10px]">{state.logs.length}</span>}
+                                    </button>
+                                    <div className="w-px h-3 bg-border-strong mx-1" />
+                                    <Tooltip content="Reload Preview" position="bottom">
+                                        <button 
+                                            onClick={handleRefresh} 
+                                            className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
+                                            aria-label="Reload Preview"
+                                        >
+                                            <RefreshIcon />
+                                        </button>
+                                    </Tooltip>
+                                    <Tooltip content="Open in New Tab" position="bottom">
+                                        <button 
+                                            onClick={handleOpenNewTab}
+                                            className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
+                                            aria-label="Open in New Tab"
+                                        >
+                                            <ExternalLinkIcon />
+                                        </button>
+                                    </Tooltip>
+                                </div>
                             </div>
-                        ) : (
-                            <div className="flex-1 bg-white relative w-full h-full">
-                                <Frame
-                                    key={state.iframeKey}
-                                    initialContent={previewContent}
-                                    className="absolute inset-0 w-full h-full border-none bg-white"
-                                    title="Artifact Preview"
-                                >
-                                    {/* Empty children: content is managed via initialContent to support full HTML structure */}
-                                </Frame>
-                            </div>
-                        )}
-                        
-                        {/* Console Terminal Panel */}
-                        <AnimatePresence>
-                            {state.showConsole && (
-                                <motion.div
-                                    initial={{ height: 0 }}
-                                    animate={{ height: '35%' }}
-                                    exit={{ height: 0 }}
-                                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                    className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col w-full"
-                                >
-                                    <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
-                                        <span>Terminal</span>
-                                        <button onClick={() => dispatch({ type: 'CLEAR_LOGS' })} className="hover:text-white transition-colors">Clear</button>
+                            <div className="flex-1 relative flex flex-col overflow-hidden">
+                                {state.isLoading ? (
+                                    <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
+                                        <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
                                     </div>
-                                    <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
-                                        {state.logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
-                                        {state.logs.map((log, i) => (
-                                            <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
-                                                <span className={`flex-shrink-0 font-bold ${
-                                                    log.level === 'error' ? 'text-red-400' :
-                                                    log.level === 'warn' ? 'text-yellow-400' :
-                                                    'text-blue-400'
-                                                }`}>
-                                                    {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
-                                                </span>
-                                                <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
-                                                    {log.message}
-                                                </span>
+                                ) : (
+                                    <div className="flex-1 bg-white relative w-full h-full">
+                                        <Frame
+                                            key={state.iframeKey}
+                                            initialContent={previewContent}
+                                            className="absolute inset-0 w-full h-full border-none bg-white"
+                                            title="Artifact Preview"
+                                        >
+                                            {/* Empty children: content is managed via initialContent */}
+                                        </Frame>
+                                    </div>
+                                )}
+                                
+                                {/* Console Terminal Panel */}
+                                <AnimatePresence>
+                                    {state.showConsole && (
+                                        <motion.div
+                                            initial={{ height: 0 }}
+                                            animate={{ height: '35%' }}
+                                            exit={{ height: 0 }}
+                                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                            className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col w-full"
+                                        >
+                                            <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
+                                                <span>Terminal</span>
+                                                <button onClick={() => dispatch({ type: 'CLEAR_LOGS' })} className="hover:text-white transition-colors">Clear</button>
                                             </div>
-                                        ))}
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                                            <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
+                                                {state.logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
+                                                {state.logs.map((log, i) => (
+                                                    <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
+                                                        <span className={`flex-shrink-0 font-bold ${
+                                                            log.level === 'error' ? 'text-red-400' :
+                                                            log.level === 'warn' ? 'text-yellow-400' :
+                                                            'text-blue-400'
+                                                        }`}>
+                                                            {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
+                                                        </span>
+                                                        <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
+                                                            {log.message}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
