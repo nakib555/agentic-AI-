@@ -5,46 +5,46 @@
  */
 
 const spockeTheme = {
-  // --- Base Layers (True Void) ---
-  "--bg-page": "#000000",        // True OLED Black
-  "--bg-layer-1": "#050505",     // Almost Black (Cards)
-  "--bg-layer-2": "#0a0a0a",     // Dark Gray (Inputs/Hover)
-  "--bg-layer-3": "#171717",     // Lighter Gray (Active)
-  "--bg-glass": "rgba(0, 0, 0, 0.7)", // Dark Translucent
+  // --- Base Layers (True Void & OLED Black) ---
+  "--bg-page": "#000000",        // True Black
+  "--bg-layer-1": "#0A0A0A",     // Almost Black (Cards)
+  "--bg-layer-2": "#111111",     // Dark Gray (Inputs/Hover)
+  "--bg-layer-3": "#1A1A1A",     // Lighter Gray (Active)
+  "--bg-glass": "rgba(0, 0, 0, 0.85)", // High density tint
 
   // --- Text Colors (High Contrast) ---
-  "--text-primary": "#ededed",   // Near White
-  "--text-secondary": "#a1a1aa", // Neutral Gray
-  "--text-tertiary": "#52525b",  // Darker Gray
+  "--text-primary": "#FFFFFF",   // Pure White
+  "--text-secondary": "#A3A3A3", // Neutral 400
+  "--text-tertiary": "#525252",  // Neutral 600
   "--text-inverted": "#000000",
 
-  // --- Borders (Neon Glow) ---
-  "--border-subtle": "rgba(34, 211, 238, 0.08)", // Cyan hint
-  "--border-default": "rgba(34, 211, 238, 0.15)",
-  "--border-strong": "rgba(34, 211, 238, 0.25)",
-  "--border-focus": "#22d3ee",   // Electric Cyan
+  // --- Borders (Electric & Sharp) ---
+  "--border-subtle": "#1F1F1F",
+  "--border-default": "#262626",
+  "--border-strong": "#404040",
+  "--border-focus": "#06b6d4",   // Cyan 500
 
-  // --- Brand Colors (Electric Cyan/Teal) ---
+  // --- Brand Colors (Electric Cyan/Teal Glow) ---
   "--primary-main": "#06b6d4",   // Cyan 500
   "--primary-hover": "#22d3ee",  // Cyan 400
-  "--primary-subtle": "rgba(6, 182, 212, 0.15)", // Cyan tint
+  "--primary-subtle": "rgba(6, 182, 212, 0.1)", // Very subtle cyan tint
   "--primary-text": "#cffafe",   // Cyan 100
 
-  // --- Status Indicators (Vibrant Neon) ---
-  "--status-error-bg": "rgba(220, 38, 38, 0.2)",
-  "--status-error-text": "#fca5a5",
-  "--status-success-bg": "rgba(22, 163, 74, 0.2)",
-  "--status-success-text": "#86efac",
-  "--status-warning-bg": "rgba(202, 138, 4, 0.2)",
-  "--status-warning-text": "#fde047",
+  // --- Status Indicators (Vibrant & Saturated) ---
+  "--status-error-bg": "rgba(220, 38, 38, 0.15)",
+  "--status-error-text": "#f87171", // Red 400
+  "--status-success-bg": "rgba(22, 163, 74, 0.15)",
+  "--status-success-text": "#4ade80", // Green 400
+  "--status-warning-bg": "rgba(234, 179, 8, 0.15)",
+  "--status-warning-text": "#facc15", // Yellow 400
 
   // --- Component Specifics ---
-  "--bg-message-user": "#0a0a0a", 
+  "--bg-message-user": "#111111", 
   "--bg-message-ai": "transparent",
   "--bg-input": "#050505",
-  "--bg-input-secondary": "#0a0a0a",
+  "--bg-input-secondary": "#0A0A0A",
   "--bg-code": "#000000",
-  "--text-code": "#22d3ee",      // Matrix style code text
+  "--text-code": "#22d3ee",      // Cyan text for code (Matrix feel)
   "--bg-sidebar": "#000000"
 };
 
