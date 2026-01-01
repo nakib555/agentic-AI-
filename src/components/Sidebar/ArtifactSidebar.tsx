@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useReducer, useTransition, useDeferredValue, useCallback, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useViewport } from '../../hooks/useViewport';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTheme } from '../../hooks/useTheme';
-import { Skeleton } from '../UI/Skeleton';
 import { Tooltip } from '../UI/Tooltip';
 
 type ArtifactSidebarProps = {
@@ -23,6 +22,58 @@ type ArtifactSidebarProps = {
     isResizing: boolean;
     setIsResizing: (isResizing: boolean) => void;
 };
+
+// --- Reducer for Complex State Management ---
+
+type LogEntry = { level: string, message: string, timestamp: number };
+
+type State = {
+    activeTab: 'code' | 'preview';
+    iframeKey: number;
+    logs: LogEntry[];
+    showConsole: boolean;
+    isLoading: boolean;
+};
+
+type Action = 
+    | { type: 'SET_TAB', payload: 'code' | 'preview' }
+    | { type: 'REFRESH_PREVIEW' }
+    | { type: 'SET_LOADING', payload: boolean }
+    | { type: 'ADD_LOG', payload: LogEntry }
+    | { type: 'TOGGLE_CONSOLE' }
+    | { type: 'SHOW_CONSOLE_ON_ERROR' }
+    | { type: 'CLEAR_LOGS' };
+
+const initialState: State = {
+    activeTab: 'code',
+    iframeKey: 0,
+    logs: [],
+    showConsole: false,
+    isLoading: true,
+};
+
+const artifactReducer = (state: State, action: Action): State => {
+    switch (action.type) {
+        case 'SET_TAB': 
+            return { ...state, activeTab: action.payload };
+        case 'REFRESH_PREVIEW':
+            return { ...state, iframeKey: state.iframeKey + 1, logs: [], isLoading: true };
+        case 'SET_LOADING':
+            return { ...state, isLoading: action.payload };
+        case 'ADD_LOG':
+            return { ...state, logs: [...state.logs, action.payload] };
+        case 'TOGGLE_CONSOLE':
+            return { ...state, showConsole: !state.showConsole };
+        case 'SHOW_CONSOLE_ON_ERROR':
+            return { ...state, showConsole: true };
+        case 'CLEAR_LOGS':
+            return { ...state, logs: [] };
+        default: 
+            return state;
+    }
+};
+
+// --- Icons ---
 
 const CopyIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
@@ -67,157 +118,99 @@ const EyeIcon = () => (
     </svg>
 );
 
-// Loading Skeleton Component
-const ArtifactSkeleton = () => (
-    <div className="p-6 space-y-4 w-full h-full bg-white dark:bg-[#0d0d0d] overflow-hidden">
-        <div className="flex items-center gap-2 mb-6">
-            <Skeleton className="h-3 w-3 rounded-full bg-red-400/20" />
-            <Skeleton className="h-3 w-3 rounded-full bg-yellow-400/20" />
-            <Skeleton className="h-3 w-3 rounded-full bg-green-400/20" />
-        </div>
-        <div className="space-y-3">
-            <Skeleton className="h-4 w-3/4 rounded-md" />
-            <Skeleton className="h-4 w-1/2 rounded-md" />
-            <Skeleton className="h-4 w-5/6 rounded-md" />
-            <Skeleton className="h-4 w-2/3 rounded-md" />
-            <div className="h-4"></div>
-            <Skeleton className="h-4 w-1/3 rounded-md" />
-            <Skeleton className="h-4 w-full rounded-md" />
-            <Skeleton className="h-4 w-4/5 rounded-md" />
-        </div>
-        <div className="mt-8 space-y-3">
-             <Skeleton className="h-32 w-full rounded-xl opacity-50" />
-        </div>
-    </div>
-);
+const generateConsoleScript = () => `
+    <script>
+        (function() {
+            const originalConsole = window.console;
+            function send(level, args) {
+                try {
+                    const msg = args.map(a => {
+                        if (typeof a === 'object') {
+                            try { return JSON.stringify(a, null, 2); } catch(e) { return '[Circular]'; }
+                        }
+                        return String(a);
+                    }).join(' ');
+                    window.parent.postMessage({ type: 'ARTIFACT_LOG', level, message: msg }, '*');
+                } catch(e) {}
+            }
+            window.console = {
+                ...originalConsole,
+                log: (...args) => { originalConsole.log(...args); send('info', args); },
+                info: (...args) => { originalConsole.info(...args); send('info', args); },
+                warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
+                error: (...args) => { originalConsole.error(...args); send('error', args); },
+            };
+            window.addEventListener('error', (e) => {
+                send('error', [e.message]);
+            });
+            window.addEventListener('unhandledrejection', (e) => {
+                send('error', ['Unhandled Rejection: ' + (e.reason ? e.reason.toString() : 'Unknown')]);
+            });
+        })();
+    </script>
+`;
 
-export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({ 
+const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({ 
     isOpen, onClose, content, language, width, setWidth, isResizing, setIsResizing 
 }) => {
     const { isDesktop } = useViewport();
     const { theme } = useTheme();
-    const [activeTab, setActiveTab] = useState<'code' | 'preview'>('code');
-    const [iframeKey, setIframeKey] = useState(0);
-    const [isCopied, setIsCopied] = useState(false);
-    const [logs, setLogs] = useState<{level: string, message: string, timestamp: number}[]>([]);
-    const [showConsole, setShowConsole] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    
+    // UI State managed by Reducer
+    const [state, dispatch] = useReducer(artifactReducer, initialState);
+    
+    // Performance Hooks
+    const [isPending, startTransition] = useTransition();
+    const deferredContent = useDeferredValue(content);
+    
+    // Local ephemeral state
+    const [isCopied, setIsCopied] = useState(false);
 
-    // Auto-switch to preview for visual languages only once on mount or language change
+    // Auto-switch tab based on language
     useEffect(() => {
         if (['html', 'svg'].includes(language)) {
-            setActiveTab('preview');
+            dispatch({ type: 'SET_TAB', payload: 'preview' });
         } else {
-            setActiveTab('code');
+            dispatch({ type: 'SET_TAB', payload: 'code' });
         }
     }, [language]);
 
-    // Force iframe refresh and simulate loading ONLY when content changes
-    // Removed activeTab from dependency array to prevent reload on switch
+    // Handle content updates
     useEffect(() => {
-        setIframeKey(prev => prev + 1);
-        setLogs([]); // Clear logs on reload
-        setIsLoading(true);
-        // Short artificial delay to show the ghost element (UX) and allow syntax highlighter to prep
-        const timer = setTimeout(() => setIsLoading(false), 600);
+        dispatch({ type: 'REFRESH_PREVIEW' });
+        const timer = setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 600);
         return () => clearTimeout(timer);
-    }, [content]);
+    }, [content]); // Intentionally dependent on raw content update to trigger refresh
 
-    // Listen for console logs from the iframe
+    // Console Log Listener
     useEffect(() => {
         const handler = (e: MessageEvent) => {
-            // Validate source to ensure we only catch logs from OUR iframe
-            if (iframeRef.current && e.source !== iframeRef.current.contentWindow) {
-                return;
-            }
+            if (iframeRef.current && e.source !== iframeRef.current.contentWindow) return;
             if (e.data && e.data.type === 'ARTIFACT_LOG') {
-                setLogs(prev => [...prev, { level: e.data.level, message: e.data.message, timestamp: Date.now() }]);
-                if (e.data.level === 'error') setShowConsole(true);
+                dispatch({ 
+                    type: 'ADD_LOG', 
+                    payload: { level: e.data.level, message: e.data.message, timestamp: Date.now() } 
+                });
+                if (e.data.level === 'error') {
+                    dispatch({ type: 'SHOW_CONSOLE_ON_ERROR' });
+                }
             }
         };
         window.addEventListener('message', handler);
         return () => window.removeEventListener('message', handler);
     }, []);
 
-    const startResizing = (mouseDownEvent: React.MouseEvent) => {
-        mouseDownEvent.preventDefault();
-        setIsResizing(true);
-        const handleMouseMove = (e: MouseEvent) => {
-            const newWidth = window.innerWidth - e.clientX;
-            // Clamp width
-            setWidth(Math.max(300, Math.min(newWidth, window.innerWidth * 0.8)));
-        };
-        const handleMouseUp = () => {
-            setIsResizing(false);
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleMouseUp);
-    };
-
-    const handleCopy = () => {
-        navigator.clipboard.writeText(content);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-    };
-
-    const handleOpenNewTab = () => {
-        const win = window.open('', '_blank');
-        if (win) {
-            win.document.write(getPreviewContent());
-            win.document.close();
-        }
-    };
-
-    const isPreviewable = ['html', 'svg', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language);
-
-    const getPreviewContent = () => {
-        // Sanitize content: remove markdown code block fences if present
-        let cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
-
-        // Robust Console Capture Script
-        const consoleScript = `
-            <script>
-                (function() {
-                    const originalConsole = window.console;
-                    function send(level, args) {
-                        try {
-                            const msg = args.map(a => {
-                                if (typeof a === 'object') {
-                                    try { return JSON.stringify(a, null, 2); } catch(e) { return '[Circular]'; }
-                                }
-                                return String(a);
-                            }).join(' ');
-                            window.parent.postMessage({ type: 'ARTIFACT_LOG', level, message: msg }, '*');
-                        } catch(e) {}
-                    }
-                    window.console = {
-                        ...originalConsole,
-                        log: (...args) => { originalConsole.log(...args); send('info', args); },
-                        info: (...args) => { originalConsole.info(...args); send('info', args); },
-                        warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
-                        error: (...args) => { originalConsole.error(...args); send('error', args); },
-                    };
-                    window.addEventListener('error', (e) => {
-                        send('error', [e.message]);
-                    });
-                    window.addEventListener('unhandledrejection', (e) => {
-                        send('error', ['Unhandled Rejection: ' + (e.reason ? e.reason.toString() : 'Unknown')]);
-                    });
-                })();
-            </script>
-        `;
+    // Memoized Preview Generation
+    const previewContent = useMemo(() => {
+        let cleanContent = deferredContent.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
+        const consoleScript = generateConsoleScript();
 
         if (language === 'html' || language === 'svg') {
-            // Inject console script into HTML
             if (cleanContent.includes('<head>')) {
                 return cleanContent.replace('<head>', `<head>${consoleScript}`);
-            } else {
-                return `${consoleScript}${cleanContent}`;
             }
+            return `${consoleScript}${cleanContent}`;
         }
         
         if (['javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language)) {
@@ -243,10 +236,52 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
             `;
         }
         return '';
-    };
+    }, [deferredContent, language]);
 
+    const handleTabChange = useCallback((tab: 'code' | 'preview') => {
+        startTransition(() => {
+            dispatch({ type: 'SET_TAB', payload: tab });
+        });
+    }, []);
+
+    const startResizingHandler = useCallback((mouseDownEvent: React.MouseEvent) => {
+        mouseDownEvent.preventDefault();
+        setIsResizing(true);
+        const handleMouseMove = (e: MouseEvent) => {
+            const newWidth = window.innerWidth - e.clientX;
+            setWidth(Math.max(300, Math.min(newWidth, window.innerWidth * 0.8)));
+        };
+        const handleMouseUp = () => {
+            setIsResizing(false);
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+    }, [setIsResizing, setWidth]);
+
+    const handleCopy = useCallback(() => {
+        navigator.clipboard.writeText(content);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    }, [content]);
+
+    const handleOpenNewTab = useCallback(() => {
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(previewContent);
+            win.document.close();
+        }
+    }, [previewContent]);
+
+    const handleRefresh = useCallback(() => {
+        dispatch({ type: 'REFRESH_PREVIEW' });
+        setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 600);
+    }, []);
+
+    const isPreviewable = ['html', 'svg', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language);
     const effectiveTheme = theme === 'system' 
-        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') 
+        ? (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') 
         : theme;
 
     return (
@@ -271,7 +306,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                     </div>
                 )}
 
-                {/* Header Toolbar - Responsive */}
+                {/* Header Toolbar */}
                 <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-3 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-white/5 flex-shrink-0">
                     <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-full">
                         <div className="flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-white/5 rounded-md border border-gray-200 dark:border-white/5 flex-shrink-0">
@@ -282,9 +317,9 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                         {isPreviewable && (
                             <div className="flex bg-gray-100 dark:bg-black/40 p-0.5 rounded-lg border border-gray-200 dark:border-white/5 flex-shrink-0">
                                 <button 
-                                    onClick={() => setActiveTab('code')}
+                                    onClick={() => handleTabChange('code')}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                                        activeTab === 'code' 
+                                        state.activeTab === 'code' 
                                         ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
                                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                                     }`}
@@ -293,9 +328,9 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                                     Code
                                 </button>
                                 <button 
-                                    onClick={() => setActiveTab('preview')}
+                                    onClick={() => handleTabChange('preview')}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                                        activeTab === 'preview' 
+                                        state.activeTab === 'preview' 
                                         ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
                                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                                     }`}
@@ -335,14 +370,9 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
 
                 {/* Main Content Area */}
                 <div className="flex-1 overflow-hidden relative group/content">
-                    {/* 
-                        Use display: none instead of conditional rendering (activeTab === 'code' ? ... : ...)
-                        This preserves the iframe state and prevents reloads when switching tabs.
-                    */}
-                    
                     {/* CODE VIEW */}
                     <div 
-                        className={`absolute inset-0 overflow-auto custom-scrollbar bg-white dark:bg-[#0d0d0d] ${activeTab === 'code' ? 'block' : 'hidden'}`}
+                        className={`absolute inset-0 overflow-auto custom-scrollbar bg-white dark:bg-[#0d0d0d] ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
                     >
                         <SyntaxHighlighter
                             language={language}
@@ -360,13 +390,13 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                             wrapLines={false} 
                             lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
                         >
-                            {content}
+                            {deferredContent}
                         </SyntaxHighlighter>
                     </div>
 
                     {/* PREVIEW VIEW */}
                     <div 
-                        className={`absolute inset-0 bg-gray-100 dark:bg-[#1a1a1a] flex flex-col ${activeTab === 'preview' ? 'block' : 'hidden'}`}
+                        className={`absolute inset-0 bg-gray-100 dark:bg-[#1a1a1a] flex flex-col ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
                     >
                         <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#202020] border-b border-gray-200 dark:border-white/5 flex-shrink-0">
                             <div className="flex items-center gap-2">
@@ -376,17 +406,17 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                             </div>
                             <div className="flex items-center gap-2">
                                 <button 
-                                    onClick={() => setShowConsole(!showConsole)}
-                                    className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5'}`}
+                                    onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
+                                    className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${state.showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5'}`}
                                     title="Toggle Console"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-                                    Console {logs.length > 0 && <span className="bg-gray-200 dark:bg-white/10 px-1 rounded-sm text-[10px]">{logs.length}</span>}
+                                    Console {state.logs.length > 0 && <span className="bg-gray-200 dark:bg-white/10 px-1 rounded-sm text-[10px]">{state.logs.length}</span>}
                                 </button>
                                 <div className="w-px h-3 bg-gray-300 dark:bg-white/10 mx-1" />
                                 <Tooltip content="Reload Preview" position="bottom">
                                     <button 
-                                        onClick={() => setIframeKey(k => k + 1)} 
+                                        onClick={handleRefresh} 
                                         className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
                                         aria-label="Reload Preview"
                                     >
@@ -405,7 +435,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                             </div>
                         </div>
                         <div className="flex-1 relative flex flex-col overflow-hidden">
-                            {isLoading ? (
+                            {state.isLoading ? (
                                 <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
                                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
                                     <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
@@ -414,8 +444,8 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                                 <div className="flex-1 bg-white relative">
                                     <iframe 
                                         ref={iframeRef}
-                                        key={iframeKey}
-                                        srcDoc={getPreviewContent()}
+                                        key={state.iframeKey}
+                                        srcDoc={previewContent}
                                         className="absolute inset-0 w-full h-full border-none bg-white"
                                         sandbox="allow-scripts allow-modals allow-forms allow-popups"
                                         title="Artifact Preview"
@@ -425,7 +455,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                             
                             {/* Console Terminal Panel */}
                             <AnimatePresence>
-                                {showConsole && (
+                                {state.showConsole && (
                                     <motion.div
                                         initial={{ height: 0 }}
                                         animate={{ height: '35%' }}
@@ -435,11 +465,11 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
                                     >
                                         <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
                                             <span>Terminal</span>
-                                            <button onClick={() => setLogs([])} className="hover:text-white transition-colors">Clear</button>
+                                            <button onClick={() => dispatch({ type: 'CLEAR_LOGS' })} className="hover:text-white transition-colors">Clear</button>
                                         </div>
                                         <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
-                                            {logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
-                                            {logs.map((log, i) => (
+                                            {state.logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
+                                            {state.logs.map((log, i) => (
                                                 <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
                                                     <span className={`flex-shrink-0 font-bold ${
                                                         log.level === 'error' ? 'text-red-400' :
@@ -465,7 +495,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
             {/* Resize Handle (Desktop only) */}
             {isDesktop && (
                 <div 
-                    onMouseDown={startResizing} 
+                    onMouseDown={startResizingHandler} 
                     className={`
                         absolute top-0 left-0 w-1 h-full cursor-col-resize z-50 transition-colors
                         ${isResizing ? 'bg-indigo-500' : 'hover:bg-indigo-500/50 bg-transparent'}
@@ -477,3 +507,5 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = ({
         </motion.aside>
     );
 };
+
+export const ArtifactSidebar = memo(ArtifactSidebarRaw);
