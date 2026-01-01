@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence, PanInfo } from 'framer-motion';
 const motion = motionTyped as any;
 import { NavItem } from './NavItem';
 import type { ChatSession } from '../../types';
@@ -36,10 +36,10 @@ type SidebarProps = {
     isDesktop: boolean;
 };
 
-// Simplified mobile animation variants
+// Simplified mobile animation variants - Bottom Sheet Style
 const mobileVariants = {
-    open: { x: '0%' },
-    closed: { x: '-100%' },
+    open: { y: '0%' },
+    closed: { y: '100%' },
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -110,6 +110,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isCollapsed, isDesktop, isOpen, setIsCollapsed, setIsOpen]);
 
+    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        if (!isDesktop) {
+            // Close if dragged down sufficiently or flicked
+            if (info.offset.y > 100 || (info.velocity.y > 300 && info.offset.y > 0)) {
+                setIsOpen(false);
+            }
+        }
+    };
 
     return (
         <aside className={`h-full flex-shrink-0 ${isDesktop ? 'relative z-20' : 'fixed inset-0 z-40 pointer-events-none'}`}>
@@ -140,23 +148,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     damping: 30,
                     mass: 0.8,
                 }}
+                drag={!isDesktop ? "y" : false}
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={{ top: 0, bottom: 0.5 }}
+                onDragEnd={onDragEnd}
                 style={{
-                    height: '100%',
+                    height: isDesktop ? '100%' : '85vh',
                     position: isDesktop ? 'relative' : 'absolute',
-                    width: isDesktop ? 'auto' : 300, // Fixed width on mobile for consistency
+                    width: isDesktop ? 'auto' : '100%',
                     left: 0,
-                    top: 0,
+                    top: isDesktop ? 0 : undefined,
+                    bottom: isDesktop ? undefined : 0,
                     pointerEvents: 'auto',
                     willChange: isResizing ? 'width' : 'transform, width',
                 }}
-                className="bg-layer-1 border-r border-border flex flex-col transform-gpu shadow-2xl md:shadow-none overflow-hidden"
+                className={`bg-layer-1 flex flex-col transform-gpu shadow-2xl md:shadow-none overflow-hidden ${
+                    isDesktop ? 'border-r border-border' : 'border-t border-border rounded-t-2xl'
+                }`}
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
+                {/* Drag Handle for Mobile */}
+                {!isDesktop && (
+                    <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing flex-shrink-0" onClick={() => setIsOpen(false)}>
+                        <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-600 rounded-full" />
+                    </div>
+                )}
+
                 <div 
                     className="p-3 flex flex-col h-full group"
                     style={{ 
                         userSelect: isResizing ? 'none' : 'auto',
-                        paddingBottom: !isDesktop ? 'env(safe-area-inset-bottom)' : '0.75rem' // Standard p-3 is 0.75rem
+                        paddingBottom: !isDesktop ? 'env(safe-area-inset-bottom)' : '0.75rem', // Standard p-3 is 0.75rem
+                        paddingTop: !isDesktop ? '0' : '0.75rem'
                     }}
                 >
                     <SidebarHeader 
