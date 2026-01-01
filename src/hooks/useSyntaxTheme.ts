@@ -12,7 +12,7 @@ import {
   atomDark, 
   materialDark, 
   synthwave84, 
-  github,
+  ghcolors,
   solarizedlight
 } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -25,7 +25,7 @@ export const SYNTAX_THEMES: Record<string, any> = {
   'atom-dark': atomDark,
   'material': materialDark,
   'synthwave': synthwave84,
-  'github': github,
+  'github': ghcolors,
   'solarized': solarizedlight
 };
 
