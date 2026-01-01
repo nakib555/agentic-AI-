@@ -9,6 +9,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
+import Frame from 'react-frame-component';
 
 // --- Icons ---
 const CopyIcon = () => (
@@ -142,7 +143,6 @@ type ArtifactContentProps = {
 };
 
 export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ content, language, onClose }) => {
-    const iframeRef = useRef<HTMLIFrameElement>(null);
     const syntaxStyle = useSyntaxTheme();
     
     // UI State managed by Reducer
@@ -192,7 +192,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     // Console Log Listener
     useEffect(() => {
         const handler = (e: MessageEvent) => {
-            if (iframeRef.current && e.source !== iframeRef.current.contentWindow) return;
             if (e.data && e.data.type === 'ARTIFACT_LOG') {
                 dispatch({ 
                     type: 'ADD_LOG', 
@@ -421,14 +420,14 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                             </div>
                         ) : (
                             <div className="flex-1 bg-white relative w-full h-full">
-                                <iframe 
-                                    ref={iframeRef}
+                                <Frame
                                     key={state.iframeKey}
-                                    srcDoc={previewContent}
+                                    initialContent={previewContent}
                                     className="absolute inset-0 w-full h-full border-none bg-white"
-                                    sandbox="allow-scripts allow-modals allow-forms allow-popups"
                                     title="Artifact Preview"
-                                />
+                                >
+                                    {/* Empty children: content is managed via initialContent to support full HTML structure */}
+                                </Frame>
                             </div>
                         )}
                         

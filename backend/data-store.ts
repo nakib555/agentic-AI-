@@ -61,6 +61,8 @@ export async function initDataFile(filePath: string, defaultContent: any) {
 }
 
 export async function initDataStore() {
+    console.log(`[DataStore] Initializing storage at: ${DATA_DIR}`);
+    
     await fs.mkdir(DATA_DIR, { recursive: true });
     await fs.mkdir(HISTORY_PATH, { recursive: true });
     await fs.mkdir(MEMORY_FILES_DIR, { recursive: true });
@@ -94,4 +96,6 @@ export async function initDataStore() {
     } catch {
         await fs.writeFile(MEMORY_CONTENT_PATH, '', 'utf-8');
     }
+    
+    console.log(`[DataStore] Storage ready.`);
 }
