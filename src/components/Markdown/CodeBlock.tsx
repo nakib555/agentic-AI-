@@ -21,7 +21,7 @@ const languageMap: { [key: string]: string } = {
     sh: 'bash', bash: 'bash', shell: 'bash', zsh: 'bash', console: 'bash',
     
     // Web
-    html: 'html', xml: 'xml', svg: 'xml',
+    html: 'markup', xml: 'markup', svg: 'markup',
     css: 'css', scss: 'scss', sass: 'scss', less: 'less',
     
     // Data Formats
