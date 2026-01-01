@@ -44,7 +44,7 @@ const spockeTheme = {
   "--bg-input": "#050505",
   "--bg-input-secondary": "#0A0A0A",
   "--bg-code": "#000000",
-  "--text-code": "#22d3ee",      // Cyan text for code (Matrix feel)
+  "--text-code": "#e4e4e7",      // Neutral Zinc 200 (Matches Dark Theme)
   "--bg-sidebar": "#000000"
 };
 
