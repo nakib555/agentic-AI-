@@ -1,3 +1,4 @@
+
 /* PART 2 of 2 of main.css */
 
 :root {
@@ -140,9 +141,16 @@ html, body, #root {
     var(--text-secondary) 100%
   );
   background-size: 200% auto;
-  color: transparent;
+  
+  /* Essential for text masking on all browsers */
+  color: transparent; 
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  
   animation: shimmer 3s linear infinite;
+  
+  /* Fix for Safari/Mobile text clipping issues */
+  display: inline-block;
+  background-attachment: scroll;
 }
