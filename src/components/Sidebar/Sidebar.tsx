@@ -157,7 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onDragEnd={onDragEnd}
                 style={{
                     height: isDesktop ? '100%' : 'auto',
-                    maxHeight: isDesktop ? undefined : '87.5vh',
+                    maxHeight: isDesktop ? undefined : '85vh',
                     position: isDesktop ? 'relative' : 'absolute',
                     width: isDesktop ? 'auto' : '100%',
                     left: 0,
