@@ -7,10 +7,8 @@
 import React, { useState, useEffect, useRef, useReducer, useTransition, useDeferredValue, useCallback, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useViewport } from '../../hooks/useViewport';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useTheme } from '../../hooks/useTheme';
 import { Tooltip } from '../UI/Tooltip';
+import hljs from 'highlight.js';
 
 type ArtifactSidebarProps = {
     isOpen: boolean;
@@ -154,7 +152,6 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
     isOpen, onClose, content, language, width, setWidth, isResizing, setIsResizing 
 }) => {
     const { isDesktop } = useViewport();
-    const { theme } = useTheme();
     const iframeRef = useRef<HTMLIFrameElement>(null);
     
     // UI State managed by Reducer
@@ -238,6 +235,17 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
         return '';
     }, [deferredContent, language]);
 
+    const highlightedCode = useMemo(() => {
+        try {
+            if (language && hljs.getLanguage(language)) {
+                return hljs.highlight(deferredContent, { language }).value;
+            }
+            return hljs.highlightAuto(deferredContent).value;
+        } catch (e) {
+            return deferredContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    }, [deferredContent, language]);
+
     const handleTabChange = useCallback((tab: 'code' | 'preview') => {
         startTransition(() => {
             dispatch({ type: 'SET_TAB', payload: tab });
@@ -280,9 +288,6 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
     }, []);
 
     const isPreviewable = ['html', 'svg', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language);
-    const effectiveTheme = theme === 'system' 
-        ? (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') 
-        : theme;
 
     return (
         <motion.aside
@@ -374,24 +379,13 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                     <div 
                         className={`absolute inset-0 overflow-auto custom-scrollbar bg-white dark:bg-[#0d0d0d] ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
                     >
-                        <SyntaxHighlighter
-                            language={language}
-                            style={effectiveTheme === 'dark' ? vscDarkPlus : oneLight}
-                            customStyle={{ 
-                                margin: 0, 
-                                padding: '1.5rem', 
-                                minHeight: '100%', 
-                                fontSize: '13px', 
-                                lineHeight: '1.5',
-                                fontFamily: "'Fira Code', monospace",
-                                backgroundColor: 'transparent'
-                            }}
-                            showLineNumbers={true}
-                            wrapLines={false} 
-                            lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
-                        >
-                            {deferredContent}
-                        </SyntaxHighlighter>
+                        <pre className="m-0 p-6 bg-transparent font-mono text-[13px] leading-relaxed text-slate-800 dark:text-slate-200">
+                            <code 
+                                className={`hljs ${language ? `language-${language}` : ''}`} 
+                                dangerouslySetInnerHTML={{ __html: highlightedCode }}
+                                style={{ background: 'transparent', padding: 0 }}
+                            />
+                        </pre>
                     </div>
 
                     {/* PREVIEW VIEW */}

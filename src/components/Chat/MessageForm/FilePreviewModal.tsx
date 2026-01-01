@@ -6,8 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import hljs from 'highlight.js';
 
 type FilePreviewModalProps = {
   file: File;
@@ -18,6 +17,7 @@ type FilePreviewModalProps = {
 export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, isOpen, onClose }) => {
   const [content, setContent] = useState<string | null>(null);
   const [fileType, setFileType] = useState<'image' | 'text' | 'pdf' | 'other'>('other');
+  const [highlightedContent, setHighlightedContent] = useState<string>('');
 
   useEffect(() => {
     if (!file) return;
@@ -45,7 +45,20 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, isOpen
       const reader = new FileReader();
       reader.onload = (e) => {
           const result = e.target?.result;
-          if (typeof result === 'string') setContent(result);
+          if (typeof result === 'string') {
+              setContent(result);
+              // Try to highlight based on extension or auto
+              const ext = file.name.split('.').pop();
+              try {
+                  if (ext && hljs.getLanguage(ext)) {
+                      setHighlightedContent(hljs.highlight(result, { language: ext }).value);
+                  } else {
+                      setHighlightedContent(hljs.highlightAuto(result).value);
+                  }
+              } catch (err) {
+                  setHighlightedContent(result.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+              }
+          }
       };
       reader.readAsText(file);
       return;
@@ -104,15 +117,14 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, isOpen
                 )}
 
                 {fileType === 'text' && content && (
-                    <div className="w-full h-full bg-white dark:bg-[#1e1e1e] rounded-lg shadow-sm overflow-hidden text-sm border border-gray-200 dark:border-white/5">
-                        <SyntaxHighlighter
-                            language="text"
-                            style={vscDarkPlus}
-                            customStyle={{ margin: 0, padding: '1.5rem', height: '100%' }}
-                            wrapLongLines={true}
-                        >
-                            {content}
-                        </SyntaxHighlighter>
+                    <div className="w-full h-full bg-[#282c34] rounded-lg shadow-sm overflow-hidden text-sm border border-gray-200 dark:border-white/5 text-code-text">
+                        <pre className="m-0 p-6 bg-transparent font-mono overflow-auto h-full">
+                            <code 
+                                className="hljs" 
+                                dangerouslySetInnerHTML={{ __html: highlightedContent }}
+                                style={{ background: 'transparent', padding: 0 }}
+                            />
+                        </pre>
                     </div>
                 )}
 
