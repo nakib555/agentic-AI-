@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useRef, useReducer, useTransition, useDeferredValue, useCallback, useMemo, memo } from 'react';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo, useDragControls } from 'framer-motion';
 import { useViewport } from '../../hooks/useViewport';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
@@ -155,6 +155,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
     const { isDesktop } = useViewport();
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const syntaxStyle = useSyntaxTheme();
+    const dragControls = useDragControls();
     
     // UI State managed by Reducer
     const [state, dispatch] = useReducer(artifactReducer, initialState);
@@ -302,6 +303,8 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
             animate={isOpen ? (isDesktop ? { width } : { y: 0 }) : (isDesktop ? { width: 0 } : { y: '100%' })}
             transition={{ type: isResizing ? 'tween' : 'spring', stiffness: 300, damping: 30 }}
             drag={!isDesktop ? "y" : false}
+            dragListener={false}
+            dragControls={dragControls}
             dragConstraints={{ top: 0, bottom: dragRange }}
             dragElastic={{ top: 0, bottom: 0.5 }}
             onDragEnd={onDragEnd}
@@ -312,13 +315,17 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                     : 'fixed inset-x-0 bottom-0 z-[60] border-t rounded-t-2xl shadow-2xl'
                 }
             `}
-            style={!isDesktop ? { height: '95vh' } : undefined}
+            style={!isDesktop ? { height: 'auto', maxHeight: '95vh', minHeight: '45vh' } : undefined}
         >
             <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%', height: '100%' }}>
                 
                 {/* Drag handle for mobile */}
                 {!isDesktop && (
-                    <div className="flex justify-center pt-3 pb-1 flex-shrink-0 bg-layer-1 cursor-grab active:cursor-grabbing" aria-hidden="true">
+                    <div 
+                        className="flex justify-center pt-3 pb-1 flex-shrink-0 bg-layer-1 cursor-grab active:cursor-grabbing touch-none" 
+                        onPointerDown={(e) => dragControls.start(e)}
+                        aria-hidden="true"
+                    >
                         <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
                     </div>
                 )}

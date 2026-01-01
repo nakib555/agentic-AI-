@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback } from 'react';
-import { motion, PanInfo } from 'framer-motion';
+import { motion, PanInfo, useDragControls } from 'framer-motion';
 import type { Source } from '../../types';
 import { useViewport } from '../../hooks/useViewport';
 import { SourceItem } from './SourceItem';
@@ -22,6 +22,7 @@ type SourcesSidebarProps = {
 
 export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose, sources, width, setWidth, isResizing, setIsResizing }) => {
     const { isDesktop } = useViewport();
+    const dragControls = useDragControls();
 
     const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
         mouseDownEvent.preventDefault();
@@ -72,6 +73,8 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
                 mass: 0.8
             }}
             drag={!isDesktop ? "y" : false}
+            dragListener={false}
+            dragControls={dragControls}
             dragConstraints={{ top: 0, bottom: dragRange }}
             dragElastic={{ top: 0, bottom: 0.5 }}
             onDragEnd={onDragEnd}
@@ -83,7 +86,7 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
             role="complementary"
             aria-labelledby="sources-sidebar-title"
             style={{ 
-                height: isDesktop ? '100%' : '95vh',
+                height: isDesktop ? '100%' : 'auto',
                 maxHeight: isDesktop ? undefined : '95vh',
                 minHeight: isDesktop ? undefined : '45vh',
                 userSelect: isResizing ? 'none' : 'auto',
@@ -93,7 +96,11 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
             <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%' }}>
                 {/* Drag handle for mobile */}
                 {!isDesktop && (
-                    <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing" aria-hidden="true">
+                    <div 
+                        className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none" 
+                        onPointerDown={(e) => dragControls.start(e)}
+                        aria-hidden="true"
+                    >
                         <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-600 rounded-full"></div>
                     </div>
                 )}

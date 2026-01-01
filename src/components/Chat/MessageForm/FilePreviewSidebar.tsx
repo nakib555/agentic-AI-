@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo, useDragControls } from 'framer-motion';
 import { useViewport } from '../../../hooks/useViewport';
 import type { ProcessedFile } from './types';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -27,6 +27,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
     const [previewType, setPreviewType] = useState<'image' | 'text' | 'pdf' | 'other'>('other');
     const [isCopied, setIsCopied] = useState(false);
     const syntaxStyle = useSyntaxTheme();
+    const dragControls = useDragControls();
 
     useEffect(() => {
         if (!file || !file.file) {
@@ -152,6 +153,8 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                         variants={isDesktop ? desktopVariants : mobileVariants}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         drag={!isDesktop ? "y" : false}
+                        dragListener={false}
+                        dragControls={dragControls}
                         dragConstraints={{ top: 0, bottom: dragRange }}
                         dragElastic={{ top: 0, bottom: 0.5 }}
                         onDragEnd={onDragEnd}
@@ -162,11 +165,15 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                                 : 'bottom-0 left-0 right-0 rounded-t-2xl border-t border-border-subtle'
                             }
                         `}
-                        style={!isDesktop ? { height: '95vh', maxHeight: '95vh', minHeight: '45vh' } : {}}
+                        style={!isDesktop ? { height: 'auto', maxHeight: '95vh', minHeight: '45vh' } : {}}
                     >
                         {/* Drag Handle for Mobile */}
                         {!isDesktop && (
-                            <div className="flex justify-center pt-3 pb-2 bg-layer-2 flex-shrink-0 cursor-grab active:cursor-grabbing" onClick={onClose}>
+                            <div 
+                                className="flex justify-center pt-3 pb-2 bg-layer-2 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none" 
+                                onPointerDown={(e) => dragControls.start(e)}
+                                onClick={onClose}
+                            >
                                 <div className="w-12 h-1.5 rounded-full bg-border-strong/50"></div>
                             </div>
                         )}

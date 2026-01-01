@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { motion as motionTyped, AnimatePresence, PanInfo } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence, PanInfo, useDragControls } from 'framer-motion';
 const motion = motionTyped as any;
 import { NavItem } from './NavItem';
 import type { ChatSession } from '../../types';
@@ -52,6 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const prevIsDesktop = useRef(isDesktop);
     const [animationDisabledForResize, setAnimationDisabledForResize] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const dragControls = useDragControls();
 
     useEffect(() => {
         if (prevIsDesktop.current !== isDesktop) {
@@ -149,11 +150,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     mass: 0.8,
                 }}
                 drag={!isDesktop ? "y" : false}
+                dragListener={false} // Disable default drag to allow scrolling
+                dragControls={dragControls}
                 dragConstraints={{ top: 0, bottom: 0 }}
                 dragElastic={{ top: 0, bottom: 0.5 }}
                 onDragEnd={onDragEnd}
                 style={{
-                    height: isDesktop ? '100%' : '85vh',
+                    height: isDesktop ? '100%' : 'auto',
+                    maxHeight: isDesktop ? undefined : '85vh',
                     position: isDesktop ? 'relative' : 'absolute',
                     width: isDesktop ? 'auto' : '100%',
                     left: 0,
@@ -169,16 +173,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
                 {/* Drag Handle for Mobile */}
                 {!isDesktop && (
-                    <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing flex-shrink-0" onClick={() => setIsOpen(false)}>
+                    <div 
+                        className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing flex-shrink-0 touch-none" 
+                        onPointerDown={(e) => dragControls.start(e)}
+                    >
                         <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-600 rounded-full" />
                     </div>
                 )}
 
                 <div 
-                    className="p-3 flex flex-col h-full group"
+                    className="p-3 flex flex-col h-full group min-h-0"
                     style={{ 
                         userSelect: isResizing ? 'none' : 'auto',
-                        paddingBottom: !isDesktop ? 'env(safe-area-inset-bottom)' : '0.75rem', // Standard p-3 is 0.75rem
+                        paddingBottom: !isDesktop ? 'env(safe-area-inset-bottom)' : '0.75rem', 
                         paddingTop: !isDesktop ? '0' : '0.75rem'
                     }}
                 >
