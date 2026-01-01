@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useRef, useReducer, useTransition, useDeferredValue, useCallback, useMemo, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { useViewport } from '../../hooks/useViewport';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
@@ -278,6 +278,15 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
         setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 600);
     }, []);
 
+    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        if (!isDesktop) {
+            // Close if dragged down sufficiently (>100px) or flicked down quickly
+            if (info.offset.y > 100 || info.velocity.y > 500) {
+                onClose();
+            }
+        }
+    };
+
     const isPreviewable = ['html', 'svg', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language);
 
     return (
@@ -285,19 +294,24 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
             initial={false}
             animate={isOpen ? (isDesktop ? { width } : { y: 0 }) : (isDesktop ? { width: 0 } : { y: '100%' })}
             transition={{ type: isResizing ? 'tween' : 'spring', stiffness: 300, damping: 30 }}
+            drag={!isDesktop ? "y" : false}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.2 }}
+            onDragEnd={onDragEnd}
             className={`
                 flex-shrink-0 bg-layer-1 border-l border-border-subtle overflow-hidden flex flex-col
                 ${isDesktop 
                     ? 'relative h-full z-30' 
-                    : 'fixed inset-x-0 bottom-0 z-[60] border-t h-[85vh] rounded-t-2xl shadow-2xl'
+                    : 'fixed inset-x-0 bottom-0 z-[60] border-t rounded-t-2xl shadow-2xl'
                 }
             `}
+            style={!isDesktop ? { maxHeight: '95vh', minHeight: '50vh', height: 'auto' } : undefined}
         >
-            <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%' }}>
+            <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%', height: isDesktop ? '100%' : '85vh' }}>
                 
                 {/* Drag handle for mobile */}
                 {!isDesktop && (
-                    <div className="flex justify-center pt-3 pb-1 flex-shrink-0 bg-layer-1" aria-hidden="true">
+                    <div className="flex justify-center pt-3 pb-1 flex-shrink-0 bg-layer-1 cursor-grab active:cursor-grabbing" aria-hidden="true">
                         <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
                     </div>
                 )}

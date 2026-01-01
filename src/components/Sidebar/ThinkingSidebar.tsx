@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback, useMemo, useRef, useEffect } from 'react';
-import { motion as motionTyped } from 'framer-motion';
+import { motion as motionTyped, PanInfo } from 'framer-motion';
 import type { Message } from '../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { useViewport } from '../../hooks/useViewport';
@@ -55,6 +55,15 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
         window.addEventListener('mouseup', handleMouseUp);
     }, [setWidth, setIsResizing]);
     
+    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        if (!isDesktop) {
+            // Close if dragged down sufficiently (>100px) or flicked down quickly
+            if (info.offset.y > 100 || info.velocity.y > 500) {
+                onClose();
+            }
+        }
+    };
+
     const { status, statusColor, plan, executionLog } = useMemo(() => {
         if (!message) {
             return { status: 'Idle', statusColor: 'bg-slate-400', plan: '', executionLog: [] };
@@ -172,6 +181,10 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                 damping: 30,
                 mass: 0.8,
             }}
+            drag={!isDesktop ? "y" : false}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.2 }}
+            onDragEnd={onDragEnd}
             className={`
                 flex-shrink-0 overflow-hidden bg-white dark:bg-layer-1
                 ${isDesktop 
@@ -182,7 +195,9 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             role="complementary"
             aria-labelledby="thinking-sidebar-title"
             style={{ 
-                height: isDesktop ? '100%' : '60vh',
+                height: isDesktop ? '100%' : 'auto',
+                maxHeight: isDesktop ? undefined : '85vh',
+                minHeight: isDesktop ? undefined : '40vh',
                 userSelect: isResizing ? 'none' : 'auto',
                 willChange: isResizing ? 'width' : 'width, transform'
             }}
@@ -193,7 +208,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             >
                 {/* Drag handle for mobile */}
                 {!isDesktop && (
-                    <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
+                    <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing" aria-hidden="true">
                         <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
                     </div>
                 )}

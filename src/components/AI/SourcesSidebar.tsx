@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, PanInfo } from 'framer-motion';
 import type { Source } from '../../types';
 import { useViewport } from '../../hooks/useViewport';
 import { SourceItem } from './SourceItem';
@@ -39,6 +39,15 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
         window.addEventListener('mouseup', handleMouseUp);
     }, [setWidth, setIsResizing]);
 
+    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        if (!isDesktop) {
+            // Close if dragged down sufficiently (>100px) or flicked down quickly
+            if (info.offset.y > 100 || info.velocity.y > 500) {
+                onClose();
+            }
+        }
+    };
+
     const desktopVariants = { open: { width }, closed: { width: 0 } };
     const mobileVariants = { open: { y: 0 }, closed: { y: '100%' } };
     const variants = isDesktop ? desktopVariants : mobileVariants;
@@ -56,6 +65,10 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
                 damping: 30,
                 mass: 0.8
             }}
+            drag={!isDesktop ? "y" : false}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.2 }}
+            onDragEnd={onDragEnd}
             className={`flex-shrink-0 overflow-hidden bg-white dark:bg-[#09090b] ${
                 isDesktop 
                 ? 'relative border-l border-gray-200 dark:border-white/10' 
@@ -64,7 +77,9 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
             role="complementary"
             aria-labelledby="sources-sidebar-title"
             style={{ 
-                height: isDesktop ? '100%' : '50vh',
+                height: isDesktop ? '100%' : 'auto',
+                maxHeight: isDesktop ? undefined : '85vh',
+                minHeight: isDesktop ? undefined : '40vh',
                 userSelect: isResizing ? 'none' : 'auto',
                 willChange: isResizing ? 'width' : 'width, transform'
             }}
@@ -72,7 +87,7 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
             <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%' }}>
                 {/* Drag handle for mobile */}
                 {!isDesktop && (
-                    <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
+                    <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing" aria-hidden="true">
                         <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-600 rounded-full"></div>
                     </div>
                 )}

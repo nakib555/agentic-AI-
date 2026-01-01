@@ -150,9 +150,10 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                             fixed z-[70] bg-page shadow-2xl flex flex-col overflow-hidden
                             ${isDesktop 
                                 ? 'top-0 right-0 h-full w-[600px] max-w-[90vw] border-l border-border-subtle' 
-                                : 'bottom-0 left-0 right-0 h-[85vh] rounded-t-2xl border-t border-border-subtle'
+                                : 'bottom-0 left-0 right-0 rounded-t-2xl border-t border-border-subtle'
                             }
                         `}
+                        style={!isDesktop ? { height: 'auto', maxHeight: '90vh', minHeight: '40vh' } : {}}
                     >
                         {/* Drag Handle for Mobile */}
                         {!isDesktop && (
