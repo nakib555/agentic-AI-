@@ -13,7 +13,8 @@ import {
   materialDark, 
   synthwave84, 
   ghcolors,
-  solarizedlight
+  solarizedlight,
+  vs
 } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 // Map of available themes
@@ -26,7 +27,8 @@ export const SYNTAX_THEMES: Record<string, any> = {
   'material': materialDark,
   'synthwave': synthwave84,
   'github': ghcolors,
-  'solarized': solarizedlight
+  'solarized': solarizedlight,
+  'vs': vs
 };
 
 export const useSyntaxTheme = () => {

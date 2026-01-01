@@ -33,6 +33,7 @@ const PROVIDER_OPTIONS = [
 const SYNTAX_OPTIONS = [
     { id: 'auto', label: 'Auto (Match Theme)', desc: 'Switches automatically' },
     { id: 'vsc-dark', label: 'VSCode Dark', desc: 'Classic VSCode look' },
+    { id: 'vs', label: 'Visual Studio', desc: 'Classic light theme' },
     { id: 'dracula', label: 'Dracula', desc: 'High contrast purple' },
     { id: 'atom-dark', label: 'Atom Dark', desc: 'Soft dark colors' },
     { id: 'synthwave', label: 'Synthwave 84', desc: 'Neon & Retro' },
