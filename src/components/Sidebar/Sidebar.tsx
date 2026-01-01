@@ -154,7 +154,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
                 <div 
                     className="p-3 flex flex-col h-full group"
-                    style={{ userSelect: isResizing ? 'none' : 'auto' }}
+                    style={{ 
+                        userSelect: isResizing ? 'none' : 'auto',
+                        paddingBottom: !isDesktop ? 'env(safe-area-inset-bottom)' : '0.75rem' // Standard p-3 is 0.75rem
+                    }}
                 >
                     <SidebarHeader 
                         isCollapsed={isCollapsed}

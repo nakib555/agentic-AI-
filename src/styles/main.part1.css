@@ -55,6 +55,8 @@ body {
 }
 
 /* Ensure scroll events stay inside the container and don't bubble to parent */
+/* Also enable momentum scrolling on iOS */
 .overflow-y-auto, .overflow-x-auto {
   overscroll-behavior: auto;
+  -webkit-overflow-scrolling: touch;
 }

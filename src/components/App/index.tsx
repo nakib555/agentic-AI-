@@ -41,7 +41,12 @@ export const App = () => {
         // Apply visual viewport height constraint on mobile to ensure the entire app layout resizes 
         // correctly when the virtual keyboard opens, preventing the UI from being pushed up or scrolling.
         style={{ 
-            height: !logic.isDesktop && logic.visualViewportHeight ? `${logic.visualViewportHeight}px` : '100dvh' 
+            height: !logic.isDesktop && logic.visualViewportHeight ? `${logic.visualViewportHeight}px` : '100dvh',
+            // Safe area padding for notches and home bars
+            paddingTop: 'env(safe-area-inset-top)',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            paddingLeft: 'env(safe-area-inset-left)',
+            paddingRight: 'env(safe-area-inset-right)' 
         }}
     >
       {logic.versionMismatch && <VersionMismatchOverlay />}
