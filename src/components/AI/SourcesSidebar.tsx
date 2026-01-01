@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback } from 'react';
-import { motion, PanInfo, useDragControls, AnimatePresence } from 'framer-motion';
+import React, { useCallback, useRef, useLayoutEffect } from 'react';
+import { motion, PanInfo, useDragControls, AnimatePresence, useMotionValue, animate } from 'framer-motion';
 import type { Source } from '../../types';
 import { useViewport } from '../../hooks/useViewport';
 import { SourceItem } from './SourceItem';
@@ -23,6 +23,8 @@ type SourcesSidebarProps = {
 export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose, sources, width, setWidth, isResizing, setIsResizing }) => {
     const { isDesktop } = useViewport();
     const dragControls = useDragControls();
+    const contentRef = useRef<HTMLDivElement>(null);
+    const y = useMotionValue(typeof window !== 'undefined' ? window.innerHeight : 800);
 
     const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
         mouseDownEvent.preventDefault();
@@ -40,25 +42,48 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
         window.addEventListener('mouseup', handleMouseUp);
     }, [setWidth, setIsResizing]);
 
-    // Mobile Bottom Sheet Logic
-    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const minHeight = screenHeight * 0.45; // 45vh minimum
-    const maxHeight = screenHeight * 0.85; // 85vh maximum
-    const dragRange = maxHeight - minHeight;
+    // Mobile Sheet Logic: Calculate optimal height and animate
+    useLayoutEffect(() => {
+        if (isDesktop) return;
+
+        const vh = window.innerHeight;
+        const MAX_H = vh * 0.85; 
+        const MIN_H = vh * 0.45;
+
+        if (isOpen) {
+            const actualHeight = contentRef.current?.scrollHeight || 0;
+            const targetHeight = Math.min(Math.max(actualHeight, MIN_H), MAX_H);
+            const targetY = MAX_H - targetHeight;
+            
+            animate(y, targetY, { type: "spring", damping: 30, stiffness: 300 });
+        } else {
+            animate(y, MAX_H, { type: "spring", damping: 30, stiffness: 300 });
+        }
+    }, [isOpen, isDesktop, sources, y]);
 
     const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-        if (!isDesktop) {
-            // Close if dragged down sufficiently past min height or flicked down quickly
-            if (info.offset.y > dragRange + 20 || (info.velocity.y > 300 && info.offset.y > 0)) {
-                onClose();
-            }
+        if (isDesktop) return;
+
+        const vh = window.innerHeight;
+        const MAX_H = vh * 0.85;
+        const MIN_H = vh * 0.45;
+        const currentY = y.get();
+        const velocityY = info.velocity.y;
+
+        const closingThreshold = MAX_H - (MIN_H / 2);
+
+        if (velocityY > 300 || currentY > closingThreshold) {
+            onClose();
+        } else if (currentY < (MAX_H - MIN_H) / 2) {
+            // Snap to Max
+            animate(y, 0, { type: "spring", damping: 30, stiffness: 300 });
+        } else {
+            // Snap to Min
+            animate(y, MAX_H - MIN_H, { type: "spring", damping: 30, stiffness: 300 });
         }
     };
 
-    const desktopVariants = { open: { width }, closed: { width: 0 } };
-    const mobileVariants = { open: { y: 0 }, closed: { y: '100%' } };
-    const variants = isDesktop ? desktopVariants : mobileVariants;
-    const animateState = isOpen ? 'open' : 'closed';
+    if (!isDesktop && !isOpen) return null;
 
     return (
         <>
@@ -76,41 +101,33 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
             </AnimatePresence>
             <motion.aside
                 initial={false}
-                animate={animateState}
-                variants={variants}
-                transition={{ 
-                    type: isResizing ? 'tween' : 'spring', 
-                    duration: isResizing ? 0 : 0.5, 
-                    stiffness: 250, 
-                    damping: 30,
-                    mass: 0.8
-                }}
+                animate={isDesktop ? { width: isOpen ? width : 0 } : undefined}
+                style={!isDesktop ? { y, height: '85vh', maxHeight: '85vh' } : { width }}
+                transition={isDesktop ? { type: isResizing ? 'tween' : 'spring', stiffness: 250, damping: 30 } : undefined}
                 drag={!isDesktop ? "y" : false}
                 dragListener={false}
                 dragControls={dragControls}
-                dragConstraints={{ top: 0, bottom: dragRange }}
-                dragElastic={{ top: 0, bottom: 0.5 }}
+                dragConstraints={{ top: 0, bottom: (typeof window !== 'undefined' ? window.innerHeight * 0.85 : 800) }}
+                dragElastic={{ top: 0, bottom: 0.2 }}
                 onDragEnd={onDragEnd}
-                className={`flex-shrink-0 overflow-hidden bg-white dark:bg-[#09090b] ${
-                    isDesktop 
-                    ? 'relative border-l border-gray-200 dark:border-white/10' 
-                    : 'fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 dark:border-white/10 rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]'
-                }`}
+                className={`
+                    flex-shrink-0 overflow-hidden bg-white dark:bg-[#09090b]
+                    ${isDesktop 
+                        ? 'relative border-l border-gray-200 dark:border-white/10' 
+                        : 'fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 dark:border-white/10 rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]'
+                    }
+                `}
                 role="complementary"
                 aria-labelledby="sources-sidebar-title"
-                style={{ 
-                    height: isDesktop ? '100%' : 'auto',
-                    maxHeight: isDesktop ? undefined : '85vh',
-                    minHeight: isDesktop ? undefined : '45vh',
-                    userSelect: isResizing ? 'none' : 'auto',
-                    willChange: isResizing ? 'width' : 'width, transform'
-                }}
             >
-                <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%' }}>
+                <div 
+                    ref={contentRef}
+                    className="flex flex-col h-full overflow-hidden w-full"
+                >
                     {/* Drag handle for mobile */}
                     {!isDesktop && (
                         <div 
-                            className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none" 
+                            className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none w-full" 
                             onPointerDown={(e) => dragControls.start(e)}
                             aria-hidden="true"
                         >
@@ -118,7 +135,7 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
                         </div>
                     )}
 
-                    <div className={`flex items-center justify-between px-4 pb-3 ${isDesktop ? 'pt-4' : 'pt-2'} border-b border-gray-200 dark:border-white/10 flex-shrink-0`}>
+                    <div className={`flex items-center justify-between px-4 pb-3 ${isDesktop ? 'pt-4' : 'pt-2'} border-b border-gray-200 dark:border-white/10 flex-shrink-0 w-full`}>
                         <h2 id="sources-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Sources</h2>
                         <button onClick={onClose} className="p-1.5 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-black/20 transition-colors" aria-label="Close sources">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
@@ -128,7 +145,7 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-2">
+                    <div className="flex-1 overflow-y-auto p-2 w-full">
                         {sources && sources.length > 0 ? (
                             <div className="space-y-1">
                                 {sources.map((source, index) => <SourceItem key={source.uri + index} source={source} />)}

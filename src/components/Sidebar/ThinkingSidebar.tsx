@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useMemo, useRef, useEffect } from 'react';
-import { motion as motionTyped, PanInfo, useDragControls, AnimatePresence } from 'framer-motion';
+import React, { useCallback, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
+import { motion as motionTyped, PanInfo, useDragControls, AnimatePresence, useMotionValue, animate } from 'framer-motion';
 import type { Message } from '../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { useViewport } from '../../hooks/useViewport';
@@ -26,16 +26,13 @@ type ThinkingSidebarProps = {
     onRegenerate: (messageId: string) => void;
 };
 
-// Mobile variants for bottom-up animation
-const mobileVariants = {
-  open: { y: 0 },
-  closed: { y: '100%' },
-};
-
 export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClose, message, sendMessage, width, setWidth, isResizing, setIsResizing, onRegenerate }) => {
     const { isDesktop } = useViewport();
     const contentRef = useRef<HTMLDivElement>(null);
     const dragControls = useDragControls();
+    
+    // Mobile specific state
+    const y = useMotionValue(typeof window !== 'undefined' ? window.innerHeight : 800);
 
     const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
         mouseDownEvent.preventDefault();
@@ -56,18 +53,49 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
         window.addEventListener('mouseup', handleMouseUp);
     }, [setWidth, setIsResizing]);
     
-    // Mobile Bottom Sheet Logic
-    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const minHeight = screenHeight * 0.45; // 45vh minimum
-    const maxHeight = screenHeight * 0.85; // 85vh maximum
-    const dragRange = maxHeight - minHeight;
+    // Mobile Sheet Logic: Calculate optimal height and animate
+    useLayoutEffect(() => {
+        if (isDesktop) return;
+
+        const vh = window.innerHeight;
+        // Mobile layout constants
+        const MAX_H = vh * 0.85; 
+        const MIN_H = vh * 0.45;
+
+        if (isOpen) {
+            // Measure actual content height
+            const actualHeight = contentRef.current?.scrollHeight || 0;
+            // Clamp desired height between Min and Max
+            const targetHeight = Math.min(Math.max(actualHeight, MIN_H), MAX_H);
+            // Calculate Y translation (Container is fixed at MAX_H, so we slide it down)
+            const targetY = MAX_H - targetHeight;
+            
+            animate(y, targetY, { type: "spring", damping: 30, stiffness: 300 });
+        } else {
+            // Slide completely off screen
+            animate(y, MAX_H, { type: "spring", damping: 30, stiffness: 300 });
+        }
+    }, [isOpen, isDesktop, message, y]); // Re-calc on message change
 
     const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-        if (!isDesktop) {
-            // Close if dragged down sufficiently past the min height or flicked down
-            if (info.offset.y > dragRange + 20 || (info.velocity.y > 300 && info.offset.y > 0)) {
-                onClose();
-            }
+        if (isDesktop) return;
+
+        const vh = window.innerHeight;
+        const MAX_H = vh * 0.85;
+        const MIN_H = vh * 0.45;
+        const currentY = y.get();
+        const velocityY = info.velocity.y;
+
+        const closingThreshold = MAX_H - (MIN_H / 2); // Dragged far down
+
+        if (velocityY > 300 || currentY > closingThreshold) {
+            onClose();
+        } else if (currentY < (MAX_H - MIN_H) / 2) {
+            // Snap to Max
+            animate(y, 0, { type: "spring", damping: 30, stiffness: 300 });
+        } else {
+            // Snap to Min
+            animate(y, MAX_H - MIN_H, { type: "spring", damping: 30, stiffness: 300 });
         }
     };
 
@@ -103,16 +131,6 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             });
         }
     }, [executionLog, isLiveGeneration]);
-
-
-    // Desktop variants for side-in animation
-    const desktopVariants = {
-        open: { width: width },
-        closed: { width: 0 },
-    };
-
-    const variants = isDesktop ? desktopVariants : mobileVariants;
-    const animateState = isOpen ? 'open' : 'closed';
 
     const thinkingContent = () => {
         if (!message) {
@@ -175,6 +193,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
         );
     }
 
+    if (!isDesktop && !isOpen) return null;
 
     return (
         <>
@@ -192,46 +211,32 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             </AnimatePresence>
             <motion.aside
                 initial={false}
-                animate={animateState}
-                variants={variants}
-                transition={{
-                    type: isResizing ? 'tween' : 'spring',
-                    duration: isResizing ? 0 : 0.5,
-                    stiffness: 250,
-                    damping: 30,
-                    mass: 0.8,
-                }}
+                animate={isDesktop ? { width: isOpen ? width : 0 } : undefined}
+                style={!isDesktop ? { y, height: '85vh', maxHeight: '85vh' } : { width }}
+                transition={isDesktop ? { type: isResizing ? 'tween' : 'spring', stiffness: 300, damping: 30 } : undefined}
                 drag={!isDesktop ? "y" : false}
                 dragListener={false} // Disable auto listener
                 dragControls={dragControls}
-                dragConstraints={{ top: 0, bottom: dragRange }}
-                dragElastic={{ top: 0, bottom: 0.5 }}
+                dragConstraints={{ top: 0, bottom: (typeof window !== 'undefined' ? window.innerHeight * 0.85 : 800) }}
+                dragElastic={{ top: 0, bottom: 0.2 }}
                 onDragEnd={onDragEnd}
                 className={`
                     flex-shrink-0 overflow-hidden bg-white dark:bg-layer-1
                     ${isDesktop 
                         ? 'relative border-l border-gray-200 dark:border-white/10' 
-                        : 'fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 dark:border-white/10 rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]' 
+                        : 'fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 dark:border-white/10 rounded-t-2xl shadow-2xl' 
                     }
                 `}
                 role="complementary"
                 aria-labelledby="thinking-sidebar-title"
-                style={{ 
-                    height: isDesktop ? '100%' : 'auto',
-                    maxHeight: isDesktop ? undefined : '85vh',
-                    minHeight: isDesktop ? undefined : '45vh',
-                    userSelect: isResizing ? 'none' : 'auto',
-                    willChange: isResizing ? 'width' : 'width, transform'
-                }}
             >
                 <div 
-                    className="flex flex-col h-full overflow-hidden" 
-                    style={{ width: isDesktop ? `${width}px` : '100%' }}
+                    className="flex flex-col h-full overflow-hidden w-full" 
                 >
                     {/* Drag handle for mobile */}
                     {!isDesktop && (
                         <div 
-                            className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none" 
+                            className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none w-full" 
                             onPointerDown={(e) => dragControls.start(e)}
                             aria-hidden="true"
                         >
@@ -240,7 +245,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                     )}
                     
                     {/* Header */}
-                    <div className={`flex items-center justify-between px-4 pb-3 ${isDesktop ? 'pt-4' : 'pt-2'} border-b border-gray-200 dark:border-white/5 flex-shrink-0`}>
+                    <div className={`flex items-center justify-between px-4 pb-3 ${isDesktop ? 'pt-4' : 'pt-2'} border-b border-gray-200 dark:border-white/5 flex-shrink-0 w-full`}>
                         <div className="flex items-center gap-3">
                             <h2 id="thinking-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Reasoning</h2>
                             {message && (
@@ -262,7 +267,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                     </div>
 
                     {/* Content */}
-                    <div ref={contentRef} className="flex-1 overflow-y-auto py-4 min-h-0 bg-slate-50/50 dark:bg-black/10">
+                    <div ref={contentRef} className="flex-1 overflow-y-auto py-4 min-h-0 bg-slate-50/50 dark:bg-black/10 w-full">
                         {thinkingContent()}
                     </div>
                 </div>

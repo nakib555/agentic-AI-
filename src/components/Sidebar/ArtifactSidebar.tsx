@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useReducer, useCallback, useMemo, memo } from 'react';
-import { motion, AnimatePresence, PanInfo, useDragControls } from 'framer-motion';
+import React, { useState, useEffect, useRef, useReducer, useCallback, useMemo, memo, useLayoutEffect } from 'react';
+import { motion, AnimatePresence, PanInfo, useDragControls, useMotionValue, animate } from 'framer-motion';
 import { useViewport } from '../../hooks/useViewport';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
@@ -163,9 +163,12 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
     // Local ephemeral state
     const [isCopied, setIsCopied] = useState(false);
 
+    // Mobile specific state
+    const y = useMotionValue(typeof window !== 'undefined' ? window.innerHeight : 800);
+    const contentRef = useRef<HTMLDivElement>(null);
+
     // Auto-switch tab based on language
     useEffect(() => {
-        // Handle standard HTML, SVG, and 'markup' alias
         if (['html', 'svg', 'markup', 'xml'].includes(language)) {
             dispatch({ type: 'SET_TAB', payload: 'preview' });
         } else {
@@ -198,6 +201,59 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
         return () => window.removeEventListener('message', handler);
     }, []);
 
+    // Mobile Sheet Logic: Calculate optimal height and animate
+    useLayoutEffect(() => {
+        if (isDesktop) return;
+
+        const vh = window.innerHeight;
+        // Mobile layout constants
+        const MAX_H = vh * 0.85; 
+        const MIN_H = vh * 0.45;
+
+        if (isOpen) {
+            // Measure actual content height
+            const actualHeight = contentRef.current?.scrollHeight || 0;
+            // Clamp desired height between Min and Max
+            const targetHeight = Math.min(Math.max(actualHeight, MIN_H), MAX_H);
+            // Calculate Y translation (Container is fixed at MAX_H, so we slide it down)
+            const targetY = MAX_H - targetHeight;
+            
+            animate(y, targetY, { type: "spring", damping: 30, stiffness: 300 });
+        } else {
+            // Slide completely off screen
+            animate(y, MAX_H, { type: "spring", damping: 30, stiffness: 300 });
+        }
+    }, [isOpen, isDesktop, content, y]); // Recalculate on content change
+
+    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        if (isDesktop) return;
+
+        const vh = window.innerHeight;
+        const MAX_H = vh * 0.85;
+        const MIN_H = vh * 0.45;
+        const currentY = y.get();
+        const velocityY = info.velocity.y;
+
+        // Thresholds
+        const closingThreshold = MAX_H - (MIN_H / 2); // Dragged far down
+        
+        // Logic: 
+        // 1. Fast swipe down -> Close
+        // 2. Dragged way down -> Close
+        // 3. Dragged up -> Snap to Max (0 offset)
+        // 4. Dragged middle/down -> Snap to Min
+
+        if (velocityY > 300 || currentY > closingThreshold) {
+            onClose();
+        } else if (currentY < (MAX_H - MIN_H) / 2) {
+            // Snap to Max (Full 85vh)
+            animate(y, 0, { type: "spring", damping: 30, stiffness: 300 });
+        } else {
+            // Snap to Min (45vh)
+            animate(y, MAX_H - MIN_H, { type: "spring", damping: 30, stiffness: 300 });
+        }
+    };
+
     // Memoized Preview Generation
     const previewContent = useMemo(() => {
         if (!content) return '';
@@ -213,7 +269,6 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
         }
         
         if (['javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language)) {
-            // Escape closing script tags to prevent HTML parser breakage
             const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
             return `
                 <!DOCTYPE html>
@@ -278,25 +333,8 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
         setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 600);
     }, []);
 
-    // Mobile Bottom Sheet Logic
-    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const minHeight = screenHeight * 0.45; // 45vh
-    const maxHeight = screenHeight * 0.85; // 85vh
-    const dragRange = maxHeight - minHeight;
-
-    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-        if (!isDesktop) {
-            // If dragged down past the "min height" threshold (with a small buffer)
-            // or if flicked down quickly
-            if (info.offset.y > dragRange + 20 || (info.velocity.y > 300 && info.offset.y > 0)) {
-                onClose();
-            }
-        }
-    };
-
     const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language);
     
-    // Normalize language string for display (upper case if common abbreviation)
     const displayLanguage = useMemo(() => {
         if (!language) return 'TXT';
         const raw = language.toLowerCase();
@@ -306,244 +344,262 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
         return raw.charAt(0).toUpperCase() + raw.slice(1);
     }, [language]);
 
-    // Map 'html' to 'markup' for syntax highlighter if needed by the specific Prism build
     const syntaxHighlighterLanguage = useMemo(() => {
         if (language === 'html') return 'markup';
         return language;
     }, [language]);
 
+    // Mobile Overlay - Only show if open
+    if (!isDesktop && !isOpen) return null;
+
     return (
-        <motion.aside
-            initial={false}
-            animate={isOpen ? (isDesktop ? { width } : { y: 0 }) : (isDesktop ? { width: 0 } : { y: '100%' })}
-            transition={{ type: isResizing ? 'tween' : 'spring', stiffness: 300, damping: 30 }}
-            drag={!isDesktop ? "y" : false}
-            dragListener={false}
-            dragControls={dragControls}
-            dragConstraints={{ top: 0, bottom: dragRange }}
-            dragElastic={{ top: 0, bottom: 0.5 }}
-            onDragEnd={onDragEnd}
-            className={`
-                flex-shrink-0 bg-layer-1 border-l border-border-subtle overflow-hidden flex flex-col
-                ${isDesktop 
-                    ? 'relative h-full z-30' 
-                    : 'fixed inset-x-0 bottom-0 z-[60] border-t rounded-t-2xl shadow-2xl'
-                }
-            `}
-            // Important: Use max-height on mobile to allow content to determine size but cap it at 85vh
-            // 'auto' height on mobile allows flex children to expand naturally
-            style={!isDesktop ? { height: 'auto', maxHeight: '85vh', minHeight: '45vh', display: 'flex', flexDirection: 'column' } : undefined}
-        >
-            <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%', height: '100%' }}>
-                
-                {/* Drag handle for mobile */}
-                {!isDesktop && (
-                    <div 
-                        className="flex justify-center pt-3 pb-1 flex-shrink-0 bg-layer-1 cursor-grab active:cursor-grabbing touch-none" 
-                        onPointerDown={(e) => dragControls.start(e)}
-                        aria-hidden="true"
-                    >
-                        <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
-                    </div>
+        <>
+            {/* Backdrop for Mobile */}
+            <AnimatePresence>
+                {!isDesktop && isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+                    />
                 )}
+            </AnimatePresence>
 
-                {/* Header Toolbar */}
-                <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-3 bg-layer-1 border-b border-border-subtle flex-shrink-0">
-                    <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-full">
-                        <div className="flex items-center gap-2 px-2 py-1 bg-layer-2 rounded-md border border-border-default flex-shrink-0">
-                            <span className="text-xs font-bold text-content-secondary uppercase tracking-wider font-mono">
-                                {displayLanguage}
-                            </span>
-                        </div>
-                        {isPreviewable && (
-                            <div className="flex bg-layer-2 p-0.5 rounded-lg border border-border-default flex-shrink-0">
-                                <button 
-                                    onClick={() => handleTabChange('code')}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                                        state.activeTab === 'code' 
-                                        ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
-                                        : 'text-content-secondary hover:text-content-primary'
-                                    }`}
-                                >
-                                    <CodeIcon />
-                                    Code
-                                </button>
-                                <button 
-                                    onClick={() => handleTabChange('preview')}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                                        state.activeTab === 'preview' 
-                                        ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
-                                        : 'text-content-secondary hover:text-content-primary'
-                                    }`}
-                                >
-                                    <EyeIcon />
-                                    Preview
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                    
-                    <div className="flex items-center gap-2 ml-auto">
-                        <Tooltip content="Copy Code" position="bottom" delay={500}>
-                            <button 
-                                onClick={handleCopy}
-                                className="p-2 rounded-lg text-content-secondary hover:text-content-primary hover:bg-layer-2 transition-colors"
-                                aria-label="Copy code"
-                            >
-                                {isCopied ? <CheckIcon /> : <CopyIcon />}
-                            </button>
-                        </Tooltip>
-                        
-                        <Tooltip content="Close Panel" position="bottom" delay={500}>
-                            <button 
-                                onClick={onClose} 
-                                className="p-2 rounded-lg text-content-secondary hover:text-content-primary hover:bg-layer-2 transition-colors"
-                                aria-label="Close artifact"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
-                            </button>
-                        </Tooltip>
-                    </div>
-                </div>
-
-                {/* Main Content Area */}
-                <div className={`flex-1 min-h-0 ${isDesktop ? 'relative overflow-hidden' : 'overflow-y-auto relative'}`}>
-                    {/* CODE VIEW */}
-                    <div 
-                        className={`${isDesktop ? 'absolute inset-0 overflow-auto custom-scrollbar' : ''} bg-code-surface ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
-                    >
-                        <SyntaxHighlighter
-                            language={syntaxHighlighterLanguage || 'text'}
-                            style={syntaxStyle}
-                            customStyle={{ 
-                                margin: 0, 
-                                padding: '1.5rem', 
-                                minHeight: '100%', 
-                                fontSize: '13px', 
-                                lineHeight: '1.5',
-                                fontFamily: "'Fira Code', monospace",
-                                background: 'transparent',
-                            }}
-                            showLineNumbers={true}
-                            wrapLines={false} 
-                            lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
-                            fallbackLanguage="text"
+            <motion.aside
+                initial={false}
+                // Desktop uses width, Mobile uses Y via MotionValue
+                animate={isDesktop ? { width: isOpen ? width : 0 } : undefined} 
+                style={!isDesktop ? { y, height: '85vh', maxHeight: '85vh' } : { width }}
+                transition={isDesktop ? { type: isResizing ? 'tween' : 'spring', stiffness: 300, damping: 30 } : undefined}
+                drag={!isDesktop ? "y" : false}
+                dragListener={false} // Manual control via drag handle
+                dragControls={dragControls}
+                dragConstraints={{ top: 0, bottom: (typeof window !== 'undefined' ? window.innerHeight * 0.85 : 800) }}
+                dragElastic={{ top: 0, bottom: 0.2 }}
+                onDragEnd={onDragEnd}
+                className={`
+                    flex-shrink-0 bg-layer-1 border-l border-border-subtle overflow-hidden flex flex-col shadow-2xl
+                    ${isDesktop 
+                        ? 'relative h-full z-30' 
+                        : 'fixed inset-x-0 bottom-0 z-[70] border-t rounded-t-2xl'
+                    }
+                `}
+            >
+                <div 
+                    ref={contentRef}
+                    className="flex flex-col h-full overflow-hidden w-full"
+                >
+                    {/* Drag handle for mobile */}
+                    {!isDesktop && (
+                        <div 
+                            className="flex justify-center pt-3 pb-1 flex-shrink-0 bg-layer-1 cursor-grab active:cursor-grabbing touch-none w-full" 
+                            onPointerDown={(e) => dragControls.start(e)}
+                            aria-hidden="true"
                         >
-                            {content || ''}
-                        </SyntaxHighlighter>
-                    </div>
-
-                    {/* PREVIEW VIEW */}
-                    <div 
-                        className={`${isDesktop ? 'absolute inset-0' : 'h-[50vh]'} bg-layer-2 flex flex-col ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
-                    >
-                        <div className="flex items-center justify-between px-3 py-2 bg-layer-1 border-b border-border-default flex-shrink-0">
-                            <div className="flex items-center gap-2">
-                                <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                                <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button 
-                                    onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
-                                    className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${state.showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-content-secondary hover:text-content-primary hover:bg-layer-2'}`}
-                                    title="Toggle Console"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-                                    Console {state.logs.length > 0 && <span className="bg-layer-2 px-1 rounded-sm text-[10px]">{state.logs.length}</span>}
-                                </button>
-                                <div className="w-px h-3 bg-border-strong mx-1" />
-                                <Tooltip content="Reload Preview" position="bottom">
-                                    <button 
-                                        onClick={handleRefresh} 
-                                        className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
-                                        aria-label="Reload Preview"
-                                    >
-                                        <RefreshIcon />
-                                    </button>
-                                </Tooltip>
-                                <Tooltip content="Open in New Tab" position="bottom">
-                                    <button 
-                                        onClick={handleOpenNewTab}
-                                        className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
-                                        aria-label="Open in New Tab"
-                                    >
-                                        <ExternalLinkIcon />
-                                    </button>
-                                </Tooltip>
-                            </div>
+                            <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
                         </div>
-                        <div className="flex-1 relative flex flex-col overflow-hidden">
-                            {state.isLoading ? (
-                                <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
-                                    <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
-                                </div>
-                            ) : (
-                                <div className="flex-1 bg-white relative">
-                                    <iframe 
-                                        ref={iframeRef}
-                                        key={state.iframeKey}
-                                        srcDoc={previewContent}
-                                        className="absolute inset-0 w-full h-full border-none bg-white"
-                                        sandbox="allow-scripts allow-modals allow-forms allow-popups"
-                                        title="Artifact Preview"
-                                    />
+                    )}
+
+                    {/* Header Toolbar */}
+                    <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-3 bg-layer-1 border-b border-border-subtle flex-shrink-0 w-full">
+                        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-full">
+                            <div className="flex items-center gap-2 px-2 py-1 bg-layer-2 rounded-md border border-border-default flex-shrink-0">
+                                <span className="text-xs font-bold text-content-secondary uppercase tracking-wider font-mono">
+                                    {displayLanguage}
+                                </span>
+                            </div>
+                            {isPreviewable && (
+                                <div className="flex bg-layer-2 p-0.5 rounded-lg border border-border-default flex-shrink-0">
+                                    <button 
+                                        onClick={() => handleTabChange('code')}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                                            state.activeTab === 'code' 
+                                            ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
+                                            : 'text-content-secondary hover:text-content-primary'
+                                        }`}
+                                    >
+                                        <CodeIcon />
+                                        Code
+                                    </button>
+                                    <button 
+                                        onClick={() => handleTabChange('preview')}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                                            state.activeTab === 'preview' 
+                                            ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
+                                            : 'text-content-secondary hover:text-content-primary'
+                                        }`}
+                                    >
+                                        <EyeIcon />
+                                        Preview
+                                    </button>
                                 </div>
                             )}
+                        </div>
+                        
+                        <div className="flex items-center gap-2 ml-auto">
+                            <Tooltip content="Copy Code" position="bottom" delay={500}>
+                                <button 
+                                    onClick={handleCopy}
+                                    className="p-2 rounded-lg text-content-secondary hover:text-content-primary hover:bg-layer-2 transition-colors"
+                                    aria-label="Copy code"
+                                >
+                                    {isCopied ? <CheckIcon /> : <CopyIcon />}
+                                </button>
+                            </Tooltip>
                             
-                            {/* Console Terminal Panel */}
-                            <AnimatePresence>
-                                {state.showConsole && (
-                                    <motion.div
-                                        initial={{ height: 0 }}
-                                        animate={{ height: '35%' }}
-                                        exit={{ height: 0 }}
-                                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                        className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col"
+                            <Tooltip content="Close Panel" position="bottom" delay={500}>
+                                <button 
+                                    onClick={onClose} 
+                                    className="p-2 rounded-lg text-content-secondary hover:text-content-primary hover:bg-layer-2 transition-colors"
+                                    aria-label="Close artifact"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </Tooltip>
+                        </div>
+                    </div>
+
+                    {/* Main Content Area */}
+                    <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col w-full">
+                        {/* CODE VIEW */}
+                        <div 
+                            className={`flex-1 relative overflow-auto custom-scrollbar bg-code-surface ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
+                        >
+                            <SyntaxHighlighter
+                                language={syntaxHighlighterLanguage || 'text'}
+                                style={syntaxStyle}
+                                customStyle={{ 
+                                    margin: 0, 
+                                    padding: '1.5rem', 
+                                    minHeight: '100%', 
+                                    fontSize: '13px', 
+                                    lineHeight: '1.5',
+                                    fontFamily: "'Fira Code', monospace",
+                                    background: 'transparent',
+                                }}
+                                showLineNumbers={true}
+                                wrapLines={false} 
+                                lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
+                                fallbackLanguage="text"
+                            >
+                                {content || ''}
+                            </SyntaxHighlighter>
+                        </div>
+
+                        {/* PREVIEW VIEW */}
+                        <div 
+                            className={`flex-1 relative flex flex-col bg-layer-2 ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
+                        >
+                            <div className="flex items-center justify-between px-3 py-2 bg-layer-1 border-b border-border-default flex-shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
+                                        className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${state.showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-content-secondary hover:text-content-primary hover:bg-layer-2'}`}
+                                        title="Toggle Console"
                                     >
-                                        <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
-                                            <span>Terminal</span>
-                                            <button onClick={() => dispatch({ type: 'CLEAR_LOGS' })} className="hover:text-white transition-colors">Clear</button>
-                                        </div>
-                                        <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
-                                            {state.logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
-                                            {state.logs.map((log, i) => (
-                                                <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
-                                                    <span className={`flex-shrink-0 font-bold ${
-                                                        log.level === 'error' ? 'text-red-400' :
-                                                        log.level === 'warn' ? 'text-yellow-400' :
-                                                        'text-blue-400'
-                                                    }`}>
-                                                        {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
-                                                    </span>
-                                                    <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
-                                                        {log.message}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </motion.div>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                                        Console {state.logs.length > 0 && <span className="bg-layer-2 px-1 rounded-sm text-[10px]">{state.logs.length}</span>}
+                                    </button>
+                                    <div className="w-px h-3 bg-border-strong mx-1" />
+                                    <Tooltip content="Reload Preview" position="bottom">
+                                        <button 
+                                            onClick={handleRefresh} 
+                                            className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
+                                            aria-label="Reload Preview"
+                                        >
+                                            <RefreshIcon />
+                                        </button>
+                                    </Tooltip>
+                                    <Tooltip content="Open in New Tab" position="bottom">
+                                        <button 
+                                            onClick={handleOpenNewTab}
+                                            className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
+                                            aria-label="Open in New Tab"
+                                        >
+                                            <ExternalLinkIcon />
+                                        </button>
+                                    </Tooltip>
+                                </div>
+                            </div>
+                            <div className="flex-1 relative flex flex-col overflow-hidden">
+                                {state.isLoading ? (
+                                    <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
+                                        <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 bg-white relative w-full h-full">
+                                        <iframe 
+                                            ref={iframeRef}
+                                            key={state.iframeKey}
+                                            srcDoc={previewContent}
+                                            className="absolute inset-0 w-full h-full border-none bg-white"
+                                            sandbox="allow-scripts allow-modals allow-forms allow-popups"
+                                            title="Artifact Preview"
+                                        />
+                                    </div>
                                 )}
-                            </AnimatePresence>
+                                
+                                {/* Console Terminal Panel */}
+                                <AnimatePresence>
+                                    {state.showConsole && (
+                                        <motion.div
+                                            initial={{ height: 0 }}
+                                            animate={{ height: '35%' }}
+                                            exit={{ height: 0 }}
+                                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                            className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col w-full"
+                                        >
+                                            <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
+                                                <span>Terminal</span>
+                                                <button onClick={() => dispatch({ type: 'CLEAR_LOGS' })} className="hover:text-white transition-colors">Clear</button>
+                                            </div>
+                                            <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
+                                                {state.logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
+                                                {state.logs.map((log, i) => (
+                                                    <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
+                                                        <span className={`flex-shrink-0 font-bold ${
+                                                            log.level === 'error' ? 'text-red-400' :
+                                                            log.level === 'warn' ? 'text-yellow-400' :
+                                                            'text-blue-400'
+                                                        }`}>
+                                                            {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
+                                                        </span>
+                                                        <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
+                                                            {log.message}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Resize Handle (Desktop only) */}
-            {isDesktop && (
-                <div
-                    className="group absolute top-0 left-0 h-full z-50 w-4 cursor-col-resize flex justify-start hover:bg-transparent pl-[1px]"
-                    onMouseDown={startResizingHandler}
-                >
-                    <div className={`w-[2px] h-full transition-colors duration-200 ${isResizing ? 'bg-indigo-500' : 'bg-transparent group-hover:bg-indigo-400/50'}`}></div>
-                </div>
-            )}
-        </motion.aside>
+                {/* Resize Handle (Desktop only) */}
+                {isDesktop && (
+                    <div
+                        className="group absolute top-0 left-0 h-full z-50 w-4 cursor-col-resize flex justify-start hover:bg-transparent pl-[1px]"
+                        onMouseDown={startResizingHandler}
+                    >
+                        <div className={`w-[2px] h-full transition-colors duration-200 ${isResizing ? 'bg-indigo-500' : 'bg-transparent group-hover:bg-indigo-400/50'}`}></div>
+                    </div>
+                )}
+            </motion.aside>
+        </>
     );
 };
 
