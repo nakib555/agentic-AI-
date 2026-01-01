@@ -124,12 +124,12 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
 
       <div 
         className={`
-            relative bg-transparent border transition-all duration-200 rounded-2xl overflow-hidden shadow-sm flex flex-col
+            relative bg-white dark:bg-[#09090b] border-2 transition-all duration-200 rounded-2xl overflow-hidden shadow-sm flex flex-col
             ${isDragging 
-                ? 'border-indigo-500 ring-2 ring-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-900/20 scale-[1.01]' 
+                ? 'border-indigo-600 dark:border-indigo-400 ring-4 ring-indigo-500/20 bg-indigo-50/80 dark:bg-indigo-900/40 scale-[1.01]' 
                 : logic.isFocused 
-                    ? 'border-primary-main shadow-md ring-1 ring-primary-main/20' 
-                    : 'border-border-default hover:border-border-strong'
+                    ? 'border-indigo-600 dark:border-indigo-400 shadow-lg ring-2 ring-indigo-500/20' 
+                    : 'border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500'
             }
         `}
         onDragEnter={handleDragEnter}
@@ -145,7 +145,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 dark:bg-black/80 backdrop-blur-[2px] pointer-events-none"
+                    className="absolute inset-0 z-50 flex items-center justify-center bg-white/90 dark:bg-black/90 backdrop-blur-[2px] pointer-events-none"
                 >
                     <div className="text-center text-indigo-600 dark:text-indigo-400 font-bold text-lg flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 animate-bounce">
@@ -159,14 +159,14 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
             )}
         </AnimatePresence>
 
-        {/* File List Area */}
+        {/* File List Area - High Contrast */}
         <AnimatePresence>
             {hasFiles && (
                 <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="flex flex-nowrap overflow-x-auto gap-3 px-4 pb-2 pt-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 scrollbar-hide"
+                    className="flex flex-nowrap overflow-x-auto gap-3 px-4 pb-3 pt-4 border-b border-slate-200 dark:border-zinc-700 bg-slate-100 dark:bg-zinc-900 scrollbar-hide"
                     onWheel={(e) => {
                         if (e.deltaY !== 0) {
                             e.currentTarget.scrollLeft += e.deltaY;
@@ -191,10 +191,10 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         <div className="flex flex-col relative flex-1">
             {/* Animated Placeholder Overlay */}
             {!logic.inputValue && !isDragging && (
-               <div className="absolute inset-0 px-4 py-4 pointer-events-none select-none opacity-50 z-0 overflow-hidden">
+               <div className="absolute inset-0 px-4 py-4 pointer-events-none select-none opacity-60 z-0 overflow-hidden">
                   <TextType 
                     text={logic.placeholder} 
-                    className="text-content-tertiary text-base leading-relaxed"
+                    className="text-slate-500 dark:text-slate-400 text-base leading-relaxed"
                     loop 
                     cursorCharacter="|"
                     typingSpeed={30}
@@ -214,7 +214,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                 onBlur={() => logic.setIsFocused(false)}
                 disabled={isGeneratingResponse}
                 rows={1}
-                className="w-full bg-transparent text-content-primary px-4 py-4 max-h-[120px] focus:outline-none resize-none overflow-y-auto leading-relaxed custom-scrollbar placeholder:text-transparent z-10"
+                className="w-full bg-transparent text-slate-900 dark:text-slate-100 px-4 py-4 max-h-[120px] focus:outline-none resize-none overflow-y-auto leading-relaxed custom-scrollbar placeholder:text-transparent z-10"
                 style={{ minHeight: '3.5rem' }}
             />
         </div>
@@ -228,7 +228,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                         ref={logic.attachButtonRef}
                         onClick={() => logic.setIsUploadMenuOpen(!logic.isUploadMenuOpen)}
                         disabled={isGeneratingResponse}
-                        className="relative p-2 rounded-xl text-content-secondary hover:text-content-primary hover:bg-layer-3 transition-colors disabled:opacity-50"
+                        className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
                         aria-label="Attach files"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
@@ -258,8 +258,8 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                         className={`
                             p-2 rounded-xl transition-colors disabled:opacity-50
                             ${logic.isRecording 
-                                ? 'bg-red-500/10 text-red-500 animate-pulse' 
-                                : 'text-content-secondary hover:text-content-primary hover:bg-layer-3'
+                                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 animate-pulse border border-red-200 dark:border-red-800' 
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-zinc-800'
                             }
                         `}
                         aria-label="Voice input"
@@ -280,8 +280,8 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                         className={`
                             p-2 rounded-xl transition-all duration-300 disabled:opacity-50
                             ${logic.isEnhancing 
-                                ? 'text-primary-main bg-primary-subtle' 
-                                : 'text-content-secondary hover:text-primary-main hover:bg-layer-3'
+                                ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30' 
+                                : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-zinc-800'
                             }
                         `}
                         aria-label="Enhance prompt"
@@ -311,24 +311,22 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                         disabled={!isGeneratingResponse && isSendDisabled}
                         aria-label={isGeneratingResponse ? "Stop generating" : "Send message"}
                         className={`
-                            w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm group
+                            w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm group border
                             ${isGeneratingResponse 
-                                ? 'bg-layer-1 border-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800' 
+                                ? 'bg-white dark:bg-zinc-800 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-zinc-700' 
                                 : isSendDisabled 
-                                    ? 'bg-layer-3 text-content-tertiary cursor-not-allowed shadow-none' 
-                                    : 'bg-primary-main text-text-inverted hover:bg-primary-hover hover:scale-105 hover:shadow-md'
+                                    ? 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-600 cursor-not-allowed shadow-none' 
+                                    : 'bg-indigo-600 dark:bg-indigo-500 border-indigo-700 dark:border-indigo-400 text-white hover:bg-indigo-700 dark:hover:bg-indigo-400 hover:shadow-md'
                             }
                         `}
                         whileTap={{ scale: 0.95 }}
                     >
                         {isGeneratingResponse ? ( 
-                            <div className="relative w-6 h-6 flex items-center justify-center">
+                            <div className="relative w-5 h-5 flex items-center justify-center">
                                 {/* Loading Spinner - Fades out on hover */}
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-full h-full transition-opacity duration-200 group-hover:opacity-0">
-                                    <circle cx="24" cy="24" r="16" fill="none" stroke="#4f46e5" strokeWidth="4.5" strokeLinecap="round" strokeDasharray="80 100" strokeDashoffset="0">
-                                        <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="2.5s" repeatCount="indefinite" />
-                                        <animate attributeName="stroke-dashoffset" values="0; -180" dur="2.5s" repeatCount="indefinite" />
-                                        <animate attributeName="stroke" dur="10s" repeatCount="indefinite" values="#f87171; #fb923c; #facc15; #4ade80; #22d3ee; #3b82f6; #818cf8; #e879f9; #f472b6; #f87171" />
+                                    <circle cx="24" cy="24" r="16" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeDasharray="80 100" strokeDashoffset="0" className="text-indigo-600 dark:text-indigo-400">
+                                        <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="1s" repeatCount="indefinite" />
                                     </circle>
                                 </svg>
                                 {/* Stop Icon - Fades in on hover */}
@@ -355,7 +353,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.5 }}
-            className="text-[11px] font-medium text-content-tertiary/70 select-none"
+            className="text-[11px] font-medium text-slate-400 dark:text-slate-500 select-none"
           >
              Agentic AI can make mistakes.
           </motion.p>

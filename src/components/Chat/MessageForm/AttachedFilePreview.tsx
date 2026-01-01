@@ -117,8 +117,8 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 onClick={handleClick}
                 className={`
                     relative w-16 h-16 rounded-2xl overflow-hidden cursor-pointer
-                    shadow-sm border border-black/5 dark:border-white/5 
-                    transform transition-all duration-300 ease-out group-hover:-translate-y-0.5 group-hover:shadow-md
+                    shadow-md border border-slate-300 dark:border-slate-500 ring-1 ring-black/5 dark:ring-white/5
+                    transform transition-all duration-300 ease-out group-hover:-translate-y-0.5 group-hover:shadow-lg
                     ${hasFailed ? 'opacity-80 grayscale' : ''}
                     ${visuals.bg}
                 `}
@@ -188,9 +188,9 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                     absolute top-0 right-0 z-20 
                     w-6 h-6 rounded-full 
                     bg-white dark:bg-zinc-800 
-                    text-slate-400 dark:text-slate-500
+                    text-slate-500 dark:text-slate-400
                     hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white
-                    shadow-md border border-slate-100 dark:border-white/10
+                    shadow-md border border-slate-200 dark:border-slate-600
                     flex items-center justify-center transition-colors duration-200
                     cursor-pointer scale-90 hover:scale-100
                 "
