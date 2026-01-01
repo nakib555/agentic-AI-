@@ -43,8 +43,8 @@ const lightTheme = {
   "--bg-message-ai": "#f8f9fa",
   "--bg-input": "#ffffff",
   "--bg-input-secondary": "#f8fafc",
-  "--bg-code": "#f1f5f9",
-  "--text-code": "#334155",
+  "--bg-code": "#1e1e1e", // Dark background for code blocks to match vscDarkPlus
+  "--text-code": "#e4e4e7", // Light text for code blocks
   "--bg-sidebar": "#f8f9fa"
 };
 

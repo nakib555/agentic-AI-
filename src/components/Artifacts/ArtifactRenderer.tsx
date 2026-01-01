@@ -192,7 +192,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     };
 
     return (
-        <div className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d0d] shadow-lg">
+        <div className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-code-surface shadow-lg">
             <div className="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/5">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     {title || (type === 'code' ? 'Interactive App' : 'Data View')}
@@ -217,7 +217,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                 {activeTab === 'preview' ? (
                     renderPreview()
                 ) : (
-                    <div className="max-h-[400px] overflow-auto custom-scrollbar">
+                    <div className="max-h-[400px] overflow-auto custom-scrollbar bg-code-surface text-code-text">
                         <SyntaxHighlighter
                             language={language || 'text'}
                             style={vscDarkPlus}
@@ -226,7 +226,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                                 padding: '1rem', 
                                 fontSize: '13px', 
                                 lineHeight: '1.5',
-                                // Use theme default background
+                                backgroundColor: 'transparent',
                             }}
                             codeTagProps={{
                                 style: { fontFamily: "'Fira Code', monospace" }

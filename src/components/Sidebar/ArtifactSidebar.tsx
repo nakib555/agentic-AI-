@@ -367,7 +367,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                 <div className="flex-1 overflow-hidden relative group/content">
                     {/* CODE VIEW */}
                     <div 
-                        className={`absolute inset-0 overflow-auto custom-scrollbar bg-[#1e1e1e] ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
+                        className={`absolute inset-0 overflow-auto custom-scrollbar bg-code-surface text-code-text ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
                     >
                         <SyntaxHighlighter
                             language={language}
@@ -379,7 +379,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                                 fontSize: '13px', 
                                 lineHeight: '1.5',
                                 fontFamily: "'Fira Code', monospace",
-                                // Use default dark bg
+                                backgroundColor: 'transparent' // Use theme background
                             }}
                             showLineNumbers={true}
                             wrapLines={false} 

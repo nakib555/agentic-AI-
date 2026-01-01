@@ -58,9 +58,9 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
     const isRunnable = onRunCode && runnableLanguages.includes(rawLanguage);
 
     return (
-      <div className="my-6 rounded-xl overflow-hidden border border-border-default shadow-sm font-sans group bg-[#1e1e1e]">
+      <div className="my-6 rounded-xl overflow-hidden border border-border-default shadow-sm font-sans group bg-code-surface text-code-text">
         {/* Header */}
-        <div className="flex justify-between items-center px-4 py-2 bg-layer-2/50 border-b border-border-subtle select-none backdrop-blur-sm">
+        <div className="flex justify-between items-center px-4 py-2 bg-layer-2/10 border-b border-border-subtle select-none backdrop-blur-sm">
           <div className="flex items-center gap-3">
              <span className="text-xs font-semibold text-content-tertiary lowercase font-mono">
                 {formattedLanguage || 'text'}
@@ -116,7 +116,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
               customStyle={{
                 margin: 0,
                 padding: '1.25rem',
-                // Use default background from theme (usually dark)
+                backgroundColor: 'transparent', // Use container background
                 fontFamily: "'Fira Code', 'Consolas', monospace",
               }}
               codeTagProps={{
