@@ -1,14 +1,18 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
-import { SandpackProvider, SandpackLayout, SandpackPreview } from "@codesandbox/sandpack-react";
 import Frame from 'react-frame-component';
+
+// Lazy load Sandpack to reduce initial bundle size
+const SandpackProvider = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackProvider })));
+const SandpackLayout = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackLayout })));
+const SandpackPreview = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackPreview })));
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
@@ -17,19 +21,30 @@ type ArtifactRendererProps = {
     title?: string;
 };
 
-// Helper to detect React code accurately
+// Robust React detection logic
 const detectIsReact = (code: string, lang: string) => {
-    if (lang === 'html' || lang === 'css' || lang === 'json') return false;
+    const normalize = (s: string) => s.toLowerCase().trim();
+    const l = normalize(lang);
+    
+    if (l === 'jsx' || l === 'tsx') return true;
+    if (l === 'html' || l === 'css' || l === 'json' || l === 'svg' || l === 'xml') return false;
+    
     const clean = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''); // remove comments
     return (
-        lang === 'jsx' || 
-        lang === 'tsx' || 
         /import\s+React/.test(clean) || 
         /import\s+.*from\s+['"]react['"]/.test(clean) || 
-        /export\s+default\s+function/.test(clean) && /return\s*\(/.test(clean) ||
-        /<[A-Z][A-Za-z0-9]*\s/.test(clean) // Looks like JSX component usage
+        /export\s+default\s+function/.test(clean) ||
+        /return\s*\(\s*<[A-Z]/.test(clean) || // JSX return pattern
+        (/className=/.test(clean) && /<[a-z0-9]+/.test(clean)) // JSX attributes
     );
 };
+
+const LoadingSpinner = () => (
+    <div className="flex flex-col items-center justify-center h-full min-h-[300px] bg-white dark:bg-[#1e1e1e] text-slate-500">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+        <span className="text-xs font-medium animate-pulse">Initializing Preview Environment...</span>
+    </div>
+);
 
 export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, content, language = 'html', title }) => {
     const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
@@ -105,7 +120,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             }
         }
 
-        // --- Sandpack for React ---
+        // --- Sandpack for React / ES Modules ---
         if (isReact) {
             // Ensure App.js exports default
             let finalCode = content;
@@ -115,29 +130,31 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             }
 
             return (
-                <div className="h-full min-h-[400px] w-full">
-                    <SandpackProvider 
-                        template="react"
-                        theme={isDark ? "dark" : "light"}
-                        files={{ "/App.js": finalCode }}
-                        options={{
-                            externalResources: ["https://cdn.tailwindcss.com"]
-                        }}
-                    >
-                        <SandpackLayout style={{ height: '400px', border: 'none', borderRadius: 0 }}>
-                            <SandpackPreview 
-                                style={{ height: '100%' }} 
-                                showOpenInCodeSandbox={false} 
-                                showRefreshButton={true}
-                            />
-                        </SandpackLayout>
-                    </SandpackProvider>
+                <div className="h-full min-h-[400px] w-full relative">
+                    <Suspense fallback={<LoadingSpinner />}>
+                        <SandpackProvider 
+                            template="react"
+                            theme={isDark ? "dark" : "light"}
+                            files={{ "/App.js": finalCode }}
+                            options={{
+                                externalResources: ["https://cdn.tailwindcss.com"]
+                            }}
+                        >
+                            <SandpackLayout style={{ height: '400px', border: 'none', borderRadius: 0 }}>
+                                <SandpackPreview 
+                                    style={{ height: '100%' }} 
+                                    showOpenInCodeSandbox={false} 
+                                    showRefreshButton={true}
+                                    showRestartButton={true}
+                                />
+                            </SandpackLayout>
+                        </SandpackProvider>
+                    </Suspense>
                 </div>
             );
         }
 
-        // --- Frame for HTML/JS ---
-        // Code Preview (HTML/SVG/JS) via react-frame-component
+        // --- Frame for HTML/JS (Standard) ---
         if (language === 'html' || language === 'svg' || language === 'javascript' || language === 'markup' || language === 'xml') {
             const cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
 
@@ -210,32 +227,25 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                             </button>
                             {showConsole && <button onClick={() => setLogs([])} className="hover:text-white transition-colors">Clear</button>}
                         </div>
-                        <AnimatePresence>
-                            {showConsole && (
-                                <motion.div
-                                    initial={{ height: 0 }}
-                                    animate={{ height: 160 }}
-                                    exit={{ height: 0 }}
-                                    className="overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar"
-                                >
-                                    {logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
-                                    {logs.map((log, i) => (
-                                        <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
-                                            <span className={`flex-shrink-0 font-bold ${
-                                                log.level === 'error' ? 'text-red-400' :
-                                                log.level === 'warn' ? 'text-yellow-400' :
-                                                'text-blue-400'
-                                            }`}>
-                                                {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
-                                            </span>
-                                            <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
-                                                {log.message}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                        {showConsole && (
+                            <div className="h-40 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
+                                {logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
+                                {logs.map((log, i) => (
+                                    <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
+                                        <span className={`flex-shrink-0 font-bold ${
+                                            log.level === 'error' ? 'text-red-400' :
+                                            log.level === 'warn' ? 'text-yellow-400' :
+                                            'text-blue-400'
+                                        }`}>
+                                            {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
+                                        </span>
+                                        <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
+                                            {log.message}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             );
@@ -250,7 +260,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         <div className="my-4 rounded-xl overflow-hidden border border-border-default shadow-lg bg-code-surface transition-colors duration-300">
             <div className="flex items-center justify-between px-4 py-2 bg-layer-2/50 border-b border-border-default backdrop-blur-sm">
                 <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">
-                    {title || (type === 'code' ? (isReact ? 'React App' : 'Interactive App') : 'Data View')}
+                    {title || (type === 'code' ? (isReact ? 'Interactive App' : 'HTML Preview') : 'Data View')}
                 </span>
                 <div className="flex bg-layer-3 p-0.5 rounded-lg">
                     <button 

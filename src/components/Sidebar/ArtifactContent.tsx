@@ -4,14 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useReducer, useEffect, useMemo, useCallback, useState } from 'react';
+import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
 import Frame from 'react-frame-component';
-import { SandpackProvider, SandpackLayout, SandpackPreview } from "@codesandbox/sandpack-react";
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
+
+// Lazy load Sandpack
+const SandpackProvider = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackProvider })));
+const SandpackLayout = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackLayout })));
+const SandpackPreview = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackPreview })));
 
 // --- Icons ---
 const CopyIcon = () => (
@@ -139,15 +143,19 @@ const generateConsoleScript = () => `
 `;
 
 const detectIsReact = (code: string, lang: string) => {
-    if (lang === 'html' || lang === 'css' || lang === 'json') return false;
+    const normalize = (s: string) => s.toLowerCase().trim();
+    const l = normalize(lang);
+    
+    if (l === 'jsx' || l === 'tsx') return true;
+    if (l === 'html' || l === 'css' || l === 'json' || l === 'svg' || l === 'xml') return false;
+    
     const clean = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
     return (
-        lang === 'jsx' || 
-        lang === 'tsx' || 
         /import\s+React/.test(clean) || 
         /import\s+.*from\s+['"]react['"]/.test(clean) || 
-        /export\s+default\s+function/.test(clean) && /return\s*\(/.test(clean) ||
-        /<[A-Z][A-Za-z0-9]*\s/.test(clean)
+        /export\s+default\s+function/.test(clean) ||
+        /return\s*\(\s*<[A-Z]/.test(clean) ||
+        (/className=/.test(clean) && /<[a-z0-9]+/.test(clean))
     );
 };
 
@@ -287,8 +295,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     }, [content]);
 
     const handleOpenNewTab = useCallback(() => {
-        // We cannot open Sandpack previews in new tab easily as they are managed by the runner.
-        // For Frame/HTML, we can.
         if (!isReact) {
             const win = window.open('', '_blank');
             if (win) {
@@ -296,7 +302,8 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 win.document.close();
             }
         } else {
-            alert("Interactive Sandpack previews cannot be opened in a new tab yet.");
+            // Can't open Sandpack in new tab easily as it runs inside React
+            alert("Interactive previews are embedded and cannot be opened in a new tab yet.");
         }
     }, [previewContent, isReact]);
 
@@ -322,9 +329,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return language;
     }, [language]);
 
-    // Check if the content is too large for standard syntax highlighting
     const useVirtualization = useMemo(() => {
-        // Rough estimation: 1000 lines or 50KB size
         return content.length > VIRTUALIZATION_THRESHOLD_SIZE || (content.match(/\n/g) || []).length > VIRTUALIZATION_THRESHOLD_LINES;
     }, [content]);
 
@@ -438,22 +443,30 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 >
                     {isReact ? (
                         <div className="flex-1 w-full h-full relative bg-white">
-                             <SandpackProvider 
-                                template="react"
-                                theme={isDark ? "dark" : "light"}
-                                files={{ "/App.js": debouncedContent }}
-                                options={{
-                                    externalResources: ["https://cdn.tailwindcss.com"]
-                                }}
-                            >
-                                <SandpackLayout style={{ height: '100%', border: 'none', borderRadius: 0 }}>
-                                    <SandpackPreview 
-                                        style={{ height: '100%' }} 
-                                        showOpenInCodeSandbox={false} 
-                                        showRefreshButton={true}
-                                    />
-                                </SandpackLayout>
-                            </SandpackProvider>
+                             <Suspense fallback={
+                                <div className="flex flex-col items-center justify-center h-full">
+                                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                    <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
+                                </div>
+                             }>
+                                 <SandpackProvider 
+                                    template="react"
+                                    theme={isDark ? "dark" : "light"}
+                                    files={{ "/App.js": debouncedContent }}
+                                    options={{
+                                        externalResources: ["https://cdn.tailwindcss.com"]
+                                    }}
+                                >
+                                    <SandpackLayout style={{ height: '100%', border: 'none', borderRadius: 0 }}>
+                                        <SandpackPreview 
+                                            style={{ height: '100%' }} 
+                                            showOpenInCodeSandbox={false} 
+                                            showRefreshButton={true}
+                                            showRestartButton={true}
+                                        />
+                                    </SandpackLayout>
+                                </SandpackProvider>
+                            </Suspense>
                         </div>
                     ) : (
                         <>
