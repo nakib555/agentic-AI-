@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useCallback, useRef, Suspense } from 'react';
+import React, { useEffect, useCallback, useRef, Suspense, useState } from 'react';
 import { motion as motionTyped, AnimatePresence, PanInfo, useDragControls } from 'framer-motion';
 const motion = motionTyped as any;
 import type { ChatSession } from '../../types';
