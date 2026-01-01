@@ -8,43 +8,43 @@ const spockeTheme = {
   // --- Base Layers (True Void / High Contrast) ---
   "--bg-page": "#000000",        // True Black
   "--bg-layer-1": "#000000",     // True Black
-  "--bg-layer-2": "#121212",     // Very Dark Gray
-  "--bg-layer-3": "#262626",     // Dark Gray
+  "--bg-layer-2": "#111111",     // Almost Black
+  "--bg-layer-3": "#222222",     // Deep Gray
   "--bg-glass": "#000000",       // Opaque black for max readability
 
-  // --- Text Colors (Stark) ---
+  // --- Text Colors (Stark & Crisp) ---
   "--text-primary": "#FFFFFF",   // Pure White
-  "--text-secondary": "#d4d4d4", // Neutral 300
-  "--text-tertiary": "#a3a3a3",  // Neutral 400
+  "--text-secondary": "#e0e0e0", // Very Light Gray
+  "--text-tertiary": "#a0a0a0",  // Light Gray
   "--text-inverted": "#000000",
 
-  // --- Borders (Sharp & Defined) ---
+  // --- Borders (Sharp & Defined for Desktop Precision) ---
   "--border-subtle": "#333333",
-  "--border-default": "#404040",
-  "--border-strong": "#737373",
-  "--border-focus": "#06b6d4",   // Cyan 500
+  "--border-default": "#444444",
+  "--border-strong": "#888888",
+  "--border-focus": "#00f0ff",   // Neon Cyan
 
-  // --- Brand Colors (Electric) ---
-  "--primary-main": "#06b6d4",   // Cyan 500
-  "--primary-hover": "#22d3ee",  // Cyan 400
-  "--primary-subtle": "rgba(6, 182, 212, 0.2)", 
-  "--primary-text": "#e0f2fe",   // Cyan 50
+  // --- Brand Colors (Electric / Cyberpunk) ---
+  "--primary-main": "#00d9f9",   // Electric Cyan
+  "--primary-hover": "#60efff",  // Bright Cyan
+  "--primary-subtle": "rgba(0, 217, 249, 0.15)", 
+  "--primary-text": "#e0faff",
 
-  // --- Status Indicators (Saturated) ---
-  "--status-error-bg": "rgba(185, 28, 28, 0.4)",
-  "--status-error-text": "#fca5a5", 
-  "--status-success-bg": "rgba(21, 128, 61, 0.4)",
-  "--status-success-text": "#86efac", 
-  "--status-warning-bg": "rgba(161, 98, 7, 0.4)",
-  "--status-warning-text": "#fde047", 
+  // --- Status Indicators (Saturated Neon) ---
+  "--status-error-bg": "rgba(255, 0, 0, 0.15)",
+  "--status-error-text": "#ff4d4d", // Bright Red
+  "--status-success-bg": "rgba(0, 255, 0, 0.15)",
+  "--status-success-text": "#4ade80", // Bright Green
+  "--status-warning-bg": "rgba(255, 255, 0, 0.1)",
+  "--status-warning-text": "#facc15", // Bright Yellow
 
   // --- Component Specifics ---
-  "--bg-message-user": "#171717", // Neutral 900
+  "--bg-message-user": "#111111", 
   "--bg-message-ai": "transparent",
-  "--bg-input": "#000000",
-  "--bg-input-secondary": "#171717",
-  "--bg-code": "#050505",
-  "--text-code": "#ffffff",
+  "--bg-input": "#050505",
+  "--bg-input-secondary": "#111111",
+  "--bg-code": "#080808",
+  "--text-code": "#00ff9d",       // Matrix Green for code
   "--bg-sidebar": "#000000"
 };
 
