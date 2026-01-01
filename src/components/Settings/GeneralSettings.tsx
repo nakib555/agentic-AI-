@@ -30,6 +30,16 @@ const PROVIDER_OPTIONS = [
     { id: 'openrouter', label: 'OpenRouter', desc: 'Access to Claude, GPT, etc.' }
 ];
 
+const SYNTAX_OPTIONS = [
+    { id: 'auto', label: 'Auto (Match Theme)', desc: 'Switches automatically' },
+    { id: 'vsc-dark', label: 'VSCode Dark', desc: 'Classic VSCode look' },
+    { id: 'dracula', label: 'Dracula', desc: 'High contrast purple' },
+    { id: 'atom-dark', label: 'Atom Dark', desc: 'Soft dark colors' },
+    { id: 'synthwave', label: 'Synthwave 84', desc: 'Neon & Retro' },
+    { id: 'one-light', label: 'One Light', desc: 'Clean light theme' },
+    { id: 'github', label: 'GitHub Light', desc: 'Standard GitHub style' },
+];
+
 const ActionButton = ({ 
     icon, 
     title, 
@@ -314,6 +324,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
     serverUrl, onSaveServerUrl,
     provider, openRouterApiKey, onProviderChange
 }) => {
+  const [syntaxTheme, setSyntaxTheme] = useState(() => localStorage.getItem('syntax_theme') || 'auto');
 
   const handleMainApiKeySave = async (key: string, savedProvider: 'gemini' | 'openrouter') => {
       const cleanKey = key.trim();
@@ -336,6 +347,13 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
       if (onSaveSuggestionApiKey) {
           onSaveSuggestionApiKey(cleanKey);
       }
+  };
+
+  const handleSyntaxThemeChange = (newTheme: string) => {
+      setSyntaxTheme(newTheme);
+      localStorage.setItem('syntax_theme', newTheme);
+      // Dispatch event for useSyntaxTheme hook
+      window.dispatchEvent(new Event('syntax-theme-change'));
   };
 
   return (
@@ -386,6 +404,17 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
 
       <SettingItem label="Theme" description="Choose your preferred visual style." layout="col">
         <ThemeToggle theme={theme} setTheme={setTheme} variant="cards" />
+      </SettingItem>
+
+      <SettingItem label="Code Syntax Highlighting" description="Customize how code blocks are rendered.">
+          <div className="w-full sm:w-64">
+              <SelectDropdown 
+                  value={syntaxTheme}
+                  onChange={handleSyntaxThemeChange}
+                  options={SYNTAX_OPTIONS}
+                  icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>}
+              />
+          </div>
       </SettingItem>
 
       {/* Manual Server URL Override */}
