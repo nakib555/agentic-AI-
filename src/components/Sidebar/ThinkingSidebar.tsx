@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback, useMemo, useRef, useEffect } from 'react';
-import { motion as motionTyped, PanInfo, useDragControls } from 'framer-motion';
+import { motion as motionTyped, PanInfo, useDragControls, AnimatePresence } from 'framer-motion';
 import type { Message } from '../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { useViewport } from '../../hooks/useViewport';
@@ -58,7 +58,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
     
     // Mobile Bottom Sheet Logic
     const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const minHeight = screenHeight * 0.20; // 20vh minimum
+    const minHeight = screenHeight * 0.45; // 45vh minimum
     const maxHeight = screenHeight * 0.85; // 85vh maximum
     const dragRange = maxHeight - minHeight;
 
@@ -177,90 +177,104 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
 
 
     return (
-        <motion.aside
-            initial={false}
-            animate={animateState}
-            variants={variants}
-            transition={{
-                type: isResizing ? 'tween' : 'spring',
-                duration: isResizing ? 0 : 0.5,
-                stiffness: 250,
-                damping: 30,
-                mass: 0.8,
-            }}
-            drag={!isDesktop ? "y" : false}
-            dragListener={false} // Disable auto listener
-            dragControls={dragControls}
-            dragConstraints={{ top: 0, bottom: dragRange }}
-            dragElastic={{ top: 0, bottom: 0.5 }}
-            onDragEnd={onDragEnd}
-            className={`
-                flex-shrink-0 overflow-hidden bg-white dark:bg-layer-1
-                ${isDesktop 
-                    ? 'relative border-l border-gray-200 dark:border-white/10' 
-                    : 'fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 dark:border-white/10 rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]' 
-                }
-            `}
-            role="complementary"
-            aria-labelledby="thinking-sidebar-title"
-            style={{ 
-                height: isDesktop ? '100%' : 'auto',
-                maxHeight: isDesktop ? undefined : '85vh',
-                minHeight: isDesktop ? undefined : '20vh',
-                userSelect: isResizing ? 'none' : 'auto',
-                willChange: isResizing ? 'width' : 'width, transform'
-            }}
-        >
-            <div 
-                className="flex flex-col h-full overflow-hidden" 
-                style={{ width: isDesktop ? `${width}px` : '100%' }}
-            >
-                {/* Drag handle for mobile */}
-                {!isDesktop && (
-                    <div 
-                        className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none" 
-                        onPointerDown={(e) => dragControls.start(e)}
-                        aria-hidden="true"
-                    >
-                        <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
-                    </div>
-                )}
-                
-                {/* Header */}
-                <div className={`flex items-center justify-between px-4 pb-3 ${isDesktop ? 'pt-4' : 'pt-2'} border-b border-gray-200 dark:border-white/5 flex-shrink-0`}>
-                    <div className="flex items-center gap-3">
-                        <h2 id="thinking-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Reasoning</h2>
-                        {message && (
-                            <span className={`px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide text-white rounded-md ${statusColor}`}>
-                                {status}
-                            </span>
-                        )}
-                    </div>
-                    <button
+        <>
+            <AnimatePresence>
+                {!isDesktop && isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="p-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-                        aria-label="Close thought process"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
+                        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+                        aria-hidden="true"
+                    />
+                )}
+            </AnimatePresence>
+            <motion.aside
+                initial={false}
+                animate={animateState}
+                variants={variants}
+                transition={{
+                    type: isResizing ? 'tween' : 'spring',
+                    duration: isResizing ? 0 : 0.5,
+                    stiffness: 250,
+                    damping: 30,
+                    mass: 0.8,
+                }}
+                drag={!isDesktop ? "y" : false}
+                dragListener={false} // Disable auto listener
+                dragControls={dragControls}
+                dragConstraints={{ top: 0, bottom: dragRange }}
+                dragElastic={{ top: 0, bottom: 0.5 }}
+                onDragEnd={onDragEnd}
+                className={`
+                    flex-shrink-0 overflow-hidden bg-white dark:bg-layer-1
+                    ${isDesktop 
+                        ? 'relative border-l border-gray-200 dark:border-white/10' 
+                        : 'fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 dark:border-white/10 rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]' 
+                    }
+                `}
+                role="complementary"
+                aria-labelledby="thinking-sidebar-title"
+                style={{ 
+                    height: isDesktop ? '100%' : 'auto',
+                    maxHeight: isDesktop ? undefined : '85vh',
+                    minHeight: isDesktop ? undefined : '45vh',
+                    userSelect: isResizing ? 'none' : 'auto',
+                    willChange: isResizing ? 'width' : 'width, transform'
+                }}
+            >
+                <div 
+                    className="flex flex-col h-full overflow-hidden" 
+                    style={{ width: isDesktop ? `${width}px` : '100%' }}
+                >
+                    {/* Drag handle for mobile */}
+                    {!isDesktop && (
+                        <div 
+                            className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none" 
+                            onPointerDown={(e) => dragControls.start(e)}
+                            aria-hidden="true"
+                        >
+                            <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
+                        </div>
+                    )}
+                    
+                    {/* Header */}
+                    <div className={`flex items-center justify-between px-4 pb-3 ${isDesktop ? 'pt-4' : 'pt-2'} border-b border-gray-200 dark:border-white/5 flex-shrink-0`}>
+                        <div className="flex items-center gap-3">
+                            <h2 id="thinking-sidebar-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Reasoning</h2>
+                            {message && (
+                                <span className={`px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide text-white rounded-md ${statusColor}`}>
+                                    {status}
+                                </span>
+                            )}
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="p-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                            aria-label="Close thought process"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
 
-                {/* Content */}
-                <div ref={contentRef} className="flex-1 overflow-y-auto py-4 min-h-0 bg-slate-50/50 dark:bg-black/10">
-                    {thinkingContent()}
+                    {/* Content */}
+                    <div ref={contentRef} className="flex-1 overflow-y-auto py-4 min-h-0 bg-slate-50/50 dark:bg-black/10">
+                        {thinkingContent()}
+                    </div>
                 </div>
-            </div>
-            
-            {isDesktop && isOpen && (
-                <div
-                    onMouseDown={startResizing}
-                    className="absolute top-0 left-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-indigo-500/50 transition-colors z-10"
-                    title="Resize sidebar"
-                />
-            )}
-        </motion.aside>
+                
+                {isDesktop && isOpen && (
+                    <div
+                        onMouseDown={startResizing}
+                        className="absolute top-0 left-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-indigo-500/50 transition-colors z-10"
+                        title="Resize sidebar"
+                    />
+                )}
+            </motion.aside>
+        </>
     );
 };
