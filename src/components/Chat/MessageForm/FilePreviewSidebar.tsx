@@ -233,8 +233,8 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                             )}
 
                             {previewType === 'text' && content && (
-                                <div className="absolute inset-0 overflow-auto custom-scrollbar bg-code-surface text-code-text">
-                                    <div className="min-h-full w-full">
+                                <div className="absolute inset-0 overflow-auto custom-scrollbar">
+                                    <div className="min-h-full w-full bg-[#1e1e1e] text-sm text-[#d4d4d4]">
                                         <SyntaxHighlighter
                                             language="text"
                                             style={vscDarkPlus}
@@ -244,7 +244,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                                                 minHeight: '100%', 
                                                 fontSize: '13px', 
                                                 fontFamily: "'Fira Code', monospace",
-                                                backgroundColor: 'transparent'
+                                                // Let vscDarkPlus control the background for best contrast
                                             }}
                                             codeTagProps={{ style: { fontFamily: "inherit" } }}
                                             wrapLongLines={true}

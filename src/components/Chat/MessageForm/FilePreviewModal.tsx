@@ -104,16 +104,11 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, isOpen
                 )}
 
                 {fileType === 'text' && content && (
-                    <div className="w-full h-full bg-code-surface text-code-text rounded-lg shadow-sm overflow-hidden text-sm border border-gray-200 dark:border-white/5">
+                    <div className="w-full h-full bg-white dark:bg-[#1e1e1e] rounded-lg shadow-sm overflow-hidden text-sm border border-gray-200 dark:border-white/5">
                         <SyntaxHighlighter
                             language="text"
                             style={vscDarkPlus}
-                            customStyle={{ 
-                                margin: 0, 
-                                padding: '1.5rem', 
-                                height: '100%',
-                                backgroundColor: 'transparent'
-                            }}
+                            customStyle={{ margin: 0, padding: '1.5rem', height: '100%' }}
                             wrapLongLines={true}
                         >
                             {content}
