@@ -278,10 +278,17 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
         setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 600);
     }, []);
 
+    // Mobile Bottom Sheet Logic
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const minHeight = screenHeight * 0.45; // 45vh
+    const maxHeight = screenHeight * 0.95; // 95vh
+    const dragRange = maxHeight - minHeight;
+
     const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
         if (!isDesktop) {
-            // Close if dragged down sufficiently (>100px) or flicked down quickly
-            if (info.offset.y > 100 || info.velocity.y > 500) {
+            // If dragged down past the "min height" threshold (with a small buffer)
+            // or if flicked down quickly
+            if (info.offset.y > dragRange + 20 || (info.velocity.y > 300 && info.offset.y > 0)) {
                 onClose();
             }
         }
@@ -295,8 +302,8 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
             animate={isOpen ? (isDesktop ? { width } : { y: 0 }) : (isDesktop ? { width: 0 } : { y: '100%' })}
             transition={{ type: isResizing ? 'tween' : 'spring', stiffness: 300, damping: 30 }}
             drag={!isDesktop ? "y" : false}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.2 }}
+            dragConstraints={{ top: 0, bottom: dragRange }}
+            dragElastic={{ top: 0, bottom: 0.5 }}
             onDragEnd={onDragEnd}
             className={`
                 flex-shrink-0 bg-layer-1 border-l border-border-subtle overflow-hidden flex flex-col
@@ -305,9 +312,9 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                     : 'fixed inset-x-0 bottom-0 z-[60] border-t rounded-t-2xl shadow-2xl'
                 }
             `}
-            style={!isDesktop ? { maxHeight: '95vh', minHeight: '50vh', height: 'auto' } : undefined}
+            style={!isDesktop ? { height: '95vh' } : undefined}
         >
-            <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%', height: isDesktop ? '100%' : '85vh' }}>
+            <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%', height: '100%' }}>
                 
                 {/* Drag handle for mobile */}
                 {!isDesktop && (

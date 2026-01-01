@@ -104,9 +104,18 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
         }
     };
 
+    // Mobile Bottom Sheet Logic
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const minHeight = screenHeight * 0.45; // 45vh
+    const maxHeight = screenHeight * 0.95; // 95vh
+    const dragRange = maxHeight - minHeight;
+
     const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-        if (!isDesktop && info.offset.y > 100 && info.velocity.y > 0) {
-            onClose();
+        if (!isDesktop) {
+            // Close if dragged down sufficiently past min height or flicked down
+            if (info.offset.y > dragRange + 20 || (info.velocity.y > 300 && info.offset.y > 0)) {
+                onClose();
+            }
         }
     };
 
@@ -143,8 +152,8 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                         variants={isDesktop ? desktopVariants : mobileVariants}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         drag={!isDesktop ? "y" : false}
-                        dragConstraints={{ top: 0, bottom: 0 }}
-                        dragElastic={{ top: 0, bottom: 0.2 }}
+                        dragConstraints={{ top: 0, bottom: dragRange }}
+                        dragElastic={{ top: 0, bottom: 0.5 }}
                         onDragEnd={onDragEnd}
                         className={`
                             fixed z-[70] bg-page shadow-2xl flex flex-col overflow-hidden
@@ -153,7 +162,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                                 : 'bottom-0 left-0 right-0 rounded-t-2xl border-t border-border-subtle'
                             }
                         `}
-                        style={!isDesktop ? { height: 'auto', maxHeight: '90vh', minHeight: '40vh' } : {}}
+                        style={!isDesktop ? { height: '95vh', maxHeight: '95vh', minHeight: '45vh' } : {}}
                     >
                         {/* Drag Handle for Mobile */}
                         {!isDesktop && (

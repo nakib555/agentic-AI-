@@ -55,10 +55,16 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
         window.addEventListener('mouseup', handleMouseUp);
     }, [setWidth, setIsResizing]);
     
+    // Mobile Bottom Sheet Logic
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const minHeight = screenHeight * 0.45; // 45vh
+    const maxHeight = screenHeight * 0.95; // 95vh
+    const dragRange = maxHeight - minHeight;
+
     const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
         if (!isDesktop) {
-            // Close if dragged down sufficiently (>100px) or flicked down quickly
-            if (info.offset.y > 100 || info.velocity.y > 500) {
+            // Close if dragged down sufficiently past the min height or flicked down
+            if (info.offset.y > dragRange + 20 || (info.velocity.y > 300 && info.offset.y > 0)) {
                 onClose();
             }
         }
@@ -182,8 +188,8 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                 mass: 0.8,
             }}
             drag={!isDesktop ? "y" : false}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.2 }}
+            dragConstraints={{ top: 0, bottom: dragRange }}
+            dragElastic={{ top: 0, bottom: 0.5 }}
             onDragEnd={onDragEnd}
             className={`
                 flex-shrink-0 overflow-hidden bg-white dark:bg-layer-1
@@ -195,9 +201,9 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             role="complementary"
             aria-labelledby="thinking-sidebar-title"
             style={{ 
-                height: isDesktop ? '100%' : 'auto',
-                maxHeight: isDesktop ? undefined : '85vh',
-                minHeight: isDesktop ? undefined : '40vh',
+                height: isDesktop ? '100%' : '95vh',
+                maxHeight: isDesktop ? undefined : '95vh',
+                minHeight: isDesktop ? undefined : '45vh',
                 userSelect: isResizing ? 'none' : 'auto',
                 willChange: isResizing ? 'width' : 'width, transform'
             }}
