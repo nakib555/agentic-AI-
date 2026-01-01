@@ -1,15 +1,17 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useReducer, useEffect, useRef, useMemo, useCallback, useState } from 'react';
+import React, { useReducer, useEffect, useMemo, useCallback, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
 import Frame from 'react-frame-component';
 import { SandpackProvider, SandpackLayout, SandpackPreview } from "@codesandbox/sandpack-react";
+import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 
 // --- Icons ---
 const CopyIcon = () => (
@@ -148,6 +150,11 @@ const detectIsReact = (code: string, lang: string) => {
         /<[A-Z][A-Za-z0-9]*\s/.test(clean)
     );
 };
+
+// Threshold for switching to virtualized plain text viewer
+// ~1000 lines or ~50KB is a safe bet for 4GB RAM devices to avoid React reconciliation lag
+const VIRTUALIZATION_THRESHOLD_LINES = 1000;
+const VIRTUALIZATION_THRESHOLD_SIZE = 50 * 1024; // 50KB
 
 type ArtifactContentProps = {
     content: string;
@@ -315,8 +322,14 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return language;
     }, [language]);
 
+    // Check if the content is too large for standard syntax highlighting
+    const useVirtualization = useMemo(() => {
+        // Rough estimation: 1000 lines or 50KB size
+        return content.length > VIRTUALIZATION_THRESHOLD_SIZE || (content.match(/\n/g) || []).length > VIRTUALIZATION_THRESHOLD_LINES;
+    }, [content]);
+
     return (
-        <div className="flex flex-col h-full overflow-hidden w-full">
+        <div className="flex flex-col h-full overflow-hidden w-full bg-layer-1">
             {/* Header Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-3 bg-layer-1 border-b border-border-subtle flex-shrink-0 w-full">
                 <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-full">
@@ -324,6 +337,11 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                         <span className="text-xs font-bold text-content-secondary uppercase tracking-wider font-mono">
                             {displayLanguage}
                         </span>
+                        {useVirtualization && state.activeTab === 'code' && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wide">
+                                LARGE FILE
+                            </span>
+                        )}
                     </div>
                     {isPreviewable && (
                         <div className="flex bg-layer-2 p-0.5 rounded-lg border border-border-default flex-shrink-0">
@@ -385,25 +403,33 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 <div 
                     className={`flex-1 relative overflow-auto custom-scrollbar bg-code-surface ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
                 >
-                    <SyntaxHighlighter
-                        language={syntaxHighlighterLanguage || 'text'}
-                        style={syntaxStyle}
-                        customStyle={{ 
-                            margin: 0, 
-                            padding: '1.5rem', 
-                            minHeight: '100%', 
-                            fontSize: '13px', 
-                            lineHeight: '1.5',
-                            fontFamily: "'Fira Code', monospace",
-                            background: 'transparent',
-                        }}
-                        showLineNumbers={true}
-                        wrapLines={false} 
-                        lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
-                        fallbackLanguage="text"
-                    >
-                        {content || ''}
-                    </SyntaxHighlighter>
+                    {useVirtualization ? (
+                        <VirtualizedCodeViewer 
+                            content={content} 
+                            language={language}
+                            theme={syntaxStyle}
+                        />
+                    ) : (
+                        <SyntaxHighlighter
+                            language={syntaxHighlighterLanguage || 'text'}
+                            style={syntaxStyle}
+                            customStyle={{ 
+                                margin: 0, 
+                                padding: '1.5rem', 
+                                minHeight: '100%', 
+                                fontSize: '13px', 
+                                lineHeight: '1.5',
+                                fontFamily: "'Fira Code', monospace",
+                                background: 'transparent',
+                            }}
+                            showLineNumbers={true}
+                            wrapLines={false} 
+                            lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
+                            fallbackLanguage="text"
+                        >
+                            {content || ''}
+                        </SyntaxHighlighter>
+                    )}
                 </div>
 
                 {/* PREVIEW VIEW */}
