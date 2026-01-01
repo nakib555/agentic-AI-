@@ -58,8 +58,8 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
     
     // Mobile Bottom Sheet Logic
     const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const minHeight = screenHeight * 0.45; // 45vh
-    const maxHeight = screenHeight * 0.95; // 95vh
+    const minHeight = screenHeight * 0.20; // 20vh minimum
+    const maxHeight = screenHeight * 0.85; // 85vh maximum
     const dragRange = maxHeight - minHeight;
 
     const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -205,8 +205,8 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             aria-labelledby="thinking-sidebar-title"
             style={{ 
                 height: isDesktop ? '100%' : 'auto',
-                maxHeight: isDesktop ? undefined : '95vh',
-                minHeight: isDesktop ? undefined : '45vh',
+                maxHeight: isDesktop ? undefined : '85vh',
+                minHeight: isDesktop ? undefined : '20vh',
                 userSelect: isResizing ? 'none' : 'auto',
                 willChange: isResizing ? 'width' : 'width, transform'
             }}

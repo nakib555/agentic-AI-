@@ -280,7 +280,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
 
     // Mobile Bottom Sheet Logic
     const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const minHeight = screenHeight * 0.45; // 45vh
+    const minHeight = screenHeight * 0.20; // 20vh
     const maxHeight = screenHeight * 0.85; // 85vh
     const dragRange = maxHeight - minHeight;
 
@@ -332,7 +332,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
             `}
             // Important: Use max-height on mobile to allow content to determine size but cap it at 85vh
             // 'auto' height on mobile allows flex children to expand naturally
-            style={!isDesktop ? { height: 'auto', maxHeight: '85vh', display: 'flex', flexDirection: 'column' } : undefined}
+            style={!isDesktop ? { height: 'auto', maxHeight: '85vh', minHeight: '20vh', display: 'flex', flexDirection: 'column' } : undefined}
         >
             <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%', height: '100%' }}>
                 

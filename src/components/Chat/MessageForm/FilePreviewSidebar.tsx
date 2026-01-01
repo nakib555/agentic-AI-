@@ -131,8 +131,8 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
 
     // Mobile Bottom Sheet Logic
     const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const minHeight = screenHeight * 0.45; // 45vh
-    const maxHeight = screenHeight * 0.95; // 95vh
+    const minHeight = screenHeight * 0.20; // 20vh minimum
+    const maxHeight = screenHeight * 0.85; // 85vh maximum
     const dragRange = maxHeight - minHeight;
 
     const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -189,7 +189,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                                 : 'bottom-0 left-0 right-0 rounded-t-2xl border-t border-border-subtle'
                             }
                         `}
-                        style={!isDesktop ? { height: 'auto', maxHeight: '95vh', minHeight: '45vh' } : {}}
+                        style={!isDesktop ? { height: 'auto', maxHeight: '85vh', minHeight: '20vh' } : {}}
                     >
                         {/* Drag Handle for Mobile */}
                         {!isDesktop && (
