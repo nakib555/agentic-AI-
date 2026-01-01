@@ -9,7 +9,7 @@ import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { useViewport } from '../../../hooks/useViewport';
 import type { ProcessedFile } from './types';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useSyntaxTheme } from '../../../hooks/useSyntaxTheme';
 
 type FilePreviewSidebarProps = {
     isOpen: boolean;
@@ -26,6 +26,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
     const [content, setContent] = useState<string | null>(null);
     const [previewType, setPreviewType] = useState<'image' | 'text' | 'pdf' | 'other'>('other');
     const [isCopied, setIsCopied] = useState(false);
+    const syntaxStyle = useSyntaxTheme();
 
     useEffect(() => {
         if (!file || !file.file) {
@@ -233,25 +234,23 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                             )}
 
                             {previewType === 'text' && content && (
-                                <div className="absolute inset-0 overflow-auto custom-scrollbar">
-                                    <div className="min-h-full w-full bg-[#1e1e1e] text-sm text-[#d4d4d4]">
-                                        <SyntaxHighlighter
-                                            language="text"
-                                            style={vscDarkPlus}
-                                            customStyle={{ 
-                                                margin: 0, 
-                                                padding: '1.5rem', 
-                                                minHeight: '100%', 
-                                                fontSize: '13px', 
-                                                fontFamily: "'Fira Code', monospace",
-                                                // Let vscDarkPlus control the background for best contrast
-                                            }}
-                                            codeTagProps={{ style: { fontFamily: "inherit" } }}
-                                            wrapLongLines={true}
-                                        >
-                                            {content}
-                                        </SyntaxHighlighter>
-                                    </div>
+                                <div className="absolute inset-0 overflow-auto custom-scrollbar bg-code-surface">
+                                    <SyntaxHighlighter
+                                        language="text"
+                                        style={syntaxStyle}
+                                        customStyle={{ 
+                                            margin: 0, 
+                                            padding: '1.5rem', 
+                                            minHeight: '100%', 
+                                            fontSize: '13px', 
+                                            fontFamily: "'Fira Code', monospace",
+                                            background: 'transparent',
+                                        }}
+                                        codeTagProps={{ style: { fontFamily: "inherit" } }}
+                                        wrapLongLines={true}
+                                    >
+                                        {content}
+                                    </SyntaxHighlighter>
                                 </div>
                             )}
 

@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
@@ -22,6 +22,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     const [logs, setLogs] = useState<{level: string, message: string, timestamp: number}[]>([]);
     const [showConsole, setShowConsole] = useState(false);
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const syntaxStyle = useSyntaxTheme();
 
     // Refresh iframe when content changes
     useEffect(() => {
@@ -192,12 +193,12 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     };
 
     return (
-        <div className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d0d] shadow-lg">
-            <div className="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/5">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <div className="my-4 rounded-xl overflow-hidden border border-border-default shadow-lg bg-code-surface transition-colors duration-300">
+            <div className="flex items-center justify-between px-4 py-2 bg-layer-2/50 border-b border-border-default backdrop-blur-sm">
+                <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">
                     {title || (type === 'code' ? 'Interactive App' : 'Data View')}
                 </span>
-                <div className="flex bg-gray-200 dark:bg-black/30 p-0.5 rounded-lg">
+                <div className="flex bg-layer-3 p-0.5 rounded-lg">
                     <button 
                         onClick={() => setActiveTab('preview')}
                         className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTab === 'preview' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
@@ -220,13 +221,13 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                     <div className="max-h-[400px] overflow-auto custom-scrollbar">
                         <SyntaxHighlighter
                             language={language || 'text'}
-                            style={vscDarkPlus}
+                            style={syntaxStyle}
                             customStyle={{ 
                                 margin: 0, 
                                 padding: '1rem', 
                                 fontSize: '13px', 
                                 lineHeight: '1.5',
-                                // Use theme default background
+                                background: 'transparent',
                             }}
                             codeTagProps={{
                                 style: { fontFamily: "'Fira Code', monospace" }

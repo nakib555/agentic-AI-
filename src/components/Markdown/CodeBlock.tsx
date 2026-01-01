@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 
 const languageMap: { [key: string]: string } = {
     js: 'javascript', jsx: 'javascript', ts: 'typescript', tsx: 'typescript',
@@ -28,6 +28,7 @@ type CodeBlockProps = {
 
 export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStreaming, onRunCode, isDisabled }) => {
     const [isCopied, setIsCopied] = useState(false);
+    const syntaxStyle = useSyntaxTheme();
 
     const codeContent = String(children).replace(/\n$/, '');
 
@@ -58,7 +59,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
     const isRunnable = onRunCode && runnableLanguages.includes(rawLanguage);
 
     return (
-      <div className="my-6 rounded-xl overflow-hidden border border-border-default shadow-sm font-sans group bg-[#1e1e1e]">
+      <div className="my-6 rounded-xl overflow-hidden border border-border-default shadow-sm font-sans group bg-code-surface transition-colors duration-300">
         {/* Header */}
         <div className="flex justify-between items-center px-4 py-2 bg-layer-2/50 border-b border-border-subtle select-none backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -112,11 +113,12 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         <div className="relative overflow-x-auto text-[13px] leading-6 scrollbar-thin">
             <SyntaxHighlighter
               language={highlighterLang}
-              style={vscDarkPlus}
+              style={syntaxStyle}
               customStyle={{
                 margin: 0,
                 padding: '1.25rem',
-                // Use default background from theme (usually dark)
+                // Use default background from theme
+                background: 'transparent', // Let parent control bg via CSS variable
                 fontFamily: "'Fira Code', 'Consolas', monospace",
               }}
               codeTagProps={{

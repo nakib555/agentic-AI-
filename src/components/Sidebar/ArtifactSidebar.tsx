@@ -8,8 +8,8 @@ import React, { useState, useEffect, useRef, useReducer, useTransition, useDefer
 import { motion, AnimatePresence } from 'framer-motion';
 import { useViewport } from '../../hooks/useViewport';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Tooltip } from '../UI/Tooltip';
+import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 
 type ArtifactSidebarProps = {
     isOpen: boolean;
@@ -154,6 +154,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
 }) => {
     const { isDesktop } = useViewport();
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const syntaxStyle = useSyntaxTheme();
     
     // UI State managed by Reducer
     const [state, dispatch] = useReducer(artifactReducer, initialState);
@@ -285,10 +286,10 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
             animate={isOpen ? (isDesktop ? { width } : { y: 0 }) : (isDesktop ? { width: 0 } : { y: '100%' })}
             transition={{ type: isResizing ? 'tween' : 'spring', stiffness: 300, damping: 30 }}
             className={`
-                flex-shrink-0 bg-gray-50 dark:bg-[#0c0c0c] overflow-hidden flex flex-col
+                flex-shrink-0 bg-layer-1 border-l border-border-subtle overflow-hidden flex flex-col
                 ${isDesktop 
-                    ? 'relative border-l border-gray-200 dark:border-white/10 h-full z-30' 
-                    : 'fixed inset-x-0 bottom-0 z-[60] border-t border-gray-200 dark:border-white/10 h-[85vh] rounded-t-2xl shadow-2xl'
+                    ? 'relative h-full z-30' 
+                    : 'fixed inset-x-0 bottom-0 z-[60] border-t h-[85vh] rounded-t-2xl shadow-2xl'
                 }
             `}
         >
@@ -296,27 +297,27 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                 
                 {/* Drag handle for mobile */}
                 {!isDesktop && (
-                    <div className="flex justify-center pt-3 pb-1 flex-shrink-0 bg-white dark:bg-[#121212]" aria-hidden="true">
+                    <div className="flex justify-center pt-3 pb-1 flex-shrink-0 bg-layer-1" aria-hidden="true">
                         <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
                     </div>
                 )}
 
                 {/* Header Toolbar */}
-                <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-3 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-white/5 flex-shrink-0">
+                <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-3 bg-layer-1 border-b border-border-subtle flex-shrink-0">
                     <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-full">
-                        <div className="flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-white/5 rounded-md border border-gray-200 dark:border-white/5 flex-shrink-0">
-                            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider font-mono">
+                        <div className="flex items-center gap-2 px-2 py-1 bg-layer-2 rounded-md border border-border-default flex-shrink-0">
+                            <span className="text-xs font-bold text-content-secondary uppercase tracking-wider font-mono">
                                 {language || 'TXT'}
                             </span>
                         </div>
                         {isPreviewable && (
-                            <div className="flex bg-gray-100 dark:bg-black/40 p-0.5 rounded-lg border border-gray-200 dark:border-white/5 flex-shrink-0">
+                            <div className="flex bg-layer-2 p-0.5 rounded-lg border border-border-default flex-shrink-0">
                                 <button 
                                     onClick={() => handleTabChange('code')}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                                         state.activeTab === 'code' 
                                         ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
-                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                        : 'text-content-secondary hover:text-content-primary'
                                     }`}
                                 >
                                     <CodeIcon />
@@ -327,7 +328,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                                         state.activeTab === 'preview' 
                                         ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
-                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                        : 'text-content-secondary hover:text-content-primary'
                                     }`}
                                 >
                                     <EyeIcon />
@@ -341,7 +342,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                         <Tooltip content="Copy Code" position="bottom" delay={500}>
                             <button 
                                 onClick={handleCopy}
-                                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                                className="p-2 rounded-lg text-content-secondary hover:text-content-primary hover:bg-layer-2 transition-colors"
                                 aria-label="Copy code"
                             >
                                 {isCopied ? <CheckIcon /> : <CopyIcon />}
@@ -351,7 +352,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                         <Tooltip content="Close Panel" position="bottom" delay={500}>
                             <button 
                                 onClick={onClose} 
-                                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                                className="p-2 rounded-lg text-content-secondary hover:text-content-primary hover:bg-layer-2 transition-colors"
                                 aria-label="Close artifact"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
@@ -367,11 +368,11 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                 <div className="flex-1 overflow-hidden relative group/content">
                     {/* CODE VIEW */}
                     <div 
-                        className={`absolute inset-0 overflow-auto custom-scrollbar bg-[#1e1e1e] ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
+                        className={`absolute inset-0 overflow-auto custom-scrollbar bg-code-surface ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
                     >
                         <SyntaxHighlighter
                             language={language}
-                            style={vscDarkPlus}
+                            style={syntaxStyle}
                             customStyle={{ 
                                 margin: 0, 
                                 padding: '1.5rem', 
@@ -379,7 +380,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                                 fontSize: '13px', 
                                 lineHeight: '1.5',
                                 fontFamily: "'Fira Code', monospace",
-                                // Use default dark bg
+                                background: 'transparent',
                             }}
                             showLineNumbers={true}
                             wrapLines={false} 
@@ -391,9 +392,9 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
 
                     {/* PREVIEW VIEW */}
                     <div 
-                        className={`absolute inset-0 bg-gray-100 dark:bg-[#1a1a1a] flex flex-col ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
+                        className={`absolute inset-0 bg-layer-2 flex flex-col ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
                     >
-                        <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#202020] border-b border-gray-200 dark:border-white/5 flex-shrink-0">
+                        <div className="flex items-center justify-between px-3 py-2 bg-layer-1 border-b border-border-default flex-shrink-0">
                             <div className="flex items-center gap-2">
                                 <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
                                 <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
@@ -402,17 +403,17 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                             <div className="flex items-center gap-2">
                                 <button 
                                     onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
-                                    className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${state.showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5'}`}
+                                    className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${state.showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-content-secondary hover:text-content-primary hover:bg-layer-2'}`}
                                     title="Toggle Console"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-                                    Console {state.logs.length > 0 && <span className="bg-gray-200 dark:bg-white/10 px-1 rounded-sm text-[10px]">{state.logs.length}</span>}
+                                    Console {state.logs.length > 0 && <span className="bg-layer-2 px-1 rounded-sm text-[10px]">{state.logs.length}</span>}
                                 </button>
-                                <div className="w-px h-3 bg-gray-300 dark:bg-white/10 mx-1" />
+                                <div className="w-px h-3 bg-border-strong mx-1" />
                                 <Tooltip content="Reload Preview" position="bottom">
                                     <button 
                                         onClick={handleRefresh} 
-                                        className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
+                                        className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
                                         aria-label="Reload Preview"
                                     >
                                         <RefreshIcon />
@@ -421,7 +422,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                                 <Tooltip content="Open in New Tab" position="bottom">
                                     <button 
                                         onClick={handleOpenNewTab}
-                                        className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
+                                        className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
                                         aria-label="Open in New Tab"
                                     >
                                         <ExternalLinkIcon />

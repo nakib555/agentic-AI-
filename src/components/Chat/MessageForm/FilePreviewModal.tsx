@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useSyntaxTheme } from '../../../hooks/useSyntaxTheme';
 
 type FilePreviewModalProps = {
   file: File;
@@ -18,6 +18,7 @@ type FilePreviewModalProps = {
 export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, isOpen, onClose }) => {
   const [content, setContent] = useState<string | null>(null);
   const [fileType, setFileType] = useState<'image' | 'text' | 'pdf' | 'other'>('other');
+  const syntaxStyle = useSyntaxTheme();
 
   useEffect(() => {
     if (!file) return;
@@ -107,8 +108,8 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, isOpen
                     <div className="w-full h-full bg-white dark:bg-[#1e1e1e] rounded-lg shadow-sm overflow-hidden text-sm border border-gray-200 dark:border-white/5">
                         <SyntaxHighlighter
                             language="text"
-                            style={vscDarkPlus}
-                            customStyle={{ margin: 0, padding: '1.5rem', height: '100%' }}
+                            style={syntaxStyle}
+                            customStyle={{ margin: 0, padding: '1.5rem', height: '100%', background: 'transparent' }}
                             wrapLongLines={true}
                         >
                             {content}
