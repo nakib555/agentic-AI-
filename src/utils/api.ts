@@ -25,6 +25,11 @@ export const getApiBaseUrl = () => {
 
     // 3. Development fallback
     if (process.env.NODE_ENV === 'development') {
+        if (typeof window !== 'undefined') {
+            // If accessing via IP (e.g. 192.168.1.5), assume backend is on same host at port 3001
+            // This enables testing on real mobile devices connected to the same network.
+            return `http://${window.location.hostname}:3001`;
+        }
         return 'http://localhost:3001';
     }
 

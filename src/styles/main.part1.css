@@ -5,6 +5,9 @@
 
 html {
   font-size: 15px;
+  /* Prevent font scaling in landscape on mobile */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 @media (min-width: 768px) {
