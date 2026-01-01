@@ -293,6 +293,22 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
     };
 
     const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language);
+    
+    // Normalize language string for display (upper case if common abbreviation)
+    const displayLanguage = useMemo(() => {
+        if (!language) return 'TXT';
+        const raw = language.toLowerCase();
+        if (['html', 'css', 'json', 'xml', 'sql', 'php', 'svg'].includes(raw)) return raw.toUpperCase();
+        if (raw === 'javascript') return 'JavaScript';
+        if (raw === 'typescript') return 'TypeScript';
+        return raw.charAt(0).toUpperCase() + raw.slice(1);
+    }, [language]);
+
+    // Map 'html' to 'markup' for syntax highlighter if needed by the specific Prism build
+    const syntaxHighlighterLanguage = useMemo(() => {
+        if (language === 'html') return 'markup';
+        return language;
+    }, [language]);
 
     return (
         <motion.aside
@@ -332,7 +348,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                     <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-full">
                         <div className="flex items-center gap-2 px-2 py-1 bg-layer-2 rounded-md border border-border-default flex-shrink-0">
                             <span className="text-xs font-bold text-content-secondary uppercase tracking-wider font-mono">
-                                {language || 'TXT'}
+                                {displayLanguage}
                             </span>
                         </div>
                         {isPreviewable && (
@@ -396,7 +412,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                         className={`absolute inset-0 overflow-auto custom-scrollbar bg-code-surface ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
                     >
                         <SyntaxHighlighter
-                            language={language}
+                            language={syntaxHighlighterLanguage}
                             style={syntaxStyle}
                             customStyle={{ 
                                 margin: 0, 

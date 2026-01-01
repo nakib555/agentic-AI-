@@ -86,7 +86,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         }
 
         // Code Preview (HTML/SVG/JS)
-        if (language === 'html' || language === 'svg' || language === 'javascript') {
+        if (language === 'html' || language === 'svg' || language === 'javascript' || language === 'markup' || language === 'xml') {
             // Strip potential markdown wrappers from content if the model output them inside the JSON payload
             const cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
 
@@ -192,6 +192,8 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         return <div className="p-4 text-slate-500">Preview not available for {language}</div>;
     };
 
+    // Use 'markup' for syntax highlighter if language is 'html' to match standard Prism alias if needed, 
+    // but default to passing the language through as CodeBlock normalization should handle it.
     const highlightLang = (language === 'html' || language === 'svg' || language === 'xml') ? 'markup' : (language || 'text');
 
     return (

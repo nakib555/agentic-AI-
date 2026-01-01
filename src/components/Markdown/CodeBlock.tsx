@@ -20,8 +20,8 @@ const languageMap: { [key: string]: string } = {
     // Shell
     sh: 'bash', bash: 'bash', shell: 'bash', zsh: 'bash', console: 'bash',
     
-    // Web
-    html: 'markup', xml: 'markup', svg: 'markup',
+    // Web - Updated to preserve 'html' for better UI labels
+    html: 'html', xml: 'xml', svg: 'svg', markup: 'html',
     css: 'css', scss: 'scss', sass: 'scss', less: 'less',
     
     // Data Formats
@@ -183,7 +183,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         {/* Editor Body */}
         <div className="relative overflow-x-auto text-[13px] leading-6 scrollbar-thin">
             <SyntaxHighlighter
-              language={highlighterLang}
+              language={highlighterLang === 'html' ? 'markup' : highlighterLang} // Map html to markup for syntax highlighter if needed
               style={syntaxStyle}
               customStyle={{
                 margin: 0,
