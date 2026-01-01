@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export const useSyntaxTheme = () => {
   const [style, setStyle] = useState(vscDarkPlus);
@@ -13,7 +13,7 @@ export const useSyntaxTheme = () => {
   useEffect(() => {
     const update = () => {
       const isDark = document.documentElement.classList.contains('dark');
-      setStyle(isDark ? vscDarkPlus : vs);
+      setStyle(isDark ? vscDarkPlus : oneLight);
     };
 
     update(); // Initial check
