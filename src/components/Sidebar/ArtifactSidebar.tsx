@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useReducer, useTransition, useDeferredValue, useCallback, useMemo, memo } from 'react';
+import React, { useState, useEffect, useRef, useReducer, useCallback, useMemo, memo } from 'react';
 import { motion, AnimatePresence, PanInfo, useDragControls } from 'framer-motion';
 import { useViewport } from '../../hooks/useViewport';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -160,16 +160,13 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
     // UI State managed by Reducer
     const [state, dispatch] = useReducer(artifactReducer, initialState);
     
-    // Performance Hooks
-    const [isPending, startTransition] = useTransition();
-    const deferredContent = useDeferredValue(content);
-    
     // Local ephemeral state
     const [isCopied, setIsCopied] = useState(false);
 
     // Auto-switch tab based on language
     useEffect(() => {
-        if (['html', 'svg'].includes(language)) {
+        // Handle standard HTML, SVG, and 'markup' alias
+        if (['html', 'svg', 'markup', 'xml'].includes(language)) {
             dispatch({ type: 'SET_TAB', payload: 'preview' });
         } else {
             dispatch({ type: 'SET_TAB', payload: 'code' });
@@ -181,7 +178,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
         dispatch({ type: 'REFRESH_PREVIEW' });
         const timer = setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 600);
         return () => clearTimeout(timer);
-    }, [content]); // Intentionally dependent on raw content update to trigger refresh
+    }, [content]); 
 
     // Console Log Listener
     useEffect(() => {
@@ -203,10 +200,10 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
 
     // Memoized Preview Generation
     const previewContent = useMemo(() => {
-        let cleanContent = deferredContent.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
+        let cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
         const consoleScript = generateConsoleScript();
 
-        if (language === 'html' || language === 'svg') {
+        if (language === 'html' || language === 'svg' || language === 'markup' || language === 'xml') {
             if (cleanContent.includes('<head>')) {
                 return cleanContent.replace('<head>', `<head>${consoleScript}`);
             }
@@ -214,6 +211,8 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
         }
         
         if (['javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language)) {
+            // Escape closing script tags to prevent HTML parser breakage
+            const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
             return `
                 <!DOCTYPE html>
                 <html>
@@ -226,7 +225,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                     <div id="output"></div>
                     <script type="module">
                         try {
-                            ${cleanContent}
+                            ${safeContent}
                         } catch (e) {
                             console.error(e);
                         }
@@ -236,12 +235,10 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
             `;
         }
         return '';
-    }, [deferredContent, language]);
+    }, [content, language]);
 
     const handleTabChange = useCallback((tab: 'code' | 'preview') => {
-        startTransition(() => {
-            dispatch({ type: 'SET_TAB', payload: tab });
-        });
+        dispatch({ type: 'SET_TAB', payload: tab });
     }, []);
 
     const startResizingHandler = useCallback((mouseDownEvent: React.MouseEvent) => {
@@ -295,7 +292,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
         }
     };
 
-    const isPreviewable = ['html', 'svg', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language);
+    const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language);
 
     return (
         <motion.aside
@@ -413,8 +410,9 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                             showLineNumbers={true}
                             wrapLines={false} 
                             lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
+                            fallbackLanguage="text"
                         >
-                            {deferredContent}
+                            {content}
                         </SyntaxHighlighter>
                     </div>
 

@@ -218,7 +218,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                 {/* Drag handle for mobile */}
                 {!isDesktop && (
                     <div 
-                        className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing" 
+                        className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none" 
                         onPointerDown={(e) => dragControls.start(e)}
                         aria-hidden="true"
                     >

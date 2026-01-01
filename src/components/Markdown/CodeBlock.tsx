@@ -102,13 +102,6 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
       }
     };
 
-    const handleOpenArtifact = () => {
-        // Dispatch event for AppLogic to catch
-        window.dispatchEvent(new CustomEvent('open-artifact', { 
-            detail: { code: codeContent, language: language || 'plaintext' } 
-        }));
-    };
-    
     // Normalize language
     const { highlighterLang, displayLang } = useMemo(() => {
         const raw = (language || 'text').toLowerCase().trim();
@@ -124,6 +117,15 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
 
         return { highlighterLang: mapped, displayLang: display };
     }, [language]);
+
+    const handleOpenArtifact = () => {
+        // Dispatch event for AppLogic to catch
+        // IMPORTANT: Send the normalized highlighterLang so the Artifact sidebar
+        // receives a language supported by its SyntaxHighlighter instance (e.g. 'javascript' instead of 'js')
+        window.dispatchEvent(new CustomEvent('open-artifact', { 
+            detail: { code: codeContent, language: highlighterLang } 
+        }));
+    };
 
     const isRunnable = onRunCode && runnableLanguages.includes((language || '').toLowerCase());
 
