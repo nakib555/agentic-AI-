@@ -111,7 +111,7 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
             initial={{ opacity: 0, scale: 0.8, width: 0 }}
             animate={{ opacity: 1, scale: 1, width: 'auto' }}
             exit={{ opacity: 0, scale: 0.5, width: 0, transition: { duration: 0.15 } }}
-            className="relative group py-1" 
+            className="relative group py-1 pr-1" 
         >
             <div 
                 onClick={handleClick}
@@ -179,24 +179,24 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 )}
             </div>
 
-            {/* Floating Remove Button */}
+            {/* Permanent Remove Button */}
             <button
                 type="button"
                 onClick={handleRemove}
                 aria-label={`Remove ${file.name}`}
                 className="
-                    absolute top-0 right-0 z-20 
+                    absolute -top-1 -right-1 z-20 
                     w-5 h-5 rounded-full 
-                    bg-black/50 text-white hover:bg-red-500
-                    backdrop-blur-sm shadow-sm
-                    border border-white/20
-                    flex items-center justify-center transition-all duration-200
-                    opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100
-                    hover:scale-110
+                    bg-white dark:bg-zinc-800 
+                    text-slate-400 dark:text-slate-500
+                    hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white
+                    shadow-sm border border-slate-200 dark:border-white/10
+                    flex items-center justify-center transition-colors duration-200
+                    cursor-pointer
                 "
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
-                    <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L10 8.94 6.28 5.22Z" />
+                    <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
                 </svg>
             </button>
         </motion.div>
