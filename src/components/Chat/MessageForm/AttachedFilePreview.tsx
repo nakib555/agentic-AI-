@@ -71,7 +71,7 @@ const getFileVisuals = (file: File) => {
     
     // Text
     if (['txt', 'md', 'rtf'].some(e => name.endsWith('.' + e))) {
-        return { bg: 'bg-gradient-to-br from-slate-400 to-slate-500', text: 'text-white', label: ext };
+        return { bg: 'bg-gradient-to-br from-slate-400 to-slate-500', text: 'text-white', label: 'EXT' };
     }
 
     // Default
@@ -111,14 +111,14 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
             initial={{ opacity: 0, scale: 0.8, width: 0 }}
             animate={{ opacity: 1, scale: 1, width: 'auto' }}
             exit={{ opacity: 0, scale: 0.5, width: 0, transition: { duration: 0.15 } }}
-            className="relative group py-1 pr-1" 
+            className="relative group pt-2 pr-2 pb-1 pl-1" 
         >
             <div 
                 onClick={handleClick}
                 className={`
                     relative w-16 h-16 rounded-2xl overflow-hidden cursor-pointer
                     shadow-sm border border-black/5 dark:border-white/5 
-                    transform transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-md
+                    transform transition-all duration-300 ease-out group-hover:-translate-y-0.5 group-hover:shadow-md
                     ${hasFailed ? 'opacity-80 grayscale' : ''}
                     ${visuals.bg}
                 `}
@@ -185,17 +185,17 @@ export const AttachedFilePreview: React.FC<AttachedFilePreviewProps> = ({ file, 
                 onClick={handleRemove}
                 aria-label={`Remove ${file.name}`}
                 className="
-                    absolute -top-1 -right-1 z-20 
-                    w-5 h-5 rounded-full 
+                    absolute top-0 right-0 z-20 
+                    w-6 h-6 rounded-full 
                     bg-white dark:bg-zinc-800 
                     text-slate-400 dark:text-slate-500
                     hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white
-                    shadow-sm border border-slate-200 dark:border-white/10
+                    shadow-md border border-slate-100 dark:border-white/10
                     flex items-center justify-center transition-colors duration-200
-                    cursor-pointer
+                    cursor-pointer scale-90 hover:scale-100
                 "
             >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
                     <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
                 </svg>
             </button>
