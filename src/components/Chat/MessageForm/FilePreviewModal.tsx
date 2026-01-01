@@ -18,6 +18,7 @@ type FilePreviewModalProps = {
 export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, isOpen, onClose }) => {
   const [content, setContent] = useState<string | null>(null);
   const [fileType, setFileType] = useState<'image' | 'text' | 'pdf' | 'other'>('other');
+  const [language, setLanguage] = useState('text');
   const syntaxStyle = useSyntaxTheme();
 
   useEffect(() => {
@@ -43,6 +44,28 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, isOpen
       file.name.match(/\.(json|js|jsx|ts|tsx|css|html|md|py|rb|java|c|cpp|h|txt|csv|xml|yaml|yml|log|env|ini|conf)$/i)
     ) {
       setFileType('text');
+      
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      let detectedLang = 'text';
+      switch(ext) {
+          case 'js': case 'jsx': detectedLang = 'javascript'; break;
+          case 'ts': case 'tsx': detectedLang = 'typescript'; break;
+          case 'py': detectedLang = 'python'; break;
+          case 'rb': detectedLang = 'ruby'; break;
+          case 'java': detectedLang = 'java'; break;
+          case 'c': case 'h': detectedLang = 'c'; break;
+          case 'cpp': detectedLang = 'cpp'; break;
+          case 'css': detectedLang = 'css'; break;
+          case 'html': case 'xml': case 'svg': detectedLang = 'markup'; break; // Map HTML to markup
+          case 'json': detectedLang = 'json'; break;
+          case 'md': detectedLang = 'markdown'; break;
+          case 'sql': detectedLang = 'sql'; break;
+          case 'sh': case 'bash': detectedLang = 'bash'; break;
+          case 'yaml': case 'yml': detectedLang = 'yaml'; break;
+          default: detectedLang = 'text';
+      }
+      setLanguage(detectedLang);
+
       const reader = new FileReader();
       reader.onload = (e) => {
           const result = e.target?.result;
@@ -101,13 +124,13 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, isOpen
                 )}
                 
                 {fileType === 'pdf' && content && (
-                    <iframe src={content} title={file.name} className="w-full h-full min-h-[600px] rounded-lg border-none" />
+                    <iframe src={content} title={file.name} className="w-full h-full min-h-[600px] rounded-lg border-none bg-white shadow-sm" />
                 )}
 
                 {fileType === 'text' && content && (
                     <div className="w-full h-full bg-white dark:bg-[#1e1e1e] rounded-lg shadow-sm overflow-hidden text-sm border border-gray-200 dark:border-white/5">
                         <SyntaxHighlighter
-                            language="text"
+                            language={language}
                             style={syntaxStyle}
                             customStyle={{ margin: 0, padding: '1.5rem', height: '100%', background: 'transparent' }}
                             wrapLongLines={true}

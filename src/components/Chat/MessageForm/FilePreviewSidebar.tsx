@@ -25,6 +25,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
     const { isDesktop } = useViewport();
     const [content, setContent] = useState<string | null>(null);
     const [previewType, setPreviewType] = useState<'image' | 'text' | 'pdf' | 'other'>('other');
+    const [language, setLanguage] = useState('text');
     const [isCopied, setIsCopied] = useState(false);
     const syntaxStyle = useSyntaxTheme();
     const dragControls = useDragControls();
@@ -36,6 +37,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
         }
 
         const rawFile = file.file;
+        const ext = rawFile.name.split('.').pop()?.toLowerCase();
 
         if (rawFile.type.startsWith('image/')) {
             setPreviewType('image');
@@ -61,6 +63,28 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
             rawFile.name.match(/\.(json|js|jsx|ts|tsx|css|html|md|py|rb|java|c|cpp|h|txt|csv|xml|yaml|yml|log|env|ini|conf)$/i)
         ) {
             setPreviewType('text');
+            
+            // Detect language for syntax highlighter
+            let detectedLang = 'text';
+            switch(ext) {
+                case 'js': case 'jsx': detectedLang = 'javascript'; break;
+                case 'ts': case 'tsx': detectedLang = 'typescript'; break;
+                case 'py': detectedLang = 'python'; break;
+                case 'rb': detectedLang = 'ruby'; break;
+                case 'java': detectedLang = 'java'; break;
+                case 'c': case 'h': detectedLang = 'c'; break;
+                case 'cpp': detectedLang = 'cpp'; break;
+                case 'css': detectedLang = 'css'; break;
+                case 'html': case 'xml': case 'svg': detectedLang = 'markup'; break; // Map HTML to markup
+                case 'json': detectedLang = 'json'; break;
+                case 'md': detectedLang = 'markdown'; break;
+                case 'sql': detectedLang = 'sql'; break;
+                case 'sh': case 'bash': detectedLang = 'bash'; break;
+                case 'yaml': case 'yml': detectedLang = 'yaml'; break;
+                default: detectedLang = 'text';
+            }
+            setLanguage(detectedLang);
+
             if (file.base64Data) {
                 try {
                     const decoded = new TextDecoder().decode(
@@ -252,7 +276,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                             {previewType === 'text' && content && (
                                 <div className="absolute inset-0 overflow-auto custom-scrollbar bg-code-surface">
                                     <SyntaxHighlighter
-                                        language="text"
+                                        language={language}
                                         style={syntaxStyle}
                                         customStyle={{ 
                                             margin: 0, 

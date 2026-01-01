@@ -200,6 +200,8 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
 
     // Memoized Preview Generation
     const previewContent = useMemo(() => {
+        if (!content) return '';
+        
         let cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
         const consoleScript = generateConsoleScript();
 
@@ -328,7 +330,9 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                     : 'fixed inset-x-0 bottom-0 z-[60] border-t rounded-t-2xl shadow-2xl'
                 }
             `}
-            style={!isDesktop ? { height: 'auto', maxHeight: '95vh', minHeight: '45vh' } : undefined}
+            // Important: Use fixed height on mobile to ensure flex children expand correctly.
+            // 'auto' height on mobile causes absolute children to collapse the container.
+            style={!isDesktop ? { height: '85vh', maxHeight: '95vh' } : undefined}
         >
             <div className="flex flex-col h-full overflow-hidden" style={{ width: isDesktop ? `${width}px` : '100%', height: '100%' }}>
                 
@@ -412,7 +416,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                         className={`absolute inset-0 overflow-auto custom-scrollbar bg-code-surface ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
                     >
                         <SyntaxHighlighter
-                            language={syntaxHighlighterLanguage}
+                            language={syntaxHighlighterLanguage || 'text'}
                             style={syntaxStyle}
                             customStyle={{ 
                                 margin: 0, 
@@ -428,7 +432,7 @@ const ArtifactSidebarRaw: React.FC<ArtifactSidebarProps> = ({
                             lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
                             fallbackLanguage="text"
                         >
-                            {content}
+                            {content || ''}
                         </SyntaxHighlighter>
                     </div>
 
