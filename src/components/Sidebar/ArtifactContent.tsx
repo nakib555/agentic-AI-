@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 import type { SandpackProps } from "@codesandbox/sandpack-react";
 
-// FIX: Added explicit SandpackProps type to React.lazy
+// FIX: Added explicit SandpackProps type to React.lazy to resolve component prop type mismatch in the build environment
 const Sandpack = React.lazy<React.ComponentType<SandpackProps>>(() => import("@codesandbox/sandpack-react").then(module => ({ default: module.Sandpack })));
 
 // --- Icons ---
@@ -46,14 +46,14 @@ const RefreshIcon = () => (
 );
 
 const CodeIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
         <polyline points="16 18 22 12 16 6"></polyline>
         <polyline points="8 6 2 12 8 18"></polyline>
     </svg>
 );
 
 const EyeIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
         <circle cx="12" cy="12" r="3"></circle>
     </svg>
@@ -167,25 +167,21 @@ const detectIsReact = (code: string, lang: string) => {
     const normalize = (s: string) => s.toLowerCase().trim();
     const l = normalize(lang);
     
-    // Explicit React languages
     if (l === 'jsx' || l === 'tsx') return true;
-    
-    // Explicit non-React web languages
     if (l === 'html' || l === 'css' || l === 'json' || l === 'svg' || l === 'xml') return false;
     
-    // Heuristics for JS/TS
-    const clean = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''); // remove comments
+    const clean = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
     return (
         /import\s+React/.test(clean) || 
         /import\s+.*from\s+['"]react['"]/.test(clean) || 
-        // Fallback: If it exports default function and looks like a component, treat as React for Sandpack
-        (/export\s+default\s+function/.test(clean) && /return\s*\(\s*<[A-Z]/.test(clean)) ||
-        // Fallback: JSX attributes with tags
+        /export\s+default\s+function/.test(clean) ||
+        /return\s*\(\s*<[A-Z]/.test(clean) ||
         (/className=/.test(clean) && /<[a-z0-9]+/.test(clean))
     );
 };
 
-const VIRTUALIZATION_THRESHOLD_SIZE = 20 * 1024; 
+// Threshold for switching to virtualized plain text viewer
+const VIRTUALIZATION_THRESHOLD_SIZE = 20 * 1024; // 20KB (approx 500-1000 lines of dense code)
 
 type ArtifactContentProps = {
     content: string;
@@ -193,61 +189,18 @@ type ArtifactContentProps = {
     onClose: () => void;
 };
 
-// Segmented Toggle Component
-const SegmentedToggle = ({ 
-    options, 
-    active, 
-    onChange 
-}: { 
-    options: { id: string, label: string, icon: React.ReactNode }[], 
-    active: string, 
-    onChange: (id: any) => void 
-}) => {
-    return (
-        <div className="flex p-1 bg-gray-100 dark:bg-black/40 rounded-lg border border-gray-200/50 dark:border-white/5 relative">
-            {options.map((opt) => {
-                const isActive = active === opt.id;
-                return (
-                    <button
-                        key={opt.id}
-                        onClick={() => onChange(opt.id)}
-                        className={`
-                            relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors z-10
-                            ${isActive ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}
-                        `}
-                    >
-                        {isActive && (
-                            <motion.div
-                                layoutId="segment-bg"
-                                className="absolute inset-0 bg-white dark:bg-white/10 rounded-md shadow-sm border border-black/5 dark:border-white/5"
-                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            />
-                        )}
-                        <span className="relative z-10 flex items-center gap-1.5">
-                            {opt.icon}
-                            {opt.label}
-                        </span>
-                    </button>
-                );
-            })}
-        </div>
-    );
-};
-
 export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ content, language, onClose }) => {
     const syntaxStyle = useSyntaxTheme();
+    
+    // UI State managed by Reducer
     const [state, dispatch] = useReducer(artifactReducer, initialState);
     const [isCopied, setIsCopied] = React.useState(false);
     
-    // Live content debounced for Code View (Highlighter)
+    // Debounce content to prevent UI blocking during streaming of large files
     const [debouncedContent, setDebouncedContent] = useState(content);
-    
-    // Frozen content for Preview View (Iframe/Sandpack)
-    // We do NOT update this automatically on content change to prevent refresh loops/flicker
-    const [previewCode, setPreviewCode] = useState(content);
 
+    // Theme detection
     const [isDark, setIsDark] = useState(false);
-
     useEffect(() => {
         const checkDark = () => setIsDark(document.documentElement.classList.contains('dark'));
         checkDark();
@@ -256,37 +209,24 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => observer.disconnect();
     }, []);
 
-    // 1. Initialize Preview State
-    // Reset preview code if language changes (implies completely new file)
-    useEffect(() => {
-        setPreviewCode(content);
-    }, [language]);
-
-    // Ensure preview has content if it started empty (initial stream packet)
-    useEffect(() => {
-        if (!previewCode && content) {
-            setPreviewCode(content);
-        }
-    }, [content, previewCode]);
-
-    // 2. Tab Selection Logic
+    // Auto-switch tab based on language on mount
     useEffect(() => {
         const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || detectIsReact(content, language);
-        // Auto-switch to preview if content is manageable size and renderable type
         if (content.length < 50000 && isRenderable) {
             dispatch({ type: 'SET_TAB', payload: 'preview' });
         } else {
             dispatch({ type: 'SET_TAB', payload: 'code' });
         }
-    }, [language]); // Only run when language/file changes, not on every content keystroke
+    }, [language, content.length]);
 
-    // 3. Debounce Live Content for Code View
+    // Update debounced content with variable delay based on size
     useEffect(() => {
+        // Dynamic debounce: Larger files update less frequently to save CPU
         const length = content.length;
         let delay = 100;
-        if (length > 1000000) delay = 1500;
-        else if (length > 100000) delay = 800;
-        else if (length > 20000) delay = 300;
+        if (length > 1000000) delay = 1500; // 1MB+ -> 1.5s
+        else if (length > 100000) delay = 800; // 100KB+ -> 800ms
+        else if (length > 20000) delay = 300; // 20KB+ -> 300ms
 
         const handler = setTimeout(() => {
             setDebouncedContent(content);
@@ -294,21 +234,23 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => clearTimeout(handler);
     }, [content]);
 
-    // 4. Loading State Management
+    // Handle updates for Preview Mode (Expensive)
     useEffect(() => {
         if (state.activeTab === 'preview') {
-            const timer = setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 200);
+            dispatch({ type: 'REFRESH_PREVIEW' });
+            const timer = setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 100);
             return () => clearTimeout(timer);
         }
-    }, [previewCode, state.activeTab]); 
+    }, [debouncedContent, state.activeTab]); 
 
+    // Handle updates for Code Mode
     useEffect(() => {
         if (state.activeTab === 'code') {
             dispatch({ type: 'SET_LOADING', payload: false });
         }
     }, [debouncedContent, state.activeTab]);
 
-    // 5. Console Logs
+    // Console Log Listener
     useEffect(() => {
         const handler = (e: MessageEvent) => {
             if (e.data && e.data.type === 'ARTIFACT_LOG') {
@@ -325,22 +267,24 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => window.removeEventListener('message', handler);
     }, []);
 
-    // 6. React Detection based on Frozen Preview Code
     const isReact = useMemo(() => {
-        if (previewCode.length > 50000) return false;
-        return detectIsReact(previewCode, language);
-    }, [previewCode, language]);
+        if (debouncedContent.length > 50000) return false; // Optimization
+        return detectIsReact(debouncedContent, language);
+    }, [debouncedContent, language]);
 
-    // 7. Preview Content Generation (Iframe)
-    const iframeContent = useMemo(() => {
-        if (!previewCode) return '';
+    // Memoized Preview Generation
+    const previewContent = useMemo(() => {
+        if (!debouncedContent) return '';
         
-        let cleanContent = previewCode.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
+        let cleanContent = debouncedContent.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
         const consoleScript = generateConsoleScript();
         const tailwindCdn = '<script src="https://cdn.tailwindcss.com"></script>';
 
+        // HTML / XML / SVG
         if (['html', 'svg', 'markup', 'xml'].includes(language)) {
+            // Automatically inject Tailwind for better out-of-the-box styling of LLM snippets
             const stylesAndScript = `${tailwindCdn}${consoleScript}`;
+            
             if (cleanContent.includes('<head>')) {
                 return cleanContent.replace('<head>', `<head>${stylesAndScript}`);
             } else if (cleanContent.includes('<html>')) {
@@ -349,6 +293,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             return `<!DOCTYPE html><html><head>${stylesAndScript}</head><body>${cleanContent}</body></html>`;
         }
         
+        // CSS
         if (['css', 'scss', 'less'].includes(language)) {
             return `
                 <!DOCTYPE html>
@@ -373,7 +318,8 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
 
-        if (['javascript', 'typescript', 'js', 'ts'].includes(language)) {
+        // JavaScript / TypeScript
+        if (['javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language)) {
             const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
             return `
                 <!DOCTYPE html>
@@ -385,6 +331,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 <body>
                     <div id="root"></div>
                     <script type="module">
+                        // Shim for non-React JS previews
                         try {
                             ${safeContent}
                         } catch (e) {
@@ -396,7 +343,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
         return '';
-    }, [previewCode, language]);
+    }, [debouncedContent, language]);
 
     const handleCopy = useCallback(() => {
         navigator.clipboard.writeText(content);
@@ -408,20 +355,18 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         if (!isReact) {
             const win = window.open('', '_blank');
             if (win) {
-                win.document.write(iframeContent);
+                win.document.write(previewContent);
                 win.document.close();
             }
         } else {
             alert("Interactive previews are embedded and cannot be opened in a new tab yet.");
         }
-    }, [iframeContent, isReact]);
+    }, [previewContent, isReact]);
 
     const handleRefresh = useCallback(() => {
-        setPreviewCode(content); // Explicitly update preview with latest live content
         dispatch({ type: 'REFRESH_PREVIEW' });
-        // Allow time for Sandpack/Iframe to unmount/remount
-        setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 300);
-    }, [content]);
+        setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 200);
+    }, []);
 
     const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx', 'css'].includes(language) || isReact;
     
@@ -440,35 +385,51 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return language;
     }, [language]);
 
+    // Efficient check for large files without regex
     const useVirtualization = useMemo(() => {
         return content.length > VIRTUALIZATION_THRESHOLD_SIZE;
     }, [content.length]);
 
     return (
-        <div className="flex flex-col h-full overflow-hidden w-full bg-white dark:bg-[#09090b]">
-            {/* Elegant Header */}
-            <div className="flex flex-wrap items-center justify-between gap-y-3 px-4 py-3 bg-white/80 dark:bg-[#09090b]/80 border-b border-gray-200 dark:border-white/5 backdrop-blur-md sticky top-0 z-20 shrink-0">
-                <div className="flex items-center gap-4 overflow-hidden max-w-full">
-                    <div className="flex items-center gap-2.5 px-2.5 py-1.5 bg-gray-100 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/5 shrink-0">
-                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest font-mono">
+        <div className="flex flex-col h-full overflow-hidden w-full bg-layer-1">
+            {/* Header Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-3 bg-layer-1 border-b border-border-subtle flex-shrink-0 w-full">
+                <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-full">
+                    <div className="flex items-center gap-2 px-2 py-1 bg-layer-2 rounded-md border border-border-default flex-shrink-0">
+                        <span className="text-xs font-bold text-content-secondary uppercase tracking-wider font-mono">
                             {displayLanguage}
                         </span>
                         {useVirtualization && state.activeTab === 'code' && (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 font-bold uppercase tracking-wide">
-                                LARGE FILE
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wide">
+                                VIRTUALIZED
                             </span>
                         )}
                     </div>
-                    
                     {isPreviewable && (
-                        <SegmentedToggle 
-                            options={[
-                                { id: 'code', label: 'Code', icon: <CodeIcon /> },
-                                { id: 'preview', label: 'Preview', icon: <EyeIcon /> }
-                            ]}
-                            active={state.activeTab}
-                            onChange={(id) => dispatch({ type: 'SET_TAB', payload: id })}
-                        />
+                        <div className="flex bg-layer-2 p-0.5 rounded-lg border border-border-default flex-shrink-0">
+                            <button 
+                                onClick={() => dispatch({ type: 'SET_TAB', payload: 'code' })}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                                    state.activeTab === 'code' 
+                                    ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
+                                    : 'text-content-secondary hover:text-content-primary'
+                                }`}
+                            >
+                                <CodeIcon />
+                                Code
+                            </button>
+                            <button 
+                                onClick={() => dispatch({ type: 'SET_TAB', payload: 'preview' })}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                                    state.activeTab === 'preview' 
+                                    ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
+                                    : 'text-content-secondary hover:text-content-primary'
+                                }`}
+                            >
+                                <EyeIcon />
+                                Preview
+                            </button>
+                        </div>
                     )}
                 </div>
                 
@@ -476,19 +437,17 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                     <Tooltip content="Copy Code" position="bottom" delay={500}>
                         <button 
                             onClick={handleCopy}
-                            className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                            className="p-2 rounded-lg text-content-secondary hover:text-content-primary hover:bg-layer-2 transition-colors"
                             aria-label="Copy code"
                         >
                             {isCopied ? <CheckIcon /> : <CopyIcon />}
                         </button>
                     </Tooltip>
                     
-                    <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1" />
-
                     <Tooltip content="Close Panel" position="bottom" delay={500}>
                         <button 
                             onClick={onClose} 
-                            className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                            className="p-2 rounded-lg text-content-secondary hover:text-content-primary hover:bg-layer-2 transition-colors"
                             aria-label="Close artifact"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
@@ -521,7 +480,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                 padding: '1.5rem', 
                                 minHeight: '100%', 
                                 fontSize: '13px', 
-                                lineHeight: '1.6',
+                                lineHeight: '1.5',
                                 fontFamily: "'Fira Code', monospace",
                                 background: 'transparent',
                             }}
@@ -537,63 +496,57 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
 
                 {/* PREVIEW VIEW */}
                 <div 
-                    className={`flex-1 relative flex flex-col bg-gray-50 dark:bg-black/20 ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
+                    className={`flex-1 relative flex flex-col bg-layer-2 ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
                 >
                     {isReact ? (
                         <div className="flex-1 w-full h-full relative bg-white">
                              <Suspense fallback={
-                                <div className="flex flex-col items-center justify-center h-full gap-3">
-                                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Loading Sandbox...</span>
+                                <div className="flex flex-col items-center justify-center h-full">
+                                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                    <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
                                 </div>
                              }>
-                                 {/* Key forces remount on refresh */}
                                  <Sandpack
-                                    key={state.iframeKey} 
                                     template="react"
                                     theme={isDark ? "dark" : "light"}
-                                    files={{ 
-                                        "/App.js": previewCode,
-                                        "/styles.css": `@import "tailwindcss/base"; @import "tailwindcss/components"; @import "tailwindcss/utilities";`
-                                    }}
+                                    files={{ "/App.js": debouncedContent }}
                                     options={{
                                         externalResources: ["https://cdn.tailwindcss.com"],
-                                        layout: 'preview',
-                                        // We handle custom refresh, disable auto reload loop if possible by controlling content updates
-                                        showRefreshButton: false 
+                                        layout: 'preview'
                                     }}
                                  />
                             </Suspense>
                         </div>
                     ) : (
                         <>
-                            <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-white/5 flex-shrink-0">
+                            <div className="flex items-center justify-between px-3 py-2 bg-layer-1 border-b border-border-default flex-shrink-0">
                                 <div className="flex items-center gap-2">
                                     <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
                                     <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
                                     <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
                                 </div>
                                 
-                                <div className="flex-1 mx-4 text-center">
-                                    <span className="px-3 py-1 bg-gray-100 dark:bg-white/5 rounded text-[10px] font-mono text-gray-500 dark:text-gray-400 uppercase tracking-widest border border-gray-200 dark:border-white/5">
-                                        Browser Preview
-                                    </span>
+                                <div className="flex-1 mx-4">
+                                    <div className="bg-white dark:bg-black/10 border border-gray-200 dark:border-white/10 rounded px-3 py-1 text-xs text-center text-gray-500 font-mono truncate shadow-sm">
+                                        preview
+                                    </div>
                                 </div>
 
                                 <div className="flex items-center gap-2">
                                     <button 
                                         onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
-                                        className={`p-1.5 text-[10px] font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${state.showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/5'}`}
+                                        className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${state.showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-content-secondary hover:text-content-primary hover:bg-layer-2'}`}
                                         title="Toggle Console"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-                                        TERM {state.logs.length > 0 && <span className="bg-black/10 dark:bg-white/10 px-1 rounded-[2px]">{state.logs.length}</span>}
+                                        Console {state.logs.length > 0 && <span className="bg-layer-2 px-1 rounded-sm text-[10px]">{state.logs.length}</span>}
                                     </button>
-                                    <div className="w-px h-3 bg-gray-200 dark:bg-white/10 mx-1" />
-                                    <Tooltip content="Refresh Preview" position="bottom">
+                                    <div className="w-px h-3 bg-border-strong mx-1" />
+                                    <Tooltip content="Reload Preview" position="bottom">
                                         <button 
                                             onClick={handleRefresh} 
-                                            className="p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
+                                            className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
+                                            aria-label="Reload Preview"
                                         >
                                             <RefreshIcon />
                                         </button>
@@ -601,7 +554,8 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     <Tooltip content="Open in New Tab" position="bottom">
                                         <button 
                                             onClick={handleOpenNewTab}
-                                            className="p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
+                                            className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
+                                            aria-label="Open in New Tab"
                                         >
                                             <ExternalLinkIcon />
                                         </button>
@@ -612,13 +566,13 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                 {state.isLoading ? (
                                     <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
                                         <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
-                                        <span className="text-xs font-bold text-indigo-500 uppercase tracking-widest">Rendering...</span>
+                                        <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
                                     </div>
                                 ) : (
                                     <div className="flex-1 bg-white relative w-full h-full">
                                         <iframe
                                             key={state.iframeKey}
-                                            srcDoc={iframeContent}
+                                            srcDoc={previewContent}
                                             className="absolute inset-0 w-full h-full border-none bg-white"
                                             title="Artifact Preview"
                                             sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
@@ -634,19 +588,16 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                             animate={{ height: '35%' }}
                                             exit={{ height: 0 }}
                                             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                            className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col w-full z-20"
+                                            className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col w-full"
                                         >
-                                            <div className="flex items-center justify-between px-3 py-1.5 bg-[#252526] border-b border-black/20 text-[10px] font-mono text-gray-400 select-none uppercase tracking-wider">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="w-2 h-2 rounded-full bg-slate-500 animate-pulse"></span>
-                                                    Output Log
-                                                </div>
+                                            <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
+                                                <span>Terminal</span>
                                                 <button onClick={() => dispatch({ type: 'CLEAR_LOGS' })} className="hover:text-white transition-colors">Clear</button>
                                             </div>
                                             <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
-                                                {state.logs.length === 0 && <div className="text-gray-600 italic px-1 pt-1">Console empty.</div>}
+                                                {state.logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
                                                 {state.logs.map((log, i) => (
-                                                    <div key={i} className="flex gap-2 border-b border-white/5 pb-1 mb-1 last:border-0 items-start">
+                                                    <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
                                                         <span className={`flex-shrink-0 font-bold ${
                                                             log.level === 'error' ? 'text-red-400' :
                                                             log.level === 'warn' ? 'text-yellow-400' :
@@ -656,9 +607,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                                         </span>
                                                         <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
                                                             {log.message}
-                                                        </span>
-                                                        <span className="ml-auto text-[9px] text-gray-600 tabular-nums">
-                                                            {new Date(log.timestamp).toLocaleTimeString([], {hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit'})}
                                                         </span>
                                                     </div>
                                                 ))}
