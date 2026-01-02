@@ -10,7 +10,7 @@ import {
   SandpackPreview, 
   SandpackConsole, 
   useSandpackConsole
-} from "@codesandbox/sandpack-react";
+} from "@codesandbox/sandpack-react/unstyled";
 
 type SandpackComponentProps = {
     code: string;
