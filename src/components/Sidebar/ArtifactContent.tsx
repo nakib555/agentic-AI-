@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -31,11 +32,9 @@ const ReactSandpackPreview = React.lazy(() =>
             externalResources: ["https://cdn.tailwindcss.com"],
         }}
       >
-        <module.SandpackLayout style={{ 
+        <div style={{ 
             height: '100%', 
             width: '100%', 
-            borderRadius: 0, 
-            border: 'none',
             display: 'flex',
             flexDirection: 'column',
             backgroundColor: 'transparent',
@@ -51,7 +50,7 @@ const ReactSandpackPreview = React.lazy(() =>
             <div style={{ height: 'auto', maxHeight: '30%', flexShrink: 0, borderTop: '1px solid var(--sp-colors-surface2)', backgroundColor: 'transparent' }}>
                  <module.SandpackConsole resetOnPreviewRestart />
             </div>
-        </module.SandpackLayout>
+        </div>
       </module.SandpackProvider>
     ),
   }))

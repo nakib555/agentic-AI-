@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -28,16 +29,18 @@ const ReactSandpack = React.lazy(() => import("@codesandbox/sandpack-react").the
                 externalResources: ["https://cdn.tailwindcss.com"],
             }}
         >
-            <module.SandpackLayout style={{ 
+            <div style={{ 
                 height: '100%', 
                 borderRadius: '0.75rem', 
                 border: '1px solid var(--sp-colors-surface2)',
                 backgroundColor: 'transparent',
-                padding: 0
+                padding: 0,
+                display: 'flex',
+                flexDirection: 'column'
             }}>
-                <module.SandpackPreview style={{ height: '400px' }} showRefreshButton={true} />
+                <module.SandpackPreview style={{ height: '400px', display: 'block' }} showRefreshButton={true} />
                 <module.SandpackConsole style={{ height: '150px' }} />
-            </module.SandpackLayout>
+            </div>
         </module.SandpackProvider>
     )
 })));
@@ -296,30 +299,4 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             </div>
 
             <div className="relative">
-                {activeTab === 'preview' ? (
-                    renderPreview()
-                ) : (
-                    <div className="max-h-[400px] overflow-auto custom-scrollbar">
-                        <SyntaxHighlighter
-                            language={highlightLang}
-                            style={syntaxStyle}
-                            customStyle={{ 
-                                margin: 0, 
-                                padding: '1rem', 
-                                fontSize: '13px', 
-                                lineHeight: '1.5',
-                                background: 'transparent',
-                            }}
-                            codeTagProps={{
-                                style: { fontFamily: "'Fira Code', monospace" }
-                            }}
-                            showLineNumbers
-                        >
-                            {content}
-                        </SyntaxHighlighter>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
+                {activeTab === '
