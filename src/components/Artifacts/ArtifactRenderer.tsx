@@ -43,61 +43,6 @@ const LoadingSpinner = () => (
     </div>
 );
 
-// Generates a script to intercept console logs and send them to the parent window
-const generateConsoleScript = () => `
-    <script>
-        (function() {
-            const originalConsole = window.console;
-            
-            function safeStringify(obj) {
-                const seen = new WeakSet();
-                return JSON.stringify(obj, (key, value) => {
-                    if (typeof value === 'object' && value !== null) {
-                        if (seen.has(value)) {
-                            return '[Circular]';
-                        }
-                        seen.add(value);
-                    }
-                    if (typeof value === 'function') return '[Function]';
-                    return value;
-                }, 2);
-            }
-
-            function send(level, args) {
-                try {
-                    const msg = args.map(a => {
-                        if (a === null) return 'null';
-                        if (a === undefined) return 'undefined';
-                        if (typeof a === 'object') {
-                            try { return safeStringify(a); } catch(e) { return Object.prototype.toString.call(a); }
-                        }
-                        return String(a);
-                    }).join(' ');
-                    window.parent.postMessage({ type: 'ARTIFACT_LOG', level, message: msg }, '*');
-                } catch(e) {
-                    console.error('Error sending log to parent:', e);
-                }
-            }
-
-            window.console = {
-                ...originalConsole,
-                log: (...args) => { originalConsole.log(...args); send('info', args); },
-                info: (...args) => { originalConsole.info(...args); send('info', args); },
-                warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
-                error: (...args) => { originalConsole.error(...args); send('error', args); },
-                debug: (...args) => { originalConsole.debug(...args); send('info', args); },
-            };
-
-            window.addEventListener('error', (e) => {
-                send('error', [e.message]);
-            });
-            window.addEventListener('unhandledrejection', (e) => {
-                send('error', ['Unhandled Rejection: ' + (e.reason ? e.reason.toString() : 'Unknown')]);
-            });
-        })();
-    </script>
-`;
-
 export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, content, language = 'html', title }) => {
     const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
     const [logs, setLogs] = useState<{level: string, message: string, timestamp: number}[]>([]);
@@ -134,11 +79,6 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
 
     const isReact = useMemo(() => detectIsReact(content, language), [content, language]);
 
-    const handleRefresh = useCallback(() => {
-        setIframeKey(prev => prev + 1);
-        setLogs([]);
-    }, []);
-
     // Memoize options to prevent Sandpack reloading on every render
     const sandpackOptions = useMemo(() => ({
         externalResources: ["https://cdn.tailwindcss.com"],
@@ -151,7 +91,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         wrapContent: true,
         editorHeight: '100%',
         classes: {
-            "sp-wrapper": "h-full w-full",
+            "sp-wrapper": "h-full w-full min-h-[400px]",
             "sp-layout": "h-full w-full",
             "sp-preview": "h-full w-full",
         }
