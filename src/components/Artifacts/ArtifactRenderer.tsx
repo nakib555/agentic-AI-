@@ -201,7 +201,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                             srcDoc={initialContent}
                             className="absolute inset-0 w-full h-full border-none bg-white"
                             title="Artifact Preview"
-                            sandbox="allow-scripts allow-forms allow-modals"
+                            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
                         />
                     </div>
                     {/* Integrated Console Terminal */}
