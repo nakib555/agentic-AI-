@@ -524,7 +524,8 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                             className="absolute inset-0 w-full h-full border-none bg-white"
                                             title="Artifact Preview"
                                         >
-                                            {/* Empty children: content is managed via initialContent */}
+                                            {/* Empty children to satisfy TypeScript requirement */}
+                                            <></>
                                         </Frame>
                                     </div>
                                 )}

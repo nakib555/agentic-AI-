@@ -212,7 +212,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                             className="absolute inset-0 w-full h-full border-none bg-white"
                             title="Artifact Preview"
                         >
-                            {/* Content is handled via initialContent */}
+                            <></>
                         </Frame>
                     </div>
                     {/* Integrated Console Terminal */}
