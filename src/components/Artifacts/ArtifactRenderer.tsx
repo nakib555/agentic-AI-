@@ -127,14 +127,6 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         return () => window.removeEventListener('message', handler);
     }, []);
 
-    // Update iframe key when content changes significantly or tab switches back to preview
-    // This ensures content refreshes correctly.
-    useEffect(() => {
-        if (activeTab === 'preview') {
-            setIframeKey(prev => prev + 1);
-        }
-    }, [content.length, activeTab]);
-
     // Reset logs on content change
     useEffect(() => {
         setLogs([]);
@@ -238,67 +230,52 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         }
 
         // --- Frame for HTML/JS (Standard) ---
-        if (language === 'html' || language === 'svg' || language === 'javascript' || language === 'markup' || language === 'xml' || language === 'css') {
+        if (language === 'html' || language === 'svg' || language === 'javascript' || language === 'markup' || language === 'xml') {
             const cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
-            const consoleScript = generateConsoleScript();
-            const tailwindCdn = '<script src="https://cdn.tailwindcss.com"></script>';
+
+            const consoleScript = `
+                <script>
+                    (function() {
+                        const originalConsole = window.console;
+                        function send(level, args) {
+                            try {
+                                const msg = args.map(a => {
+                                    if (typeof a === 'object') {
+                                        try { return JSON.stringify(a, null, 2); } catch(e) { return '[Circular]'; }
+                                    }
+                                    return String(a);
+                                }).join(' ');
+                                window.parent.postMessage({ type: 'ARTIFACT_LOG', level, message: msg }, '*');
+                            } catch(e) {}
+                        }
+                        window.console = {
+                            ...originalConsole,
+                            log: (...args) => { originalConsole.log(...args); send('info', args); },
+                            info: (...args) => { originalConsole.info(...args); send('info', args); },
+                            warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
+                            error: (...args) => { originalConsole.error(...args); send('error', args); },
+                        };
+                        window.addEventListener('error', (e) => {
+                            send('error', [e.message]);
+                        });
+                        window.addEventListener('unhandledrejection', (e) => {
+                            send('error', ['Unhandled Rejection: ' + (e.reason ? e.reason.toString() : 'Unknown')]);
+                        });
+                    })();
+                </script>
+            `;
 
             let initialContent = '';
-
-            // Handle CSS
-            if (language === 'css') {
-                initialContent = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        ${consoleScript}
-                        <style>
-                            body { font-family: system-ui, sans-serif; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f8f9fa; }
-                            .demo-box { padding: 2rem; border: 1px dashed #ccc; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-                        </style>
-                        <style>${cleanContent}</style>
-                    </head>
-                    <body>
-                        <div class="demo-box">
-                            <h1>CSS Preview</h1>
-                            <p>Styles applied successfully.</p>
-                            <button class="btn primary">Demo Button</button>
-                        </div>
-                    </body>
-                    </html>
-                `;
-            }
-            // Handle JS
-            else if (['javascript', 'js'].includes(language)) {
-                initialContent = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        ${consoleScript}
-                        <style>body{font-family:sans-serif;padding:20px;}</style>
-                    </head>
-                    <body>
-                        <div id="output"></div>
-                        <script>
-                            try {
-                                ${cleanContent}
-                            } catch(e) {
-                                console.error(e);
-                            }
-                        </script>
-                    </body>
-                    </html>
-                `;
-            } 
-            // Handle HTML
-            else {
-                const stylesAndScript = `${tailwindCdn}${consoleScript}`;
+            if (language === 'javascript') {
+                initialContent = `<!DOCTYPE html><html><head>${consoleScript}<style>body{font-family:sans-serif;padding:20px;}</style></head><body><script>${cleanContent}</script></body></html>`;
+            } else {
+                // Inject script into head for HTML
                 if (cleanContent.includes('<head>')) {
-                    initialContent = cleanContent.replace('<head>', `<head>${stylesAndScript}`);
+                    initialContent = cleanContent.replace('<head>', `<head>${consoleScript}`);
                 } else if (cleanContent.includes('<html>')) {
-                     initialContent = cleanContent.replace('<html>', `<html><head>${stylesAndScript}</head>`);
+                     initialContent = cleanContent.replace('<html>', `<html><head>${consoleScript}</head>`);
                 } else {
-                    initialContent = `<!DOCTYPE html><html><head>${stylesAndScript}</head><body>${cleanContent}</body></html>`;
+                    initialContent = `${consoleScript}${cleanContent}`;
                 }
             }
             

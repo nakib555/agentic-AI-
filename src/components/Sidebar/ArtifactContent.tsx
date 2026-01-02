@@ -228,6 +228,14 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         }
     }, [language, content.length]);
 
+    // Initial load handler to clear the loading spinner
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            dispatch({ type: 'SET_LOADING', payload: false });
+        }, 500);
+        return () => clearTimeout(timer);
+    }, []);
+
     // Update debounced content with variable delay based on size
     useEffect(() => {
         // Dynamic debounce: Larger files update less frequently to save CPU
@@ -243,17 +251,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => clearTimeout(handler);
     }, [content]);
 
-    // Handle updates for Preview Mode (Expensive)
-    useEffect(() => {
-        if (state.activeTab === 'preview') {
-            dispatch({ type: 'REFRESH_PREVIEW' });
-            // Simply disable loading after a short delay to allow iframe to mount
-            const timer = setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 300);
-            return () => clearTimeout(timer);
-        }
-    }, [debouncedContent, state.activeTab]); 
-
-    // Handle updates for Code Mode
+    // Handle updates for Code Mode - ensure loading is off
     useEffect(() => {
         if (state.activeTab === 'code') {
             dispatch({ type: 'SET_LOADING', payload: false });
