@@ -9,10 +9,44 @@ import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
-import type { SandpackProps } from "@codesandbox/sandpack-react";
 
-// FIX: Added explicit SandpackProps type to React.lazy to resolve component prop type mismatch in the build environment
-const Sandpack = React.lazy<React.ComponentType<SandpackProps>>(() => import("@codesandbox/sandpack-react").then(module => ({ default: module.Sandpack })));
+// Custom lazy loader for composable Sandpack components to ensure ONLY preview is rendered
+const ReactSandpackPreview = React.lazy(() =>
+  import("@codesandbox/sandpack-react").then((module) => ({
+    default: ({ code, theme }: { code: string, theme: any }) => (
+      <module.SandpackProvider
+        template="react"
+        theme={theme}
+        files={{ "/App.js": code }}
+        customSetup={{
+          dependencies: {
+            "lucide-react": "latest",
+            "recharts": "latest",
+            "framer-motion": "latest",
+            "clsx": "latest",
+            "tailwind-merge": "latest",
+          },
+        }}
+        options={{
+            externalResources: ["https://cdn.tailwindcss.com"],
+            classes: {
+                "sp-wrapper": "h-full w-full",
+                "sp-layout": "h-full w-full",
+                "sp-preview": "h-full w-full",
+            }
+        }}
+      >
+        <module.SandpackLayout style={{ height: '100%', width: '100%', border: 'none', borderRadius: 0, background: 'transparent' }}>
+          <module.SandpackPreview
+            style={{ height: '100%', width: '100%' }}
+            showOpenInCodeSandbox={false}
+            showRefreshButton={true}
+          />
+        </module.SandpackLayout>
+      </module.SandpackProvider>
+    ),
+  }))
+);
 
 // --- Icons ---
 const CopyIcon = () => (
@@ -398,24 +432,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return content.length > VIRTUALIZATION_THRESHOLD_SIZE;
     }, [content.length]);
 
-    // Memoize options to prevent Sandpack reloading on every render
-    const sandpackOptions = useMemo(() => ({
-        externalResources: ["https://cdn.tailwindcss.com"],
-        layout: "preview" as const,
-        showCode: false, // Ensure code is hidden in preview mode
-        showNavigator: false,
-        showTabs: false,
-        showLineNumbers: false,
-        showInlineErrors: true,
-        wrapContent: true,
-        editorHeight: '100%',
-        classes: {
-            "sp-wrapper": "h-full w-full",
-            "sp-layout": "h-full w-full",
-            "sp-preview": "h-full w-full",
-        }
-    }), []);
-
     return (
         <div className="flex flex-col h-full overflow-hidden w-full bg-layer-1">
             {/* Header Toolbar */}
@@ -532,21 +548,10 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
                                 </div>
                              }>
-                                 <Sandpack
+                                 <ReactSandpackPreview
                                     key={state.iframeKey}
-                                    template="react"
                                     theme={isDark ? "dark" : "light"}
-                                    files={{ "/App.js": debouncedContent }}
-                                    customSetup={{
-                                        dependencies: {
-                                            "lucide-react": "latest",
-                                            "recharts": "latest",
-                                            "framer-motion": "latest",
-                                            "clsx": "latest",
-                                            "tailwind-merge": "latest"
-                                        }
-                                    }}
-                                    options={sandpackOptions}
+                                    code={debouncedContent}
                                  />
                             </Suspense>
                         </div>
