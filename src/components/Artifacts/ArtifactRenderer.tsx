@@ -4,13 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
-
-// Lazy load the shared Sandpack component
-const ReactSandpack = React.lazy(() => import('./SandpackComponent'));
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
@@ -18,13 +15,6 @@ type ArtifactRendererProps = {
     language?: string;
     title?: string;
 };
-
-const LoadingSpinner = () => (
-    <div className="flex flex-col items-center justify-center h-full min-h-[300px] bg-white dark:bg-[#1e1e1e] text-slate-500">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-        <span className="text-xs font-medium animate-pulse">Initializing Preview Environment...</span>
-    </div>
-);
 
 export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, content, language = 'html', title }) => {
     const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
@@ -61,6 +51,18 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     }, [content]);
 
     const isReact = useMemo(() => detectIsReact(content, language), [content, language]);
+
+    // Auto-switch tab based on language on mount
+    useEffect(() => {
+        // Exclude React from simple preview since Sandpack is removed
+        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language) && !isReact;
+        
+        if (content.length < 50000 && isRenderable) {
+            setActiveTab('preview');
+        } else {
+            setActiveTab('source');
+        }
+    }, [language, content.length, isReact]);
 
     const renderPreview = () => {
         if (type === 'data') {
@@ -101,30 +103,16 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             }
         }
 
-        // --- Sandpack for React / ES Modules ---
-        if (isReact) {
-            return (
-                <div className="h-full min-h-[400px] w-full relative">
-                    <Suspense fallback={<LoadingSpinner />}>
-                        <ReactSandpack
-                            keyId={iframeKey} // Force reload Sandpack on refresh
-                            theme={isDark ? "dark" : "light"}
-                            code={content}
-                            mode="inline"
-                        />
-                    </Suspense>
-                </div>
-            );
-        }
-
         // --- Frame for HTML/JS (Standard) ---
-        if (language === 'html' || language === 'svg' || language === 'javascript' || language === 'markup' || language === 'xml') {
+        if (['html', 'svg', 'javascript', 'markup', 'xml', 'css', 'js'].includes(language) && !isReact) {
             const cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
             const consoleScript = generateConsoleScript();
 
             let initialContent = '';
-            if (language === 'javascript') {
+            if (language === 'javascript' || language === 'js') {
                 initialContent = `<!DOCTYPE html><html><head>${consoleScript}<style>body{font-family:sans-serif;padding:20px;}</style></head><body><script>${cleanContent}</script></body></html>`;
+            } else if (language === 'css') {
+                 initialContent = `<!DOCTYPE html><html><head>${consoleScript}<style>${cleanContent}</style></head><body><h1>CSS Preview</h1><div class="demo">Demo Content</div></body></html>`;
             } else {
                 // Inject script into head for HTML
                 if (cleanContent.includes('<head>')) {
@@ -187,20 +175,25 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     };
 
     const highlightLang = (language === 'html' || language === 'svg' || language === 'xml') ? 'markup' : (language || 'text');
+    
+    // Only show Preview tab if it's a simple renderable language and NOT React (since sandpack is gone)
+    const showPreviewTab = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language) && !isReact;
 
     return (
         <div className="my-4 rounded-xl overflow-hidden border border-border-default shadow-lg bg-code-surface transition-colors duration-300">
             <div className="flex items-center justify-between px-4 py-2 bg-layer-2/50 border-b border-border-default backdrop-blur-sm">
                 <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">
-                    {title || (type === 'code' ? (isReact ? 'Interactive App' : 'HTML Preview') : 'Data View')}
+                    {title || (type === 'code' ? 'Code Snippet' : 'Data View')}
                 </span>
                 <div className="flex bg-layer-3 p-0.5 rounded-lg">
-                    <button 
-                        onClick={() => setActiveTab('preview')}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTab === 'preview' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
-                    >
-                        Preview
-                    </button>
+                    {showPreviewTab && (
+                        <button 
+                            onClick={() => setActiveTab('preview')}
+                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTab === 'preview' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
+                        >
+                            Preview
+                        </button>
+                    )}
                     <button 
                         onClick={() => setActiveTab('source')}
                         className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTab === 'source' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}

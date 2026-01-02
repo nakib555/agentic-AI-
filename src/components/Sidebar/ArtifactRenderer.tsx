@@ -1,51 +1,16 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense } from 'react';
+import React, { useReducer, useEffect, useMemo, useCallback, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
-
-// Custom lazy loader for composable Sandpack components to ensure ONLY preview is rendered
-const ReactSandpackPreview = React.lazy(() =>
-  import("@codesandbox/sandpack-react").then((module) => ({
-    default: ({ code, theme }: { code: string, theme: any }) => (
-      <module.SandpackProvider
-        template="react"
-        theme={theme}
-        files={{ "/App.js": code }}
-        customSetup={{
-          dependencies: {
-            "lucide-react": "latest",
-            "recharts": "latest",
-            "framer-motion": "latest",
-            "clsx": "latest",
-            "tailwind-merge": "latest",
-          },
-        }}
-        options={{
-            externalResources: ["https://cdn.tailwindcss.com"],
-        }}
-      >
-        <div className="h-full w-full flex flex-col bg-transparent m-0 p-0">
-            <module.SandpackPreview 
-                style={{ flex: 1, minHeight: 0, height: '100%' }} 
-                showRefreshButton={true} 
-                showOpenInCodeSandbox={false}
-                showNavigator={false}
-            />
-            <div style={{ height: 'auto', maxHeight: '30%', flexShrink: 0, borderTop: '1px solid var(--sp-colors-surface2)', backgroundColor: 'transparent' }}>
-                 <module.SandpackConsole resetOnPreviewRestart />
-            </div>
-        </div>
-      </module.SandpackProvider>
-    ),
-  }))
-);
+import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
 // --- Icons ---
 const CopyIcon = () => (
@@ -140,78 +105,6 @@ const artifactReducer = (state: State, action: Action): State => {
     }
 };
 
-// Generates a script to intercept console logs and send them to the parent window
-const generateConsoleScript = () => `
-    <script>
-        (function() {
-            const originalConsole = window.console;
-            
-            function safeStringify(obj) {
-                const seen = new WeakSet();
-                return JSON.stringify(obj, (key, value) => {
-                    if (typeof value === 'object' && value !== null) {
-                        if (seen.has(value)) {
-                            return '[Circular]';
-                        }
-                        seen.add(value);
-                    }
-                    if (typeof value === 'function') return '[Function]';
-                    return value;
-                }, 2);
-            }
-
-            function send(level, args) {
-                try {
-                    const msg = args.map(a => {
-                        if (a === null) return 'null';
-                        if (a === undefined) return 'undefined';
-                        if (typeof a === 'object') {
-                            try { return safeStringify(a); } catch(e) { return Object.prototype.toString.call(a); }
-                        }
-                        return String(a);
-                    }).join(' ');
-                    window.parent.postMessage({ type: 'ARTIFACT_LOG', level, message: msg }, '*');
-                } catch(e) {
-                    console.error('Error sending log to parent:', e);
-                }
-            }
-
-            window.console = {
-                ...originalConsole,
-                log: (...args) => { originalConsole.log(...args); send('info', args); },
-                info: (...args) => { originalConsole.info(...args); send('info', args); },
-                warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
-                error: (...args) => { originalConsole.error(...args); send('error', args); },
-                debug: (...args) => { originalConsole.debug(...args); send('info', args); },
-            };
-
-            window.addEventListener('error', (e) => {
-                send('error', [e.message]);
-            });
-            window.addEventListener('unhandledrejection', (e) => {
-                send('error', ['Unhandled Rejection: ' + (e.reason ? e.reason.toString() : 'Unknown')]);
-            });
-        })();
-    </script>
-`;
-
-const detectIsReact = (code: string, lang: string) => {
-    const normalize = (s: string) => s.toLowerCase().trim();
-    const l = normalize(lang);
-    
-    if (l === 'jsx' || l === 'tsx') return true;
-    if (l === 'html' || l === 'css' || l === 'json' || l === 'svg' || l === 'xml') return false;
-    
-    const clean = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''); // remove comments
-    return (
-        /import\s+React/.test(clean) || 
-        /import\s+.*from\s+['"]react['"]/.test(clean) || 
-        /export\s+default\s+function/.test(clean) ||
-        /return\s*\(\s*<[A-Z]/.test(clean) || // JSX return pattern
-        (/className=/.test(clean) && /<[a-z0-9]+/.test(clean)) // JSX attributes
-    );
-};
-
 // Threshold for switching to virtualized plain text viewer
 const VIRTUALIZATION_THRESHOLD_SIZE = 20 * 1024; // 20KB (approx 500-1000 lines of dense code)
 
@@ -241,15 +134,21 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => observer.disconnect();
     }, []);
 
+    const isReact = useMemo(() => {
+        if (content.length > 50000) return false; 
+        return detectIsReact(content, language);
+    }, [content, language]);
+
     // Auto-switch tab based on language on mount
     useEffect(() => {
-        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || detectIsReact(content, language);
+        // Exclude React from previewable list since Sandpack is removed
+        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) && !isReact;
         if (content.length < 50000 && isRenderable) {
             dispatch({ type: 'SET_TAB', payload: 'preview' });
         } else {
             dispatch({ type: 'SET_TAB', payload: 'code' });
         }
-    }, [language, content.length]);
+    }, [language, content.length, isReact]);
 
     // Initial load handler to clear the loading spinner
     useEffect(() => {
@@ -298,11 +197,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => window.removeEventListener('message', handler);
     }, []);
 
-    const isReact = useMemo(() => {
-        if (debouncedContent.length > 50000) return false; // Optimization
-        return detectIsReact(debouncedContent, language);
-    }, [debouncedContent, language]);
-
     // Memoized Preview Generation
     const previewContent = useMemo(() => {
         if (!debouncedContent) return '';
@@ -350,7 +244,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         }
 
         // JavaScript / TypeScript (Standard Iframe fallback if not React)
-        if (['javascript', 'typescript', 'js', 'ts'].includes(language)) {
+        if (['javascript', 'typescript', 'js', 'ts'].includes(language) && !isReact) {
             const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
             return `
                 <!DOCTYPE html>
@@ -374,7 +268,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
         return '';
-    }, [debouncedContent, language]);
+    }, [debouncedContent, language, isReact]);
 
     const handleCopy = useCallback(() => {
         navigator.clipboard.writeText(content);
@@ -399,7 +293,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 200);
     }, []);
 
-    const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx', 'css'].includes(language) || isReact;
+    const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx', 'css'].includes(language) && !isReact;
     
     const displayLanguage = useMemo(() => {
         if (!language) return 'TXT';
@@ -525,125 +419,106 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                     )}
                 </div>
 
-                {/* PREVIEW VIEW */}
+                {/* PREVIEW VIEW (Standard Frame) */}
                 <div 
                     className={`flex-1 relative flex flex-col bg-layer-2 ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
                 >
-                    {isReact ? (
-                        <div className="flex-1 w-full h-full relative bg-white dark:bg-[#1e1e1e]">
-                             <Suspense fallback={
-                                <div className="flex flex-col items-center justify-center h-full">
-                                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                                    <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
-                                </div>
-                             }>
-                                 <ReactSandpackPreview
-                                    key={state.iframeKey}
-                                    theme={isDark ? "dark" : "light"}
-                                    code={debouncedContent}
-                                 />
-                            </Suspense>
+                    <div className="flex items-center justify-between px-3 py-2 bg-layer-1 border-b border-border-default flex-shrink-0">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                            <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
                         </div>
-                    ) : (
-                        <>
-                            <div className="flex items-center justify-between px-3 py-2 bg-layer-1 border-b border-border-default flex-shrink-0">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                                    <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
-                                </div>
-                                
-                                <div className="flex-1 mx-4">
-                                    <div className="bg-white dark:bg-black/10 border border-gray-200 dark:border-white/10 rounded px-3 py-1 text-xs text-center text-gray-500 font-mono truncate shadow-sm">
-                                        preview
-                                    </div>
-                                </div>
+                        
+                        <div className="flex-1 mx-4">
+                            <div className="bg-white dark:bg-black/10 border border-gray-200 dark:border-white/10 rounded px-3 py-1 text-xs text-center text-gray-500 font-mono truncate shadow-sm">
+                                preview
+                            </div>
+                        </div>
 
-                                <div className="flex items-center gap-2">
-                                    <button 
-                                        onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
-                                        className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${state.showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-content-secondary hover:text-content-primary hover:bg-layer-2'}`}
-                                        title="Toggle Console"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-                                        Console {state.logs.length > 0 && <span className="bg-layer-2 px-1 rounded-sm text-[10px]">{state.logs.length}</span>}
-                                    </button>
-                                    <div className="w-px h-3 bg-border-strong mx-1" />
-                                    <Tooltip content="Reload Preview" position="bottom">
-                                        <button 
-                                            onClick={handleRefresh} 
-                                            className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
-                                            aria-label="Reload Preview"
-                                        >
-                                            <RefreshIcon />
-                                        </button>
-                                    </Tooltip>
-                                    <Tooltip content="Open in New Tab" position="bottom">
-                                        <button 
-                                            onClick={handleOpenNewTab}
-                                            className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
-                                            aria-label="Open in New Tab"
-                                        >
-                                            <ExternalLinkIcon />
-                                        </button>
-                                    </Tooltip>
-                                </div>
+                        <div className="flex items-center gap-2">
+                            <button 
+                                onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
+                                className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${state.showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-content-secondary hover:text-content-primary hover:bg-layer-2'}`}
+                                title="Toggle Console"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                                Console {state.logs.length > 0 && <span className="bg-layer-2 px-1 rounded-sm text-[10px]">{state.logs.length}</span>}
+                            </button>
+                            <div className="w-px h-3 bg-border-strong mx-1" />
+                            <Tooltip content="Reload Preview" position="bottom">
+                                <button 
+                                    onClick={handleRefresh} 
+                                    className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
+                                    aria-label="Reload Preview"
+                                >
+                                    <RefreshIcon />
+                                </button>
+                            </Tooltip>
+                            <Tooltip content="Open in New Tab" position="bottom">
+                                <button 
+                                    onClick={handleOpenNewTab}
+                                    className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
+                                    aria-label="Open in New Tab"
+                                >
+                                    <ExternalLinkIcon />
+                                </button>
+                            </Tooltip>
+                        </div>
+                    </div>
+                    <div className="flex-1 relative flex flex-col overflow-hidden">
+                        {state.isLoading ? (
+                            <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
+                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
+                                <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
                             </div>
-                            <div className="flex-1 relative flex flex-col overflow-hidden">
-                                {state.isLoading ? (
-                                    <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
-                                        <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 bg-white dark:bg-[#1e1e1e] relative w-full h-full">
-                                        <iframe
-                                            key={state.iframeKey}
-                                            srcDoc={previewContent}
-                                            className="absolute inset-0 w-full h-full border-none bg-white dark:bg-[#1e1e1e]"
-                                            title="Artifact Preview"
-                                            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
-                                        />
-                                    </div>
-                                )}
-                                
-                                {/* Console Terminal Panel */}
-                                <AnimatePresence>
-                                    {state.showConsole && (
-                                        <motion.div
-                                            initial={{ height: 0 }}
-                                            animate={{ height: '35%' }}
-                                            exit={{ height: 0 }}
-                                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                            className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col w-full"
-                                        >
-                                            <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
-                                                <span>Terminal</span>
-                                                <button onClick={() => dispatch({ type: 'CLEAR_LOGS' })} className="hover:text-white transition-colors">Clear</button>
-                                            </div>
-                                            <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
-                                                {state.logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
-                                                {state.logs.map((log, i) => (
-                                                    <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
-                                                        <span className={`flex-shrink-0 font-bold ${
-                                                            log.level === 'error' ? 'text-red-400' :
-                                                            log.level === 'warn' ? 'text-yellow-400' :
-                                                            'text-blue-400'
-                                                        }`}>
-                                                            {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
-                                                        </span>
-                                                        <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
-                                                            {log.message}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                        ) : (
+                            <div className="flex-1 bg-white dark:bg-[#1e1e1e] relative w-full h-full">
+                                <iframe
+                                    key={state.iframeKey}
+                                    srcDoc={previewContent}
+                                    className="absolute inset-0 w-full h-full border-none bg-white dark:bg-[#1e1e1e]"
+                                    title="Artifact Preview"
+                                    sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
+                                />
                             </div>
-                        </>
-                    )}
+                        )}
+                        
+                        {/* Console Terminal Panel */}
+                        <AnimatePresence>
+                            {state.showConsole && (
+                                <motion.div
+                                    initial={{ height: 0 }}
+                                    animate={{ height: '35%' }}
+                                    exit={{ height: 0 }}
+                                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                    className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col w-full"
+                                >
+                                    <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
+                                        <span>Terminal</span>
+                                        <button onClick={() => dispatch({ type: 'CLEAR_LOGS' })} className="hover:text-white transition-colors">Clear</button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
+                                        {state.logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
+                                        {state.logs.map((log, i) => (
+                                            <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
+                                                <span className={`flex-shrink-0 font-bold ${
+                                                    log.level === 'error' ? 'text-red-400' :
+                                                    log.level === 'warn' ? 'text-yellow-400' :
+                                                    'text-blue-400'
+                                                }`}>
+                                                    {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
+                                                </span>
+                                                <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
+                                                    {log.message}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
             </div>
         </div>
