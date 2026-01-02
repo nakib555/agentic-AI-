@@ -7,10 +7,8 @@ import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 
-// Lazy load Sandpack to reduce initial bundle size
-const SandpackProvider = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackProvider })));
-const SandpackLayout = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackLayout })));
-const SandpackPreview = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackPreview })));
+// FIX: Corrected lazy import to handle Sandpack as a default export, which resolves prop-typing issues.
+const Sandpack = React.lazy(() => import("@codesandbox/sandpack-react"));
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
@@ -130,23 +128,17 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             return (
                 <div className="h-full min-h-[400px] w-full relative">
                     <Suspense fallback={<LoadingSpinner />}>
-                        <SandpackProvider 
+                        <Sandpack
                             template="react"
                             theme={isDark ? "dark" : "light"}
                             files={{ "/App.js": finalCode }}
                             options={{
-                                externalResources: ["https://cdn.tailwindcss.com"]
+                                externalResources: ["https://cdn.tailwindcss.com"],
+                                layout: 'preview',
+                                showOpenInCodeSandbox: false,
+                                showRerenderButton: true,
                             }}
-                        >
-                            <SandpackLayout style={{ height: '400px', border: 'none', borderRadius: 0 }}>
-                                <SandpackPreview 
-                                    style={{ height: '100%' }} 
-                                    showOpenInCodeSandbox={false} 
-                                    showRefreshButton={true}
-                                    showRestartButton={true}
-                                />
-                            </SandpackLayout>
-                        </SandpackProvider>
+                        />
                     </Suspense>
                 </div>
             );

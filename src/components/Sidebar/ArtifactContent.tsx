@@ -10,10 +10,8 @@ import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 
-// Lazy load Sandpack
-const SandpackProvider = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackProvider })));
-const SandpackLayout = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackLayout })));
-const SandpackPreview = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackPreview })));
+// FIX: Corrected lazy import to handle Sandpack as a default export, which resolves prop-typing issues.
+const Sandpack = React.lazy(() => import("@codesandbox/sandpack-react"));
 
 // --- Icons ---
 const CopyIcon = () => (
@@ -451,23 +449,17 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
                                 </div>
                              }>
-                                 <SandpackProvider 
+                                 <Sandpack
                                     template="react"
                                     theme={isDark ? "dark" : "light"}
                                     files={{ "/App.js": debouncedContent }}
                                     options={{
-                                        externalResources: ["https://cdn.tailwindcss.com"]
+                                        externalResources: ["https://cdn.tailwindcss.com"],
+                                        showOpenInCodeSandbox: false,
+                                        showRerenderButton: true,
+                                        layout: 'preview'
                                     }}
-                                >
-                                    <SandpackLayout style={{ height: '100%', border: 'none', borderRadius: 0 }}>
-                                        <SandpackPreview 
-                                            style={{ height: '100%' }} 
-                                            showOpenInCodeSandbox={false} 
-                                            showRefreshButton={true}
-                                            showRestartButton={true}
-                                        />
-                                    </SandpackLayout>
-                                </SandpackProvider>
+                                 />
                             </Suspense>
                         </div>
                     ) : (
