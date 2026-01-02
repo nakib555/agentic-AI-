@@ -151,6 +151,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     const sandpackOptions = useMemo(() => ({
         externalResources: ["https://cdn.tailwindcss.com"],
         layout: "preview" as const,
+        showCode: false, // Ensure code is hidden in preview mode
         showNavigator: false,
         showTabs: false,
         showLineNumbers: false,
