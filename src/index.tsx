@@ -8,7 +8,6 @@ import ReactDOM from 'react-dom/client';
 import { App } from './components/App/index';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { logCollector } from './utils/logCollector';
-import "@codesandbox/sandpack-react/dist/index.css";
 
 // Start logging immediately to capture startup events
 logCollector.start();
