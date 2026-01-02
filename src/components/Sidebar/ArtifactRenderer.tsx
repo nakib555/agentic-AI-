@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -137,7 +136,6 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                             options={{
                                 externalResources: ["https://cdn.tailwindcss.com"],
                                 layout: 'preview',
-                                showOpenInCodeSandbox: false,
                                 showRerenderButton: true,
                             }}
                         />

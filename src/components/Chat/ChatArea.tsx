@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -49,7 +48,6 @@ export const ChatArea = ({
   const messageFormRef = useRef<MessageFormHandle>(null);
   const [isDragging, setIsDragging] = useState(false);
   
-  // Use a counter to robustly handle drag enter/leave events on nested elements.
   const dragCounter = useRef(0);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -61,7 +59,6 @@ export const ChatArea = ({
     e.preventDefault();
     e.stopPropagation();
     dragCounter.current++;
-    // Only show the overlay if files are being dragged.
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
       setIsDragging(true);
     }
@@ -83,14 +80,11 @@ export const ChatArea = ({
     dragCounter.current = 0;
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      // Use the ref to imperatively call the method on MessageForm
       messageFormRef.current?.attachFiles(Array.from(files));
     }
   };
 
   const handleSetActiveResponseIndex = useCallback((messageId: string, index: number) => {
-    // The currentChatId check is still useful to ensure we are in an active chat
-    // before allowing any action.
     if (currentChatId) {
       onSetActiveResponseIndex(messageId, index);
     }
@@ -110,8 +104,6 @@ export const ChatArea = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            // Added pointer-events-none to ensure drops can fall through to specific drop zones (like MessageForm)
-            // if the user targets them directly, while still showing the global drag cue.
             className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-400/10 border-2 border-dashed border-indigo-500 dark:border-indigo-400 rounded-2xl z-30 flex items-center justify-center m-4 pointer-events-none"
           >
             <div className="text-center font-bold text-indigo-600 dark:text-indigo-300 bg-white/80 dark:bg-black/80 px-6 py-4 rounded-xl shadow-lg backdrop-blur-sm">

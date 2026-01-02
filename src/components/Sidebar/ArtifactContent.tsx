@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -457,8 +456,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     files={{ "/App.js": debouncedContent }}
                                     options={{
                                         externalResources: ["https://cdn.tailwindcss.com"],
-                                        showOpenInCodeSandbox: false,
-                                        showRerenderButton: true,
                                         layout: 'preview'
                                     }}
                                  />
