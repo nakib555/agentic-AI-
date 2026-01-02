@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -238,7 +237,8 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     useEffect(() => {
         if (state.activeTab === 'preview') {
             dispatch({ type: 'REFRESH_PREVIEW' });
-            const timer = setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 100);
+            // Simply disable loading after a short delay to allow iframe to mount
+            const timer = setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 300);
             return () => clearTimeout(timer);
         }
     }, [debouncedContent, state.activeTab]); 
@@ -507,6 +507,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                 </div>
                              }>
                                  <Sandpack
+                                    key={state.iframeKey}
                                     template="react"
                                     theme={isDark ? "dark" : "light"}
                                     files={{ "/App.js": debouncedContent }}

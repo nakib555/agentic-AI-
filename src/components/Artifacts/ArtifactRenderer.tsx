@@ -1,10 +1,9 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import type { SandpackProps } from "@codesandbox/sandpack-react";
@@ -98,6 +97,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
     const [logs, setLogs] = useState<{level: string, message: string, timestamp: number}[]>([]);
     const [showConsole, setShowConsole] = useState(false);
+    const [iframeKey, setIframeKey] = useState(0); // Add key to force reload
     const syntaxStyle = useSyntaxTheme();
     
     // Theme detection
@@ -122,12 +122,25 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         return () => window.removeEventListener('message', handler);
     }, []);
 
+    // Update iframe key when content changes significantly or tab switches back to preview
+    // This ensures content refreshes correctly.
+    useEffect(() => {
+        if (activeTab === 'preview') {
+            setIframeKey(prev => prev + 1);
+        }
+    }, [content.length, activeTab]);
+
     // Reset logs on content change
     useEffect(() => {
         setLogs([]);
     }, [content]);
 
     const isReact = useMemo(() => detectIsReact(content, language), [content, language]);
+
+    const handleRefresh = useCallback(() => {
+        setIframeKey(prev => prev + 1);
+        setLogs([]);
+    }, []);
 
     const renderPreview = () => {
         if (type === 'data') {
@@ -181,6 +194,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                 <div className="h-full min-h-[400px] w-full relative">
                     <Suspense fallback={<LoadingSpinner />}>
                         <Sandpack
+                            key={iframeKey} // Force reload Sandpack on refresh
                             template="react"
                             theme={isDark ? "dark" : "light"}
                             files={{ "/App.js": finalCode }}
@@ -264,22 +278,33 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             return (
                 <div className="flex flex-col h-full min-h-[400px]">
                     {/* Fake Browser Chrome */}
-                    <div className="flex items-center gap-4 px-4 py-2 bg-gray-100 border-b border-gray-200">
+                    <div className="flex items-center gap-4 px-4 py-2 bg-gray-100 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
                         <div className="flex gap-1.5">
                             <div className="w-3 h-3 rounded-full bg-red-400 border border-red-500/20"></div>
                             <div className="w-3 h-3 rounded-full bg-yellow-400 border border-yellow-500/20"></div>
                             <div className="w-3 h-3 rounded-full bg-green-400 border border-green-500/20"></div>
                         </div>
                         <div className="flex-1 mx-4">
-                            <div className="bg-white border border-gray-300 rounded px-3 py-0.5 text-xs text-center text-gray-500 font-mono shadow-sm">
+                            <div className="bg-white dark:bg-black/20 border border-gray-300 dark:border-white/10 rounded px-3 py-0.5 text-xs text-center text-gray-500 dark:text-slate-400 font-mono shadow-sm">
                                 preview
                             </div>
                         </div>
-                        <div className="w-8"></div> {/* Spacer for balance */}
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleRefresh}
+                                className="p-1 hover:bg-gray-200 dark:hover:bg-white/10 rounded text-slate-500 dark:text-slate-400"
+                                title="Refresh Preview"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                                    <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.32 2.366l-1.12 1.12a.75.75 0 01-1.06-1.06l3.894-3.893a.75.75 0 011.06 1.06l-1.12 1.12a4 4 0 006.788-1.72.75.75 0 011.392.574zm-10.624-2.848a5.5 5.5 0 019.32-2.366l1.12-1.12a.75.75 0 011.06 1.06l-3.894 3.893a.75.75 0 01-1.06-1.06l1.12-1.12a4 4 0 00-6.788 1.72.75.75 0 01-1.392-.574z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex-1 relative bg-white">
                         <iframe
+                            key={iframeKey}
                             srcDoc={initialContent}
                             className="absolute inset-0 w-full h-full border-none bg-white"
                             title="Artifact Preview"
