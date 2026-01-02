@@ -469,6 +469,13 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
                                     <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
                                 </div>
+                                
+                                <div className="flex-1 mx-4">
+                                    <div className="bg-white dark:bg-black/10 border border-gray-200 dark:border-white/10 rounded px-3 py-1 text-xs text-center text-gray-500 font-mono truncate shadow-sm">
+                                        preview
+                                    </div>
+                                </div>
+
                                 <div className="flex items-center gap-2">
                                     <button 
                                         onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
@@ -512,7 +519,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                             srcDoc={previewContent}
                                             className="absolute inset-0 w-full h-full border-none bg-white"
                                             title="Artifact Preview"
-                                            sandbox="allow-scripts allow-forms allow-modals"
+                                            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
                                         />
                                     </div>
                                 )}

@@ -196,6 +196,21 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             
             return (
                 <div className="flex flex-col h-full min-h-[400px]">
+                    {/* Fake Browser Chrome */}
+                    <div className="flex items-center gap-4 px-4 py-2 bg-gray-100 border-b border-gray-200">
+                        <div className="flex gap-1.5">
+                            <div className="w-3 h-3 rounded-full bg-red-400 border border-red-500/20"></div>
+                            <div className="w-3 h-3 rounded-full bg-yellow-400 border border-yellow-500/20"></div>
+                            <div className="w-3 h-3 rounded-full bg-green-400 border border-green-500/20"></div>
+                        </div>
+                        <div className="flex-1 mx-4">
+                            <div className="bg-white border border-gray-300 rounded px-3 py-0.5 text-xs text-center text-gray-500 font-mono shadow-sm">
+                                preview
+                            </div>
+                        </div>
+                        <div className="w-8"></div> {/* Spacer for balance */}
+                    </div>
+
                     <div className="flex-1 relative bg-white">
                         <iframe
                             srcDoc={initialContent}
