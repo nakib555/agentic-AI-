@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Import Sandpack styles first to allow overrides */
+@import "@codesandbox/sandpack-react/dist/index.css";
+
 /* 1. Import Design Tokens (The Control Center) */
 @import '../theme/design-tokens.css';
 
