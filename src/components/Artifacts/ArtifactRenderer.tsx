@@ -7,67 +7,16 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
+import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
-// Custom lazy loader for composable Sandpack components for inline renderer
-const ReactSandpack = React.lazy(() => import("@codesandbox/sandpack-react").then(module => ({
-    default: ({ code, theme, keyId }: { code: string, theme: any, keyId: any }) => (
-        <module.SandpackProvider
-            key={keyId}
-            template="react"
-            theme={theme}
-            files={{ "/App.js": code }}
-            customSetup={{
-                dependencies: {
-                    "lucide-react": "latest",
-                    "recharts": "latest",
-                    "framer-motion": "latest",
-                    "clsx": "latest",
-                    "tailwind-merge": "latest",
-                },
-            }}
-            options={{
-                externalResources: ["https://cdn.tailwindcss.com"],
-            }}
-        >
-            <div style={{ 
-                height: '100%', 
-                borderRadius: '0.75rem', 
-                border: '1px solid var(--sp-colors-surface2)',
-                backgroundColor: 'transparent',
-                padding: 0,
-                display: 'flex',
-                flexDirection: 'column'
-            }}>
-                <module.SandpackPreview style={{ height: '400px', display: 'block' }} showRefreshButton={true} />
-                <module.SandpackConsole style={{ height: '150px' }} />
-            </div>
-        </module.SandpackProvider>
-    )
-})));
+// Lazy load the shared Sandpack component
+const ReactSandpack = React.lazy(() => import('./SandpackComponent'));
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
     content: string;
     language?: string;
     title?: string;
-};
-
-// Robust React detection logic
-const detectIsReact = (code: string, lang: string) => {
-    const normalize = (s: string) => s.toLowerCase().trim();
-    const l = normalize(lang);
-    
-    if (l === 'jsx' || l === 'tsx') return true;
-    if (l === 'html' || l === 'css' || l === 'json' || l === 'svg' || l === 'xml') return false;
-    
-    const clean = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''); // remove comments
-    return (
-        /import\s+React/.test(clean) || 
-        /import\s+.*from\s+['"]react['"]/.test(clean) || 
-        /export\s+default\s+function/.test(clean) ||
-        /return\s*\(\s*<[A-Z]/.test(clean) || // JSX return pattern
-        (/className=/.test(clean) && /<[a-z0-9]+/.test(clean)) // JSX attributes
-    );
 };
 
 const LoadingSpinner = () => (
@@ -154,20 +103,14 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
 
         // --- Sandpack for React / ES Modules ---
         if (isReact) {
-            // Ensure App.js exports default
-            let finalCode = content;
-            if (!content.includes('export default')) {
-                // Heuristic to add export default if missing
-                finalCode = content + '\n\nexport default App;'; 
-            }
-
             return (
                 <div className="h-full min-h-[400px] w-full relative">
                     <Suspense fallback={<LoadingSpinner />}>
                         <ReactSandpack
                             keyId={iframeKey} // Force reload Sandpack on refresh
                             theme={isDark ? "dark" : "light"}
-                            code={finalCode}
+                            code={content}
+                            mode="inline"
                         />
                     </Suspense>
                 </div>
@@ -177,38 +120,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         // --- Frame for HTML/JS (Standard) ---
         if (language === 'html' || language === 'svg' || language === 'javascript' || language === 'markup' || language === 'xml') {
             const cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
-
-            const consoleScript = `
-                <script>
-                    (function() {
-                        const originalConsole = window.console;
-                        function send(level, args) {
-                            try {
-                                const msg = args.map(a => {
-                                    if (typeof a === 'object') {
-                                        try { return JSON.stringify(a, null, 2); } catch(e) { return '[Circular]'; }
-                                    }
-                                    return String(a);
-                                }).join(' ');
-                                window.parent.postMessage({ type: 'ARTIFACT_LOG', level, message: msg }, '*');
-                            } catch(e) {}
-                        }
-                        window.console = {
-                            ...originalConsole,
-                            log: (...args) => { originalConsole.log(...args); send('info', args); },
-                            info: (...args) => { originalConsole.info(...args); send('info', args); },
-                            warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
-                            error: (...args) => { originalConsole.error(...args); send('error', args); },
-                        };
-                        window.addEventListener('error', (e) => {
-                            send('error', [e.message]);
-                        });
-                        window.addEventListener('unhandledrejection', (e) => {
-                            send('error', ['Unhandled Rejection: ' + (e.reason ? e.reason.toString() : 'Unknown')]);
-                        });
-                    })();
-                </script>
-            `;
+            const consoleScript = generateConsoleScript();
 
             let initialContent = '';
             if (language === 'javascript') {

@@ -10,43 +10,10 @@ import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
+import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
-// Custom lazy loader for composable Sandpack components to ensure ONLY preview is rendered
-const ReactSandpackPreview = React.lazy(() =>
-  import("@codesandbox/sandpack-react").then((module) => ({
-    default: ({ code, theme }: { code: string, theme: any }) => (
-      <module.SandpackProvider
-        template="react"
-        theme={theme}
-        files={{ "/App.js": code }}
-        customSetup={{
-          dependencies: {
-            "lucide-react": "latest",
-            "recharts": "latest",
-            "framer-motion": "latest",
-            "clsx": "latest",
-            "tailwind-merge": "latest",
-          },
-        }}
-        options={{
-            externalResources: ["https://cdn.tailwindcss.com"],
-        }}
-      >
-        <div className="h-full w-full flex flex-col bg-transparent m-0 p-0">
-            <module.SandpackPreview 
-                style={{ flex: 1, minHeight: 0, height: '100%' }} 
-                showRefreshButton={true} 
-                showOpenInCodeSandbox={false}
-                showNavigator={false}
-            />
-            <div style={{ height: 'auto', maxHeight: '30%', flexShrink: 0, borderTop: '1px solid var(--sp-colors-surface2)', backgroundColor: 'transparent' }}>
-                 <module.SandpackConsole resetOnPreviewRestart />
-            </div>
-        </div>
-      </module.SandpackProvider>
-    ),
-  }))
-);
+// Lazy load the shared Sandpack component
+const ReactSandpack = React.lazy(() => import('../Artifacts/SandpackComponent'));
 
 // --- Icons ---
 const CopyIcon = () => (
@@ -139,88 +106,6 @@ const artifactReducer = (state: State, action: Action): State => {
         default: 
             return state;
     }
-};
-
-// Generates a script to intercept console logs and send them to the parent window
-const generateConsoleScript = () => `
-    <script>
-        (function() {
-            const originalConsole = window.console;
-            
-            function safeStringify(obj) {
-                const seen = new WeakSet();
-                return JSON.stringify(obj, (key, value) => {
-                    if (typeof value === 'object' && value !== null) {
-                        if (seen.has(value)) {
-                            return '[Circular]';
-                        }
-                        seen.add(value);
-                    }
-                    if (typeof value === 'function') return '[Function]';
-                    return value;
-                }, 2);
-            }
-
-            function send(level, args) {
-                try {
-                    const msg = args.map(a => {
-                        if (a === null) return 'null';
-                        if (a === undefined) return 'undefined';
-                        if (typeof a === 'object') {
-                            try { return safeStringify(a); } catch(e) { return Object.prototype.toString.call(a); }
-                        }
-                        return String(a);
-                    }).join(' ');
-                    window.parent.postMessage({ type: 'ARTIFACT_LOG', level, message: msg }, '*');
-                } catch(e) {
-                    console.error('Error sending log to parent:', e);
-                }
-            }
-
-            window.console = {
-                ...originalConsole,
-                log: (...args) => { originalConsole.log(...args); send('info', args); },
-                info: (...args) => { originalConsole.info(...args); send('info', args); },
-                warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
-                error: (...args) => { originalConsole.error(...args); send('error', args); },
-                debug: (...args) => { originalConsole.debug(...args); send('info', args); },
-            };
-
-            window.addEventListener('error', (e) => {
-                send('error', [e.message]);
-            });
-            window.addEventListener('unhandledrejection', (e) => {
-                send('error', ['Unhandled Rejection: ' + (e.reason ? e.reason.toString() : 'Unknown')]);
-            });
-        })();
-    </script>
-`;
-
-const detectIsReact = (code: string, lang: string) => {
-    const normalize = (s: string) => s.toLowerCase().trim();
-    const l = normalize(lang);
-    
-    // Force React handling for JSX/TSX extensions
-    if (l === 'jsx' || l === 'tsx') return true;
-    
-    // Force Iframe/Standard handling for standard web formats
-    if (l === 'html' || l === 'css' || l === 'json' || l === 'svg' || l === 'xml') return false;
-    
-    const clean = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''); // remove comments
-    
-    // Detection Strategy:
-    // 1. Look for React Imports (Strongest signal)
-    if (/import\s+.*from\s+['"]react['"]/.test(clean) || /import\s+React/.test(clean)) return true;
-    
-    // 2. Look for React Hook usage
-    if (/\buse(State|Effect|Context|Reducer|Callback|Memo|Ref|ImperativeHandle|LayoutEffect|DebugValue)\s*\(/.test(clean)) return true;
-
-    // 3. Look for JSX in return statements (e.g. return <div...)
-    // This avoids false positives from simple "less than" comparisons or HTML strings in quotes
-    if (/return\s*\(\s*<[a-zA-Z]/.test(clean) || /return\s+<[a-zA-Z]/.test(clean)) return true;
-    
-    // 4. Default to standard JS (Iframe) if none of the above matches
-    return false;
 };
 
 // Threshold for switching to virtualized plain text viewer
@@ -548,10 +433,11 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
                                 </div>
                              }>
-                                 <ReactSandpackPreview
+                                 <ReactSandpack
                                     key={state.iframeKey}
                                     theme={isDark ? "dark" : "light"}
                                     code={debouncedContent}
+                                    mode="full"
                                  />
                             </Suspense>
                         </div>
