@@ -1,19 +1,51 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, Suspense, useReducer, useCallback } from 'react';
+import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
-import type { SandpackProps } from "@codesandbox/sandpack-react";
 
-// FIX: Added explicit SandpackProps type to React.lazy to resolve component prop type mismatch in the build environment
-const Sandpack = React.lazy<React.ComponentType<SandpackProps>>(() => import("@codesandbox/sandpack-react").then(module => ({ default: module.Sandpack })));
+// Custom lazy loader for composable Sandpack components to ensure ONLY preview is rendered
+const ReactSandpackPreview = React.lazy(() =>
+  import("@codesandbox/sandpack-react").then((module) => ({
+    default: ({ code, theme }: { code: string, theme: any }) => (
+      <module.SandpackProvider
+        template="react"
+        theme={theme}
+        files={{ "/App.js": code }}
+        customSetup={{
+          dependencies: {
+            "lucide-react": "latest",
+            "recharts": "latest",
+            "framer-motion": "latest",
+            "clsx": "latest",
+            "tailwind-merge": "latest",
+          },
+        }}
+        options={{
+            externalResources: ["https://cdn.tailwindcss.com"],
+        }}
+      >
+        <div className="h-full w-full flex flex-col bg-transparent m-0 p-0">
+            <module.SandpackPreview 
+                style={{ flex: 1, minHeight: 0, height: '100%' }} 
+                showRefreshButton={true} 
+                showOpenInCodeSandbox={false}
+                showNavigator={false}
+            />
+            <div style={{ height: 'auto', maxHeight: '30%', flexShrink: 0, borderTop: '1px solid var(--sp-colors-surface2)', backgroundColor: 'transparent' }}>
+                 <module.SandpackConsole resetOnPreviewRestart />
+            </div>
+        </div>
+      </module.SandpackProvider>
+    ),
+  }))
+);
 
 // --- Icons ---
 const CopyIcon = () => (
@@ -505,29 +537,10 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
                                 </div>
                              }>
-                                 <Sandpack
+                                 <ReactSandpackPreview
                                     key={state.iframeKey}
-                                    template="react"
                                     theme={isDark ? "dark" : "light"}
-                                    files={{ "/App.js": debouncedContent }}
-                                    customSetup={{
-                                        dependencies: {
-                                            "lucide-react": "latest",
-                                            "recharts": "latest",
-                                            "framer-motion": "latest",
-                                            "clsx": "latest",
-                                            "tailwind-merge": "latest",
-                                        },
-                                    }}
-                                    options={{
-                                        showConsoleButton: true,
-                                        showInlineErrors: true,
-                                        showNavigator: true,
-                                        showLineNumbers: true,
-                                        showTabs: true,
-                                        externalResources: ["https://cdn.tailwindcss.com"],
-                                    }}
-                                    style={{ height: '100%' }}
+                                    code={debouncedContent}
                                  />
                             </Suspense>
                         </div>
