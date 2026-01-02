@@ -28,7 +28,13 @@ const ReactSandpack = React.lazy(() => import("@codesandbox/sandpack-react").the
                 externalResources: ["https://cdn.tailwindcss.com"],
             }}
         >
-            <module.SandpackLayout style={{ height: '100%', borderRadius: '0.75rem', border: '1px solid var(--sp-colors-surface2)' }}>
+            <module.SandpackLayout style={{ 
+                height: '100%', 
+                borderRadius: '0.75rem', 
+                border: '1px solid var(--sp-colors-surface2)',
+                backgroundColor: 'transparent',
+                padding: 0
+            }}>
                 <module.SandpackPreview style={{ height: '400px' }} showRefreshButton={true} />
                 <module.SandpackConsole style={{ height: '150px' }} />
             </module.SandpackLayout>

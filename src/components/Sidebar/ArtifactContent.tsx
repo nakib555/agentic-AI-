@@ -38,14 +38,17 @@ const ReactSandpackPreview = React.lazy(() =>
             border: 'none',
             display: 'flex',
             flexDirection: 'column',
-            backgroundColor: 'transparent'
+            backgroundColor: 'transparent',
+            margin: 0,
+            padding: 0
         }}>
             <module.SandpackPreview 
-                style={{ flex: 1, minHeight: 0 }} 
+                style={{ flex: 1, minHeight: 0, height: '100%' }} 
                 showRefreshButton={true} 
                 showOpenInCodeSandbox={false}
+                showNavigator={false}
             />
-            <div style={{ height: 'auto', maxHeight: '30%', flexShrink: 0, borderTop: '1px solid var(--sp-colors-surface2)' }}>
+            <div style={{ height: 'auto', maxHeight: '30%', flexShrink: 0, borderTop: '1px solid var(--sp-colors-surface2)', backgroundColor: 'transparent' }}>
                  <module.SandpackConsole resetOnPreviewRestart />
             </div>
         </module.SandpackLayout>
