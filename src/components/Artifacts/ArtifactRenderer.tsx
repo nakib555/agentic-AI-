@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,9 +7,10 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
+import type { SandpackProps } from "@codesandbox/sandpack-react";
 
-// FIX: Corrected lazy import to handle Sandpack as a named export from the module.
-const Sandpack = React.lazy(() => import("@codesandbox/sandpack-react").then(module => ({ default: module.Sandpack })));
+// FIX: Added explicit SandpackProps type to React.lazy to resolve component prop type mismatch in the build environment
+const Sandpack = React.lazy<React.ComponentType<SandpackProps>>(() => import("@codesandbox/sandpack-react").then(module => ({ default: module.Sandpack })));
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
