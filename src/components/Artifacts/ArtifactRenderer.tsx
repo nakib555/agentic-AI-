@@ -198,6 +198,15 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                             template="react"
                             theme={isDark ? "dark" : "light"}
                             files={{ "/App.js": finalCode }}
+                            customSetup={{
+                                dependencies: {
+                                    "lucide-react": "latest",
+                                    "recharts": "latest",
+                                    "framer-motion": "latest",
+                                    "clsx": "latest",
+                                    "tailwind-merge": "latest"
+                                }
+                            }}
                             options={{
                                 externalResources: ["https://cdn.tailwindcss.com"],
                                 layout: 'preview',
@@ -308,7 +317,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                             srcDoc={initialContent}
                             className="absolute inset-0 w-full h-full border-none bg-white"
                             title="Artifact Preview"
-                            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
+                            sandbox="allow-scripts allow-forms allow-modals allow-popups"
                         />
                     </div>
                     {/* Integrated Console Terminal */}

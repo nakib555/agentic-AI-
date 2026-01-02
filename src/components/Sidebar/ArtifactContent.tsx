@@ -511,6 +511,15 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     template="react"
                                     theme={isDark ? "dark" : "light"}
                                     files={{ "/App.js": debouncedContent }}
+                                    customSetup={{
+                                        dependencies: {
+                                            "lucide-react": "latest",
+                                            "recharts": "latest",
+                                            "framer-motion": "latest",
+                                            "clsx": "latest",
+                                            "tailwind-merge": "latest"
+                                        }
+                                    }}
                                     options={{
                                         externalResources: ["https://cdn.tailwindcss.com"],
                                         layout: 'preview'
@@ -576,7 +585,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                             srcDoc={previewContent}
                                             className="absolute inset-0 w-full h-full border-none bg-white"
                                             title="Artifact Preview"
-                                            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
+                                            sandbox="allow-scripts allow-forms allow-modals allow-popups"
                                         />
                                     </div>
                                 )}
