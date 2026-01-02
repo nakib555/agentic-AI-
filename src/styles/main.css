@@ -4,7 +4,7 @@
  */
 
 /* Import Sandpack styles first to allow overrides */
-@import "@codesandbox/sandpack-react/styles.css";
+
 
 /* 1. Import Design Tokens (The Control Center) */
 @import '../theme/design-tokens.css';
