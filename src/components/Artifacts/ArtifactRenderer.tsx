@@ -299,4 +299,30 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             </div>
 
             <div className="relative">
-                {activeTab === '
+                {activeTab === 'preview' ? (
+                    renderPreview()
+                ) : (
+                    <div className="max-h-[400px] overflow-auto custom-scrollbar">
+                        <SyntaxHighlighter
+                            language={highlightLang}
+                            style={syntaxStyle}
+                            customStyle={{ 
+                                margin: 0, 
+                                padding: '1rem', 
+                                fontSize: '13px', 
+                                lineHeight: '1.5',
+                                background: 'transparent',
+                            }}
+                            codeTagProps={{
+                                style: { fontFamily: "'Fira Code', monospace" }
+                            }}
+                            showLineNumbers
+                        >
+                            {content}
+                        </SyntaxHighlighter>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};

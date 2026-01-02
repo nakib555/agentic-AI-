@@ -32,7 +32,7 @@ const ReactSandpackPreview = React.lazy(() =>
             externalResources: ["https://cdn.tailwindcss.com"],
         }}
       >
-     
+        <div className="h-full w-full flex flex-col bg-transparent m-0 p-0">
             <module.SandpackPreview 
                 style={{ flex: 1, minHeight: 0, height: '100%' }} 
                 showRefreshButton={true} 
