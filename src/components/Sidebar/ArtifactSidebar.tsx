@@ -1,14 +1,13 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useLayoutEffect, Suspense } from 'react';
+import React, { useCallback, useLayoutEffect } from 'react';
 import { motion, AnimatePresence, PanInfo, useDragControls, useMotionValue, animate } from 'framer-motion';
 import { useViewport } from '../../hooks/useViewport';
-
-// Lazy load Content
-const ArtifactContent = React.lazy(() => import('./ArtifactContent').then(m => ({ default: m.ArtifactContent })));
+import { ArtifactContent } from './ArtifactContent';
 
 type ArtifactSidebarProps = {
     isOpen: boolean;
@@ -55,7 +54,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
         if (isDesktop) return;
 
         const vh = window.innerHeight;
-        const MAX_H = vh * 0.85;
+        const MAX_H = vh * 0.85; 
         const MIN_H = vh * 0.45;
         const currentY = y.get();
         const velocityY = info.velocity.y;
@@ -141,17 +140,11 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
                         </div>
                     )}
 
-                    <Suspense fallback={
-                        <div className="flex items-center justify-center h-full">
-                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
-                        </div>
-                    }>
-                        <ArtifactContent 
-                            content={content}
-                            language={language}
-                            onClose={onClose}
-                        />
-                    </Suspense>
+                    <ArtifactContent 
+                        content={content}
+                        language={language}
+                        onClose={onClose}
+                    />
                 </div>
 
                 {/* Resize Handle (Desktop only) */}
