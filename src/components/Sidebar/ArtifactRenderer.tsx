@@ -4,22 +4,165 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useReducer, useCallback } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
+import { motion, AnimatePresence } from 'framer-motion';
+import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 import type { SandpackProps } from "@codesandbox/sandpack-react";
 
 // FIX: Added explicit SandpackProps type to React.lazy to resolve component prop type mismatch in the build environment
 const Sandpack = React.lazy<React.ComponentType<SandpackProps>>(() => import("@codesandbox/sandpack-react").then(module => ({ default: module.Sandpack })));
 
-type ArtifactRendererProps = {
-    type: 'code' | 'data';
-    content: string;
-    language?: string;
-    title?: string;
+// --- Icons ---
+const CopyIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+);
+
+const CheckIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-green-500">
+        <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+);
+
+const ExternalLinkIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+        <polyline points="15 3 21 3 21 9"></polyline>
+        <line x1="10" y1="14" x2="21" y2="3"></line>
+    </svg>
+);
+
+const RefreshIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+        <path d="M23 4v6h-6"></path>
+        <path d="M1 20v-6h6"></path>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+    </svg>
+);
+
+const CodeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+        <polyline points="16 18 22 12 16 6"></polyline>
+        <polyline points="8 6 2 12 8 18"></polyline>
+    </svg>
+);
+
+const EyeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+);
+
+// --- Reducer ---
+type LogEntry = { level: string, message: string, timestamp: number };
+
+type State = {
+    activeTab: 'code' | 'preview';
+    iframeKey: number;
+    logs: LogEntry[];
+    showConsole: boolean;
+    isLoading: boolean;
 };
 
-// Robust React detection logic
+type Action = 
+    | { type: 'SET_TAB', payload: 'code' | 'preview' }
+    | { type: 'REFRESH_PREVIEW' }
+    | { type: 'SET_LOADING', payload: boolean }
+    | { type: 'ADD_LOG', payload: LogEntry }
+    | { type: 'TOGGLE_CONSOLE' }
+    | { type: 'SHOW_CONSOLE_ON_ERROR' }
+    | { type: 'CLEAR_LOGS' };
+
+const initialState: State = {
+    activeTab: 'code',
+    iframeKey: 0,
+    logs: [],
+    showConsole: false,
+    isLoading: true,
+};
+
+const artifactReducer = (state: State, action: Action): State => {
+    switch (action.type) {
+        case 'SET_TAB': 
+            return { ...state, activeTab: action.payload };
+        case 'REFRESH_PREVIEW':
+            return { ...state, iframeKey: state.iframeKey + 1, logs: [], isLoading: true };
+        case 'SET_LOADING':
+            return { ...state, isLoading: action.payload };
+        case 'ADD_LOG':
+            return { ...state, logs: [...state.logs, action.payload] };
+        case 'TOGGLE_CONSOLE':
+            return { ...state, showConsole: !state.showConsole };
+        case 'SHOW_CONSOLE_ON_ERROR':
+            return { ...state, showConsole: true };
+        case 'CLEAR_LOGS':
+            return { ...state, logs: [] };
+        default: 
+            return state;
+    }
+};
+
+// Generates a script to intercept console logs and send them to the parent window
+const generateConsoleScript = () => `
+    <script>
+        (function() {
+            const originalConsole = window.console;
+            
+            function safeStringify(obj) {
+                const seen = new WeakSet();
+                return JSON.stringify(obj, (key, value) => {
+                    if (typeof value === 'object' && value !== null) {
+                        if (seen.has(value)) {
+                            return '[Circular]';
+                        }
+                        seen.add(value);
+                    }
+                    if (typeof value === 'function') return '[Function]';
+                    return value;
+                }, 2);
+            }
+
+            function send(level, args) {
+                try {
+                    const msg = args.map(a => {
+                        if (a === null) return 'null';
+                        if (a === undefined) return 'undefined';
+                        if (typeof a === 'object') {
+                            try { return safeStringify(a); } catch(e) { return Object.prototype.toString.call(a); }
+                        }
+                        return String(a);
+                    }).join(' ');
+                    window.parent.postMessage({ type: 'ARTIFACT_LOG', level, message: msg }, '*');
+                } catch(e) {
+                    console.error('Error sending log to parent:', e);
+                }
+            }
+
+            window.console = {
+                ...originalConsole,
+                log: (...args) => { originalConsole.log(...args); send('info', args); },
+                info: (...args) => { originalConsole.info(...args); send('info', args); },
+                warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
+                error: (...args) => { originalConsole.error(...args); send('error', args); },
+                debug: (...args) => { originalConsole.debug(...args); send('info', args); },
+            };
+
+            window.addEventListener('error', (e) => {
+                send('error', [e.message]);
+            });
+            window.addEventListener('unhandledrejection', (e) => {
+                send('error', ['Unhandled Rejection: ' + (e.reason ? e.reason.toString() : 'Unknown')]);
+            });
+        })();
+    </script>
+`;
+
 const detectIsReact = (code: string, lang: string) => {
     const normalize = (s: string) => s.toLowerCase().trim();
     const l = normalize(lang);
@@ -37,19 +180,25 @@ const detectIsReact = (code: string, lang: string) => {
     );
 };
 
-const LoadingSpinner = () => (
-    <div className="flex flex-col items-center justify-center h-full min-h-[300px] bg-white dark:bg-[#1e1e1e] text-slate-500">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-        <span className="text-xs font-medium animate-pulse">Initializing Preview Environment...</span>
-    </div>
-);
+// Threshold for switching to virtualized plain text viewer
+const VIRTUALIZATION_THRESHOLD_SIZE = 20 * 1024; // 20KB (approx 500-1000 lines of dense code)
 
-export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, content, language = 'html', title }) => {
-    const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
-    const [logs, setLogs] = useState<{level: string, message: string, timestamp: number}[]>([]);
-    const [showConsole, setShowConsole] = useState(false);
+type ArtifactContentProps = {
+    content: string;
+    language: string;
+    onClose: () => void;
+};
+
+export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ content, language, onClose }) => {
     const syntaxStyle = useSyntaxTheme();
     
+    // UI State managed by Reducer
+    const [state, dispatch] = useReducer(artifactReducer, initialState);
+    const [isCopied, setIsCopied] = React.useState(false);
+    
+    // Debounce content to prevent UI blocking during streaming of large files
+    const [debouncedContent, setDebouncedContent] = useState(content);
+
     // Theme detection
     const [isDark, setIsDark] = useState(false);
     useEffect(() => {
@@ -60,241 +209,430 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         return () => observer.disconnect();
     }, []);
 
-    // Listen for console logs from the iframe (only for Frame mode)
+    // Auto-switch tab based on language on mount
+    useEffect(() => {
+        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || detectIsReact(content, language);
+        if (content.length < 50000 && isRenderable) {
+            dispatch({ type: 'SET_TAB', payload: 'preview' });
+        } else {
+            dispatch({ type: 'SET_TAB', payload: 'code' });
+        }
+    }, [language, content.length]);
+
+    // Initial load handler to clear the loading spinner
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            dispatch({ type: 'SET_LOADING', payload: false });
+        }, 500);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Update debounced content with variable delay based on size
+    useEffect(() => {
+        // Dynamic debounce: Larger files update less frequently to save CPU
+        const length = content.length;
+        let delay = 100;
+        if (length > 1000000) delay = 1500; // 1MB+ -> 1.5s
+        else if (length > 100000) delay = 800; // 100KB+ -> 800ms
+        else if (length > 20000) delay = 300; // 20KB+ -> 300ms
+
+        const handler = setTimeout(() => {
+            setDebouncedContent(content);
+        }, delay);
+        return () => clearTimeout(handler);
+    }, [content]);
+
+    // Handle updates for Code Mode - ensure loading is off
+    useEffect(() => {
+        if (state.activeTab === 'code') {
+            dispatch({ type: 'SET_LOADING', payload: false });
+        }
+    }, [debouncedContent, state.activeTab]);
+
+    // Console Log Listener
     useEffect(() => {
         const handler = (e: MessageEvent) => {
             if (e.data && e.data.type === 'ARTIFACT_LOG') {
-                setLogs(prev => [...prev, { level: e.data.level, message: e.data.message, timestamp: Date.now() }]);
-                if (e.data.level === 'error') setShowConsole(true);
+                dispatch({ 
+                    type: 'ADD_LOG', 
+                    payload: { level: e.data.level, message: e.data.message, timestamp: Date.now() } 
+                });
+                if (e.data.level === 'error') {
+                    dispatch({ type: 'SHOW_CONSOLE_ON_ERROR' });
+                }
             }
         };
         window.addEventListener('message', handler);
         return () => window.removeEventListener('message', handler);
     }, []);
 
-    // Reset logs on content change
-    useEffect(() => {
-        setLogs([]);
-    }, [content]);
+    const isReact = useMemo(() => {
+        if (debouncedContent.length > 50000) return false; // Optimization
+        return detectIsReact(debouncedContent, language);
+    }, [debouncedContent, language]);
 
-    const isReact = useMemo(() => detectIsReact(content, language), [content, language]);
+    // Memoized Preview Generation
+    const previewContent = useMemo(() => {
+        if (!debouncedContent) return '';
+        
+        let cleanContent = debouncedContent.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
+        const consoleScript = generateConsoleScript();
+        const tailwindCdn = '<script src="https://cdn.tailwindcss.com"></script>';
 
-    const renderPreview = () => {
-        if (type === 'data') {
-            try {
-                // Basic CSV/JSON table renderer
-                const isJson = content.trim().startsWith('{') || content.trim().startsWith('[');
-                let data = isJson ? JSON.parse(content) : null;
-                
-                // If simple array of objects, render table
-                if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
-                    const headers = Object.keys(data[0]);
-                    return (
-                        <div className="overflow-auto max-h-[400px]">
-                            <table className="min-w-full text-sm">
-                                <thead className="bg-gray-100 dark:bg-white/5 sticky top-0">
-                                    <tr>
-                                        {headers.map(h => (
-                                            <th key={h} className="px-4 py-2 text-left font-semibold text-slate-700 dark:text-slate-200">{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data.map((row, i) => (
-                                        <tr key={i} className="border-t border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5">
-                                            {headers.map(h => (
-                                                <td key={h} className="px-4 py-2 text-slate-600 dark:text-slate-400">{String(row[h])}</td>
-                                            ))}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    );
-                }
-                return <pre className="p-4 text-xs font-mono">{JSON.stringify(data, null, 2)}</pre>;
-            } catch (e) {
-                return <div className="p-4 text-red-500">Failed to parse data artifact.</div>;
-            }
-        }
-
-        // --- Sandpack for React / ES Modules ---
-        if (isReact) {
-            // Ensure App.js exports default
-            let finalCode = content;
-            if (!content.includes('export default')) {
-                // Heuristic to add export default if missing
-                finalCode = content + '\n\nexport default App;'; 
-            }
-
-            return (
-                <div className="h-full min-h-[400px] w-full relative">
-                    <Suspense fallback={<LoadingSpinner />}>
-                        <Sandpack
-                            template="react"
-                            theme={isDark ? "dark" : "light"}
-                            files={{ "/App.js": finalCode }}
-                            options={{
-                                externalResources: ["https://cdn.tailwindcss.com"],
-                                layout: 'preview',
-                                showRefreshButton: true,
-                                showConsole: true,
-                                showConsoleButton: true,
-                            }}
-                        />
-                    </Suspense>
-                </div>
-            );
-        }
-
-        // --- Frame for HTML/JS (Standard) ---
-        if (language === 'html' || language === 'svg' || language === 'javascript' || language === 'markup' || language === 'xml') {
-            const cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
-
-            const consoleScript = `
-                <script>
-                    (function() {
-                        const originalConsole = window.console;
-                        function send(level, args) {
-                            try {
-                                const msg = args.map(a => {
-                                    if (typeof a === 'object') {
-                                        try { return JSON.stringify(a, null, 2); } catch(e) { return '[Circular]'; }
-                                    }
-                                    return String(a);
-                                }).join(' ');
-                                window.parent.postMessage({ type: 'ARTIFACT_LOG', level, message: msg }, '*');
-                            } catch(e) {}
-                        }
-                        window.console = {
-                            ...originalConsole,
-                            log: (...args) => { originalConsole.log(...args); send('info', args); },
-                            info: (...args) => { originalConsole.info(...args); send('info', args); },
-                            warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
-                            error: (...args) => { originalConsole.error(...args); send('error', args); },
-                        };
-                        window.addEventListener('error', (e) => {
-                            send('error', [e.message]);
-                        });
-                        window.addEventListener('unhandledrejection', (e) => {
-                            send('error', ['Unhandled Rejection: ' + (e.reason ? e.reason.toString() : 'Unknown')]);
-                        });
-                    })();
-                </script>
-            `;
-
-            let initialContent = '';
-            if (language === 'javascript') {
-                initialContent = `<!DOCTYPE html><html><head>${consoleScript}<style>body{font-family:sans-serif;padding:20px;}</style></head><body><script>${cleanContent}</script></body></html>`;
-            } else {
-                // Inject script into head for HTML
-                if (cleanContent.includes('<head>')) {
-                    initialContent = cleanContent.replace('<head>', `<head>${consoleScript}`);
-                } else if (cleanContent.includes('<html>')) {
-                     initialContent = cleanContent.replace('<html>', `<html><head>${consoleScript}</head>`);
-                } else {
-                    initialContent = `${consoleScript}${cleanContent}`;
-                }
-            }
+        // HTML / XML / SVG
+        if (['html', 'svg', 'markup', 'xml'].includes(language)) {
+            // Automatically inject Tailwind for better out-of-the-box styling of LLM snippets
+            const stylesAndScript = `${tailwindCdn}${consoleScript}`;
             
-            return (
-                <div className="flex flex-col h-full min-h-[400px]">
-                    <div className="flex-1 relative bg-white">
-                        <iframe
-                            srcDoc={initialContent}
-                            className="absolute inset-0 w-full h-full border-none bg-white"
-                            title="Artifact Preview"
-                            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
-                        />
-                    </div>
-                    {/* Integrated Console Terminal */}
-                    <div className="flex-shrink-0 bg-[#1e1e1e] border-t border-gray-700 flex flex-col">
-                        <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
-                            <button 
-                                onClick={() => setShowConsole(!showConsole)} 
-                                className="flex items-center gap-2 hover:text-white transition-colors focus:outline-none"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-3.5 h-3.5 transition-transform ${showConsole ? 'rotate-90' : ''}`}><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                Console {logs.length > 0 && <span className="bg-gray-600 text-white px-1 rounded-sm text-[10px]">{logs.length}</span>}
-                            </button>
-                            {showConsole && <button onClick={() => setLogs([])} className="hover:text-white transition-colors">Clear</button>}
-                        </div>
-                        {showConsole && (
-                            <div className="h-40 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
-                                {logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
-                                {logs.map((log, i) => (
-                                    <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
-                                        <span className={`flex-shrink-0 font-bold ${
-                                            log.level === 'error' ? 'text-red-400' :
-                                            log.level === 'warn' ? 'text-yellow-400' :
-                                            'text-blue-400'
-                                        }`}>
-                                            {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
-                                        </span>
-                                        <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
-                                            {log.message}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
+            if (cleanContent.includes('<head>')) {
+                return cleanContent.replace('<head>', `<head>${stylesAndScript}`);
+            } else if (cleanContent.includes('<html>')) {
+                return cleanContent.replace('<html>', `<html><head>${stylesAndScript}</head>`);
+            }
+            return `<!DOCTYPE html><html><head>${stylesAndScript}</head><body>${cleanContent}</body></html>`;
         }
         
-        return <div className="p-4 text-slate-500">Preview not available for {language}</div>;
-    };
+        // CSS
+        if (['css', 'scss', 'less'].includes(language)) {
+            return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    ${consoleScript}
+                    <style>
+                        body { font-family: system-ui, sans-serif; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f8f9fa; }
+                        h1 { color: #333; margin-bottom: 1rem; }
+                        .demo-container { padding: 2rem; border: 1px dashed #ccc; border-radius: 8px; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+                    </style>
+                    <style>${cleanContent}</style>
+                </head>
+                <body>
+                    <div class="demo-container">
+                        <h1>CSS Preview</h1>
+                        <p>The styles above are applied to this document.</p>
+                        <button class="btn primary">Demo Button</button>
+                    </div>
+                </body>
+                </html>
+            `;
+        }
 
-    const highlightLang = (language === 'html' || language === 'svg' || language === 'xml') ? 'markup' : (language || 'text');
+        // JavaScript / TypeScript (Standard Iframe fallback if not React)
+        if (['javascript', 'typescript', 'js', 'ts'].includes(language)) {
+            const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
+            return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>body { font-family: system-ui, sans-serif; padding: 20px; color: #333; } @media (prefers-color-scheme: dark) { body { color: #eee; } }</style>
+                    ${consoleScript}
+                </head>
+                <body>
+                    <div id="root"></div>
+                    <script type="module">
+                        // Shim for non-React JS previews
+                        try {
+                            ${safeContent}
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    </script>
+                </body>
+                </html>
+            `;
+        }
+        return '';
+    }, [debouncedContent, language]);
+
+    const handleCopy = useCallback(() => {
+        navigator.clipboard.writeText(content);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    }, [content]);
+
+    const handleOpenNewTab = useCallback(() => {
+        if (!isReact) {
+            const win = window.open('', '_blank');
+            if (win) {
+                win.document.write(previewContent);
+                win.document.close();
+            }
+        } else {
+            alert("Interactive previews are embedded and cannot be opened in a new tab yet.");
+        }
+    }, [previewContent, isReact]);
+
+    const handleRefresh = useCallback(() => {
+        dispatch({ type: 'REFRESH_PREVIEW' });
+        setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 200);
+    }, []);
+
+    const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx', 'css'].includes(language) || isReact;
+    
+    const displayLanguage = useMemo(() => {
+        if (!language) return 'TXT';
+        const raw = language.toLowerCase();
+        if (isReact) return 'REACT';
+        if (['html', 'css', 'json', 'xml', 'sql', 'php', 'svg'].includes(raw)) return raw.toUpperCase();
+        if (raw === 'javascript') return 'JavaScript';
+        if (raw === 'typescript') return 'TypeScript';
+        return raw.charAt(0).toUpperCase() + raw.slice(1);
+    }, [language, isReact]);
+
+    const syntaxHighlighterLanguage = useMemo(() => {
+        if (language === 'html') return 'markup';
+        return language;
+    }, [language]);
+
+    // Efficient check for large files without regex
+    const useVirtualization = useMemo(() => {
+        return content.length > VIRTUALIZATION_THRESHOLD_SIZE;
+    }, [content.length]);
 
     return (
-        <div className="my-4 rounded-xl overflow-hidden border border-border-default shadow-lg bg-code-surface transition-colors duration-300">
-            <div className="flex items-center justify-between px-4 py-2 bg-layer-2/50 border-b border-border-default backdrop-blur-sm">
-                <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">
-                    {title || (type === 'code' ? (isReact ? 'Interactive App' : 'HTML Preview') : 'Data View')}
-                </span>
-                <div className="flex bg-layer-3 p-0.5 rounded-lg">
-                    <button 
-                        onClick={() => setActiveTab('preview')}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTab === 'preview' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
-                    >
-                        Preview
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('source')}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTab === 'source' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
-                    >
-                        Source
-                    </button>
+        <div className="flex flex-col h-full overflow-hidden w-full bg-layer-1">
+            {/* Header Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-3 bg-layer-1 border-b border-border-subtle flex-shrink-0 w-full">
+                <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-full">
+                    <div className="flex items-center gap-2 px-2 py-1 bg-layer-2 rounded-md border border-border-default flex-shrink-0">
+                        <span className="text-xs font-bold text-content-secondary uppercase tracking-wider font-mono">
+                            {displayLanguage}
+                        </span>
+                        {useVirtualization && state.activeTab === 'code' && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wide">
+                                VIRTUALIZED
+                            </span>
+                        )}
+                    </div>
+                    {isPreviewable && (
+                        <div className="flex bg-layer-2 p-0.5 rounded-lg border border-border-default flex-shrink-0">
+                            <button 
+                                onClick={() => dispatch({ type: 'SET_TAB', payload: 'code' })}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                                    state.activeTab === 'code' 
+                                    ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
+                                    : 'text-content-secondary hover:text-content-primary'
+                                }`}
+                            >
+                                <CodeIcon />
+                                Code
+                            </button>
+                            <button 
+                                onClick={() => dispatch({ type: 'SET_TAB', payload: 'preview' })}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                                    state.activeTab === 'preview' 
+                                    ? 'bg-white dark:bg-[#2a2a2a] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
+                                    : 'text-content-secondary hover:text-content-primary'
+                                }`}
+                            >
+                                <EyeIcon />
+                                Preview
+                            </button>
+                        </div>
+                    )}
+                </div>
+                
+                <div className="flex items-center gap-2 ml-auto">
+                    <Tooltip content="Copy Code" position="bottom" delay={500}>
+                        <button 
+                            onClick={handleCopy}
+                            className="p-2 rounded-lg text-content-secondary hover:text-content-primary hover:bg-layer-2 transition-colors"
+                            aria-label="Copy code"
+                        >
+                            {isCopied ? <CheckIcon /> : <CopyIcon />}
+                        </button>
+                    </Tooltip>
+                    
+                    <Tooltip content="Close Panel" position="bottom" delay={500}>
+                        <button 
+                            onClick={onClose} 
+                            className="p-2 rounded-lg text-content-secondary hover:text-content-primary hover:bg-layer-2 transition-colors"
+                            aria-label="Close artifact"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </Tooltip>
                 </div>
             </div>
 
-            <div className="relative">
-                {activeTab === 'preview' ? (
-                    renderPreview()
-                ) : (
-                    <div className="max-h-[400px] overflow-auto custom-scrollbar">
+            {/* Main Content Area */}
+            <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col w-full">
+                {/* CODE VIEW */}
+                <div 
+                    className={`flex-1 relative overflow-auto custom-scrollbar bg-code-surface ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
+                >
+                    {useVirtualization ? (
+                        <VirtualizedCodeViewer 
+                            content={debouncedContent} 
+                            language={language}
+                            theme={syntaxStyle}
+                        />
+                    ) : (
                         <SyntaxHighlighter
-                            language={highlightLang}
+                            language={syntaxHighlighterLanguage || 'text'}
                             style={syntaxStyle}
                             customStyle={{ 
                                 margin: 0, 
-                                padding: '1rem', 
+                                padding: '1.5rem', 
+                                minHeight: '100%', 
                                 fontSize: '13px', 
                                 lineHeight: '1.5',
+                                fontFamily: "'Fira Code', monospace",
                                 background: 'transparent',
                             }}
-                            codeTagProps={{
-                                style: { fontFamily: "'Fira Code', monospace" }
-                            }}
-                            showLineNumbers
+                            showLineNumbers={true}
+                            wrapLines={false} 
+                            lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
+                            fallbackLanguage="text"
                         >
-                            {content}
+                            {debouncedContent || ''}
                         </SyntaxHighlighter>
-                    </div>
-                )}
+                    )}
+                </div>
+
+                {/* PREVIEW VIEW */}
+                <div 
+                    className={`flex-1 relative flex flex-col bg-layer-2 ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
+                >
+                    {isReact ? (
+                        <div className="flex-1 w-full h-full relative bg-white dark:bg-[#1e1e1e]">
+                             <Suspense fallback={
+                                <div className="flex flex-col items-center justify-center h-full">
+                                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                    <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
+                                </div>
+                             }>
+                                 <Sandpack
+                                    key={state.iframeKey}
+                                    template="react"
+                                    theme={isDark ? "dark" : "light"}
+                                    files={{ "/App.js": debouncedContent }}
+                                    customSetup={{
+                                        dependencies: {
+                                            "lucide-react": "latest",
+                                            "recharts": "latest",
+                                            "framer-motion": "latest",
+                                            "clsx": "latest",
+                                            "tailwind-merge": "latest",
+                                        },
+                                    }}
+                                    options={{
+                                        showConsoleButton: true,
+                                        showInlineErrors: true,
+                                        showNavigator: true,
+                                        showLineNumbers: true,
+                                        showTabs: true,
+                                        externalResources: ["https://cdn.tailwindcss.com"],
+                                    }}
+                                    style={{ height: '100%' }}
+                                 />
+                            </Suspense>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="flex items-center justify-between px-3 py-2 bg-layer-1 border-b border-border-default flex-shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                                </div>
+                                
+                                <div className="flex-1 mx-4">
+                                    <div className="bg-white dark:bg-black/10 border border-gray-200 dark:border-white/10 rounded px-3 py-1 text-xs text-center text-gray-500 font-mono truncate shadow-sm">
+                                        preview
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
+                                        className={`p-1.5 text-xs font-mono font-medium rounded transition-colors flex items-center gap-1.5 ${state.showConsole ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-content-secondary hover:text-content-primary hover:bg-layer-2'}`}
+                                        title="Toggle Console"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                                        Console {state.logs.length > 0 && <span className="bg-layer-2 px-1 rounded-sm text-[10px]">{state.logs.length}</span>}
+                                    </button>
+                                    <div className="w-px h-3 bg-border-strong mx-1" />
+                                    <Tooltip content="Reload Preview" position="bottom">
+                                        <button 
+                                            onClick={handleRefresh} 
+                                            className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
+                                            aria-label="Reload Preview"
+                                        >
+                                            <RefreshIcon />
+                                        </button>
+                                    </Tooltip>
+                                    <Tooltip content="Open in New Tab" position="bottom">
+                                        <button 
+                                            onClick={handleOpenNewTab}
+                                            className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
+                                            aria-label="Open in New Tab"
+                                        >
+                                            <ExternalLinkIcon />
+                                        </button>
+                                    </Tooltip>
+                                </div>
+                            </div>
+                            <div className="flex-1 relative flex flex-col overflow-hidden">
+                                {state.isLoading ? (
+                                    <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
+                                        <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 bg-white dark:bg-[#1e1e1e] relative w-full h-full">
+                                        <iframe
+                                            key={state.iframeKey}
+                                            srcDoc={previewContent}
+                                            className="absolute inset-0 w-full h-full border-none bg-white dark:bg-[#1e1e1e]"
+                                            title="Artifact Preview"
+                                            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
+                                        />
+                                    </div>
+                                )}
+                                
+                                {/* Console Terminal Panel */}
+                                <AnimatePresence>
+                                    {state.showConsole && (
+                                        <motion.div
+                                            initial={{ height: 0 }}
+                                            animate={{ height: '35%' }}
+                                            exit={{ height: 0 }}
+                                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                            className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col w-full"
+                                        >
+                                            <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
+                                                <span>Terminal</span>
+                                                <button onClick={() => dispatch({ type: 'CLEAR_LOGS' })} className="hover:text-white transition-colors">Clear</button>
+                                            </div>
+                                            <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
+                                                {state.logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
+                                                {state.logs.map((log, i) => (
+                                                    <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
+                                                        <span className={`flex-shrink-0 font-bold ${
+                                                            log.level === 'error' ? 'text-red-400' :
+                                                            log.level === 'warn' ? 'text-yellow-400' :
+                                                            'text-blue-400'
+                                                        }`}>
+                                                            {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
+                                                        </span>
+                                                        <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
+                                                            {log.message}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );
-};
+});

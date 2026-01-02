@@ -32,14 +32,14 @@ const ReactSandpackPreview = React.lazy(() =>
             externalResources: ["https://cdn.tailwindcss.com"],
         }}
       >
-        <div>
+        <div className="h-full w-full flex flex-col bg-transparent m-0 p-0">
             <module.SandpackPreview 
                 style={{ flex: 1, minHeight: 0, height: '100%' }} 
                 showRefreshButton={true} 
                 showOpenInCodeSandbox={false}
-
+                showNavigator={false}
             />
-            <div >
+            <div style={{ height: 'auto', maxHeight: '30%', flexShrink: 0, borderTop: '1px solid var(--sp-colors-surface2)', backgroundColor: 'transparent' }}>
                  <module.SandpackConsole resetOnPreviewRestart />
             </div>
         </div>
