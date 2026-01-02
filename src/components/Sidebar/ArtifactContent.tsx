@@ -14,7 +14,7 @@ import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 const ReactSandpackPreview = React.lazy(() =>
   import("@codesandbox/sandpack-react").then((module) => ({
     default: ({ code, theme }: { code: string, theme: any }) => (
-      <module.Sandpack
+      <module.SandpackProvider
         template="react"
         theme={theme}
         files={{ "/App.js": code }}
@@ -29,17 +29,26 @@ const ReactSandpackPreview = React.lazy(() =>
         }}
         options={{
             externalResources: ["https://cdn.tailwindcss.com"],
-            layout: "preview",
-            showConsole: true,
-            showConsoleButton: true,
-            showRefreshButton: true,
-            classes: {
-                "sp-wrapper": "h-full w-full block",
-                "sp-layout": "h-full w-full rounded-none border-none",
-                "sp-stack": "h-full w-full",
-            }
         }}
-      />
+      >
+        <module.SandpackLayout style={{ 
+            height: '100%', 
+            width: '100%', 
+            borderRadius: 0, 
+            border: 'none',
+            display: 'flex',
+            flexDirection: 'column'
+        }}>
+            <module.SandpackPreview 
+                style={{ flex: 1, minHeight: 0 }} 
+                showRefreshButton={true} 
+                showOpenInCodeSandbox={false}
+            />
+            <div style={{ height: 'auto', maxHeight: '30%', flexShrink: 0, borderTop: '1px solid var(--sp-colors-surface2)' }}>
+                 <module.SandpackConsole resetOnPreviewRestart />
+            </div>
+        </module.SandpackLayout>
+      </module.SandpackProvider>
     ),
   }))
 );

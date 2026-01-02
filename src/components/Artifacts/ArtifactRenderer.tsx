@@ -6,10 +6,35 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
-import type { SandpackProps } from "@codesandbox/sandpack-react";
 
-// FIX: Added explicit SandpackProps type to React.lazy to resolve component prop type mismatch in the build environment
-const Sandpack = React.lazy<React.ComponentType<SandpackProps>>(() => import("@codesandbox/sandpack-react").then(module => ({ default: module.Sandpack })));
+// Custom lazy loader for composable Sandpack components for inline renderer
+const ReactSandpack = React.lazy(() => import("@codesandbox/sandpack-react").then(module => ({
+    default: ({ code, theme, keyId }: { code: string, theme: any, keyId: any }) => (
+        <module.SandpackProvider
+            key={keyId}
+            template="react"
+            theme={theme}
+            files={{ "/App.js": code }}
+            customSetup={{
+                dependencies: {
+                    "lucide-react": "latest",
+                    "recharts": "latest",
+                    "framer-motion": "latest",
+                    "clsx": "latest",
+                    "tailwind-merge": "latest",
+                },
+            }}
+            options={{
+                externalResources: ["https://cdn.tailwindcss.com"],
+            }}
+        >
+            <module.SandpackLayout style={{ height: '100%', borderRadius: '0.75rem', border: '1px solid var(--sp-colors-surface2)' }}>
+                <module.SandpackPreview style={{ height: '400px' }} showRefreshButton={true} />
+                <module.SandpackConsole style={{ height: '150px' }} />
+            </module.SandpackLayout>
+        </module.SandpackProvider>
+    )
+})));
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
@@ -130,18 +155,10 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             return (
                 <div className="h-full min-h-[400px] w-full relative">
                     <Suspense fallback={<LoadingSpinner />}>
-                        <Sandpack
-                            key={iframeKey} // Force reload Sandpack on refresh
-                            template="react"
+                        <ReactSandpack
+                            keyId={iframeKey} // Force reload Sandpack on refresh
                             theme={isDark ? "dark" : "light"}
-                            files={{ "/App.js": finalCode }}
-                            options={{
-                                externalResources: ["https://cdn.tailwindcss.com"],
-                                layout: 'preview',
-                                showRefreshButton: true,
-                                showConsole: true,
-                                showConsoleButton: true,
-                            }}
+                            code={finalCode}
                         />
                     </Suspense>
                 </div>
