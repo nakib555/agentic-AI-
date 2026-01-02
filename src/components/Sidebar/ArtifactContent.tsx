@@ -10,8 +10,8 @@ import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 
-// FIX: Corrected lazy import to handle Sandpack as a default export, which resolves prop-typing issues.
-const Sandpack = React.lazy(() => import("@codesandbox/sandpack-react"));
+// FIX: Corrected lazy import to handle Sandpack as a named export from the module.
+const Sandpack = React.lazy(() => import("@codesandbox/sandpack-react").then(module => ({ default: module.Sandpack })));
 
 // --- Icons ---
 const CopyIcon = () => (

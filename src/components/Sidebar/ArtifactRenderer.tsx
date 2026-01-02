@@ -7,8 +7,8 @@ import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 
-// FIX: Corrected lazy import to handle Sandpack as a default export, which resolves prop-typing issues.
-const Sandpack = React.lazy(() => import("@codesandbox/sandpack-react"));
+// FIX: Corrected lazy import to handle Sandpack as a named export from the module.
+const Sandpack = React.lazy(() => import("@codesandbox/sandpack-react").then(module => ({ default: module.Sandpack })));
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
@@ -261,37 +261,3 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                     <button 
                         onClick={() => setActiveTab('source')}
                         className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTab === 'source' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
-                    >
-                        Source
-                    </button>
-                </div>
-            </div>
-
-            <div className="relative">
-                {activeTab === 'preview' ? (
-                    renderPreview()
-                ) : (
-                    <div className="max-h-[400px] overflow-auto custom-scrollbar">
-                        <SyntaxHighlighter
-                            language={highlightLang}
-                            style={syntaxStyle}
-                            customStyle={{ 
-                                margin: 0, 
-                                padding: '1rem', 
-                                fontSize: '13px', 
-                                lineHeight: '1.5',
-                                background: 'transparent',
-                            }}
-                            codeTagProps={{
-                                style: { fontFamily: "'Fira Code', monospace" }
-                            }}
-                            showLineNumbers
-                        >
-                            {content}
-                        </SyntaxHighlighter>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};

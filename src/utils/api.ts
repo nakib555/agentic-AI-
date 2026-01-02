@@ -15,18 +15,21 @@ export const getApiBaseUrl = () => {
         // Ignore localStorage access errors (security settings, etc)
     }
 
+    // FIX: Safe access to import.meta.env to prevent crashes in environments
+    // where it is not defined or replaced (e.g. esbuild production builds).
+    const meta = import.meta as any;
+    const env = meta.env || {};
+
     // 2. Check for explicit environment variable (Set this in Cloudflare Pages/Vercel)
     // The bundler (Vite/esbuild) replaces this with a string literal.
     // It is not a standard browser feature.
-    // FIX: Cast `import.meta` to `any` to bypass TypeScript error when `vite/client` types are not available.
-    const envUrl = (import.meta as any).env.VITE_API_BASE_URL;
+    const envUrl = env.VITE_API_BASE_URL;
     if (envUrl) {
         return envUrl.replace(/\/$/, '');
     }
 
     // 3. Development fallback
-    // FIX: Cast `import.meta` to `any` to bypass TypeScript error for `env.DEV`.
-    if ((import.meta as any).env.DEV) {
+    if (env.DEV) {
         if (typeof window !== 'undefined') {
             // If accessing via IP (e.g. 192.168.1.5), assume backend is on same host at port 3001
             // This enables testing on real mobile devices connected to the same network.
@@ -69,12 +72,13 @@ export const fetchFromApi = async (url: string, options: ApiOptions = {}): Promi
     const method = options.method || 'GET';
     const { silent, ...fetchOptions } = options;
     
-    // Cast import.meta to any to avoid TypeScript errors
+    // FIX: Safe access to import.meta.env
     const meta = import.meta as any;
+    const env = meta.env || {};
     
     const headers = {
         ...fetchOptions.headers,
-        'X-Client-Version': (meta.env && meta.env.VITE_APP_VERSION) || 'unknown',
+        'X-Client-Version': env.VITE_APP_VERSION || 'unknown',
     };
     
     try {
