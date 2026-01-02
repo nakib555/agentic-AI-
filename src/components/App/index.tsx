@@ -11,11 +11,11 @@ import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 } from './constants';
 import { VersionMismatchOverlay } from '../UI/VersionMismatchOverlay';
+import { ChatArea } from '../Chat/ChatArea';
 
 // Lazy Load Major UI Blocks to optimize initial render and bundle splitting
 const Sidebar = React.lazy(() => import('../Sidebar/Sidebar').then(module => ({ default: module.Sidebar })));
 const ChatHeader = React.lazy(() => import('../Chat/ChatHeader').then(module => ({ default: module.ChatHeader })));
-const ChatArea = React.lazy(() => import('../Chat/ChatArea').then(module => ({ default: module.ChatArea })));
 const SourcesSidebar = React.lazy(() => import('../AI/SourcesSidebar').then(module => ({ default: module.SourcesSidebar })));
 const ArtifactSidebar = React.lazy(() => import('../Sidebar/ArtifactSidebar').then(module => ({ default: module.ArtifactSidebar })));
 const ThinkingSidebar = React.lazy(() => import('../Sidebar/ThinkingSidebar').then(module => ({ default: module.ThinkingSidebar })));
