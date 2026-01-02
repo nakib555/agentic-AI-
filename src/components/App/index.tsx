@@ -4,7 +4,7 @@
  */
 
 import React, { Suspense } from 'react';
-import { useAppLogic } from '../../hooks/useAppLogic';
+import { useAppLogic } from './useAppLogic';
 import { Toast } from '../UI/Toast';
 import { AppSkeleton } from '../UI/AppSkeleton';
 import {
