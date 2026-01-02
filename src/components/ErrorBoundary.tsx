@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+import React, { type ErrorInfo, type ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
   children?: ReactNode;
@@ -14,7 +14,7 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   // Explicitly declare state as a class property
   public state: ErrorBoundaryState = {
     hasError: false,
@@ -78,16 +78,4 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               </button>
               <button
                 onClick={this.handleReload}
-                className="px-4 py-2 text-sm font-semibold text-white bg-primary-main hover:bg-primary-hover rounded-lg transition-colors"
-              >
-                Reload
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
+                className

@@ -4,10 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
+
+// Lazy load the shared Sandpack component
+const ReactSandpack = React.lazy(() => import('./SandpackComponent'));
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
@@ -54,8 +57,8 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
 
     // Auto-switch tab based on language on mount
     useEffect(() => {
-        // Exclude React from simple preview since Sandpack is removed
-        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language) && !isReact;
+        // Auto-switch to preview if it's a standard web format OR if React is detected
+        const isRenderable = (['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language)) || isReact;
         
         if (content.length < 50000 && isRenderable) {
             setActiveTab('preview');
@@ -103,8 +106,29 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             }
         }
 
+        // --- React Sandpack Preview ---
+        if (isReact) {
+            return (
+                <div className="h-[550px] w-full bg-white dark:bg-[#1e1e1e] border-t border-border-subtle">
+                     <Suspense fallback={
+                        <div className="flex flex-col items-center justify-center h-full">
+                            <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                            <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
+                        </div>
+                     }>
+                         <ReactSandpack
+                            key={iframeKey}
+                            theme={isDark ? "dark" : "light"}
+                            code={content}
+                            mode="inline"
+                         />
+                    </Suspense>
+                </div>
+            );
+        }
+
         // --- Frame for HTML/JS (Standard) ---
-        if (['html', 'svg', 'javascript', 'markup', 'xml', 'css', 'js'].includes(language) && !isReact) {
+        if (['html', 'svg', 'javascript', 'markup', 'xml', 'css', 'js'].includes(language)) {
             const cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
             const consoleScript = generateConsoleScript();
 
@@ -176,8 +200,8 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
 
     const highlightLang = (language === 'html' || language === 'svg' || language === 'xml') ? 'markup' : (language || 'text');
     
-    // Only show Preview tab if it's a simple renderable language and NOT React (since sandpack is gone)
-    const showPreviewTab = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language) && !isReact;
+    // Only show Preview tab if it's a simple renderable language OR React
+    const showPreviewTab = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language) || isReact;
 
     return (
         <div className="my-4 rounded-xl overflow-hidden border border-border-default shadow-lg bg-code-surface transition-colors duration-300">

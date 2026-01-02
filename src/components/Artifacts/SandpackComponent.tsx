@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { SandpackProvider, SandpackPreview, SandpackConsole } from "@codesandbox/sandpack-react";
+import { SandpackProvider, SandpackLayout, SandpackPreview, SandpackConsole } from "@codesandbox/sandpack-react";
 
 type SandpackComponentProps = {
     code: string;
@@ -44,32 +44,26 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, keyI
                 externalResources: ["https://cdn.tailwindcss.com"],
             }}
         >
-            {mode === 'inline' ? (
-                <div style={{ 
-                    height: '100%', 
-                    borderRadius: '0.75rem', 
-                    border: '1px solid var(--sp-colors-surface2)',
-                    backgroundColor: 'transparent',
-                    padding: 0,
-                    display: 'flex',
-                    flexDirection: 'column'
-                }}>
-                    <SandpackPreview style={{ height: '400px', display: 'block' }} showRefreshButton={true} showOpenInCodeSandbox={false} />
-                    <SandpackConsole style={{ height: '150px' }} resetOnPreviewRestart />
-                </div>
-            ) : (
-                <div className="h-full w-full flex flex-col bg-transparent m-0 p-0">
-                    <SandpackPreview 
-                        style={{ flex: 1, minHeight: 0, height: '100%' }} 
-                        showRefreshButton={true} 
-                        showOpenInCodeSandbox={false}
-                        showNavigator={false}
-                    />
-                    <div style={{ height: 'auto', maxHeight: '30%', flexShrink: 0, borderTop: '1px solid var(--sp-colors-surface2)', backgroundColor: 'transparent' }}>
-                         <SandpackConsole resetOnPreviewRestart />
-                    </div>
-                </div>
-            )}
+            <SandpackLayout style={{ 
+                height: '100%', 
+                border: 'none', 
+                borderRadius: mode === 'inline' ? '0.75rem' : '0', 
+                backgroundColor: 'transparent',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden'
+            }}>
+                <SandpackPreview 
+                    style={{ height: mode === 'inline' ? '400px' : '100%', flex: 1 }} 
+                    showRefreshButton={true} 
+                    showOpenInCodeSandbox={false}
+                    showNavigator={false}
+                />
+                <SandpackConsole 
+                    style={{ height: mode === 'inline' ? '150px' : 'auto', maxHeight: mode === 'full' ? '30%' : undefined, flexShrink: 0 }} 
+                    resetOnPreviewRestart 
+                />
+            </SandpackLayout>
         </SandpackProvider>
     );
 };

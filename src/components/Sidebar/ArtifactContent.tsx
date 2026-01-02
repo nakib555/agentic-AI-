@@ -137,16 +137,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => observer.disconnect();
     }, []);
 
-    // Auto-switch tab based on language on mount
-    useEffect(() => {
-        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || detectIsReact(content, language);
-        if (content.length < 50000 && isRenderable) {
-            dispatch({ type: 'SET_TAB', payload: 'preview' });
-        } else {
-            dispatch({ type: 'SET_TAB', payload: 'code' });
-        }
-    }, [language, content.length]);
-
     // Initial load handler to clear the loading spinner
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -199,6 +189,16 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return detectIsReact(debouncedContent, language);
     }, [debouncedContent, language]);
 
+    // Auto-switch tab based on language detection
+    useEffect(() => {
+        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || isReact;
+        if (content.length < 50000 && isRenderable) {
+            dispatch({ type: 'SET_TAB', payload: 'preview' });
+        } else {
+            dispatch({ type: 'SET_TAB', payload: 'code' });
+        }
+    }, [language, content.length, isReact]);
+
     // Memoized Preview Generation
     const previewContent = useMemo(() => {
         if (!debouncedContent) return '';
@@ -246,7 +246,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         }
 
         // JavaScript / TypeScript (Standard Iframe fallback if not React)
-        if (['javascript', 'typescript', 'js', 'ts'].includes(language)) {
+        if (['javascript', 'typescript', 'js', 'ts'].includes(language) && !isReact) {
             const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
             return `
                 <!DOCTYPE html>
@@ -270,7 +270,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
         return '';
-    }, [debouncedContent, language]);
+    }, [debouncedContent, language, isReact]);
 
     const handleCopy = useCallback(() => {
         navigator.clipboard.writeText(content);
