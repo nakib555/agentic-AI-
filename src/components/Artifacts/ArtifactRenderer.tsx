@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -7,7 +6,6 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
-import Frame from 'react-frame-component';
 
 // Lazy load Sandpack to reduce initial bundle size
 const SandpackProvider = React.lazy(() => import("@codesandbox/sandpack-react").then(m => ({ default: m.SandpackProvider })));
@@ -207,13 +205,12 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             return (
                 <div className="flex flex-col h-full min-h-[400px]">
                     <div className="flex-1 relative bg-white">
-                        <Frame
-                            initialContent={initialContent}
+                        <iframe
+                            srcDoc={initialContent}
                             className="absolute inset-0 w-full h-full border-none bg-white"
                             title="Artifact Preview"
-                        >
-                            <></>
-                        </Frame>
+                            sandbox="allow-scripts allow-forms allow-modals"
+                        />
                     </div>
                     {/* Integrated Console Terminal */}
                     <div className="flex-shrink-0 bg-[#1e1e1e] border-t border-gray-700 flex flex-col">

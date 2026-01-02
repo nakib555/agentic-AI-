@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -9,7 +8,6 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
-import Frame from 'react-frame-component';
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 
 // Lazy load Sandpack
@@ -518,15 +516,13 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     </div>
                                 ) : (
                                     <div className="flex-1 bg-white relative w-full h-full">
-                                        <Frame
+                                        <iframe
                                             key={state.iframeKey}
-                                            initialContent={previewContent}
+                                            srcDoc={previewContent}
                                             className="absolute inset-0 w-full h-full border-none bg-white"
                                             title="Artifact Preview"
-                                        >
-                                            {/* Empty children to satisfy TypeScript requirement */}
-                                            <></>
-                                        </Frame>
+                                            sandbox="allow-scripts allow-forms allow-modals"
+                                        />
                                     </div>
                                 )}
                                 
