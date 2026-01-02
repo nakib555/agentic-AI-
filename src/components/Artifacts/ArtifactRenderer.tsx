@@ -217,11 +217,11 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             
             return (
                 <div className="flex flex-col h-full min-h-[400px]">
-                    <div className="flex-1 relative bg-white">
+                    <div className="flex-1 relative bg-white dark:bg-[#1e1e1e]">
                         <iframe
                             key={iframeKey}
                             srcDoc={initialContent}
-                            className="absolute inset-0 w-full h-full border-none bg-white"
+                            className="absolute inset-0 w-full h-full border-none bg-white dark:bg-[#1e1e1e]"
                             title="Artifact Preview"
                             sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
                         />

@@ -37,7 +37,8 @@ const ReactSandpackPreview = React.lazy(() =>
             borderRadius: 0, 
             border: 'none',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            backgroundColor: 'transparent'
         }}>
             <module.SandpackPreview 
                 style={{ flex: 1, minHeight: 0 }} 
@@ -546,7 +547,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                     className={`flex-1 relative flex flex-col bg-layer-2 ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
                 >
                     {isReact ? (
-                        <div className="flex-1 w-full h-full relative bg-white">
+                        <div className="flex-1 w-full h-full relative bg-white dark:bg-[#1e1e1e]">
                              <Suspense fallback={
                                 <div className="flex flex-col items-center justify-center h-full">
                                     <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
@@ -612,11 +613,11 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                         <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
                                     </div>
                                 ) : (
-                                    <div className="flex-1 bg-white relative w-full h-full">
+                                    <div className="flex-1 bg-white dark:bg-[#1e1e1e] relative w-full h-full">
                                         <iframe
                                             key={state.iframeKey}
                                             srcDoc={previewContent}
-                                            className="absolute inset-0 w-full h-full border-none bg-white"
+                                            className="absolute inset-0 w-full h-full border-none bg-white dark:bg-[#1e1e1e]"
                                             title="Artifact Preview"
                                             sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
                                         />
