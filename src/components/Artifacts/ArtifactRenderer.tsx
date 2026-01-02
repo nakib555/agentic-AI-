@@ -43,7 +43,7 @@ const LoadingSpinner = () => (
     </div>
 );
 
-// Helper for safe JSON stringification in console
+// Generates a script to intercept console logs and send them to the parent window
 const generateConsoleScript = () => `
     <script>
         (function() {
@@ -74,15 +74,20 @@ const generateConsoleScript = () => `
                         return String(a);
                     }).join(' ');
                     window.parent.postMessage({ type: 'ARTIFACT_LOG', level, message: msg }, '*');
-                } catch(e) {}
+                } catch(e) {
+                    console.error('Error sending log to parent:', e);
+                }
             }
+
             window.console = {
                 ...originalConsole,
                 log: (...args) => { originalConsole.log(...args); send('info', args); },
                 info: (...args) => { originalConsole.info(...args); send('info', args); },
                 warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
                 error: (...args) => { originalConsole.error(...args); send('error', args); },
+                debug: (...args) => { originalConsole.debug(...args); send('info', args); },
             };
+
             window.addEventListener('error', (e) => {
                 send('error', [e.message]);
             });
@@ -141,6 +146,23 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         setIframeKey(prev => prev + 1);
         setLogs([]);
     }, []);
+
+    // Memoize options to prevent Sandpack reloading on every render
+    const sandpackOptions = useMemo(() => ({
+        externalResources: ["https://cdn.tailwindcss.com"],
+        layout: "preview" as const,
+        showNavigator: false,
+        showTabs: false,
+        showLineNumbers: false,
+        showInlineErrors: true,
+        wrapContent: true,
+        editorHeight: '100%',
+        classes: {
+            "sp-wrapper": "h-full w-full",
+            "sp-layout": "h-full w-full",
+            "sp-preview": "h-full w-full",
+        }
+    }), []);
 
     const renderPreview = () => {
         if (type === 'data') {
@@ -207,20 +229,15 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                                     "tailwind-merge": "latest"
                                 }
                             }}
-                            options={{
-                                externalResources: ["https://cdn.tailwindcss.com"],
-                                layout: 'preview',
-                                showRefreshButton: true,
-                            }}
+                            options={sandpackOptions}
                         />
                     </Suspense>
                 </div>
             );
         }
 
-        // --- Frame for HTML/JS/CSS (Standard) ---
-        // Enhanced for "Real Browser" execution
-        if (['html', 'svg', 'javascript', 'js', 'markup', 'xml', 'css'].includes(language)) {
+        // --- Frame for HTML/JS (Standard) ---
+        if (language === 'html' || language === 'svg' || language === 'javascript' || language === 'markup' || language === 'xml' || language === 'css') {
             const cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
             const consoleScript = generateConsoleScript();
             const tailwindCdn = '<script src="https://cdn.tailwindcss.com"></script>';
@@ -286,38 +303,13 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             
             return (
                 <div className="flex flex-col h-full min-h-[400px]">
-                    {/* Fake Browser Chrome */}
-                    <div className="flex items-center gap-4 px-4 py-2 bg-gray-100 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
-                        <div className="flex gap-1.5">
-                            <div className="w-3 h-3 rounded-full bg-red-400 border border-red-500/20"></div>
-                            <div className="w-3 h-3 rounded-full bg-yellow-400 border border-yellow-500/20"></div>
-                            <div className="w-3 h-3 rounded-full bg-green-400 border border-green-500/20"></div>
-                        </div>
-                        <div className="flex-1 mx-4">
-                            <div className="bg-white dark:bg-black/20 border border-gray-300 dark:border-white/10 rounded px-3 py-0.5 text-xs text-center text-gray-500 dark:text-slate-400 font-mono shadow-sm">
-                                preview
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleRefresh}
-                                className="p-1 hover:bg-gray-200 dark:hover:bg-white/10 rounded text-slate-500 dark:text-slate-400"
-                                title="Refresh Preview"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                                    <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.32 2.366l-1.12 1.12a.75.75 0 01-1.06-1.06l3.894-3.893a.75.75 0 011.06 1.06l-1.12 1.12a4 4 0 006.788-1.72.75.75 0 011.392.574zm-10.624-2.848a5.5 5.5 0 019.32-2.366l1.12-1.12a.75.75 0 011.06 1.06l-3.894 3.893a.75.75 0 01-1.06-1.06l1.12-1.12a4 4 0 00-6.788 1.72.75.75 0 01-1.392-.574z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
                     <div className="flex-1 relative bg-white">
                         <iframe
                             key={iframeKey}
                             srcDoc={initialContent}
                             className="absolute inset-0 w-full h-full border-none bg-white"
                             title="Artifact Preview"
-                            sandbox="allow-scripts allow-forms allow-modals allow-popups"
+                            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
                         />
                     </div>
                     {/* Integrated Console Terminal */}

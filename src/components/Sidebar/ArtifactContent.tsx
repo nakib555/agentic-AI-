@@ -166,17 +166,27 @@ const detectIsReact = (code: string, lang: string) => {
     const normalize = (s: string) => s.toLowerCase().trim();
     const l = normalize(lang);
     
+    // Force React handling for JSX/TSX extensions
     if (l === 'jsx' || l === 'tsx') return true;
+    
+    // Force Iframe/Standard handling for standard web formats
     if (l === 'html' || l === 'css' || l === 'json' || l === 'svg' || l === 'xml') return false;
     
-    const clean = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
-    return (
-        /import\s+React/.test(clean) || 
-        /import\s+.*from\s+['"]react['"]/.test(clean) || 
-        /export\s+default\s+function/.test(clean) ||
-        /return\s*\(\s*<[A-Z]/.test(clean) ||
-        (/className=/.test(clean) && /<[a-z0-9]+/.test(clean))
-    );
+    const clean = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''); // remove comments
+    
+    // Detection Strategy:
+    // 1. Look for React Imports (Strongest signal)
+    if (/import\s+.*from\s+['"]react['"]/.test(clean) || /import\s+React/.test(clean)) return true;
+    
+    // 2. Look for React Hook usage
+    if (/\buse(State|Effect|Context|Reducer|Callback|Memo|Ref|ImperativeHandle|LayoutEffect|DebugValue)\s*\(/.test(clean)) return true;
+
+    // 3. Look for JSX in return statements (e.g. return <div...)
+    // This avoids false positives from simple "less than" comparisons or HTML strings in quotes
+    if (/return\s*\(\s*<[a-zA-Z]/.test(clean) || /return\s+<[a-zA-Z]/.test(clean)) return true;
+    
+    // 4. Default to standard JS (Iframe) if none of the above matches
+    return false;
 };
 
 // Threshold for switching to virtualized plain text viewer
@@ -318,8 +328,8 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
 
-        // JavaScript / TypeScript
-        if (['javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language)) {
+        // JavaScript / TypeScript (Standard Iframe fallback if not React)
+        if (['javascript', 'typescript', 'js', 'ts'].includes(language)) {
             const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
             return `
                 <!DOCTYPE html>
@@ -389,6 +399,23 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     const useVirtualization = useMemo(() => {
         return content.length > VIRTUALIZATION_THRESHOLD_SIZE;
     }, [content.length]);
+
+    // Memoize options to prevent Sandpack reloading on every render
+    const sandpackOptions = useMemo(() => ({
+        externalResources: ["https://cdn.tailwindcss.com"],
+        layout: "preview" as const,
+        showNavigator: false,
+        showTabs: false,
+        showLineNumbers: false,
+        showInlineErrors: true,
+        wrapContent: true,
+        editorHeight: '100%',
+        classes: {
+            "sp-wrapper": "h-full w-full",
+            "sp-layout": "h-full w-full",
+            "sp-preview": "h-full w-full",
+        }
+    }), []);
 
     return (
         <div className="flex flex-col h-full overflow-hidden w-full bg-layer-1">
@@ -520,10 +547,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                             "tailwind-merge": "latest"
                                         }
                                     }}
-                                    options={{
-                                        externalResources: ["https://cdn.tailwindcss.com"],
-                                        layout: 'preview'
-                                    }}
+                                    options={sandpackOptions}
                                  />
                             </Suspense>
                         </div>
@@ -585,7 +609,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                             srcDoc={previewContent}
                                             className="absolute inset-0 w-full h-full border-none bg-white"
                                             title="Artifact Preview"
-                                            sandbox="allow-scripts allow-forms allow-modals allow-popups"
+                                            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
                                         />
                                     </div>
                                 )}
