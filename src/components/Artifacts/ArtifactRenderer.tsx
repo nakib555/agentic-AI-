@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -156,7 +155,8 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                             srcDoc={initialContent}
                             className="absolute inset-0 w-full h-full border-none bg-white dark:bg-[#1e1e1e]"
                             title="Artifact Preview"
-                            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
+                            sandbox="allow-scripts allow-forms allow-modals allow-popups"
+                            allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
                         />
                     </div>
                     {/* Integrated Console Terminal */}

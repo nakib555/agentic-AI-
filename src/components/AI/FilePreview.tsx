@@ -33,7 +33,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ filename, srcUrl, mime
       return <img src={srcUrl} alt={filename} className="max-h-[60vh] w-auto h-auto object-contain" />;
     }
     if (mimeType === 'application/pdf' || mimeType === 'text/html') {
-        return <iframe src={srcUrl} sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups" className="w-full h-[60vh] border-none bg-white" title={filename} />;
+        return <iframe src={srcUrl} sandbox="allow-scripts allow-forms allow-modals allow-popups" className="w-full h-[60vh] border-none bg-white" title={filename} />;
     }
     return <p className="p-4 text-sm text-slate-400">No preview available for this file type.</p>;
   };

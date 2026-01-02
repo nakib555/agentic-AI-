@@ -42,7 +42,7 @@ export const CodeExecutionResult: React.FC<CodeExecutionResultProps> = ({ output
                 <iframe
                   srcDoc={htmlOutput}
                   className="w-full h-96 border-none"
-                  sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
+                  sandbox="allow-scripts allow-forms allow-modals allow-popups"
                   title="Code Execution Visual Output"
                 />
               </div>
