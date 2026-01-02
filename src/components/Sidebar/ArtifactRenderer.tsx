@@ -136,7 +136,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                             options={{
                                 externalResources: ["https://cdn.tailwindcss.com"],
                                 layout: 'preview',
-                                showRerenderButton: true,
+                                showRefreshButton: true,
                             }}
                         />
                     </Suspense>
