@@ -167,15 +167,20 @@ const detectIsReact = (code: string, lang: string) => {
     const normalize = (s: string) => s.toLowerCase().trim();
     const l = normalize(lang);
     
+    // Explicit React languages
     if (l === 'jsx' || l === 'tsx') return true;
+    
+    // Explicit non-React web languages
     if (l === 'html' || l === 'css' || l === 'json' || l === 'svg' || l === 'xml') return false;
     
-    const clean = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
+    // Heuristics for JS/TS
+    const clean = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''); // remove comments
     return (
         /import\s+React/.test(clean) || 
         /import\s+.*from\s+['"]react['"]/.test(clean) || 
-        /export\s+default\s+function/.test(clean) ||
-        /return\s*\(\s*<[A-Z]/.test(clean) ||
+        // Fallback: If it exports default function and looks like a component, treat as React for Sandpack
+        (/export\s+default\s+function/.test(clean) && /return\s*\(\s*<[A-Z]/.test(clean)) ||
+        // Fallback: JSX attributes with tags
         (/className=/.test(clean) && /<[a-z0-9]+/.test(clean))
     );
 };
@@ -233,7 +238,14 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     const syntaxStyle = useSyntaxTheme();
     const [state, dispatch] = useReducer(artifactReducer, initialState);
     const [isCopied, setIsCopied] = React.useState(false);
+    
+    // Live content debounced for Code View (Highlighter)
     const [debouncedContent, setDebouncedContent] = useState(content);
+    
+    // Frozen content for Preview View (Iframe/Sandpack)
+    // We do NOT update this automatically on content change to prevent refresh loops/flicker
+    const [previewCode, setPreviewCode] = useState(content);
+
     const [isDark, setIsDark] = useState(false);
 
     useEffect(() => {
@@ -244,15 +256,31 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => observer.disconnect();
     }, []);
 
+    // 1. Initialize Preview State
+    // Reset preview code if language changes (implies completely new file)
+    useEffect(() => {
+        setPreviewCode(content);
+    }, [language]);
+
+    // Ensure preview has content if it started empty (initial stream packet)
+    useEffect(() => {
+        if (!previewCode && content) {
+            setPreviewCode(content);
+        }
+    }, [content, previewCode]);
+
+    // 2. Tab Selection Logic
     useEffect(() => {
         const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || detectIsReact(content, language);
+        // Auto-switch to preview if content is manageable size and renderable type
         if (content.length < 50000 && isRenderable) {
             dispatch({ type: 'SET_TAB', payload: 'preview' });
         } else {
             dispatch({ type: 'SET_TAB', payload: 'code' });
         }
-    }, [language, content.length]);
+    }, [language]); // Only run when language/file changes, not on every content keystroke
 
+    // 3. Debounce Live Content for Code View
     useEffect(() => {
         const length = content.length;
         let delay = 100;
@@ -266,13 +294,13 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => clearTimeout(handler);
     }, [content]);
 
+    // 4. Loading State Management
     useEffect(() => {
         if (state.activeTab === 'preview') {
-            dispatch({ type: 'REFRESH_PREVIEW' });
-            const timer = setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 100);
+            const timer = setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 200);
             return () => clearTimeout(timer);
         }
-    }, [debouncedContent, state.activeTab]); 
+    }, [previewCode, state.activeTab]); 
 
     useEffect(() => {
         if (state.activeTab === 'code') {
@@ -280,6 +308,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         }
     }, [debouncedContent, state.activeTab]);
 
+    // 5. Console Logs
     useEffect(() => {
         const handler = (e: MessageEvent) => {
             if (e.data && e.data.type === 'ARTIFACT_LOG') {
@@ -296,15 +325,17 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => window.removeEventListener('message', handler);
     }, []);
 
+    // 6. React Detection based on Frozen Preview Code
     const isReact = useMemo(() => {
-        if (debouncedContent.length > 50000) return false;
-        return detectIsReact(debouncedContent, language);
-    }, [debouncedContent, language]);
+        if (previewCode.length > 50000) return false;
+        return detectIsReact(previewCode, language);
+    }, [previewCode, language]);
 
-    const previewContent = useMemo(() => {
-        if (!debouncedContent) return '';
+    // 7. Preview Content Generation (Iframe)
+    const iframeContent = useMemo(() => {
+        if (!previewCode) return '';
         
-        let cleanContent = debouncedContent.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
+        let cleanContent = previewCode.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
         const consoleScript = generateConsoleScript();
         const tailwindCdn = '<script src="https://cdn.tailwindcss.com"></script>';
 
@@ -342,7 +373,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
 
-        if (['javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx'].includes(language)) {
+        if (['javascript', 'typescript', 'js', 'ts'].includes(language)) {
             const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
             return `
                 <!DOCTYPE html>
@@ -365,7 +396,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
         return '';
-    }, [debouncedContent, language]);
+    }, [previewCode, language]);
 
     const handleCopy = useCallback(() => {
         navigator.clipboard.writeText(content);
@@ -377,18 +408,20 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         if (!isReact) {
             const win = window.open('', '_blank');
             if (win) {
-                win.document.write(previewContent);
+                win.document.write(iframeContent);
                 win.document.close();
             }
         } else {
             alert("Interactive previews are embedded and cannot be opened in a new tab yet.");
         }
-    }, [previewContent, isReact]);
+    }, [iframeContent, isReact]);
 
     const handleRefresh = useCallback(() => {
+        setPreviewCode(content); // Explicitly update preview with latest live content
         dispatch({ type: 'REFRESH_PREVIEW' });
-        setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 200);
-    }, []);
+        // Allow time for Sandpack/Iframe to unmount/remount
+        setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 300);
+    }, [content]);
 
     const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx', 'css'].includes(language) || isReact;
     
@@ -514,13 +547,20 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Loading Sandbox...</span>
                                 </div>
                              }>
+                                 {/* Key forces remount on refresh */}
                                  <Sandpack
+                                    key={state.iframeKey} 
                                     template="react"
                                     theme={isDark ? "dark" : "light"}
-                                    files={{ "/App.js": debouncedContent }}
+                                    files={{ 
+                                        "/App.js": previewCode,
+                                        "/styles.css": `@import "tailwindcss/base"; @import "tailwindcss/components"; @import "tailwindcss/utilities";`
+                                    }}
                                     options={{
                                         externalResources: ["https://cdn.tailwindcss.com"],
-                                        layout: 'preview'
+                                        layout: 'preview',
+                                        // We handle custom refresh, disable auto reload loop if possible by controlling content updates
+                                        showRefreshButton: false 
                                     }}
                                  />
                             </Suspense>
@@ -550,7 +590,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                         TERM {state.logs.length > 0 && <span className="bg-black/10 dark:bg-white/10 px-1 rounded-[2px]">{state.logs.length}</span>}
                                     </button>
                                     <div className="w-px h-3 bg-gray-200 dark:bg-white/10 mx-1" />
-                                    <Tooltip content="Reload Preview" position="bottom">
+                                    <Tooltip content="Refresh Preview" position="bottom">
                                         <button 
                                             onClick={handleRefresh} 
                                             className="p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"
@@ -578,7 +618,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     <div className="flex-1 bg-white relative w-full h-full">
                                         <iframe
                                             key={state.iframeKey}
-                                            srcDoc={previewContent}
+                                            srcDoc={iframeContent}
                                             className="absolute inset-0 w-full h-full border-none bg-white"
                                             title="Artifact Preview"
                                             sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"

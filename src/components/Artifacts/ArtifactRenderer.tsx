@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import type { SandpackProps } from "@codesandbox/sandpack-react";
@@ -31,9 +31,8 @@ const detectIsReact = (code: string, lang: string) => {
     return (
         /import\s+React/.test(clean) || 
         /import\s+.*from\s+['"]react['"]/.test(clean) || 
-        /export\s+default\s+function/.test(clean) ||
-        /return\s*\(\s*<[A-Z]/.test(clean) || // JSX return pattern
-        (/className=/.test(clean) && /<[a-z0-9]+/.test(clean)) // JSX attributes
+        (/export\s+default\s+function/.test(clean) && /return\s*\(\s*<[A-Z]/.test(clean)) ||
+        (/className=/.test(clean) && /<[a-z0-9]+/.test(clean))
     );
 };
 
@@ -100,6 +99,11 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     const [showConsole, setShowConsole] = useState(false);
     const syntaxStyle = useSyntaxTheme();
     
+    // Frozen content for Preview View
+    const [previewCode, setPreviewCode] = useState(content);
+    // Key to force remount
+    const [iframeKey, setIframeKey] = useState(0);
+
     // Theme detection
     const [isDark, setIsDark] = useState(false);
     useEffect(() => {
@@ -110,7 +114,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         return () => observer.disconnect();
     }, []);
 
-    // Listen for console logs from the iframe (only for Frame mode)
+    // Listen for console logs
     useEffect(() => {
         const handler = (e: MessageEvent) => {
             if (e.data && e.data.type === 'ARTIFACT_LOG') {
@@ -122,12 +126,37 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         return () => window.removeEventListener('message', handler);
     }, []);
 
-    // Reset logs on content change
+    // Initial Load Logic: Update preview if it was empty, otherwise keep frozen
     useEffect(() => {
+        if (!previewCode && content) {
+            setPreviewCode(content);
+        }
+    }, [content, previewCode]);
+
+    // Reset on Language Change (New Artifact)
+    useEffect(() => {
+        setPreviewCode(content);
         setLogs([]);
+    }, [language]);
+
+    // Switch to preview if renderable
+    useEffect(() => {
+        if (!content) return;
+        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || detectIsReact(content, language);
+        if (content.length < 50000 && isRenderable) {
+            setActiveTab('preview');
+        } else {
+            setActiveTab('source');
+        }
+    }, [language]); // Only on mount/language change, not content update
+
+    const handleRefresh = useCallback(() => {
+        setPreviewCode(content);
+        setLogs([]);
+        setIframeKey(k => k + 1);
     }, [content]);
 
-    const isReact = useMemo(() => detectIsReact(content, language), [content, language]);
+    const isReact = useMemo(() => detectIsReact(previewCode, language), [previewCode, language]);
 
     const renderPreview = () => {
         if (type === 'data') {
@@ -171,23 +200,26 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         // --- Sandpack for React / ES Modules ---
         if (isReact) {
             // Ensure App.js exports default
-            let finalCode = content;
-            if (!content.includes('export default')) {
-                // Heuristic to add export default if missing
-                finalCode = content + '\n\nexport default App;'; 
+            let finalCode = previewCode;
+            if (!previewCode.includes('export default')) {
+                finalCode = previewCode + '\n\nexport default App;'; 
             }
 
             return (
                 <div className="h-full min-h-[400px] w-full relative">
                     <Suspense fallback={<LoadingSpinner />}>
                         <Sandpack
+                            key={iframeKey}
                             template="react"
                             theme={isDark ? "dark" : "light"}
-                            files={{ "/App.js": finalCode }}
+                            files={{ 
+                                "/App.js": finalCode,
+                                "/styles.css": `@import "tailwindcss/base"; @import "tailwindcss/components"; @import "tailwindcss/utilities";`
+                            }}
                             options={{
                                 externalResources: ["https://cdn.tailwindcss.com"],
                                 layout: 'preview',
-                                showRefreshButton: true,
+                                showRefreshButton: false, // Managed manually
                             }}
                         />
                     </Suspense>
@@ -196,9 +228,8 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         }
 
         // --- Frame for HTML/JS/CSS (Standard) ---
-        // Enhanced for "Real Browser" execution
         if (['html', 'svg', 'javascript', 'js', 'markup', 'xml', 'css'].includes(language)) {
-            const cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
+            const cleanContent = previewCode.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
             const consoleScript = generateConsoleScript();
             const tailwindCdn = '<script src="https://cdn.tailwindcss.com"></script>';
 
@@ -263,23 +294,9 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             
             return (
                 <div className="flex flex-col h-full min-h-[400px]">
-                    {/* Fake Browser Chrome */}
-                    <div className="flex items-center gap-4 px-4 py-2 bg-gray-100 border-b border-gray-200">
-                        <div className="flex gap-1.5">
-                            <div className="w-3 h-3 rounded-full bg-red-400 border border-red-500/20"></div>
-                            <div className="w-3 h-3 rounded-full bg-yellow-400 border border-yellow-500/20"></div>
-                            <div className="w-3 h-3 rounded-full bg-green-400 border border-green-500/20"></div>
-                        </div>
-                        <div className="flex-1 mx-4">
-                            <div className="bg-white border border-gray-300 rounded px-3 py-0.5 text-xs text-center text-gray-500 font-mono shadow-sm">
-                                preview
-                            </div>
-                        </div>
-                        <div className="w-8"></div> {/* Spacer for balance */}
-                    </div>
-
                     <div className="flex-1 relative bg-white">
                         <iframe
+                            key={iframeKey}
                             srcDoc={initialContent}
                             className="absolute inset-0 w-full h-full border-none bg-white"
                             title="Artifact Preview"
@@ -330,9 +347,22 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     return (
         <div className="my-4 rounded-xl overflow-hidden border border-border-default shadow-lg bg-code-surface transition-colors duration-300">
             <div className="flex items-center justify-between px-4 py-2 bg-layer-2/50 border-b border-border-default backdrop-blur-sm">
-                <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">
-                    {title || (type === 'code' ? (isReact ? 'Interactive App' : 'HTML Preview') : 'Data View')}
-                </span>
+                <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">
+                        {title || (type === 'code' ? (isReact ? 'Interactive App' : 'HTML Preview') : 'Data View')}
+                    </span>
+                    {/* Refresh Button - Only visible in preview mode */}
+                    {activeTab === 'preview' && type === 'code' && (
+                        <button 
+                            onClick={handleRefresh}
+                            className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 transition-colors"
+                            title="Refresh Preview"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                        </button>
+                    )}
+                </div>
+                
                 <div className="flex bg-layer-3 p-0.5 rounded-lg">
                     <button 
                         onClick={() => setActiveTab('preview')}
