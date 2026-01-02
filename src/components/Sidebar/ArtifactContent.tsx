@@ -39,7 +39,7 @@ const ReactSandpackPreview = React.lazy(() =>
                 showOpenInCodeSandbox={false}
                 showNavigator={false}
             />
-            <div style={{ height: 'auto', maxHeight: '30%', flexShrink: 0, borderTop: '1px solid var(--sp-colors-surface2)', backgroundColor: 'transparent' }}>
+            <div >
                  <module.SandpackConsole resetOnPreviewRestart />
             </div>
         </div>
