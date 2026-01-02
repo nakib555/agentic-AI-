@@ -6,44 +6,10 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
+import type { SandpackProps } from "@codesandbox/sandpack-react";
 
-// Custom lazy loader for composable Sandpack components to ensure ONLY preview is rendered
-const ReactSandpackPreview = React.lazy(() =>
-  import("@codesandbox/sandpack-react").then((module) => ({
-    default: ({ code, theme }: { code: string, theme: any }) => (
-      <module.SandpackProvider
-        template="react"
-        theme={theme}
-        files={{ "/App.js": code }}
-        customSetup={{
-          dependencies: {
-            "lucide-react": "latest",
-            "recharts": "latest",
-            "framer-motion": "latest",
-            "clsx": "latest",
-            "tailwind-merge": "latest",
-          },
-        }}
-        options={{
-            externalResources: ["https://cdn.tailwindcss.com"],
-            classes: {
-                "sp-wrapper": "h-full w-full",
-                "sp-layout": "h-full w-full",
-                "sp-preview": "h-full w-full",
-            }
-        }}
-      >
-        <module.SandpackLayout style={{ height: '100%', width: '100%', border: 'none', borderRadius: 0, background: 'transparent' }}>
-          <module.SandpackPreview
-            style={{ height: '100%', width: '100%' }}
-            showOpenInCodeSandbox={false}
-            showRefreshButton={false}
-          />
-        </module.SandpackLayout>
-      </module.SandpackProvider>
-    ),
-  }))
-);
+// FIX: Added explicit SandpackProps type to React.lazy to resolve component prop type mismatch in the build environment
+const Sandpack = React.lazy<React.ComponentType<SandpackProps>>(() => import("@codesandbox/sandpack-react").then(module => ({ default: module.Sandpack })));
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
@@ -164,10 +130,18 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             return (
                 <div className="h-full min-h-[400px] w-full relative">
                     <Suspense fallback={<LoadingSpinner />}>
-                        <ReactSandpackPreview
+                        <Sandpack
                             key={iframeKey} // Force reload Sandpack on refresh
+                            template="react"
                             theme={isDark ? "dark" : "light"}
-                            code={finalCode}
+                            files={{ "/App.js": finalCode }}
+                            options={{
+                                externalResources: ["https://cdn.tailwindcss.com"],
+                                layout: 'preview',
+                                showRefreshButton: true,
+                                showConsole: true,
+                                showConsoleButton: true,
+                            }}
                         />
                     </Suspense>
                 </div>
