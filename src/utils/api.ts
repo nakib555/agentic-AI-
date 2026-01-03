@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,6 +9,7 @@
  */
 export const getApiBaseUrl = (): string => {
     // 1. Manual Override from LocalStorage (Highest Priority)
+    // Allows users to explicitly set a backend URL in Settings, overriding everything else.
     try {
         if (typeof window !== 'undefined') {
             const customUrl = localStorage.getItem('custom_server_url');
@@ -15,11 +17,24 @@ export const getApiBaseUrl = (): string => {
         }
     } catch (e) {}
 
-    // 2. Safe environment detection
+    // 2. Build Configuration / Environment Variable (VITE_API_BASE_URL)
+    // This allows deployments (like Cloudflare Pages) to define the backend URL via env vars.
+    // In Vite, this is replaced at build time or available in dev mode.
+    try {
+        // @ts-ignore - Vite specific
+        const envUrl = import.meta.env.VITE_API_BASE_URL;
+        if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
+            return envUrl.replace(/\/$/, '');
+        }
+    } catch (e) {
+        // Ignore if import.meta is not available or fails
+    }
+
+    // 3. Safe environment detection
     // Some bundlers/runtimes don't support import.meta.env
     const isDev = typeof process !== 'undefined' && process.env?.NODE_ENV === 'development';
     
-    // 3. Development/Localhost logic
+    // 4. Development/Localhost logic
     if (typeof window !== 'undefined') {
         const { hostname, port, protocol } = window.location;
         const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
@@ -33,7 +48,7 @@ export const getApiBaseUrl = (): string => {
             return '';
         }
         
-        // 4. Preview/Iframe Environments (like AI Studio)
+        // 5. Preview/Iframe Environments (like AI Studio)
         // If the hostname looks like a sub-domain of a known platform, 
         // we might still want to try same-origin relative paths first.
         return ''; 
