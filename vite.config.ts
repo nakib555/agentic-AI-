@@ -89,13 +89,22 @@ export default defineConfig(({ mode }) => {
       build: {
         outDir: 'dist',
         rollupOptions: {
-          external: ['react', 'react-dom', 'react-dom/client', '@codesandbox/sandpack-react'],
+          external: [
+            'react', 
+            'react-dom', 
+            'react-dom/client', 
+            '@codesandbox/sandpack-react',
+            // Externalize markdown deps to use CDN and avoid React version conflicts
+            'react-markdown',
+            'remark-math',
+            'remark-gfm',
+            'rehype-katex',
+            'rehype-raw',
+            'react-syntax-highlighter',
+            '@google/genai'
+          ],
           output: {
-            manualChunks: {
-              'syntax-highlighter': ['react-syntax-highlighter'],
-              'markdown': ['react-markdown', 'rehype-katex', 'rehype-raw', 'remark-gfm', 'remark-math'],
-              'gemini': ['@google/genai'],
-            }
+            manualChunks: undefined // Automatic chunking
           }
         }
       }

@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -119,7 +118,7 @@ type ArtifactContentProps = {
 
 // --- Error Boundary for Lazy Component ---
 interface ArtifactErrorBoundaryProps {
-    children: React.ReactNode;
+    children?: React.ReactNode;
     onFallback: () => void;
 }
 
@@ -128,10 +127,7 @@ interface ArtifactErrorBoundaryState {
 }
 
 class ArtifactErrorBoundary extends React.Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
-    constructor(props: ArtifactErrorBoundaryProps) {
-        super(props);
-        this.state = { hasError: false };
-    }
+    public override state: ArtifactErrorBoundaryState = { hasError: false };
 
     static getDerivedStateFromError() { return { hasError: true }; }
     

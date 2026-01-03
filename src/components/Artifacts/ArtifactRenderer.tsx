@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -15,7 +14,7 @@ const SandpackEmbed = React.lazy(() => import('./SandpackComponent'));
 
 // --- Error Boundary for Lazy Component ---
 interface ArtifactPreviewErrorBoundaryProps {
-    children: React.ReactNode;
+    children?: React.ReactNode;
     fallback: React.ReactNode;
 }
 
@@ -24,10 +23,7 @@ interface ArtifactPreviewErrorBoundaryState {
 }
 
 class ArtifactPreviewErrorBoundary extends React.Component<ArtifactPreviewErrorBoundaryProps, ArtifactPreviewErrorBoundaryState> {
-    constructor(props: ArtifactPreviewErrorBoundaryProps) {
-        super(props);
-        this.state = { hasError: false };
-    }
+    public override state: ArtifactPreviewErrorBoundaryState = { hasError: false };
 
     static getDerivedStateFromError() { return { hasError: true }; }
     
