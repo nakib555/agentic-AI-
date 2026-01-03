@@ -70,7 +70,12 @@ export const generateConsoleScript = () => `
                 ...originalConsole,
                 log: (...args) => { originalConsole.log(...args); send('info', args); },
                 info: (...args) => { originalConsole.info(...args); send('info', args); },
-                warn: (...args) => { originalConsole.warn(...args); send('warn', args); },
+                warn: (...args) => { 
+                    // Suppress Tailwind CSS CDN warning
+                    if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+                    originalConsole.warn(...args); 
+                    send('warn', args); 
+                },
                 error: (...args) => { originalConsole.error(...args); send('error', args); },
                 debug: (...args) => { originalConsole.debug(...args); send('info', args); },
             };

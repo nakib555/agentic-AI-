@@ -44,21 +44,55 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, language, t
 
     const template = getTemplate(language, code);
 
+    // Custom index.html to suppress Tailwind CDN warning
+    const suppressedIndexHtml = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>App</title>
+    <script>
+      (function() {
+        const origWarn = console.warn;
+        console.warn = (...args) => {
+          if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+          origWarn.apply(console, args);
+        };
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>`;
+
     // Prepare files based on template
     const getFiles = (): SandpackProps['files'] => {
         if (template === 'react' || template === 'react-ts') {
             return {
                 '/App.tsx': code,
+                '/public/index.html': {
+                    code: suppressedIndexHtml,
+                    hidden: true
+                }
             };
         }
         if (template === 'vue') {
             return {
                 '/src/App.vue': code,
+                '/index.html': {
+                    code: suppressedIndexHtml.replace('<div id="root"></div>', '<div id="app"></div>'),
+                    hidden: true
+                }
             };
         }
         if (template === 'svelte') {
             return {
                 '/App.svelte': code,
+                '/index.html': {
+                    code: suppressedIndexHtml.replace('<div id="root"></div>', '<div id="app"></div>'),
+                    hidden: true
+                }
             };
         }
         if (template === 'static') {

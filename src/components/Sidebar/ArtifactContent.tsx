@@ -117,9 +117,22 @@ type ArtifactContentProps = {
     onClose: () => void;
 };
 
+interface ArtifactErrorBoundaryProps {
+    children: React.ReactNode;
+    onFallback: () => void;
+}
+
+interface ArtifactErrorBoundaryState {
+    hasError: boolean;
+}
+
 // --- Error Boundary for Lazy Component ---
-class ArtifactErrorBoundary extends React.Component<{ children: React.ReactNode, onFallback: () => void }, { hasError: boolean }> {
-    state = { hasError: false };
+class ArtifactErrorBoundary extends React.Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
+    constructor(props: ArtifactErrorBoundaryProps) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
     static getDerivedStateFromError() { return { hasError: true }; }
     componentDidCatch(error: any) { console.error("Artifact Preview Error:", error); }
     render() {
@@ -234,8 +247,9 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
 
         // HTML / XML / SVG
         if (['html', 'svg', 'markup', 'xml'].includes(language)) {
-            // Automatically inject Tailwind for better out-of-the-box styling of LLM snippets
-            const stylesAndScript = `${tailwindCdn}${consoleScript}`;
+            // Automatically inject Tailwind for better out-of-the-box styling of LLM snippets.
+            // Put consoleScript FIRST to ensure suppression logic is active before Tailwind loads.
+            const stylesAndScript = `${consoleScript}${tailwindCdn}`;
             
             if (cleanContent.includes('<head>')) {
                 return cleanContent.replace('<head>', `<head>${stylesAndScript}`);

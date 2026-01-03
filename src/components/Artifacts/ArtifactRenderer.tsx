@@ -13,10 +13,24 @@ import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils'
 // Ensure we handle the default export correctly
 const SandpackEmbed = React.lazy(() => import('./SandpackComponent'));
 
+interface ErrorBoundaryProps {
+    children: React.ReactNode;
+    fallback: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+    hasError: boolean;
+}
+
 // --- Error Boundary for Lazy Component ---
-class ArtifactPreviewErrorBoundary extends React.Component<{ children: React.ReactNode, fallback: React.ReactNode }, { hasError: boolean }> {
-    state = { hasError: false };
+class ArtifactPreviewErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+    constructor(props: ErrorBoundaryProps) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
     static getDerivedStateFromError() { return { hasError: true }; }
+    
     render() {
         if (this.state.hasError) return this.props.fallback;
         return this.props.children;
@@ -113,7 +127,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {data.map((row, i) => (
+                                    {data.map((row: any, i: number) => (
                                         <tr key={i} className="border-t border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5">
                                             {headers.map(h => (
                                                 <td key={h} className="px-4 py-2 text-slate-600 dark:text-slate-400">{String(row[h])}</td>
