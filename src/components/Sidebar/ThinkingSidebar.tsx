@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -10,8 +11,10 @@ import { useViewport } from '../../hooks/useViewport';
 
 const motion = motionTyped as any;
 
-// Lazy load the content component
-const ThinkingContent = React.lazy(() => import('./ThinkingContent').then(m => ({ default: m.ThinkingContent })));
+// Safe lazy load
+const ThinkingContent = React.lazy(() => 
+    import('./ThinkingContent').then(m => ({ default: m.ThinkingContent }))
+);
 
 type ThinkingSidebarProps = {
     isOpen: boolean;
@@ -62,8 +65,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
 
         if (isOpen) {
             // Mobile: Always slide to Max height for better UX on thinking process
-            // Calculate Y translation (Container is fixed at MAX_H, so we slide it down)
-            const targetY = 0; // Fully expanded relative to container
+            const targetY = 0; 
             
             animate(y, targetY, { type: "spring", damping: 30, stiffness: 300 });
         } else {

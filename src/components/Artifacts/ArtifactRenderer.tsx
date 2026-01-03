@@ -14,7 +14,7 @@ import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils'
 const SandpackEmbed = React.lazy(() => import('./SandpackComponent'));
 
 interface ErrorBoundaryProps {
-    children: React.ReactNode;
+    children?: React.ReactNode;
     fallback: React.ReactNode;
 }
 
@@ -24,9 +24,10 @@ interface ErrorBoundaryState {
 
 // --- Error Boundary for Lazy Component ---
 class ArtifactPreviewErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+    public override state: ErrorBoundaryState = { hasError: false };
+
     constructor(props: ErrorBoundaryProps) {
         super(props);
-        this.state = { hasError: false };
     }
 
     static getDerivedStateFromError() { return { hasError: true }; }

@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,8 +9,10 @@ import { motion as motionTyped, AnimatePresence, PanInfo, useDragControls } from
 const motion = motionTyped as any;
 import type { ChatSession } from '../../types';
 
-// Lazy load content
-const SidebarContent = React.lazy(() => import('./SidebarContent').then(m => ({ default: m.SidebarContent })));
+// Safe lazy load for SidebarContent
+const SidebarContent = React.lazy(() => 
+    import('./SidebarContent').then(module => ({ default: module.SidebarContent }))
+);
 
 type SidebarProps = {
     isOpen: boolean;
@@ -84,8 +87,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 event.preventDefault();
                 if (isCollapsed) setIsCollapsed(false);
                 if (!isOpen && !isDesktop) setIsOpen(true);
-                // Focusing handled inside SidebarContent logic now or requires forwarding ref if strictly needed
-                // Simplified here: Opening sidebar is primary action.
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -187,7 +188,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </Suspense>
                 </div>
 
-                {/* Resize Handle - Adjusted position to overlap inside edge to avoid clipping */}
+                {/* Resize Handle */}
                 {isDesktop && !isCollapsed && (
                     <div
                         className="group absolute top-0 right-0 h-full z-50 w-4 cursor-col-resize flex justify-center hover:bg-transparent"

@@ -20,6 +20,9 @@ type ArtifactSidebarProps = {
     setIsResizing: (isResizing: boolean) => void;
 };
 
+// No lazy loading needed for ArtifactContent as it's already code-split within itself via Sandpack lazy loading
+// And ArtifactSidebar is already lazy loaded by App.
+
 export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({ 
     isOpen, onClose, content, language, width, setWidth, isResizing, setIsResizing 
 }) => {

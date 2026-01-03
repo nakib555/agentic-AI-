@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -13,14 +14,30 @@ import {
 import { VersionMismatchOverlay } from '../UI/VersionMismatchOverlay';
 import { ChatArea } from '../Chat/ChatArea';
 
-// Lazy Load Major UI Blocks to optimize initial render and bundle splitting
-const Sidebar = React.lazy(() => import('../Sidebar/Sidebar').then(module => ({ default: module.Sidebar })));
-const ChatHeader = React.lazy(() => import('../Chat/ChatHeader').then(module => ({ default: module.ChatHeader })));
-const SourcesSidebar = React.lazy(() => import('../AI/SourcesSidebar').then(module => ({ default: module.SourcesSidebar })));
-const ArtifactSidebar = React.lazy(() => import('../Sidebar/ArtifactSidebar').then(module => ({ default: module.ArtifactSidebar })));
-const ThinkingSidebar = React.lazy(() => import('../Sidebar/ThinkingSidebar').then(module => ({ default: module.ThinkingSidebar })));
-const AppModals = React.lazy(() => import('./AppModals').then(module => ({ default: module.AppModals })));
-const TestRunner = React.lazy(() => import('../Testing').then(module => ({ default: module.TestRunner })));
+// Helper to safely lazy load named exports
+function lazyLoad<T extends React.ComponentType<any>>(
+  importFactory: () => Promise<{ [key: string]: any }>,
+  name: string
+): React.LazyExoticComponent<T> {
+  return React.lazy(() =>
+    importFactory().then((module) => {
+      const component = module[name];
+      if (!component) {
+        throw new Error(`Module does not export component '${name}'`);
+      }
+      return { default: component };
+    })
+  );
+}
+
+// Lazy Load Major UI Blocks
+const Sidebar = lazyLoad(() => import('../Sidebar/Sidebar'), 'Sidebar');
+const ChatHeader = lazyLoad(() => import('../Chat/ChatHeader'), 'ChatHeader');
+const SourcesSidebar = lazyLoad(() => import('../AI/SourcesSidebar'), 'SourcesSidebar');
+const ArtifactSidebar = lazyLoad(() => import('../Sidebar/ArtifactSidebar'), 'ArtifactSidebar');
+const ThinkingSidebar = lazyLoad(() => import('../Sidebar/ThinkingSidebar'), 'ThinkingSidebar');
+const AppModals = lazyLoad(() => import('./AppModals'), 'AppModals');
+const TestRunner = lazyLoad(() => import('../Testing'), 'TestRunner');
 
 export const App = () => {
   const logic = useAppLogic();
@@ -30,19 +47,14 @@ export const App = () => {
     : null;
   const chatTitle = currentChat ? currentChat.title : null;
   
-  // Find the currently active message for thinking sidebar logic if needed
-  // Use optional chaining for messages array as it might be undefined during initial load
   const activeMessage = currentChat?.messages?.length ? currentChat.messages[currentChat.messages.length - 1] : null;
 
   return (
     <div 
         ref={logic.appContainerRef} 
         className={`flex h-full bg-transparent overflow-hidden transition-[height] duration-200 ease-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
-        // Apply visual viewport height constraint on mobile to ensure the entire app layout resizes 
-        // correctly when the virtual keyboard opens, preventing the UI from being pushed up or scrolling.
         style={{ 
             height: !logic.isDesktop && logic.visualViewportHeight ? `${logic.visualViewportHeight}px` : '100dvh',
-            // Safe area padding for notches and home bars
             paddingTop: 'env(safe-area-inset-top)',
             paddingBottom: 'env(safe-area-inset-bottom)',
             paddingLeft: 'env(safe-area-inset-left)',
@@ -51,7 +63,6 @@ export const App = () => {
     >
       {logic.versionMismatch && <VersionMismatchOverlay />}
       
-      {/* Global Suspense Boundary with Shimmering Skeleton Loader */}
       <Suspense fallback={<AppSkeleton />}>
         <Sidebar
           key={logic.isDesktop ? 'desktop' : 'mobile'}
@@ -78,7 +89,6 @@ export const App = () => {
         <main 
             className="relative z-10 flex-1 flex flex-col chat-background min-w-0 h-full"
         >
-          {/* Mobile Sidebar Toggle - Only visible on mobile when sidebar is closed */}
           {!logic.isDesktop && !logic.isSidebarOpen && (
             <button
               onClick={() => logic.setIsSidebarOpen(true)}
@@ -141,7 +151,7 @@ export const App = () => {
         />
 
         <ThinkingSidebar
-            isOpen={false} // Placeholder: Logic to toggle this sidebar not fully exposed in prompt, defaulting to false/hidden or controlled by logic if implemented
+            isOpen={false} // Hidden by default as per logic
             onClose={() => {}} 
             message={activeMessage}
             sendMessage={logic.sendMessage}

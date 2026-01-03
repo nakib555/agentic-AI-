@@ -7,7 +7,6 @@
 import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo, Suspense, useEffect } from 'react';
 import type { Message, Source } from '../../types';
 import { MessageComponent } from './Message';
-import { WelcomeScreen } from './WelcomeScreen/index';
 import type { MessageFormHandle } from './MessageForm/index';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
@@ -15,8 +14,9 @@ import { useViewport } from '../../hooks/useViewport';
 
 const motion = motionTyped as any;
 
-// Lazy load the skeleton to reduce initial bundle size and support suspense
+// Safe lazy loads
 const ChatSkeleton = React.lazy(() => import('../UI/ChatSkeleton').then(m => ({ default: m.ChatSkeleton })));
+const WelcomeScreen = React.lazy(() => import('./WelcomeScreen/index').then(m => ({ default: m.WelcomeScreen })));
 
 export type MessageListHandle = {
   scrollToBottom: () => void;
@@ -144,7 +144,9 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
             </Suspense>
         ) : (
             <div className="h-full overflow-y-auto custom-scrollbar">
-                 <WelcomeScreen sendMessage={sendMessage} />
+                 <Suspense fallback={<div className="h-full flex items-center justify-center"><div className="animate-spin w-6 h-6 border-2 border-indigo-500 rounded-full border-t-transparent"></div></div>}>
+                    <WelcomeScreen sendMessage={sendMessage} />
+                 </Suspense>
             </div>
         )
       ) : (

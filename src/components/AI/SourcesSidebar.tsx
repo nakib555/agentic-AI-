@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,8 +9,10 @@ import { motion, PanInfo, useDragControls, AnimatePresence, useMotionValue, anim
 import type { Source } from '../../types';
 import { useViewport } from '../../hooks/useViewport';
 
-// Lazy load content
-const SourcesContent = React.lazy(() => import('./SourcesContent').then(m => ({ default: m.SourcesContent })));
+// Safe lazy load
+const SourcesContent = React.lazy(() => 
+    import('./SourcesContent').then(m => ({ default: m.SourcesContent }))
+);
 
 type SourcesSidebarProps = {
     isOpen: boolean;
