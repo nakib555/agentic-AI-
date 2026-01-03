@@ -519,13 +519,9 @@ export const useChat = (
 
         // 6. Sync to Backend & Update Local State
         try {
-            await fetchFromApi(`/api/chats/${chatId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: truncatedMessages })
-            });
-            
-            chatHistoryHook.updateChatProperty(chatId, { messages: truncatedMessages });
+            // Await the property update to ensure backend DB is consistent before we trigger regeneration.
+            // updateChatProperty handles the PUT request internally.
+            await chatHistoryHook.updateChatProperty(chatId, { messages: truncatedMessages });
             
             // 7. Trigger AI Response generation
             // We need to add a model placeholder for the new response
@@ -604,14 +600,8 @@ export const useChat = (
 
         // 5. Sync & Update
         try {
-            // Optimistic update
+            // This handles local update and backend persistence
             chatHistoryHook.updateChatProperty(chatId, { messages: newMessages });
-
-            await fetchFromApi(`/api/chats/${chatId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: newMessages })
-            });
         } catch (e) {
             console.error("Failed to switch branch:", e);
             if (onShowToast) onShowToast("Failed to switch branch", 'error');
@@ -646,7 +636,8 @@ export const useChat = (
         // 2. Truncate Future in UI immediately (start fresh branch)
         // We must remove future messages because we are generating a new path from this point.
         const truncatedMessages = currentChat.messages.slice(0, messageIndex + 1);
-        chatHistoryHook.updateChatProperty(currentChatId, { messages: truncatedMessages });
+        // Await persistence to ensure backend is ready for regeneration
+        await chatHistoryHook.updateChatProperty(currentChatId, { messages: truncatedMessages });
 
         // 3. Add new response entry
         const newResponse: ModelResponse = { text: '', toolCallEvents: [], startTime: Date.now() };
@@ -711,14 +702,8 @@ export const useChat = (
 
         // 5. Sync & Update
         try {
-            // Optimistic update
+            // This handles local update and backend persistence
             chatHistoryHook.updateChatProperty(chatId, { messages: newMessages });
-
-            await fetchFromApi(`/api/chats/${chatId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: newMessages })
-            });
         } catch (e) {
             console.error("Failed to switch response branch:", e);
             if (onShowToast) onShowToast("Failed to switch response branch", 'error');
