@@ -63,7 +63,7 @@ const SegmentedControl: React.FC<{
     const id = React.useId();
     
     return (
-        <div className={`flex flex-col gap-1.5 w-full ${className || ''}`}>
+        <div className={`flex flex-col gap-2 w-full ${className || ''}`}>
             <div className="flex items-center gap-2 px-1">
                 {icon && <span className="flex-shrink-0 opacity-70 scale-90">{icon}</span>}
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{label}</span>
@@ -78,7 +78,7 @@ const SegmentedControl: React.FC<{
                             onClick={() => !disabled && onChange(opt.id)}
                             disabled={disabled}
                             className={`
-                                relative flex-1 py-1.5 text-xs font-medium rounded-md transition-colors duration-200 min-w-0
+                                relative flex-1 py-2 text-xs font-medium rounded-md transition-colors duration-200 min-w-0
                                 ${isActive 
                                     ? 'text-indigo-600 dark:text-indigo-300' 
                                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -112,7 +112,7 @@ const TextInput: React.FC<{
     disabled?: boolean;
     icon?: React.ReactNode;
 }> = ({ label, placeholder, value, onChange, onBlur, multiline, disabled, icon }) => (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex flex-col gap-2.5 w-full">
         <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
             {icon && <span className="flex-shrink-0 opacity-70 scale-90">{icon}</span>}
             {label}
@@ -125,7 +125,7 @@ const TextInput: React.FC<{
                     onBlur={onBlur}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className="w-full px-3 py-2.5 bg-transparent border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 min-h-[100px] resize-none leading-relaxed"
+                    className="w-full px-4 py-3 bg-transparent border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 min-h-[120px] resize-none leading-relaxed"
                 />
             ) : (
                 <input
@@ -135,7 +135,7 @@ const TextInput: React.FC<{
                     onBlur={onBlur}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className="w-full py-2 px-3 bg-transparent border border-slate-200 dark:border-white/10 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                    className="w-full py-2.5 px-4 bg-transparent border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
             )}
         </div>
@@ -149,13 +149,13 @@ const SectionHeader: React.FC<{
     color: string;
     bg: string;
 }> = ({ title, subtitle, icon, color, bg }) => (
-    <div className="flex items-center gap-3 mb-4">
-        <div className={`p-2 rounded-lg ${bg} ${color}`}>
+    <div className="flex items-center gap-4 mb-6">
+        <div className={`p-2.5 rounded-xl ${bg} ${color}`}>
             {icon}
         </div>
         <div>
-            <h4 className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight leading-none">{title}</h4>
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-1">{subtitle}</p>
+            <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight leading-none">{title}</h4>
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-1.5">{subtitle}</p>
         </div>
     </div>
 );
@@ -304,56 +304,56 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     };
 
     return (
-        <div className="pb-10 max-w-7xl mx-auto w-full">
+        <div className="pb-16 max-w-7xl mx-auto w-full px-1">
             {/* Header with Auto-Save Indicator */}
-            <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-md text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M12 11l4 4"/><path d="M16 11l-4 4"/></svg>
+            <div className="mb-12 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M12 11l4 4"/><path d="M16 11l-4 4"/></svg>
                     </div>
                     <div>
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Personalization</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Customize the AI's personality and your profile.</p>
+                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Personalization</h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Customize the AI's personality and your profile.</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3 self-end sm:self-auto">
                     <button 
                         onClick={handleReset}
-                        className="px-3 py-1.5 text-[10px] font-semibold text-slate-500 hover:text-red-500 hover:bg-red-50 dark:text-slate-400 dark:hover:bg-red-900/10 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-900/20"
+                        className="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 hover:text-red-500 hover:bg-red-50 dark:text-slate-400 dark:hover:bg-red-900/10 rounded-xl transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-900/20"
                         disabled={disabled}
                     >
                         Reset Defaults
                     </button>
                     
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-white/50 dark:bg-white/5 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm">
+                    <div className="flex items-center gap-2.5 px-4 py-2 bg-white/80 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-sm">
                         {saveState === 'saved' ? (
                             <>
-                                <svg className="w-3 h-3 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <svg className="w-3.5 h-3.5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
                                 </svg>
-                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Saved</span>
+                                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Saved</span>
                             </>
                         ) : saveState === 'saving' ? (
                             <>
-                                <svg className="animate-spin w-3 h-3 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg className="animate-spin w-3.5 h-3.5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Saving</span>
+                                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Saving</span>
                             </>
                         ) : (
                             <>
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Typing</span>
+                                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Typing</span>
                             </>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Main Grid: Reduced spacing for tighter layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+            {/* Main Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-16 items-start">
                 
                 {/* Column 1: Persona Tuning */}
                 <div className="flex flex-col w-full">
@@ -365,7 +365,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         bg="bg-fuchsia-50 dark:bg-fuchsia-500/10" 
                     />
 
-                    <div className="space-y-6 pl-1 w-full">
+                    <div className="space-y-8 pl-1 w-full">
                         <SelectDropdown 
                             label="Primary Persona" 
                             icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-fuchsia-500"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>}
@@ -373,10 +373,10 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                             onChange={handleToneChange} 
                             options={TONE_OPTIONS} 
                             disabled={disabled}
-                            triggerClassName="w-full bg-transparent border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2.5 hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors"
+                            triggerClassName="w-full bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors shadow-sm"
                         />
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5 w-full">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
                             <SegmentedControl 
                                 label="Warmth" 
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-orange-500"><path d="M19 14c1.49-1.28 3.6-1.28 5.09 0 1.49 1.28 1.49 3.36 0 4.63s-3.6 1.28-5.09 0c-1.49-1.28-1.49-3.36 0-4.63z"/><path d="M11.23 8.8c-2.73-1.53-2.92-3.8-2.92-3.8s-3.23 2-1.72 6.8c1.33 4.2 3.64 6.7 9.42 7.2 4.47.38 6.75-2.26 6.75-2.26s-1.57 3.53-7.51 3.26c-5.7-.26-7.82-3.66-9.15-7.87C4.7 8.1 7.21 4.7 7.21 4.7s2.21 2.37 4.02 4.1z"/></svg>}
@@ -433,7 +433,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         bg="bg-cyan-50 dark:bg-cyan-500/10" 
                     />
 
-                    <div className="space-y-6 pl-1 w-full">
+                    <div className="space-y-8 pl-1 w-full">
                         <TextInput 
                             label="Nickname" 
                             value={nickname} 
