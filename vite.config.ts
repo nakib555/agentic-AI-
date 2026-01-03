@@ -1,3 +1,4 @@
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { defineConfig, loadEnv } from 'vite';
@@ -88,7 +89,6 @@ export default defineConfig(({ mode }) => {
       build: {
         outDir: 'dist',
         rollupOptions: {
-          external: ['livecodes'],
           output: {
             manualChunks: {
               'vendor-react': ['react', 'react-dom', 'framer-motion'],

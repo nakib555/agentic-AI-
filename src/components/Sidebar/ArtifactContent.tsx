@@ -12,33 +12,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
-// Lazy load the shared component (now using LiveCodes under the hood)
-const LiveCodesEmbed = React.lazy(() => import('../Artifacts/SandpackComponent'));
-
-// --- Error Boundary for Lazy Component ---
-class ArtifactErrorBoundary extends React.Component<{ children: React.ReactNode, onFallback: () => void }, { hasError: boolean }> {
-    state = { hasError: false };
-    static getDerivedStateFromError() { return { hasError: true }; }
-    componentDidCatch(error: any) { console.error("Artifact Preview Error:", error); }
-    render() {
-        if (this.state.hasError) {
-            return (
-                <div className="flex flex-col items-center justify-center h-full p-4 text-center bg-white dark:bg-[#1e1e1e]">
-                    <div className="text-red-500 mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <p className="text-sm font-medium">Failed to load preview environment.</p>
-                    </div>
-                    <button onClick={this.props.onFallback} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-sm transition-colors">
-                        View Code Source
-                    </button>
-                </div>
-            );
-        }
-        return this.props.children;
-    }
-}
+// Lazy load the shared component (now using Sandpack under the hood)
+const SandpackEmbed = React.lazy(() => import('../Artifacts/SandpackComponent'));
 
 // --- Icons ---
 const CopyIcon = () => (
@@ -142,6 +117,31 @@ type ArtifactContentProps = {
     onClose: () => void;
 };
 
+// --- Error Boundary for Lazy Component ---
+class ArtifactErrorBoundary extends React.Component<{ children: React.ReactNode, onFallback: () => void }, { hasError: boolean }> {
+    state = { hasError: false };
+    static getDerivedStateFromError() { return { hasError: true }; }
+    componentDidCatch(error: any) { console.error("Artifact Preview Error:", error); }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="flex flex-col items-center justify-center h-full p-4 text-center bg-white dark:bg-[#1e1e1e]">
+                    <div className="text-red-500 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <p className="text-sm font-medium">Failed to load preview environment.</p>
+                    </div>
+                    <button onClick={this.props.onFallback} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-sm transition-colors">
+                        View Code Source
+                    </button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
 export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ content, language, onClose }) => {
     const syntaxStyle = useSyntaxTheme();
     
@@ -162,27 +162,20 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => observer.disconnect();
     }, []);
 
-    // Determine Renderer Strategy
-    const useLiveCodes = useMemo(() => {
-        if (content.length > 50000) return false;
-        
-        const isReact = detectIsReact(content, language);
-        const isStandardWeb = ['html', 'htm', 'css', 'svg', 'xml', 'markup'].includes(language.toLowerCase());
-        const isJs = ['javascript', 'js'].includes(language.toLowerCase());
-
-        // Use LiveCodes if it's NOT standard web OR it is React/Framework JS
-        return !isStandardWeb && (!isJs || isReact);
+    const isReact = useMemo(() => {
+        if (content.length > 50000) return false; 
+        return detectIsReact(content, language);
     }, [content, language]);
 
     // Auto-switch tab based on language detection
     useEffect(() => {
-        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || useLiveCodes;
+        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || isReact;
         if (content.length < 50000 && isRenderable) {
             dispatch({ type: 'SET_TAB', payload: 'preview' });
         } else {
             dispatch({ type: 'SET_TAB', payload: 'code' });
         }
-    }, [language, content.length, useLiveCodes]);
+    }, [language, content.length, isReact]);
 
     // Initial load handler to clear the loading spinner
     useEffect(() => {
@@ -277,8 +270,8 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
 
-        // JavaScript / TypeScript (Standard Iframe fallback if not React/Framework)
-        if (['javascript', 'typescript', 'js', 'ts'].includes(language) && !useLiveCodes) {
+        // JavaScript / TypeScript (Standard Iframe fallback if not React)
+        if (['javascript', 'typescript', 'js', 'ts'].includes(language) && !isReact) {
             const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
             return `
                 <!DOCTYPE html>
@@ -302,7 +295,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
         return '';
-    }, [debouncedContent, language, useLiveCodes]);
+    }, [debouncedContent, language, isReact]);
 
     const handleCopy = useCallback(() => {
         navigator.clipboard.writeText(content);
@@ -311,7 +304,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     }, [content]);
 
     const handleOpenNewTab = useCallback(() => {
-        if (!useLiveCodes) {
+        if (!isReact) {
             const win = window.open('', '_blank');
             if (win) {
                 win.document.write(previewContent);
@@ -320,24 +313,24 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         } else {
             alert("Interactive previews are embedded and cannot be opened in a new tab yet.");
         }
-    }, [previewContent, useLiveCodes]);
+    }, [previewContent, isReact]);
 
     const handleRefresh = useCallback(() => {
         dispatch({ type: 'REFRESH_PREVIEW' });
         setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 200);
     }, []);
 
-    const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx', 'css'].includes(language) || useLiveCodes;
+    const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx', 'css'].includes(language) || isReact;
     
     const displayLanguage = useMemo(() => {
         if (!language) return 'TXT';
         const raw = language.toLowerCase();
-        if (useLiveCodes) return raw.toUpperCase();
+        if (isReact) return 'REACT';
         if (['html', 'css', 'json', 'xml', 'sql', 'php', 'svg'].includes(raw)) return raw.toUpperCase();
         if (raw === 'javascript') return 'JavaScript';
         if (raw === 'typescript') return 'TypeScript';
         return raw.charAt(0).toUpperCase() + raw.slice(1);
-    }, [language, useLiveCodes]);
+    }, [language, isReact]);
 
     const syntaxHighlighterLanguage = useMemo(() => {
         if (language === 'html') return 'markup';
@@ -457,7 +450,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 <div 
                     className={`flex-1 relative flex flex-col bg-layer-2 ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
                 >
-                    {useLiveCodes ? (
+                    {isReact ? (
                         <div className="flex-1 w-full h-full relative bg-white dark:bg-[#1e1e1e]">
                              <ArtifactErrorBoundary onFallback={() => dispatch({ type: 'SET_TAB', payload: 'code' })}>
                                  <Suspense fallback={
@@ -466,7 +459,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                         <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
                                     </div>
                                  }>
-                                     <LiveCodesEmbed
+                                     <SandpackEmbed
                                         key={state.iframeKey}
                                         theme={isDark ? "dark" : "light"}
                                         code={debouncedContent}

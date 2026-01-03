@@ -9,8 +9,8 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
-// Lazy load the shared LiveCodes component
-const LiveCodesEmbed = React.lazy(() => import('./SandpackComponent'));
+// Lazy load the shared Sandpack component
+const SandpackEmbed = React.lazy(() => import('./SandpackComponent'));
 
 // --- Error Boundary for Lazy Component ---
 class ArtifactPreviewErrorBoundary extends React.Component<{ children: React.ReactNode, fallback: React.ReactNode }, { hasError: boolean }> {
@@ -64,37 +64,32 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     }, [content]);
 
     // Determine Renderer Strategy
-    const useLiveCodes = useMemo(() => {
+    const useSandpack = useMemo(() => {
         if (type === 'data') return false;
         
         // Detect React-like patterns in content
         const isReact = detectIsReact(content, language);
+        const l = language.toLowerCase();
         
-        // Check for basic web languages that work best in a simple iframe
-        const isStandardWeb = ['html', 'htm', 'css', 'svg', 'xml', 'markup'].includes(language.toLowerCase());
-        const isJs = ['javascript', 'js'].includes(language.toLowerCase());
+        // Supported frameworks by Sandpack in our implementation
+        const isSupportedFramework = ['react', 'jsx', 'tsx', 'vue', 'svelte'].includes(l);
 
-        // Logic: 
-        // 1. If it's React/JSX/TSX or other frameworks (Vue/Svelte/Python), use LiveCodes.
-        // 2. If it's pure HTML/CSS/JS (without React patterns), use Standard Iframe.
-        
-        // Return TRUE for LiveCodes if: 
-        // It is NOT standard web markup OR it IS javascript/typescript but clearly React.
-        return !isStandardWeb && (!isJs || isReact);
+        // Logic: Use Sandpack for Frameworks. Use Standard Iframe for simple HTML/JS.
+        return isReact || isSupportedFramework;
     }, [content, language, type]);
 
 
     // Auto-switch tab based on language on mount
     useEffect(() => {
-        // Preview is available for standard web OR things handled by LiveCodes
-        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language) || useLiveCodes;
+        // Preview is available for standard web OR things handled by Sandpack
+        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language) || useSandpack;
         
         if (content.length < 50000 && isRenderable) {
             setActiveTab('preview');
         } else {
             setActiveTab('source');
         }
-    }, [language, content.length, useLiveCodes]);
+    }, [language, content.length, useSandpack]);
 
     const renderPreview = () => {
         if (type === 'data') {
@@ -135,8 +130,8 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             }
         }
 
-        // --- LiveCodes Preview (Frameworks, Python, React, etc.) ---
-        if (useLiveCodes) {
+        // --- Sandpack Preview (Frameworks, React, etc.) ---
+        if (useSandpack) {
             return (
                 <div className="h-[550px] w-full bg-white dark:bg-[#1e1e1e] border-t border-border-subtle relative">
                      <ArtifactPreviewErrorBoundary fallback={
@@ -151,11 +146,10 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                                 <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
                             </div>
                          }>
-                             <LiveCodesEmbed
-                                key={iframeKey} 
-                                theme={isDark ? "dark" : "light"}
+                             <SandpackEmbed
                                 code={content}
                                 language={language}
+                                theme={isDark ? "dark" : "light"}
                                 mode="inline"
                              />
                         </Suspense>
@@ -237,8 +231,8 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
 
     const highlightLang = (language === 'html' || language === 'svg' || language === 'xml') ? 'markup' : (language || 'text');
     
-    // Only show Preview tab if it's a simple renderable language OR LiveCodes can handle it
-    const showPreviewTab = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language) || useLiveCodes;
+    // Only show Preview tab if it's a simple renderable language OR Sandpack can handle it
+    const showPreviewTab = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language) || useSandpack;
 
     return (
         <div className="my-4 rounded-xl overflow-hidden border border-border-default shadow-lg bg-code-surface transition-colors duration-300">
