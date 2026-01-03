@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Sandpack, SandpackProps } from "@codesandbox/sandpack-react";
+import { SandpackProvider, SandpackLayout, SandpackPreview, SandpackProps } from "@codesandbox/sandpack-react";
 
 type SandpackComponentProps = {
     code: string;
@@ -62,15 +62,11 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, language, t
 
     return (
         <div className="w-full h-full sandpack-container">
-            <Sandpack
+            <SandpackProvider
                 template={template}
                 theme={theme === 'dark' ? 'dark' : 'light'}
                 files={getFiles()}
                 options={{
-                    showNavigator: false,
-                    showTabs: false,
-                    showLineNumbers: true, // Show line numbers in the editor part if visible
-                    editorHeight: '100%',
                     classes: {
                         "sp-wrapper": "h-full",
                         "sp-layout": "h-full",
@@ -89,11 +85,20 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, language, t
                         "lodash": "latest"
                     }
                 }}
-            />
+            >
+                <SandpackLayout>
+                    <SandpackPreview 
+                        style={{ height: '100%' }} 
+                        showOpenInCodeSandbox={false} 
+                        showRefreshButton={true}
+                    />
+                </SandpackLayout>
+            </SandpackProvider>
             <style>{`
                 .sandpack-container .sp-wrapper { height: 100%; }
-                .sandpack-container .sp-layout { height: 100%; border: none; border-radius: 0; }
+                .sandpack-container .sp-layout { height: 100%; border: none; border-radius: 0; background: transparent; }
                 .sandpack-container .sp-preview-iframe { height: 100%; }
+                .sandpack-container .sp-preview-container { height: 100%; }
             `}</style>
         </div>
     );
