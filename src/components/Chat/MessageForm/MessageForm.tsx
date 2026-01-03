@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { forwardRef, useState } from 'react';
+import React, { forwardRef, useState, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMessageForm } from './useMessageForm';
 import { UploadMenu } from './UploadMenu';
@@ -14,8 +14,10 @@ import { MessageFormHandle } from './types';
 import { Message } from '../../../types';
 import { TextType } from '../../UI/TextType';
 import { Tooltip } from '../../UI/Tooltip';
-import { FilePreviewSidebar } from './FilePreviewSidebar';
 import { AttachedFilePreview } from './AttachedFilePreview';
+
+// Lazy load the sidebar to avoid loading syntax highlighters immediately
+const FilePreviewSidebar = React.lazy(() => import('./FilePreviewSidebar').then(m => ({ default: m.FilePreviewSidebar })));
 
 type MessageFormProps = {
   onSubmit: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
@@ -100,11 +102,13 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
       </AnimatePresence>
 
       {/* Content Preview Sidebar (Desktop) / Modal (Mobile) */}
-      <FilePreviewSidebar 
-        isOpen={!!logic.previewFile}
-        onClose={() => logic.setPreviewFile(null)}
-        file={logic.previewFile}
-      />
+      <Suspense fallback={null}>
+          <FilePreviewSidebar 
+            isOpen={!!logic.previewFile}
+            onClose={() => logic.setPreviewFile(null)}
+            file={logic.previewFile}
+          />
+      </Suspense>
 
       <input
         type="file"

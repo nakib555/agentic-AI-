@@ -95,6 +95,9 @@ export default defineConfig(({ mode }) => {
               'syntax-highlighter': ['react-syntax-highlighter'],
               'markdown': ['react-markdown', 'rehype-katex', 'rehype-raw', 'remark-gfm', 'remark-math'],
               'gemini': ['@google/genai'],
+              'sandpack': ['@codesandbox/sandpack-react'],
+              'virtuoso': ['react-virtuoso'],
+              'html2canvas': ['html2canvas'],
             }
           }
         }
