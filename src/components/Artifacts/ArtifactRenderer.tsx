@@ -10,6 +10,7 @@ import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
 // Lazy load the shared Sandpack component
+// Ensure we handle the default export correctly
 const SandpackEmbed = React.lazy(() => import('./SandpackComponent'));
 
 // --- Error Boundary for Lazy Component ---
@@ -69,7 +70,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         
         // Detect React-like patterns in content
         const isReact = detectIsReact(content, language);
-        const l = language.toLowerCase();
+        const l = (language || '').toLowerCase();
         
         // Supported frameworks by Sandpack in our implementation
         const isSupportedFramework = ['react', 'jsx', 'tsx', 'vue', 'svelte'].includes(l);

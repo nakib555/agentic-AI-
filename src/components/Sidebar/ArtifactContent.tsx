@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
-// Lazy load the shared component (now using Sandpack under the hood)
+// Lazy load the shared component
 const SandpackEmbed = React.lazy(() => import('../Artifacts/SandpackComponent'));
 
 // --- Icons ---
