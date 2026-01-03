@@ -113,7 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto" 
+                        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] pointer-events-auto" 
                         style={{ willChange: 'opacity' }}
                     />
                 )}
@@ -141,8 +141,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 style={{
                     height: '100%',
                     position: isDesktop ? 'relative' : 'fixed',
-                    width: isDesktop ? 'auto' : '67.5%', // Updated width for mobile
-                    maxWidth: isDesktop ? undefined : '320px',
+                    width: isDesktop ? 'auto' : '80%',
+                    maxWidth: isDesktop ? undefined : '340px',
                     left: 0,
                     top: 0,
                     bottom: 0,
