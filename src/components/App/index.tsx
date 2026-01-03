@@ -90,16 +90,18 @@ export const App = () => {
         >
           {/* Mobile Header Toggle */}
           {!logic.isDesktop && (
-            <div className="absolute top-0 left-0 right-0 h-14 z-30 pointer-events-none flex items-center px-4">
-               {!logic.isSidebarOpen && (
-                <button
-                  onClick={() => logic.setIsSidebarOpen(true)}
-                  className="pointer-events-auto p-2 rounded-lg bg-layer-1/80 backdrop-blur-md border border-border text-content-secondary hover:text-content-primary shadow-sm"
-                  aria-label="Open sidebar"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-                </button>
-               )}
+            <div className="absolute top-0 left-0 right-0 z-30 pointer-events-none px-4 py-3">
+               <div className="h-11 flex items-center">
+                 {!logic.isSidebarOpen && (
+                  <button
+                    onClick={() => logic.setIsSidebarOpen(true)}
+                    className="pointer-events-auto p-2 rounded-lg bg-layer-1/80 backdrop-blur-md border border-border text-content-secondary hover:text-content-primary shadow-sm"
+                    aria-label="Open sidebar"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                  </button>
+                 )}
+               </div>
             </div>
           )}
 
