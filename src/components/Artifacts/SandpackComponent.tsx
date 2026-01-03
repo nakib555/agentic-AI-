@@ -23,9 +23,21 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, language, t
         if (l === 'svelte') return 'svelte';
         if (l === 'angular') return 'angular';
         if (l === 'html') return 'static';
+        
         // Fallback for JS/TS if it looks like React
-        if ((l === 'js' || l === 'javascript' || l === 'ts' || l === 'typescript') && (codeContent.includes('React') || codeContent.includes('export default'))) {
-            return 'react-ts';
+        // Check for common React patterns: explicit import, JSX-like tags, or export default component
+        if (
+            l === 'js' || l === 'javascript' || l === 'ts' || l === 'typescript'
+        ) {
+             if (
+                codeContent.includes('React') || 
+                codeContent.includes('export default') ||
+                /from\s+['"]react['"]/.test(codeContent) ||
+                /require\(['"]react['"]\)/.test(codeContent) ||
+                /return\s+<[A-Z]/.test(codeContent) // Heuristic for JSX return
+             ) {
+                 return 'react-ts';
+             }
         }
         return 'vanilla-ts';
     };
@@ -75,6 +87,8 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, language, t
                 }}
                 customSetup={{
                     dependencies: {
+                        "react": "^18.0.0",
+                        "react-dom": "^18.0.0",
                         "lucide-react": "latest",
                         "recharts": "latest",
                         "framer-motion": "latest",
