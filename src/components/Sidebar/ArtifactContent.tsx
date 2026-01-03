@@ -13,7 +13,7 @@ import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
 // Lazy load the shared component (now using LiveCodes under the hood)
-const ReactSandpack = React.lazy(() => import('../Artifacts/SandpackComponent'));
+const LiveCodesEmbed = React.lazy(() => import('../Artifacts/SandpackComponent'));
 
 // --- Error Boundary for Lazy Component ---
 class ArtifactErrorBoundary extends React.Component<{ children: React.ReactNode, onFallback: () => void }, { hasError: boolean }> {
@@ -459,7 +459,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                         <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
                                     </div>
                                  }>
-                                     <ReactSandpack
+                                     <LiveCodesEmbed
                                         key={state.iframeKey}
                                         theme={isDark ? "dark" : "light"}
                                         code={debouncedContent}

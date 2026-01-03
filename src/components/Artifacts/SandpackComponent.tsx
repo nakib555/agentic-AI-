@@ -8,13 +8,13 @@ import React, { useState, useEffect, useRef } from 'react';
 // @ts-ignore - livecodes is loaded via importmap
 import { createPlayground } from 'livecodes';
 
-type SandpackComponentProps = {
+type LiveCodesEmbedProps = {
     code: string;
     theme: 'dark' | 'light';
     mode?: 'inline' | 'full';
 };
 
-const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode = 'inline' }) => {
+const LiveCodesEmbed: React.FC<LiveCodesEmbedProps> = ({ code, theme, mode = 'inline' }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const playgroundRef = useRef<any>(null);
     const [isReady, setIsReady] = useState(false);
@@ -34,17 +34,23 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode
             background-color: ${currentTheme === 'dark' ? '#1e1e1e' : '#ffffff'};
             color: ${currentTheme === 'dark' ? '#fff' : '#1e293b'};
         }
+        #app {
+            height: 100%;
+            width: 100%;
+        }
     `;
 
     // Initialize Playground
     useEffect(() => {
         if (!containerRef.current) return;
 
-        // Cleanup previous instance if it exists to avoid duplication
+        // Cleanup previous instance if it exists
         if (playgroundRef.current) {
             try {
                 playgroundRef.current.destroy();
-            } catch (e) { }
+            } catch (e) {
+                // Ignore destruction errors
+            }
             playgroundRef.current = null;
         }
 
@@ -52,7 +58,7 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode
 
         const initPlayground = async () => {
             const options = {
-                appUrl: 'https://v29.livecodes.io/',
+                appUrl: 'https://v29.livecodes.io/', // Pin version for stability
                 params: {
                     console: 'open',
                     mode: 'result',
@@ -95,11 +101,7 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode
             };
 
             try {
-                // Ensure createPlayground is available
-                if (typeof createPlayground !== 'function') {
-                    throw new Error("LiveCodes SDK not loaded");
-                }
-
+                // @ts-ignore
                 const playground = await createPlayground(containerRef.current!, options);
                 if (isMounted) {
                     playgroundRef.current = playground;
@@ -124,7 +126,7 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode
             }
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Run once on mount
+    }, []); // Run once on mount to initialize the iframe
 
     // Dynamic Code Update
     useEffect(() => {
@@ -155,7 +157,7 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode
 
     return (
         <div 
-            className="w-full h-full relative group"
+            className="w-full h-full relative"
             style={{
                 borderRadius: mode === 'inline' ? '0' : '0',
                 overflow: 'hidden',
@@ -165,15 +167,9 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode
                 flexDirection: 'column'
             }}
         >
-            {!isReady && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#1e1e1e] z-10">
-                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Initializing Environment...</span>
-                </div>
-            )}
-            <div ref={containerRef} className="w-full flex-1 min-h-0 relative" />
+            <div ref={containerRef} className="w-full flex-1 min-h-0 absolute inset-0" />
         </div>
     );
 };
 
-export default SandpackComponent;
+export default LiveCodesEmbed;

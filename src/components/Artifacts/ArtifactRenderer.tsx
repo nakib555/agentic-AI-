@@ -10,7 +10,7 @@ import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
 // Lazy load the shared LiveCodes component
-const ReactSandpack = React.lazy(() => import('./SandpackComponent'));
+const LiveCodesEmbed = React.lazy(() => import('./SandpackComponent'));
 
 // --- Error Boundary for Lazy Component ---
 class ArtifactPreviewErrorBoundary extends React.Component<{ children: React.ReactNode, fallback: React.ReactNode }, { hasError: boolean }> {
@@ -131,7 +131,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                                 <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
                             </div>
                          }>
-                             <ReactSandpack
+                             <LiveCodesEmbed
                                 key={iframeKey} 
                                 theme={isDark ? "dark" : "light"}
                                 code={content}
