@@ -63,7 +63,7 @@ const SegmentedControl: React.FC<{
     const id = React.useId();
     
     return (
-        <div className={`flex flex-col gap-2 w-full ${className || ''}`}>
+        <div className={`flex flex-col gap-1.5 w-full ${className || ''}`}>
             <div className="flex items-center gap-2 px-1">
                 {icon && <span className="flex-shrink-0 opacity-70 scale-90">{icon}</span>}
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{label}</span>
@@ -149,7 +149,7 @@ const SectionHeader: React.FC<{
     color: string;
     bg: string;
 }> = ({ title, subtitle, icon, color, bg }) => (
-    <div className="flex items-center gap-3 mb-6">
+    <div className="flex items-center gap-3 mb-4">
         <div className={`p-2 rounded-lg ${bg} ${color}`}>
             {icon}
         </div>
@@ -352,8 +352,8 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                 </div>
             </div>
 
-            {/* Main Grid: Updated breakpoint to lg:grid-cols-2 to prevent crowding on tablets */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-12 items-start">
+            {/* Main Grid: Reduced spacing for tighter layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
                 
                 {/* Column 1: Persona Tuning */}
                 <div className="flex flex-col w-full">
@@ -365,7 +365,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         bg="bg-fuchsia-50 dark:bg-fuchsia-500/10" 
                     />
 
-                    <div className="space-y-8 pl-1 w-full">
+                    <div className="space-y-6 pl-1 w-full">
                         <SelectDropdown 
                             label="Primary Persona" 
                             icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-fuchsia-500"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>}
@@ -376,7 +376,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                             triggerClassName="w-full bg-transparent border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2.5 hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors"
                         />
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-8 w-full">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5 w-full">
                             <SegmentedControl 
                                 label="Warmth" 
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-orange-500"><path d="M19 14c1.49-1.28 3.6-1.28 5.09 0 1.49 1.28 1.49 3.36 0 4.63s-3.6 1.28-5.09 0c-1.49-1.28-1.49-3.36 0-4.63z"/><path d="M11.23 8.8c-2.73-1.53-2.92-3.8-2.92-3.8s-3.23 2-1.72 6.8c1.33 4.2 3.64 6.7 9.42 7.2 4.47.38 6.75-2.26 6.75-2.26s-1.57 3.53-7.51 3.26c-5.7-.26-7.82-3.66-9.15-7.87C4.7 8.1 7.21 4.7 7.21 4.7s2.21 2.37 4.02 4.1z"/></svg>}
@@ -433,7 +433,7 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         bg="bg-cyan-50 dark:bg-cyan-500/10" 
                     />
 
-                    <div className="space-y-8 pl-1 w-full">
+                    <div className="space-y-6 pl-1 w-full">
                         <TextInput 
                             label="Nickname" 
                             value={nickname} 
