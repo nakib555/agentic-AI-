@@ -3,14 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { 
-  SandpackProvider, 
-  SandpackLayout, 
-  SandpackPreview, 
-  SandpackConsole, 
-  useSandpackConsole
-} from "@codesandbox/sandpack-react";
+import React, { useState, useEffect, useRef } from 'react';
+import { createPlayground } from 'livecodes';
 
 type SandpackComponentProps = {
     code: string;
@@ -19,115 +13,111 @@ type SandpackComponentProps = {
     mode?: 'inline' | 'full';
 };
 
-const SandpackInner = ({ mode }: { mode: 'inline' | 'full' }) => {
-    const [consoleExpanded, setConsoleExpanded] = useState(false);
-    const { logs } = useSandpackConsole({ resetOnPreviewRestart: true });
-    
-    // Count distinct log types for the badge
-    const errorCount = logs.filter(log => log.method === 'error').length;
-    const warningCount = logs.filter(log => log.method === 'warn').length;
-    const infoCount = logs.filter(log => log.method === 'log' || log.method === 'info').length;
-
-    // Auto-expand console if a new error is detected
-    useEffect(() => {
-        if (errorCount > 0) {
-            setConsoleExpanded(true);
-        }
-    }, [errorCount]);
-
-    return (
-        <SandpackLayout style={{ 
-            height: '100%', 
-            border: 'none', 
-            borderRadius: mode === 'inline' ? '0.75rem' : '0', 
-            backgroundColor: 'transparent',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden'
-        }}>
-            <SandpackPreview 
-                style={{ height: '100%', flex: 1, minHeight: 0 }} 
-                showRefreshButton={true} 
-                showOpenInCodeSandbox={false}
-                showNavigator={false}
-            />
-            
-            {/* Collapsible Console Footer */}
-            <div className="flex-shrink-0 bg-[#1e1e1e] border-t border-gray-700 flex flex-col w-full">
-                 <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none h-7">
-                    <button 
-                        onClick={() => setConsoleExpanded(!consoleExpanded)} 
-                        className="flex items-center gap-2 hover:text-white transition-colors focus:outline-none w-full"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-3.5 h-3.5 transition-transform duration-200 ${consoleExpanded ? 'rotate-90' : ''}`}><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        <span>Console</span>
-                        {(errorCount > 0 || warningCount > 0 || infoCount > 0) && (
-                            <div className="flex gap-1 ml-auto">
-                                {errorCount > 0 && <span className="bg-red-900/50 text-red-300 px-1.5 rounded text-[10px] font-bold">{errorCount}</span>}
-                                {warningCount > 0 && <span className="bg-yellow-900/50 text-yellow-300 px-1.5 rounded text-[10px] font-bold">{warningCount}</span>}
-                                {infoCount > 0 && <span className="bg-gray-700 text-gray-300 px-1.5 rounded text-[10px] font-bold">{infoCount}</span>}
-                            </div>
-                        )}
-                    </button>
-                </div>
-                
-                <div 
-                    style={{ 
-                        height: consoleExpanded ? '160px' : '0px', 
-                        transition: 'height 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                        overflow: 'hidden' 
-                    }}
-                >
-                    <SandpackConsole 
-                        style={{ height: '100%', width: '100%' }} 
-                        resetOnPreviewRestart 
-                    />
-                </div>
-            </div>
-        </SandpackLayout>
-    );
-};
-
 const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, keyId, mode = 'inline' }) => {
-    // Ensure App.js exports default for Sandpack to pick it up correctly
-    let finalCode = code;
-    if (!code.includes('export default')) {
-        finalCode = code + '\n\nexport default App;'; 
-    }
+    const containerRef = useRef<HTMLDivElement>(null);
+    const playgroundRef = useRef<any>(null);
 
-    const files = {
-        "/App.js": finalCode
-    };
+    useEffect(() => {
+        if (!containerRef.current) return;
 
-    const commonDependencies = {
-        "lucide-react": "latest",
-        "recharts": "latest",
-        "framer-motion": "latest",
-        "clsx": "latest",
-        "tailwind-merge": "latest",
-        "date-fns": "latest",
-        "react-markdown": "latest",
-    };
+        let finalCode = code;
+        // Ensure React code exports properly for LiveCodes
+        if (!code.includes('export default')) {
+            finalCode = code + '\n\nexport default App;'; 
+        }
+
+        const run = async () => {
+            if (playgroundRef.current) {
+                playgroundRef.current.destroy();
+            }
+
+            const playground = await createPlayground(containerRef.current!, {
+                appUrl: 'https://v29.livecodes.io/',
+                params: {
+                    console: 'open',
+                    mode: 'result',
+                },
+                config: {
+                    title: "React Component",
+                    mode: "result",
+                    theme: theme,
+                    markup: {
+                        language: "html",
+                        content: '<div id="app"></div>'
+                    },
+                    script: {
+                        language: "tsx", 
+                        content: finalCode
+                    },
+                    style: {
+                        language: "css",
+                        content: `
+                            body { font-family: 'Inter', sans-serif; padding: 1rem; } 
+                            ${theme === 'dark' ? 'body { background-color: #1e1e1e; color: #fff; }' : ''}
+                        `
+                    },
+                    processors: ["tailwindcss"],
+                    imports: {
+                        "react": "https://esm.sh/react@18.2.0",
+                        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+                        "lucide-react": "https://esm.sh/lucide-react",
+                        "recharts": "https://esm.sh/recharts",
+                        "framer-motion": "https://esm.sh/framer-motion",
+                        "clsx": "https://esm.sh/clsx",
+                        "tailwind-merge": "https://esm.sh/tailwind-merge",
+                        "date-fns": "https://esm.sh/date-fns",
+                        "react-markdown": "https://esm.sh/react-markdown",
+                    },
+                    customSettings: {
+                        template: "react"
+                    }
+                }
+            });
+            playgroundRef.current = playground;
+        };
+
+        run();
+
+        return () => {
+            if (playgroundRef.current) {
+                playgroundRef.current.destroy();
+            }
+        };
+    }, [keyId, theme]); 
+
+    // Dynamic code update
+    useEffect(() => {
+        if (playgroundRef.current && code) {
+            let finalCode = code;
+            if (!code.includes('export default')) {
+                finalCode = code + '\n\nexport default App;'; 
+            }
+            
+            playgroundRef.current.setConfig({
+                ...playgroundRef.current.getConfig(),
+                script: {
+                    language: 'tsx',
+                    content: finalCode
+                }
+            });
+        }
+    }, [code]);
 
     return (
-        <SandpackProvider
-            key={keyId}
-            template="react"
-            theme={theme}
-            files={files}
-            customSetup={{
-                dependencies: commonDependencies,
-            }}
-            options={{
-                externalResources: ["https://cdn.tailwindcss.com"],
-                // This ensures errors are captured by useSandpackConsole
-                classes: {
-                    "sp-layout": "custom-sandpack-layout",
-                }
+        <div 
+            className="w-full h-full"
+            style={{
+                borderRadius: mode === 'inline' ? '0.75rem' : '0',
+                overflow: 'hidden',
+                backgroundColor: theme === 'dark' ? '#1e1e1e' : '#ffffff',
+                border: '1px solid ' + (theme === 'dark' ? '#333' : '#e5e7eb'),
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column'
             }}
         >
-            <SandpackInner mode={mode as 'inline' | 'full'} />
-        </SandpackProvider>
+            <div ref={containerRef} style={{ width: '100%', flex: 1, minHeight: 0 }} />
+        </div>
     );
 };
 
