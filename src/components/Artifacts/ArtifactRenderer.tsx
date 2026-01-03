@@ -63,18 +63,38 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         setLogs([]);
     }, [content]);
 
-    const isReact = useMemo(() => detectIsReact(content, language), [content, language]);
+    // Determine Renderer Strategy
+    const useLiveCodes = useMemo(() => {
+        if (type === 'data') return false;
+        
+        // Detect React-like patterns in content
+        const isReact = detectIsReact(content, language);
+        
+        // Check for basic web languages that work best in a simple iframe
+        const isStandardWeb = ['html', 'htm', 'css', 'svg', 'xml', 'markup'].includes(language.toLowerCase());
+        const isJs = ['javascript', 'js'].includes(language.toLowerCase());
+
+        // Logic: 
+        // 1. If it's React/JSX/TSX or other frameworks (Vue/Svelte/Python), use LiveCodes.
+        // 2. If it's pure HTML/CSS/JS (without React patterns), use Standard Iframe.
+        
+        // Return TRUE for LiveCodes if: 
+        // It is NOT standard web markup OR it IS javascript/typescript but clearly React.
+        return !isStandardWeb && (!isJs || isReact);
+    }, [content, language, type]);
+
 
     // Auto-switch tab based on language on mount
     useEffect(() => {
-        const isRenderable = (['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language)) || isReact;
+        // Preview is available for standard web OR things handled by LiveCodes
+        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language) || useLiveCodes;
         
         if (content.length < 50000 && isRenderable) {
             setActiveTab('preview');
         } else {
             setActiveTab('source');
         }
-    }, [language, content.length, isReact]);
+    }, [language, content.length, useLiveCodes]);
 
     const renderPreview = () => {
         if (type === 'data') {
@@ -115,8 +135,8 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             }
         }
 
-        // --- React LiveCodes Preview ---
-        if (isReact) {
+        // --- LiveCodes Preview (Frameworks, Python, React, etc.) ---
+        if (useLiveCodes) {
             return (
                 <div className="h-[550px] w-full bg-white dark:bg-[#1e1e1e] border-t border-border-subtle relative">
                      <ArtifactPreviewErrorBoundary fallback={
@@ -135,6 +155,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                                 key={iframeKey} 
                                 theme={isDark ? "dark" : "light"}
                                 code={content}
+                                language={language}
                                 mode="inline"
                              />
                         </Suspense>
@@ -143,7 +164,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             );
         }
 
-        // --- Standard Frame for HTML/JS ---
+        // --- Standard Frame for Pure HTML/JS/CSS ---
         if (['html', 'svg', 'javascript', 'markup', 'xml', 'css', 'js'].includes(language)) {
             const cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
             const consoleScript = generateConsoleScript();
@@ -216,8 +237,8 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
 
     const highlightLang = (language === 'html' || language === 'svg' || language === 'xml') ? 'markup' : (language || 'text');
     
-    // Only show Preview tab if it's a simple renderable language OR React
-    const showPreviewTab = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language) || isReact;
+    // Only show Preview tab if it's a simple renderable language OR LiveCodes can handle it
+    const showPreviewTab = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language) || useLiveCodes;
 
     return (
         <div className="my-4 rounded-xl overflow-hidden border border-border-default shadow-lg bg-code-surface transition-colors duration-300">

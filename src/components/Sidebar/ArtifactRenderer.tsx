@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -463,6 +462,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                         key={state.iframeKey}
                                         theme={isDark ? "dark" : "light"}
                                         code={debouncedContent}
+                                        language={language}
                                         mode="full"
                                      />
                                 </Suspense>

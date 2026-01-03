@@ -162,20 +162,27 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => observer.disconnect();
     }, []);
 
-    const isReact = useMemo(() => {
-        if (content.length > 50000) return false; 
-        return detectIsReact(content, language);
+    // Determine Renderer Strategy
+    const useLiveCodes = useMemo(() => {
+        if (content.length > 50000) return false;
+        
+        const isReact = detectIsReact(content, language);
+        const isStandardWeb = ['html', 'htm', 'css', 'svg', 'xml', 'markup'].includes(language.toLowerCase());
+        const isJs = ['javascript', 'js'].includes(language.toLowerCase());
+
+        // Use LiveCodes if it's NOT standard web OR it is React/Framework JS
+        return !isStandardWeb && (!isJs || isReact);
     }, [content, language]);
 
     // Auto-switch tab based on language detection
     useEffect(() => {
-        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || isReact;
+        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || useLiveCodes;
         if (content.length < 50000 && isRenderable) {
             dispatch({ type: 'SET_TAB', payload: 'preview' });
         } else {
             dispatch({ type: 'SET_TAB', payload: 'code' });
         }
-    }, [language, content.length, isReact]);
+    }, [language, content.length, useLiveCodes]);
 
     // Initial load handler to clear the loading spinner
     useEffect(() => {
@@ -270,8 +277,8 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
 
-        // JavaScript / TypeScript (Standard Iframe fallback if not React)
-        if (['javascript', 'typescript', 'js', 'ts'].includes(language) && !isReact) {
+        // JavaScript / TypeScript (Standard Iframe fallback if not React/Framework)
+        if (['javascript', 'typescript', 'js', 'ts'].includes(language) && !useLiveCodes) {
             const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
             return `
                 <!DOCTYPE html>
@@ -295,7 +302,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
         return '';
-    }, [debouncedContent, language, isReact]);
+    }, [debouncedContent, language, useLiveCodes]);
 
     const handleCopy = useCallback(() => {
         navigator.clipboard.writeText(content);
@@ -304,7 +311,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     }, [content]);
 
     const handleOpenNewTab = useCallback(() => {
-        if (!isReact) {
+        if (!useLiveCodes) {
             const win = window.open('', '_blank');
             if (win) {
                 win.document.write(previewContent);
@@ -313,24 +320,24 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         } else {
             alert("Interactive previews are embedded and cannot be opened in a new tab yet.");
         }
-    }, [previewContent, isReact]);
+    }, [previewContent, useLiveCodes]);
 
     const handleRefresh = useCallback(() => {
         dispatch({ type: 'REFRESH_PREVIEW' });
         setTimeout(() => dispatch({ type: 'SET_LOADING', payload: false }), 200);
     }, []);
 
-    const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx', 'css'].includes(language) || isReact;
+    const isPreviewable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx', 'css'].includes(language) || useLiveCodes;
     
     const displayLanguage = useMemo(() => {
         if (!language) return 'TXT';
         const raw = language.toLowerCase();
-        if (isReact) return 'REACT';
+        if (useLiveCodes) return raw.toUpperCase();
         if (['html', 'css', 'json', 'xml', 'sql', 'php', 'svg'].includes(raw)) return raw.toUpperCase();
         if (raw === 'javascript') return 'JavaScript';
         if (raw === 'typescript') return 'TypeScript';
         return raw.charAt(0).toUpperCase() + raw.slice(1);
-    }, [language, isReact]);
+    }, [language, useLiveCodes]);
 
     const syntaxHighlighterLanguage = useMemo(() => {
         if (language === 'html') return 'markup';
@@ -450,7 +457,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 <div 
                     className={`flex-1 relative flex flex-col bg-layer-2 ${state.activeTab === 'preview' ? 'block' : 'hidden'}`}
                 >
-                    {isReact ? (
+                    {useLiveCodes ? (
                         <div className="flex-1 w-full h-full relative bg-white dark:bg-[#1e1e1e]">
                              <ArtifactErrorBoundary onFallback={() => dispatch({ type: 'SET_TAB', payload: 'code' })}>
                                  <Suspense fallback={
@@ -463,6 +470,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                         key={state.iframeKey}
                                         theme={isDark ? "dark" : "light"}
                                         code={debouncedContent}
+                                        language={language}
                                         mode="full"
                                      />
                                 </Suspense>
