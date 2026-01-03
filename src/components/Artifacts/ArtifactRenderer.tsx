@@ -8,7 +8,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
-// Lazy load the shared Sandpack component
+// Lazy load the shared Sandpack (LiveCodes) component
 const ReactSandpack = React.lazy(() => import('./SandpackComponent'));
 
 type ArtifactRendererProps = {
@@ -22,7 +22,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
     const [logs, setLogs] = useState<{level: string, message: string, timestamp: number}[]>([]);
     const [showConsole, setShowConsole] = useState(false);
-    const [iframeKey, setIframeKey] = useState(0); // Add key to force reload
+    const [iframeKey, setIframeKey] = useState(0); 
     const syntaxStyle = useSyntaxTheme();
     
     // Theme detection
@@ -35,7 +35,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         return () => observer.disconnect();
     }, []);
 
-    // Listen for console logs from the iframe (only for Frame mode)
+    // Listen for console logs from the iframe (only for Standard Frame mode)
     useEffect(() => {
         const handler = (e: MessageEvent) => {
             if (e.data && e.data.type === 'ARTIFACT_LOG') {
@@ -56,7 +56,6 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
 
     // Auto-switch tab based on language on mount
     useEffect(() => {
-        // Auto-switch to preview if it's a standard web format OR if React is detected
         const isRenderable = (['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js'].includes(language)) || isReact;
         
         if (content.length < 50000 && isRenderable) {
@@ -105,18 +104,18 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             }
         }
 
-        // --- React Sandpack Preview ---
+        // --- React Sandpack (LiveCodes) Preview ---
         if (isReact) {
             return (
-                <div className="h-[550px] w-full bg-white dark:bg-[#1e1e1e] border-t border-border-subtle">
+                <div className="h-[550px] w-full bg-white dark:bg-[#1e1e1e] border-t border-border-subtle relative">
                      <Suspense fallback={
-                        <div className="flex flex-col items-center justify-center h-full">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#1e1e1e]">
                             <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
                             <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
                         </div>
                      }>
                          <ReactSandpack
-                            key={iframeKey}
+                            key={iframeKey} // Allows hard reset if needed
                             theme={isDark ? "dark" : "light"}
                             code={content}
                             mode="inline"
@@ -126,7 +125,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             );
         }
 
-        // --- Frame for HTML/JS (Standard) ---
+        // --- Standard Frame for HTML/JS ---
         if (['html', 'svg', 'javascript', 'markup', 'xml', 'css', 'js'].includes(language)) {
             const cleanContent = content.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '');
             const consoleScript = generateConsoleScript();
@@ -137,7 +136,6 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             } else if (language === 'css') {
                  initialContent = `<!DOCTYPE html><html><head>${consoleScript}<style>${cleanContent}</style></head><body><h1>CSS Preview</h1><div class="demo">Demo Content</div></body></html>`;
             } else {
-                // Inject script into head for HTML
                 if (cleanContent.includes('<head>')) {
                     initialContent = cleanContent.replace('<head>', `<head>${consoleScript}`);
                 } else if (cleanContent.includes('<html>')) {
@@ -159,7 +157,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                             allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
                         />
                     </div>
-                    {/* Integrated Console Terminal */}
+                    {/* Integrated Console Terminal for Standard Frame */}
                     <div className="flex-shrink-0 bg-[#1e1e1e] border-t border-gray-700 flex flex-col">
                         <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
                             <button 

@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -19,6 +18,23 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode
     const playgroundRef = useRef<any>(null);
     const [isReady, setIsReady] = useState(false);
 
+    // Helper to ensure code has an export default
+    const prepareCode = (source: string) => {
+        if (source.includes('export default')) return source;
+        return `${source}\n\n// Explicit export added by system\nexport default App;`;
+    };
+
+    // Helper for base CSS to match theme
+    const getBaseStyles = (currentTheme: 'dark' | 'light') => `
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            padding: 1rem; 
+            margin: 0;
+            background-color: ${currentTheme === 'dark' ? '#1e1e1e' : '#ffffff'};
+            color: ${currentTheme === 'dark' ? '#fff' : '#1e293b'};
+        }
+    `;
+
     // Initialize Playground
     useEffect(() => {
         if (!containerRef.current) return;
@@ -36,20 +52,13 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode
         let isMounted = true;
 
         const initPlayground = async () => {
-            // Prepare code: Ensure export default App exists if not present
-            let finalCode = code;
-            
-            // Basic heuristic to ensure the React component renders
-            if (!code.includes('export default')) {
-                finalCode = code + '\n\nexport default App;';
-            }
-
             const options = {
                 appUrl: 'https://v29.livecodes.io/',
                 params: {
                     console: 'open',
                     mode: 'result',
                     loading: 'eager',
+                    embed: true,
                 },
                 config: {
                     title: "React Component",
@@ -61,18 +70,11 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode
                     },
                     script: {
                         language: "tsx", 
-                        content: finalCode
+                        content: prepareCode(code)
                     },
                     style: {
                         language: "css",
-                        content: `
-                            body { 
-                                font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-                                padding: 1rem; 
-                                margin: 0;
-                            } 
-                            ${theme === 'dark' ? 'body { background-color: #1e1e1e; color: #fff; }' : 'body { background-color: #ffffff; color: #1e293b; }'}
-                        `
+                        content: getBaseStyles(theme)
                     },
                     processors: ["tailwindcss"],
                     imports: {
@@ -85,6 +87,7 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode
                         "tailwind-merge": "https://esm.sh/tailwind-merge",
                         "date-fns": "https://esm.sh/date-fns",
                         "react-markdown": "https://esm.sh/react-markdown",
+                        "lodash": "https://esm.sh/lodash@4.17.21"
                     },
                     customSettings: {
                         template: "react"
@@ -116,41 +119,50 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode
                 playgroundRef.current = null;
             }
         };
-    }, [theme]); // Re-init on theme change to ensure clean style switch
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Run once on mount
 
-    // Dynamic code update (Fast)
+    // Dynamic Code Update
     useEffect(() => {
         if (!isReady || !playgroundRef.current) return;
 
-        let finalCode = code;
-        if (!code.includes('export default')) {
-            finalCode = code + '\n\nexport default App;';
-        }
-
-        // LiveCodes allows updating config dynamically without full reload
         playgroundRef.current.setConfig({
             ...playgroundRef.current.getConfig(),
             script: {
                 language: "tsx",
-                content: finalCode
+                content: prepareCode(code)
             }
         });
     }, [code, isReady]);
+
+    // Dynamic Theme Update
+    useEffect(() => {
+        if (!isReady || !playgroundRef.current) return;
+
+        playgroundRef.current.setConfig({
+            ...playgroundRef.current.getConfig(),
+            theme: theme,
+            style: {
+                language: "css",
+                content: getBaseStyles(theme)
+            }
+        });
+    }, [theme, isReady]);
 
     return (
         <div 
             className="w-full h-full relative"
             style={{
-                borderRadius: mode === 'inline' ? '0.75rem' : '0',
+                borderRadius: mode === 'inline' ? '0' : '0',
                 overflow: 'hidden',
                 backgroundColor: theme === 'dark' ? '#1e1e1e' : '#ffffff',
-                border: '1px solid ' + (theme === 'dark' ? '#333' : '#e5e7eb'),
+                // Remove border here as parent handles it
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column'
             }}
         >
-            <div ref={containerRef} className="w-full flex-1 min-h-0" />
+            <div ref={containerRef} className="w-full flex-1 min-h-0 absolute inset-0" />
         </div>
     );
 };

@@ -107,8 +107,7 @@ const artifactReducer = (state: State, action: Action): State => {
     }
 };
 
-// Threshold for switching to virtualized plain text viewer
-const VIRTUALIZATION_THRESHOLD_SIZE = 20 * 1024; // 20KB (approx 500-1000 lines of dense code)
+const VIRTUALIZATION_THRESHOLD_SIZE = 20 * 1024;
 
 type ArtifactContentProps = {
     content: string;
@@ -146,12 +145,11 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
 
     // Update debounced content with variable delay based on size
     useEffect(() => {
-        // Dynamic debounce: Larger files update less frequently to save CPU
         const length = content.length;
         let delay = 100;
-        if (length > 1000000) delay = 1500; // 1MB+ -> 1.5s
-        else if (length > 100000) delay = 800; // 100KB+ -> 800ms
-        else if (length > 20000) delay = 300; // 20KB+ -> 300ms
+        if (length > 1000000) delay = 1500;
+        else if (length > 100000) delay = 800;
+        else if (length > 20000) delay = 300;
 
         const handler = setTimeout(() => {
             setDebouncedContent(content);
@@ -184,9 +182,9 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     }, []);
 
     const isReact = useMemo(() => {
-        if (debouncedContent.length > 50000) return false; // Optimization
-        return detectIsReact(debouncedContent, language);
-    }, [debouncedContent, language]);
+        if (content.length > 50000) return false; 
+        return detectIsReact(content, language);
+    }, [content, language]);
 
     // Auto-switch tab based on language detection
     useEffect(() => {
@@ -206,11 +204,8 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         const consoleScript = generateConsoleScript();
         const tailwindCdn = '<script src="https://cdn.tailwindcss.com"></script>';
 
-        // HTML / XML / SVG
         if (['html', 'svg', 'markup', 'xml'].includes(language)) {
-            // Automatically inject Tailwind for better out-of-the-box styling of LLM snippets
             const stylesAndScript = `${tailwindCdn}${consoleScript}`;
-            
             if (cleanContent.includes('<head>')) {
                 return cleanContent.replace('<head>', `<head>${stylesAndScript}`);
             } else if (cleanContent.includes('<html>')) {
@@ -219,7 +214,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             return `<!DOCTYPE html><html><head>${stylesAndScript}</head><body>${cleanContent}</body></html>`;
         }
         
-        // CSS
         if (['css', 'scss', 'less'].includes(language)) {
             return `
                 <!DOCTYPE html>
@@ -244,7 +238,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             `;
         }
 
-        // JavaScript / TypeScript (Standard Iframe fallback if not React)
         if (['javascript', 'typescript', 'js', 'ts'].includes(language) && !isReact) {
             const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
             return `
@@ -257,7 +250,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 <body>
                     <div id="root"></div>
                     <script type="module">
-                        // Shim for non-React JS previews
                         try {
                             ${safeContent}
                         } catch (e) {
@@ -311,7 +303,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return language;
     }, [language]);
 
-    // Efficient check for large files without regex
     const useVirtualization = useMemo(() => {
         return content.length > VIRTUALIZATION_THRESHOLD_SIZE;
     }, [content.length]);
@@ -427,7 +418,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                     {isReact ? (
                         <div className="flex-1 w-full h-full relative bg-white dark:bg-[#1e1e1e]">
                              <Suspense fallback={
-                                <div className="flex flex-col items-center justify-center h-full">
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#1e1e1e]">
                                     <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
                                     <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
                                 </div>
