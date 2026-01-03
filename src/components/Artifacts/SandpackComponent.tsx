@@ -33,7 +33,7 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, language, t
     const template = getTemplate(language, code);
 
     // Prepare files based on template
-    const getFiles = () => {
+    const getFiles = (): SandpackProps['files'] => {
         if (template === 'react' || template === 'react-ts') {
             return {
                 '/App.tsx': code,
