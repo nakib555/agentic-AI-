@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef, useCallback, type Dispatch, type SetStateAction } from 'react';
-import { useChat } from '../../hooks/useChat';
+import { useChat } from '../../hooks/useChat/index';
 import { useTheme } from '../../hooks/useTheme';
 import { useSidebar } from '../../hooks/useSidebar';
 import { useViewport } from '../../hooks/useViewport';
