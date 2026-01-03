@@ -83,7 +83,8 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, language, t
                         "sp-wrapper": "h-full",
                         "sp-layout": "h-full",
                         "sp-stack": "h-full",
-                    }
+                    },
+                    externalResources: ["https://cdn.tailwindcss.com"]
                 }}
                 customSetup={{
                     dependencies: {
@@ -96,7 +97,11 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, language, t
                         "tailwind-merge": "latest",
                         "date-fns": "latest",
                         "react-markdown": "latest",
-                        "lodash": "latest"
+                        "lodash": "latest",
+                        "uuid": "latest",
+                        "canvas-confetti": "latest",
+                        "@radix-ui/react-slot": "latest",
+                        "class-variance-authority": "latest"
                     }
                 }}
             >
