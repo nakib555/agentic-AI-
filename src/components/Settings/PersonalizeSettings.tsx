@@ -63,12 +63,12 @@ const SegmentedControl: React.FC<{
     const id = React.useId();
     
     return (
-        <div className={`flex flex-col gap-3 ${className || ''}`}>
-            <div className="flex items-center gap-2.5 px-1">
-                {icon && <span className="flex-shrink-0">{icon}</span>}
-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{label}</span>
+        <div className={`flex flex-col gap-2 ${className || ''}`}>
+            <div className="flex items-center gap-2 px-1 mb-1">
+                {icon && <span className="flex-shrink-0 opacity-70">{icon}</span>}
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</span>
             </div>
-            <div className="flex p-1.5 bg-slate-100/80 dark:bg-black/40 rounded-xl border border-slate-200/50 dark:border-white/5 relative z-0">
+            <div className="flex p-1 bg-slate-100/50 dark:bg-black/20 rounded-lg border border-slate-200/50 dark:border-white/5 relative z-0">
                 {options.map((opt) => {
                     const isActive = value === opt.id;
                     return (
@@ -76,8 +76,9 @@ const SegmentedControl: React.FC<{
                             key={opt.id}
                             onClick={() => !disabled && onChange(opt.id)}
                             disabled={disabled}
+                            type="button"
                             className={`
-                                relative flex-1 py-2 text-xs font-semibold rounded-lg transition-colors duration-200
+                                relative flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
                                 ${isActive 
                                     ? 'text-indigo-600 dark:text-indigo-300' 
                                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -88,8 +89,8 @@ const SegmentedControl: React.FC<{
                             {isActive && (
                                 <motion.div
                                     layoutId={`seg-bg-${id}`}
-                                    className="absolute inset-0 bg-white dark:bg-white/10 rounded-lg shadow-sm border border-black/5 dark:border-white/5"
-                                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                                    className="absolute inset-0 bg-white dark:bg-white/10 rounded-md shadow-sm border border-black/5 dark:border-white/5"
+                                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                                 />
                             )}
                             <span className="relative z-10">{opt.label}</span>
@@ -111,9 +112,9 @@ const TextInput: React.FC<{
     disabled?: boolean;
     icon?: React.ReactNode;
 }> = ({ label, placeholder, value, onChange, onBlur, multiline, disabled, icon }) => (
-    <div className="flex flex-col gap-3">
-        <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2.5 px-1">
-            {icon && <span className="flex-shrink-0">{icon}</span>}
+    <div className="flex flex-col gap-2">
+        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2 px-1 mb-1">
+            {icon && <span className="flex-shrink-0 opacity-70">{icon}</span>}
             {label}
         </label>
         <div className="relative group">
@@ -124,7 +125,7 @@ const TextInput: React.FC<{
                     onBlur={onBlur}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 min-h-[120px] resize-none leading-relaxed"
+                    className="w-full px-4 py-3 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 min-h-[100px] resize-none leading-relaxed shadow-sm hover:border-slate-300 dark:hover:border-white/20"
                 />
             ) : (
                 <input
@@ -134,7 +135,7 @@ const TextInput: React.FC<{
                     onBlur={onBlur}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className="w-full py-2.5 px-4 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+                    className="w-full py-2.5 px-4 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 shadow-sm hover:border-slate-300 dark:hover:border-white/20"
                 />
             )}
         </div>
@@ -148,13 +149,13 @@ const SectionHeader: React.FC<{
     color: string;
     bg: string;
 }> = ({ title, subtitle, icon, color, bg }) => (
-    <div className="flex items-center gap-4 border-b border-gray-100 dark:border-white/5 pb-4 mb-2">
-        <div className={`p-2.5 rounded-xl ${bg} ${color}`}>
+    <div className="flex items-center gap-4 mb-6">
+        <div className={`p-2.5 rounded-xl ${bg} ${color} shadow-sm ring-1 ring-black/5 dark:ring-white/10`}>
             {icon}
         </div>
         <div>
-            <h4 className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">{title}</h4>
-            <p className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">{subtitle}</p>
+            <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">{title}</h4>
+            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{subtitle}</p>
         </div>
     </div>
 );
@@ -303,16 +304,16 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
     };
 
     return (
-        <div className="pb-10 max-w-6xl mx-auto">
+        <div className="pb-10 max-w-7xl mx-auto h-full flex flex-col">
             {/* Header with Auto-Save Indicator */}
-            <div className="mb-12 border-b border-gray-100 dark:border-white/5 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+            <div className="mb-8 border-b border-gray-100 dark:border-white/5 pb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-6 flex-shrink-0">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M12 11l4 4"/><path d="M16 11l-4 4"/></svg>
                     </div>
                     <div>
                         <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Personalization</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Customize the AI's personality and your profile.</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Tailor the AI's personality and your profile.</p>
                     </div>
                 </div>
 
@@ -322,13 +323,13 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                         className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-red-500 hover:bg-red-50 dark:text-slate-400 dark:hover:bg-red-900/10 rounded-full transition-colors"
                         disabled={disabled}
                     >
-                        Reset to Defaults
+                        Reset Defaults
                     </button>
                     
-                    <div className="flex items-center gap-2 px-4 py-2 bg-slate-100/50 dark:bg-white/5 rounded-full border border-slate-200/50 dark:border-white/5">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-slate-100/50 dark:bg-white/5 rounded-full border border-slate-200/50 dark:border-white/5 min-w-[100px] justify-center">
                         {saveState === 'saved' ? (
                             <>
-                                <svg className="w-4 h-4 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <svg className="w-3.5 h-3.5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
                                 </svg>
                                 <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Saved</span>
@@ -339,31 +340,31 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Saving...</span>
+                                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Saving</span>
                             </>
                         ) : (
                             <>
                                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Typing...</span>
+                                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Editing</span>
                             </>
                         )}
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 lg:gap-20 items-start">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 lg:gap-12 items-start flex-1 overflow-y-auto custom-scrollbar pr-2">
                 
                 {/* Column 1: Persona Tuning */}
-                <div className="flex flex-col gap-10">
+                <div className="bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 md:p-8">
                     <SectionHeader 
                         title="Style & Tone" 
                         subtitle="AI Personality" 
                         icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 5H3"/><path d="M19 19v4"/><path d="M21 21h-4"/></svg>}
                         color="text-fuchsia-600 dark:text-fuchsia-400" 
-                        bg="bg-fuchsia-50 dark:bg-fuchsia-500/10" 
+                        bg="bg-fuchsia-100 dark:bg-fuchsia-500/20" 
                     />
 
-                    <div className="space-y-10 pl-1">
+                    <div className="space-y-8">
                         <SelectDropdown 
                             label="Primary Persona" 
                             icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-fuchsia-500"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>}
@@ -371,9 +372,10 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                             onChange={handleToneChange} 
                             options={TONE_OPTIONS} 
                             disabled={disabled}
+                            triggerClassName="bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 hover:border-fuchsia-400 dark:hover:border-fuchsia-500/50 shadow-sm"
                         />
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
                             <SegmentedControl 
                                 label="Warmth" 
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-orange-500"><path d="M19 14c1.49-1.28 3.6-1.28 5.09 0 1.49 1.28 1.49 3.36 0 4.63s-3.6 1.28-5.09 0c-1.49-1.28-1.49-3.36 0-4.63z"/><path d="M11.23 8.8c-2.73-1.53-2.92-3.8-2.92-3.8s-3.23 2-1.72 6.8c1.33 4.2 3.64 6.7 9.42 7.2 4.47.38 6.75-2.26 6.75-2.26s-1.57 3.53-7.51 3.26c-5.7-.26-7.82-3.66-9.15-7.87C4.7 8.1 7.21 4.7 7.21 4.7s2.21 2.37 4.02 4.1z"/></svg>}
@@ -397,7 +399,6 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                                 onChange={handleStructureChange} 
                                 options={INTENSITY_OPTIONS} 
                                 disabled={disabled}
-                                className="pt-2"
                             />
                             <SegmentedControl 
                                 label="Emoji Usage" 
@@ -406,33 +407,34 @@ const PersonalizeSettings: React.FC<PersonalizeSettingsProps> = ({
                                 onChange={handleEmojiChange} 
                                 options={INTENSITY_OPTIONS} 
                                 disabled={disabled}
-                                className="pt-2"
                             />
                         </div>
 
-                        <TextInput 
-                            label="Custom System Instructions" 
-                            value={customInstructions} 
-                            onChange={handleCustomChange} 
-                            placeholder="Enter specific behavioral rules or response formatting instructions..."
-                            multiline
-                            disabled={disabled}
-                            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-purple-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>}
-                        />
+                        <div className="pt-2">
+                            <TextInput 
+                                label="Custom System Instructions" 
+                                value={customInstructions} 
+                                onChange={handleCustomChange} 
+                                placeholder="Enter specific behavioral rules or response formatting instructions..."
+                                multiline
+                                disabled={disabled}
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-purple-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>}
+                            />
+                        </div>
                     </div>
                 </div>
 
                 {/* Column 2: User Context */}
-                <div className="flex flex-col gap-10">
+                <div className="bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 md:p-8">
                     <SectionHeader 
                         title="User Profile" 
                         subtitle="Your Context" 
                         icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
                         color="text-cyan-600 dark:text-cyan-400" 
-                        bg="bg-cyan-50 dark:bg-cyan-500/10" 
+                        bg="bg-cyan-100 dark:bg-cyan-500/20" 
                     />
 
-                    <div className="space-y-10 pl-1">
+                    <div className="space-y-8">
                         <TextInput 
                             label="Nickname" 
                             value={nickname} 

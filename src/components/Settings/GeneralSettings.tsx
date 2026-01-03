@@ -26,8 +26,8 @@ type GeneralSettingsProps = {
 };
 
 const PROVIDER_OPTIONS = [
-    { id: 'gemini', label: 'Google Gemini', desc: 'Default' },
-    { id: 'openrouter', label: 'OpenRouter', desc: 'Access to Claude, GPT, etc.' }
+    { id: 'gemini', label: 'Google Gemini', desc: 'Official Google AI models' },
+    { id: 'openrouter', label: 'OpenRouter', desc: 'Claude, GPT, Llama & more' }
 ];
 
 const SYNTAX_OPTIONS = [
@@ -125,16 +125,16 @@ const ApiKeyInput = ({
     const labelComponent = label ? (
         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{label}</span>
     ) : (
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-2 w-full">
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">AI Provider</span>
             <SelectDropdown
                 value={provider}
                 onChange={(val) => onProviderChange?.(val as 'gemini' | 'openrouter')}
                 options={PROVIDER_OPTIONS}
                 disabled={!onProviderChange}
-                className="w-48"
-                triggerClassName="flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors shadow-sm"
+                className="w-full sm:w-64"
+                triggerClassName="flex items-center justify-between gap-2 px-3 py-2.5 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors shadow-sm text-sm"
             />
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">API Key</span>
         </div>
     );
 
@@ -144,7 +144,7 @@ const ApiKeyInput = ({
             description={description} 
             layout="col"
         >
-            <form onSubmit={handleSave} className="space-y-4">
+            <form onSubmit={handleSave} className="space-y-4 mt-2">
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className={`w-4 h-4 transition-colors duration-200 ${localValue ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
@@ -155,7 +155,7 @@ const ApiKeyInput = ({
                     value={localValue}
                     onChange={e => setLocalValue(e.target.value)}
                     placeholder={placeholder}
-                    className="w-full pl-9 pr-28 py-2.5 bg-slate-100/50 dark:bg-white/5 border border-transparent dark:border-transparent rounded-lg text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-inner"
+                    className="w-full pl-9 pr-28 py-3 bg-slate-100/50 dark:bg-white/5 border border-transparent dark:border-transparent rounded-xl text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-inner"
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 gap-1">
                     <button
@@ -174,7 +174,7 @@ const ApiKeyInput = ({
                         type="submit"
                         disabled={saveStatus === 'saving' || (!isOptional && !localValue)}
                         className={`
-                            px-3 py-1.5 text-xs font-semibold text-white rounded-md transition-all shadow-sm
+                            px-3 py-1.5 text-xs font-semibold text-white rounded-lg transition-all shadow-sm
                             ${saveStatus === 'saved' 
                                 ? 'bg-green-500 hover:bg-green-600 shadow-green-500/20' 
                                 : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20 hover:-translate-y-0.5 active:translate-y-0'
@@ -196,7 +196,7 @@ const ApiKeyInput = ({
                  ) : (
                      <span className="text-xs text-slate-400 flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-                        Stored securely on your device.
+                        Keys are stored locally on your device.
                      </span>
                  )}
               </div>
@@ -358,7 +358,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="mb-8">
         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">General Settings</h3>
       </div>
@@ -367,12 +367,12 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
         provider={provider}
         onProviderChange={onProviderChange}
         description={provider === 'gemini' 
-            ? "Required for main chat, reasoning, and tool execution." 
-            : "Required for accessing OpenRouter models."
+            ? "Required for Gemini chat, reasoning, and tool execution." 
+            : "Required for accessing models via OpenRouter."
         }
         value={provider === 'gemini' ? apiKey : openRouterApiKey}
         onSave={handleMainApiKeySave}
-        placeholder={provider === 'gemini' ? "Enter your Gemini API key" : "Enter your OpenRouter API key"}
+        placeholder={provider === 'gemini' ? "Enter Gemini API Key (begins with AIza...)" : "Enter OpenRouter API Key (begins with sk-or...)"}
       />
 
       {provider === 'gemini' && onSaveSuggestionApiKey && (

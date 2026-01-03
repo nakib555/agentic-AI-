@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -37,32 +38,32 @@ const TemperatureControl = ({ value, onChange, disabled }: { value: number, onCh
     };
 
     const getLabel = (v: number) => {
-        if (v < 0.3) return { text: "Precise", color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/10", desc: "Factual & Deterministic" };
-        if (v < 0.7) return { text: "Balanced", color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10", desc: "Natural & Engaging" };
-        return { text: "Creative", color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10", desc: "Imaginative & Diverse" };
+        if (v < 0.3) return { text: "Precise", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10", desc: "Factual & Deterministic" };
+        if (v < 0.7) return { text: "Balanced", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10", desc: "Natural & Engaging" };
+        return { text: "Creative", color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-500/10", desc: "Imaginative & Diverse" };
     };
     const label = getLabel(localValue);
 
     return (
-        <div className="w-full bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 transition-all hover:border-indigo-300 dark:hover:border-indigo-500/30">
+        <div className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-2xl p-6 transition-all hover:border-indigo-300 dark:hover:border-indigo-500/30 shadow-sm">
             <div className="flex items-start justify-between mb-6">
                 <div>
-                    <span className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         Response Creativity
-                        <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-extrabold tracking-wider ${label.color} ${label.bg}`}>
+                        <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${label.color} ${label.bg}`}>
                             {label.text}
                         </span>
                     </span>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">{label.desc}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 font-medium">{label.desc}</p>
                 </div>
                 <div className="font-mono text-xl font-bold text-slate-700 dark:text-slate-200 tracking-tight">
                     {localValue.toFixed(1)}
                 </div>
             </div>
             
-            <div className="relative h-10 flex items-center group touch-none">
+            <div className="relative h-12 flex items-center group touch-none">
                 {/* Track Background */}
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-3 bg-slate-200 dark:bg-black/40 rounded-full overflow-hidden shadow-inner">
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
                     {/* Gradient Fill */}
                     <div 
                         className="h-full bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-600 transition-all duration-100 ease-out origin-left" 
@@ -85,18 +86,18 @@ const TemperatureControl = ({ value, onChange, disabled }: { value: number, onCh
                 
                 {/* Animated Thumb */}
                 <div 
-                    className="absolute top-1/2 -translate-y-1/2 h-7 w-7 bg-white dark:bg-slate-200 shadow-[0_4px_10px_rgba(0,0,0,0.2)] border-2 border-transparent rounded-full pointer-events-none transition-all duration-100 ease-out z-10 flex items-center justify-center"
-                    style={{ left: `calc(${localValue * 100}% - 14px)` }}
+                    className="absolute top-1/2 -translate-y-1/2 h-6 w-6 bg-white dark:bg-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.2)] border-2 border-transparent rounded-full pointer-events-none transition-all duration-100 ease-out z-10 flex items-center justify-center"
+                    style={{ left: `calc(${localValue * 100}% - 12px)` }}
                 >
                     <div className={`w-2 h-2 rounded-full ${localValue > 0.7 ? 'bg-purple-500' : localValue > 0.3 ? 'bg-blue-500' : 'bg-emerald-500'}`} />
                 </div>
             </div>
             
-            <div className="flex justify-between mt-2 px-1">
+            <div className="flex justify-between mt-1 px-1">
                 {[0, 0.5, 1].map((tick) => (
                     <div 
                         key={tick} 
-                        className="flex flex-col items-center gap-1 cursor-pointer" 
+                        className="flex flex-col items-center gap-1 cursor-pointer group/tick" 
                         onClick={() => {
                             if (!disabled) {
                                 setLocalValue(tick);
@@ -104,7 +105,7 @@ const TemperatureControl = ({ value, onChange, disabled }: { value: number, onCh
                             }
                         }}
                     >
-                        <div className={`w-1 h-1 rounded-full ${Math.abs(localValue - tick) < 0.1 ? 'bg-slate-800 dark:bg-slate-200 scale-150' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className={`w-1 h-1 rounded-full transition-all ${Math.abs(localValue - tick) < 0.1 ? 'bg-slate-800 dark:bg-slate-200 scale-150' : 'bg-slate-300 dark:bg-slate-600 group-hover/tick:bg-slate-400'}`} />
                     </div>
                 ))}
             </div>
@@ -210,7 +211,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
     const isGemini = provider === 'gemini';
 
     return (
-        <div className="space-y-10 pb-12">
+        <div className="space-y-10 pb-12 max-w-4xl mx-auto">
             <div className="mb-8">
                 <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Intelligence Configuration</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Fine-tune the cognitive engine and generative capabilities.</p>
@@ -231,20 +232,24 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
             )}
 
             {/* Core Intelligence Section */}
-            <section className="space-y-6">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+            <section className="space-y-8">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5 dark:ring-white/5">
                         <SparklesIcon />
                     </div>
-                    <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">Cognitive Engine</h4>
+                    <div>
+                        <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Cognitive Engine</h4>
+                        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Primary Logic</p>
+                    </div>
                 </div>
                 
-                <div className="space-y-6">
-                    <SettingItem 
-                        label="Primary Reasoning Model" 
-                        description={isGemini ? "The main model used for chat, reasoning, and planning." : "Selected OpenRouter model for reasoning."}
-                    >
-                        <div className="w-full sm:w-[320px]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                        <SettingItem 
+                            label="Reasoning Model" 
+                            description={isGemini ? "The main model used for chat and planning." : "Selected OpenRouter model for reasoning."}
+                            layout="col"
+                        >
                             <ModelSelector 
                                 models={filteredReasoningModels} 
                                 selectedModel={selectedModel} 
@@ -252,72 +257,73 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 disabled={disabled || noModelsAvailable} 
                                 placeholder="Select a reasoning model"
                                 icon={<SparklesIcon />}
+                                className="w-full"
                             />
-                        </div>
-                    </SettingItem>
-
-                    <TemperatureControl 
-                        value={temperature} 
-                        onChange={setTemperature} 
-                        disabled={disabled} 
-                    />
+                        </SettingItem>
+                    </div>
+                    
+                    <div className="flex flex-col justify-end">
+                        <TemperatureControl 
+                            value={temperature} 
+                            onChange={setTemperature} 
+                            disabled={disabled} 
+                        />
+                    </div>
                 </div>
             </section>
 
-            <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/10 to-transparent w-full" />
+            <div className="h-px bg-slate-200/50 dark:bg-white/5 w-full" />
 
             {/* Multimodal Capabilities Section */}
-            <section className="space-y-6">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400">
+            <section className="space-y-8">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 shadow-sm ring-1 ring-black/5 dark:ring-white/5">
                         <div className="flex -space-x-1">
                             <PhotoIcon />
                             <VideoIcon />
                         </div>
                     </div>
-                    <div className="flex-1">
-                        <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">Multimodal Suite</h4>
+                    <div>
+                        <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Multimodal Suite</h4>
+                        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Generation Tools</p>
                     </div>
                 </div>
 
-                <div className="space-y-6">
-                    <SettingItem label="Image Generation">
-                        <div className="w-full sm:w-[320px]">
-                            <ModelSelector 
-                                models={imageModels} 
-                                selectedModel={imageModel} 
-                                onModelChange={onImageModelChange} 
-                                disabled={disabled || noModelsAvailable} 
-                                placeholder="Select image model"
-                                icon={<PhotoIcon />}
-                            />
-                        </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <SettingItem label="Image Generation" layout="col">
+                        <ModelSelector 
+                            models={imageModels} 
+                            selectedModel={imageModel} 
+                            onModelChange={onImageModelChange} 
+                            disabled={disabled || noModelsAvailable} 
+                            placeholder="Select image model"
+                            icon={<PhotoIcon />}
+                            className="w-full"
+                        />
                     </SettingItem>
 
-                    <SettingItem label="Video Generation">
-                        <div className="w-full sm:w-[320px]">
-                            <ModelSelector 
-                                models={videoModels} 
-                                selectedModel={videoModel} 
-                                onModelChange={onVideoModelChange} 
-                                disabled={disabled || noModelsAvailable} 
-                                placeholder="Select video model"
-                                icon={<VideoIcon />}
-                            />
-                        </div>
+                    <SettingItem label="Video Generation" layout="col">
+                        <ModelSelector 
+                            models={videoModels} 
+                            selectedModel={videoModel} 
+                            onModelChange={onVideoModelChange} 
+                            disabled={disabled || noModelsAvailable} 
+                            placeholder="Select video model"
+                            icon={<VideoIcon />}
+                            className="w-full"
+                        />
                     </SettingItem>
 
-                    <SettingItem label="Speech Synthesis (TTS)">
-                        <div className="w-full sm:w-[320px]">
-                            <ModelSelector 
-                                models={ttsModels} 
-                                selectedModel={ttsModel} 
-                                onModelChange={onTtsModelChange} 
-                                disabled={disabled || noModelsAvailable} 
-                                placeholder="Select TTS model"
-                                icon={<SpeakerIcon />}
-                            />
-                        </div>
+                    <SettingItem label="Speech Synthesis" layout="col">
+                        <ModelSelector 
+                            models={ttsModels} 
+                            selectedModel={ttsModel} 
+                            onModelChange={onTtsModelChange} 
+                            disabled={disabled || noModelsAvailable} 
+                            placeholder="Select TTS model"
+                            icon={<SpeakerIcon />}
+                            className="w-full"
+                        />
                     </SettingItem>
                 </div>
             </section>
