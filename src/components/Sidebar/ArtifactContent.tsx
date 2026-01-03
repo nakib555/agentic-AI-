@@ -118,10 +118,25 @@ type ArtifactContentProps = {
 };
 
 // --- Error Boundary for Lazy Component ---
-class ArtifactErrorBoundary extends React.Component<{ children: React.ReactNode, onFallback: () => void }, { hasError: boolean }> {
-    state = { hasError: false };
+interface ArtifactErrorBoundaryProps {
+    children: React.ReactNode;
+    onFallback: () => void;
+}
+
+interface ArtifactErrorBoundaryState {
+    hasError: boolean;
+}
+
+class ArtifactErrorBoundary extends React.Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
+    constructor(props: ArtifactErrorBoundaryProps) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
     static getDerivedStateFromError() { return { hasError: true }; }
+    
     componentDidCatch(error: any) { console.error("Artifact Preview Error:", error); }
+    
     render() {
         if (this.state.hasError) {
             return (
@@ -169,7 +184,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
 
     // Auto-switch tab based on language detection
     useEffect(() => {
-        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || isReact;
+        const isRenderable = ['html', 'svg', 'markup', 'xml', 'javascript', 'typescript', 'js', 'ts', 'jsx', 'tsx', 'css'].includes(language) || isReact;
         if (content.length < 50000 && isRenderable) {
             dispatch({ type: 'SET_TAB', payload: 'preview' });
         } else {

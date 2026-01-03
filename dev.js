@@ -115,6 +115,9 @@ try {
     entryPoints: ['src/index.tsx'],
     bundle: true,
     outfile: 'dist/index.js',
+    format: 'esm',
+    // Externalize React and Sandpack to use CDN versions (resolving Invalid Element Type and Hooks errors)
+    external: ['react', 'react-dom', 'react-dom/client', '@codesandbox/sandpack-react'], 
     loader: { 
       '.tsx': 'tsx', 
       '.ts': 'ts', 

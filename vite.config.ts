@@ -89,9 +89,9 @@ export default defineConfig(({ mode }) => {
       build: {
         outDir: 'dist',
         rollupOptions: {
+          external: ['react', 'react-dom', 'react-dom/client', '@codesandbox/sandpack-react'],
           output: {
             manualChunks: {
-              'vendor-react': ['react', 'react-dom', 'framer-motion'],
               'syntax-highlighter': ['react-syntax-highlighter'],
               'markdown': ['react-markdown', 'rehype-katex', 'rehype-raw', 'remark-gfm', 'remark-math'],
               'gemini': ['@google/genai'],
