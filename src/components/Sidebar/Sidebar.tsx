@@ -156,7 +156,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div 
-                    className="p-3 flex flex-col h-full group min-h-0"
+                    className="p-3 flex flex-col h-full group min-h-0 relative"
                     style={{ 
                         userSelect: isResizing ? 'none' : 'auto',
                         paddingBottom: !isDesktop ? 'env(safe-area-inset-bottom)' : '0.75rem', 

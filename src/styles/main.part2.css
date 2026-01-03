@@ -26,7 +26,7 @@ html, body, #root {
 
 @media screen and (max-width: 768px) {
   input, textarea, select {
-    font-size: 16px !important;
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
   }
 }
 
@@ -72,6 +72,7 @@ html, body, #root {
 .contain-content { contain: content; }
 .min-w-0 { min-width: 0; }
 
+/* Enhanced Glassmorphism - Active on ALL devices now */
 .glass-panel {
   background: var(--bg-glass);
   backdrop-filter: blur(16px);
@@ -85,43 +86,6 @@ html, body, #root {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-default);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-/* Mobile Performance Overrides (Battery Saver & GPU Optimization) */
-@media screen and (max-width: 768px) {
-  /* 1. Disable Glassmorphism on Panels (Force Solid for Content) */
-  .glass-panel, 
-  .glass-input {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    /* Use solid backgrounds for panels/inputs to ensure text readability */
-    background-color: var(--bg-layer-1) !important;
-    /* Replace depth/blur with subtle border */
-    border: 1px solid var(--border-default) !important;
-  }
-
-  /* 2. Disable Blur on Overlays (Keep Transparency for Modals) */
-  /* This fixes the "white space" issue on mobile settings/sidebar */
-  .backdrop-blur-md,
-  .backdrop-blur-sm,
-  .backdrop-blur-xl,
-  [class*="backdrop-blur"] {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    /* CRITICAL: Do NOT force background color here. */
-  }
-  
-  /* 3. Flatten Shadows */
-  .shadow-sm,
-  .shadow,
-  .shadow-md,
-  .shadow-lg,
-  .shadow-xl,
-  .shadow-2xl,
-  .shadow-inner {
-    box-shadow: none !important;
-    /* The border replacement was causing unwanted visual artifacts. It is now removed. */
-  }
 }
 
 /* Shimmer Text Animation */

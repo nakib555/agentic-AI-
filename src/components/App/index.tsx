@@ -52,13 +52,12 @@ export const App = () => {
   return (
     <div 
         ref={logic.appContainerRef} 
-        className={`flex h-full bg-transparent overflow-hidden transition-[height] duration-200 ease-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
+        className={`flex h-full bg-page text-content-primary overflow-hidden transition-[height] duration-200 ease-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
         style={{ 
             height: !logic.isDesktop && logic.visualViewportHeight ? `${logic.visualViewportHeight}px` : '100dvh',
-            paddingTop: 'env(safe-area-inset-top)',
-            paddingBottom: 'env(safe-area-inset-bottom)',
-            paddingLeft: 'env(safe-area-inset-left)',
-            paddingRight: 'env(safe-area-inset-right)' 
+            // On mobile, we use visualViewportHeight to handle keyboard, so we reset safe-areas slightly differently
+            paddingTop: logic.isDesktop ? '0' : 'env(safe-area-inset-top)', 
+            paddingBottom: logic.isDesktop ? '0' : 'env(safe-area-inset-bottom)',
         }}
     >
       {logic.versionMismatch && <VersionMismatchOverlay />}
@@ -87,16 +86,21 @@ export const App = () => {
         />
 
         <main 
-            className="relative z-10 flex-1 flex flex-col chat-background min-w-0 h-full"
+            className="relative z-10 flex-1 flex flex-col min-w-0 h-full bg-page transition-colors duration-300"
         >
-          {!logic.isDesktop && !logic.isSidebarOpen && (
-            <button
-              onClick={() => logic.setIsSidebarOpen(true)}
-              className="absolute top-3 left-4 z-50 p-2 rounded-lg bg-white/80 dark:bg-black/50 backdrop-blur-md border border-gray-200 dark:border-white/10 text-slate-600 dark:text-slate-300 shadow-sm"
-              aria-label="Open sidebar"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-            </button>
+          {/* Mobile Header Toggle */}
+          {!logic.isDesktop && (
+            <div className="absolute top-0 left-0 right-0 h-14 z-30 pointer-events-none flex items-center px-4">
+               {!logic.isSidebarOpen && (
+                <button
+                  onClick={() => logic.setIsSidebarOpen(true)}
+                  className="pointer-events-auto p-2 rounded-lg bg-layer-1/80 backdrop-blur-md border border-border text-content-secondary hover:text-content-primary shadow-sm"
+                  aria-label="Open sidebar"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+               )}
+            </div>
           )}
 
           <div className="flex-1 flex flex-col w-full min-h-0">
