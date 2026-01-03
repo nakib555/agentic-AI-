@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
-// Lazy load the shared Sandpack component
+// Lazy load the shared component (now using LiveCodes under the hood)
 const ReactSandpack = React.lazy(() => import('../Artifacts/SandpackComponent'));
 
 // --- Icons ---
@@ -135,7 +135,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => observer.disconnect();
     }, []);
 
-    // Initial load handler to clear the loading spinner
+    // Initial load handler
     useEffect(() => {
         const timer = setTimeout(() => {
             dispatch({ type: 'SET_LOADING', payload: false });
@@ -157,7 +157,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => clearTimeout(handler);
     }, [content]);
 
-    // Handle updates for Code Mode - ensure loading is off
+    // Handle updates for Code Mode
     useEffect(() => {
         if (state.activeTab === 'code') {
             dispatch({ type: 'SET_LOADING', payload: false });
@@ -196,7 +196,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         }
     }, [language, content.length, isReact]);
 
-    // Memoized Preview Generation
+    // Memoized Preview Generation for Iframe Fallback
     const previewContent = useMemo(() => {
         if (!debouncedContent) return '';
         
@@ -215,50 +215,12 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         }
         
         if (['css', 'scss', 'less'].includes(language)) {
-            return `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    ${consoleScript}
-                    <style>
-                        body { font-family: system-ui, sans-serif; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f8f9fa; }
-                        h1 { color: #333; margin-bottom: 1rem; }
-                        .demo-container { padding: 2rem; border: 1px dashed #ccc; border-radius: 8px; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-                    </style>
-                    <style>${cleanContent}</style>
-                </head>
-                <body>
-                    <div class="demo-container">
-                        <h1>CSS Preview</h1>
-                        <p>The styles above are applied to this document.</p>
-                        <button class="btn primary">Demo Button</button>
-                    </div>
-                </body>
-                </html>
-            `;
+            return `<!DOCTYPE html><html><head>${consoleScript}<style>body{font-family:system-ui,sans-serif;padding:20px;min-height:100vh;margin:0;background:#f8f9fa}h1{color:#333}</style><style>${cleanContent}</style></head><body><h1>CSS Preview</h1><p>Styles applied.</p></body></html>`;
         }
 
         if (['javascript', 'typescript', 'js', 'ts'].includes(language) && !isReact) {
             const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
-            return `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <style>body { font-family: system-ui, sans-serif; padding: 20px; color: #333; } @media (prefers-color-scheme: dark) { body { color: #eee; } }</style>
-                    ${consoleScript}
-                </head>
-                <body>
-                    <div id="root"></div>
-                    <script type="module">
-                        try {
-                            ${safeContent}
-                        } catch (e) {
-                            console.error(e);
-                        }
-                    </script>
-                </body>
-                </html>
-            `;
+            return `<!DOCTYPE html><html><head><style>body{font-family:system-ui,sans-serif;padding:20px;}</style>${consoleScript}</head><body><div id="root"></div><script type="module">try{${safeContent}}catch(e){console.error(e);}</script></body></html>`;
         }
         return '';
     }, [debouncedContent, language, isReact]);
@@ -439,13 +401,6 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
                                     <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
                                 </div>
-                                
-                                <div className="flex-1 mx-4">
-                                    <div className="bg-white dark:bg-black/10 border border-gray-200 dark:border-white/10 rounded px-3 py-1 text-xs text-center text-gray-500 font-mono truncate shadow-sm">
-                                        preview
-                                    </div>
-                                </div>
-
                                 <div className="flex items-center gap-2">
                                     <button 
                                         onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
@@ -465,35 +420,18 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                             <RefreshIcon />
                                         </button>
                                     </Tooltip>
-                                    <Tooltip content="Open in New Tab" position="bottom">
-                                        <button 
-                                            onClick={handleOpenNewTab}
-                                            className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
-                                            aria-label="Open in New Tab"
-                                        >
-                                            <ExternalLinkIcon />
-                                        </button>
-                                    </Tooltip>
                                 </div>
                             </div>
                             <div className="flex-1 relative flex flex-col overflow-hidden">
-                                {state.isLoading ? (
-                                    <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
-                                        <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 bg-white dark:bg-[#1e1e1e] relative w-full h-full">
-                                        <iframe
-                                            key={state.iframeKey}
-                                            srcDoc={previewContent}
-                                            className="absolute inset-0 w-full h-full border-none bg-white dark:bg-[#1e1e1e]"
-                                            title="Artifact Preview"
-                                            sandbox="allow-scripts allow-forms allow-modals allow-popups"
-                                            allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
-                                        />
-                                    </div>
-                                )}
+                                <div className="flex-1 bg-white dark:bg-[#1e1e1e] relative w-full h-full">
+                                    <iframe
+                                        key={state.iframeKey}
+                                        srcDoc={previewContent}
+                                        className="absolute inset-0 w-full h-full border-none bg-white dark:bg-[#1e1e1e]"
+                                        title="Artifact Preview"
+                                        sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
+                                    />
+                                </div>
                                 
                                 {/* Console Terminal Panel */}
                                 <AnimatePresence>

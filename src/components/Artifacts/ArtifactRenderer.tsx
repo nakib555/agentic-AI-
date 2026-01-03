@@ -8,7 +8,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
-// Lazy load the shared Sandpack (LiveCodes) component
+// Lazy load the shared LiveCodes component
 const ReactSandpack = React.lazy(() => import('./SandpackComponent'));
 
 type ArtifactRendererProps = {
@@ -104,7 +104,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             }
         }
 
-        // --- React Sandpack (LiveCodes) Preview ---
+        // --- React LiveCodes Preview ---
         if (isReact) {
             return (
                 <div className="h-[550px] w-full bg-white dark:bg-[#1e1e1e] border-t border-border-subtle relative">
@@ -115,7 +115,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                         </div>
                      }>
                          <ReactSandpack
-                            key={iframeKey} // Allows hard reset if needed
+                            key={iframeKey} 
                             theme={isDark ? "dark" : "light"}
                             code={content}
                             mode="inline"
