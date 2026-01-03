@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { SandpackProvider, SandpackLayout, SandpackPreview, SandpackProps } from "@codesandbox/sandpack-react";
 
 type SandpackComponentProps = {
@@ -72,6 +72,69 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, language, t
         };
     };
 
+    // Auto-detect dependencies from code imports
+    const customDependencies = useMemo(() => {
+        const defaultDeps: Record<string, string> = {
+            "react": "^18.0.0",
+            "react-dom": "^18.0.0",
+            "lucide-react": "latest",
+            "recharts": "latest",
+            "framer-motion": "latest",
+            "clsx": "latest",
+            "tailwind-merge": "latest",
+            "date-fns": "latest",
+            "react-markdown": "latest",
+            "lodash": "latest",
+            "uuid": "latest",
+            "canvas-confetti": "latest",
+            "@radix-ui/react-slot": "latest",
+            "class-variance-authority": "latest"
+        };
+
+        try {
+            // Regex matches:
+            // import ... from "package"
+            // import "package"
+            // require("package")
+            const importRegex = /from\s+['"]([^'"]+)['"]|import\s+['"]([^'"]+)['"]|require\(['"]([^'"]+)['"]\)/g;
+            
+            let match;
+            while ((match = importRegex.exec(code)) !== null) {
+                // match[1] -> from "..."; match[2] -> import "..."; match[3] -> require("...")
+                const pkgPath = match[1] || match[2] || match[3];
+                
+                if (!pkgPath) continue;
+
+                // Skip relative imports (./Component) or absolute paths (/)
+                if (pkgPath.startsWith('.') || pkgPath.startsWith('/')) continue;
+
+                // Skip internal CSS/Asset imports often found in examples if they look local
+                if (pkgPath.endsWith('.css') && pkgPath.startsWith('./')) continue;
+
+                // Extract package name (handle scoped packages like @radix-ui/react-avatar)
+                let pkgName = pkgPath;
+                if (pkgPath.startsWith('@')) {
+                    const parts = pkgPath.split('/');
+                    if (parts.length >= 2) {
+                        pkgName = `${parts[0]}/${parts[1]}`;
+                    }
+                } else {
+                    pkgName = pkgPath.split('/')[0];
+                }
+
+                // Add to dependencies if not already present
+                // We default to "latest" to let Sandpack resolve it
+                if (!defaultDeps[pkgName]) {
+                    defaultDeps[pkgName] = "latest";
+                }
+            }
+        } catch (e) {
+            console.warn("[Sandpack] Failed to auto-detect dependencies:", e);
+        }
+
+        return defaultDeps;
+    }, [code]);
+
     return (
         <div className="w-full h-full sandpack-container">
             <SandpackProvider
@@ -87,22 +150,7 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, language, t
                     externalResources: ["https://cdn.tailwindcss.com"]
                 }}
                 customSetup={{
-                    dependencies: {
-                        "react": "^18.0.0",
-                        "react-dom": "^18.0.0",
-                        "lucide-react": "latest",
-                        "recharts": "latest",
-                        "framer-motion": "latest",
-                        "clsx": "latest",
-                        "tailwind-merge": "latest",
-                        "date-fns": "latest",
-                        "react-markdown": "latest",
-                        "lodash": "latest",
-                        "uuid": "latest",
-                        "canvas-confetti": "latest",
-                        "@radix-ui/react-slot": "latest",
-                        "class-variance-authority": "latest"
-                    }
+                    dependencies: customDependencies
                 }}
             >
                 <SandpackLayout>
