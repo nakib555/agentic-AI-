@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -94,6 +95,11 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode
             };
 
             try {
+                // Ensure createPlayground is available
+                if (typeof createPlayground !== 'function') {
+                    throw new Error("LiveCodes SDK not loaded");
+                }
+
                 const playground = await createPlayground(containerRef.current!, options);
                 if (isMounted) {
                     playgroundRef.current = playground;

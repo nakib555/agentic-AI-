@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -13,6 +14,31 @@ import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils'
 
 // Lazy load the shared component (now using LiveCodes under the hood)
 const ReactSandpack = React.lazy(() => import('../Artifacts/SandpackComponent'));
+
+// --- Error Boundary for Lazy Component ---
+class ArtifactErrorBoundary extends React.Component<{ children: React.ReactNode, onFallback: () => void }, { hasError: boolean }> {
+    state = { hasError: false };
+    static getDerivedStateFromError() { return { hasError: true }; }
+    componentDidCatch(error: any) { console.error("Artifact Preview Error:", error); }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="flex flex-col items-center justify-center h-full p-4 text-center bg-white dark:bg-[#1e1e1e]">
+                    <div className="text-red-500 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <p className="text-sm font-medium">Failed to load preview environment.</p>
+                    </div>
+                    <button onClick={this.props.onFallback} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-sm transition-colors">
+                        View Code Source
+                    </button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
 // --- Icons ---
 const CopyIcon = () => (
@@ -107,7 +133,8 @@ const artifactReducer = (state: State, action: Action): State => {
     }
 };
 
-const VIRTUALIZATION_THRESHOLD_SIZE = 20 * 1024;
+// Threshold for switching to virtualized plain text viewer
+const VIRTUALIZATION_THRESHOLD_SIZE = 20 * 1024; // 20KB (approx 500-1000 lines of dense code)
 
 type ArtifactContentProps = {
     content: string;
@@ -135,7 +162,22 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => observer.disconnect();
     }, []);
 
-    // Initial load handler
+    const isReact = useMemo(() => {
+        if (content.length > 50000) return false; 
+        return detectIsReact(content, language);
+    }, [content, language]);
+
+    // Auto-switch tab based on language detection
+    useEffect(() => {
+        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || isReact;
+        if (content.length < 50000 && isRenderable) {
+            dispatch({ type: 'SET_TAB', payload: 'preview' });
+        } else {
+            dispatch({ type: 'SET_TAB', payload: 'code' });
+        }
+    }, [language, content.length, isReact]);
+
+    // Initial load handler to clear the loading spinner
     useEffect(() => {
         const timer = setTimeout(() => {
             dispatch({ type: 'SET_LOADING', payload: false });
@@ -145,11 +187,12 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
 
     // Update debounced content with variable delay based on size
     useEffect(() => {
+        // Dynamic debounce: Larger files update less frequently to save CPU
         const length = content.length;
         let delay = 100;
-        if (length > 1000000) delay = 1500;
-        else if (length > 100000) delay = 800;
-        else if (length > 20000) delay = 300;
+        if (length > 1000000) delay = 1500; // 1MB+ -> 1.5s
+        else if (length > 100000) delay = 800; // 100KB+ -> 800ms
+        else if (length > 20000) delay = 300; // 20KB+ -> 300ms
 
         const handler = setTimeout(() => {
             setDebouncedContent(content);
@@ -157,7 +200,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => clearTimeout(handler);
     }, [content]);
 
-    // Handle updates for Code Mode
+    // Handle updates for Code Mode - ensure loading is off
     useEffect(() => {
         if (state.activeTab === 'code') {
             dispatch({ type: 'SET_LOADING', payload: false });
@@ -181,22 +224,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return () => window.removeEventListener('message', handler);
     }, []);
 
-    const isReact = useMemo(() => {
-        if (content.length > 50000) return false; 
-        return detectIsReact(content, language);
-    }, [content, language]);
-
-    // Auto-switch tab based on language detection
-    useEffect(() => {
-        const isRenderable = ['html', 'svg', 'markup', 'xml', 'css', 'javascript', 'js', 'ts', 'jsx', 'tsx'].includes(language) || isReact;
-        if (content.length < 50000 && isRenderable) {
-            dispatch({ type: 'SET_TAB', payload: 'preview' });
-        } else {
-            dispatch({ type: 'SET_TAB', payload: 'code' });
-        }
-    }, [language, content.length, isReact]);
-
-    // Memoized Preview Generation for Iframe Fallback
+    // Memoized Preview Generation
     const previewContent = useMemo(() => {
         if (!debouncedContent) return '';
         
@@ -204,8 +232,11 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         const consoleScript = generateConsoleScript();
         const tailwindCdn = '<script src="https://cdn.tailwindcss.com"></script>';
 
+        // HTML / XML / SVG
         if (['html', 'svg', 'markup', 'xml'].includes(language)) {
+            // Automatically inject Tailwind for better out-of-the-box styling of LLM snippets
             const stylesAndScript = `${tailwindCdn}${consoleScript}`;
+            
             if (cleanContent.includes('<head>')) {
                 return cleanContent.replace('<head>', `<head>${stylesAndScript}`);
             } else if (cleanContent.includes('<html>')) {
@@ -214,13 +245,54 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             return `<!DOCTYPE html><html><head>${stylesAndScript}</head><body>${cleanContent}</body></html>`;
         }
         
+        // CSS
         if (['css', 'scss', 'less'].includes(language)) {
-            return `<!DOCTYPE html><html><head>${consoleScript}<style>body{font-family:system-ui,sans-serif;padding:20px;min-height:100vh;margin:0;background:#f8f9fa}h1{color:#333}</style><style>${cleanContent}</style></head><body><h1>CSS Preview</h1><p>Styles applied.</p></body></html>`;
+            return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    ${consoleScript}
+                    <style>
+                        body { font-family: system-ui, sans-serif; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f8f9fa; }
+                        h1 { color: #333; margin-bottom: 1rem; }
+                        .demo-container { padding: 2rem; border: 1px dashed #ccc; border-radius: 8px; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+                    </style>
+                    <style>${cleanContent}</style>
+                </head>
+                <body>
+                    <div class="demo-container">
+                        <h1>CSS Preview</h1>
+                        <p>The styles above are applied to this document.</p>
+                        <button class="btn primary">Demo Button</button>
+                    </div>
+                </body>
+                </html>
+            `;
         }
 
+        // JavaScript / TypeScript (Standard Iframe fallback if not React)
         if (['javascript', 'typescript', 'js', 'ts'].includes(language) && !isReact) {
             const safeContent = cleanContent.replace(/<\/script>/g, '<\\/script>');
-            return `<!DOCTYPE html><html><head><style>body{font-family:system-ui,sans-serif;padding:20px;}</style>${consoleScript}</head><body><div id="root"></div><script type="module">try{${safeContent}}catch(e){console.error(e);}</script></body></html>`;
+            return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>body { font-family: system-ui, sans-serif; padding: 20px; color: #333; } @media (prefers-color-scheme: dark) { body { color: #eee; } }</style>
+                    ${consoleScript}
+                </head>
+                <body>
+                    <div id="root"></div>
+                    <script type="module">
+                        // Shim for non-React JS previews
+                        try {
+                            ${safeContent}
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    </script>
+                </body>
+                </html>
+            `;
         }
         return '';
     }, [debouncedContent, language, isReact]);
@@ -265,6 +337,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return language;
     }, [language]);
 
+    // Efficient check for large files without regex
     const useVirtualization = useMemo(() => {
         return content.length > VIRTUALIZATION_THRESHOLD_SIZE;
     }, [content.length]);
@@ -379,19 +452,21 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 >
                     {isReact ? (
                         <div className="flex-1 w-full h-full relative bg-white dark:bg-[#1e1e1e]">
-                             <Suspense fallback={
-                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#1e1e1e]">
-                                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                                    <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
-                                </div>
-                             }>
-                                 <ReactSandpack
-                                    key={state.iframeKey}
-                                    theme={isDark ? "dark" : "light"}
-                                    code={debouncedContent}
-                                    mode="full"
-                                 />
-                            </Suspense>
+                             <ArtifactErrorBoundary onFallback={() => dispatch({ type: 'SET_TAB', payload: 'code' })}>
+                                 <Suspense fallback={
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#1e1e1e]">
+                                        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                        <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
+                                    </div>
+                                 }>
+                                     <ReactSandpack
+                                        key={state.iframeKey}
+                                        theme={isDark ? "dark" : "light"}
+                                        code={debouncedContent}
+                                        mode="full"
+                                     />
+                                </Suspense>
+                            </ArtifactErrorBoundary>
                         </div>
                     ) : (
                         <>
@@ -401,6 +476,13 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
                                     <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
                                 </div>
+                                
+                                <div className="flex-1 mx-4">
+                                    <div className="bg-white dark:bg-black/10 border border-gray-200 dark:border-white/10 rounded px-3 py-1 text-xs text-center text-gray-500 font-mono truncate shadow-sm">
+                                        preview
+                                    </div>
+                                </div>
+
                                 <div className="flex items-center gap-2">
                                     <button 
                                         onClick={() => dispatch({ type: 'TOGGLE_CONSOLE' })}
@@ -420,18 +502,34 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                             <RefreshIcon />
                                         </button>
                                     </Tooltip>
+                                    <Tooltip content="Open in New Tab" position="bottom">
+                                        <button 
+                                            onClick={handleOpenNewTab}
+                                            className="p-1.5 text-content-secondary hover:text-content-primary hover:bg-layer-2 rounded transition-colors"
+                                            aria-label="Open in New Tab"
+                                        >
+                                            <ExternalLinkIcon />
+                                        </button>
+                                    </Tooltip>
                                 </div>
                             </div>
                             <div className="flex-1 relative flex flex-col overflow-hidden">
-                                <div className="flex-1 bg-white dark:bg-[#1e1e1e] relative w-full h-full">
-                                    <iframe
-                                        key={state.iframeKey}
-                                        srcDoc={previewContent}
-                                        className="absolute inset-0 w-full h-full border-none bg-white dark:bg-[#1e1e1e]"
-                                        title="Artifact Preview"
-                                        sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
-                                    />
-                                </div>
+                                {state.isLoading ? (
+                                    <div className="absolute inset-0 bg-white dark:bg-[#121212] z-10 flex flex-col items-center justify-center space-y-3">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
+                                        <span className="text-xs font-medium text-slate-500">Loading Preview...</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 bg-white dark:bg-[#1e1e1e] relative w-full h-full">
+                                        <iframe
+                                            key={state.iframeKey}
+                                            srcDoc={previewContent}
+                                            className="absolute inset-0 w-full h-full border-none bg-white dark:bg-[#1e1e1e]"
+                                            title="Artifact Preview"
+                                            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
+                                        />
+                                    </div>
+                                )}
                                 
                                 {/* Console Terminal Panel */}
                                 <AnimatePresence>

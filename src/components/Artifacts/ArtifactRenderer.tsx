@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -10,6 +11,16 @@ import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils'
 
 // Lazy load the shared LiveCodes component
 const ReactSandpack = React.lazy(() => import('./SandpackComponent'));
+
+// --- Error Boundary for Lazy Component ---
+class ArtifactPreviewErrorBoundary extends React.Component<{ children: React.ReactNode, fallback: React.ReactNode }, { hasError: boolean }> {
+    state = { hasError: false };
+    static getDerivedStateFromError() { return { hasError: true }; }
+    render() {
+        if (this.state.hasError) return this.props.fallback;
+        return this.props.children;
+    }
+}
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
@@ -108,19 +119,26 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         if (isReact) {
             return (
                 <div className="h-[550px] w-full bg-white dark:bg-[#1e1e1e] border-t border-border-subtle relative">
-                     <Suspense fallback={
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#1e1e1e]">
-                            <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                            <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
-                        </div>
+                     <ArtifactPreviewErrorBoundary fallback={
+                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#1e1e1e] text-center p-4">
+                             <div className="text-red-500 mb-2">⚠ Preview Unavailable</div>
+                             <p className="text-xs text-slate-500">The interactive environment could not be loaded.</p>
+                         </div>
                      }>
-                         <ReactSandpack
-                            key={iframeKey} 
-                            theme={isDark ? "dark" : "light"}
-                            code={content}
-                            mode="inline"
-                         />
-                    </Suspense>
+                         <Suspense fallback={
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#1e1e1e]">
+                                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
+                            </div>
+                         }>
+                             <ReactSandpack
+                                key={iframeKey} 
+                                theme={isDark ? "dark" : "light"}
+                                code={content}
+                                mode="inline"
+                             />
+                        </Suspense>
+                    </ArtifactPreviewErrorBoundary>
                 </div>
             );
         }
