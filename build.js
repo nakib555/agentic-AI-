@@ -1,4 +1,3 @@
-
 import esbuild from 'esbuild';
 import cpx from 'cpx';
 import { rm, readFile, writeFile, mkdir } from 'fs/promises';
@@ -34,8 +33,6 @@ try {
     entryPoints: ['src/index.tsx'],
     bundle: true,
     outfile: 'dist/index.js',
-    format: 'esm', // Ensure ESM output for browser resolution
-    external: ['react', 'react-dom', 'react-dom/client', '@codesandbox/sandpack-react'], // Use CDN versions
     loader: { 
       '.tsx': 'tsx', 
       '.ts': 'ts',

@@ -1,4 +1,3 @@
-
 import esbuild from 'esbuild';
 import { spawn, execSync } from 'child_process';
 import cpx from 'cpx';
@@ -116,22 +115,6 @@ try {
     entryPoints: ['src/index.tsx'],
     bundle: true,
     outfile: 'dist/index.js',
-    format: 'esm',
-    // Externalize React and Sandpack to use CDN versions (resolving Invalid Element Type and Hooks errors)
-    // ADDED: markdown dependencies externalized to fix "ReactCurrentOwner" error due to duplicate/mismatched React instances
-    external: [
-        'react', 
-        'react-dom', 
-        'react-dom/client', 
-        '@codesandbox/sandpack-react',
-        'react-markdown',
-        'remark-math',
-        'remark-gfm',
-        'rehype-katex',
-        'rehype-raw',
-        'react-syntax-highlighter',
-        '@google/genai'
-    ], 
     loader: { 
       '.tsx': 'tsx', 
       '.ts': 'ts', 

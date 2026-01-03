@@ -14,21 +14,21 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public override state: ErrorBoundaryState = {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = {
     hasError: false,
     error: null,
   };
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
   }
 
-  componentDidUpdate(prevProps: ErrorBoundaryProps) {
+  public componentDidUpdate(prevProps: ErrorBoundaryProps) {
     // Automatically reset error state if children change (e.g., due to HMR, code edits, or parent re-render)
     if (this.state.hasError && this.props.children !== prevProps.children) {
       this.setState({ hasError: false, error: null });
@@ -54,7 +54,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     this.setState({ hasError: false, error: null });
   }
 
-  render() {
+  public render() {
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 flex items-center justify-center bg-page p-4 text-center z-[9999]">
