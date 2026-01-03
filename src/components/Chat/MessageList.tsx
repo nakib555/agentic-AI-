@@ -197,7 +197,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
              animate={{ opacity: 1, y: 0, scale: 1 }}
              exit={{ opacity: 0, y: 10, scale: 0.9 }}
              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-             className="absolute bottom-4 inset-x-0 flex justify-center pointer-events-none z-30"
+             className="absolute bottom-6 md:bottom-4 inset-x-0 flex justify-center pointer-events-none z-30"
           >
             <button
                 onClick={handleScrollToBottom}
