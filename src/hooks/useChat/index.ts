@@ -543,7 +543,7 @@ export const useChat = (
 
             // 8. Start Stream
             await startBackendChat(
-                'chat',
+                'regenerate', // Force regenerate to ensure context is correctly read from the updated history in DB
                 chatId,
                 modelPlaceholder.id,
                 null, // Passing null since user message is already in history (updated above)
