@@ -159,8 +159,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     className="p-3 flex flex-col h-full group min-h-0 relative"
                     style={{ 
                         userSelect: isResizing ? 'none' : 'auto',
-                        paddingBottom: !isDesktop ? 'env(safe-area-inset-bottom)' : '0.75rem', 
-                        paddingTop: !isDesktop ? 'env(safe-area-inset-top)' : '0.75rem'
+                        // Ensure base padding (12px) is added to safe area inset to prevent clipping on mobile
+                        paddingBottom: !isDesktop ? 'calc(env(safe-area-inset-bottom) + 12px)' : '0.75rem', 
+                        paddingTop: !isDesktop ? 'calc(env(safe-area-inset-top) + 12px)' : '0.75rem'
                     }}
                 >
                     <Suspense fallback={
