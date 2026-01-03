@@ -15,23 +15,20 @@ interface ErrorBoundaryState {
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-    };
-  }
+  public override state: ErrorBoundaryState = {
+    hasError: false,
+    error: null,
+  };
 
   public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  public override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
   }
 
-  public componentDidUpdate(prevProps: ErrorBoundaryProps) {
+  public override componentDidUpdate(prevProps: ErrorBoundaryProps) {
     // Automatically reset error state if children change (e.g., due to HMR, code edits, or parent re-render)
     if (this.state.hasError && this.props.children !== prevProps.children) {
       this.setState({ hasError: false, error: null });
@@ -57,7 +54,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     this.setState({ hasError: false, error: null });
   }
 
-  public render() {
+  public override render() {
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 flex items-center justify-center bg-page p-4 text-center z-[9999]">

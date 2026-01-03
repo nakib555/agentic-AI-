@@ -1,41 +1,55 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+// @ts-ignore - livecodes is loaded via importmap so types might be missing in dev environment
 import { createPlayground } from 'livecodes';
 
 type SandpackComponentProps = {
     code: string;
     theme: 'dark' | 'light';
-    keyId?: number;
     mode?: 'inline' | 'full';
 };
 
-const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, keyId, mode = 'inline' }) => {
+const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, mode = 'inline' }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const playgroundRef = useRef<any>(null);
+    const [isReady, setIsReady] = useState(false);
 
+    // Initialize Playground
     useEffect(() => {
         if (!containerRef.current) return;
 
-        let finalCode = code;
-        // Ensure React code exports properly for LiveCodes
-        if (!code.includes('export default')) {
-            finalCode = code + '\n\nexport default App;'; 
+        // Cleanup previous instance if it exists
+        if (playgroundRef.current) {
+            try {
+                playgroundRef.current.destroy();
+            } catch (e) {
+                // Ignore destruction errors
+            }
+            playgroundRef.current = null;
         }
 
-        const run = async () => {
-            if (playgroundRef.current) {
-                playgroundRef.current.destroy();
+        let isMounted = true;
+
+        const initPlayground = async () => {
+            // Prepare code: Ensure export default App exists if not present
+            let finalCode = code;
+            
+            // Basic heuristic to ensure the React component renders
+            if (!code.includes('export default')) {
+                finalCode = code + '\n\nexport default App;';
             }
 
-            const playground = await createPlayground(containerRef.current!, {
+            const options = {
                 appUrl: 'https://v29.livecodes.io/',
                 params: {
                     console: 'open',
                     mode: 'result',
+                    loading: 'eager',
                 },
                 config: {
                     title: "React Component",
@@ -52,17 +66,21 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, keyI
                     style: {
                         language: "css",
                         content: `
-                            body { font-family: 'Inter', sans-serif; padding: 1rem; } 
-                            ${theme === 'dark' ? 'body { background-color: #1e1e1e; color: #fff; }' : ''}
+                            body { 
+                                font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+                                padding: 1rem; 
+                                margin: 0;
+                            } 
+                            ${theme === 'dark' ? 'body { background-color: #1e1e1e; color: #fff; }' : 'body { background-color: #ffffff; color: #1e293b; }'}
                         `
                     },
                     processors: ["tailwindcss"],
                     imports: {
                         "react": "https://esm.sh/react@18.2.0",
                         "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-                        "lucide-react": "https://esm.sh/lucide-react",
-                        "recharts": "https://esm.sh/recharts",
-                        "framer-motion": "https://esm.sh/framer-motion",
+                        "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+                        "recharts": "https://esm.sh/recharts@2.7.2",
+                        "framer-motion": "https://esm.sh/framer-motion@10.12.16",
                         "clsx": "https://esm.sh/clsx",
                         "tailwind-merge": "https://esm.sh/tailwind-merge",
                         "date-fns": "https://esm.sh/date-fns",
@@ -72,40 +90,56 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, keyI
                         template: "react"
                     }
                 }
-            });
-            playgroundRef.current = playground;
+            };
+
+            try {
+                const playground = await createPlayground(containerRef.current!, options);
+                if (isMounted) {
+                    playgroundRef.current = playground;
+                    setIsReady(true);
+                } else {
+                    playground.destroy();
+                }
+            } catch (err) {
+                console.error("Failed to initialize LiveCodes playground:", err);
+            }
         };
 
-        run();
+        initPlayground();
 
         return () => {
+            isMounted = false;
             if (playgroundRef.current) {
-                playgroundRef.current.destroy();
+                try {
+                    playgroundRef.current.destroy();
+                } catch (e) { }
+                playgroundRef.current = null;
             }
         };
-    }, [keyId, theme]); 
+    }, [theme]); // Re-init on theme change to ensure clean style switch
 
-    // Dynamic code update
+    // Dynamic code update (Fast)
     useEffect(() => {
-        if (playgroundRef.current && code) {
-            let finalCode = code;
-            if (!code.includes('export default')) {
-                finalCode = code + '\n\nexport default App;'; 
-            }
-            
-            playgroundRef.current.setConfig({
-                ...playgroundRef.current.getConfig(),
-                script: {
-                    language: 'tsx',
-                    content: finalCode
-                }
-            });
+        if (!isReady || !playgroundRef.current) return;
+
+        let finalCode = code;
+        if (!code.includes('export default')) {
+            finalCode = code + '\n\nexport default App;';
         }
-    }, [code]);
+
+        // LiveCodes allows updating config dynamically without full reload
+        playgroundRef.current.setConfig({
+            ...playgroundRef.current.getConfig(),
+            script: {
+                language: "tsx",
+                content: finalCode
+            }
+        });
+    }, [code, isReady]);
 
     return (
         <div 
-            className="w-full h-full"
+            className="w-full h-full relative"
             style={{
                 borderRadius: mode === 'inline' ? '0.75rem' : '0',
                 overflow: 'hidden',
@@ -116,7 +150,7 @@ const SandpackComponent: React.FC<SandpackComponentProps> = ({ code, theme, keyI
                 flexDirection: 'column'
             }}
         >
-            <div ref={containerRef} style={{ width: '100%', flex: 1, minHeight: 0 }} />
+            <div ref={containerRef} className="w-full flex-1 min-h-0" />
         </div>
     );
 };
