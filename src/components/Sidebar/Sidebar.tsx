@@ -141,7 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 style={{
                     height: '100%',
                     position: isDesktop ? 'relative' : 'fixed',
-                    width: isDesktop ? 'auto' : '85%', // Adjusted for side drawer
+                    width: isDesktop ? 'auto' : '67.5%', // Updated width for mobile
                     maxWidth: isDesktop ? undefined : '320px',
                     left: 0,
                     top: 0,
