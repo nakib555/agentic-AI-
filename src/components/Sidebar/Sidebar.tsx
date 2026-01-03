@@ -135,8 +135,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 drag={!isDesktop ? "x" : false}
                 dragListener={!isDesktop} 
                 dragControls={dragControls}
-                dragConstraints={{ left: -300, right: 0 }} 
-                dragElastic={{ left: 0.5, right: 0.05 }} 
+                dragConstraints={{ left: -1000, right: 0 }} 
+                dragElastic={{ left: 0.5, right: 0 }} 
                 onDragEnd={onDragEnd}
                 style={{
                     height: '100%',
