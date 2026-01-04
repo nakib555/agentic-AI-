@@ -85,7 +85,7 @@ try {
   // 5. Compile Tailwind CSS
   console.log('Compiling Tailwind CSS...');
   try {
-    execSync('npx tailwindcss -i ./src/styles/main.css -o ./dist/styles/main.css --minify', { stdio: 'inherit' });
+    execSync('npx @tailwindcss/cli -i ./src/styles/main.css -o ./dist/styles/main.css --minify', { stdio: 'inherit' });
     console.log('Tailwind CSS compiled successfully.');
   } catch (err) {
     console.error('Tailwind CSS compilation failed:', err);

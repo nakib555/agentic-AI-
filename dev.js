@@ -52,7 +52,7 @@ await patchAndCopy('sw.js', 'dist/sw.js', (js) => js.replace('{{VERSION}}', 'dev
 // This ensures main.css exists before the browser requests it via SW
 console.log('Compiling initial Tailwind CSS...');
 try {
-    execSync('npx tailwindcss -i ./src/styles/main.css -o ./dist/styles/main.css');
+    execSync('npx @tailwindcss/cli -i ./src/styles/main.css -o ./dist/styles/main.css');
 } catch (e) {
     console.error('Tailwind compilation failed:', e.message);
 }
@@ -76,7 +76,7 @@ fs.watch('sw.js', () => {
 });
 
 // Watch Tailwind
-const tailwindProcess = spawn('npx', ['tailwindcss', '-i', './src/styles/main.css', '-o', './dist/styles/main.css', '--watch'], {
+const tailwindProcess = spawn('npx', ['@tailwindcss/cli', '-i', './src/styles/main.css', '-o', './dist/styles/main.css', '--watch'], {
     stdio: 'inherit',
     shell: true
 });
