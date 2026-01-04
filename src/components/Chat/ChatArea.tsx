@@ -24,7 +24,7 @@ type ChatAreaProps = {
   onShowSources: (sources: Source[]) => void;
   approveExecution: (editedPlan: string) => void;
   denyExecution: () => void;
-  messageListRef: React.RefObject<MessageListHandle | null>;
+  messageListRef: React.RefObject<MessageListHandle>;
   onRegenerate: (messageId: string) => void;
   onSetActiveResponseIndex: (messageId: string, index: number) => void;
   isAgentMode: boolean;
