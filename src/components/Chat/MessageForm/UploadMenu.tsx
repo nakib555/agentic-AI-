@@ -9,7 +9,7 @@ import { motion as motionTyped } from 'framer-motion';
 const motion = motionTyped as any;
 
 type UploadMenuProps = {
-  menuRef: React.RefObject<HTMLDivElement>;
+  menuRef: React.RefObject<HTMLDivElement | null>;
   onFileClick: () => void;
   onFolderClick: () => void;
 };
