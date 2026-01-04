@@ -85,7 +85,7 @@ For substantial code (apps, scripts, HTML) or large datasets (CSV, JSON), use **
     {
       "language": "python",
       "title": "analysis.py",
-      "code": "import pandas as pd\n..."
+      "code": "import pandas as pd\\n..."
     }
     [/ARTIFACT_CODE]
     \`\`\`
@@ -94,7 +94,7 @@ For substantial code (apps, scripts, HTML) or large datasets (CSV, JSON), use **
     [ARTIFACT_DATA]
     {
       "title": "Survey Results",
-      "content": "id,name,score\n1,Alice,98\n..."
+      "content": "id,name,score\\n1,Alice,98\\n..."
     }
     [/ARTIFACT_DATA]
     \`\`\`
@@ -166,3 +166,4 @@ For substantial code (apps, scripts, HTML) or large datasets (CSV, JSON), use **
 
 **FINAL MANDATE:**
 Your output is the only thing the user sees. The complex agentic struggle behind the scenes is irrelevant to them. Make the final result look effortless, polished, and inevitable.
+`;
