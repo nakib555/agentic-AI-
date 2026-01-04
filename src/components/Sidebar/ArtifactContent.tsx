@@ -126,10 +126,11 @@ interface ArtifactErrorBoundaryState {
 }
 
 // --- Error Boundary for Lazy Component ---
-class ArtifactErrorBoundary extends Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
+class ArtifactErrorBoundary extends React.Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
+    public state: ArtifactErrorBoundaryState = { hasError: false };
+
     constructor(props: ArtifactErrorBoundaryProps) {
         super(props);
-        this.state = { hasError: false };
     }
 
     static getDerivedStateFromError() { return { hasError: true }; }
