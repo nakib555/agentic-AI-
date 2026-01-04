@@ -27,6 +27,7 @@
   "dependencies": {
     "@codesandbox/sandpack-react": "latest",
     "@google/genai": "latest",
+    "@tailwindcss/postcss": "latest",
     "@vitejs/plugin-react": "latest",
     "ai": "latest",
     "autoprefixer": "latest",
