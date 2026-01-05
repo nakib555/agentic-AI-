@@ -26,6 +26,10 @@ class ArtifactPreviewErrorBoundary extends React.Component<ErrorBoundaryProps, E
     state: ErrorBoundaryState = { hasError: false };
 
     static getDerivedStateFromError() { return { hasError: true }; }
+
+    componentDidCatch(error: any, errorInfo: any) {
+        console.error("Artifact Preview Error:", error, errorInfo);
+    }
     
     render() {
         if (this.state.hasError) return this.props.fallback;
