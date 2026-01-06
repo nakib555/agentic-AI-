@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -23,6 +22,65 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS (CDN Fallback/Dev) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              'page': 'var(--bg-page)',
+              'layer-1': 'var(--bg-layer-1)',
+              'layer-2': 'var(--bg-layer-2)',
+              'layer-3': 'var(--bg-layer-3)',
+              'glass': 'var(--bg-glass)',
+              'content-primary': 'var(--text-primary)',
+              'content-secondary': 'var(--text-secondary)',
+              'content-tertiary': 'var(--text-tertiary)',
+              'text-inverted': 'var(--text-inverted)',
+              'border-subtle': 'var(--border-subtle)',
+              'border-default': 'var(--border-default)',
+              'border-strong': 'var(--border-strong)',
+              'border-focus': 'var(--border-focus)',
+              'border': 'var(--border-default)',
+              'primary-main': 'var(--primary-main)',
+              'primary-hover': 'var(--primary-hover)',
+              'primary-subtle': 'var(--primary-subtle)',
+              'primary-text': 'var(--primary-text)',
+              'status-error-bg': 'var(--status-error-bg)',
+              'status-error-text': 'var(--status-error-text)',
+              'status-success-bg': 'var(--status-success-bg)',
+              'status-success-text': 'var(--status-success-text)',
+              'status-warning-bg': 'var(--status-warning-bg)',
+              'status-warning-text': 'var(--status-warning-text)',
+              'message-user': 'var(--bg-message-user)',
+              'message-ai': 'var(--bg-message-ai)',
+              'input-main': 'var(--bg-input)',
+              'input-sub': 'var(--bg-input-secondary)',
+              'code-surface': 'var(--bg-code)',
+              'code-text': 'var(--text-code)',
+              'sidebar-surface': 'var(--bg-sidebar)',
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['Fira Code', 'monospace'],
+              display: ['Space Grotesk', 'sans-serif'],
+            },
+            keyframes: {
+              'shimmer-wave': {
+                '0%': { transform: 'translateX(-100%)' },
+                '100%': { transform: 'translateX(100%)' },
+              },
+            },
+            animation: {
+              'shimmer-wave': 'shimmer-wave 2s infinite linear',
+            },
+          }
+        }
+      }
+    </script>
 
     <!-- Application Styles -->
     <link rel="stylesheet" href="/styles/main.css">
