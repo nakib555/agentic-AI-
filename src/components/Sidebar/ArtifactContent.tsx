@@ -1,14 +1,14 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense } from 'react';
+import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense, Component } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
+import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
 
 // Lazy load the shared component
@@ -107,6 +107,9 @@ const artifactReducer = (state: State, action: Action): State => {
     }
 };
 
+// Threshold for switching to virtualized plain text viewer
+const VIRTUALIZATION_THRESHOLD_SIZE = 20 * 1024; // 20KB (approx 500-1000 lines of dense code)
+
 type ArtifactContentProps = {
     content: string;
     language: string;
@@ -123,8 +126,8 @@ interface ArtifactErrorBoundaryState {
 }
 
 // --- Error Boundary for Lazy Component ---
-class ArtifactErrorBoundary extends React.Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
-    public state: ArtifactErrorBoundaryState = { hasError: false };
+class ArtifactErrorBoundary extends Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
+    state: ArtifactErrorBoundaryState = { hasError: false };
 
     static getDerivedStateFromError() { return { hasError: true }; }
     componentDidCatch(error: any) { console.error("Artifact Preview Error:", error); }
@@ -153,7 +156,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     
     // UI State managed by Reducer
     const [state, dispatch] = useReducer(artifactReducer, initialState);
-    const [isCopied, setIsCopied] = React.useState(false);
+    const [isCopied, setIsCopied] = useState(false);
     
     // Debounce content to prevent UI blocking during streaming of large files
     const [debouncedContent, setDebouncedContent] = useState(content);
@@ -344,6 +347,11 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         return language;
     }, [language]);
 
+    // Efficient check for large files without regex
+    const useVirtualization = useMemo(() => {
+        return content.length > VIRTUALIZATION_THRESHOLD_SIZE;
+    }, [content.length]);
+
     return (
         <div className="flex flex-col h-full overflow-hidden w-full bg-layer-1">
             {/* Header Toolbar */}
@@ -353,6 +361,11 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                         <span className="text-xs font-bold text-content-secondary uppercase tracking-wider font-mono">
                             {displayLanguage}
                         </span>
+                        {useVirtualization && state.activeTab === 'code' && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wide">
+                                VIRTUALIZED
+                            </span>
+                        )}
                     </div>
                     {isPreviewable && (
                         <div className="flex bg-layer-2 p-0.5 rounded-lg border border-border-default flex-shrink-0">
@@ -414,25 +427,33 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 <div 
                     className={`flex-1 relative overflow-auto custom-scrollbar bg-code-surface ${state.activeTab === 'code' ? 'block' : 'hidden'}`}
                 >
-                    <SyntaxHighlighter
-                        language={syntaxHighlighterLanguage || 'text'}
-                        style={syntaxStyle}
-                        customStyle={{ 
-                            margin: 0, 
-                            padding: '1.5rem', 
-                            minHeight: '100%', 
-                            fontSize: '13px', 
-                            lineHeight: '1.5',
-                            fontFamily: "'Fira Code', monospace",
-                            background: 'transparent',
-                        }}
-                        showLineNumbers={true}
-                        wrapLines={false} 
-                        lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
-                        fallbackLanguage="text"
-                    >
-                        {debouncedContent || ''}
-                    </SyntaxHighlighter>
+                    {useVirtualization ? (
+                        <VirtualizedCodeViewer 
+                            content={debouncedContent} 
+                            language={language}
+                            theme={syntaxStyle}
+                        />
+                    ) : (
+                        <SyntaxHighlighter
+                            language={syntaxHighlighterLanguage || 'text'}
+                            style={syntaxStyle}
+                            customStyle={{ 
+                                margin: 0, 
+                                padding: '1.5rem', 
+                                minHeight: '100%', 
+                                fontSize: '13px', 
+                                lineHeight: '1.5',
+                                fontFamily: "'Fira Code', monospace",
+                                background: 'transparent',
+                            }}
+                            showLineNumbers={true}
+                            wrapLines={false} 
+                            lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
+                            fallbackLanguage="text"
+                        >
+                            {debouncedContent || ''}
+                        </SyntaxHighlighter>
+                    )}
                 </div>
 
                 {/* PREVIEW VIEW */}
