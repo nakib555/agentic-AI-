@@ -54,11 +54,16 @@ export const useChat = (
         return chatHistory.find(c => c.id === currentChatId)?.messages || [];
     }, [chatHistory, currentChatId]);
 
+    // Computed isLoading state that strictly checks for data availability.
+    // If we have a currentChatId, but the chat object in history doesn't have messages yet,
+    // it effectively implies we are in a loading state (fetching details).
+    // This overrides any stale 'isLoading: false' state that might exist on the history summary item.
     const isLoading = useMemo(() => {
         if (!currentChatId) return false;
         const chat = chatHistory.find(c => c.id === currentChatId);
         
         // If chat exists in list but messages are undefined, it's loading details.
+        // Exception: "New Chat" created client-side might start with empty messages array, which is fine.
         if (chat && chat.messages === undefined && chat.title !== "New Chat") {
             return true;
         }
@@ -84,156 +89,29 @@ export const useChat = (
         executeFrontendTool(callId, toolName, toolArgs);
     }, []);
 
-    // --- RECONNECTION LOGIC ---
-    const connectToActiveStream = useCallback(async (chatId: string, messageId: string) => {
-        if (abortControllerRef.current) return; // Already streaming
-
-        abortControllerRef.current = new AbortController();
-        
-        try {
-            console.log(`[FRONTEND] Attempting to reconnect to stream for chat ${chatId}`);
-            const response = await fetchFromApi(`/api/handler?task=connect&chatId=${chatId}`, {
-                signal: abortControllerRef.current.signal
-            });
-
-            if (response.status === 404) {
-                // No active stream, that's fine.
-                abortControllerRef.current = null;
-                // Ensure UI state matches reality
-                chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
-                chatHistoryHook.completeChatLoading(chatId);
-                return;
-            }
-
-            if (!response.ok || !response.body) throw new Error("Connection failed");
-
-            // If we connected, set loading state to true to show the UI
-            chatHistoryHook.setChatLoadingState(chatId, true);
-            chatHistoryHook.updateMessage(chatId, messageId, { isThinking: true });
-
-            await processBackendStream(
-                response,
-                {
-                    onTextChunk: (delta) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (current) => {
-                            const newText = (current.text || '') + delta;
-                            const parsedWorkflow = parseAgenticWorkflow(newText, current.toolCallEvents || [], false);
-                            return { text: newText, workflow: parsedWorkflow };
-                        });
-                    },
-                    onWorkflowUpdate: () => {},
-                    onToolCallStart: (toolCallEvents) => {
-                        const newEvents = toolCallEvents.map((toolEvent: any) => ({
-                            id: toolEvent.id,
-                            call: toolEvent.call,
-                            startTime: Date.now()
-                        }));
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
-                            // De-duplicate events based on ID
-                            const existingIds = new Set(r.toolCallEvents?.map(e => e.id) || []);
-                            const uniqueNewEvents = newEvents.filter(e => !existingIds.has(e.id));
-                            
-                            const updatedEvents = [...(r.toolCallEvents || []), ...uniqueNewEvents];
-                            const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents, false);
-                            return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
-                        });
-                    },
-                    onToolUpdate: (payload) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
-                            const updatedEvents = r.toolCallEvents?.map(tc => {
-                                if (tc.id === payload.id) {
-                                    const session = (tc.browserSession || { url: payload.url || '', logs: [], status: 'running' }) as BrowserSession;
-                                    if (payload.log) session.logs = [...session.logs, payload.log];
-                                    if (payload.screenshot) session.screenshot = payload.screenshot;
-                                    if (payload.title) session.title = payload.title;
-                                    if (payload.url) session.url = payload.url;
-                                    if (payload.status) session.status = payload.status;
-                                    return { ...tc, browserSession: { ...session } };
-                                }
-                                return tc;
-                            });
-                            const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents || [], false);
-                            return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
-                        });
-                    },
-                    onToolCallEnd: (payload) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
-                            const updatedEvents = r.toolCallEvents?.map(tc => tc.id === payload.id ? { ...tc, result: payload.result, endTime: Date.now() } : tc);
-                            const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents || [], false);
-                            return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
-                        });
-                    },
-                    onPlanReady: (plan) => {
-                        const payload = plan as any; 
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: payload }));
-                        chatHistoryHook.updateMessage(chatId, messageId, { executionState: 'pending_approval' });
-                    },
-                    onFrontendToolRequest: (callId, toolName, toolArgs) => {
-                        handleFrontendToolExecution(callId, toolName, toolArgs);
-                    },
-                    onComplete: (payload) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
-                            const finalWorkflow = parseAgenticWorkflow(payload.finalText, r.toolCallEvents || [], true);
-                            return { 
-                                text: payload.finalText, 
-                                endTime: Date.now(), 
-                                groundingMetadata: payload.groundingMetadata,
-                                workflow: finalWorkflow 
-                            };
-                        });
-                    },
-                    onError: (error) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error, endTime: Date.now() }));
-                    },
-                    onCancel: () => {
-                       // handled finally
-                    }
-                },
-                abortControllerRef.current.signal
-            );
-        } catch (e) {
-            // console.warn("Reconnection stream ended", e);
-        } finally {
-            abortControllerRef.current = null;
-            chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
-            chatHistoryHook.completeChatLoading(chatId);
-        }
-    }, [chatHistoryHook, handleFrontendToolExecution]);
-
-    // Auto-reconnect when chat loads
-    useEffect(() => {
-        if (currentChatId && !isLoading) {
-            const chat = chatHistory.find(c => c.id === currentChatId);
-            if (chat?.messages?.length) {
-                const lastMsg = chat.messages[chat.messages.length - 1];
-                // Try to reconnect if the last message is from the model and marked as thinking
-                // Or simply try to reconnect anyway to catch up on any detached jobs
-                if (lastMsg.role === 'model') {
-                    connectToActiveStream(currentChatId, lastMsg.id);
-                }
-            }
-        }
-    }, [currentChatId, isLoading, connectToActiveStream]); // eslint-disable-line react-hooks/exhaustive-deps
-
-
     const cancelGeneration = useCallback(() => {
-        // Abort the frontend fetch immediately
+        // Abort the frontend fetch immediately for responsiveness
         abortControllerRef.current?.abort();
         
-        const chatId = currentChatIdRef.current;
-        if (chatId) {
-            // Send the explicit cancel request to the backend using chatId
+        // Send the explicit cancel request to the backend fire-and-forget style
+        if (requestIdRef.current) {
             fetchFromApi('/api/handler?task=cancel', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chatId }),
+                body: JSON.stringify({ requestId: requestIdRef.current }),
             }).catch(error => console.error('[FRONTEND] Failed to send cancel request:', error));
-
+            requestIdRef.current = null;
+        }
+        
+        const chatId = currentChatIdRef.current;
+        if (chatId) {
             const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
             
             if (currentChat?.messages?.length) {
                 const lastMessage = currentChat.messages[currentChat.messages.length - 1];
                 
+                // 1. Mark as not thinking
+                // 2. Mark with specific STOPPED code so UI renders "Stopped" instead of crashing or showing generic error
                 chatHistoryHook.updateActiveResponseOnMessage(chatId, lastMessage.id, () => ({
                     error: { 
                         code: 'STOPPED_BY_USER', 
@@ -245,6 +123,7 @@ export const useChat = (
                 chatHistoryHook.updateMessage(chatId, lastMessage.id, { isThinking: false });
                 chatHistoryHook.completeChatLoading(chatId);
 
+                // Fallback for plan approval state cancellation if we are stuck there
                 if (lastMessage.executionState === 'pending_approval') {
                      const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
                      const callId = activeResponse?.plan?.callId || 'plan-approval';
@@ -252,7 +131,6 @@ export const useChat = (
                 }
             }
         }
-        requestIdRef.current = null;
     }, [handleFrontendToolExecution, chatHistoryHook]);
     
     const { updateMessage } = chatHistoryHook;

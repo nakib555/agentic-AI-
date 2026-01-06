@@ -17,9 +17,9 @@
   },
   "scripts": {
     "build": "npm run build:client && npm run build:server",
-    "build:client": "tsc && npx @tailwindcss/cli -i ./src/styles/main.css -o ./src/styles/generated.css --minify && vite build",
-    "build:server": "esbuild backend/server.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:playwright",
-    "start": "node dist/server.js",
+    "build:client": "tsc && vite build && npx @tailwindcss/cli -i ./src/styles/main.css -o ./dist/styles/main.css --minify",
+    "build:server": "esbuild backend/server.ts --bundle --platform=node --format=cjs --outfile=dist/server.cjs --external:playwright",
+    "start": "node dist/server.cjs",
     "dev": "node dev.js",
     "deploy": "npm run build:client && wrangler pages deploy dist",
     "lint": "eslint ."
@@ -32,7 +32,9 @@
     "ai": "latest",
     "autoprefixer": "latest",
     "cors": "latest",
+    "cpx": "latest",
     "dotenv": "latest",
+    "esbuild": "latest",
     "express": "latest",
     "framer-motion": "latest",
     "html2canvas": "latest",
@@ -56,26 +58,16 @@
     "zod": "latest"
   },
   "devDependencies": {
-    "esbuild": "latest",
-    "vite": "latest",
-    "typescript": "latest",
-    "tailwindcss": "latest",
     "@tailwindcss/cli": "latest",
-    "@vitejs/plugin-react": "latest",
-
-    "eslint": "latest",
-    "nodemon": "latest",
-    "ts-node": "latest",
-    "postcss": "latest",
-    "autoprefixer": "latest",
-
+    "@types/cors": "latest",
+    "@types/express": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "@types/express": "latest",
-    "@types/cors": "latest",
     "@types/react-syntax-highlighter": "latest",
-
     "babel-plugin-react-compiler": "latest",
-    "eslint-plugin-react-compiler": "latest"
+    "eslint": "latest",
+    "eslint-plugin-react-compiler": "latest",
+    "nodemon": "latest",
+    "ts-node": "latest"
   }
 }

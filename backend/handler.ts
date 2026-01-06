@@ -21,67 +21,22 @@ import { generateContentWithRetry, generateContentStreamWithRetry } from './util
 import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
 import { streamOpenRouter } from './utils/openRouterUtils';
-import { vectorMemory } from './services/vectorMemory'; 
-
-// --- JOB MANAGEMENT SYSTEM ---
-
-type ActiveJob = {
-    chatId: string;
-    controller: AbortController;
-    clients: Set<ExpressResponse>;
-    eventBuffer: string[]; // Store serialized events for reconnection replay
-    persistence: ChatPersistenceManager;
-    createdAt: number;
-};
-
-// Global registry of active generation jobs, keyed by chatId
-const activeJobs = new Map<string, ActiveJob>();
+import { vectorMemory } from './services/vectorMemory'; // Import Vector Memory
 
 // Store promises for frontend tool requests that the backend is waiting on
 const frontendToolRequests = new Map<string, (result: any) => void>();
 
-const writeToClient = (res: any, type: string, payload: any) => {
+// Store abort controllers for ongoing agentic loops to allow cancellation
+const activeAgentLoops = new Map<string, AbortController>();
+
+// Using 'any' for res to bypass type definition mismatches in the environment
+const writeEvent = (res: any, type: string, payload: any) => {
     if (!res.writableEnded && !res.closed && !res.destroyed) {
         try {
             res.write(JSON.stringify({ type, payload }) + '\n');
         } catch (e) {
             console.error(`[HANDLER] Error writing '${type}' event to stream:`, e);
         }
-    }
-};
-
-// Broadcasts an event to all clients connected to a specific job
-const broadcastEvent = (chatId: string, type: string, payload: any) => {
-    const job = activeJobs.get(chatId);
-    if (!job) return;
-
-    const eventString = JSON.stringify({ type, payload });
-    
-    // Buffer for future reconnects
-    job.eventBuffer.push(eventString);
-
-    // Send to currently connected clients
-    for (const client of job.clients) {
-        if (!client.writableEnded && !client.closed) {
-            try {
-                client.write(eventString + '\n');
-            } catch (e) {
-                console.error(`[HANDLER] Broadcast failed for chat ${chatId}`, e);
-                job.clients.delete(client);
-            }
-        }
-    }
-};
-
-const cleanupJob = (chatId: string) => {
-    const job = activeJobs.get(chatId);
-    if (job) {
-        // Close any lingering clients
-        for (const client of job.clients) {
-            if (!client.writableEnded) client.end();
-        }
-        activeJobs.delete(chatId);
-        console.log(`[JOB_MANAGER] Cleaned up job for chat ${chatId}`);
     }
 };
 
@@ -253,7 +208,7 @@ export const apiHandler = async (req: any, res: any) => {
     if (isSuggestionTask && suggestionApiKey) {
         activeApiKey = suggestionApiKey;
     } 
-    const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'connect'];
+    const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree'];
     if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
         return res.status(401).json({ error: "API key not configured on the server." });
     }
@@ -268,58 +223,10 @@ export const apiHandler = async (req: any, res: any) => {
 
     try {
         switch (task) {
-            case 'connect': {
-                // Allows a client to reconnect to an active stream
-                const { chatId } = req.query;
-                
-                if (!chatId || typeof chatId !== 'string') {
-                    return res.status(400).json({ error: "Chat ID required" });
-                }
-
-                const activeJob = activeJobs.get(chatId);
-                
-                if (!activeJob) {
-                    return res.status(404).json({ error: "No active job found for this chat" });
-                }
-
-                console.log(`[HANDLER] Client reconnecting to chat ${chatId}`);
-
-                // Setup SSE-like headers
-                res.setHeader('Content-Type', 'application/json');
-                res.setHeader('Transfer-Encoding', 'chunked');
-                res.flushHeaders();
-
-                // Replay history buffer
-                for (const eventStr of activeJob.eventBuffer) {
-                    res.write(eventStr + '\n');
-                }
-
-                // Add to active clients
-                activeJob.clients.add(res);
-
-                // Handle client disconnect (remove from set, but DON'T kill the job)
-                req.on('close', () => {
-                    activeJob.clients.delete(res);
-                    console.log(`[HANDLER] Reconnected client disconnected from ${chatId}`);
-                });
-
-                break;
-            }
-
             case 'chat': 
             case 'regenerate': {
                 const { chatId, model, settings, newMessage, messageId } = req.body;
                 
-                // --- CONCURRENCY CHECK ---
-                // If there's already an active job for this chat, we abort the OLD one to start the NEW one.
-                if (activeJobs.has(chatId)) {
-                    console.log(`[HANDLER] Aborting existing job for chat ${chatId} to start new turn.`);
-                    const oldJob = activeJobs.get(chatId)!;
-                    oldJob.controller.abort();
-                    // Clean up old job immediately
-                    cleanupJob(chatId);
-                }
-
                 // 1. Initial Persistence & History Fetch
                 let savedChat = await historyControl.getChat(chatId);
                 if (!savedChat) return res.status(404).json({ error: "Chat not found" });
@@ -347,12 +254,15 @@ export const apiHandler = async (req: any, res: any) => {
                     savedChat = await historyControl.updateChat(chatId, { messages: historyMessages });
                     historyForAI = historyMessages.slice(0, -1);
                 } else if (task === 'regenerate') {
+                     // NEW LOGIC:
                      // The frontend handles the branching/placeholder setup via updateChat before calling this.
+                     // We just need to identify the message to calculate the preceding context.
                      const targetIndex = historyMessages.findIndex((m: any) => m.id === messageId);
                      
                      if (targetIndex !== -1) {
                          // Context is everything BEFORE the target message
                          historyForAI = historyMessages.slice(0, targetIndex);
+                         // We do NOT modify the history array or save here, preserving the structure set by frontend.
                      } else {
                          // Fallback: If message doesn't exist (e.g. race condition or direct API call), create it.
                          const modelPlaceholder = {
@@ -374,29 +284,7 @@ export const apiHandler = async (req: any, res: any) => {
 
                 const persistence = new ChatPersistenceManager(chatId, messageId);
 
-                // --- INITIALIZE JOB ---
-                const abortController = new AbortController();
-                const requestId = generateId();
-                
-                const newJob: ActiveJob = {
-                    chatId,
-                    controller: abortController,
-                    clients: new Set([res]),
-                    eventBuffer: [],
-                    persistence,
-                    createdAt: Date.now()
-                };
-                activeJobs.set(chatId, newJob);
-
-                // --- SYSTEM PROMPT CONSTRUCTION ---
-                const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
-                const { systemPrompt, aboutUser, aboutResponse } = settings;
-                
-                let personalizationSection = "";
-                if (aboutUser && aboutUser.trim()) personalizationSection += `\n## 👤 USER PROFILE & CONTEXT\n${aboutUser.trim()}\n`;
-                if (aboutResponse && aboutResponse.trim()) personalizationSection += `\n## 🎭 RESPONSE STYLE & PERSONA PREFERENCES\n${aboutResponse.trim()}\n`;
-                if (systemPrompt && systemPrompt.trim()) personalizationSection += `\n## 🔧 CUSTOM USER DIRECTIVES\n${systemPrompt.trim()}\n`;
-
+                // --- RAG RETRIEVAL STEP ---
                 let ragContext = "";
                 if (ai && newMessage && newMessage.text) {
                     try {
@@ -409,7 +297,20 @@ export const apiHandler = async (req: any, res: any) => {
                         console.error("[RAG] Retrieval failed:", e);
                     }
                 }
+
+                // --- SYSTEM PROMPT CONSTRUCTION ---
+                // We construct this logic BEFORE the provider check so OpenRouter also gets the full prompt context.
+                const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
+                const { systemPrompt, aboutUser, aboutResponse } = settings;
                 
+                // CRITICAL: Personalization Injection
+                // We ensure this is prepended forcefully
+                let personalizationSection = "";
+                if (aboutUser && aboutUser.trim()) personalizationSection += `\n## 👤 USER PROFILE & CONTEXT\n${aboutUser.trim()}\n`;
+                if (aboutResponse && aboutResponse.trim()) personalizationSection += `\n## 🎭 RESPONSE STYLE & PERSONA PREFERENCES\n${aboutResponse.trim()}\n`;
+                if (systemPrompt && systemPrompt.trim()) personalizationSection += `\n## 🔧 CUSTOM USER DIRECTIVES\n${systemPrompt.trim()}\n`;
+
+                // Inject RAG Context into System Instruction
                 if (ragContext) {
                     personalizationSection += ragContext;
                 }
@@ -433,24 +334,28 @@ ${coreInstruction}
                 res.setHeader('Transfer-Encoding', 'chunked');
                 res.flushHeaders();
 
-                broadcastEvent(chatId, 'start', { requestId });
+                const requestId = generateId();
+                const abortController = new AbortController();
+                activeAgentLoops.set(requestId, abortController);
+                writeEvent(res, 'start', { requestId });
 
-                // IMPORTANT: Handle client disconnect WITHOUT aborting the job
+                const pingInterval = setInterval(() => writeEvent(res, 'ping', {}), 10000);
+                
                 req.on('close', () => {
-                    const job = activeJobs.get(chatId);
-                    if (job) {
-                        job.clients.delete(res);
-                        console.log(`[HANDLER] Client disconnected from chat ${chatId}. Job continuing in background...`);
-                    }
+                    clearInterval(pingInterval);
                 });
 
                 if (activeProvider === 'openrouter') {
-                    // OpenRouter logic with broadcasting
+                    // Flatten using the same robust transformer, mapping roles for OpenRouter
                     const flatHistory = transformHistoryToGeminiFormat(historyForAI);
+                    
                     const openRouterMessages = flatHistory.map((msg: any) => ({
                         role: msg.role === 'model' ? 'assistant' : 'user',
+                        // Combine parts into single text for OpenRouter
                         content: (msg.parts || []).map((p: any) => p.text || '').join('\n')
                     }));
+                    
+                    // Inject the fully constructed system instruction
                     openRouterMessages.unshift({ role: 'system', content: finalSystemInstruction });
 
                     try {
@@ -460,17 +365,17 @@ ${coreInstruction}
                             openRouterMessages,
                             {
                                 onTextChunk: (text) => {
-                                    broadcastEvent(chatId, 'text-chunk', text);
+                                    writeEvent(res, 'text-chunk', text);
                                     persistence.addText(text);
                                 },
                                 onComplete: (fullText) => {
-                                    broadcastEvent(chatId, 'complete', { finalText: fullText });
+                                    writeEvent(res, 'complete', { finalText: fullText });
                                     persistence.complete((response) => {
                                         response.endTime = Date.now();
                                     });
                                 },
                                 onError: (error) => {
-                                    broadcastEvent(chatId, 'error', { message: error.message || 'OpenRouter Error' });
+                                    writeEvent(res, 'error', { message: error.message || 'OpenRouter Error' });
                                     persistence.complete((response) => {
                                         response.error = { message: error.message || 'OpenRouter Error' };
                                     });
@@ -479,10 +384,12 @@ ${coreInstruction}
                             { temperature: settings.temperature, maxTokens: settings.maxOutputTokens }
                         );
                     } catch (e: any) {
-                        broadcastEvent(chatId, 'error', { message: e.message });
+                        writeEvent(res, 'error', { message: e.message });
                         persistence.complete((response) => { response.error = { message: e.message }; });
                     } finally {
-                        cleanupJob(chatId);
+                        clearInterval(pingInterval);
+                        activeAgentLoops.delete(requestId);
+                        if (!res.writableEnded) res.end();
                     }
                     return;
                 }
@@ -494,16 +401,10 @@ ${coreInstruction}
 
                 const requestFrontendExecution = (callId: string, toolName: string, toolArgs: any) => {
                     return new Promise<string | { error: string }>((resolve) => {
-                        // We check the ACTIVE clients in the job
-                        const job = activeJobs.get(chatId);
-                        if (!job || job.clients.size === 0) {
-                            // Backend execution logic if client is missing could go here, 
-                            // but for frontend tools, we mostly just have to fail or wait.
-                            // For now, fail fast if no clients.
-                            resolve({ error: "Client unavailable for frontend tool." });
+                        if (res.writableEnded || res.closed || res.destroyed) {
+                            resolve({ error: "Client disconnected." });
                             return;
                         }
-
                         const timeoutId = setTimeout(() => {
                             if (frontendToolRequests.has(callId)) {
                                 frontendToolRequests.delete(callId);
@@ -515,14 +416,12 @@ ${coreInstruction}
                             resolve(result);
                         });
                         sessionCallIds.add(callId);
-                        
-                        // Broadcast the request to all connected clients
-                        broadcastEvent(chatId, 'frontend-tool-request', { callId, toolName, toolArgs });
+                        writeEvent(res, 'frontend-tool-request', { callId, toolName, toolArgs });
                     });
                 };
                 
                 const onToolUpdate = (callId: string, data: any) => {
-                    broadcastEvent(chatId, 'tool-update', { id: callId, ...data });
+                    writeEvent(res, 'tool-update', { id: callId, ...data });
                 };
                 
                 const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, activeApiKey!, chatId, requestFrontendExecution, false, onToolUpdate);
@@ -533,6 +432,25 @@ ${coreInstruction}
                     tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }],
                 };
                 
+                // --- DEBUG LOGGING ---
+                console.log('\n\x1b[36m%s\x1b[0m', '╔═══════════════════════ FULL AI PROMPT CONTEXT ═══════════════════════╗');
+                console.log('\x1b[1m%s\x1b[0m', '▶ MODEL:', model);
+                console.log('\x1b[33m%s\x1b[0m', '\n▶ SYSTEM INSTRUCTION (Internal + Personalization + RAG):');
+                // console.log(finalSystemInstruction);
+                console.log('\x1b[33m%s\x1b[0m', '\n▶ CONVERSATION HISTORY (Gemini Format):');
+                
+                // Safe logger to truncate base64 data for cleaner console output
+                const safeHistoryLog = fullHistory.map(h => ({
+                    role: h.role,
+                    parts: (h.parts || []).map(p => {
+                        if (p.inlineData) return { inlineData: { mimeType: p.inlineData.mimeType, data: '[BASE64_DATA_TRUNCATED]' } };
+                        return p;
+                    })
+                }));
+                // console.log(JSON.stringify(safeHistoryLog, null, 2));
+                console.log('\x1b[36m%s\x1b[0m', '╚══════════════════════════════════════════════════════════════════════╝\n');
+                // --- END DEBUG LOGGING ---
+
                 try {
                     await runAgenticLoop({
                         ai,
@@ -541,17 +459,17 @@ ${coreInstruction}
                         toolExecutor,
                         callbacks: {
                             onTextChunk: (text) => {
-                                broadcastEvent(chatId, 'text-chunk', text);
+                                writeEvent(res, 'text-chunk', text);
                                 persistence.addText(text);
                             },
                             onNewToolCalls: (toolCallEvents) => {
-                                broadcastEvent(chatId, 'tool-call-start', toolCallEvents);
+                                writeEvent(res, 'tool-call-start', toolCallEvents);
                                 persistence.update((response) => {
                                     response.toolCallEvents = [...(response.toolCallEvents || []), ...toolCallEvents];
                                 });
                             },
                             onToolResult: (id, result) => {
-                                broadcastEvent(chatId, 'tool-call-end', { id, result });
+                                writeEvent(res, 'tool-call-end', { id, result });
                                 persistence.update((response) => {
                                     if (response.toolCallEvents) {
                                         const event = response.toolCallEvents.find((e: any) => e.id === id);
@@ -564,8 +482,7 @@ ${coreInstruction}
                             },
                             onPlanReady: (plan) => {
                                 return new Promise((resolve) => {
-                                    const job = activeJobs.get(chatId);
-                                    if (!job || job.clients.size === 0) {
+                                    if (res.writableEnded || res.closed) {
                                         resolve(false); 
                                         return;
                                     }
@@ -575,12 +492,12 @@ ${coreInstruction}
                                     });
                                     frontendToolRequests.set(callId, resolve);
                                     sessionCallIds.add(callId);
-                                    broadcastEvent(chatId, 'plan-ready', { plan, callId });
+                                    writeEvent(res, 'plan-ready', { plan, callId });
                                 });
                             },
                             onFrontendToolRequest: (callId, name, args) => { },
                             onComplete: (finalText, groundingMetadata) => {
-                                broadcastEvent(chatId, 'complete', { finalText, groundingMetadata });
+                                writeEvent(res, 'complete', { finalText, groundingMetadata });
                                 persistence.complete((response) => {
                                     response.endTime = Date.now();
                                     if (groundingMetadata) response.groundingMetadata = groundingMetadata;
@@ -591,11 +508,11 @@ ${coreInstruction}
                                 }
                             },
                             onCancel: () => {
-                                broadcastEvent(chatId, 'cancel', {});
+                                writeEvent(res, 'cancel', {});
                                 persistence.complete();
                             },
                             onError: (error) => {
-                                broadcastEvent(chatId, 'error', error);
+                                writeEvent(res, 'error', error);
                                 persistence.complete((response) => {
                                     response.error = error;
                                     response.endTime = Date.now();
@@ -607,10 +524,12 @@ ${coreInstruction}
                         threadId: requestId,
                     });
                 } catch (loopError) {
-                    console.error(`[HANDLER] Loop crash for ${chatId}:`, loopError);
+                    console.error(`[HANDLER] Loop crash:`, loopError);
                     persistence.complete((response) => { response.error = parseApiError(loopError); });
                 } finally {
-                    cleanupJob(chatId);
+                    clearInterval(pingInterval);
+                    activeAgentLoops.delete(requestId);
+                    if (!res.writableEnded) res.end();
                 }
                 break;
             }
@@ -628,31 +547,17 @@ ${coreInstruction}
                 break;
             }
             case 'cancel': {
-                const { requestId, chatId } = req.body;
-                
-                // Try to find by chatId first (more reliable in persistence logic)
-                if (chatId) {
-                    const job = activeJobs.get(chatId);
-                    if (job) {
-                        job.controller.abort();
-                        cleanupJob(chatId);
-                        return res.status(200).send({ message: 'Cancellation request received for chat.' });
-                    }
+                const { requestId } = req.body;
+                const controller = activeAgentLoops.get(requestId);
+                if (controller) {
+                    controller.abort();
+                    activeAgentLoops.delete(requestId);
+                    res.status(200).send({ message: 'Cancellation request received.' });
+                } else {
+                    res.status(404).json({ error: `No active request found for requestId: ${requestId}` });
                 }
-
-                // Legacy lookup by requestId (less reliable if user reloaded)
-                // We'd have to scan all jobs
-                let found = false;
-                for (const [id, job] of activeJobs.entries()) {
-                    // This is imperfect as we don't store requestId in the job object currently, 
-                    // but usually chatId is available.
-                    // If strictly needed, we can add requestId to ActiveJob type.
-                }
-                
-                res.status(404).json({ error: `No active request found to cancel.` });
                 break;
             }
-            // ... (keep title, suggestions, tts, enhance, etc.)
             case 'title': {
                 if (!ai) return res.status(200).json({ title: '' });
                 const { messages } = req.body;

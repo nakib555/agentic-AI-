@@ -78,11 +78,32 @@ export const useMessageForm = (
     const element = inputRef.current;
     if (!element) return;
 
-    // Reset height to auto to correctly calculate scrollHeight for shrinking content
-    element.style.height = 'auto';
+    const shadow = document.createElement('textarea');
+    const computed = window.getComputedStyle(element);
+
+    shadow.value = inputValue;
+    shadow.style.width = computed.width;
+    shadow.style.padding = computed.padding;
+    shadow.style.border = computed.border;
+    shadow.style.fontSize = computed.fontSize;
+    shadow.style.fontFamily = computed.fontFamily;
+    shadow.style.fontWeight = computed.fontWeight;
+    shadow.style.lineHeight = computed.lineHeight;
+    shadow.style.letterSpacing = computed.letterSpacing;
+    shadow.style.boxSizing = computed.boxSizing;
     
-    const scrollHeight = element.scrollHeight;
-    
+    shadow.style.position = 'absolute';
+    shadow.style.visibility = 'hidden';
+    shadow.style.top = '-9999px';
+    shadow.style.left = '-9999px';
+    shadow.style.overflow = 'hidden';
+    shadow.style.height = '0';
+    shadow.style.minHeight = '0';
+
+    document.body.appendChild(shadow);
+    const scrollHeight = shadow.scrollHeight;
+    document.body.removeChild(shadow);
+
     // Increased max height to support better multi-line editing experience
     const MAX_HEIGHT_PX = 120;
     const SINGLE_LINE_THRESHOLD = 32; 
