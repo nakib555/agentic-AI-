@@ -1,3 +1,4 @@
+
 {
   "name": "agentic-ai-chat",
   "version": "1.0.0",
@@ -17,7 +18,7 @@
   },
   "scripts": {
     "build": "npm run build:client && npm run build:server",
-    "build:client": "tsc && npx @tailwindcss/cli -i ./src/styles/main.css -o ./src/styles/generated.css --minify && vite build",
+    "build:client": "tsc && npx @tailwindcss/cli -i ./src/styles/main.css -o ./src/styles/generated.css -c tailwind.config.js --minify && vite build",
     "build:server": "esbuild backend/server.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:playwright",
     "start": "node dist/server.js",
     "dev": "node dev.js",
@@ -73,7 +74,9 @@
     "@types/react-dom": "latest",
     "@types/express": "latest",
     "@types/cors": "latest",
-    "@types/react-syntax-highlighter": "latest"
+    "@types/react-syntax-highlighter": "latest",
 
+    "babel-plugin-react-compiler": "latest",
+    "eslint-plugin-react-compiler": "latest"
   }
 }

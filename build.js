@@ -87,7 +87,8 @@ try {
   // 5. Compile Tailwind CSS
   console.log('Compiling Tailwind CSS...');
   try {
-    execSync('npx @tailwindcss/cli -i ./src/styles/main.css -o ./dist/styles/main.css --minify', { stdio: 'inherit' });
+    // Explicitly use -c tailwind.config.js to avoid ambiguity
+    execSync('npx @tailwindcss/cli -i ./src/styles/main.css -o ./dist/styles/main.css -c tailwind.config.js --minify', { stdio: 'inherit' });
     
     // [CSS-DEBUG] Verification
     try {

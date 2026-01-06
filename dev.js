@@ -53,14 +53,15 @@ await patchAndCopy('sw.js', 'dist/sw.js', (js) => js.replace('{{VERSION}}', 'dev
 // This ensures main.css exists before the browser requests it via SW
 console.log('Compiling initial Tailwind CSS...');
 try {
-    execSync('npx @tailwindcss/cli -i ./src/styles/main.css -o ./dist/styles/main.css');
+    // Explicitly use -c tailwind.config.js
+    execSync('npx @tailwindcss/cli -i ./src/styles/main.css -o ./dist/styles/main.css -c tailwind.config.js');
     
     // [CSS-DEBUG] Verification Logic
     try {
         const cssStats = await stat('./dist/styles/main.css');
         console.log(`\x1b[32m[CSS-DEBUG]\x1b[0m CSS Compiled successfully. Size: ${cssStats.size} bytes.`);
         if (cssStats.size < 500) {
-            console.warn(`\x1b[33m[CSS-DEBUG] ⚠️ Warning: Generated CSS is very small (${cssStats.size}b). Check tailwind.config.ts 'content' paths.\x1b[0m`);
+            console.warn(`\x1b[33m[CSS-DEBUG] ⚠️ Warning: Generated CSS is very small (${cssStats.size}b). Check tailwind.config.js 'content' paths.\x1b[0m`);
         }
     } catch (err) {
         console.error(`\x1b[31m[CSS-DEBUG] ❌ Error: dist/styles/main.css was NOT created.\x1b[0m`);
@@ -89,7 +90,7 @@ fs.watch('sw.js', () => {
 });
 
 // Watch Tailwind
-const tailwindProcess = spawn('npx', ['@tailwindcss/cli', '-i', './src/styles/main.css', '-o', './dist/styles/main.css', '--watch'], {
+const tailwindProcess = spawn('npx', ['@tailwindcss/cli', '-i', './src/styles/main.css', '-o', './dist/styles/main.css', '-c', 'tailwind.config.js', '--watch'], {
     stdio: 'inherit',
     shell: true
 });
