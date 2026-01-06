@@ -4,12 +4,12 @@
  */
 
 import { useState, useEffect, useMemo, useRef, useCallback, type Dispatch, type SetStateAction } from 'react';
-import { useChat } from './useChat';
+import { useChat } from './useChat/index';
 import { useTheme } from './useTheme';
 import { useSidebar } from './useSidebar';
 import { useViewport } from './useViewport';
 import { useMemory } from './useMemory';
-import type { Model, Source } from '../types';
+import type { Model, Source, ChatSession } from '../types';
 import {
   exportChatToJson,
   exportChatToMarkdown,
@@ -372,7 +372,7 @@ export const useAppLogic = () => {
         prevChatIdRef.current = chat.currentChatId;
     }
 
-    const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
+    const currentChat = chat.chatHistory.find((c: ChatSession) => c.id === chat.currentChatId);
     if (currentChat) {
         // Force sync activeModel with chat model if they differ
         // This ensures visual consistency if the backend/hook updates independently
@@ -447,14 +447,14 @@ export const useAppLogic = () => {
 
   
   useEffect(() => {
-    const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
+    const currentChat = chat.chatHistory.find((c: ChatSession) => c.id === chat.currentChatId);
     if (currentChat && !currentChat.isLoading && currentChat.messages?.length > 0) {
       memory.updateMemory(currentChat);
     }
   }, [chat.isLoading, chat.currentChatId, chat.chatHistory, memory.updateMemory]);
 
   const handleExportChat = useCallback((format: 'md' | 'json' | 'pdf') => {
-    const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
+    const currentChat = chat.chatHistory.find((c: ChatSession) => c.id === chat.currentChatId);
     if (!currentChat) return;
     if (format === 'json') exportChatToJson(currentChat);
     if (format === 'md') exportChatToMarkdown(currentChat);
@@ -462,7 +462,7 @@ export const useAppLogic = () => {
   }, [chat.currentChatId, chat.chatHistory]);
 
   const handleShareChat = () => {
-    const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
+    const currentChat = chat.chatHistory.find((c: ChatSession) => c.id === chat.currentChatId);
     if (currentChat) exportChatToClipboard(currentChat);
   };
   

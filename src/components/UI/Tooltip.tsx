@@ -105,11 +105,12 @@ export const Tooltip: React.FC<TooltipProps> = ({
   }, [isVisible]);
 
   // Clone element to attach event handlers and ref
-  const trigger = React.cloneElement(children, {
+  const child = children as React.ReactElement<any>;
+  const trigger = React.cloneElement(child, {
     ref: (node: HTMLElement | null) => {
       triggerRef.current = node;
       // Handle existing refs if any
-      const childRef = (children as any).ref;
+      const childRef = (child as any).ref;
       if (typeof childRef === 'function') {
         childRef(node);
       } else if (childRef && typeof childRef === 'object') {
@@ -119,16 +120,16 @@ export const Tooltip: React.FC<TooltipProps> = ({
     },
     onMouseEnter: (e: React.MouseEvent) => {
         handleMouseEnter();
-        if (children.props.onMouseEnter) children.props.onMouseEnter(e);
+        if (child.props.onMouseEnter) child.props.onMouseEnter(e);
     },
     onMouseLeave: (e: React.MouseEvent) => {
         handleMouseLeave();
-        if (children.props.onMouseLeave) children.props.onMouseLeave(e);
+        if (child.props.onMouseLeave) child.props.onMouseLeave(e);
     },
     // Hide tooltip on click to prevent obstruction
     onClick: (e: React.MouseEvent) => {
         setIsVisible(false);
-        if (children.props.onClick) children.props.onClick(e);
+        if (child.props.onClick) child.props.onClick(e);
     }
   });
 
