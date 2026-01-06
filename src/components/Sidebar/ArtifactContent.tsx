@@ -127,7 +127,7 @@ interface ArtifactErrorBoundaryState {
 
 // --- Error Boundary for Lazy Component ---
 class ArtifactErrorBoundary extends Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
-    state: ArtifactErrorBoundaryState = { hasError: false };
+    public state: ArtifactErrorBoundaryState = { hasError: false };
 
     static getDerivedStateFromError() { return { hasError: true }; }
     componentDidCatch(error: any) { console.error("Artifact Preview Error:", error); }
@@ -156,7 +156,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     
     // UI State managed by Reducer
     const [state, dispatch] = useReducer(artifactReducer, initialState);
-    const [isCopied, setIsCopied] = useState(false);
+    const [isCopied, setIsCopied] = React.useState(false);
     
     // Debounce content to prevent UI blocking during streaming of large files
     const [debouncedContent, setDebouncedContent] = useState(content);

@@ -98,11 +98,11 @@ html, body, #root {
 .shimmer-text {
   background: linear-gradient(
     110deg,
-    var(--text-secondary) 20%,
-    var(--text-primary) 30%,
+    var(--text-secondary) 0%,
+    var(--text-primary) 40%,
     var(--primary-main) 50%,
-    var(--text-primary) 70%,
-    var(--text-secondary) 80%
+    var(--text-primary) 60%,
+    var(--text-secondary) 100%
   );
   background-size: 200% auto;
   
@@ -112,10 +112,9 @@ html, body, #root {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   
-  animation: shimmer 2.5s linear infinite;
+  animation: shimmer 3s linear infinite;
   
-  /* Fix for Safari/Mobile text clipping and rendering issues */
+  /* Fix for Safari/Mobile text clipping issues */
   display: inline-block;
-  transform: translateZ(0);
-  will-change: background-position;
+  background-attachment: scroll;
 }
