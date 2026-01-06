@@ -73,7 +73,7 @@
     "@types/react-dom": "latest",
     "@types/express": "latest",
     "@types/cors": "latest",
-    "@types/react-syntax-highlighter": "latest",
+    "@types/react-syntax-highlighter": "latest"
 
   }
 }
