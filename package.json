@@ -56,12 +56,12 @@
     "zod": "latest"
   },
   "devDependencies": {
-    "esbuild": "0.21.5",
-    "vite": "5.4.11",
-    "typescript": "5.4.5",
-    "tailwindcss": "3.4.15",
-    "@tailwindcss/cli": "3.4.15",
-    "@vitejs/plugin-react": "4.3.3",
+    "esbuild": "latest",
+    "vite": "latest",
+    "typescript": "latest",
+    "tailwindcss": "latest",
+    "@tailwindcss/cli": "latest",
+    "@vitejs/plugin-react": "latest",
 
     "eslint": "latest",
     "nodemon": "latest",
