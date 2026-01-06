@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -10,12 +11,11 @@ import type { MessageFormHandle } from './MessageForm/index';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { useViewport } from '../../hooks/useViewport';
-import { ChatSkeleton } from '../UI/ChatSkeleton';
 
 const motion = motionTyped as any;
 
 // Safe lazy loads
-// We keep WelcomeScreen lazy as it's not time-critical for interaction feedback
+const ChatSkeleton = React.lazy(() => import('../UI/ChatSkeleton').then(m => ({ default: m.ChatSkeleton })));
 const WelcomeScreen = React.lazy(() => import('./WelcomeScreen/index').then(m => ({ default: m.WelcomeScreen })));
 
 export type MessageListHandle = {
@@ -33,7 +33,7 @@ type MessageListProps = {
   onShowSources: (sources: Source[]) => void;
   approveExecution: (editedPlan: string) => void;
   denyExecution: () => void;
-  messageFormRef: React.RefObject<MessageFormHandle | null>;
+  messageFormRef: React.RefObject<MessageFormHandle>;
   onRegenerate: (messageId: string) => void;
   onSetActiveResponseIndex: (messageId: string, index: number) => void;
   isAgentMode: boolean;
@@ -136,19 +136,13 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
 
   return (
     <div className="flex-1 min-h-0 relative w-full">
-      {/* 
-        LOGIC FIX: Prioritize Skeleton if data is loading OR if the list is empty but still loading.
-        This handles the edge case where messages=[] but isLoading=true (e.g. initial fetch of a chat).
-        We check visibleMessages.length === 0 specifically to show Skeleton instead of WelcomeScreen.
-      */}
       {visibleMessages.length === 0 ? (
         isLoading ? (
-            // Show Skeleton immediately when loading a chat or if history is fetching
-            <div className="h-full w-full bg-transparent">
+            // Show Skeleton when loading a chat (messages are empty but isLoading is true)
+            <Suspense fallback={<div className="h-full w-full bg-transparent" />}>
                 <ChatSkeleton />
-            </div>
+            </Suspense>
         ) : (
-            // Only show Welcome Screen if NOT loading and EMPTY
             <div className="h-full overflow-y-auto custom-scrollbar">
                  <Suspense fallback={<div className="h-full flex items-center justify-center"><div className="animate-spin w-6 h-6 border-2 border-indigo-500 rounded-full border-t-transparent"></div></div>}>
                     <WelcomeScreen sendMessage={sendMessage} />
