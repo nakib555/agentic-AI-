@@ -3,7 +3,7 @@ import esbuild from 'esbuild';
 import { spawn, execSync } from 'child_process';
 import cpx from 'cpx';
 import 'dotenv/config';
-import { rm, readFile, writeFile, mkdir } from 'fs/promises';
+import { rm, readFile, writeFile, mkdir, stat } from 'fs/promises';
 import fs from 'fs';
 
 const FRONTEND_DEV_PORT = 8000;
@@ -54,8 +54,20 @@ await patchAndCopy('sw.js', 'dist/sw.js', (js) => js.replace('{{VERSION}}', 'dev
 console.log('Compiling initial Tailwind CSS...');
 try {
     execSync('npx @tailwindcss/cli -i ./src/styles/main.css -o ./dist/styles/main.css');
+    
+    // [CSS-DEBUG] Verification Logic
+    try {
+        const cssStats = await stat('./dist/styles/main.css');
+        console.log(`\x1b[32m[CSS-DEBUG]\x1b[0m CSS Compiled successfully. Size: ${cssStats.size} bytes.`);
+        if (cssStats.size < 500) {
+            console.warn(`\x1b[33m[CSS-DEBUG] ⚠️ Warning: Generated CSS is very small (${cssStats.size}b). Check tailwind.config.ts 'content' paths.\x1b[0m`);
+        }
+    } catch (err) {
+        console.error(`\x1b[31m[CSS-DEBUG] ❌ Error: dist/styles/main.css was NOT created.\x1b[0m`);
+    }
+
 } catch (e) {
-    console.error('Tailwind compilation failed:', e.message);
+    console.error('\x1b[31m[CSS-DEBUG] Tailwind compilation failed:\x1b[0m', e.message);
 }
 
 console.log('Assets prepared.');
