@@ -1,3 +1,4 @@
+
 import esbuild from 'esbuild';
 import cpx from 'cpx';
 import { rm, readFile, writeFile, mkdir } from 'fs/promises';
@@ -40,7 +41,8 @@ try {
       '.woff': 'file',
       '.woff2': 'file',
       '.ttf': 'file',
-      '.eot': 'file'
+      '.eot': 'file',
+      '.css': 'empty'
     },
     define,
     minify: true,

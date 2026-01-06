@@ -1,3 +1,4 @@
+
 import esbuild from 'esbuild';
 import { spawn, execSync } from 'child_process';
 import cpx from 'cpx';
@@ -122,7 +123,8 @@ try {
       '.woff': 'file',
       '.woff2': 'file',
       '.ttf': 'file',
-      '.eot': 'file'
+      '.eot': 'file',
+      '.css': 'empty'
     },
     sourcemap: true,
     define: {
