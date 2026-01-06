@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense, Component } from 'react';
+import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
@@ -126,8 +126,8 @@ interface ArtifactErrorBoundaryState {
 }
 
 // --- Error Boundary for Lazy Component ---
-class ArtifactErrorBoundary extends Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
-    state: ArtifactErrorBoundaryState = { hasError: false };
+class ArtifactErrorBoundary extends React.Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
+    public state: ArtifactErrorBoundaryState = { hasError: false };
 
     static getDerivedStateFromError() { return { hasError: true }; }
     componentDidCatch(error: any) { console.error("Artifact Preview Error:", error); }
@@ -156,7 +156,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     
     // UI State managed by Reducer
     const [state, dispatch] = useReducer(artifactReducer, initialState);
-    const [isCopied, setIsCopied] = useState(false);
+    const [isCopied, setIsCopied] = React.useState(false);
     
     // Debounce content to prevent UI blocking during streaming of large files
     const [debouncedContent, setDebouncedContent] = useState(content);
@@ -537,8 +537,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                             srcDoc={previewContent}
                                             className="absolute inset-0 w-full h-full border-none bg-white dark:bg-[#1e1e1e]"
                                             title="Artifact Preview"
-                                            sandbox="allow-scripts allow-forms allow-modals allow-popups"
-                                            allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+                                            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
                                         />
                                     </div>
                                 )}

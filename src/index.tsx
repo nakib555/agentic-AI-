@@ -6,8 +6,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './styles/main.css';
-// Fix: Correct relative import path
+// Explicitly point to the index file to avoid any ambiguity with the deprecated App.tsx
 import { App } from './components/App/index';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { logCollector } from './utils/logCollector';

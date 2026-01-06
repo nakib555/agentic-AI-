@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -19,13 +20,12 @@ export const useMessageForm = (
   ref: React.ForwardedRef<MessageFormHandle>,
   messages: Message[],
   isAgentMode: boolean,
-  hasApiKey: boolean,
-  onFocusChange?: (focused: boolean) => void
+  hasApiKey: boolean
 ) => {
   const [inputValue, setInputValue] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUploadMenuOpen, setIsUploadMenuOpen] = useState(false);
-  const [isFocused, setIsFocusedState] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const [previewFile, setPreviewFile] = useState<ProcessedFile | null>(null);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -35,11 +35,6 @@ export const useMessageForm = (
   const fileHandling = useFileHandling(ref);
   const enhancements = useInputEnhancements(inputValue, setInputValue, fileHandling.processedFiles.length > 0, onSubmit);
   
-  const setIsFocused = (focused: boolean) => {
-      setIsFocusedState(focused);
-      if (onFocusChange) onFocusChange(focused);
-  };
-
   const lastMessageText = useMemo(() => {
     const lastVisibleMessage = messages.filter(m => !m.isHidden).pop();
     if (!lastVisibleMessage) return '';
@@ -78,11 +73,32 @@ export const useMessageForm = (
     const element = inputRef.current;
     if (!element) return;
 
-    // Reset height to auto to correctly calculate scrollHeight for shrinking content
-    element.style.height = 'auto';
+    const shadow = document.createElement('textarea');
+    const computed = window.getComputedStyle(element);
+
+    shadow.value = inputValue;
+    shadow.style.width = computed.width;
+    shadow.style.padding = computed.padding;
+    shadow.style.border = computed.border;
+    shadow.style.fontSize = computed.fontSize;
+    shadow.style.fontFamily = computed.fontFamily;
+    shadow.style.fontWeight = computed.fontWeight;
+    shadow.style.lineHeight = computed.lineHeight;
+    shadow.style.letterSpacing = computed.letterSpacing;
+    shadow.style.boxSizing = computed.boxSizing;
     
-    const scrollHeight = element.scrollHeight;
-    
+    shadow.style.position = 'absolute';
+    shadow.style.visibility = 'hidden';
+    shadow.style.top = '-9999px';
+    shadow.style.left = '-9999px';
+    shadow.style.overflow = 'hidden';
+    shadow.style.height = '0';
+    shadow.style.minHeight = '0';
+
+    document.body.appendChild(shadow);
+    const scrollHeight = shadow.scrollHeight;
+    document.body.removeChild(shadow);
+
     // Increased max height to support better multi-line editing experience
     const MAX_HEIGHT_PX = 120;
     const SINGLE_LINE_THRESHOLD = 32; 

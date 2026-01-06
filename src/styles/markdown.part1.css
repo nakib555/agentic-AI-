@@ -141,7 +141,7 @@
   width: 100%;
   border-collapse: separate; /* Allows border radius */
   border-spacing: 0;
-  margin: 1.5em 0;
+  margin: 0;
   font-size: 0.9em;
   display: block; /* Important for overflow */
   overflow-x: auto; /* Scroll horizontally on overflow */
@@ -180,5 +180,4 @@
   max-width: 100%;
   border: 1px solid var(--border-default);
   border-radius: 0.5rem;
-  padding: 1rem;
 }

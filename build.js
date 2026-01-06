@@ -1,7 +1,6 @@
-
 import esbuild from 'esbuild';
 import cpx from 'cpx';
-import { rm, readFile, writeFile, mkdir, stat } from 'fs/promises';
+import { rm, readFile, writeFile, mkdir } from 'fs/promises';
 import 'dotenv/config';
 import { execSync } from 'child_process';
 import path from 'path';
@@ -36,13 +35,12 @@ try {
     outfile: 'dist/index.js',
     loader: { 
       '.tsx': 'tsx', 
-      '.ts': 'ts', 
+      '.ts': 'ts',
       '.json': 'json',
       '.woff': 'file',
       '.woff2': 'file',
       '.ttf': 'file',
-      '.eot': 'file',
-      '.css': 'empty'
+      '.eot': 'file'
     },
     define,
     minify: true,
@@ -87,19 +85,7 @@ try {
   // 5. Compile Tailwind CSS
   console.log('Compiling Tailwind CSS...');
   try {
-    // Explicitly use -c tailwind.config.js to avoid ambiguity
-    execSync('npx @tailwindcss/cli -i ./src/styles/main.css -o ./dist/styles/main.css -c tailwind.config.js --minify', { stdio: 'inherit' });
-    
-    // [CSS-DEBUG] Verification
-    try {
-        const cssStats = await stat('./dist/styles/main.css');
-        console.log(`[CSS-DEBUG] Production CSS compiled. Size: ${cssStats.size} bytes.`);
-        if (cssStats.size === 0) throw new Error("CSS file is empty");
-    } catch (e) {
-        console.error(`[CSS-DEBUG] ❌ FAILED: dist/styles/main.css is missing or empty.`);
-        process.exit(1);
-    }
-
+    execSync('npx tailwindcss -i ./src/styles/main.css -o ./dist/styles/main.css --minify', { stdio: 'inherit' });
     console.log('Tailwind CSS compiled successfully.');
   } catch (err) {
     console.error('Tailwind CSS compilation failed:', err);
