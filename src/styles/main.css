@@ -1,21 +1,15 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Tailwind Directives - MUST BE FIRST for Preflight to work correctly */
+/* Import split CSS files - Must precede all other statements */
+@import '../theme/design-tokens.css';
+@import './main.part1.css';
+@import './main.part2.css';
+@import './markdown.css';
+
+/* Tailwind Directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import split CSS files */
-
-@import '../theme/design-tokens.css';
-
-/* 2. Import Layout & Components */
-@import './main.part1.css';
-@import './main.part2.css';
-
-/* 3. Import Markdown Styles */
-@import './markdown.css';
