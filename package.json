@@ -75,7 +75,5 @@
     "@types/cors": "latest",
     "@types/react-syntax-highlighter": "latest",
 
-    "babel-plugin-react-compiler": "latest",
-    "eslint-plugin-react-compiler": "latest"
   }
 }
