@@ -4,12 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo, Suspense, useEffect } from 'react';
+import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo, Suspense, useEffect, useLayoutEffect } from 'react';
 import type { Message, Source } from '../../types';
 import { MessageComponent } from './Message';
 import type { MessageFormHandle } from './MessageForm/index';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
-import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { useViewport } from '../../hooks/useViewport';
 
 const motion = motionTyped as any;
@@ -77,9 +76,10 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
     denyExecution, messageFormRef, onRegenerate, onSetActiveResponseIndex,
     isAgentMode, onEditMessage, onNavigateBranch
 }, ref) => {
-  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [atBottom, setAtBottom] = useState(true);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const { isDesktop } = useViewport();
 
   // Safeguard against undefined messages prop
@@ -88,54 +88,60 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   // Track previous length to detect new messages
   const prevMessagesLength = useRef(visibleMessages.length);
 
-  // Auto-scroll on new message
-  useEffect(() => {
+  // Auto-scroll logic
+  useLayoutEffect(() => {
       const currentLength = visibleMessages.length;
       const prevLength = prevMessagesLength.current;
-
-      if (currentLength > prevLength) {
-          const lastMessage = visibleMessages[currentLength - 1];
-          // Scroll if it's a user message (always show what I just sent)
-          // OR if we were already at the bottom (standard sticky behavior)
-          const shouldScroll = lastMessage?.role === 'user' || atBottom;
-
-          if (shouldScroll) {
-              // Use setTimeout to ensure DOM has updated with the new item
-              setTimeout(() => {
-                  virtuosoRef.current?.scrollToIndex({ 
-                      index: currentLength - 1, 
-                      align: 'end',
-                      behavior: 'smooth' 
-                  });
-              }, 50);
-          }
+      const isNewMessage = currentLength > prevLength;
+      
+      // If we are already at the bottom OR a new message arrived from user, snap to bottom
+      if (shouldAutoScroll || (isNewMessage && visibleMessages[currentLength - 1]?.role === 'user')) {
+          bottomRef.current?.scrollIntoView({ behavior: 'auto' });
       }
       
       prevMessagesLength.current = currentLength;
-  }, [visibleMessages, atBottom]);
+  }, [visibleMessages, shouldAutoScroll]);
+
+  // Also scroll when isLoading changes to true (new response starting) if we were at bottom
+  useEffect(() => {
+      if (isLoading && shouldAutoScroll) {
+           bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+  }, [isLoading, shouldAutoScroll]);
+
+  // Handle manual scroll to toggle auto-scroll state
+  const handleScroll = useCallback(() => {
+      if (!scrollContainerRef.current) return;
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+      
+      // 50px threshold for determining if we are at the bottom
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 80;
+      
+      setShouldAutoScroll(isAtBottom);
+      setShowScrollButton(!isAtBottom);
+  }, []);
 
   // Expose scroll methods to parent via ref
   useImperativeHandle(ref, () => ({
     scrollToBottom: () => {
-      // Use smooth scrolling only when triggered manually
-      virtuosoRef.current?.scrollToIndex({ index: visibleMessages.length - 1, behavior: 'smooth', align: 'end' });
+      setShouldAutoScroll(true);
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     },
     scrollToMessage: (messageId: string) => {
-        // We need to find the index of the message in the *visible* list
-        const index = visibleMessages.findIndex(m => m.id === messageId);
-        
-        if (index !== -1 && virtuosoRef.current) {
-            virtuosoRef.current.scrollToIndex({ index, behavior: 'smooth', align: 'center' });
+        const element = document.getElementById(`message-${messageId}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }
   }));
 
-  const handleScrollToBottom = useCallback(() => {
-      virtuosoRef.current?.scrollToIndex({ index: visibleMessages.length - 1, behavior: 'smooth', align: 'end' });
-  }, [visibleMessages.length]);
+  const handleScrollToBottomClick = useCallback(() => {
+      setShouldAutoScroll(true);
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
 
   return (
-    <div className="flex-1 min-h-0 relative w-full">
+    <div className="flex-1 min-h-0 relative w-full group">
       {visibleMessages.length === 0 ? (
         isLoading ? (
             // Show Skeleton when loading a chat (messages are empty but isLoading is true)
@@ -150,25 +156,16 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
             </div>
         )
       ) : (
-        <div className="h-full" role="log" aria-live="polite">
-            <Virtuoso
-                ref={virtuosoRef}
-                style={{ height: '100%', width: '100%' }}
-                data={visibleMessages}
-                // 'auto' works well, but for code blocks, slightly higher threshold avoids jitter
-                followOutput={atBottom ? "auto" : false} 
-                increaseViewportBy={600} // Increased significantly to preload complex code blocks
-                overscan={400} 
-                initialTopMostItemIndex={visibleMessages.length - 1}
-                // Removed alignToBottom to fix large top gap; messages will naturally start at the top.
-                atBottomStateChange={(isAtBottom) => {
-                    setAtBottom(isAtBottom);
-                    setShowScrollButton(!isAtBottom);
-                }}
-                atBottomThreshold={100} // More tolerant threshold for "stick to bottom" logic
-                className="custom-scrollbar"
-                itemContent={(index, msg) => (
-                    <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4">
+        <div 
+            ref={scrollContainerRef}
+            className="h-full overflow-y-auto custom-scrollbar scroll-smooth" 
+            onScroll={handleScroll}
+            role="log" 
+            aria-live="polite"
+        >
+            <div className="flex flex-col pb-4">
+                {visibleMessages.map((msg, index) => (
+                    <div key={msg.id} className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4">
                         <MessageWrapper 
                             msg={msg}
                             index={index}
@@ -181,12 +178,10 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                             }}
                         />
                     </div>
-                )}
-                components={{
-                    Header: () => <div className="h-4 md:h-6" />, // Reduced padding
-                    Footer: () => <div className="h-32 md:h-48" />
-                }}
-            />
+                ))}
+                {/* Bottom Anchor */}
+                <div ref={bottomRef} className="h-32 md:h-48 flex-shrink-0" />
+            </div>
         </div>
       )}
 
@@ -200,11 +195,11 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
              className="absolute bottom-6 md:bottom-4 inset-x-0 flex justify-center pointer-events-none z-30"
           >
             <button
-                onClick={handleScrollToBottom}
+                onClick={handleScrollToBottomClick}
                 className="pointer-events-auto group flex items-center gap-2 px-4 py-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-xl hover:shadow-2xl border border-gray-200/50 dark:border-white/10 rounded-full transition-all transform hover:-translate-y-1 active:scale-95 ring-1 ring-black/5 dark:ring-white/5"
                 aria-label="Scroll to latest messages"
             >
-                {!atBottom && isLoading && (
+                {!shouldAutoScroll && isLoading && (
                     <span className="relative flex h-2 w-2 mr-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
