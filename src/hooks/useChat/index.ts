@@ -35,7 +35,17 @@ export const useChat = (
     onShowToast?: (message: string, type: 'info' | 'success' | 'error') => void
 ) => {
     const chatHistoryHook = useChatHistory();
-    const { chatHistory, currentChatId, updateChatTitle, updateChatProperty } = chatHistoryHook;
+    const { 
+        chatHistory, 
+        currentChatId, 
+        updateChatTitle, 
+        updateChatProperty,
+        updateMessage,
+        setChatLoadingState,
+        completeChatLoading,
+        updateActiveResponseOnMessage
+    } = chatHistoryHook;
+
     const abortControllerRef = useRef<AbortController | null>(null);
     const requestIdRef = useRef<string | null>(null); // For explicit cancellation
     const testResolverRef = useRef<((value: Message | PromiseLike<Message>) => void) | null>(null);
@@ -102,22 +112,22 @@ export const useChat = (
                 // No active stream, that's fine.
                 abortControllerRef.current = null;
                 // Ensure UI state matches reality
-                chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
-                chatHistoryHook.completeChatLoading(chatId);
+                updateMessage(chatId, messageId, { isThinking: false });
+                completeChatLoading(chatId);
                 return;
             }
 
             if (!response.ok || !response.body) throw new Error("Connection failed");
 
             // If we connected, set loading state to true to show the UI
-            chatHistoryHook.setChatLoadingState(chatId, true);
-            chatHistoryHook.updateMessage(chatId, messageId, { isThinking: true });
+            setChatLoadingState(chatId, true);
+            updateMessage(chatId, messageId, { isThinking: true });
 
             await processBackendStream(
                 response,
                 {
                     onTextChunk: (delta) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (current) => {
+                        updateActiveResponseOnMessage(chatId, messageId, (current) => {
                             const newText = (current.text || '') + delta;
                             const parsedWorkflow = parseAgenticWorkflow(newText, current.toolCallEvents || [], false);
                             return { text: newText, workflow: parsedWorkflow };
@@ -130,7 +140,7 @@ export const useChat = (
                             call: toolEvent.call,
                             startTime: Date.now()
                         }));
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
+                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
                             // De-duplicate events based on ID
                             const existingIds = new Set(r.toolCallEvents?.map(e => e.id) || []);
                             const uniqueNewEvents = newEvents.filter(e => !existingIds.has(e.id));
@@ -141,7 +151,7 @@ export const useChat = (
                         });
                     },
                     onToolUpdate: (payload) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
+                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
                             const updatedEvents = r.toolCallEvents?.map(tc => {
                                 if (tc.id === payload.id) {
                                     const session = (tc.browserSession || { url: payload.url || '', logs: [], status: 'running' }) as BrowserSession;
@@ -159,7 +169,7 @@ export const useChat = (
                         });
                     },
                     onToolCallEnd: (payload) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
+                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
                             const updatedEvents = r.toolCallEvents?.map(tc => tc.id === payload.id ? { ...tc, result: payload.result, endTime: Date.now() } : tc);
                             const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents || [], false);
                             return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
@@ -167,14 +177,14 @@ export const useChat = (
                     },
                     onPlanReady: (plan) => {
                         const payload = plan as any; 
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: payload }));
-                        chatHistoryHook.updateMessage(chatId, messageId, { executionState: 'pending_approval' });
+                        updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: payload }));
+                        updateMessage(chatId, messageId, { executionState: 'pending_approval' });
                     },
                     onFrontendToolRequest: (callId, toolName, toolArgs) => {
                         handleFrontendToolExecution(callId, toolName, toolArgs);
                     },
                     onComplete: (payload) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
+                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
                             const finalWorkflow = parseAgenticWorkflow(payload.finalText, r.toolCallEvents || [], true);
                             return { 
                                 text: payload.finalText, 
@@ -185,7 +195,7 @@ export const useChat = (
                         });
                     },
                     onError: (error) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error, endTime: Date.now() }));
+                        updateActiveResponseOnMessage(chatId, messageId, () => ({ error, endTime: Date.now() }));
                     },
                     onCancel: () => {
                        // handled finally
@@ -197,10 +207,10 @@ export const useChat = (
             // console.warn("Reconnection stream ended", e);
         } finally {
             abortControllerRef.current = null;
-            chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
-            chatHistoryHook.completeChatLoading(chatId);
+            updateMessage(chatId, messageId, { isThinking: false });
+            completeChatLoading(chatId);
         }
-    }, [chatHistoryHook, handleFrontendToolExecution]);
+    }, [updateMessage, completeChatLoading, setChatLoadingState, updateActiveResponseOnMessage, handleFrontendToolExecution]);
 
     // Auto-reconnect when chat loads
     useEffect(() => {
@@ -209,13 +219,12 @@ export const useChat = (
             if (chat?.messages?.length) {
                 const lastMsg = chat.messages[chat.messages.length - 1];
                 // Try to reconnect if the last message is from the model and marked as thinking
-                // Or simply try to reconnect anyway to catch up on any detached jobs
-                if (lastMsg.role === 'model') {
+                if (lastMsg.role === 'model' && lastMsg.isThinking) {
                     connectToActiveStream(currentChatId, lastMsg.id);
                 }
             }
         }
-    }, [currentChatId, isLoading, connectToActiveStream]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [currentChatId, isLoading, connectToActiveStream, chatHistory]);
 
 
     const cancelGeneration = useCallback(() => {
@@ -236,7 +245,7 @@ export const useChat = (
             if (currentChat?.messages?.length) {
                 const lastMessage = currentChat.messages[currentChat.messages.length - 1];
                 
-                chatHistoryHook.updateActiveResponseOnMessage(chatId, lastMessage.id, () => ({
+                updateActiveResponseOnMessage(chatId, lastMessage.id, () => ({
                     error: { 
                         code: 'STOPPED_BY_USER', 
                         message: 'Generation stopped by user.',
@@ -244,8 +253,8 @@ export const useChat = (
                     },
                     endTime: Date.now()
                 }));
-                chatHistoryHook.updateMessage(chatId, lastMessage.id, { isThinking: false });
-                chatHistoryHook.completeChatLoading(chatId);
+                updateMessage(chatId, lastMessage.id, { isThinking: false });
+                completeChatLoading(chatId);
 
                 if (lastMessage.executionState === 'pending_approval') {
                      const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
@@ -255,9 +264,8 @@ export const useChat = (
             }
         }
         requestIdRef.current = null;
-    }, [handleFrontendToolExecution, chatHistoryHook]);
+    }, [handleFrontendToolExecution, updateActiveResponseOnMessage, updateMessage, completeChatLoading]);
     
-    const { updateMessage } = chatHistoryHook;
     
     const approveExecution = useCallback((editedPlan: string) => {
         const chatId = currentChatIdRef.current;
@@ -361,7 +369,7 @@ export const useChat = (
                     },
                     onTextChunk: (delta) => {
                         // Append delta to current text
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (current) => {
+                        updateActiveResponseOnMessage(chatId, messageId, (current) => {
                             const newText = (current.text || '') + delta;
                             // Client-side workflow parsing
                             const parsedWorkflow = parseAgenticWorkflow(newText, current.toolCallEvents || [], false);
@@ -377,14 +385,14 @@ export const useChat = (
                             call: toolEvent.call,
                             startTime: Date.now()
                         }));
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
+                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
                             const updatedEvents = [...(r.toolCallEvents || []), ...newEvents];
                             const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents, false);
                             return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
                         });
                     },
                     onToolUpdate: (payload) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
+                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
                             const updatedEvents = r.toolCallEvents?.map(tc => {
                                 if (tc.id === payload.id) {
                                     const session = (tc.browserSession || { url: payload.url || '', logs: [], status: 'running' }) as BrowserSession;
@@ -402,7 +410,7 @@ export const useChat = (
                         });
                     },
                     onToolCallEnd: (payload) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
+                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
                             const updatedEvents = r.toolCallEvents?.map(tc => tc.id === payload.id ? { ...tc, result: payload.result, endTime: Date.now() } : tc);
                             const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents || [], false);
                             return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
@@ -410,14 +418,14 @@ export const useChat = (
                     },
                     onPlanReady: (plan) => {
                         const payload = plan as any; 
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: payload }));
-                        chatHistoryHook.updateMessage(chatId, messageId, { executionState: 'pending_approval' });
+                        updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: payload }));
+                        updateMessage(chatId, messageId, { executionState: 'pending_approval' });
                     },
                     onFrontendToolRequest: (callId, toolName, toolArgs) => {
                         handleFrontendToolExecution(callId, toolName, toolArgs);
                     },
                     onComplete: (payload) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, (r) => {
+                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
                             const finalWorkflow = parseAgenticWorkflow(payload.finalText, r.toolCallEvents || [], true);
                             return { 
                                 text: payload.finalText, 
@@ -428,7 +436,7 @@ export const useChat = (
                         });
                     },
                     onError: (error) => {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error, endTime: Date.now() }));
+                        updateActiveResponseOnMessage(chatId, messageId, () => ({ error, endTime: Date.now() }));
                     },
                     onCancel: () => {
                         if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
@@ -444,12 +452,12 @@ export const useChat = (
                 // Handled globally
             } else if ((error as Error).name !== 'AbortError') {
                 console.error('[FRONTEND] Backend stream failed.', { error });
-                chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
+                updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
             }
         } finally {
             if (!abortControllerRef.current?.signal.aborted) {
-                chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
-                chatHistoryHook.completeChatLoading(chatId);
+                updateMessage(chatId, messageId, { isThinking: false });
+                completeChatLoading(chatId);
                 abortControllerRef.current = null;
                 requestIdRef.current = null;
                 
@@ -473,7 +481,7 @@ export const useChat = (
                     // 2. Generate Suggestions
                     const suggestions = await generateFollowUpSuggestions(finalChatState.messages);
                      if (suggestions.length > 0) {
-                        chatHistoryHook.updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
+                        updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
                         
                         // FIX: Explicitly persist suggestions to backend
                         const currentChatSnapshot = chatHistoryRef.current.find(c => c.id === chatId);
@@ -511,8 +519,8 @@ export const useChat = (
 
             } else {
                 // Ensure state is cleaned up even if aborted manually (though handleCancel usually handles it)
-                chatHistoryHook.updateMessage(chatId, messageId, { isThinking: false });
-                chatHistoryHook.completeChatLoading(chatId);
+                updateMessage(chatId, messageId, { isThinking: false });
+                completeChatLoading(chatId);
                 abortControllerRef.current = null;
                 requestIdRef.current = null;
             }
@@ -568,7 +576,7 @@ export const useChat = (
     
         const modelPlaceholder: Message = { id: generateId(), role: 'model', text: '', responses: [{ text: '', toolCallEvents: [], startTime: Date.now() }], activeResponseIndex: 0, isThinking: true };
         chatHistoryHook.addMessagesToChat(activeChatId, [modelPlaceholder]);
-        chatHistoryHook.setChatLoadingState(activeChatId, true);
+        setChatLoadingState(activeChatId, true);
     
         const chatForSettings = currentChat || { model: initialModel, ...settings };
 
@@ -657,11 +665,11 @@ export const useChat = (
 
         // 7. Update State & Backend atomically
         // This triggers optimistic React update immediately showing both the edited msg AND the thinking bubble.
-        chatHistoryHook.setChatLoadingState(chatId, true);
+        setChatLoadingState(chatId, true);
         
         try {
             // Update local state and trigger persist
-            await chatHistoryHook.updateChatProperty(chatId, { messages: truncatedList });
+            await updateChatProperty(chatId, { messages: truncatedList });
             
             // 8. Start Stream (regenerate from the placeholder ID)
             await startBackendChat(
@@ -676,9 +684,9 @@ export const useChat = (
         } catch (e) {
             console.error("Failed to edit message:", e);
             if (onShowToast) onShowToast("Failed to edit message branch", 'error');
-            chatHistoryHook.setChatLoadingState(chatId, false);
+            setChatLoadingState(chatId, false);
         }
-    }, [isLoading, chatHistoryHook, startBackendChat, cancelGeneration, onShowToast, settings, isAgentMode]);
+    }, [isLoading, startBackendChat, cancelGeneration, onShowToast, settings, isAgentMode, updateChatProperty, setChatLoadingState]);
 
     const navigateBranch = useCallback(async (messageId: string, direction: 'next' | 'prev') => {
         if (isLoading) return;
@@ -724,13 +732,13 @@ export const useChat = (
 
         // 5. Sync & Update
         try {
-            await chatHistoryHook.updateChatProperty(chatId, { messages: newMessagesList });
+            await updateChatProperty(chatId, { messages: newMessagesList });
         } catch (e) {
             console.error("Failed to switch branch:", e);
             if (onShowToast) onShowToast("Failed to switch branch", 'error');
         }
 
-    }, [isLoading, chatHistoryHook, onShowToast]);
+    }, [isLoading, updateChatProperty, onShowToast]);
 
     // --- Branching Logic for AI Responses (Regeneration & Navigation) ---
 
@@ -771,10 +779,10 @@ export const useChat = (
         const truncatedList = [...updatedMessages.slice(0, messageIndex), targetMessage];
 
         // 5. Atomic Update to Backend
-        await chatHistoryHook.updateChatProperty(currentChatId, { messages: truncatedList });
+        await updateChatProperty(currentChatId, { messages: truncatedList });
         
         // 6. Set Loading State locally
-        chatHistoryHook.setChatLoadingState(currentChatId, true);
+        setChatLoadingState(currentChatId, true);
 
         // 7. Use 'regenerate' task
         await startBackendChat(
@@ -786,7 +794,7 @@ export const useChat = (
             { ...settings, isAgentMode: isAgentMode }
         );
 
-    }, [isLoading, currentChatId, chatHistoryHook, cancelGeneration, startBackendChat, settings, isAgentMode]);
+    }, [isLoading, currentChatId, cancelGeneration, startBackendChat, settings, isAgentMode, updateChatProperty, setChatLoadingState]);
 
     const setResponseIndex = useCallback(async (messageId: string, index: number) => {
         if (isLoading) return; 
@@ -826,12 +834,12 @@ export const useChat = (
 
         // 6. Sync & Update
         try {
-            await chatHistoryHook.updateChatProperty(chatId, { messages: newMessagesList });
+            await updateChatProperty(chatId, { messages: newMessagesList });
         } catch (e) {
             console.error("Failed to switch response branch:", e);
             if (onShowToast) onShowToast("Failed to switch response branch", 'error');
         }
-    }, [isLoading, chatHistoryHook, onShowToast]);
+    }, [isLoading, updateChatProperty, onShowToast]);
 
     const sendMessageForTest = (userMessage: string, options?: { isThinkingModeEnabled?: boolean }): Promise<Message> => {
         return new Promise((resolve) => {
