@@ -1,9 +1,10 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense, Component } from 'react';
+import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
@@ -552,4 +553,35 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                                             className="bg-[#1e1e1e] border-t border-gray-700 flex flex-col w-full"
                                         >
-                                            <div className="flex items-
+                                            <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-black/20 text-xs font-mono text-gray-400 select-none">
+                                                <span>Terminal</span>
+                                                <button onClick={() => dispatch({ type: 'CLEAR_LOGS' })} className="hover:text-white transition-colors">Clear</button>
+                                            </div>
+                                            <div className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 custom-scrollbar">
+                                                {state.logs.length === 0 && <div className="text-gray-600 italic px-1">No output.</div>}
+                                                {state.logs.map((log, i) => (
+                                                    <div key={i} className="flex gap-2 border-b border-white/5 pb-0.5 mb-0.5 last:border-0">
+                                                        <span className={`flex-shrink-0 font-bold ${
+                                                            log.level === 'error' ? 'text-red-400' :
+                                                            log.level === 'warn' ? 'text-yellow-400' :
+                                                            'text-blue-400'
+                                                        }`}>
+                                                            {log.level === 'info' ? '›' : log.level === 'error' ? '✖' : '⚠'}
+                                                        </span>
+                                                        <span className={`break-all whitespace-pre-wrap ${log.level === 'error' ? 'text-red-300' : 'text-gray-300'}`}>
+                                                            {log.message}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+});
