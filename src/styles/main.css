@@ -1,15 +1,14 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Import split CSS files - Must precede all other statements */
+/* Import Tailwind v4 Core */
+@import "tailwindcss";
+
+/* Import Custom Theme Layers */
 @import '../theme/design-tokens.css';
 @import './main.part1.css';
 @import './main.part2.css';
 @import './markdown.css';
-
-/* Tailwind Directives */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
