@@ -76,7 +76,8 @@
     "esbuild": "https://aistudiocdn.com/esbuild@^0.27.1",
     "cpx": "https://aistudiocdn.com/cpx@^1.5.0",
     "playwright": "https://aistudiocdn.com/playwright@^1.57.0",
-    "@langchain/langgraph": "https://aistudiocdn.com/@langchain/langgraph@^1.0.4"
+    "@langchain/langgraph": "https://aistudiocdn.com/@langchain/langgraph@^1.0.4",
+    "@codesandbox/sandpack-react": "https://esm.sh/@codesandbox/sandpack-react@^2.20.0"
   }
 }
 </script>
@@ -84,6 +85,7 @@
   <body class="bg-page text-content-primary transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
+    <script type="module" src="src/styles/main.css"></script>
     <script>
       // More robust Service Worker registration with Update Handling
       if ('serviceWorker' in navigator) {
