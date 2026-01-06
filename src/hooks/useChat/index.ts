@@ -92,8 +92,10 @@ export const useChat = (
         
         try {
             console.log(`[FRONTEND] Attempting to reconnect to stream for chat ${chatId}`);
+            // Pass silent: true to suppress expected 404 errors when no stream is active
             const response = await fetchFromApi(`/api/handler?task=connect&chatId=${chatId}`, {
-                signal: abortControllerRef.current.signal
+                signal: abortControllerRef.current.signal,
+                silent: true 
             });
 
             if (response.status === 404) {
