@@ -23,13 +23,12 @@ export async function readData<T>(filePath: string): Promise<T> {
 /**
  * Writes content to a file atomically.
  * Works with Strings (text/json) and Buffers (binary/images).
- * Includes retry logic for robust handling of filesystem race conditions (ENOENT).
  */
 export async function writeFileAtomic(filePath: string, data: string | Buffer): Promise<void> {
     const tempPath = `${filePath}.tmp.${Date.now()}`;
     const dir = path.dirname(filePath);
 
-    const performWrite = async () => {
+    try {
         // Ensure directory exists
         await fs.mkdir(dir, { recursive: true });
         
@@ -38,29 +37,10 @@ export async function writeFileAtomic(filePath: string, data: string | Buffer): 
         
         // Atomic rename (replace)
         await fs.rename(tempPath, filePath);
-    };
-
-    try {
-        await performWrite();
-    } catch (error: any) {
-        // Attempt cleanup of temp file in case it was created but rename failed
-        try { await fs.unlink(tempPath); } catch (e) {}
-
-        // Retry logic for ENOENT or generic write errors that might be transient (e.g. folder deleted during write)
-        if (error.code === 'ENOENT') {
-            console.warn(`[DataStore] Write failed with ENOENT, retrying once for: ${filePath}`);
-            try {
-                await performWrite();
-                return;
-            } catch (retryError: any) {
-                // Cleanup again
-                try { await fs.unlink(tempPath); } catch (e) {}
-                
-                throw new Error(`Write failed (Retry): Could not save '${path.basename(filePath)}'. The directory structure might be unstable. Original error: ${error.message}`);
-            }
-        }
-        
+    } catch (error) {
         console.error(`[DataStore] Failed to write file atomically to ${filePath}:`, error);
+        // Attempt cleanup
+        try { await fs.unlink(tempPath); } catch (e) {}
         throw error;
     }
 }
@@ -81,8 +61,6 @@ export async function initDataFile(filePath: string, defaultContent: any) {
 }
 
 export async function initDataStore() {
-    console.log(`[DataStore] Initializing storage at: ${DATA_DIR}`);
-    
     await fs.mkdir(DATA_DIR, { recursive: true });
     await fs.mkdir(HISTORY_PATH, { recursive: true });
     await fs.mkdir(MEMORY_FILES_DIR, { recursive: true });
@@ -116,6 +94,4 @@ export async function initDataStore() {
     } catch {
         await fs.writeFile(MEMORY_CONTENT_PATH, '', 'utf-8');
     }
-    
-    console.log(`[DataStore] Storage ready.`);
 }

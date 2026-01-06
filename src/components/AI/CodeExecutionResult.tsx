@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -42,7 +43,7 @@ export const CodeExecutionResult: React.FC<CodeExecutionResultProps> = ({ output
                 <iframe
                   srcDoc={htmlOutput}
                   className="w-full h-96 border-none"
-                  sandbox="allow-scripts allow-forms allow-modals allow-popups"
+                  sandbox="allow-scripts" // Sandboxed for security
                   title="Code Execution Visual Output"
                 />
               </div>

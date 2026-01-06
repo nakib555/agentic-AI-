@@ -5,9 +5,6 @@
 
 html {
   font-size: 15px;
-  /* Prevent font scaling in landscape on mobile */
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
 }
 
 @media (min-width: 768px) {
@@ -58,8 +55,6 @@ body {
 }
 
 /* Ensure scroll events stay inside the container and don't bubble to parent */
-/* Also enable momentum scrolling on iOS */
 .overflow-y-auto, .overflow-x-auto {
   overscroll-behavior: auto;
-  -webkit-overflow-scrolling: touch;
 }

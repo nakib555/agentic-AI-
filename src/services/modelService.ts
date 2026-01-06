@@ -1,9 +1,10 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// DEPRECATED: Model logic is now handled by the backend.
-// Types are available in src/types/models.ts
-export {};
+// This file is deprecated. Model information is now fetched dynamically from the backend.
+// The Model type is defined in `src/types/models.ts`.
+import type { Model } from '../types';
+
+export type { Model };

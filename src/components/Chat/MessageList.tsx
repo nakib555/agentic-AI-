@@ -1,23 +1,21 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo, Suspense, useEffect } from 'react';
+import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo, Suspense } from 'react';
 import type { Message, Source } from '../../types';
 import { MessageComponent } from './Message';
+import { WelcomeScreen } from './WelcomeScreen/index';
 import type { MessageFormHandle } from './MessageForm/index';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { useViewport } from '../../hooks/useViewport';
-import { ChatSkeleton } from '../UI/ChatSkeleton';
 
 const motion = motionTyped as any;
 
-// Safe lazy loads
-// We keep WelcomeScreen lazy as it's not time-critical for interaction feedback
-const WelcomeScreen = React.lazy(() => import('./WelcomeScreen/index').then(m => ({ default: m.WelcomeScreen })));
+// Lazy load the skeleton to reduce initial bundle size and support suspense
+const ChatSkeleton = React.lazy(() => import('../UI/ChatSkeleton').then(m => ({ default: m.ChatSkeleton })));
 
 export type MessageListHandle = {
   scrollToBottom: () => void;
@@ -85,35 +83,6 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
 
   // Safeguard against undefined messages prop
   const visibleMessages = useMemo(() => (messages || []).filter(msg => !msg.isHidden), [messages]);
-  
-  // Track previous length to detect new messages
-  const prevMessagesLength = useRef(visibleMessages.length);
-
-  // Auto-scroll on new message
-  useEffect(() => {
-      const currentLength = visibleMessages.length;
-      const prevLength = prevMessagesLength.current;
-
-      if (currentLength > prevLength) {
-          const lastMessage = visibleMessages[currentLength - 1];
-          // Scroll if it's a user message (always show what I just sent)
-          // OR if we were already at the bottom (standard sticky behavior)
-          const shouldScroll = lastMessage?.role === 'user' || atBottom;
-
-          if (shouldScroll) {
-              // Use setTimeout to ensure DOM has updated with the new item
-              setTimeout(() => {
-                  virtuosoRef.current?.scrollToIndex({ 
-                      index: currentLength - 1, 
-                      align: 'end',
-                      behavior: 'smooth' 
-                  });
-              }, 50);
-          }
-      }
-      
-      prevMessagesLength.current = currentLength;
-  }, [visibleMessages, atBottom]);
 
   // Expose scroll methods to parent via ref
   useImperativeHandle(ref, () => ({
@@ -139,15 +108,13 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
     <div className="flex-1 min-h-0 relative w-full">
       {visibleMessages.length === 0 ? (
         isLoading ? (
-            // Show Skeleton immediately when loading a chat
-            <div className="h-full w-full bg-transparent">
+            // Show Skeleton when loading a chat (messages are empty but isLoading is true)
+            <Suspense fallback={<div className="h-full w-full bg-transparent" />}>
                 <ChatSkeleton />
-            </div>
+            </Suspense>
         ) : (
             <div className="h-full overflow-y-auto custom-scrollbar">
-                 <Suspense fallback={<div className="h-full flex items-center justify-center"><div className="animate-spin w-6 h-6 border-2 border-indigo-500 rounded-full border-t-transparent"></div></div>}>
-                    <WelcomeScreen sendMessage={sendMessage} />
-                 </Suspense>
+                 <WelcomeScreen sendMessage={sendMessage} />
             </div>
         )
       ) : (
@@ -198,7 +165,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
              animate={{ opacity: 1, y: 0, scale: 1 }}
              exit={{ opacity: 0, y: 10, scale: 0.9 }}
              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-             className="absolute bottom-6 md:bottom-4 inset-x-0 flex justify-center pointer-events-none z-30"
+             className="absolute bottom-4 inset-x-0 flex justify-center pointer-events-none z-30"
           >
             <button
                 onClick={handleScrollToBottom}
