@@ -7,7 +7,6 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import JSZip from 'jszip';
 import type { MemoryFile } from '../../hooks/useMemory';
-import { Virtuoso } from 'react-virtuoso';
 
 const motion = motionTyped as any;
 
@@ -312,16 +311,12 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                             </button>
                         </div>
 
-                        {/* Virtualized List */}
-                        <div className="flex-1 min-h-0 w-full bg-slate-50/50 dark:bg-black/10">
+                        {/* List Area */}
+                        <div className="flex-1 min-h-0 w-full bg-slate-50/50 dark:bg-black/10 overflow-y-auto custom-scrollbar">
                             {filteredFiles.length > 0 ? (
-                                <Virtuoso
-                                    style={{ height: '100%', width: '100%' }}
-                                    data={filteredFiles}
-                                    className="custom-scrollbar"
-                                    components={{ Footer: () => <div className="h-4" /> }}
-                                    itemContent={(index, file) => (
-                                        <div className="px-6 py-2">
+                                <div className="pb-4">
+                                    {filteredFiles.map((file) => (
+                                        <div key={file.id} className="px-6 py-2">
                                             <div 
                                                 onClick={() => setEditingFile(file)}
                                                 className="group cursor-pointer relative flex items-start gap-4 p-4 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/5 rounded-2xl hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-md transition-all duration-200"
@@ -360,8 +355,8 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
                                                 </div>
                                             </div>
                                         </div>
-                                    )}
-                                />
+                                    ))}
+                                </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-center opacity-60">
                                     <div className="w-16 h-16 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-4 text-slate-400">

@@ -5,7 +5,6 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Virtuoso } from 'react-virtuoso';
 
 type VirtualizedCodeViewerProps = {
     content: string;
@@ -51,32 +50,23 @@ export const VirtualizedCodeViewer: React.FC<VirtualizedCodeViewerProps> = ({ co
     }
 
     return (
-        <div className="h-full w-full bg-code-surface text-code-text font-mono text-[13px]">
-            <Virtuoso
-                style={{ height: '100%', width: '100%' }}
-                totalCount={lines.length}
-                overscan={500} // Pre-render a decent chunk for smooth scrolling
-                itemContent={(index) => {
-                    const line = lines[index];
-                    return (
-                        <div className="flex leading-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
-                            {/* Line Number */}
-                            <span 
-                                className="w-16 flex-shrink-0 text-right pr-4 text-slate-400 dark:text-slate-600 select-none border-r border-slate-200 dark:border-white/5 mr-4 bg-slate-50/50 dark:bg-white/[0.02]"
-                                style={{ fontFamily: 'inherit' }}
-                            >
-                                {index + 1}
-                            </span>
-                            
-                            {/* Line Content - Plain text for max performance on massive files */}
-                            {/* We avoid syntax highlighting here to keep scrolling 60fps on 1M lines */}
-                            <span className="whitespace-pre break-all pr-4" style={{ fontFamily: "'Fira Code', monospace" }}>
-                                {line || ' '} 
-                            </span>
-                        </div>
-                    );
-                }}
-            />
+        <div className="h-full w-full bg-code-surface text-code-text font-mono text-[13px] overflow-auto custom-scrollbar">
+            {lines.map((line, index) => (
+                <div key={index} className="flex leading-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                    {/* Line Number */}
+                    <span 
+                        className="w-16 flex-shrink-0 text-right pr-4 text-slate-400 dark:text-slate-600 select-none border-r border-slate-200 dark:border-white/5 mr-4 bg-slate-50/50 dark:bg-white/[0.02]"
+                        style={{ fontFamily: 'inherit' }}
+                    >
+                        {index + 1}
+                    </span>
+                    
+                    {/* Line Content - Plain text for max performance on massive files */}
+                    <span className="whitespace-pre break-all pr-4" style={{ fontFamily: "'Fira Code', monospace" }}>
+                        {line || ' '} 
+                    </span>
+                </div>
+            ))}
         </div>
     );
 };

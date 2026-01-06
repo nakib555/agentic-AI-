@@ -47,7 +47,6 @@
     "react-katex": "latest",
     "react-markdown": "latest",
     "react-syntax-highlighter": "latest",
-    "react-virtuoso": "latest",
     "rehype-katex": "latest",
     "rehype-raw": "latest",
     "remark-gfm": "latest",

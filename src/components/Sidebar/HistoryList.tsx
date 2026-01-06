@@ -10,7 +10,6 @@ const motion = motionTyped as any;
 import type { ChatSession } from '../../types';
 import { HistoryItem } from './HistoryItem';
 import { Skeleton } from '../UI/Skeleton';
-import { Virtuoso } from 'react-virtuoso';
 
 type HistoryListProps = {
   history: ChatSession[];
@@ -98,7 +97,7 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
         setCollapsedGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }));
     };
 
-    // Flatten the grouped data for Virtuoso
+    // Flatten the grouped data
     const virtualItems = useMemo<VirtualItem[]>(() => {
         const filteredHistory = history.filter(item =>
             item.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -151,57 +150,51 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
     }
 
     return (
-        <div className="flex-1 min-h-0 text-sm w-full">
-            <Virtuoso
-                style={{ height: '100%', width: '100%' }}
-                data={virtualItems}
-                className="custom-scrollbar"
-                // Add a little padding at the bottom of the list
-                components={{ Footer: () => <div className="h-4" /> }}
-                itemContent={(index, item) => {
-                    if (item.type === 'header') {
-                        return (
-                            <div className="pt-2 pb-1 px-1 bg-layer-1 z-10">
-                                <button
-                                    onClick={() => !shouldCollapse && toggleGroup(item.group)}
-                                    disabled={shouldCollapse}
-                                    className="w-full flex items-center justify-between px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:bg-gray-100/60 dark:hover:bg-violet-900/30 rounded py-1.5 transition-colors disabled:cursor-default disabled:hover:bg-transparent"
-                                >
-                                    <motion.span
-                                        className="block overflow-hidden whitespace-nowrap"
-                                        initial={false}
-                                        animate={{ width: shouldCollapse ? 0 : 'auto', opacity: shouldCollapse ? 0 : 1 }}
-                                        transition={{ duration: 0.2 }}
-                                    >
-                                        {item.group}
-                                    </motion.span>
-                                    {!shouldCollapse && (
-                                        <div className={`transition-transform duration-200 ${item.collapsed ? 'rotate-0' : 'rotate-90'}`}>
-                                            <ChevronIcon />
-                                        </div>
-                                    )}
-                                </button>
-                            </div>
-                        );
-                    }
-
+        <div className="flex-1 min-h-0 text-sm w-full overflow-y-auto custom-scrollbar">
+            {virtualItems.map((item, index) => {
+                if (item.type === 'header') {
                     return (
-                        <div className="px-1 py-0.5">
-                            <HistoryItem 
-                                text={item.chat.title} 
-                                isCollapsed={isCollapsed}
-                                isDesktop={isDesktop}
-                                searchQuery={searchQuery}
-                                active={item.chat.id === currentChatId}
-                                onClick={() => onLoadChat(item.chat.id)}
-                                onDelete={() => onDeleteChat(item.chat.id)}
-                                onUpdateTitle={(newTitle) => onUpdateChatTitle(item.chat.id, newTitle)}
-                                isLoading={item.chat.isLoading ?? false}
-                            />
+                        <div key={`header-${item.group}`} className="pt-2 pb-1 px-1 bg-layer-1 z-10 sticky top-0">
+                            <button
+                                onClick={() => !shouldCollapse && toggleGroup(item.group)}
+                                disabled={shouldCollapse}
+                                className="w-full flex items-center justify-between px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:bg-gray-100/60 dark:hover:bg-violet-900/30 rounded py-1.5 transition-colors disabled:cursor-default disabled:hover:bg-transparent"
+                            >
+                                <motion.span
+                                    className="block overflow-hidden whitespace-nowrap"
+                                    initial={false}
+                                    animate={{ width: shouldCollapse ? 0 : 'auto', opacity: shouldCollapse ? 0 : 1 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {item.group}
+                                </motion.span>
+                                {!shouldCollapse && (
+                                    <div className={`transition-transform duration-200 ${item.collapsed ? 'rotate-0' : 'rotate-90'}`}>
+                                        <ChevronIcon />
+                                    </div>
+                                )}
+                            </button>
                         </div>
                     );
-                }}
-            />
+                }
+
+                return (
+                    <div key={`chat-${item.chat.id}`} className="px-1 py-0.5">
+                        <HistoryItem 
+                            text={item.chat.title} 
+                            isCollapsed={isCollapsed}
+                            isDesktop={isDesktop}
+                            searchQuery={searchQuery}
+                            active={item.chat.id === currentChatId}
+                            onClick={() => onLoadChat(item.chat.id)}
+                            onDelete={() => onDeleteChat(item.chat.id)}
+                            onUpdateTitle={(newTitle) => onUpdateChatTitle(item.chat.id, newTitle)}
+                            isLoading={item.chat.isLoading ?? false}
+                        />
+                    </div>
+                );
+            })}
+            <div className="h-4" />
         </div>
     );
 };
