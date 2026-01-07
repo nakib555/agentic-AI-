@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { type ErrorInfo, type ReactNode } from 'react';
+import React, { ErrorInfo } from 'react';
 
 interface ErrorBoundaryProps {
-  children?: ReactNode;
+  children?: React.ReactNode;
 }
 
 interface ErrorBoundaryState {

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, ErrorInfo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
@@ -26,6 +26,10 @@ class ArtifactPreviewErrorBoundary extends React.Component<ErrorBoundaryProps, E
     public state: ErrorBoundaryState = { hasError: false };
 
     static getDerivedStateFromError() { return { hasError: true }; }
+
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error("ArtifactPreviewErrorBoundary caught an error:", error, errorInfo);
+    }
     
     render() {
         if (this.state.hasError) return this.props.fallback;

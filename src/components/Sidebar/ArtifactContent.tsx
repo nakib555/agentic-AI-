@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense, Component } from 'react';
+import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense, ErrorInfo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
@@ -130,7 +130,11 @@ class ArtifactErrorBoundary extends React.Component<ArtifactErrorBoundaryProps, 
     public state: ArtifactErrorBoundaryState = { hasError: false };
 
     static getDerivedStateFromError() { return { hasError: true }; }
-    componentDidCatch(error: any) { console.error("Artifact Preview Error:", error); }
+    
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error("Artifact Preview Error:", error, errorInfo);
+    }
+
     render() {
         if (this.state.hasError) {
             return (
