@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -129,7 +130,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
 
       <div 
         className={`
-            relative bg-input border-2 transition-all duration-200 rounded-2xl overflow-hidden shadow-sm flex flex-col
+            relative bg-transparent border-2 transition-all duration-200 rounded-2xl overflow-hidden shadow-sm flex flex-col
             ${isDragging 
                 ? 'border-primary-main ring-4 ring-primary-subtle bg-primary-subtle scale-[1.01]' 
                 : logic.isFocused 
