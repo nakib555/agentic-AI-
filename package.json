@@ -26,6 +26,7 @@
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.19.8",
     "@google/genai": "1.29.1",
+    "@gsap/react": "^2.1.0",
     "@vitejs/plugin-react": "^4.2.1",
     "ai": "^3.2.18",
     "autoprefixer": "^10.4.14",
@@ -35,6 +36,7 @@
     "esbuild": "^0.20.2",
     "express": "^4.19.2",
     "framer-motion": "11.2.10",
+    "gsap": "^3.12.5",
     "html2canvas": "1.4.1",
     "jszip": "^3.10.1",
     "playwright": "^1.49.0",
