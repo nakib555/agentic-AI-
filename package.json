@@ -40,8 +40,8 @@
     "jszip": "^3.10.1",
     "playwright": "^1.49.0",
     "postcss": "^8.4.30",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-katex": "^3.0.4",
     "react-markdown": "^9.0.1",
     "react-syntax-highlighter": "15.5.0",
@@ -56,7 +56,7 @@
     "wrangler": "^4.56.0",
     "zod": "^3.22.3"
   },
- "devDependencies": {
+  "devDependencies": {
     "@types/cors": "latest",
     "@types/express": "latest",
     "@types/react": "latest",
