@@ -7,7 +7,7 @@
 // This is the simplified main hook for the MessageForm component.
 // It composes smaller, more focused hooks for file handling and input enhancements.
 
-import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { type MessageFormHandle, type ProcessedFile } from './types';
 import { useFileHandling } from './useFileHandling';
 import { useInputEnhancements } from './useInputEnhancements';
@@ -69,41 +69,28 @@ export const useMessageForm = (
   }, [inputValue, fileHandling.processedFiles.length]);
   
   // Handle automatic resizing of the input area
-  useLayoutEffect(() => {
+  // Optimization: Switched to useEffect to avoid blocking painting (reduces Forced Reflow impact).
+  // While useLayoutEffect prevents visual pop, the calculation cost on main thread during rapid typing
+  // causes frame drops. A slight visual adjustment in the next frame is preferred over input lag.
+  useEffect(() => {
     const element = inputRef.current;
     if (!element) return;
 
-    const shadow = document.createElement('textarea');
-    const computed = window.getComputedStyle(element);
-
-    shadow.value = inputValue;
-    shadow.style.width = computed.width;
-    shadow.style.padding = computed.padding;
-    shadow.style.border = computed.border;
-    shadow.style.fontSize = computed.fontSize;
-    shadow.style.fontFamily = computed.fontFamily;
-    shadow.style.fontWeight = computed.fontWeight;
-    shadow.style.lineHeight = computed.lineHeight;
-    shadow.style.letterSpacing = computed.letterSpacing;
-    shadow.style.boxSizing = computed.boxSizing;
+    // Reset height to allow shrinking
+    element.style.height = 'auto';
     
-    shadow.style.position = 'absolute';
-    shadow.style.visibility = 'hidden';
-    shadow.style.top = '-9999px';
-    shadow.style.left = '-9999px';
-    shadow.style.overflow = 'hidden';
-    shadow.style.height = '0';
-    shadow.style.minHeight = '0';
-
-    document.body.appendChild(shadow);
-    const scrollHeight = shadow.scrollHeight;
-    document.body.removeChild(shadow);
-
+    // Calculate new height
+    const scrollHeight = element.scrollHeight;
+    
     // Increased max height to support better multi-line editing experience
     const MAX_HEIGHT_PX = 120;
     const SINGLE_LINE_THRESHOLD = 32; 
     
-    setIsExpanded(scrollHeight > SINGLE_LINE_THRESHOLD || fileHandling.processedFiles.length > 0);
+    // Only update state if needed to prevent excessive re-renders
+    const shouldBeExpanded = scrollHeight > SINGLE_LINE_THRESHOLD || fileHandling.processedFiles.length > 0;
+    if (isExpanded !== shouldBeExpanded) {
+        setIsExpanded(shouldBeExpanded);
+    }
     
     if (scrollHeight > MAX_HEIGHT_PX) {
         element.style.height = `${MAX_HEIGHT_PX}px`;
@@ -112,7 +99,7 @@ export const useMessageForm = (
         element.style.height = `${scrollHeight}px`;
         element.style.overflowY = 'hidden';
     }
-  }, [inputValue, fileHandling.processedFiles.length]);
+  }, [inputValue, fileHandling.processedFiles.length, isExpanded]);
 
   // Handle clicks outside the upload menu
   useEffect(() => {

@@ -11,10 +11,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
  * 
  * PERFORMANCE OPTIMIZATION:
  * This hook uses a "Time Budget" strategy.
- * 1. It limits React state updates to ~30fps (32ms) to prevent blocking the main thread.
+ * 1. It limits React state updates to prevent blocking the main thread.
+ *    - Short text: ~30fps (32ms) for smoothness.
+ *    - Medium text: ~15fps (64ms) to reduce overhead.
+ *    - Long text (>2000 chars): ~10fps (100ms) to prevent freezing during markdown rendering.
  * 2. It calculates how many characters to add based on the remaining queue size.
- *    If the queue is large (AI generated a lot of text), it types faster.
- *    If the queue is small, it types at a natural reading speed.
+ *    If the queue is large (AI generated a lot of text), it types faster to catch up.
  */
 export const useTypewriter = (targetText: string, isThinking: boolean) => {
   // If we are not thinking (e.g. history load), show text immediately
@@ -65,11 +67,18 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       }
 
       // --- PERFORMANCE THROTTLE ---
-      // We cap updates to ~30fps (32ms). 
-      // Rendering Markdown/MathJax is expensive. Doing it 60fps (16ms) freezes the UI during long code blocks.
-      const MIN_RENDER_INTERVAL = 32; 
+      // Dynamic throttling based on content length.
+      // Rendering huge markdown/code blocks is expensive (can take > 50ms).
+      // We slow down the frame rate for larger content to keep the UI responsive.
+      let minRenderInterval = 32; // Default 30fps
       
-      if (timestamp - lastUpdateRef.current < MIN_RENDER_INTERVAL) {
+      if (currentLength.current > 2000) {
+          minRenderInterval = 100; // 10fps for massive content
+      } else if (currentLength.current > 500) {
+          minRenderInterval = 64; // ~15fps for medium content
+      }
+      
+      if (timestamp - lastUpdateRef.current < minRenderInterval) {
           rafRef.current = requestAnimationFrame(loop);
           return;
       }
@@ -77,18 +86,24 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       // --- ADAPTIVE SPEED CALCULATION ---
       const remainingChars = targetLen - currentLength.current;
       
-      // Base speed: Minimum characters to add per frame (e.g., 3 chars per 32ms = ~90 chars/sec)
-      let charsToAdd = 3;
+      // Base speed: Minimum characters to add per frame
+      let charsToAdd = 1;
 
       // Acceleration: The further behind we are, the faster we type.
       // This is crucial for large code blocks or copy-pastes from backend.
-      if (remainingChars > 2000) charsToAdd = 500;      // Instant catch-up for massive blocks
-      else if (remainingChars > 1000) charsToAdd = 250; // Very fast
+      if (remainingChars > 3000) charsToAdd = 1000;     // Instant sync for huge dumps
+      else if (remainingChars > 1000) charsToAdd = 300; // Extremely fast
       else if (remainingChars > 500) charsToAdd = 100;  // Fast code block streaming
       else if (remainingChars > 200) charsToAdd = 40;   // Fast reading speed
       else if (remainingChars > 100) charsToAdd = 15;   // Moderate
       else if (remainingChars > 50) charsToAdd = 8;     // Natural
       else if (remainingChars > 20) charsToAdd = 4;     // Deceleration
+
+      // Adjust chars to add based on the throttle. 
+      // If we throttled to 100ms (approx 3x standard 32ms), we should add 3x chars to maintain perceived speed.
+      if (minRenderInterval > 32) {
+          charsToAdd = Math.ceil(charsToAdd * (minRenderInterval / 32));
+      }
 
       currentLength.current += charsToAdd;
       

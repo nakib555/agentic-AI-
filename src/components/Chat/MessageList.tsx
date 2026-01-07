@@ -43,12 +43,19 @@ type MessageListProps = {
 };
 
 // Wrapper to inject context (like previous user message)
-const MessageWrapper: React.FC<{ 
+// We memoize this to prevent re-creation if props haven't changed, 
+// though the main optimization comes from the parent passing stable props.
+const MessageWrapper = React.memo(({ 
+    msg,
+    index,
+    messages,
+    contextProps
+}: { 
     msg: Message;
     index: number;
     messages: Message[];
-    props: Omit<MessageListProps, 'messages'>;
-}> = ({ msg, index, messages, props }) => {
+    contextProps: Omit<MessageListProps, 'messages'>;
+}) => {
     // Determine context for AI messages (the prompt that triggered it)
     let userQuery = '';
     if (msg.role === 'model') {
@@ -63,14 +70,13 @@ const MessageWrapper: React.FC<{
 
     return (
         <MessageComponent 
-            key={msg.id} 
             msg={msg} 
-            {...props}
+            {...contextProps}
             // Pass the custom prop to AiMessage via MessageComponent
             {...({ userQuery } as any)} 
         />
     );
-};
+});
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
     messages, sendMessage, isLoading, ttsVoice, ttsModel, currentChatId, 
@@ -135,6 +141,32 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
       virtuosoRef.current?.scrollToIndex({ index: visibleMessages.length - 1, behavior: 'smooth', align: 'end' });
   }, [visibleMessages.length]);
 
+  // Memoize the context props object to ensure referential equality across renders
+  // unless a dependency actually changes. This prevents MessageWrapper from re-rendering unnecessarily.
+  const contextProps = useMemo(() => ({
+      sendMessage, isLoading, ttsVoice, ttsModel, currentChatId,
+      onShowSources, approveExecution, denyExecution, messageFormRef,
+      onRegenerate, onSetActiveResponseIndex, isAgentMode, onEditMessage,
+      onNavigateBranch
+  }), [
+      sendMessage, isLoading, ttsVoice, ttsModel, currentChatId,
+      onShowSources, approveExecution, denyExecution, messageFormRef,
+      onRegenerate, onSetActiveResponseIndex, isAgentMode, onEditMessage,
+      onNavigateBranch
+  ]);
+
+  // Memoize itemContent so Virtuoso doesn't re-render all items on every parent render
+  const itemContent = useCallback((index: number, msg: Message) => (
+      <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4">
+          <MessageWrapper 
+              msg={msg}
+              index={index}
+              messages={visibleMessages}
+              contextProps={contextProps}
+          />
+      </div>
+  ), [visibleMessages, contextProps]);
+
   return (
     <div className="flex-1 min-h-0 relative w-full">
       {visibleMessages.length === 0 ? (
@@ -170,21 +202,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                 }}
                 atBottomThreshold={100} // More tolerant threshold for "stick to bottom" logic
                 className="custom-scrollbar"
-                itemContent={(index, msg) => (
-                    <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4">
-                        <MessageWrapper 
-                            msg={msg}
-                            index={index}
-                            messages={visibleMessages}
-                            props={{
-                                sendMessage, isLoading, ttsVoice, ttsModel, currentChatId,
-                                onShowSources, approveExecution, denyExecution, messageFormRef,
-                                onRegenerate, onSetActiveResponseIndex, isAgentMode, onEditMessage,
-                                onNavigateBranch
-                            }}
-                        />
-                    </div>
-                )}
+                itemContent={itemContent}
                 components={{
                     Header: () => <div className="h-4 md:h-6" />, // Reduced padding
                     Footer: () => <div className="h-32 md:h-48" />
