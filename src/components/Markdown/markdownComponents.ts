@@ -108,7 +108,8 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
         { className: "w-full overflow-hidden rounded-lg border border-slate-200 dark:border-white/10 my-6" },
         React.createElement(
             'div',
-            { className: "overflow-x-auto" },
+            // Added custom-scrollbar for horizontal table scrolling
+            { className: "overflow-x-auto custom-scrollbar" },
             React.createElement('table', props)
         )
     ),

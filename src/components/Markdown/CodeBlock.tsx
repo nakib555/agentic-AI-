@@ -159,8 +159,8 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
           </div>
         </div>
         
-        {/* Editor Body */}
-        <div className="relative overflow-x-auto text-[13px] leading-6 scrollbar-thin">
+        {/* Editor Body - Added custom-scrollbar class */}
+        <div className="relative overflow-x-auto text-[13px] leading-6 custom-scrollbar">
             <SyntaxHighlighter
               language={highlighterLang === 'html' ? 'markup' : highlighterLang} // Map html to markup for syntax highlighter if needed
               style={syntaxStyle}
