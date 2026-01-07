@@ -1,16 +1,26 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef } from 'react';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
+import React from 'react';
+import { motion as motionTyped } from 'framer-motion';
 import { PromptButton, type PromptColor } from './PromptButton';
+const motion = motionTyped as any;
 
 type FloatingPromptsProps = {
   onPromptClick: (prompt: string, options?: { isThinkingModeEnabled?: boolean }) => void;
+};
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        delayChildren: 0.4,
+        staggerChildren: 0.08,
+      },
+    },
 };
 
 const PROMPTS: { icon: string; text: string; prompt: string; color: PromptColor, agent?: boolean }[] = [
@@ -24,38 +34,22 @@ const PROMPTS: { icon: string; text: string; prompt: string; color: PromptColor,
     { icon: "📝", text: "Markdown", prompt: "Show me a comprehensive example of all the markdown formatting you support.", color: "teal" },
 ];
 
-export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useGSAP(() => {
-    gsap.fromTo('.prompt-btn', 
-      { y: 20, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.5,
-        stagger: 0.05,
-        ease: 'back.out(1.7)',
-        delay: 0.5 // Wait for title
-      }
-    );
-  }, { scope: containerRef });
-
-  return (
-    <div
-      ref={containerRef}
-      className="flex flex-wrap justify-center gap-3 w-full max-w-4xl mx-auto"
-    >
-      {PROMPTS.map((p, i) => (
-          <div key={i} className="prompt-btn opacity-0">
-            <PromptButton 
-                icon={p.icon} 
-                text={p.text} 
-                color={p.color}
-                onClick={() => onPromptClick(p.prompt, { isThinkingModeEnabled: !!p.agent })} 
-            />
-          </div>
-      ))}
-    </div>
-  );
-};
+export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
+  <motion.div
+    variants={containerVariants}
+    initial="hidden"
+    animate="visible"
+    exit="hidden"
+    className="flex flex-wrap justify-center gap-3 w-full max-w-4xl mx-auto"
+  >
+    {PROMPTS.map((p, i) => (
+        <PromptButton 
+            key={i} 
+            icon={p.icon} 
+            text={p.text} 
+            color={p.color}
+            onClick={() => onPromptClick(p.prompt, { isThinkingModeEnabled: !!p.agent })} 
+        />
+    ))}
+  </motion.div>
+);

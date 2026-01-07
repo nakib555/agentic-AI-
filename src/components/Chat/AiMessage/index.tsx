@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, memo, useMemo, Suspense, useRef } from 'react';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, memo, useMemo, Suspense } from 'react';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+const motion = motionTyped as any;
 import type { Message, Source } from '../../../types';
 import { MarkdownComponents } from '../../Markdown/markdownComponents';
 import { ErrorDisplay } from '../../UI/ErrorDisplay';
@@ -29,6 +28,13 @@ import { ThinkingProcess } from './ThinkingProcess';
 
 // Lazy load the heavy ArtifactRenderer
 const ArtifactRenderer = React.lazy(() => import('../../Artifacts/ArtifactRenderer').then(m => ({ default: m.ArtifactRenderer })));
+
+// Optimized spring physics for performance
+const animationProps = {
+  initial: { opacity: 0, y: 10, scale: 0.99 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  transition: { type: "spring", stiffness: 200, damping: 25 },
+};
 
 type AiMessageProps = { 
     msg: Message;
@@ -63,15 +69,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { activeResponse, finalAnswerText, thinkingIsComplete, thinkingText } = logic;
   
   const typedFinalAnswer = useTypewriter(finalAnswerText, msg.isThinking ?? false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // GSAP Entrance Animation
-  useGSAP(() => {
-    gsap.fromTo(containerRef.current, 
-      { opacity: 0, y: 10, scale: 0.99 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "power2.out" }
-    );
-  }, { scope: containerRef });
 
   const displaySegments = useMemo(() => {
       // Enhanced parsing to detect artifact tags
@@ -131,9 +128,9 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   if (logic.isInitialWait) return <TypingIndicator />;
 
   return (
-    <div 
-        ref={containerRef}
-        className="w-full flex flex-col items-start gap-3 origin-bottom-left group/message min-w-0 opacity-0"
+    <motion.div 
+        {...animationProps} 
+        className="w-full flex flex-col items-start gap-3 origin-bottom-left group/message min-w-0"
     >
       {/* NEW: Render attachments on the message object if present */}
       {msg.attachments && msg.attachments.length > 0 && (
@@ -157,7 +154,10 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
       
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer || isStoppedByUser) && (
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
           className="w-full flex flex-col gap-3 min-w-0"
         >
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
@@ -211,14 +211,18 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
 
           {/* Stopped Indicator - Rendered below content */}
           {isStoppedByUser && (
-              <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/30 rounded-lg w-fit">
+              <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/30 rounded-lg w-fit"
+              >
                   <div className="text-amber-500 dark:text-amber-400">
                       <StopIcon />
                   </div>
                   <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Generation Stopped</span>
-              </div>
+              </motion.div>
           )}
-        </div>
+        </motion.div>
       )}
       
       {/* Show toolbar if thinking is complete AND we have something to show (text, error, or stopped state) */}
@@ -244,7 +248,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       {logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
          <div className="w-full pb-2"><SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} /></div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

@@ -5,14 +5,20 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+const motion = motionTyped as any;
 import { MarkdownComponents } from '../Markdown/markdownComponents';
 import type { Message } from '../../types';
 import { FileIcon } from '../UI/FileIcon';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { BranchSwitcher } from '../UI/BranchSwitcher';
-import { motion, AnimatePresence } from 'framer-motion'; // Keep framer mostly for icons internal state if needed, but msg entry via GSAP
+
+// Optimized spring physics for performance
+const animationProps = {
+  initial: { opacity: 0, y: 15, scale: 0.98 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  transition: { type: "spring", stiffness: 200, damping: 25 },
+};
 
 export const UserMessage = ({ 
     msg, 
@@ -28,18 +34,9 @@ export const UserMessage = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditedText] = useState(text);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const versionCount = versions ? versions.length : 1;
   const currentVersionIdx = activeVersionIndex ?? 0;
-
-  // GSAP Entrance Animation
-  useGSAP(() => {
-    gsap.fromTo(containerRef.current, 
-      { opacity: 0, y: 20, scale: 0.98 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "power2.out" }
-    );
-  }, { scope: containerRef });
 
   useEffect(() => {
       if (isEditing) {
@@ -128,8 +125,9 @@ export const UserMessage = ({
   
   return (
     <div className="w-full flex justify-end group/userMsg pb-2">
-        <div ref={containerRef} className="w-fit max-w-[85%] sm:max-w-[80%] flex flex-col items-end min-w-0 opacity-0">
-            <div 
+        <div className="w-fit max-w-[85%] sm:max-w-[80%] flex flex-col items-end min-w-0">
+            <motion.div 
+                {...animationProps} 
                 className="bg-message-user text-content-primary rounded-2xl rounded-tr-md shadow-sm border border-border-default origin-bottom-right overflow-hidden relative z-0 max-w-full"
             >
                 {/* Content Section */}
@@ -174,7 +172,7 @@ export const UserMessage = ({
                         </div>
                     )}
                 </div>
-            </div>
+            </motion.div>
 
             {/* Actions Row */}
             <div className="flex items-center gap-2 mt-1 mr-1 select-none">
