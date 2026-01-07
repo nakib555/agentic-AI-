@@ -1,12 +1,13 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion as motionTyped } from 'framer-motion';
 import { SelectDropdown } from '../UI/SelectDropdown';
+
+const motion = motionTyped as any;
 
 type PersonalizeSettingsProps = {
   aboutUser: string;

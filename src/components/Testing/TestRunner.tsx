@@ -1,13 +1,14 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { type TestResult, type TestProgress } from './testSuite';
 import { downloadTestReport } from '../../utils/testUtils';
+
+const motion = motionTyped as any;
 
 type TestRunnerProps = {
   isOpen: boolean;
@@ -58,7 +59,7 @@ export const TestRunner: React.FC<TestRunnerProps> = ({ isOpen, onClose, runTest
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="bg-white dark:bg-layer-1 rounded-2xl shadow-xl w-full max-w-2xl h-[80vh] border border-gray-200 dark:border-white/10 flex flex-col"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10">
               <h2 id="test-runner-title" className="text-lg font-bold text-gray-800 dark:text-slate-100">Diagnostic Tests</h2>

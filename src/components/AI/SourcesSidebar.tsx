@@ -1,13 +1,14 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useCallback, useRef, useLayoutEffect, Suspense } from 'react';
-import { motion, PanInfo, useDragControls, AnimatePresence, useMotionValue, animate } from 'framer-motion';
+import { motion as motionTyped, useDragControls, AnimatePresence, useMotionValue, animate } from 'framer-motion';
 import type { Source } from '../../types';
 import { useViewport } from '../../hooks/useViewport';
+
+const motion = motionTyped as any;
 
 // Safe lazy load
 const SourcesContent = React.lazy(() => 
@@ -66,7 +67,7 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
         }
     }, [isOpen, isDesktop, sources, y]);
 
-    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: any) => {
         if (isDesktop) return;
 
         const vh = window.innerHeight;
@@ -133,7 +134,7 @@ export const SourcesSidebar: React.FC<SourcesSidebarProps> = ({ isOpen, onClose,
                     {!isDesktop && (
                         <div 
                             className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none w-full" 
-                            onPointerDown={(e) => dragControls.start(e)}
+                            onPointerDown={(e: any) => dragControls.start(e)}
                             aria-hidden="true"
                         >
                             <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-600 rounded-full"></div>

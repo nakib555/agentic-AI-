@@ -4,13 +4,15 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion as motionTyped } from 'framer-motion';
 import type { ChatSession } from '../../types';
 import { SidebarHeader } from './SidebarHeader';
 import { SearchInput } from './SearchInput';
 import { NewChatButton } from './NewChatButton';
 import { HistoryList } from './HistoryList';
 import { SidebarFooter } from './SidebarFooter';
+
+const motion = motionTyped as any;
 
 type SidebarContentProps = {
     isCollapsed: boolean;

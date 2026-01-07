@@ -1,11 +1,10 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useEffect, useCallback, useRef, Suspense, useState } from 'react';
-import { motion as motionTyped, AnimatePresence, PanInfo, useDragControls } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence, useDragControls } from 'framer-motion';
 const motion = motionTyped as any;
 import type { ChatSession } from '../../types';
 
@@ -93,7 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isCollapsed, isDesktop, isOpen, setIsCollapsed, setIsOpen]);
 
-    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: any) => {
         if (!isDesktop) {
             // Close if dragged left sufficiently
             if (info.offset.x < -100 || (info.velocity.x < -300 && info.offset.x < 0)) {

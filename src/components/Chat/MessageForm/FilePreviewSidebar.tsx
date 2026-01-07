@@ -1,15 +1,16 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { motion, AnimatePresence, PanInfo, useDragControls, useMotionValue, animate } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence, useDragControls, useMotionValue, animate } from 'framer-motion';
 import { useViewport } from '../../../hooks/useViewport';
 import type { ProcessedFile } from './types';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../../hooks/useSyntaxTheme';
+
+const motion = motionTyped as any;
 
 type FilePreviewSidebarProps = {
     isOpen: boolean;
@@ -152,7 +153,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
         }
     }, [isOpen, isDesktop, content, file, y]);
 
-    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: any) => {
         if (isDesktop) return;
 
         const vh = window.innerHeight;
@@ -225,7 +226,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                             {!isDesktop && (
                                 <div 
                                     className="flex justify-center pt-3 pb-2 bg-layer-2 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none w-full" 
-                                    onPointerDown={(e) => dragControls.start(e)}
+                                    onPointerDown={(e: any) => dragControls.start(e)}
                                     onClick={onClose}
                                 >
                                     <div className="w-12 h-1.5 rounded-full bg-border-strong/50"></div>

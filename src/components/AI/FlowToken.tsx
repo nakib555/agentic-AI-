@@ -4,7 +4,9 @@
  */
 
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion as motionTyped } from 'framer-motion';
+
+const motion = motionTyped as any;
 
 type FlowTokenProps = {
   children: string;

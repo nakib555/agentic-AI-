@@ -4,9 +4,11 @@
  */
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion as motionTyped } from 'framer-motion';
 import { Favicon } from '../UI/Favicon';
 import type { Source } from '../../types';
+
+const motion = motionTyped as any;
 
 type SourceItemProps = {
   source: Source;

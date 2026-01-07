@@ -1,11 +1,10 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { forwardRef, useState, Suspense } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { useMessageForm } from './useMessageForm';
 import { UploadMenu } from './UploadMenu';
 import { VoiceVisualizer } from '../../UI/VoiceVisualizer';
@@ -15,6 +14,8 @@ import { Message } from '../../../types';
 import { TextType } from '../../UI/TextType';
 import { Tooltip } from '../../UI/Tooltip';
 import { AttachedFilePreview } from './AttachedFilePreview';
+
+const motion = motionTyped as any;
 
 // Lazy load the sidebar to avoid loading syntax highlighters immediately
 const FilePreviewSidebar = React.lazy(() => import('./FilePreviewSidebar').then(m => ({ default: m.FilePreviewSidebar })));
@@ -171,7 +172,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     className="flex flex-nowrap overflow-x-auto gap-3 px-4 pb-3 pt-4 border-b border-border-subtle bg-input-sub scrollbar-hide"
-                    onWheel={(e) => {
+                    onWheel={(e: any) => {
                         if (e.deltaY !== 0) {
                             e.currentTarget.scrollLeft += e.deltaY;
                         }
@@ -195,7 +196,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         <div className="flex flex-col relative flex-1">
             {/* Animated Placeholder Overlay */}
             {!logic.inputValue && !isDragging && (
-               <div className="absolute inset-0 px-4 py-4 pointer-events-none select-none opacity-60 z-0 overflow-hidden">
+               <div className="absolute inset-0 px-4 py-3 pointer-events-none select-none opacity-60 z-0 overflow-hidden">
                   <TextType 
                     text={logic.placeholder} 
                     className="text-content-secondary text-base leading-relaxed"
@@ -218,8 +219,8 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                 onBlur={() => logic.setIsFocused(false)}
                 disabled={isGeneratingResponse}
                 rows={1}
-                className="w-full bg-transparent text-content-primary px-4 py-4 max-h-[120px] focus:outline-none resize-none overflow-y-auto leading-relaxed custom-scrollbar placeholder:text-transparent z-10"
-                style={{ minHeight: '3.5rem' }}
+                className="w-full bg-transparent text-content-primary px-4 py-3 max-h-[120px] focus:outline-none resize-none overflow-y-auto leading-relaxed custom-scrollbar placeholder:text-transparent z-10"
+                style={{ minHeight: '3rem' }}
             />
         </div>
 

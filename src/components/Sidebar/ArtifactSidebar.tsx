@@ -1,13 +1,14 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useCallback, useLayoutEffect } from 'react';
-import { motion, AnimatePresence, PanInfo, useDragControls, useMotionValue, animate } from 'framer-motion';
+import { motion as motionTyped, useDragControls, AnimatePresence, useMotionValue, animate } from 'framer-motion';
 import { useViewport } from '../../hooks/useViewport';
 import { ArtifactContent } from './ArtifactContent';
+
+const motion = motionTyped as any;
 
 type ArtifactSidebarProps = {
     isOpen: boolean;
@@ -53,7 +54,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
         }
     }, [isOpen, isDesktop, y]);
 
-    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: any) => {
         if (isDesktop) return;
 
         const vh = window.innerHeight;
@@ -136,7 +137,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
                     {!isDesktop && (
                         <div 
                             className="flex justify-center pt-3 pb-1 flex-shrink-0 bg-layer-1 cursor-grab active:cursor-grabbing touch-none w-full" 
-                            onPointerDown={(e) => dragControls.start(e)}
+                            onPointerDown={(e: any) => dragControls.start(e)}
                             aria-hidden="true"
                         >
                             <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>

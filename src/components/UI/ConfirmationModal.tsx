@@ -1,11 +1,12 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
+
+const motion = motionTyped as any;
 
 type ConfirmationModalProps = {
   isOpen: boolean;
@@ -34,7 +35,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, pr
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="bg-white dark:bg-layer-1 rounded-2xl shadow-xl w-full max-w-md border border-gray-200 dark:border-white/10 flex flex-col"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
             <div className="p-6">
               <h3 className="text-lg font-bold text-gray-800 dark:text-slate-100 mb-2">Confirm Action</h3>

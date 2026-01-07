@@ -1,11 +1,12 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+
+const motion = motionTyped as any;
 
 export type ToastType = 'success' | 'error' | 'info';
 

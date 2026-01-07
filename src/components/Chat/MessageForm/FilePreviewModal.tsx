@@ -1,13 +1,14 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../../hooks/useSyntaxTheme';
+
+const motion = motionTyped as any;
 
 type FilePreviewModalProps = {
   file: File;
@@ -92,7 +93,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, isOpen
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
             className="bg-white dark:bg-[#121212] rounded-2xl shadow-2xl overflow-hidden w-full max-w-4xl max-h-[85vh] flex flex-col"
           >
             {/* Header */}

@@ -1,11 +1,10 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useCallback, useLayoutEffect, Suspense } from 'react';
-import { motion as motionTyped, PanInfo, useDragControls, AnimatePresence, useMotionValue, animate } from 'framer-motion';
+import { motion as motionTyped, useDragControls, AnimatePresence, useMotionValue, animate } from 'framer-motion';
 import type { Message } from '../../types';
 import { useViewport } from '../../hooks/useViewport';
 
@@ -74,7 +73,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
         }
     }, [isOpen, isDesktop, y]);
 
-    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: any) => {
         if (isDesktop) return;
 
         const vh = window.innerHeight;
@@ -140,7 +139,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
                     {!isDesktop && (
                         <div 
                             className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none w-full" 
-                            onPointerDown={(e) => dragControls.start(e)}
+                            onPointerDown={(e: any) => dragControls.start(e)}
                             aria-hidden="true"
                         >
                             <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>

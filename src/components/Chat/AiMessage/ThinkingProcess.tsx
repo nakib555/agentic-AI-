@@ -1,13 +1,14 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { ManualCodeRenderer } from '../../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../../Markdown/markdownComponents';
+
+const motion = motionTyped as any;
 
 type ThinkingProcessProps = {
     thinkingText: string;

@@ -1,12 +1,13 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { TabButton } from '../UI/TabButton';
+
+const motion = motionTyped as any;
 
 type ImportChatModalProps = {
   isOpen: boolean;
@@ -138,7 +139,7 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="bg-slate-50 dark:bg-layer-1 rounded-2xl shadow-2xl w-full max-w-2xl h-[600px] max-h-[85vh] border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 flex-shrink-0 bg-white dark:bg-layer-1">
