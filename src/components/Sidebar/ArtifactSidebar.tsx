@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useLayoutEffect } from 'react';
+import React, { useCallback, useLayoutEffect, useRef } from 'react';
 import { motion as motionTyped, useDragControls, AnimatePresence, useMotionValue, animate } from 'framer-motion';
 import { useViewport } from '../../hooks/useViewport';
 import { ArtifactContent } from './ArtifactContent';
@@ -32,6 +32,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
     
     // Mobile specific state
     const y = useMotionValue(typeof window !== 'undefined' ? window.innerHeight : 800);
+    const contentRef = useRef<HTMLDivElement>(null);
 
     // Mobile Sheet Logic: Calculate optimal height and animate
     useLayoutEffect(() => {
@@ -43,16 +44,23 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
         const MIN_H = vh * 0.45;
 
         if (isOpen) {
-            // Assume reasonable content height or just maximize for code view
-            const targetHeight = MAX_H; 
-            const targetY = MAX_H - targetHeight;
+            // Calculate dynamic height based on content, similar to FilePreviewSidebar
+            const actualHeight = contentRef.current?.scrollHeight || 0;
+            // Default to MAX_H for code artifacts which are usually dense, but allow shrinking if content is surprisingly small
+            // We use a slightly more aggressive default for artifacts compared to files
+            const targetHeight = Math.min(Math.max(actualHeight, MIN_H), MAX_H); 
+            
+            // For Artifacts, we often want full height code views, so we lean towards MAX_H if it's close
+            const finalHeight = targetHeight > MAX_H * 0.8 ? MAX_H : targetHeight;
+            
+            const targetY = MAX_H - finalHeight;
             
             animate(y, targetY, { type: "spring", damping: 30, stiffness: 300 });
         } else {
             // Slide completely off screen
             animate(y, MAX_H, { type: "spring", damping: 30, stiffness: 300 });
         }
-    }, [isOpen, isDesktop, y]);
+    }, [isOpen, isDesktop, y, content, language]);
 
     const onDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: any) => {
         if (isDesktop) return;
@@ -131,6 +139,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
                 `}
             >
                 <div 
+                    ref={contentRef}
                     className="flex flex-col h-full overflow-hidden w-full relative"
                 >
                     {/* Drag handle for mobile */}
