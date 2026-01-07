@@ -154,7 +154,12 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
       
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer || isStoppedByUser) && (
-        <div className="w-full flex flex-col gap-3 min-w-0">
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="w-full flex flex-col gap-3 min-w-0"
+        >
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
           
           {/* Only show error if NOT stopped by user */}
@@ -217,7 +222,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                   <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Generation Stopped</span>
               </motion.div>
           )}
-        </div>
+        </motion.div>
       )}
       
       {/* Show toolbar if thinking is complete AND we have something to show (text, error, or stopped state) */}
