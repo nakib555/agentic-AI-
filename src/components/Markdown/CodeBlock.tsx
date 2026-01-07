@@ -72,8 +72,6 @@ const languageMap: { [key: string]: string } = {
     text: 'text', plaintext: 'text', txt: 'text', raw: 'text'
 };
 
-const runnableLanguages = ['javascript', 'js', 'jsx', 'python', 'py', 'typescript', 'ts', 'tsx'];
-
 type CodeBlockProps = {
     language?: string;
     children: React.ReactNode;
@@ -96,12 +94,6 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         }).catch(err => console.error('Failed to copy code: ', err));
     };
     
-    const handleRun = () => {
-      if (onRunCode && language && codeContent) {
-        onRunCode(language, codeContent);
-      }
-    };
-
     // Normalize language
     const { highlighterLang, displayLang } = useMemo(() => {
         const raw = (language || 'text').toLowerCase().trim();
@@ -127,8 +119,6 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         }));
     };
 
-    const isRunnable = onRunCode && runnableLanguages.includes((language || '').toLowerCase());
-
     return (
       <div className="my-6 rounded-lg overflow-hidden shadow-sm font-sans group bg-code-surface transition-colors duration-300 border border-border-subtle">
         {/* Header */}
@@ -149,17 +139,6 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
                 Open
             </button>
 
-            {isRunnable && (
-                <button
-                    onClick={handleRun}
-                    disabled={isDisabled}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium text-primary-main hover:bg-primary-subtle transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" /></svg>
-                    Run
-                </button>
-            )}
-            
             <button
                 onClick={handleCopy}
                 className="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium text-content-secondary hover:text-content-primary hover:bg-layer-3 transition-all"
