@@ -17,7 +17,6 @@ type ChatHeaderProps = {
   onImportChat: () => void;
   onExportChat: (format: 'md' | 'json' | 'pdf') => void;
   onShareChat: () => void;
-  onLiveClick: () => void;
   isChatActive: boolean;
   isDesktop: boolean;
   chatTitle: string | null;
@@ -28,13 +27,6 @@ const MoreOptionsIcon = () => (
         <circle cx="12" cy="12" r="1"></circle>
         <circle cx="12" cy="5" r="1"></circle>
         <circle cx="12" cy="19" r="1"></circle>
-    </svg>
-);
-
-const LiveIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path d="M8.25 4.5a3.75 3.75 0 1 1 7.5 0v8.25a3.75 3.75 0 1 1-7.5 0V4.5Z" />
-        <path d="M6 10.5a.75.75 0 0 1 .75.75v1.5a5.25 5.25 0 1 0 10.5 0v-1.5a.75.75 0 0 1 1.5 0v1.5a6.751 6.751 0 0 1-6 6.709v2.291h3a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1 0-1.5h3v-2.291a6.751 6.751 0 0 1-6-6.709v-1.5A.75.75 0 0 1 6 10.5Z" />
     </svg>
 );
 
@@ -101,7 +93,7 @@ const MenuSectionTitle: React.FC<{ children: React.ReactNode }> = ({ children })
 
 const MenuDivider = () => <li className="my-1 h-px bg-slate-100 dark:bg-white/10 mx-2" />;
 
-export const ChatHeader = ({ onImportChat, onExportChat, onShareChat, onLiveClick, isChatActive, chatTitle }: ChatHeaderProps) => {
+export const ChatHeader = ({ onImportChat, onExportChat, onShareChat, isChatActive, chatTitle }: ChatHeaderProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -178,17 +170,7 @@ export const ChatHeader = ({ onImportChat, onExportChat, onShareChat, onLiveClic
                 </div>
 
                 {/* --- Right controls --- */}
-                <div className="flex-shrink-0 flex items-center gap-3">
-                    <Tooltip content="Live Voice Mode" position="bottom" delay={500}>
-                        <button
-                            onClick={onLiveClick}
-                            className={`${baseButtonClasses} bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-900/30`}
-                            aria-label="Start Live Session"
-                        >
-                            <LiveIcon />
-                        </button>
-                    </Tooltip>
-
+                <div className="flex-shrink-0">
                     <div className="relative">
                         <Tooltip content="Options" position="bottom" delay={500}>
                             <button

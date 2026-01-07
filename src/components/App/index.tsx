@@ -38,7 +38,6 @@ const ArtifactSidebar = lazyLoad(() => import('../Sidebar/ArtifactSidebar'), 'Ar
 const ThinkingSidebar = lazyLoad(() => import('../Sidebar/ThinkingSidebar'), 'ThinkingSidebar');
 const AppModals = lazyLoad(() => import('./AppModals'), 'AppModals');
 const TestRunner = lazyLoad(() => import('../Testing'), 'TestRunner');
-const LiveInterface = lazyLoad(() => import('../Live/LiveInterface'), 'LiveInterface');
 
 export const App = () => {
   const logic = useAppLogic();
@@ -117,7 +116,6 @@ export const App = () => {
                 onShareChat={() => logic.handleShareChat()}
                 isChatActive={logic.isChatActive}
                 chatTitle={chatTitle}
-                onLiveClick={() => logic.setIsLiveMode(true)}
              />
              <ChatArea 
                 messageListRef={logic.messageListRef}
@@ -179,13 +177,6 @@ export const App = () => {
             setWidth={logic.setArtifactWidth}
             isResizing={logic.isArtifactResizing}
             setIsResizing={logic.setIsArtifactResizing}
-        />
-
-        <LiveInterface 
-            isOpen={logic.isLiveMode}
-            onClose={() => logic.setIsLiveMode(false)}
-            apiKey={logic.apiKey}
-            voiceName={logic.ttsVoice}
         />
 
         <AppModals

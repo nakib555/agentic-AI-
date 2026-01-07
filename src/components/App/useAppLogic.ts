@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -45,7 +44,6 @@ export const useAppLogic = () => {
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSourcesSidebarOpen, setIsSourcesSidebarOpen] = useState(false);
-  const [isLiveMode, setIsLiveMode] = useState(false); // NEW STATE for Live Mode
   const [sourcesForSidebar, setSourcesForSidebar] = useState<Source[]>([]);
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [backendError, setBackendError] = useState<string | null>(null);
@@ -559,7 +557,6 @@ export const useAppLogic = () => {
     isAnyResizing, // Export aggregated state
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
     isImportModalOpen, setIsImportModalOpen, isSourcesSidebarOpen, sourcesForSidebar,
-    isLiveMode, setIsLiveMode, // New exports for Live Mode
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading, versionMismatch,
     retryConnection: checkBackendStatus,
     confirmation, handleConfirm, handleCancel: () => setConfirmation(null),
