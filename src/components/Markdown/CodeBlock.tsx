@@ -130,7 +130,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
     const isRunnable = onRunCode && runnableLanguages.includes((language || '').toLowerCase());
 
     return (
-      <div className="my-6 rounded-xl overflow-hidden shadow-sm font-sans group bg-code-surface transition-colors duration-300">
+      <div className="my-6 rounded-lg overflow-hidden shadow-sm font-sans group bg-code-surface transition-colors duration-300 border border-border-subtle">
         {/* Header */}
         <div className="flex justify-between items-center px-4 py-2 bg-layer-2/50 border-b border-border-subtle select-none backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -190,6 +190,8 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
                 padding: '1.25rem',
                 background: 'transparent',
                 fontFamily: "'Fira Code', 'Consolas', monospace",
+                borderRadius: 0,
+                border: 'none',
               }}
               codeTagProps={{
                   style: { fontFamily: "inherit" }
