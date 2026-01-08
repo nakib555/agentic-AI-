@@ -380,18 +380,24 @@ export const apiHandler = async (req: any, res: any) => {
 
                 if (ragContext) personalizationSection += ragContext;
 
+                // CRITICAL FIX: The Core Instructions (Agent Protocols) must be the primary directive.
+                // Personalization is injected as a "Context" layer, but it CANNOT override the output format (JSON/STEP).
                 let finalSystemInstruction = coreInstruction;
                 if (personalizationSection) {
                     finalSystemInstruction = `
-# 🟢 PRIORITY 1: USER PERSONALIZATION & MEMORY
-The following instructions are ABSOLUTE. They override any default persona traits defined later.
+# ⚙️ SYSTEM KERNEL (IMMUTABLE PROTOCOLS)
+The following protocols define your operational mode (Thinking/Agentic or Chat).
+They are MANDATORY and CANNOT be overridden by user instructions.
+If you are in Agent Mode, you MUST start with [STEP].
 
-${personalizationSection}
+${coreInstruction}
 
 ================================================================================
 
-# ⚙️ CORE SYSTEM DIRECTIVES (Secondary to Personalization)
-${coreInstruction}
+# 🧩 CONTEXTUAL LAYER (PERSONALIZATION)
+Adopt the following persona and context, BUT ONLY within the formatting constraints defined above.
+
+${personalizationSection}
 `.trim();
                 }
 

@@ -11,6 +11,7 @@ import { CodeBlock } from './CodeBlock';
 import { InlineCode } from './InlineCode';
 import { StyledMark } from './StyledMark';
 import { Collapsible } from './Collapsible';
+import { ChecklistItem } from './ChecklistItem';
 
 // Custom Blockquote component that acts as a router for Callouts and Bubbles
 const BlockquoteRouter = (props: any) => {
@@ -56,9 +57,33 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
     
     p: (props: any) => React.createElement('p', props),
     
-    ul: (props: any) => React.createElement('ul', props),
+    ul: (props: any) => React.createElement('ul', { className: "contains-task-list", ...props }),
     ol: (props: any) => React.createElement('ol', props),
-    li: (props: any) => React.createElement('li', props),
+    
+    // Customized List Item for interactive checklists
+    li: (props: any) => {
+        const { children, className } = props;
+        
+        if (className === 'task-list-item') {
+            // Find the checkbox input to determine checked state
+            const childrenArray = React.Children.toArray(children);
+            const inputIndex = childrenArray.findIndex(
+                (child: any) => child?.type === 'input' && child?.props?.type === 'checkbox'
+            );
+            
+            if (inputIndex !== -1) {
+                const input = childrenArray[inputIndex] as React.ReactElement;
+                const isChecked = input.props.checked || false;
+                
+                // Remove the raw input from children to prevent double rendering
+                const content = childrenArray.filter((_, i) => i !== inputIndex);
+                
+                return React.createElement(ChecklistItem, { initialChecked: isChecked }, content);
+            }
+        }
+        
+        return React.createElement('li', props);
+    },
     
     blockquote: BlockquoteRouter,
     a: (props: any) => React.createElement(StyledLink, props),
@@ -108,6 +133,14 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
         return React.createElement('div', { className: "not-prose my-6" }, children);
     },
 
+    // Suppress default checkbox rendering if it somehow leaks through (though 'li' handles it)
+    input: (props: any) => {
+        if (props.type === 'checkbox') {
+            return null;
+        }
+        return React.createElement('input', props);
+    },
+
     table: (props: any) => React.createElement(
         'div',
         { className: "w-full overflow-hidden rounded-lg border border-slate-200 dark:border-white/10 my-6" },
@@ -140,4 +173,7 @@ export const WorkflowMarkdownComponents = {
     ul: (props: any) => React.createElement('ul', { className: "text-sm list-disc pl-5 mb-2 space-y-1", ...props }),
     ol: (props: any) => React.createElement('ol', { className: "text-sm list-decimal pl-5 mb-2 space-y-1", ...props }),
     blockquote: (props: any) => React.createElement('blockquote', { className: "custom-blockquote-workflow", ...props }),
+    // Use the same checklist logic for workflow views
+    li: MarkdownComponents.li, 
+    input: MarkdownComponents.input,
 };
