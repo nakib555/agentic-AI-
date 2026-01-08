@@ -16,58 +16,96 @@ type ImportChatModalProps = {
   onFileUpload: (file: File) => void;
 };
 
+// Detailed JSONC example to guide users on the expected format
 const jsonStructureExample = `{
-  "id": "chat-uuid-v4",
-  "title": "Project Architecture Review",
+  // 🆔 Unique Session Identifier (UUID v4 recommended)
+  "id": "chat-550e8400-e29b-41d4-a716-446655440000",
+  
+  // 🏷️ Conversation Title (Displayed in Sidebar)
+  "title": "React Architecture Review",
+  
+  // 🤖 AI Model Identifier
   "model": "gemini-2.5-pro",
+  
+  // 📅 Creation Timestamp (Unix Milliseconds)
   "createdAt": 1724600000000,
+  
+  // 💬 Message History
   "messages": [
     {
-      "role": "user",
-      "text": "Analyze the attached server logs for errors.",
-      "activeVersionIndex": 0,
-      "versions": [
+      "id": "msg-1",
+      "role": "user", // Can be "user" or "model"
+      
+      // The content of the message
+      "text": "Review the attached logs.",
+      
+      // 📎 File Attachments (Optional)
+      "attachments": [
         {
-          "text": "Analyze the attached server logs for errors.",
-          "createdAt": 1724600005000,
-          "attachments": [
-            {
-              "name": "server_error.log",
-              "mimeType": "text/plain",
-              "data": "base64_encoded_content_string..."
-            }
-          ]
+          "name": "error.log",
+          "mimeType": "text/plain",
+          "data": "base64_encoded_string..." 
         }
+      ],
+      
+      // 🌿 Branching/Edit History (Optional)
+      "activeVersionIndex": 0, 
+      "versions": [ 
+        { "text": "Review logs.", "createdAt": 1724600005000 } 
       ]
     },
     {
+      "id": "msg-2",
       "role": "model",
+      "text": "I found a critical error...",
+      "isThinking": false, // Is the model currently generating?
+      
+      // 🧠 Response Branching (Optional)
       "activeResponseIndex": 0,
       "responses": [
         {
-          "text": "I analyzed the logs and found 3 critical timeouts...",
-          "toolCallEvents": [],
+          "text": "I found a critical error...",
           "startTime": 1724600010000,
-          "endTime": 1724600015000,
-          "error": null
+          "endTime": 1724600015000
         }
       ]
     }
   ]
 }`;
 
-// Simple function to add syntax highlighting spans to a JSON string
+// Syntax highlighter that supports JSONC (JSON with comments)
 const getHighlightedJson = (jsonString: string) => {
-  const html = jsonString
-    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g, (match) => {
-      let cls = 'text-emerald-600 dark:text-emerald-400'; // string value
-      if (/:$/.test(match)) {
-        cls = 'text-indigo-600 dark:text-indigo-400 font-bold'; // key
-      }
-      return `<span class="${cls}">${match}</span>`;
-    })
-    .replace(/\b(true|false|null)\b/g, '<span class="text-rose-500 dark:text-rose-400 font-semibold">$1</span>') // boolean/null
-    .replace(/\b(\d{10,})\b/g, '<span class="text-amber-600 dark:text-amber-400">$1</span>'); // timestamps
+  const lines = jsonString.split('\n');
+  const html = lines.map(line => {
+    // 1. Extract Comment
+    const commentMatch = line.match(/(\/\/.*$)/);
+    let comment = '';
+    let content = line;
+    
+    if (commentMatch) {
+        comment = commentMatch[0];
+        content = line.substring(0, commentMatch.index);
+    }
+
+    // 2. Highlight JSON Syntax in content part
+    let highlighted = content
+      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g, (match) => {
+        let cls = 'text-emerald-600 dark:text-emerald-400'; // string value
+        if (/:$/.test(match)) {
+          cls = 'text-indigo-600 dark:text-indigo-400 font-bold'; // key
+        }
+        return `<span class="${cls}">${match}</span>`;
+      })
+      .replace(/\b(true|false|null)\b/g, '<span class="text-rose-500 dark:text-rose-400 font-semibold">$1</span>')
+      .replace(/\b(\d{10,})\b/g, '<span class="text-amber-600 dark:text-amber-400">$1</span>');
+
+    // 3. Re-append Comment with styling
+    if (comment) {
+        highlighted += `<span class="text-slate-400 dark:text-slate-500 italic">${comment}</span>`;
+    }
+    
+    return highlighted;
+  }).join('\n');
 
   return { __html: html };
 };
