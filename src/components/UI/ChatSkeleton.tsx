@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -14,7 +15,7 @@ export const ChatSkeleton = () => {
                 {/* User Message Ghost */}
                 <div className="flex justify-end w-full">
                     <div className="flex flex-col items-end gap-2 max-w-[80%] w-full sm:w-auto">
-                        <Skeleton className="h-20 w-64 max-w-full rounded-2xl rounded-tr-sm bg-layer-2/80 dark:bg-white/5" />
+                        <Skeleton className="h-16 w-64 max-w-full rounded-2xl rounded-tr-sm bg-layer-2/80 dark:bg-white/5" />
                     </div>
                 </div>
 
@@ -25,9 +26,18 @@ export const ChatSkeleton = () => {
                         <Skeleton className="h-4 w-32 rounded bg-layer-3/50 dark:bg-white/10" />
                     </div>
                     <div className="space-y-3 pl-11 w-full">
+                        {/* Simulate Thinking Process Accordion */}
+                        <div className="flex items-center gap-2 mb-2">
+                            <Skeleton className="h-4 w-4 rounded-full bg-layer-2/50 dark:bg-white/5" />
+                            <Skeleton className="h-3 w-24 rounded bg-layer-2/50 dark:bg-white/5" />
+                        </div>
+                        
+                        {/* Main Response Text Blocks */}
                         <Skeleton className="h-4 w-full rounded bg-layer-2/80 dark:bg-white/5" />
                         <Skeleton className="h-4 w-[92%] rounded bg-layer-2/80 dark:bg-white/5" />
                         <Skeleton className="h-4 w-[96%] rounded bg-layer-2/80 dark:bg-white/5" />
+                        
+                        {/* Artifact/Card Ghost */}
                         <div className="pt-2">
                             <Skeleton className="h-32 w-full rounded-xl bg-layer-2/60 dark:bg-white/5" />
                         </div>
