@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -16,24 +17,26 @@ type ImportChatModalProps = {
 };
 
 const jsonStructureExample = `{
-  "id": "string (optional)",
-  "title": "string",
+  "id": "chat-uuid-v4",
+  "title": "Project Architecture Review",
+  "model": "gemini-2.5-pro",
+  "createdAt": 1724600000000,
   "messages": [
     {
       "role": "user",
-      "text": "string (current active text)",
+      "text": "Analyze the attached server logs for errors.",
       "activeVersionIndex": 0,
       "versions": [
         {
-          "text": "string (v1)",
-          "attachments": [],
-          "createdAt": 1720000000000
-        },
-        {
-          "text": "string (v2)",
-          "attachments": [],
-          "createdAt": 1720000000100,
-          "historyPayload": [] // Optional: Future messages for this branch
+          "text": "Analyze the attached server logs for errors.",
+          "createdAt": 1724600005000,
+          "attachments": [
+            {
+              "name": "server_error.log",
+              "mimeType": "text/plain",
+              "data": "base64_encoded_content_string..."
+            }
+          ]
         }
       ]
     },
@@ -42,33 +45,29 @@ const jsonStructureExample = `{
       "activeResponseIndex": 0,
       "responses": [
         {
-          "text": "string (response option 1)",
+          "text": "I analyzed the logs and found 3 critical timeouts...",
           "toolCallEvents": [],
+          "startTime": 1724600010000,
+          "endTime": 1724600015000,
           "error": null
-        },
-        {
-          "text": "string (response option 2)",
-          "toolCallEvents": []
         }
       ]
     }
-  ],
-  "model": "string (e.g., 'gemini-2.5-pro')",
-  "createdAt": 1720000000000
+  ]
 }`;
 
 // Simple function to add syntax highlighting spans to a JSON string
 const getHighlightedJson = (jsonString: string) => {
   const html = jsonString
     .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g, (match) => {
-      let cls = 'text-green-600 dark:text-green-400'; // string
+      let cls = 'text-emerald-600 dark:text-emerald-400'; // string value
       if (/:$/.test(match)) {
-        cls = 'text-indigo-500 dark:text-indigo-400 font-medium'; // key
+        cls = 'text-indigo-600 dark:text-indigo-400 font-bold'; // key
       }
       return `<span class="${cls}">${match}</span>`;
     })
-    .replace(/\b(true|false|null)\b/g, '<span class="text-red-500 dark:text-red-400">$1</span>') // boolean/null
-    .replace(/\b(string|number|array|object)\b/g, '<span class="text-amber-600 dark:text-amber-400 italic">$1</span>'); // types
+    .replace(/\b(true|false|null)\b/g, '<span class="text-rose-500 dark:text-rose-400 font-semibold">$1</span>') // boolean/null
+    .replace(/\b(\d{10,})\b/g, '<span class="text-amber-600 dark:text-amber-400">$1</span>'); // timestamps
 
   return { __html: html };
 };
@@ -164,7 +163,7 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
             {/* Tab Bar */}
             <div className="flex items-center px-6 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-layer-1 gap-4">
                 <TabButton label="Import File" isActive={activeTab === 'import'} onClick={() => setActiveTab('import')} />
-                <TabButton label="JSON Structure" isActive={activeTab === 'structure'} onClick={() => setActiveTab('structure')} />
+                <TabButton label="JSON Schema" isActive={activeTab === 'structure'} onClick={() => setActiveTab('structure')} />
             </div>
 
             {/* Content Area */}
@@ -219,14 +218,14 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
                         >
                              <div className="flex items-center gap-2 mb-4">
                                 <div className="w-1 h-4 bg-indigo-500 rounded-full"></div>
-                                <h3 className="text-sm font-bold text-gray-700 dark:text-slate-200 uppercase tracking-wide">Required JSON Structure</h3>
+                                <h3 className="text-sm font-bold text-gray-700 dark:text-slate-200 uppercase tracking-wide">Expected Data Format</h3>
                             </div>
                             
                             <div className="flex-1 min-h-0 rounded-xl bg-slate-200/50 dark:bg-black/30 border border-slate-300/50 dark:border-white/5 shadow-inner flex flex-col overflow-hidden">
                                 <div className="px-4 py-2.5 bg-slate-200 dark:bg-white/5 border-b border-slate-300/50 dark:border-white/5 flex justify-between items-center z-10 backdrop-blur-sm shrink-0">
                                   <p className="text-xs font-semibold text-slate-500 dark:text-gray-400 font-mono flex items-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z" clipRule="evenodd" /></svg>
-                                    chat-export.json
+                                    example-chat.json
                                   </p>
                                   <button
                                     onClick={handleCopy}
@@ -241,7 +240,7 @@ export const ImportChatModal: React.FC<ImportChatModalProps> = ({ isOpen, onClos
                                       ) : (
                                           <motion.span key="copy" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} className="flex items-center gap-1">
                                               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 group-hover:text-indigo-500 transition-colors"><path d="M10 1.5C11.1097 1.5 12.0758 2.10424 12.5947 3H14.5C15.3284 3 16 3.67157 16 4.5V16.5C16 17.3284 15.3284 18 14.5 18H5.5C4.67157 18 4 17.3284 4 16.5V4.5C4 3.67157 4.67157 3 5.5 3H7.40527C7.92423 2.10424 8.89028 1.5 10 1.5ZM5.5 4C5.22386 4 5 4.22386 5 4.5V16.5C5 16.7761 5.22386 17 5.5 17H14.5C14.7761 17 15 16.7761 15 16.5V4.5C15 4.22386 14.7761 4 14.5 4H12.958C12.9853 4.16263 13 4.32961 13 4.5V5.5C13 5.77614 12.7761 6 12.5 6H7.5C7.22386 6 7 5.77614 7 5.5V4.5C7 4.32961 7.0147 4.16263 7.04199 4H5.5ZM12.54 13.3037C12.6486 13.05 12.9425 12.9317 13.1963 13.04C13.45 13.1486 13.5683 13.4425 13.46 13.6963C13.1651 14.3853 12.589 15 11.7998 15C11.3132 14.9999 10.908 14.7663 10.5996 14.4258C10.2913 14.7661 9.88667 14.9999 9.40039 15C8.91365 15 8.50769 14.7665 8.19922 14.4258C7.89083 14.7661 7.48636 15 7 15C6.72386 15 6.5 14.7761 6.5 14.5C6.5 14.2239 6.72386 14 7 14C7.21245 14 7.51918 13.8199 7.74023 13.3037L7.77441 13.2373C7.86451 13.0913 8.02513 13 8.2002 13C8.40022 13.0001 8.58145 13.1198 8.66016 13.3037C8.88121 13.8198 9.18796 14 9.40039 14C9.61284 13.9998 9.9197 13.8197 10.1406 13.3037L10.1748 13.2373C10.2649 13.0915 10.4248 13.0001 10.5996 9C10.7997 9 10.9808 9.11975 11.0596 9.30371C11.2806 9.8198 11.5874 9.99989 11.7998 10C12.0122 10 12.319 9.81985 12.54 9.30371ZM10 2.5C8.89543 2.5 8 3.39543 8 4.5V5H12V4.5C12 3.39543 11.1046 2.5 10 2.5Z"></path></svg>
-                                              Copy Template
+                                              Copy Example
                                           </motion.span>
                                       )}
                                     </AnimatePresence>
