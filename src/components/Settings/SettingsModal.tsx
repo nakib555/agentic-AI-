@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -177,15 +178,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                     </div>
 
                     <LayoutGroup id="settings-nav">
-                        {/* Use custom scrollbar class and ensure horizontal scroll on mobile */}
-                        <ul className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible px-2 md:px-0 py-2 md:py-0 custom-scrollbar scroll-smooth snap-x">
+                        <ul className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible px-2 md:px-0 py-2 md:py-0 scroll-smooth snap-x">
                             {CATEGORIES.map(cat => (
                                 <li key={cat.id} className="flex-shrink-0 snap-start">
                                     <SettingsCategoryButton
                                         icon={cat.icon}
                                         label={cat.label}
                                         isActive={activeCategory === cat.id}
-                                        onClick={() => setActiveCategory(cat.id)}
+                                        onClick={(e) => {
+                                            setActiveCategory(cat.id);
+                                            e.currentTarget.scrollIntoView({
+                                                behavior: 'smooth',
+                                                block: 'nearest',
+                                                inline: 'center'
+                                            });
+                                        }}
                                     />
                                 </li>
                             ))}

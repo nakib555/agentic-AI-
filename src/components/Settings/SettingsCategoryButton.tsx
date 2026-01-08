@@ -13,7 +13,7 @@ type SettingsCategoryButtonProps = {
   icon: React.ReactNode;
   label: string;
   isActive: boolean;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 };
 
 export const SettingsCategoryButton: React.FC<SettingsCategoryButtonProps> = ({ icon, label, isActive, onClick }) => (
