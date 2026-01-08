@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -193,6 +194,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <div
                         className="group absolute top-0 right-0 h-full z-50 w-4 cursor-col-resize flex justify-center hover:bg-transparent"
                         onMouseDown={startResizing}
+                        role="separator"
+                        aria-label="Resize sidebar"
                     >
                         <div className={`w-[2px] h-full transition-colors duration-200 ${isResizing ? 'bg-indigo-500' : 'bg-transparent group-hover:bg-indigo-400/50'}`}></div>
                     </div>
@@ -204,6 +207,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         onClick={() => setIsCollapsed(false)}
                         className="absolute -right-3 top-12 w-6 h-12 bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-r-lg flex items-center justify-center text-slate-400 hover:text-indigo-500 shadow-sm cursor-pointer z-50 opacity-0 group-hover:opacity-100 transition-opacity delay-300"
                         title="Expand sidebar"
+                        aria-label="Expand sidebar"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>

@@ -118,6 +118,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         onChange={logic.handleFileChange}
         className="hidden"
         multiple
+        aria-hidden="true"
       />
       <input
         type="file"
@@ -126,6 +127,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         className="hidden"
         multiple
         {...({ webkitdirectory: "", directory: "" } as any)}
+        aria-hidden="true"
       />
 
       <div 
@@ -220,6 +222,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                 onBlur={() => logic.setIsFocused(false)}
                 disabled={isGeneratingResponse}
                 rows={1}
+                aria-label="Message Input"
                 className="w-full bg-transparent text-content-primary px-4 py-3 max-h-[120px] focus:outline-none resize-none overflow-y-auto leading-relaxed custom-scrollbar placeholder:text-transparent z-10"
                 style={{ minHeight: '3rem' }}
             />
@@ -236,6 +239,8 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                         disabled={isGeneratingResponse}
                         className="relative p-2 rounded-xl text-content-secondary hover:text-primary-main hover:bg-layer-2 transition-colors disabled:opacity-50"
                         aria-label="Attach files"
+                        aria-haspopup="true"
+                        aria-expanded={logic.isUploadMenuOpen}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                             <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
@@ -268,7 +273,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                                 : 'text-content-secondary hover:text-content-primary hover:bg-layer-2'
                             }
                         `}
-                        aria-label="Voice input"
+                        aria-label={logic.isRecording ? "Stop recording" : "Start voice input"}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
@@ -290,7 +295,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                                 : 'text-content-secondary hover:text-primary-main hover:bg-layer-2'
                             }
                         `}
-                        aria-label="Enhance prompt"
+                        aria-label="Enhance prompt with AI"
                     >
                         {logic.isEnhancing ? (
                             <svg className="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

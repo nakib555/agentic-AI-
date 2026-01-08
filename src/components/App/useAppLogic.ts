@@ -81,6 +81,13 @@ export const useAppLogic = () => {
       return () => window.removeEventListener('open-artifact', handleOpenArtifact as EventListener);
   }, [isDesktop, sidebar]);
 
+  // Listen for Open Settings requests (e.g. from error prompts)
+  useEffect(() => {
+      const handleOpenSettings = () => setIsSettingsOpen(true);
+      window.addEventListener('open-settings', handleOpenSettings);
+      return () => window.removeEventListener('open-settings', handleOpenSettings);
+  }, []);
+
   // Global Resize Logic
   // Aggregates resizing state from all sidebars to enforce global UI locks (cursor, pointer-events)
   const isAnyResizing = sidebar.isResizing || sidebar.isThinkingResizing || sidebar.isSourcesResizing || isArtifactResizing;
