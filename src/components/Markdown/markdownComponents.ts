@@ -10,6 +10,7 @@ import { StyledLink } from './StyledLink';
 import { CodeBlock } from './CodeBlock';
 import { InlineCode } from './InlineCode';
 import { StyledMark } from './StyledMark';
+import { Collapsible } from './Collapsible';
 
 // Custom Blockquote component that acts as a router for Callouts and Bubbles
 const BlockquoteRouter = (props: any) => {
@@ -66,6 +67,10 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
     em: (props: any) => React.createElement('em', { className: "italic text-slate-800 dark:text-slate-200", ...props }),
     img: (props: any) => React.createElement('img', { loading: "lazy", ...props }),
     mark: (props: any) => React.createElement(StyledMark, props),
+
+    // Collapsible Sections
+    details: (props: any) => React.createElement(Collapsible, props),
+    summary: (props: any) => React.createElement('summary', props), // Collapsible handles the rendering, this is just a passthrough for children identification
 
     code: ({ inline, className, children, isBlock, node, ...props }: any) => {
         const match = /language-(\w+)/.exec(className || '');

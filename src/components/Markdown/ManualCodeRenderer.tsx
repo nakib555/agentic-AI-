@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -24,12 +25,6 @@ type ManualCodeRendererProps = {
 const processHighlights = (content: string): string => {
     if (!content) return '';
     
-    // Check if we need processing at all
-    const hasHighlight = content.includes('==');
-    const hasCurrency = content.includes('$');
-    
-    if (!hasHighlight && !hasCurrency) return content;
-    
     // Split content by code blocks, inline code, display math, and inline math to protect them
     // Note: the regex `\$[^$\n]+\$` captures valid inline math (single line).
     // Using new RegExp to avoid parser issues with backticks in regex literals
@@ -41,8 +36,21 @@ const processHighlights = (content: string): string => {
         // If this part is a code block or math, return it untouched
         if (part.startsWith('`') || part.startsWith('$')) return part;
         
-        // Apply text transformations to regular text segments
-        return part
+        let processed = part;
+
+        // 1. Transform Custom Collapsible Syntax:
+        // :::details Title
+        // Content
+        // :::
+        // Regex looks for :::details [Title] (newline) [Content] (newline) :::
+        // Uses [\s\S]*? for non-greedy multiline matching of content.
+        processed = processed.replace(
+            /:::details\s+([^\n]+)\n([\s\S]*?)\n:::/g, 
+            '<details><summary>$1</summary>\n\n$2\n</details>'
+        );
+
+        // 2. Apply text transformations to regular text segments
+        return processed
             // Match specific color syntax: ==[red] text==
             .replace(/==\[([a-zA-Z]+)\](.*?)==/g, '<mark>[$1]$2</mark>')
             // Match standard highlight: ==text==
