@@ -33,7 +33,8 @@ export const StyledMark: React.FC = (props: any) => {
     // Check if the first child is a string and contains a color tag like [red] or [#hex]
     if (children.length > 0 && typeof children[0] === 'string') {
         const firstChild = children[0] as string;
-        const colorMatch = firstChild.match(/^\[([a-zA-Z]+|#[0-9a-fA-F]{3,6})\]/);
+        // The previous regex in ManualCodeRenderer wraps the color in brackets: [color]
+        const colorMatch = firstChild.match(/^\[([^\]]+)\]/);
         
         if (colorMatch && colorMatch[1]) {
             const colorValue = colorMatch[1];
@@ -48,22 +49,26 @@ export const StyledMark: React.FC = (props: any) => {
                 children.shift();
             }
 
-            // Check if it's a hex code
-            if (colorValue.startsWith('#')) {
+            // 1. Check Named Colors (Tailwind classes)
+            const colorName = colorValue.toLowerCase();
+            if (colorMap[colorName]) {
                 return (
-                    <span className="font-semibold" style={{ color: colorValue }}>
+                    <span className={`font-semibold ${colorMap[colorName]}`}>
                         {children}
                     </span>
                 );
             }
 
-            // Check map for named colors
-            const colorName = colorValue.toLowerCase();
-            const classes = colorMap[colorName];
+            // 2. Check Raw CSS Colors (Hex, RGB, HSL, LCH, LAB, Var, etc.)
+            // Heuristic check for valid CSS color strings
+            const isRawColor = 
+                colorValue.startsWith('#') || 
+                colorValue.includes('(') || 
+                colorValue.startsWith('var');
 
-            if (classes) {
+            if (isRawColor) {
                 return (
-                    <span className={`font-semibold ${classes}`}>
+                    <span className="font-semibold" style={{ color: colorValue }}>
                         {children}
                     </span>
                 );
