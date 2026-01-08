@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -149,7 +148,7 @@ export const ChatHeader = ({ onImportChat, onExportChat, onShareChat, isChatActi
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 border border-slate-200/80 dark:border-white/10 shadow-sm min-h-[32px]" title={chatTitle}>
+                                className="inline-block text-sm font-semibold text-gray-800 dark:text-slate-200 px-4 py-2 rounded-full bg-white/60 dark:bg-black/20 border border-slate-200/80 dark:border-white/10 shadow-sm min-h-[32px] backdrop-blur-none md:backdrop-blur-md" title={chatTitle}>
                                 
                                 {isAnimatingTitle && animationKey ? (
                                     <TextType

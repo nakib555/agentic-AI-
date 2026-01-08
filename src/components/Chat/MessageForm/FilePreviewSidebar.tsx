@@ -193,7 +193,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className={`fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] transition-opacity ${isDesktop ? 'bg-black/30' : ''}`}
+                        className={`fixed inset-0 z-[60] bg-black/40 transition-opacity ${isDesktop ? 'bg-black/30' : ''}`}
                     />
 
                     {/* Container */}

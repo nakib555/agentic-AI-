@@ -112,7 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] pointer-events-auto" 
+                        className="fixed inset-0 bg-black/40 pointer-events-auto" 
                         style={{ willChange: 'opacity' }}
                     />
                 )}

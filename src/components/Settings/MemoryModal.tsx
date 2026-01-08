@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -245,7 +244,7 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({ isOpen, onClose, memor
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[80] flex items-center justify-center p-4 sm:p-6 overflow-hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-none md:backdrop-blur-sm z-[80] flex items-center justify-center p-4 sm:p-6 overflow-hidden"
           role="dialog"
           aria-modal="true"
           aria-labelledby="memory-modal-title"

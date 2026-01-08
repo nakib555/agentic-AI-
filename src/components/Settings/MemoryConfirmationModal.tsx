@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -24,7 +23,7 @@ export const MemoryConfirmationModal: React.FC<MemoryConfirmationModalProps> = (
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onCancel}
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[80] flex items-start justify-center p-4"
+          className="fixed inset-0 bg-black/40 backdrop-blur-none md:backdrop-blur-sm z-[80] flex items-start justify-center p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="memory-confirm-title"

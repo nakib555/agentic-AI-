@@ -113,7 +113,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[60]"
+                        className="fixed inset-0 bg-black/40 z-[60]"
                     />
                 )}
             </AnimatePresence>
