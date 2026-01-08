@@ -94,8 +94,10 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
     mark: (props: any) => React.createElement(StyledMark, props),
 
     // Collapsible Sections
+    // details is mapped to Collapsible. 
+    // We removed 'summary' mapping to let react-markdown use the default intrinsic element, 
+    // which allows Collapsible to reliably detect it via child.type === 'summary'.
     details: (props: any) => React.createElement(Collapsible, props),
-    summary: (props: any) => React.createElement('summary', props), // Collapsible handles the rendering, this is just a passthrough for children identification
 
     code: ({ inline, className, children, isBlock, node, ...props }: any) => {
         const match = /language-(\w+)/.exec(className || '');

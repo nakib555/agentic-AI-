@@ -5,19 +5,28 @@
  */
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as motionTyped, AnimatePresence } from 'framer-motion';
+
+const motion = motionTyped as any;
 
 export const Collapsible = ({ children, ...props }: any) => {
   const [isOpen, setIsOpen] = useState(false);
 
   // Extract Summary and Content from children
   const childrenArray = React.Children.toArray(children);
+  
+  // Find the summary element. 
+  // We check for type 'summary' (if not overridden) or check the props if available.
   const summaryElement = childrenArray.find(
     (child: any) => child.type === 'summary' || child.props?.node?.tagName === 'summary'
   );
-  const content = childrenArray.filter(
-    (child: any) => child !== summaryElement
-  );
+  
+  // If summary exists, filter it out from content. Otherwise, treat everything as content.
+  const content = summaryElement 
+    ? childrenArray.filter((child: any) => child !== summaryElement)
+    : childrenArray;
+
+  const title = summaryElement ? (summaryElement as any).props.children : 'Details';
 
   return (
     <div className="my-4 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden bg-white dark:bg-white/5 shadow-sm transition-colors hover:border-slate-300 dark:hover:border-white/20">
@@ -28,7 +37,7 @@ export const Collapsible = ({ children, ...props }: any) => {
         aria-expanded={isOpen}
       >
         <span className="font-semibold text-sm text-slate-800 dark:text-slate-200">
-          {summaryElement ? (summaryElement as any).props.children : 'Details'}
+          {title}
         </span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
