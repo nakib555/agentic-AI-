@@ -183,15 +183,19 @@ export const useChat = (
             });
 
             if (!response.ok) {
-                if (response.status === 404) {
-                    console.warn("[FRONTEND] Stream not found (404). Assuming completion.");
-                    // Ensure local state is consistent
+                throw new Error(`Reconnection failed: ${response.status}`);
+            }
+
+            // Check content type to see if we got the JSON "not found" payload or the stream
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                const data = await response.json().catch(() => ({}));
+                if (data.status === 'stream_not_found') {
+                    console.log("[FRONTEND] Stream finished or expired. Closing local state.");
                     updateMessage(chatId, messageId, { isThinking: false });
                     completeChatLoading(chatId);
-                } else {
-                    throw new Error(`Reconnection failed: ${response.status}`);
+                    return;
                 }
-                return;
             }
 
             if (!response.body) throw new Error("No response body");

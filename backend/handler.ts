@@ -217,8 +217,9 @@ export const apiHandler = async (req: any, res: any) => {
         const job = activeJobs.get(chatId);
         
         if (!job) {
-            // Chat might exist but stream finished/died
-            return res.status(404).json({ error: "No active stream found for this chat." });
+            // Chat might exist but stream finished/died.
+            // Return 200 with specific status to avoid browser console 404 errors.
+            return res.status(200).json({ status: "stream_not_found" });
         }
         
         res.setHeader('Content-Type', 'application/json');
@@ -478,7 +479,7 @@ ${personalizationSection}
                 const finalSettings = {
                     ...settings,
                     systemInstruction: finalSystemInstruction,
-                    tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ googleSearch: {} }],
+                    tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ functionDeclarations: [], googleSearch: {} }],
                 };
                 
                 try {
