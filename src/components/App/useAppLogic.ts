@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -358,10 +359,23 @@ export const useAppLogic = () => {
       if (chat.currentChatId) updateChatSettings(chat.currentChatId, { videoModel: val });
   }, [chat.currentChatId, updateChatSettings]);
 
+  // Ref for debouncing model settings saves
+  const settingsSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleModelChange = useCallback((modelId: string) => {
+    // 1. Instant UI update
     setActiveModel(modelId);
-    updateSettings({ activeModel: modelId });
-    if (chat.currentChatId) updateChatModel(chat.currentChatId, modelId);
+    
+    // 2. Debounce Global Settings Save
+    if (settingsSaveTimeoutRef.current) clearTimeout(settingsSaveTimeoutRef.current);
+    settingsSaveTimeoutRef.current = setTimeout(() => {
+        updateSettings({ activeModel: modelId }).catch(console.error);
+    }, 1000);
+
+    // 3. Debounce Chat Persistence (if active chat)
+    if (chat.currentChatId) {
+        updateChatModel(chat.currentChatId, modelId, 1000);
+    }
   }, [chat.currentChatId, updateChatModel]);
 
   const prevChatIdRef = useRef<string | null>(null);

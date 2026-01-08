@@ -49,7 +49,11 @@ export const useChatHistory = () => {
 
   const chatHistoryRef = useRef(chatHistory);
   const currentChatIdRef = useRef(currentChatId);
+  
+  // Debouncing refs
   const paginationSaveTimeoutRef = useRef<number | null>(null);
+  const pendingUpdatesRef = useRef<Record<string, Partial<ChatSession>>>({});
+  const updateTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => { chatHistoryRef.current = chatHistory; }, [chatHistory]);
   useEffect(() => { currentChatIdRef.current = currentChatId; }, [currentChatId]);
@@ -219,22 +223,40 @@ export const useChatHistory = () => {
     }));
   }, []);
 
-  const updateChatProperty = useCallback(async (chatId: string, update: Partial<ChatSession>) => {
-      const currentHistory = chatHistoryRef.current;
-      const chatToUpdate = currentHistory.find(c => c.id === chatId);
-      if (!chatToUpdate) return;
-      const previousChat = { ...chatToUpdate };
-
+  const updateChatProperty = useCallback(async (chatId: string, update: Partial<ChatSession>, debounceMs: number = 0) => {
+      // 1. Optimistic Update (Always Instant)
       setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, ...update } : s));
 
-      try {
-          await fetchApi(`/api/chats/${chatId}`, {
-              method: 'PUT',
-              body: JSON.stringify(update),
-          });
-      } catch (error) {
-          if (isVersionMismatch(error)) return;
-          setChatHistory(prev => prev.map(s => s.id === chatId ? previousChat : s));
+      // 2. Accumulate pending updates
+      pendingUpdatesRef.current[chatId] = { ...(pendingUpdatesRef.current[chatId] || {}), ...update };
+
+      const performSave = async () => {
+          const updatesToSave = pendingUpdatesRef.current[chatId];
+          // If no updates pending (already saved), exit
+          if (!updatesToSave) return;
+          
+          // Clear pending for this chat immediately to avoid race conditions
+          delete pendingUpdatesRef.current[chatId];
+
+          try {
+              await fetchApi(`/api/chats/${chatId}`, {
+                  method: 'PUT',
+                  body: JSON.stringify(updatesToSave),
+              });
+          } catch (error) {
+              if (isVersionMismatch(error)) return;
+              console.error(`Failed to save chat ${chatId}`, error);
+          }
+      };
+
+      if (debounceMs > 0) {
+          if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+          // @ts-ignore
+          updateTimeoutRef.current = setTimeout(performSave, debounceMs);
+      } else {
+          // If immediate, also flush any pending updates for this chat to ensure order
+          if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+          await performSave();
       }
   }, []);
 
@@ -256,7 +278,8 @@ export const useChatHistory = () => {
 
     if (paginationSaveTimeoutRef.current) clearTimeout(paginationSaveTimeoutRef.current);
 
-    paginationSaveTimeoutRef.current = window.setTimeout(async () => {
+    // @ts-ignore
+    paginationSaveTimeoutRef.current = setTimeout(async () => {
         try {
             await fetchApi(`/api/chats/${chatId}`, {
                 method: 'PUT',
@@ -286,8 +309,8 @@ export const useChatHistory = () => {
   }, []);
   
   const updateChatTitle = useCallback((chatId: string, title: string) => updateChatProperty(chatId, { title }), [updateChatProperty]);
-  const updateChatModel = useCallback((chatId: string, model: string) => updateChatProperty(chatId, { model }), [updateChatProperty]);
-  const updateChatSettings = useCallback((chatId: string, settings: Partial<Pick<ChatSession, 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>>) => updateChatProperty(chatId, settings), [updateChatProperty]);
+  const updateChatModel = useCallback((chatId: string, model: string, debounceMs: number = 0) => updateChatProperty(chatId, { model }, debounceMs), [updateChatProperty]);
+  const updateChatSettings = useCallback((chatId: string, settings: Partial<Pick<ChatSession, 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>>, debounceMs: number = 0) => updateChatProperty(chatId, settings, debounceMs), [updateChatProperty]);
 
   return { 
     chatHistory, currentChatId, isHistoryLoading,

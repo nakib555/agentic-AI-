@@ -208,12 +208,6 @@ export const useChat = (
                     },
                     onWorkflowUpdate: () => {},
                     onToolCallStart: (toolCallEvents) => {
-                        // Merge to avoid duplication on replay? Backend buffer sends everything from start?
-                        // Assuming backend sends all events including past ones if we reconnect to start, 
-                        // or just new ones if we use Last-Event-ID?
-                        // Current backend implementation replays full buffer.
-                        // We need to merge intelligently or just replace?
-                        // For simplicity in this implementation, we append/merge by ID.
                         updateActiveResponseOnMessage(chatId, messageId, (r) => {
                             const existingIds = new Set(r.toolCallEvents?.map(e => e.id));
                             const newEvents = toolCallEvents.filter(e => !existingIds.has(e.id)).map(e => ({...e, startTime: e.startTime || Date.now()}));
@@ -296,15 +290,11 @@ export const useChat = (
         if (hasAttemptedReconnection.current || !currentChatId) return;
         
         const chat = chatHistoryRef.current.find(c => c.id === currentChatId);
-        // If chat exists, has messages, and last message is thinking...
         if (chat && chat.messages && chat.messages.length > 0) {
             const lastMsg = chat.messages[chat.messages.length - 1];
-            // ...and we are NOT currently locally loading (stream active)
             if (lastMsg.role === 'model' && lastMsg.isThinking && !abortControllerRef.current) {
-                // ...and there's no error on it
                 if (!lastMsg.responses?.[lastMsg.activeResponseIndex]?.error) {
                     hasAttemptedReconnection.current = true;
-                    // Trigger reconnection
                     connectToActiveStream(currentChatId, lastMsg.id);
                 }
             }
@@ -793,8 +783,8 @@ export const useChat = (
         }
     }, [isLoading, updateChatProperty, onShowToast]);
 
-    const updateChatModel = useCallback((chatId: string, model: string) => updateChatProperty(chatId, { model }), [updateChatProperty]);
-    const updateChatSettings = useCallback((chatId: string, settings: Partial<Pick<ChatSession, 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>>) => updateChatProperty(chatId, settings), [updateChatProperty]);
+    const updateChatModel = useCallback((chatId: string, model: string, debounceMs: number = 0) => updateChatProperty(chatId, { model }, debounceMs), [updateChatProperty]);
+    const updateChatSettings = useCallback((chatId: string, settings: Partial<Pick<ChatSession, 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>>, debounceMs: number = 0) => updateChatProperty(chatId, settings, debounceMs), [updateChatProperty]);
 
     const sendMessageForTest = (userMessage: string, options?: { isThinkingModeEnabled?: boolean }): Promise<Message> => {
         return new Promise((resolve) => {
