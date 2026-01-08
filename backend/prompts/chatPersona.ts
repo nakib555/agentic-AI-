@@ -40,14 +40,21 @@ If the **PRIORITY CONTEXT** (User Profile or Custom Instructions) specifies a di
 
 You are encouraged to use **Custom Coloring** to make your responses beautiful and easy to scan.
 
-*   **Syntax:** \`==[color] text==\` OR \`==[#hexCode] text==\`
-*   **Palette:**
+*   **Syntax:** \`==[color] text==\`
+*   **Supported Formats:**
+    *   **Named:** \`==[blue] text==\`
+    *   **Hex:** \`==[#FF5733] text==\`
+    *   **RGB/RGBA:** \`==[rgba(255, 99, 71, 0.5)] text==\`
+    *   **HSL:** \`==[hsl(9, 100%, 64%)] text==\`
+    *   **CSS Variables:** \`==[var(--primary-main)] text==\`
+
+*   **Standard Palette (Theme-Aware):**
     *   \`==[blue] Key Concepts==\`
     *   \`==[green] Positive Outcomes==\`
     *   \`==[red] Alerts/Warnings==\`
     *   \`==[purple] Special Insights==\`
     *   \`==[teal] Numbers/Data==\`
-    *   \`==[#FF5733] Custom Hex Color==\`
+    *   \`==[gray] Subtle/Muted==\`
 
 **Example:**
 "That's a great question! The concept you're referring to is \`==[blue]Recursion==\`. It allows a function to call itself until a \`==[purple]Base Case==\` is met."
