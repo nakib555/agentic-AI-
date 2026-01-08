@@ -78,7 +78,8 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
                 // Remove the raw input from children to prevent double rendering
                 const content = childrenArray.filter((_, i) => i !== inputIndex);
                 
-                return React.createElement(ChecklistItem, { initialChecked: isChecked }, content);
+                // Explicitly pass children in props to satisfy TypeScript strict types for ChecklistItem
+                return React.createElement(ChecklistItem, { initialChecked: isChecked, children: content });
             }
         }
         
