@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, Suspense, ErrorInfo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, ErrorInfo, Component } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
@@ -22,11 +22,13 @@ interface ErrorBoundaryState {
 }
 
 // --- Error Boundary for Lazy Component ---
-class ArtifactPreviewErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ArtifactPreviewErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     constructor(props: ErrorBoundaryProps) {
         super(props);
         this.state = { hasError: false };
     }
+
+    public state: ErrorBoundaryState;
 
     static getDerivedStateFromError() { return { hasError: true }; }
 

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { ErrorInfo } from 'react';
+import React, { ErrorInfo, Component } from 'react';
 
 interface ErrorBoundaryProps {
   children?: React.ReactNode;
@@ -14,7 +14,7 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -22,6 +22,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       error: null,
     };
   }
+
+  public state: ErrorBoundaryState;
 
   public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
