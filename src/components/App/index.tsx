@@ -8,11 +8,11 @@ import React, { Suspense } from 'react';
 import { useAppLogic } from './useAppLogic';
 import { Toast } from '../UI/Toast';
 import { AppSkeleton } from '../UI/AppSkeleton';
+import { ChatSkeleton } from '../UI/ChatSkeleton';
 import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 } from './constants';
 import { VersionMismatchOverlay } from '../UI/VersionMismatchOverlay';
-import { ChatArea } from '../Chat/ChatArea';
 
 // Helper to safely lazy load named exports
 function lazyLoad<T extends React.ComponentType<any>>(
@@ -32,6 +32,7 @@ function lazyLoad<T extends React.ComponentType<any>>(
 
 // Lazy Load Major UI Blocks
 const Sidebar = lazyLoad(() => import('../Sidebar/Sidebar'), 'Sidebar');
+const ChatArea = lazyLoad(() => import('../Chat/ChatArea'), 'ChatArea');
 const ChatHeader = lazyLoad(() => import('../Chat/ChatHeader'), 'ChatHeader');
 const SourcesSidebar = lazyLoad(() => import('../AI/SourcesSidebar'), 'SourcesSidebar');
 const ArtifactSidebar = lazyLoad(() => import('../Sidebar/ArtifactSidebar'), 'ArtifactSidebar');
@@ -117,32 +118,34 @@ export const App = () => {
                 isChatActive={logic.isChatActive}
                 chatTitle={chatTitle}
              />
-             <ChatArea 
-                messageListRef={logic.messageListRef}
-                messages={logic.messages}
-                isLoading={logic.isLoading}
-                isAppLoading={logic.modelsLoading || logic.settingsLoading}
-                sendMessage={logic.sendMessage}
-                onCancel={logic.cancelGeneration}
-                ttsVoice={logic.ttsVoice}
-                ttsModel={logic.ttsModel}
-                setTtsVoice={logic.setTtsVoice}
-                currentChatId={logic.currentChatId}
-                activeModel={logic.activeModel} 
-                onShowSources={logic.handleShowSources}
-                approveExecution={logic.approveExecution}
-                denyExecution={logic.denyExecution}
-                onRegenerate={logic.regenerateResponse}
-                onSetActiveResponseIndex={logic.setActiveResponseIndex}
-                isAgentMode={logic.isAgentMode}
-                setIsAgentMode={logic.setIsAgentMode}
-                backendStatus={logic.backendStatus}
-                backendError={logic.backendError}
-                onRetryConnection={logic.retryConnection}
-                hasApiKey={!!logic.apiKey}
-                onEditMessage={logic.editMessage}
-                onNavigateBranch={logic.navigateBranch}
-             />
+             <Suspense fallback={<ChatSkeleton />}>
+                <ChatArea 
+                    messageListRef={logic.messageListRef}
+                    messages={logic.messages}
+                    isLoading={logic.isLoading}
+                    isAppLoading={logic.modelsLoading || logic.settingsLoading}
+                    sendMessage={logic.sendMessage}
+                    onCancel={logic.cancelGeneration}
+                    ttsVoice={logic.ttsVoice}
+                    ttsModel={logic.ttsModel}
+                    setTtsVoice={logic.setTtsVoice}
+                    currentChatId={logic.currentChatId}
+                    activeModel={logic.activeModel} 
+                    onShowSources={logic.handleShowSources}
+                    approveExecution={logic.approveExecution}
+                    denyExecution={logic.denyExecution}
+                    onRegenerate={logic.regenerateResponse}
+                    onSetActiveResponseIndex={logic.setActiveResponseIndex}
+                    isAgentMode={logic.isAgentMode}
+                    setIsAgentMode={logic.setIsAgentMode}
+                    backendStatus={logic.backendStatus}
+                    backendError={logic.backendError}
+                    onRetryConnection={logic.retryConnection}
+                    hasApiKey={!!logic.apiKey}
+                    onEditMessage={logic.editMessage}
+                    onNavigateBranch={logic.navigateBranch}
+                />
+             </Suspense>
           </div>
         </main>
 
