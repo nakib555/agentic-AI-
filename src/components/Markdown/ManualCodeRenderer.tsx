@@ -51,8 +51,8 @@ const processHighlights = (content: string): string => {
 
         // 2. Apply text transformations to regular text segments
         return processed
-            // Match specific color syntax: ==[red] text==
-            .replace(/==\[([a-zA-Z]+)\](.*?)==/g, '<mark>[$1]$2</mark>')
+            // Match specific color syntax: ==[red] text== OR ==[#ff0000] text==
+            .replace(/==\[([a-zA-Z]+|#[0-9a-fA-F]{3,6})\](.*?)==/g, '<mark>[$1]$2</mark>')
             // Match standard highlight: ==text==
             .replace(/==(.*?)==/g, '<mark>$1</mark>')
             // Escape currency symbols ($ followed by digit) to prevent KaTeX from mistaking them for open math tags

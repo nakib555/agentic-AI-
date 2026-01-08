@@ -30,14 +30,13 @@ const colorMap: Record<string, string> = {
 export const StyledMark: React.FC = (props: any) => {
     const children = React.Children.toArray(props.children);
     
-    // Check if the first child is a string and contains a color tag like [red]
+    // Check if the first child is a string and contains a color tag like [red] or [#hex]
     if (children.length > 0 && typeof children[0] === 'string') {
         const firstChild = children[0] as string;
-        const colorMatch = firstChild.match(/^\[([a-zA-Z]+)\]/);
+        const colorMatch = firstChild.match(/^\[([a-zA-Z]+|#[0-9a-fA-F]{3,6})\]/);
         
         if (colorMatch && colorMatch[1]) {
-            const colorName = colorMatch[1].toLowerCase();
-            const classes = colorMap[colorName];
+            const colorValue = colorMatch[1];
             
             // Remove the [color] tag from the text
             const text = firstChild.substring(colorMatch[0].length);
@@ -48,6 +47,19 @@ export const StyledMark: React.FC = (props: any) => {
             } else {
                 children.shift();
             }
+
+            // Check if it's a hex code
+            if (colorValue.startsWith('#')) {
+                return (
+                    <span className="font-semibold" style={{ color: colorValue }}>
+                        {children}
+                    </span>
+                );
+            }
+
+            // Check map for named colors
+            const colorName = colorValue.toLowerCase();
+            const classes = colorMap[colorName];
 
             if (classes) {
                 return (

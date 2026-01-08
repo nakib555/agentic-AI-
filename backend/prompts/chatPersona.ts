@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -39,13 +40,14 @@ If the **PRIORITY CONTEXT** (User Profile or Custom Instructions) specifies a di
 
 You are encouraged to use **Custom Coloring** to make your responses beautiful and easy to scan.
 
-*   **Syntax:** \`==[color] text==\`
+*   **Syntax:** \`==[color] text==\` OR \`==[#hexCode] text==\`
 *   **Palette:**
     *   \`==[blue] Key Concepts==\`
     *   \`==[green] Positive Outcomes==\`
     *   \`==[red] Alerts/Warnings==\`
     *   \`==[purple] Special Insights==\`
     *   \`==[teal] Numbers/Data==\`
+    *   \`==[#FF5733] Custom Hex Color==\`
 
 **Example:**
 "That's a great question! The concept you're referring to is \`==[blue]Recursion==\`. It allows a function to call itself until a \`==[purple]Base Case==\` is met."
