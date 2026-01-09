@@ -15,18 +15,27 @@ export const Collapsible = ({ children, ...props }: any) => {
   // Extract Summary and Content from children
   const childrenArray = React.Children.toArray(children);
   
-  // Find the summary element. 
-  // We check for type 'summary' (if not overridden) or check the props if available.
-  const summaryElement = childrenArray.find(
-    (child: any) => child.type === 'summary' || child.props?.node?.tagName === 'summary'
-  );
-  
-  // If summary exists, filter it out from content. Otherwise, treat everything as content.
-  const content = summaryElement 
-    ? childrenArray.filter((child: any) => child !== summaryElement)
-    : childrenArray;
+  let summaryElement: React.ReactNode | null = null;
+  let contentNodes: React.ReactNode[] = [];
 
-  const title = summaryElement ? (summaryElement as any).props.children : 'Details';
+  childrenArray.forEach(child => {
+      // Check for intrinsic 'summary' element or React element with type 'summary'
+      if (React.isValidElement(child) && (child.type === 'summary' || (child.props as any)?.node?.tagName === 'summary')) {
+          summaryElement = child;
+      } else {
+          contentNodes.push(child);
+      }
+  });
+
+  // Extract title from summary element
+  let title: React.ReactNode = 'Details';
+  if (summaryElement) {
+      const props = (summaryElement as React.ReactElement).props;
+      // If summary has children (text), use that. Otherwise use defaults.
+      if (props && props.children) {
+          title = props.children;
+      }
+  }
 
   return (
     <div className="my-4 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden bg-white dark:bg-white/5 shadow-sm transition-colors hover:border-slate-300 dark:hover:border-white/20">
@@ -61,8 +70,8 @@ export const Collapsible = ({ children, ...props }: any) => {
             className="overflow-hidden"
           >
             <div className="p-4 pt-0 text-sm text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-white/5">
-                <div className="pt-4">
-                    {content}
+                <div className="pt-4 markdown-content">
+                    {contentNodes}
                 </div>
             </div>
           </motion.div>

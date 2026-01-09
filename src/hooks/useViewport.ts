@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -27,6 +28,11 @@ export const useViewport = () => {
              // We only care about this on mobile where virtual keyboards affect layout
              if (window.visualViewport && window.innerWidth < DESKTOP_BREAKPOINT) {
                  setVisualViewportHeight(window.visualViewport.height);
+                 // CRITICAL: Force the browser back to the top-left corner.
+                 // When the keyboard opens, browsers often try to scroll the document to keep inputs in view.
+                 // Since we manage the layout manually with visualViewport height, this native scroll results
+                 // in the top of the app being pushed off-screen.
+                 window.scrollTo(0, 0);
              }
         };
 

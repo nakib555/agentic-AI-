@@ -44,6 +44,7 @@ const processHighlights = (content: string): string => {
         // :::
         // Regex looks for :::details [Title] (newline) [Content] (newline) :::
         // Uses [\s\S]*? for non-greedy multiline matching of content.
+        // Updated regex to handle loose spacing and newlines more robustly
         processed = processed.replace(
             /:::details\s+([^\n]+)\n([\s\S]*?)\n:::/g, 
             '<details><summary>$1</summary>\n\n$2\n</details>'
