@@ -7,7 +7,7 @@
 // This is the simplified main hook for the MessageForm component.
 // It composes smaller, more focused hooks for file handling and input enhancements.
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { type MessageFormHandle, type ProcessedFile } from './types';
 import { useFileHandling } from './useFileHandling';
 import { useInputEnhancements } from './useInputEnhancements';
@@ -69,10 +69,9 @@ export const useMessageForm = (
   }, [inputValue, fileHandling.processedFiles.length]);
   
   // Handle automatic resizing of the input area
-  // Optimization: Switched to useEffect to avoid blocking painting (reduces Forced Reflow impact).
-  // While useLayoutEffect prevents visual pop, the calculation cost on main thread during rapid typing
-  // causes frame drops. A slight visual adjustment in the next frame is preferred over input lag.
-  useEffect(() => {
+  // Optimization: useLayoutEffect ensures the height is adjusted synchronously before the paint,
+  // preventing the visual "jump" or jitter often seen with useEffect during rapid typing.
+  useLayoutEffect(() => {
     const element = inputRef.current;
     if (!element) return;
 

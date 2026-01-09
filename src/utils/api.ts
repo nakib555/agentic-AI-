@@ -40,11 +40,14 @@ export const getApiBaseUrl = (): string => {
         const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
 
         if (isLocal) {
-            // If we are served from port 3000 (Vite) but backend is 3001
-            if (port === '3000' || port === '8000' || port === '5173') {
+            // Default backend port is 3001.
+            // If the frontend is NOT running on 3001, we assume the backend is on 3001.
+            // If the frontend IS on 3001, we assume we are proxying or it's a monolithic serve,
+            // so we return an empty string to use relative paths.
+            if (port !== '3001') {
                 return `${protocol}//${hostname}:3001`;
             }
-            // If served from backend port or a different local port, use relative
+            // If served from backend port, use relative
             return '';
         }
         
