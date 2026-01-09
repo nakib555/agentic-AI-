@@ -62,6 +62,14 @@ export const App = () => {
           const currentH = window.innerHeight;
           const currentW = window.innerWidth;
           
+          console.log('[App Viewport Debug] Resize:', { 
+             innerHeight: currentH, 
+             innerWidth: currentW, 
+             visualHeight: window.visualViewport?.height,
+             stableHeight,
+             isDesktop: logic.isDesktop
+          });
+          
           // Check for width change (Orientation Change or Desktop Resize)
           // If width changes significantly, we must reset the stable height as the baseline has changed.
           if (Math.abs(currentW - widthRef.current) > 50) {
@@ -86,7 +94,7 @@ export const App = () => {
       handleResize();
       
       return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [logic.isDesktop, stableHeight]); // Added dependencies to ensure log has fresh state if needed, though stableHeight is in state
 
   // Heuristic: If visual viewport is significantly smaller than our stable full-screen height, keyboard is open.
   const isKeyboardOpen = !logic.isDesktop && logic.visualViewportHeight < (stableHeight * 0.85);
