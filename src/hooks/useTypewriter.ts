@@ -72,8 +72,10 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
       // We slow down the frame rate for larger content to keep the UI responsive.
       let minRenderInterval = 32; // Default 30fps
       
-      if (currentLength.current > 2000) {
-          minRenderInterval = 100; // 10fps for massive content
+      if (currentLength.current > 5000) {
+          minRenderInterval = 150; // 6fps for massive content to prevent freeze
+      } else if (currentLength.current > 2000) {
+          minRenderInterval = 100; // 10fps for large content
       } else if (currentLength.current > 500) {
           minRenderInterval = 64; // ~15fps for medium content
       }
@@ -91,13 +93,14 @@ export const useTypewriter = (targetText: string, isThinking: boolean) => {
 
       // Acceleration: The further behind we are, the faster we type.
       // This is crucial for large code blocks or copy-pastes from backend.
-      if (remainingChars > 3000) charsToAdd = 1000;     // Instant sync for huge dumps
-      else if (remainingChars > 1000) charsToAdd = 300; // Extremely fast
-      else if (remainingChars > 500) charsToAdd = 100;  // Fast code block streaming
-      else if (remainingChars > 200) charsToAdd = 40;   // Fast reading speed
-      else if (remainingChars > 100) charsToAdd = 15;   // Moderate
-      else if (remainingChars > 50) charsToAdd = 8;     // Natural
-      else if (remainingChars > 20) charsToAdd = 4;     // Deceleration
+      if (remainingChars > 5000) charsToAdd = 2000;     // Instant catch-up for massive dumps
+      else if (remainingChars > 2000) charsToAdd = 500; // Very Fast
+      else if (remainingChars > 1000) charsToAdd = 150; // Fast
+      else if (remainingChars > 500) charsToAdd = 50;   // Moderate Fast
+      else if (remainingChars > 200) charsToAdd = 20;   // Reading speed
+      else if (remainingChars > 100) charsToAdd = 10;   // Decent pace
+      else if (remainingChars > 50) charsToAdd = 5;     // Natural
+      else if (remainingChars > 20) charsToAdd = 3;     // Deceleration
 
       // Adjust chars to add based on the throttle. 
       // If we throttled to 100ms (approx 3x standard 32ms), we should add 3x chars to maintain perceived speed.

@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -12,6 +13,7 @@ import type { MessageFormHandle } from './MessageForm/index';
 const MessageComponentRaw: React.FC<{ 
     msg: Message;
     isLoading: boolean;
+    isLast?: boolean; // New prop to determine if this is the active message
     sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void; 
     ttsVoice: string; 
     ttsModel: string;
@@ -23,11 +25,11 @@ const MessageComponentRaw: React.FC<{
     onRegenerate: (messageId: string) => void;
     onSetActiveResponseIndex: (messageId: string, index: number) => void;
     isAgentMode: boolean;
-    userQuery?: string; // New optional prop
+    userQuery?: string;
     onEditMessage?: (messageId: string, newText: string) => void;
     onNavigateBranch?: (messageId: string, direction: 'next' | 'prev') => void;
 }> = ({ 
-    msg, isLoading, sendMessage, ttsVoice, ttsModel, currentChatId, 
+    msg, isLoading, isLast, sendMessage, ttsVoice, ttsModel, currentChatId, 
     onShowSources, approveExecution, denyExecution, messageFormRef,
     onRegenerate, onSetActiveResponseIndex, isAgentMode, userQuery,
     onEditMessage, onNavigateBranch
@@ -89,15 +91,26 @@ export const MessageComponent = memo(MessageComponentRaw, (prevProps, nextProps)
         prevMsg.responses?.length !== nextMsg.responses?.length ||
         prevMsg.versions?.length !== nextMsg.versions?.length ||
         prevMsg.executionState !== nextMsg.executionState ||
-        // CRITICAL FIX: Check if the content of the active response has changed (streaming text, tools, errors)
         prevActiveResponse !== nextActiveResponse;
 
-    // Check if userQuery changed (rare, but good for correctness)
+    // Check if userQuery changed (rare)
     if (prevProps.userQuery !== nextProps.userQuery) return false;
-
-    // If the message content hasn't changed, and it's not the last message (which might be loading),
-    // we generally don't need to re-render. 
-    // However, we must check isLoading to handle the global loading state change.
     
-    return !msgChanged && prevProps.isLoading === nextProps.isLoading && prevProps.ttsVoice === nextProps.ttsVoice && prevProps.ttsModel === nextProps.ttsModel;
+    // Check TTS settings changes
+    if (prevProps.ttsVoice !== nextProps.ttsVoice || prevProps.ttsModel !== nextProps.ttsModel) return false;
+
+    // CRITICAL OPTIMIZATION: 
+    // If the message itself hasn't changed, ignore `isLoading` changes UNLESS this is the last message.
+    // Historical messages shouldn't re-render just because the *global* app state is loading.
+    // The `isLast` prop ensures the active generation UI updates correctly.
+    if (!msgChanged) {
+        if (prevProps.isLast || nextProps.isLast) {
+            // If it is (or was) the last message, respect isLoading changes
+            return prevProps.isLoading === nextProps.isLoading;
+        }
+        // Historical messages: ignore isLoading changes
+        return true; 
+    }
+
+    return false; // Re-render if message changed
 });

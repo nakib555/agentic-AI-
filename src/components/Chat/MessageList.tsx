@@ -15,7 +15,6 @@ import { useViewport } from '../../hooks/useViewport';
 const motion = motionTyped as any;
 
 // Safe lazy loads
-// We keep WelcomeScreen lazy as it's not time-critical for interaction feedback
 const WelcomeScreen = React.lazy(() => import('./WelcomeScreen/index').then(m => ({ default: m.WelcomeScreen })));
 const ChatSkeleton = React.lazy(() => import('../UI/ChatSkeleton').then(m => ({ default: m.ChatSkeleton })));
 
@@ -43,16 +42,17 @@ type MessageListProps = {
 };
 
 // Wrapper to inject context (like previous user message)
-// We memoize this to prevent re-creation if props haven't changed, 
-// though the main optimization comes from the parent passing stable props.
+// We memoize this to prevent re-creation if props haven't changed.
 const MessageWrapper = React.memo(({ 
     msg,
     index,
+    isLast,
     messages,
     contextProps
 }: { 
     msg: Message;
     index: number;
+    isLast: boolean;
     messages: Message[];
     contextProps: Omit<MessageListProps, 'messages'>;
 }) => {
@@ -71,6 +71,7 @@ const MessageWrapper = React.memo(({
     return (
         <MessageComponent 
             msg={msg} 
+            isLast={isLast}
             {...contextProps}
             // Pass the custom prop to AiMessage via MessageComponent
             {...({ userQuery } as any)} 
@@ -128,9 +129,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
       virtuosoRef.current?.scrollToIndex({ index: visibleMessages.length - 1, behavior: 'smooth', align: 'end' });
     },
     scrollToMessage: (messageId: string) => {
-        // We need to find the index of the message in the *visible* list
         const index = visibleMessages.findIndex(m => m.id === messageId);
-        
         if (index !== -1 && virtuosoRef.current) {
             virtuosoRef.current.scrollToIndex({ index, behavior: 'smooth', align: 'center' });
         }
@@ -141,8 +140,8 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
       virtuosoRef.current?.scrollToIndex({ index: visibleMessages.length - 1, behavior: 'smooth', align: 'end' });
   }, [visibleMessages.length]);
 
-  // Memoize the context props object to ensure referential equality across renders
-  // unless a dependency actually changes. This prevents MessageWrapper from re-rendering unnecessarily.
+  // Memoize the context props object.
+  // Note: We intentionally include 'isLoading' here. The optimization happens in MessageComponent's React.memo check.
   const contextProps = useMemo(() => ({
       sendMessage, isLoading, ttsVoice, ttsModel, currentChatId,
       onShowSources, approveExecution, denyExecution, messageFormRef,
@@ -161,6 +160,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
           <MessageWrapper 
               msg={msg}
               index={index}
+              isLast={index === visibleMessages.length - 1}
               messages={visibleMessages}
               contextProps={contextProps}
           />
@@ -171,7 +171,6 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
     <div className="flex-1 min-h-0 relative w-full">
       {visibleMessages.length === 0 ? (
         isLoading ? (
-            // Show Skeleton immediately when loading a chat
             <div className="h-full w-full bg-transparent">
                 <Suspense fallback={null}>
                     <ChatSkeleton />
@@ -190,21 +189,19 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                 ref={virtuosoRef}
                 style={{ height: '100%', width: '100%' }}
                 data={visibleMessages}
-                // 'auto' works well, but for code blocks, slightly higher threshold avoids jitter
                 followOutput={atBottom ? "auto" : false} 
-                increaseViewportBy={600} // Increased significantly to preload complex code blocks
+                increaseViewportBy={600} 
                 overscan={400} 
                 initialTopMostItemIndex={visibleMessages.length - 1}
-                // Removed alignToBottom to fix large top gap; messages will naturally start at the top.
                 atBottomStateChange={(isAtBottom) => {
                     setAtBottom(isAtBottom);
                     setShowScrollButton(!isAtBottom);
                 }}
-                atBottomThreshold={100} // More tolerant threshold for "stick to bottom" logic
+                atBottomThreshold={100}
                 className="custom-scrollbar"
                 itemContent={itemContent}
                 components={{
-                    Header: () => <div className="h-4 md:h-6" />, // Reduced padding
+                    Header: () => <div className="h-4 md:h-6" />,
                     Footer: () => <div className="h-32 md:h-48" />
                 }}
             />
