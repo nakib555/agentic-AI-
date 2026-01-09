@@ -36,7 +36,15 @@ export const useViewport = () => {
              }
         };
 
+        // Aggressively prevent window scrolling on mobile (fixes "drag to up" issue)
+        const handleScroll = () => {
+             if (window.innerWidth < DESKTOP_BREAKPOINT && (window.scrollY !== 0 || window.scrollX !== 0)) {
+                 window.scrollTo(0, 0);
+             }
+        };
+
         window.addEventListener('resize', handleResize);
+        window.addEventListener('scroll', handleScroll);
         
         // Visual Viewport API for accurate mobile layout with keyboard
         if (window.visualViewport) {
@@ -50,6 +58,7 @@ export const useViewport = () => {
         // Cleanup the event listener on component unmount
         return () => {
             window.removeEventListener('resize', handleResize);
+            window.removeEventListener('scroll', handleScroll);
             if (window.visualViewport) {
                 window.visualViewport.removeEventListener('resize', handleVisualResize);
             }

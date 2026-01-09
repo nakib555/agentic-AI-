@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useAppLogic } from './useAppLogic';
 import { Toast } from '../UI/Toast';
 import { AppSkeleton } from '../UI/AppSkeleton';
@@ -50,15 +50,30 @@ export const App = () => {
   
   const activeMessage = currentChat?.messages?.length ? currentChat.messages[currentChat.messages.length - 1] : null;
 
+  const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 0);
+
+  useEffect(() => {
+      const handleResize = () => setWindowHeight(window.innerHeight);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Heuristic: If visual viewport is significantly smaller than window height, keyboard is likely open.
+  // We use 0.85 as a safe threshold (keyboard usually takes >15% of screen).
+  const isKeyboardOpen = !logic.isDesktop && logic.visualViewportHeight < (windowHeight * 0.85);
+
   return (
     <div 
         ref={logic.appContainerRef} 
         className={`flex h-full bg-page text-content-primary overflow-hidden transition-[height] duration-200 ease-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
         style={{ 
             height: !logic.isDesktop && logic.visualViewportHeight ? `${logic.visualViewportHeight}px` : '100dvh',
-            // On mobile, we use visualViewportHeight to handle keyboard, so we reset safe-areas slightly differently
+            // On mobile, we use visualViewportHeight to handle keyboard.
+            // Reset top padding to 0 always since we manage the top bar explicitly.
             paddingTop: logic.isDesktop ? '0' : 'env(safe-area-inset-top)', 
-            paddingBottom: logic.isDesktop ? '0' : 'env(safe-area-inset-bottom)',
+            // If keyboard is open, the visual viewport excludes the safe area bottom (covered by keyboard),
+            // so we set padding to 0 to maximize space. Otherwise, respect safe area.
+            paddingBottom: logic.isDesktop || isKeyboardOpen ? '0' : 'env(safe-area-inset-bottom)',
         }}
     >
       {logic.versionMismatch && <VersionMismatchOverlay />}

@@ -19,6 +19,7 @@ html, body {
     position: fixed;
     overflow: hidden;
     inset: 0;
+    overscroll-behavior: none; /* Prevent rubber banding/drag up */
 }
 
 #root {
