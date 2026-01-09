@@ -25,9 +25,24 @@ export const executeWebSearch = async (ai: GoogleGenAI, args: { query: string })
     } catch (_) { /* not a URL */ }
 
     if (isUrl) {
-      prompt = `You are a research assistant. Your goal is to provide a comprehensive, well-structured summary of the content found at the provided URL. Start with a high-level summary, then break down the key topics with bullet points. Conclude with the main takeaway. Do not add any conversational filler. URL: "${args.query}"`;
+      prompt = `You are a specialized URL summarizer. Fetch the content of this URL: "${args.query}".
+      
+      Output Requirements:
+      1. Title of the page.
+      2. Brief Executive Summary (2-3 sentences).
+      3. Key Topics/Facts (Bullet points).
+      4. If it's a technical article, extract code snippets or commands if relevant.
+      `;
     } else {
-      prompt = `You are a web research expert. Your task is to answer the user's query based on Google Search results. Provide a comprehensive, well-structured answer. Synthesize information from multiple sources. Use markdown for formatting. Do not include a list of sources in your response. Query: "${args.query}"`;
+      prompt = `You are an expert web researcher. Answer this query based on Google Search results: "${args.query}".
+      
+      Requirements:
+      - Be comprehensive and detailed.
+      - Synthesize information from multiple sources; do not just list them.
+      - If there are conflicting facts, mention the discrepancy.
+      - Use markdown for clear formatting (Headers, Lists, Tables).
+      - Do NOT output a separate "Sources" list at the bottom (the system handles that).
+      `;
     }
     
     const response = await generateContentWithRetry(ai, {
@@ -63,7 +78,7 @@ export const executeWebSearch = async (ai: GoogleGenAI, args: { query: string })
     
     const sourcesMarkdown = uniqueSources.map(s => `- [${s.title}](${s.uri})`).join('\n');
     
-    return `Search successful. Here is a summary of the findings:\n\n${summary}\n\n[SOURCES_PILLS]\n${sourcesMarkdown}\n[/SOURCES_PILLS]`;
+    return `${summary}\n\n[SOURCES_PILLS]\n${sourcesMarkdown}\n[/SOURCES_PILLS]`;
   } catch (err) {
     if (err instanceof ToolError) throw err;
     const originalError = err instanceof Error ? err : new Error(String(err));

@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -7,8 +8,12 @@ import { ToolError } from '../utils/apiError';
 import { fileStore } from '../services/fileStore';
 import { executeWithPiston } from './piston';
 
-export const executeCode = async (args: { language: string; code: string; packages?: string[]; input_filenames?: string[] }, chatId: string): Promise<string> => {
-  const { language, code, input_filenames } = args;
+export const executeCode = async (args: { language: string; code: string; packages?: string[]; input_filenames?: string[], rationale?: string }, chatId: string): Promise<string> => {
+  const { language, code, input_filenames, rationale } = args;
+
+  if (rationale) {
+      console.log(`[executeCode] Rationale: ${rationale}`);
+  }
 
   try {
     // Gather input files from virtual file system if requested

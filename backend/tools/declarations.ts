@@ -12,11 +12,11 @@ import { FunctionDeclaration, Type } from "@google/genai";
 
 export const calculatorDeclaration: FunctionDeclaration = {
     name: 'calculator',
-    description: 'Evaluates a mathematical expression. Supports basic arithmetic operators (+, -, *, /), parentheses, and numbers. Does not support variables or advanced functions (sin, cos).',
+    description: 'Evaluates a mathematical expression. Supports arithmetic (+, -, *, /) and JavaScript Math functions (Math.sqrt, Math.sin, Math.pow, Math.PI, etc.).',
     parameters: {
       type: Type.OBJECT,
       properties: {
-        expression: { type: Type.STRING, description: 'The mathematical expression to evaluate (e.g., "2 * (3 + 4) / 1.5"). Must only contain numbers, operators, and parentheses.' },
+        expression: { type: Type.STRING, description: 'The mathematical expression to evaluate (e.g., "Math.sqrt(144) * Math.PI").' },
       },
       required: ['expression'],
     },
@@ -29,6 +29,7 @@ export const codeExecutorDeclaration: FunctionDeclaration = {
       type: Type.OBJECT,
       properties: {
         language: { type: Type.STRING, description: 'The programming language. Supported: "python", "javascript", "typescript", "bash", "go", "java".' },
+        rationale: { type: Type.STRING, description: 'Brief explanation of what this code does and why it is being run (Chain of Thought).' },
         code: { type: Type.STRING, description: 'The complete source code to execute. Must be self-contained.' },
         packages: { type: Type.ARRAY, description: '(Python only) A list of PyPI packages to install before running the code (e.g., ["numpy", "pandas", "requests"]). Do not include standard library modules.', items: { type: Type.STRING } },
         input_filenames: { type: Type.ARRAY, description: '(Python only) A list of exact filenames (e.g. "data.csv") from the virtual filesystem that the code needs to read. These files must already exist via `writeFile` or uploads.', items: { type: Type.STRING } }
@@ -58,6 +59,11 @@ export const browserDeclaration: FunctionDeclaration = {
             type: Type.STRING, 
             description: 'Action to perform. "read": extract text content. "screenshot": take a picture of the page. "click"/"type"/"scroll": interact with dynamic elements.', 
             enum: ['read', 'screenshot', 'click', 'type', 'scroll', 'wait'] 
+        },
+        waitUntil: {
+            type: Type.STRING,
+            description: 'When to consider navigation finished. "domcontentloaded" (fast, default), "networkidle" (wait for SPAs/AJAX), "load" (wait for all assets).',
+            enum: ['domcontentloaded', 'networkidle', 'load']
         },
         selector: { type: Type.STRING, description: 'CSS selector for "click" or "type" actions (e.g., "button#submit", ".search-input"). Required if action is click/type.' },
         text: { type: Type.STRING, description: 'Text to type for the "type" action.' },
