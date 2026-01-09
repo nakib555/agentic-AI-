@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -202,7 +203,7 @@ export const FilePreviewSidebar: React.FC<FilePreviewSidebarProps> = ({
                         animate={isDesktop ? "open" : undefined}
                         exit={isDesktop ? "closed" : undefined}
                         variants={isDesktop ? desktopVariants : undefined}
-                        style={!isDesktop ? { y, height: '85vh', maxHeight: '85vh' } : {}}
+                        style={!isDesktop ? { y, height: '85dvh', maxHeight: '85dvh' } : {}}
                         transition={isDesktop ? { type: "spring", stiffness: 300, damping: 30 } : undefined}
                         drag={!isDesktop ? "y" : false}
                         dragListener={false}

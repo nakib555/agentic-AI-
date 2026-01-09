@@ -1,4 +1,5 @@
 
+
 /* PART 2 of 2 of main.css */
 
 :root {
@@ -14,12 +15,12 @@
   This forces the layout to stay anchored at the top.
 */
 html, body {
-    height: 100%;
+    height: 100dvh; /* FIX #1: Use dynamic viewport height */
     width: 100%;
-    position: fixed;
-    overflow: hidden;
+    position: fixed; /* FIX #2 part 1 (keeps it anchored) */
+    overflow: hidden; /* FIX #2 part 2 */
     inset: 0;
-    overscroll-behavior: none; /* Prevent rubber banding/drag up */
+    overscroll-behavior: none; /* FIX #2 part 3: Prevent rubber banding/drag up */
 }
 
 #root {

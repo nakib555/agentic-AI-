@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -114,7 +115,7 @@ export const ThinkingSidebar: React.FC<ThinkingSidebarProps> = ({ isOpen, onClos
             <motion.aside
                 initial={false}
                 animate={isDesktop ? { width: isOpen ? width : 0 } : undefined}
-                style={!isDesktop ? { y, height: '85vh', maxHeight: '85vh' } : { width }}
+                style={!isDesktop ? { y, height: '85dvh', maxHeight: '85dvh' } : { width }}
                 transition={isDesktop ? { type: isResizing ? 'tween' : 'spring', stiffness: 300, damping: 30 } : undefined}
                 drag={!isDesktop ? "y" : false}
                 dragListener={false} // Disable auto listener
