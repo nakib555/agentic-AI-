@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { useAppLogic } from './useAppLogic';
 import { Toast } from '../UI/Toast';
 import { AppSkeleton } from '../UI/AppSkeleton';
@@ -50,17 +50,45 @@ export const App = () => {
   
   const activeMessage = currentChat?.messages?.length ? currentChat.messages[currentChat.messages.length - 1] : null;
 
-  const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 0);
+  // --- Keyboard Detection Logic ---
+  // We track a "stable" viewport height that ignores sharp drops caused by the virtual keyboard opening on Android.
+  // This allows us to accurately detect if the keyboard is open by comparing the visual viewport to this stable height.
+  const [stableHeight, setStableHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 0);
+  const widthRef = useRef(typeof window !== 'undefined' ? window.innerWidth : 0);
 
   useEffect(() => {
-      const handleResize = () => setWindowHeight(window.innerHeight);
+      const handleResize = () => {
+          const currentH = window.innerHeight;
+          const currentW = window.innerWidth;
+          
+          // Check for width change (Orientation Change or Desktop Resize)
+          // If width changes significantly, we must reset the stable height as the baseline has changed.
+          if (Math.abs(currentW - widthRef.current) > 50) {
+              widthRef.current = currentW;
+              setStableHeight(currentH);
+              return;
+          }
+
+          // If width hasn't changed much, evaluate height changes logic for Mobile behavior:
+          // 1. If height grew, update stable height (Browser address bar hidden).
+          // 2. If height shrank slightly (< 25%), update stable height (Browser address bar shown).
+          // 3. If height shrank significantly (> 25%), IGNORE it (Likely Keyboard opening on Android).
+          setStableHeight(prev => {
+              if (currentH > prev) return currentH;
+              if (prev - currentH < (prev * 0.25)) return currentH;
+              return prev;
+          });
+      };
+      
       window.addEventListener('resize', handleResize);
+      // Initial set
+      handleResize();
+      
       return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Heuristic: If visual viewport is significantly smaller than window height, keyboard is likely open.
-  // We use 0.85 as a safe threshold (keyboard usually takes >15% of screen).
-  const isKeyboardOpen = !logic.isDesktop && logic.visualViewportHeight < (windowHeight * 0.85);
+  // Heuristic: If visual viewport is significantly smaller than our stable full-screen height, keyboard is open.
+  const isKeyboardOpen = !logic.isDesktop && logic.visualViewportHeight < (stableHeight * 0.85);
 
   return (
     <div 
@@ -68,11 +96,12 @@ export const App = () => {
         className={`flex h-full bg-page text-content-primary overflow-hidden transition-[height] duration-200 ease-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
         style={{ 
             height: !logic.isDesktop && logic.visualViewportHeight ? `${logic.visualViewportHeight}px` : '100dvh',
-            // On mobile, we use visualViewportHeight to handle keyboard.
+            // On mobile, we use visualViewportHeight to handle keyboard layout manually.
             // Reset top padding to 0 always since we manage the top bar explicitly.
             paddingTop: logic.isDesktop ? '0' : 'env(safe-area-inset-top)', 
-            // If keyboard is open, the visual viewport excludes the safe area bottom (covered by keyboard),
-            // so we set padding to 0 to maximize space. Otherwise, respect safe area.
+            // CRITICAL FIX: If keyboard is open, the visual viewport excludes the safe area bottom (covered by keyboard),
+            // so we set padding to 0 to maximize space and prevent "double padding" scrolling issues.
+            // Otherwise, respect safe area for home indicator.
             paddingBottom: logic.isDesktop || isKeyboardOpen ? '0' : 'env(safe-area-inset-bottom)',
         }}
     >
