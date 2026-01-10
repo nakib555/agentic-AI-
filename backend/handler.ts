@@ -22,6 +22,7 @@ import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
 import { streamOpenRouter } from './utils/openRouterUtils';
 import { vectorMemory } from './services/vectorMemory'; // Import Vector Memory
+import { executeWithPiston } from './tools/piston';
 
 // Store promises for frontend tool requests that the backend is waiting on
 const frontendToolRequests = new Map<string, (result: any) => void>();
@@ -244,7 +245,7 @@ export const apiHandler = async (req: any, res: any) => {
     const activeProvider = await getProvider();
     const mainApiKey = await getApiKey();
     const suggestionApiKey = await getSuggestionApiKey();
-    const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate'];
+    const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'];
     const isSuggestionTask = SUGGESTION_TASKS.includes(task);
     let activeApiKey = mainApiKey;
     if (isSuggestionTask && suggestionApiKey) {
@@ -659,6 +660,17 @@ ${personalizationSection}
                     const memory = await executeConsolidateMemory(ai, currentMemory, suggestions);
                     res.status(200).json({ memory });
                 } catch (e) { res.status(200).json({ memory: [currentMemory, ...suggestions].filter(Boolean).join('\n') }); }
+                break;
+            }
+            case 'run_piston': {
+                const { language, code } = req.body;
+                try {
+                    const result = await executeWithPiston(language, code);
+                    res.status(200).json({ result });
+                } catch (error: any) {
+                    // Return error in a consistent format for the frontend
+                    res.status(500).json({ error: error.message });
+                }
                 break;
             }
             case 'tool_exec': {

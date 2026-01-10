@@ -7,6 +7,10 @@
 import React, { useState, useMemo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
+import { fetchFromApi } from '../../utils/api';
+import { AnimatePresence, motion as motionTyped } from 'framer-motion';
+
+const motion = motionTyped as any;
 
 // Comprehensive alias map to handle various LLM outputs
 const languageMap: { [key: string]: string } = {
@@ -72,6 +76,11 @@ const languageMap: { [key: string]: string } = {
     text: 'text', plaintext: 'text', txt: 'text', raw: 'text'
 };
 
+// Languages that support text-based execution via Piston
+const RUNNABLE_LANGUAGES = new Set([
+    'python', 'javascript', 'typescript', 'go', 'rust', 'c', 'cpp', 'java', 'bash', 'ruby', 'php', 'swift', 'perl', 'lua'
+]);
+
 type CodeBlockProps = {
     language?: string;
     children: React.ReactNode;
@@ -82,6 +91,10 @@ type CodeBlockProps = {
 
 export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStreaming, onRunCode, isDisabled }) => {
     const [isCopied, setIsCopied] = useState(false);
+    const [isRunning, setIsRunning] = useState(false);
+    const [runOutput, setRunOutput] = useState<string | null>(null);
+    const [showOutput, setShowOutput] = useState(false);
+    
     const syntaxStyle = useSyntaxTheme();
 
     const codeContent = String(children).replace(/\n$/, '');
@@ -119,6 +132,36 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         }));
     };
 
+    const isRunnable = RUNNABLE_LANGUAGES.has(highlighterLang);
+
+    const handleRun = async () => {
+        if (isRunning) return;
+        
+        setIsRunning(true);
+        setShowOutput(true);
+        setRunOutput(null);
+
+        try {
+            const response = await fetchFromApi('/api/handler?task=run_piston', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ language: highlighterLang, code: codeContent }),
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                setRunOutput(data.result);
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                setRunOutput(`Error: ${errorData.error || response.statusText}`);
+            }
+        } catch (error: any) {
+            setRunOutput(`Execution Failed: ${error.message}`);
+        } finally {
+            setIsRunning(false);
+        }
+    };
+
     return (
       <div className="my-6 rounded-lg overflow-hidden shadow-sm font-sans group bg-code-surface transition-colors duration-300 border border-border-subtle">
         {/* Header */}
@@ -130,6 +173,22 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
           </div>
           
           <div className="flex items-center gap-2">
+            {!isStreaming && isRunnable && (
+                 <button
+                    onClick={handleRun}
+                    disabled={isRunning}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium transition-all ${isRunning ? 'text-slate-400' : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'}`}
+                    title="Run Code"
+                >
+                    {isRunning ? (
+                         <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    ) : (
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" /></svg>
+                    )}
+                    Run
+                </button>
+            )}
+
             <button
                 onClick={handleOpenArtifact}
                 className="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium text-primary-main hover:bg-primary-subtle transition-all"
@@ -159,7 +218,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
           </div>
         </div>
         
-        {/* Editor Body - Added custom-scrollbar class */}
+        {/* Editor Body */}
         <div className="relative overflow-x-auto text-[13px] leading-6 custom-scrollbar">
             <SyntaxHighlighter
               language={highlighterLang === 'html' ? 'markup' : highlighterLang} // Map html to markup for syntax highlighter if needed
@@ -183,6 +242,42 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
               {codeContent}
             </SyntaxHighlighter>
         </div>
+
+        {/* Execution Output Panel */}
+        <AnimatePresence>
+            {showOutput && (
+                <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    className="border-t border-border-subtle bg-[#1e1e1e] overflow-hidden"
+                >
+                    <div className="flex items-center justify-between px-4 py-1.5 bg-[#252526] border-b border-white/5 select-none">
+                        <div className="flex items-center gap-2">
+                             <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                             <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-wider">Console Output</span>
+                        </div>
+                        <button 
+                            onClick={() => setShowOutput(false)} 
+                            className="text-gray-500 hover:text-white transition-colors p-1"
+                            title="Close Output"
+                        >
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" /></svg>
+                        </button>
+                    </div>
+                    <div className="p-4 font-mono text-xs text-gray-300 whitespace-pre-wrap break-all max-h-60 overflow-y-auto custom-scrollbar">
+                        {isRunning ? (
+                            <div className="flex items-center gap-2 text-gray-500 italic">
+                                <span className="animate-pulse">Running...</span>
+                            </div>
+                        ) : (
+                            runOutput || <span className="text-gray-600 italic">No output returned.</span>
+                        )}
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
       </div>
     );
 };
