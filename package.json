@@ -26,6 +26,8 @@
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.19.8",
     "@google/genai": "1.29.1",
+    "@million/lint": "^1.0.0-rc.1",
+    "@tanstack/react-query": "^5.28.0",
     "@vitejs/plugin-react": "^4.2.1",
     "ai": "^3.2.18",
     "autoprefixer": "^10.4.14",
@@ -54,7 +56,8 @@
     "typescript": "^5.4.5",
     "vite": "^5.2.0",
     "wrangler": "^4.56.0",
-    "zod": "^3.22.3"
+    "zod": "^3.22.3",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
