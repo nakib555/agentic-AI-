@@ -126,8 +126,8 @@ interface ArtifactErrorBoundaryState {
 }
 
 // --- Error Boundary for Lazy Component ---
-// Fix: Use React.Component explicit extension to ensure correct type inheritance
-class ArtifactErrorBoundary extends React.Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
+// Fix: Use Component explicit extension to ensure correct type inheritance
+class ArtifactErrorBoundary extends Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
     public state: ArtifactErrorBoundaryState = { hasError: false };
 
     static getDerivedStateFromError() { return { hasError: true }; }

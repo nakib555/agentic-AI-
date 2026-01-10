@@ -22,8 +22,8 @@ interface ErrorBoundaryState {
 }
 
 // --- Error Boundary for Lazy Component ---
-// Fix: Use React.Component explicitly to resolve type issues with props
-class ArtifactPreviewErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+// Fix: Use Component explicitly to resolve type issues with props
+class ArtifactPreviewErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     public state: ErrorBoundaryState = { hasError: false };
 
     static getDerivedStateFromError() { return { hasError: true }; }
