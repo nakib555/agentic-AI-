@@ -31,11 +31,12 @@ export const processBackendStream = async (response: Response, callbacks: Stream
     const decoder = new TextDecoder();
     let buffer = '';
 
-    // --- Performance Optimization: Buffered State Updates ---
-    // A flush interval of 50ms provides a good balance between "real-time" feel and React render efficiency.
-    // We also implement a size-based trigger to prevent holding too much data if the stream is very fast.
-    const FLUSH_INTERVAL_MS = 50; 
-    const MAX_BUFFER_SIZE = 250; // Characters. Flush immediately if buffer exceeds this.
+    // --- Performance Optimization: Adaptive Buffered State Updates ---
+    // Fine-grained refinement: We use a tight interval but flush immediately 
+    // upon detecting structural markers (newlines, code blocks, UI components).
+    // This ensures layout shifts happen instantly while bulk text is smoothed out.
+    const FLUSH_INTERVAL_MS = 25; 
+    const MAX_BUFFER_SIZE = 100; 
     const WATCHDOG_TIMEOUT_MS = 45000;
 
     let pendingText: string | null = null;
@@ -87,10 +88,16 @@ export const processBackendStream = async (response: Response, callbacks: Stream
                         pendingText = (pendingText || '') + event.payload; 
                         
                         const isBufferFull = pendingText!.length >= MAX_BUFFER_SIZE;
+                        
+                        // Fine-grain Check: Flush immediately on structural tokens
+                        // This prevents "jumping" UI by ensuring newlines and markdown blocks render ASAP
+                        const hasPriorityToken = /[\n`\[\]{};:]/.test(event.payload);
+                        
+                        // Check for component tags
                         const hasArtifactTag = pendingText!.includes('[ARTIFACT') || pendingText!.includes('[/ARTIFACT') || pendingText!.includes('[STEP]');
 
-                        // Flush if buffer is full or we hit a special tag that needs immediate rendering logic
-                        if (isBufferFull || hasArtifactTag) {
+                        // Flush if buffer is full, has priority tokens, or special tags
+                        if (isBufferFull || hasArtifactTag || hasPriorityToken) {
                             flushTextUpdates();
                         } else if (flushTimeoutId === null) {
                             flushTimeoutId = setTimeout(flushTextUpdates, FLUSH_INTERVAL_MS);

@@ -31,12 +31,12 @@ export const processBackendStream = async (response: Response, callbacks: Stream
     const decoder = new TextDecoder();
     let buffer = '';
 
-    // --- Performance Optimization: Buffered State Updates ---
-    // A flush interval of 65ms (~15fps) is the sweet spot. 
-    // It reduces React Reconciliation overhead on the frontend significantly for 
-    // massive text/code blocks while still feeling "real-time" to the human eye.
-    const FLUSH_INTERVAL_MS = 65; 
-    const MAX_BUFFER_SIZE = 1000; // Increased buffer size to batch more aggressively
+    // --- Performance Optimization: Adaptive Buffered State Updates ---
+    // Fine-grained refinement: We use a tight interval but flush immediately 
+    // upon detecting structural markers (newlines, code blocks, UI components).
+    // This ensures layout shifts happen instantly while bulk text is smoothed out.
+    const FLUSH_INTERVAL_MS = 25; 
+    const MAX_BUFFER_SIZE = 100; 
     const WATCHDOG_TIMEOUT_MS = 45000;
 
     let pendingText: string | null = null;
@@ -88,11 +88,16 @@ export const processBackendStream = async (response: Response, callbacks: Stream
                         pendingText = (pendingText || '') + event.payload; 
                         
                         const isBufferFull = pendingText!.length >= MAX_BUFFER_SIZE;
-                        // Check for special tags that require immediate rendering (artifacts, thinking steps)
+                        
+                        // Fine-grain Check: Flush immediately on structural tokens
+                        // This prevents "jumping" UI by ensuring newlines and markdown blocks render ASAP
+                        const hasPriorityToken = /[\n`\[\]{};:]/.test(event.payload);
+                        
+                        // Check for component tags
                         const hasArtifactTag = pendingText!.includes('[ARTIFACT') || pendingText!.includes('[/ARTIFACT') || pendingText!.includes('[STEP]');
 
                         // Flush if buffer is full or we hit a special tag
-                        if (isBufferFull || hasArtifactTag) {
+                        if (isBufferFull || hasArtifactTag || hasPriorityToken) {
                             flushTextUpdates();
                         } else if (flushTimeoutId === null) {
                             flushTimeoutId = setTimeout(flushTextUpdates, FLUSH_INTERVAL_MS);
