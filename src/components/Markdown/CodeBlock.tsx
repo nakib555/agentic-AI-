@@ -251,28 +251,47 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
-                    className="border-t border-border-subtle bg-[#1e1e1e] overflow-hidden"
+                    className="border-t border-border-subtle bg-[#0d0d0d] dark:bg-black/40 overflow-hidden rounded-b-lg relative"
                 >
-                    <div className="flex items-center justify-between px-4 py-1.5 bg-[#252526] border-b border-white/5 select-none">
-                        <div className="flex items-center gap-2">
-                             <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></span>
-                             <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-wider">Console Output</span>
+                    {/* Terminal Status Bar */}
+                    <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5 select-none">
+                        <div className="flex items-center gap-3">
+                             <div className="flex gap-1.5">
+                                <div className={`w-2.5 h-2.5 rounded-full ${isRunning ? 'bg-yellow-500 animate-pulse' : (runOutput?.includes('Error') || runOutput?.includes('Execution errors') ? 'bg-red-500' : 'bg-green-500')}`}></div>
+                             </div>
+                             <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                Terminal
+                                {isRunning && <span className="text-slate-500 font-normal normal-case tracking-normal">— Running...</span>}
+                             </span>
                         </div>
-                        <button 
-                            onClick={() => setShowOutput(false)} 
-                            className="text-gray-500 hover:text-white transition-colors p-1"
-                            title="Close Output"
-                        >
-                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" /></svg>
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button 
+                                onClick={() => setShowOutput(false)} 
+                                className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded-md hover:bg-white/10"
+                                title="Close Output"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" /></svg>
+                            </button>
+                        </div>
                     </div>
-                    <div className="p-4 font-mono text-xs text-gray-300 whitespace-pre-wrap break-all max-h-60 overflow-y-auto custom-scrollbar">
+                    
+                    {/* Terminal Body */}
+                    <div className="p-4 font-mono text-xs sm:text-sm text-slate-300 whitespace-pre-wrap break-all max-h-80 overflow-y-auto custom-scrollbar shadow-inner bg-[#0d0d0d] relative">
                         {isRunning ? (
-                            <div className="flex items-center gap-2 text-gray-500 italic">
-                                <span className="animate-pulse">Running code on Piston...</span>
+                            <div className="flex items-center gap-2 text-slate-500 italic">
+                                <span className="w-2 h-4 bg-slate-500 animate-pulse inline-block align-middle"></span>
+                                <span>Executing script...</span>
                             </div>
                         ) : (
-                            runOutput || <span className="text-gray-600 italic">No output returned.</span>
+                            runOutput ? (
+                                <div className="leading-relaxed">
+                                    <span className="text-green-500/50 select-none mr-2">$</span>
+                                    {runOutput}
+                                    <span className="ml-1 w-2 h-4 bg-slate-500/50 inline-block align-middle animate-pulse"></span>
+                                </div>
+                            ) : (
+                                <span className="text-slate-600 italic">No output returned.</span>
+                            )
                         )}
                     </div>
                 </motion.div>
