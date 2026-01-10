@@ -27,12 +27,22 @@ export const useViewport = () => {
         const handleVisualResize = () => {
              // We only care about this on mobile where virtual keyboards affect layout
              if (window.visualViewport && window.innerWidth < DESKTOP_BREAKPOINT) {
-                 setVisualViewportHeight(window.visualViewport.height);
-                 // CRITICAL: Force the browser back to the top-left corner.
-                 // When the keyboard opens, browsers often try to scroll the document to keep inputs in view.
-                 // Since we manage the layout manually with visualViewport height, this native scroll results
-                 // in the top of the app being pushed off-screen.
-                 window.scrollTo(0, 0);
+                 const activeElement = document.activeElement;
+                 // Only trigger the specific viewport resizing logic if the main chat input is focused.
+                 // This ensures that other inputs (like search, settings modal) use standard browser behavior
+                 // (scrolling or overlay) instead of compressing the entire app container.
+                 if (activeElement && activeElement.id === 'main-chat-input') {
+                     setVisualViewportHeight(window.visualViewport.height);
+                     // CRITICAL: Force the browser back to the top-left corner.
+                     // When the keyboard opens, browsers often try to scroll the document to keep inputs in view.
+                     // Since we manage the layout manually with visualViewport height, this native scroll results
+                     // in the top of the app being pushed off-screen.
+                     window.scrollTo(0, 0);
+                 } else {
+                     // If focus is elsewhere, disable the app container shrinking.
+                     // Setting this to 0 falls back to '100dvh' in App/index.tsx.
+                     setVisualViewportHeight(0);
+                 }
              }
         };
 
@@ -49,9 +59,10 @@ export const useViewport = () => {
         // Visual Viewport API for accurate mobile layout with keyboard
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', handleVisualResize);
-            // Initial read
+            // Initial read - assume normal full height on load (0 -> 100dvh fallback)
             if (window.innerWidth < DESKTOP_BREAKPOINT) {
-                setVisualViewportHeight(window.visualViewport.height);
+                // We default to 0 on init so CSS handles 100dvh, avoiding jumpiness until interaction.
+                setVisualViewportHeight(0);
             }
         }
         

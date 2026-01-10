@@ -213,6 +213,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
             )}
             
             <textarea
+                id="main-chat-input"
                 ref={logic.inputRef}
                 value={logic.inputValue}
                 onChange={(e) => logic.setInputValue(e.target.value)}
