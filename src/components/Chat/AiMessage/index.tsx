@@ -64,7 +64,7 @@ const StopIcon = () => (
 const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, ttsModel, currentChatId, 
           onShowSources, approveExecution, denyExecution, messageFormRef, onRegenerate,
-          onSetActiveResponseIndex, isAgentMode, userQuery, isLast } = props;
+          onSetActiveResponseIndex, isAgentMode, userQuery, isLast = false } = props;
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
@@ -249,9 +249,19 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
 
       {/* Conditionally render suggestions only if this is the last message */}
-      {isLast && logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
-         <div className="w-full pb-2"><SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} /></div>
-      )}
+      <AnimatePresence>
+        {isLast && logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
+            <motion.div
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="w-full overflow-hidden"
+            >
+                <SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} />
+            </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
