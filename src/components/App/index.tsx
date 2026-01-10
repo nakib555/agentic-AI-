@@ -239,6 +239,7 @@ export const App = () => {
           onRunTests={() => logic.setIsTestMode(true)}
           onDownloadLogs={logic.handleDownloadLogs}
           onShowDataStructure={logic.handleShowDataStructure}
+          onExportAllChats={logic.handleExportAllChats}
           availableModels={logic.availableModels}
           availableImageModels={logic.availableImageModels}
           availableVideoModels={logic.availableVideoModels}

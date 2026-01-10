@@ -32,6 +32,7 @@ type SettingsModalProps = {
   onRunTests: () => void;
   onDownloadLogs: () => void;
   onShowDataStructure: () => void;
+  onExportAllChats: () => void;
   apiKey: string;
   onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter') => Promise<void>;
   suggestionApiKey: string;
@@ -219,7 +220,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                             onClearAllChats={props.onClearAllChats} 
                                             onRunTests={props.onRunTests} 
                                             onDownloadLogs={props.onDownloadLogs} 
-                                            onShowDataStructure={props.onShowDataStructure} 
+                                            onShowDataStructure={props.onShowDataStructure}
+                                            onExportAllChats={props.onExportAllChats} 
                                             apiKey={props.apiKey} 
                                             onSaveApiKey={props.onSaveApiKey} 
                                             suggestionApiKey={props.suggestionApiKey}

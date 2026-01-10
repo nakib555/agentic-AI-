@@ -1,4 +1,5 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -40,6 +41,7 @@ type AppModalsProps = {
   onRunTests: () => void;
   onDownloadLogs: () => void;
   onShowDataStructure: () => void;
+  onExportAllChats: () => void;
   availableModels: Model[];
   availableImageModels: Model[];
   availableVideoModels: Model[];
@@ -155,6 +157,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           onRunTests={props.onRunTests}
           onDownloadLogs={props.onDownloadLogs}
           onShowDataStructure={props.onShowDataStructure}
+          onExportAllChats={props.onExportAllChats}
           apiKey={props.apiKey}
           onSaveApiKey={props.onSaveApiKey}
           suggestionApiKey={props.suggestionApiKey}

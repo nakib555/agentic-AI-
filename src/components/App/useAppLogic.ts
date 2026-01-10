@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -16,6 +15,7 @@ import {
   exportChatToMarkdown,
   exportChatToPdf,
   exportChatToClipboard,
+  exportAllChatsToJson,
 } from '../../utils/exportUtils/index';
 import type { MessageListHandle } from '../Chat/MessageList';
 import {
@@ -482,6 +482,10 @@ export const useAppLogic = () => {
     if (format === 'pdf') exportChatToPdf(currentChat);
   }, [chat.currentChatId, chat.chatHistory]);
 
+  const handleExportAllChats = useCallback(() => {
+      exportAllChatsToJson(chat.chatHistory);
+  }, [chat.chatHistory]);
+
   const handleShareChat = () => {
     const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
     if (currentChat) exportChatToClipboard(currentChat);
@@ -596,7 +600,7 @@ export const useAppLogic = () => {
     handleToggleSidebar: () => isDesktop ? sidebar.handleSetSidebarCollapsed(!sidebar.isSidebarCollapsed) : sidebar.setIsSidebarOpen(!sidebar.isSidebarOpen),
     handleShowSources: (s: Source[]) => { setSourcesForSidebar(s); setIsSourcesSidebarOpen(true); },
     handleCloseSourcesSidebar: () => setIsSourcesSidebarOpen(false),
-    handleExportChat, handleShareChat, handleImportChat: () => setIsImportModalOpen(true),
+    handleExportChat, handleExportAllChats, handleShareChat, handleImportChat: () => setIsImportModalOpen(true),
     runDiagnosticTests, handleFileUploadForImport, handleDownloadLogs, handleShowDataStructure,
     updateBackendMemory: memory.updateBackendMemory, memoryFiles: memory.memoryFiles, updateMemoryFiles: memory.updateMemoryFiles,
     serverUrl, onSaveServerUrl: handleSaveServerUrl,

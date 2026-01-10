@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { ErrorInfo } from 'react';
+import React, { ErrorInfo, Component } from 'react';
 
 interface ErrorBoundaryProps {
   children?: React.ReactNode;
@@ -15,7 +15,7 @@ interface ErrorBoundaryState {
 }
 
 // Fix: Use Component explicit extension to ensure correct type inheritance
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = {
     hasError: false,
     error: null,

@@ -24,3 +24,17 @@ export const exportChatToJson = (chat: ChatSession) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 };
+
+export const exportAllChatsToJson = (chats: ChatSession[]) => {
+    const jsonContent = JSON.stringify(chats, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const date = new Date().toISOString().slice(0, 10);
+    link.download = `agentic-ai-history-${date}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
