@@ -3,40 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, Suspense, ErrorInfo, Component } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
+import { ErrorBoundary } from '../ErrorBoundary';
 
 // Lazy load the shared Sandpack component
 // Ensure we handle the default export correctly
 const SandpackEmbed = React.lazy(() => import('./SandpackComponent'));
-
-interface ErrorBoundaryProps {
-    children?: React.ReactNode;
-    fallback: React.ReactNode;
-}
-
-interface ErrorBoundaryState {
-    hasError: boolean;
-}
-
-// --- Error Boundary for Lazy Component ---
-// Fix: Use React.Component explicitly to resolve type issues with props
-class ArtifactPreviewErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-    public state: ErrorBoundaryState = { hasError: false };
-
-    static getDerivedStateFromError() { return { hasError: true }; }
-
-    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error("ArtifactPreviewErrorBoundary caught an error:", error, errorInfo);
-    }
-    
-    render() {
-        if (this.state.hasError) return this.props.fallback;
-        return this.props.children;
-    }
-}
 
 type ArtifactRendererProps = {
     type: 'code' | 'data';
@@ -150,7 +125,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
         if (useSandpack) {
             return (
                 <div className="h-[550px] w-full bg-white dark:bg-[#1e1e1e] border-t border-border-subtle relative">
-                     <ArtifactPreviewErrorBoundary fallback={
+                     <ErrorBoundary fallback={
                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#1e1e1e] text-center p-4">
                              <div className="text-red-500 mb-2">⚠ Preview Unavailable</div>
                              <p className="text-xs text-slate-500">The interactive environment could not be loaded.</p>
@@ -169,7 +144,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                                 mode="inline"
                              />
                         </Suspense>
-                    </ArtifactPreviewErrorBoundary>
+                    </ErrorBoundary>
                 </div>
             );
         }

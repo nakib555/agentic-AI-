@@ -3,13 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense, ErrorInfo, Component } from 'react';
+import React, { useReducer, useEffect, useMemo, useCallback, useState, Suspense, ErrorInfo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Tooltip } from '../UI/Tooltip';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VirtualizedCodeViewer } from './VirtualizedCodeViewer';
 import { detectIsReact, generateConsoleScript } from '../../utils/artifactUtils';
+import { ErrorBoundary } from '../ErrorBoundary';
 
 // Lazy load the shared component
 const SandpackEmbed = React.lazy(() => import('../Artifacts/SandpackComponent'));
@@ -115,46 +116,6 @@ type ArtifactContentProps = {
     language: string;
     onClose: () => void;
 };
-
-interface ArtifactErrorBoundaryProps {
-    children?: React.ReactNode;
-    onFallback: () => void;
-}
-
-interface ArtifactErrorBoundaryState {
-    hasError: boolean;
-}
-
-// --- Error Boundary for Lazy Component ---
-// Fix: Use React.Component explicit extension to ensure correct type inheritance
-class ArtifactErrorBoundary extends Component<ArtifactErrorBoundaryProps, ArtifactErrorBoundaryState> {
-    public state: ArtifactErrorBoundaryState = { hasError: false };
-
-    static getDerivedStateFromError() { return { hasError: true }; }
-    
-    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error("Artifact Preview Error:", error, errorInfo);
-    }
-
-    render() {
-        if (this.state.hasError) {
-            return (
-                <div className="flex flex-col items-center justify-center h-full p-4 text-center bg-white dark:bg-[#1e1e1e]">
-                    <div className="text-red-500 mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <p className="text-sm font-medium">Failed to load preview environment.</p>
-                    </div>
-                    <button onClick={this.props.onFallback} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-sm transition-colors">
-                        View Code Source
-                    </button>
-                </div>
-            );
-        }
-        return this.props.children;
-    }
-}
 
 export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ content, language, onClose }) => {
     const syntaxStyle = useSyntaxTheme();
@@ -467,7 +428,19 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 >
                     {isReact ? (
                         <div className="flex-1 w-full h-full relative bg-white dark:bg-[#1e1e1e]">
-                             <ArtifactErrorBoundary onFallback={() => dispatch({ type: 'SET_TAB', payload: 'code' })}>
+                             <ErrorBoundary fallback={
+                                 <div className="flex flex-col items-center justify-center h-full p-4 text-center bg-white dark:bg-[#1e1e1e]">
+                                     <div className="text-red-500 mb-2">
+                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                         </svg>
+                                         <p className="text-sm font-medium">Failed to load preview environment.</p>
+                                     </div>
+                                     <button onClick={() => dispatch({ type: 'SET_TAB', payload: 'code' })} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-sm transition-colors">
+                                         View Code Source
+                                     </button>
+                                 </div>
+                             }>
                                  <Suspense fallback={
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#1e1e1e]">
                                         <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
@@ -482,7 +455,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                         mode="full"
                                      />
                                 </Suspense>
-                            </ArtifactErrorBoundary>
+                            </ErrorBoundary>
                         </div>
                     ) : (
                         <>

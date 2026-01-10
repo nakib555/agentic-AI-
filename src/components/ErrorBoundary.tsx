@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { ErrorInfo, Component } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
-  children?: React.ReactNode;
+  children?: ReactNode;
+  fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface ErrorBoundaryState {
@@ -14,8 +16,8 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Fix: Use Component explicit extension to ensure correct type inheritance
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+// Fix: Use React.Component explicit extension to ensure correct type inheritance
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = {
     hasError: false,
     error: null,
@@ -27,6 +29,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
+    if (this.props.onError) {
+        this.props.onError(error, errorInfo);
+    }
   }
 
   public componentDidUpdate(prevProps: ErrorBoundaryProps) {
@@ -57,6 +62,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   public render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+          return this.props.fallback;
+      }
+
       return (
         <div className="fixed inset-0 flex items-center justify-center bg-page p-4 text-center z-[9999]">
           <div className="bg-white dark:bg-layer-1 p-8 rounded-2xl shadow-xl border border-border max-w-md w-full">
