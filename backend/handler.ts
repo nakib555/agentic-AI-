@@ -251,7 +251,7 @@ export const apiHandler = async (req: any, res: any) => {
     if (isSuggestionTask && suggestionApiKey) {
         activeApiKey = suggestionApiKey;
     } 
-    const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree'];
+    const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston'];
     if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
         return res.status(401).json({ error: "API key not configured on the server." });
     }
