@@ -62,6 +62,7 @@ const MessageComponentRaw: React.FC<{
                 onSetActiveResponseIndex={onSetActiveResponseIndex}
                 isAgentMode={isAgentMode}
                 userQuery={userQuery}
+                isLast={isLast}
             />
         );
     }
@@ -98,6 +99,9 @@ export const MessageComponent = memo(MessageComponentRaw, (prevProps, nextProps)
     
     // Check TTS settings changes
     if (prevProps.ttsVoice !== nextProps.ttsVoice || prevProps.ttsModel !== nextProps.ttsModel) return false;
+    
+    // Check isLast change (needed for suggestions visibility)
+    if (prevProps.isLast !== nextProps.isLast) return false;
 
     // CRITICAL OPTIMIZATION: 
     // If the message itself hasn't changed, ignore `isLoading` changes UNLESS this is the last message.

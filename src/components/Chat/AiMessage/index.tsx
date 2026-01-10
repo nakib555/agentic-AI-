@@ -25,6 +25,7 @@ import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 import { useTypewriter } from '../../../hooks/useTypewriter';
 import { parseContentSegments } from '../../../utils/workflowParsing';
 import { ThinkingProcess } from './ThinkingProcess';
+import { CodeExecutionResult } from '../../AI/CodeExecutionResult';
 
 // Lazy load the heavy ArtifactRenderer
 const ArtifactRenderer = React.lazy(() => import('../../Artifacts/ArtifactRenderer').then(m => ({ default: m.ArtifactRenderer })));
@@ -51,6 +52,7 @@ type AiMessageProps = {
     onSetActiveResponseIndex: (messageId: string, index: number) => void;
     isAgentMode: boolean;
     userQuery?: string; // Optional prompt context
+    isLast?: boolean; // New prop to control suggestions visibility
 };
 
 const StopIcon = () => (
@@ -62,7 +64,7 @@ const StopIcon = () => (
 const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, ttsModel, currentChatId, 
           onShowSources, approveExecution, denyExecution, messageFormRef, onRegenerate,
-          onSetActiveResponseIndex, isAgentMode, userQuery } = props;
+          onSetActiveResponseIndex, isAgentMode, userQuery, isLast } = props;
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
@@ -182,6 +184,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                         case 'MAP': return <motion.div key={key} initial={{ opacity: 0 }} animate={{ opacity: 1 }}><MapDisplay {...data} /></motion.div>;
                         case 'FILE': return <FileAttachment key={key} {...data} />;
                         case 'BROWSER': return <BrowserSessionDisplay key={key} {...data} />;
+                        case 'CODE_OUTPUT': return <CodeExecutionResult key={key} {...data} />;
                         case 'ARTIFACT_CODE': return (
                             <Suspense fallback={<div className="h-64 w-full bg-gray-100 dark:bg-white/5 rounded-xl animate-pulse my-4" />}>
                                 <ArtifactRenderer key={key} type="code" content={data.code} language={data.language} title={data.title} />
@@ -192,7 +195,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                                 <ArtifactRenderer key={key} type="data" content={data.content} title={data.title} />
                             </Suspense>
                         );
-                        case 'CODE_OUTPUT': return null; 
                         default: return <ErrorDisplay key={key} error={{ message: `Unknown component: ${componentType}`, details: JSON.stringify(data) }} />;
                     }
                 } else {
@@ -246,7 +248,8 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           </div>
       )}
 
-      {logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
+      {/* Conditionally render suggestions only if this is the last message */}
+      {isLast && logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
          <div className="w-full pb-2"><SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} /></div>
       )}
     </motion.div>
