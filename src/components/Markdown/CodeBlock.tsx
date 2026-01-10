@@ -124,9 +124,6 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
     }, [language]);
 
     const handleOpenArtifact = () => {
-        // Dispatch event for AppLogic to catch
-        // IMPORTANT: Send the normalized highlighterLang so the Artifact sidebar
-        // receives a language supported by its SyntaxHighlighter instance (e.g. 'javascript' instead of 'js')
         window.dispatchEvent(new CustomEvent('open-artifact', { 
             detail: { code: codeContent, language: highlighterLang } 
         }));
@@ -177,7 +174,11 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
                  <button
                     onClick={handleRun}
                     disabled={isRunning}
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium transition-all ${isRunning ? 'text-slate-400' : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'}`}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium transition-all ${
+                        isRunning 
+                        ? 'text-slate-400 bg-slate-100 dark:bg-white/5' 
+                        : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
+                    }`}
                     title="Run Code"
                 >
                     {isRunning ? (
@@ -221,7 +222,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
         {/* Editor Body */}
         <div className="relative overflow-x-auto text-[13px] leading-6 custom-scrollbar">
             <SyntaxHighlighter
-              language={highlighterLang === 'html' ? 'markup' : highlighterLang} // Map html to markup for syntax highlighter if needed
+              language={highlighterLang === 'html' ? 'markup' : highlighterLang} 
               style={syntaxStyle}
               customStyle={{
                 margin: 0,
@@ -236,7 +237,6 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
               }}
               wrapLines={true}
               wrapLongLines={false}
-              // Safely fallback to text if language fails loading in Prism
               fallbackLanguage="text"
             >
               {codeContent}
@@ -255,7 +255,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
                 >
                     <div className="flex items-center justify-between px-4 py-1.5 bg-[#252526] border-b border-white/5 select-none">
                         <div className="flex items-center gap-2">
-                             <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                             <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></span>
                              <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-wider">Console Output</span>
                         </div>
                         <button 
@@ -269,7 +269,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
                     <div className="p-4 font-mono text-xs text-gray-300 whitespace-pre-wrap break-all max-h-60 overflow-y-auto custom-scrollbar">
                         {isRunning ? (
                             <div className="flex items-center gap-2 text-gray-500 italic">
-                                <span className="animate-pulse">Running...</span>
+                                <span className="animate-pulse">Running code on Piston...</span>
                             </div>
                         ) : (
                             runOutput || <span className="text-gray-600 italic">No output returned.</span>
