@@ -638,7 +638,20 @@ ${personalizationSection}
             case 'enhance': {
                 if (!ai) return res.status(200).send(req.body.userInput);
                 const { userInput } = req.body;
-                const prompt = `Optimize this prompt for an LLM: "${userInput}". Return only the optimized prompt.`;
+                const prompt = `
+You are an expert Prompt Engineer. Your goal is to rewrite the following user input into a highly effective prompt for an LLM (Large Language Model).
+
+USER INPUT: "${userInput}"
+
+GUIDELINES:
+1. **Clarity & Specificity**: Remove ambiguity. Specify the desired format (code, list, essay, etc.) if implied.
+2. **Context**: If the input implies a role (e.g., "fix this code"), assume an expert role (e.g., "Act as a Senior Software Engineer").
+3. **Structure**: Use markdown if helpful, but keep it concise enough to be a prompt.
+4. **Preservation**: Do NOT change the core intent. Do NOT answer the prompt. ONLY rewrite it.
+5. **Output**: Return ONLY the raw text of the improved prompt. Do not add "Here is the improved prompt:" or quotes.
+
+IMPROVED PROMPT:
+`;
                 res.setHeader('Content-Type', 'text/plain');
                 try {
                     const stream = await generateContentStreamWithRetry(ai, { model: 'gemini-3-flash-preview', contents: prompt });
