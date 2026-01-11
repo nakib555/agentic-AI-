@@ -18,8 +18,8 @@ export type GenerateContentStreamResult = AsyncIterable<GenerateContentResponse>
 
 // Global throttling to smooth out bursts
 let lastRequestTimestamp = 0;
-// Increased interval to be safer
-const MIN_REQUEST_INTERVAL = 1000; 
+// Reduced interval to improve responsiveness
+const MIN_REQUEST_INTERVAL = 200; 
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 

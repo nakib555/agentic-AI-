@@ -455,7 +455,8 @@ export const useChat = (
             if ((error as Error).message === 'Version mismatch') {
                 // Handled globally
             } else if ((error as Error).name !== 'AbortError') {
-                console.error('[FRONTEND] Backend stream failed.', { error });
+                // IMPORTANT: Log error directly to console for full stack trace visibility
+                console.error('[FRONTEND] Backend stream failed.', error);
                 updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
             }
         } finally {

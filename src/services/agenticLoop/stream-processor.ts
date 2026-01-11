@@ -37,7 +37,8 @@ export const processBackendStream = async (response: Response, callbacks: Stream
     // This ensures layout shifts happen instantly while bulk text is smoothed out.
     const FLUSH_INTERVAL_MS = 25; 
     const MAX_BUFFER_SIZE = 100; 
-    const WATCHDOG_TIMEOUT_MS = 45000;
+    // Increased timeout to 2 minutes to handle "Thinking" models which may pause for long periods
+    const WATCHDOG_TIMEOUT_MS = 120000;
 
     let pendingText: string | null = null;
     let flushTimeoutId: any = null;
