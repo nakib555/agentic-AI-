@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -7,7 +8,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import type { Message } from '../../types';
 import { ThinkingWorkflow } from '../AI/ThinkingWorkflow';
 import { ErrorDisplay } from '../UI/ErrorDisplay';
-import { FormattedBlock } from '../Markdown/FormattedBlock';
+import { AgentBriefing } from '../AI/AgentBriefing';
 
 type ThinkingContentProps = {
     message: Message | null;
@@ -90,15 +91,7 @@ export const ThinkingContent: React.FC<ThinkingContentProps> = React.memo(({ mes
 
             <div className="space-y-6 px-4 pb-12 break-words">
                 {plan && (
-                    <section>
-                        <div className="flex items-center gap-2 mb-3">
-                            <div className="w-1 h-4 bg-indigo-500 rounded-full" />
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                Strategic Plan
-                            </h3>
-                        </div>
-                        <FormattedBlock content={plan} isStreaming={(message.isThinking ?? false) && executionLog.length === 0} />
-                    </section>
+                    <AgentBriefing content={plan} />
                 )}
                 
                 {executionLog.length > 0 && (
