@@ -5,14 +5,14 @@
  */
 
 import { useMemo, useCallback, useRef, useEffect } from 'react';
-import { type Message, type ChatSession, ModelResponse, BrowserSession } from '../../types';
+import { type Message, type ChatSession, ModelResponse } from '../../types';
 import { fileToBase64 } from '../../utils/fileUtils';
 import { useChatHistory } from '../useChatHistory';
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
 import { fetchFromApi } from '../../utils/api';
 import { processBackendStream } from '../../services/agenticLoop/stream-processor';
-import { parseAgenticWorkflow } from '../../utils/workflowParsing';
 import { executeFrontendTool } from './tool-executor';
+import { createStreamCallbacks } from './chat-callbacks';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -171,13 +171,15 @@ export const useChat = (
 
         console.log(`[FRONTEND] Attempting to reconnect to stream for chat ${chatId}...`);
         setChatLoadingState(chatId, true);
-        abortControllerRef.current = new AbortController();
+        
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
 
         try {
             const response = await fetchFromApi('/api/handler?task=connect', {
                 method: 'POST', // Connect task is POST to send body
                 headers: { 'Content-Type': 'application/json' },
-                signal: abortControllerRef.current.signal,
+                signal: controller.signal,
                 body: JSON.stringify({ chatId }),
                 silent: true // Suppress 404 errors during reconnection checks
             });
@@ -186,7 +188,6 @@ export const useChat = (
                 throw new Error(`Reconnection failed: ${response.status}`);
             }
 
-            // Check content type to see if we got the JSON "not found" payload or the stream
             const contentType = response.headers.get("content-type");
             if (contentType && contentType.includes("application/json")) {
                 const data = await response.json().catch(() => ({}));
@@ -200,91 +201,29 @@ export const useChat = (
 
             if (!response.body) throw new Error("No response body");
 
-            await processBackendStream(
-                response,
-                {
-                    onTextChunk: (delta) => {
-                        updateActiveResponseOnMessage(chatId, messageId, (current) => {
-                            const newText = (current.text || '') + delta;
-                            const parsedWorkflow = parseAgenticWorkflow(newText, current.toolCallEvents || [], false);
-                            return { text: newText, workflow: parsedWorkflow };
-                        });
-                    },
-                    onWorkflowUpdate: () => {},
-                    onToolCallStart: (toolCallEvents) => {
-                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
-                            const existingIds = new Set(r.toolCallEvents?.map(e => e.id));
-                            const newEvents = toolCallEvents.filter(e => !existingIds.has(e.id)).map(e => ({...e, startTime: e.startTime || Date.now()}));
-                            const updatedEvents = [...(r.toolCallEvents || []), ...newEvents];
-                            const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents, false);
-                            return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
-                        });
-                    },
-                    onToolUpdate: (payload) => {
-                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
-                            const updatedEvents = r.toolCallEvents?.map(tc => {
-                                if (tc.id === payload.id) {
-                                    const session = (tc.browserSession || { url: payload.url || '', logs: [], status: 'running' }) as BrowserSession;
-                                    if (payload.log) session.logs = [...session.logs, payload.log];
-                                    if (payload.screenshot) session.screenshot = payload.screenshot;
-                                    if (payload.title) session.title = payload.title;
-                                    if (payload.url) session.url = payload.url;
-                                    if (payload.status) session.status = payload.status;
-                                    return { ...tc, browserSession: { ...session } };
-                                }
-                                return tc;
-                            });
-                            return { toolCallEvents: updatedEvents };
-                        });
-                    },
-                    onToolCallEnd: (payload) => {
-                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
-                            const updatedEvents = r.toolCallEvents?.map(tc => tc.id === payload.id ? { ...tc, result: payload.result, endTime: Date.now() } : tc);
-                            const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents || [], false);
-                            return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
-                        });
-                    },
-                    onPlanReady: (plan) => {
-                        const payload = plan as any; 
-                        updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: payload }));
-                        updateMessage(chatId, messageId, { executionState: 'pending_approval' });
-                    },
-                    onFrontendToolRequest: (callId, toolName, toolArgs) => {
-                        handleFrontendToolExecution(callId, toolName, toolArgs);
-                    },
-                    onComplete: (payload) => {
-                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
-                            const finalWorkflow = parseAgenticWorkflow(payload.finalText, r.toolCallEvents || [], true);
-                            return { 
-                                text: payload.finalText, 
-                                endTime: Date.now(), 
-                                groundingMetadata: payload.groundingMetadata,
-                                workflow: finalWorkflow 
-                            };
-                        });
-                        updateMessage(chatId, messageId, { isThinking: false });
-                        completeChatLoading(chatId);
-                    },
-                    onError: (error) => {
-                        updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
-                        updateMessage(chatId, messageId, { isThinking: false });
-                        completeChatLoading(chatId);
-                    },
-                    onCancel: () => {
-                        updateMessage(chatId, messageId, { isThinking: false });
-                        completeChatLoading(chatId);
-                    }
-                },
-                abortControllerRef.current.signal
-            );
+            const callbacks = createStreamCallbacks({
+                chatId,
+                messageId,
+                updateActiveResponseOnMessage,
+                updateMessage,
+                completeChatLoading,
+                handleFrontendToolExecution,
+                onCancel: () => {
+                    updateMessage(chatId, messageId, { isThinking: false });
+                    completeChatLoading(chatId);
+                }
+            });
+
+            await processBackendStream(response, callbacks, controller.signal);
 
         } catch (error) {
             console.error("[FRONTEND] Reconnection error:", error);
-            // On hard fail, assume stopped
             updateMessage(chatId, messageId, { isThinking: false });
             completeChatLoading(chatId);
         } finally {
-            abortControllerRef.current = null;
+             if (abortControllerRef.current === controller) {
+                abortControllerRef.current = null;
+             }
         }
     }, [updateActiveResponseOnMessage, updateMessage, completeChatLoading, setChatLoadingState, handleFrontendToolExecution]);
 
@@ -319,7 +258,8 @@ export const useChat = (
         chatConfig: Pick<ChatSession, 'model' | 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>,
         runtimeSettings: { isAgentMode: boolean } & ChatSettings
     ) => {
-        abortControllerRef.current = new AbortController();
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
 
         try {
             const requestPayload = {
@@ -343,7 +283,7 @@ export const useChat = (
             const response = await fetchFromApi(`/api/handler?task=${task}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                signal: abortControllerRef.current.signal,
+                signal: controller.signal,
                 body: JSON.stringify(requestPayload),
             });
 
@@ -369,102 +309,40 @@ export const useChat = (
             
             if (!response.body) throw new Error("Response body is missing");
             
-            await processBackendStream(
-                response,
-                {
-                    onStart: (requestId) => {
-                        requestIdRef.current = requestId;
-                    },
-                    onTextChunk: (delta) => {
-                        updateActiveResponseOnMessage(chatId, messageId, (current) => {
-                            const newText = (current.text || '') + delta;
-                            const parsedWorkflow = parseAgenticWorkflow(newText, current.toolCallEvents || [], false);
-                            return { text: newText, workflow: parsedWorkflow };
-                        });
-                    },
-                    onWorkflowUpdate: () => { },
-                    onToolCallStart: (toolCallEvents) => {
-                        const newEvents = toolCallEvents.map((toolEvent: any) => ({
-                            id: toolEvent.id,
-                            call: toolEvent.call,
-                            startTime: Date.now()
-                        }));
-                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
-                            const updatedEvents = [...(r.toolCallEvents || []), ...newEvents];
-                            const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents, false);
-                            return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
-                        });
-                    },
-                    onToolUpdate: (payload) => {
-                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
-                            const updatedEvents = r.toolCallEvents?.map(tc => {
-                                if (tc.id === payload.id) {
-                                    const session = (tc.browserSession || { url: payload.url || '', logs: [], status: 'running' }) as BrowserSession;
-                                    if (payload.log) session.logs = [...session.logs, payload.log];
-                                    if (payload.screenshot) session.screenshot = payload.screenshot;
-                                    if (payload.title) session.title = payload.title;
-                                    if (payload.url) session.url = payload.url;
-                                    if (payload.status) session.status = payload.status;
-                                    return { ...tc, browserSession: { ...session } };
-                                }
-                                return tc;
-                            });
-                            const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents || [], false);
-                            return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
-                        });
-                    },
-                    onToolCallEnd: (payload) => {
-                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
-                            const updatedEvents = r.toolCallEvents?.map(tc => tc.id === payload.id ? { ...tc, result: payload.result, endTime: Date.now() } : tc);
-                            const parsedWorkflow = parseAgenticWorkflow(r.text || '', updatedEvents || [], false);
-                            return { toolCallEvents: updatedEvents, workflow: parsedWorkflow };
-                        });
-                    },
-                    onPlanReady: (plan) => {
-                        const payload = plan as any; 
-                        updateActiveResponseOnMessage(chatId, messageId, () => ({ plan: payload }));
-                        updateMessage(chatId, messageId, { executionState: 'pending_approval' });
-                    },
-                    onFrontendToolRequest: (callId, toolName, toolArgs) => {
-                        handleFrontendToolExecution(callId, toolName, toolArgs);
-                    },
-                    onComplete: (payload) => {
-                        updateActiveResponseOnMessage(chatId, messageId, (r) => {
-                            const finalWorkflow = parseAgenticWorkflow(payload.finalText, r.toolCallEvents || [], true);
-                            return { 
-                                text: payload.finalText, 
-                                endTime: Date.now(), 
-                                groundingMetadata: payload.groundingMetadata,
-                                workflow: finalWorkflow 
-                            };
-                        });
-                    },
-                    onError: (error) => {
-                        updateActiveResponseOnMessage(chatId, messageId, () => ({ error, endTime: Date.now() }));
-                    },
-                    onCancel: () => {
-                        if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
-                            abortControllerRef.current.abort();
-                        }
+            const callbacks = createStreamCallbacks({
+                chatId,
+                messageId,
+                updateActiveResponseOnMessage,
+                updateMessage,
+                completeChatLoading,
+                handleFrontendToolExecution,
+                onStart: (requestId) => { requestIdRef.current = requestId; },
+                onCancel: () => {
+                    if (controller && !controller.signal.aborted) {
+                        controller.abort();
                     }
-                },
-                abortControllerRef.current.signal
-            );
+                }
+            });
+
+            await processBackendStream(response, callbacks, controller.signal);
 
         } catch (error) {
             if ((error as Error).message === 'Version mismatch') {
                 // Handled globally
             } else if ((error as Error).name !== 'AbortError') {
-                // IMPORTANT: Log error directly to console for full stack trace visibility
                 console.error('[FRONTEND] Backend stream failed.', error);
                 updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
             }
         } finally {
-            if (!abortControllerRef.current?.signal.aborted) {
+            if (!controller.signal.aborted) {
                 updateMessage(chatId, messageId, { isThinking: false });
                 completeChatLoading(chatId);
-                abortControllerRef.current = null;
-                requestIdRef.current = null;
+                
+                // Cleanup refs only if we are the active controller
+                if (abortControllerRef.current === controller) {
+                    abortControllerRef.current = null;
+                    requestIdRef.current = null;
+                }
                 
                 const finalChatState = chatHistoryRef.current.find(c => c.id === chatId);
                 
@@ -518,8 +396,10 @@ export const useChat = (
             } else {
                 updateMessage(chatId, messageId, { isThinking: false });
                 completeChatLoading(chatId);
-                abortControllerRef.current = null;
-                requestIdRef.current = null;
+                if (abortControllerRef.current === controller) {
+                    abortControllerRef.current = null;
+                    requestIdRef.current = null;
+                }
             }
         }
     };
