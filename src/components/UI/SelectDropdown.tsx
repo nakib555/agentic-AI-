@@ -151,7 +151,7 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
                                 width: coords.width,
                                 zIndex: 99999
                             }}
-                            className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/5"
+                            className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-white/10 rounded-[0.65rem] shadow-2xl overflow-hidden ring-1 ring-black/5"
                         >
                             <div 
                                 className="overflow-y-auto custom-scrollbar"

@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -148,7 +147,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3, type: "spring", bounce: 0.25 }}
-            className="bg-page w-full max-w-5xl h-[85dvh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-white/10"
+            className="bg-page w-full max-w-5xl h-[85dvh] rounded-[0.65rem] shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-white/10"
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
             {/* Header */}
