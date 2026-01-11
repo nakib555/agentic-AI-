@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -10,16 +9,41 @@ import type { Model } from '../../types';
 import type { MemoryFile } from '../../hooks/useMemory';
 import type { Theme } from '../../hooks/useTheme';
 
-// Helper for safe lazy loading of named exports
+// Helper for safe lazy loading of named exports with auto-reload on version mismatch
 function lazyLoad<T extends React.ComponentType<any>>(
   importFactory: () => Promise<{ [key: string]: any }>,
   name: string
 ): React.LazyExoticComponent<T> {
   return React.lazy(() =>
-    importFactory().then((module) => {
-      if (!module[name]) throw new Error(`Module does not export '${name}'`);
-      return { default: module[name] };
-    })
+    importFactory()
+      .then((module) => {
+        if (!module[name]) throw new Error(`Module does not export '${name}'`);
+        // Cleanup reload flag on successful load
+        try { sessionStorage.removeItem(`reload_attempt_${name}`); } catch {}
+        return { default: module[name] };
+      })
+      .catch((error) => {
+        // Detect chunk load errors (404s on JS files)
+        const isChunkError = 
+            error.message?.includes('Failed to fetch dynamically imported module') ||
+            error.message?.includes('Importing a module script failed') ||
+            error.message?.includes('error loading dynamically imported module') ||
+            error.name === 'ChunkLoadError';
+
+        if (isChunkError) {
+             console.warn(`[LazyLoad] Chunk load failed for ${name}. Attempting recovery reload.`);
+             // Prevent infinite loops using session storage
+             const storageKey = `reload_attempt_${name}`;
+             try {
+                 if (!sessionStorage.getItem(storageKey)) {
+                     sessionStorage.setItem(storageKey, 'true');
+                     window.location.reload();
+                     return new Promise(() => {}); // Hang promise while reloading
+                 }
+             } catch (e) { /* ignore storage errors */ }
+        }
+        throw error;
+      })
   );
 }
 

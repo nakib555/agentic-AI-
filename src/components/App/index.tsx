@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -15,19 +14,42 @@ import {
 } from './constants';
 import { VersionMismatchOverlay } from '../UI/VersionMismatchOverlay';
 
-// Helper to safely lazy load named exports
+// Helper for safe lazy loading named exports with auto-reload logic for chunks
 function lazyLoad<T extends React.ComponentType<any>>(
   importFactory: () => Promise<{ [key: string]: any }>,
   name: string
 ): React.LazyExoticComponent<T> {
   return React.lazy(() =>
-    importFactory().then((module) => {
-      const component = module[name];
-      if (!component) {
-        throw new Error(`Module does not export component '${name}'`);
-      }
-      return { default: component };
-    })
+    importFactory()
+      .then((module) => {
+        const component = module[name];
+        if (!component) {
+          throw new Error(`Module does not export component '${name}'`);
+        }
+        // Cleanup reload flag on successful load
+        try { sessionStorage.removeItem(`reload_attempt_${name}`); } catch {}
+        return { default: component };
+      })
+      .catch((error) => {
+        const isChunkError = 
+            error.message?.includes('Failed to fetch dynamically imported module') ||
+            error.message?.includes('Importing a module script failed') ||
+            error.message?.includes('error loading dynamically imported module') ||
+            error.name === 'ChunkLoadError';
+
+        if (isChunkError) {
+             console.warn(`[LazyLoad] Chunk load failed for ${name}. Attempting recovery reload.`);
+             const storageKey = `reload_attempt_${name}`;
+             try {
+                 if (!sessionStorage.getItem(storageKey)) {
+                     sessionStorage.setItem(storageKey, 'true');
+                     window.location.reload();
+                     return new Promise(() => {});
+                 }
+             } catch (e) { /* ignore */ }
+        }
+        throw error;
+      })
   );
 }
 
@@ -52,8 +74,6 @@ export const App = () => {
   const activeMessage = currentChat?.messages?.length ? currentChat.messages[currentChat.messages.length - 1] : null;
 
   // --- Keyboard Detection Logic ---
-  // We track a "stable" viewport height that ignores sharp drops caused by the virtual keyboard opening on Android.
-  // This allows us to accurately detect if the keyboard is open by comparing the visual viewport to this stable height.
   const [stableHeight, setStableHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 0);
   const widthRef = useRef(typeof window !== 'undefined' ? window.innerWidth : 0);
 
@@ -62,18 +82,12 @@ export const App = () => {
           const currentH = window.innerHeight;
           const currentW = window.innerWidth;
           
-          // Check for width change (Orientation Change or Desktop Resize)
-          // If width changes significantly, we must reset the stable height as the baseline has changed.
           if (Math.abs(currentW - widthRef.current) > 50) {
               widthRef.current = currentW;
               setStableHeight(currentH);
               return;
           }
 
-          // If width hasn't changed much, evaluate height changes logic for Mobile behavior:
-          // 1. If height grew, update stable height (Browser address bar hidden).
-          // 2. If height shrank slightly (< 25%), update stable height (Browser address bar shown).
-          // 3. If height shrank significantly (> 25%), IGNORE it (Likely Keyboard opening on Android).
           setStableHeight(prev => {
               if (currentH > prev) return currentH;
               if (prev - currentH < (prev * 0.25)) return currentH;
@@ -82,13 +96,11 @@ export const App = () => {
       };
       
       window.addEventListener('resize', handleResize);
-      // Initial set
       handleResize();
       
       return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Heuristic: If visual viewport is significantly smaller than our stable full-screen height, keyboard is open.
   const isKeyboardOpen = !logic.isDesktop && logic.visualViewportHeight < (stableHeight * 0.85);
 
   return (
@@ -97,12 +109,7 @@ export const App = () => {
         className={`flex h-full bg-page text-content-primary overflow-hidden transition-[height] duration-200 ease-out ${logic.isAnyResizing ? 'pointer-events-none' : ''}`}
         style={{ 
             height: !logic.isDesktop && logic.visualViewportHeight ? `${logic.visualViewportHeight}px` : '100dvh',
-            // On mobile, we use visualViewportHeight to handle keyboard layout manually.
-            // Reset top padding to 0 always since we manage the top bar explicitly.
             paddingTop: logic.isDesktop ? '0' : 'env(safe-area-inset-top)', 
-            // CRITICAL FIX: If keyboard is open, the visual viewport excludes the safe area bottom (covered by keyboard),
-            // so we set padding to 0 to maximize space and prevent "double padding" scrolling issues.
-            // Otherwise, respect safe area for home indicator.
             paddingBottom: logic.isDesktop || isKeyboardOpen ? '0' : 'env(safe-area-inset-bottom)',
         }}
     >
@@ -134,7 +141,6 @@ export const App = () => {
         <main 
             className="relative z-10 flex-1 flex flex-col min-w-0 h-full bg-page transition-colors duration-300"
         >
-          {/* Mobile Header Toggle */}
           {!logic.isDesktop && (
             <div className="absolute top-0 left-0 right-0 z-30 pointer-events-none px-4 py-3">
                <div className="h-11 flex items-center">
@@ -205,7 +211,7 @@ export const App = () => {
         />
 
         <ThinkingSidebar
-            isOpen={false} // Hidden by default as per logic
+            isOpen={false} // Hidden by default
             onClose={() => {}} 
             message={activeMessage}
             sendMessage={logic.sendMessage}
