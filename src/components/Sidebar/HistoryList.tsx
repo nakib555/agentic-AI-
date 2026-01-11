@@ -29,22 +29,24 @@ type FlattenedItem =
     | { type: 'header', id: string, title: string }
     | { type: 'item', id: string, data: ChatSession };
 
-const groupChatsByMonth = (chats: ChatSession[]): { [key: string]: ChatSession[] } => {
+const groupChats = (chats: ChatSession[]): { [key: string]: ChatSession[] } => {
     const groups: { [key: string]: ChatSession[] } = {};
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const yesterdayStart = todayStart - 86400000;
+    const lastWeekStart = todayStart - (86400000 * 7);
 
     chats.forEach(chat => {
-        const chatDate = new Date(chat.createdAt);
         let groupKey: string;
-
+        // Check timestamps (assuming chat.createdAt is in ms)
         if (chat.createdAt >= todayStart) {
             groupKey = 'Today';
         } else if (chat.createdAt >= yesterdayStart) {
             groupKey = 'Yesterday';
+        } else if (chat.createdAt >= lastWeekStart) {
+            groupKey = 'Previous 7 Days';
         } else {
-            groupKey = chatDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            groupKey = new Date(chat.createdAt).toLocaleString('default', { month: 'long', year: 'numeric' });
         }
 
         if (!groups[groupKey]) {
@@ -85,8 +87,22 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
     ), [history, searchQuery]);
 
     const { groupedHistory, groupOrder } = useMemo(() => {
-        const groups = groupChatsByMonth(filteredHistory);
-        const order = ['Today', 'Yesterday', ...Object.keys(groups).filter(k => k !== 'Today' && k !== 'Yesterday').sort((a, b) => new Date(b).getTime() - new Date(a).getTime())];
+        const groups = groupChats(filteredHistory);
+        
+        // Custom sort logic to ensure chronological grouping
+        const order = Object.keys(groups).sort((a, b) => {
+            const priorityMap: Record<string, number> = { 'Today': 0, 'Yesterday': 1, 'Previous 7 Days': 2 };
+            const pA = priorityMap[a] ?? 3;
+            const pB = priorityMap[b] ?? 3;
+            if (pA !== pB) return pA - pB;
+            
+            // For months, parse date
+            const dateA = new Date(a);
+            const dateB = new Date(b);
+            // Newer dates first
+            return dateB.getTime() - dateA.getTime();
+        });
+
         return { groupedHistory: groups, groupOrder: order };
     }, [filteredHistory]);
     
@@ -122,8 +138,6 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
             if (chats && chats.length > 0) {
                 data.push({ type: 'header', id: `header-${group}`, title: group });
                 
-                // Only add items if group is NOT collapsed AND sidebar is NOT collapsed
-                // (Sidebar collapse hides list items by design in original component)
                 if (!collapsedGroups[group] && !shouldCollapse) {
                     chats.forEach(chat => data.push({ type: 'item', id: chat.id, data: chat }));
                 }
@@ -147,17 +161,16 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                     style={{ height: '100%', width: '100%' }}
                     data={flattenedData}
                     className="custom-scrollbar"
-                    // Increase overscan to ensure smooth scrolling
                     overscan={200}
                     itemContent={(index, item) => {
                         if (item.type === 'header') {
                             const isGroupCollapsed = collapsedGroups[item.title] ?? false;
                             return (
-                                <div className="bg-layer-1 z-10 pt-2 pb-1">
+                                <div className="bg-layer-1 z-10 pt-4 pb-1">
                                     <button
                                         onClick={() => !shouldCollapse && toggleGroup(item.title)}
                                         disabled={shouldCollapse}
-                                        className="w-full flex items-center justify-between px-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:bg-gray-100/60 dark:hover:bg-violet-900/30 rounded py-1 transition-colors disabled:cursor-default disabled:bg-transparent dark:disabled:bg-transparent"
+                                        className="w-full flex items-center justify-between px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 rounded py-1 transition-colors disabled:cursor-default"
                                         aria-expanded={!isGroupCollapsed}
                                     >
                                         <motion.span
@@ -169,7 +182,6 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                                             {item.title}
                                         </motion.span>
                                         
-                                        {/* Hide chevron in sidebar collapsed mode to avoid clutter */}
                                         <motion.div
                                             className={shouldCollapse ? 'hidden' : 'block'}
                                             animate={{ rotate: isGroupCollapsed ? 0 : 90 }}
@@ -183,9 +195,10 @@ export const HistoryList = ({ history, currentChatId, searchQuery, isCollapsed, 
                         }
                         
                         return (
-                            <div className="mb-0.5">
+                            <div className="mb-0.5 px-2">
                                 <HistoryItem 
                                     text={item.data.title} 
+                                    model={item.data.model}
                                     isCollapsed={isCollapsed}
                                     isDesktop={isDesktop}
                                     searchQuery={searchQuery}
