@@ -24,7 +24,6 @@ import { MessageToolbar } from './MessageToolbar';
 import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 import { useTypewriter } from '../../../hooks/useTypewriter';
 import { parseContentSegments } from '../../../utils/workflowParsing';
-import { ThinkingProcess } from './ThinkingProcess';
 import { CodeExecutionResult } from '../../AI/CodeExecutionResult';
 
 // Lazy load the heavy ArtifactRenderer
@@ -148,15 +147,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           </div>
       )}
 
-      {logic.hasThinkingText && (
-          <ThinkingProcess 
-              thinkingText={thinkingText} 
-              isThinking={!logic.thinkingIsComplete}
-              startTime={startTime}
-              endTime={endTime}
-          />
-      )}
-      
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer || isStoppedByUser) && (
         <motion.div
           initial={{ opacity: 0, y: 5 }}
