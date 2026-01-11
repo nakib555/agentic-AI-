@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -10,7 +11,7 @@ import type { MessageError, ToolCallEvent, WorkflowNodeData } from '../../types'
 import { ToolCallStep } from './ToolCallStep';
 import { ManualCodeRenderer } from '../Markdown/ManualCodeRenderer';
 import { WorkflowMarkdownComponents } from '../Markdown/markdownComponents';
-import { ObservationIcon, SearchIcon, TodoListIcon, HandoffIcon, ValidationIcon, CorrectionIcon, ExecutorIcon, ThoughtIcon } from './icons';
+import { SearchIcon } from './icons';
 import { SearchToolResult } from './SearchToolResult';
 import { getAgentColor } from '../../utils/agentUtils';
 import { FlowToken } from './FlowToken';
@@ -79,7 +80,9 @@ const HandoffNode: React.FC<{ from: string; to: string; details?: string; isStre
 };
 
 const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }: WorkflowNodeProps) => {
-    const [isExpanded, setIsExpanded] = useState(node.status === 'active' || node.status === 'failed');
+    // Force expand search nodes to show the "box" immediately
+    const isSearch = node.type === 'duckduckgoSearch';
+    const [isExpanded, setIsExpanded] = useState(isSearch || node.status === 'active' || node.status === 'failed');
     const agentColorInfo = node.agentName ? getAgentColor(node.agentName) : getAgentColor('System');
     
     // Auto-expand if active
@@ -94,7 +97,7 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
     }
 
     // --- Special Case: Search Tool ---
-    if (node.type === 'duckduckgoSearch') {
+    if (isSearch) {
         const event = node.details as ToolCallEvent;
         // Parse search results for sources
         let sources: { uri: string; title: string; }[] | undefined = undefined;
@@ -116,7 +119,7 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
         const isSearching = node.status === 'active';
 
         return (
-            <div className={`mb-3 rounded-xl border overflow-hidden transition-all duration-300 ${isSearching ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-500/30 shadow-sm' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10'}`}>
+            <div className={`mb-4 rounded-xl border overflow-hidden transition-all duration-300 ${isSearching ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-500/30 shadow-sm' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10'}`}>
                 <div 
                     className="flex items-center gap-3 p-3 cursor-pointer select-none"
                     onClick={() => setIsExpanded(!isExpanded)}
