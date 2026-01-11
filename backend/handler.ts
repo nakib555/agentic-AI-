@@ -251,7 +251,7 @@ export const apiHandler = async (req: any, res: any) => {
     if (isSuggestionTask && suggestionApiKey) {
         activeApiKey = suggestionApiKey;
     } 
-    const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston'];
+    const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston', 'feedback'];
     if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
         return res.status(401).json({ error: "API key not configured on the server." });
     }
@@ -592,6 +592,12 @@ ${personalizationSection}
                 } else {
                     res.status(404).json({ error: `No active job found for ID: ${requestId}` });
                 }
+                break;
+            }
+            case 'feedback': {
+                const { chatId, messageId, feedback } = req.body;
+                console.log(`[FEEDBACK] Chat: ${chatId}, Msg: ${messageId}, Rating: ${feedback}`);
+                res.status(200).json({ status: 'ok' });
                 break;
             }
             case 'title': {

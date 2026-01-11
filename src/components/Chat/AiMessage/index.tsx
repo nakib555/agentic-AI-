@@ -232,6 +232,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       {showToolbar && (
           <div className="w-full mt-2 transition-opacity duration-300">
             <MessageToolbar
+                chatId={currentChatId}
                 messageId={id}
                 messageText={logic.finalAnswerText}
                 rawText={activeResponse?.text || ''}
