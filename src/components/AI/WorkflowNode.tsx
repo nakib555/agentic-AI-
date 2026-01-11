@@ -113,19 +113,35 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
             }
         }
 
+        const isSearching = node.status === 'active';
+
         return (
-            <div className="mb-2">
+            <div className={`mb-3 rounded-xl border overflow-hidden transition-all duration-300 ${isSearching ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-500/30 shadow-sm' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10'}`}>
                 <div 
-                    className="flex items-center gap-3 cursor-pointer group"
+                    className="flex items-center gap-3 p-3 cursor-pointer select-none"
                     onClick={() => setIsExpanded(!isExpanded)}
                 >
+                    <div className={`relative flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isSearching ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'}`}>
+                       {isSearching ? (
+                           <>
+                             <span className="absolute inset-0 rounded-lg bg-blue-400/20 animate-ping"></span>
+                             <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                           </>
+                       ) : (
+                           <SearchIcon />
+                       )}
+                    </div>
+                    
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
-                                Researching "{node.title.replace(/^"/, '').replace(/"$/, '')}"
-                            </span>
-                            {node.duration && <span className="text-[10px] text-slate-400 font-mono">{node.duration.toFixed(1)}s</span>}
+                             <span className={`text-sm font-bold ${isSearching ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-200'}`}>
+                                {isSearching ? 'Searching the web...' : 'Search Completed'}
+                             </span>
+                             {node.duration && <span className="text-[10px] text-slate-400 font-mono bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 rounded">{node.duration.toFixed(1)}s</span>}
                         </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate font-mono mt-0.5 opacity-90">
+                            Query: "{node.title.replace(/^"/, '').replace(/"$/, '')}"
+                        </p>
                     </div>
                     <Chevron expanded={isExpanded} />
                 </div>
@@ -136,9 +152,10 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden pl-1"
+                            className="overflow-hidden"
                         >
-                            <div className="mt-2">
+                            <div className="px-3 pb-3 pt-0">
+                                <div className="h-px w-full bg-slate-100 dark:bg-white/5 mb-3" />
                                 <SearchToolResult query={node.title} sources={sources} />
                             </div>
                         </motion.div>
