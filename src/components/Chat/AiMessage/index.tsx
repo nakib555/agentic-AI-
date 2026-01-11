@@ -68,7 +68,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
-  const { activeResponse, finalAnswerText, thinkingIsComplete, thinkingText, displayDuration } = logic;
+  const { activeResponse, finalAnswerText, thinkingIsComplete, thinkingText, startTime, endTime } = logic;
   
   const typedFinalAnswer = useTypewriter(finalAnswerText, msg.isThinking ?? false);
 
@@ -152,7 +152,8 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           <ThinkingProcess 
               thinkingText={thinkingText} 
               isThinking={!logic.thinkingIsComplete}
-              duration={displayDuration}
+              startTime={startTime}
+              endTime={endTime}
           />
       )}
       

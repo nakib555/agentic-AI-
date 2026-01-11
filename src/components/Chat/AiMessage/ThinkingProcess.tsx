@@ -14,10 +14,40 @@ const motion = motionTyped as any;
 type ThinkingProcessProps = {
     thinkingText: string;
     isThinking: boolean;
-    duration?: string | number;
+    startTime?: number;
+    endTime?: number;
 };
 
-export const ThinkingProcess: React.FC<ThinkingProcessProps> = ({ thinkingText, isThinking, duration }) => {
+// Isolated timer component to prevent re-rendering the heavy thinking process text
+const DurationTimer = ({ startTime, endTime, isThinking }: { startTime?: number, endTime?: number, isThinking: boolean }) => {
+    const [elapsed, setElapsed] = useState(0);
+
+    useEffect(() => {
+        if (!startTime) return;
+        
+        // If done, show final time
+        if (!isThinking && endTime) {
+            setElapsed((endTime - startTime) / 1000);
+            return;
+        }
+
+        // Only run interval if thinking
+        if (isThinking) {
+             // Update immediately to avoid lag
+             setElapsed((Date.now() - startTime) / 1000);
+             
+             const interval = setInterval(() => {
+                 setElapsed((Date.now() - startTime) / 1000);
+             }, 100);
+             return () => clearInterval(interval);
+        }
+    }, [isThinking, startTime, endTime]);
+
+    if (!startTime) return null;
+    return <span className="text-xs font-mono text-slate-400 dark:text-slate-500">{elapsed.toFixed(1)}s</span>;
+};
+
+export const ThinkingProcess: React.FC<ThinkingProcessProps> = ({ thinkingText, isThinking, startTime, endTime }) => {
     const [isOpen, setIsOpen] = useState(false);
     // Auto-open only on initial mount if actively thinking, but respect user toggling afterwards
     const hasAutoOpened = useRef(false);
@@ -74,11 +104,7 @@ export const ThinkingProcess: React.FC<ThinkingProcessProps> = ({ thinkingText, 
                 </div>
                 
                 <div className="flex items-center gap-3">
-                    {duration && (
-                        <span className="text-xs font-mono text-slate-400 dark:text-slate-500">
-                            {duration}s
-                        </span>
-                    )}
+                    <DurationTimer startTime={startTime} endTime={endTime} isThinking={isThinking} />
                     <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         viewBox="0 0 20 20" 

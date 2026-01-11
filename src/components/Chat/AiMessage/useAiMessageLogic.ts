@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useEffect, useCallback } from 'react';
 import type { Message, ModelResponse, Source } from '../../../types';
 import { useTts } from '../../../hooks/useTts';
 import { parseMessageText } from '../../../utils/messageParser';
@@ -17,7 +17,6 @@ export const useAiMessageLogic = (
     isLoading: boolean
 ) => {
     const { isThinking, executionState } = msg;
-    const [elapsed, setElapsed] = useState(0);
 
     const activeResponse = useMemo((): ModelResponse | null => {
         if (!msg.responses || msg.responses.length === 0) return null;
@@ -91,17 +90,6 @@ export const useAiMessageLogic = (
     const hasThinkingText = thinkingText && thinkingText.trim().length > 0;
     
     const hasFinalAnswer = rawFinalAnswerText && rawFinalAnswerText.trim() !== '';
-    const duration = activeResponse?.startTime && activeResponse?.endTime ? (activeResponse.endTime - activeResponse.startTime) / 1000 : null;
-    
-    // Duration timer
-    useEffect(() => {
-        if (isThinking && activeResponse?.startTime) {
-            const intervalId = setInterval(() => setElapsed((Date.now() - activeResponse.startTime!) / 1000), 100);
-            return () => clearInterval(intervalId);
-        }
-    }, [isThinking, activeResponse?.startTime]);
-
-    const displayDuration = thinkingIsComplete && duration !== null ? duration.toFixed(1) : elapsed.toFixed(1);
 
     // Streaming Logic: If we are thinking, have a final answer, and no error, we are streaming content.
     const isStreamingFinalAnswer = !!isThinking && hasFinalAnswer && !activeResponse?.error;
@@ -129,7 +117,9 @@ export const useAiMessageLogic = (
         finalAnswerText: rawFinalAnswerText, 
         playOrStopAudio, audioState, isPlaying, ttsError: errorMessage,
         searchSources,
-        thinkingIsComplete, hasWorkflow, hasThinkingText, hasFinalAnswer, displayDuration, 
+        thinkingIsComplete, hasWorkflow, hasThinkingText, hasFinalAnswer,
+        startTime: activeResponse?.startTime,
+        endTime: activeResponse?.endTime,
         isInitialWait: !hasWorkflow && !hasThinkingText && isWaitingForFinalAnswer,
         isStreamingFinalAnswer, isWaitingForFinalAnswer, showApprovalUI, handleRunCode,
         agentPlan, executionLog, parsedFinalAnswer: segmentsToRender
