@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -24,14 +25,14 @@ const containerVariants = {
 };
 
 const PROMPTS: { icon: string; text: string; prompt: string; color: PromptColor, agent?: boolean }[] = [
-    { icon: "🧠", text: "Reasoning", prompt: "What is the capital of France?", color: "violet" },
-    { icon: "🎬", text: "Video", prompt: "Generate a video of a cat playing a piano.", color: "rose", agent: true },
-    { icon: "🎨", text: "Image", prompt: "Generate an image of a robot eating spaghetti.", color: "fuchsia", agent: true },
-    { icon: "🗺️", text: "Map", prompt: "Show me a map of the Eiffel Tower.", color: "emerald", agent: true },
-    { icon: "🤔", text: "MCQ", prompt: "Ask me a multiple choice question about physics.", color: "amber" },
-    { icon: "📍", text: "Nearby", prompt: "Find coffee shops near me.", color: "blue", agent: true },
-    { icon: "📊", text: "Table", prompt: "Create a markdown table comparing the features of Gemini 2.5 Pro and Gemini 2.5 Flash.", color: "indigo" },
-    { icon: "📝", text: "Markdown", prompt: "Show me a comprehensive example of all the markdown formatting you support.", color: "teal" },
+    { icon: "🧮", text: "1 Tool", prompt: "Use the calculator tool to calculate (153.5 * 44) / 1.5.", color: "cyan", agent: true },
+    { icon: "⛓️", text: "Multi-Tool", prompt: "Search for the GDP of France and Germany in 2023. Then, use Python to calculate the difference and create a small bar chart comparing them.", color: "violet", agent: true },
+    { icon: "🎨", text: "Image", prompt: "Generate an image of a futuristic robot painting a canvas.", color: "fuchsia", agent: true },
+    { icon: "🗺️", text: "Map", prompt: "Show me a map of Central Park, New York.", color: "emerald", agent: true },
+    { icon: "🎬", text: "Video", prompt: "Generate a video of a neon city at night.", color: "rose", agent: true },
+    { icon: "📍", text: "Nearby", prompt: "Find pizza places near me.", color: "blue", agent: true },
+    { icon: "🧠", text: "Reasoning", prompt: "Explain the grandfather paradox in simple terms.", color: "amber" },
+    { icon: "📊", text: "Table", prompt: "Create a markdown table comparing React, Vue, and Angular.", color: "indigo" },
 ];
 
 export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
