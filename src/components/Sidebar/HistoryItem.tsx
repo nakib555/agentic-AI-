@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 import { Tooltip } from '../UI/Tooltip';
 const motion = motionTyped as any;
@@ -59,9 +60,14 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, model, isCollaps
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(text);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    
+    // State for Portal Positioning
+    const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0 });
+
     const inputRef = useRef<HTMLInputElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const shouldCollapse = isDesktop && isCollapsed;
 
@@ -86,6 +92,26 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, model, isCollaps
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+    
+    // Calculate menu position when opening
+    useEffect(() => {
+        if (isMenuOpen && containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            setMenuCoords({
+                top: rect.top,
+                left: rect.right + 5 // Small gap to the right of the item
+            });
+
+            // Close on scroll/resize to prevent detached menu
+            const handleScroll = () => setIsMenuOpen(false);
+            window.addEventListener('scroll', handleScroll, true);
+            window.addEventListener('resize', handleScroll);
+            return () => {
+                window.removeEventListener('scroll', handleScroll, true);
+                window.removeEventListener('resize', handleScroll);
+            };
+        }
+    }, [isMenuOpen]);
     
     useEffect(() => {
         if (!isEditing) {
@@ -136,7 +162,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, model, isCollaps
     };
 
     return (
-        <div className="relative group/item">
+        <div ref={containerRef} className="relative group/item">
             <button 
                 onClick={isEditing ? undefined : onClick} 
                 onDoubleClick={handleDoubleClick}
@@ -183,7 +209,12 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, model, isCollaps
             </button>
 
             {!shouldCollapse && !isEditing && (
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/item:opacity-100 focus-within:opacity-100 transition-opacity">
+                <div 
+                    className={`
+                        absolute right-2 top-1/2 -translate-y-1/2 flex items-center transition-opacity
+                        ${isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100 focus-within:opacity-100'}
+                    `}
+                >
                     <Tooltip content="More options" position="right" delay={500}>
                         <button
                             ref={buttonRef}
@@ -195,34 +226,44 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, model, isCollaps
                     </Tooltip>
                 </div>
             )}
-             <AnimatePresence>
-                {isMenuOpen && (
-                    <motion.div
-                        ref={menuRef}
-                        initial={{ opacity: 0, scale: 0.95, x: -10 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, x: -10 }}
-                        transition={{ duration: 0.1 }}
-                        className="absolute left-full top-0 ml-2 z-50 w-32 bg-white dark:bg-[#252525] rounded-xl shadow-xl border border-gray-200 dark:border-white/10 p-1 overflow-hidden"
-                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                    >
-                        <ul className="flex flex-col gap-0.5">
-                            <li>
-                                <button onClick={handleEditClick} className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-200 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M11.355 2.212a.75.75 0 0 1 1.06 0l1.373 1.373a.75.75 0 0 1 0 1.06L5.435 13H3.25A.75.75 0 0 1 2.5 12.25V10l8.293-8.293a.75.75 0 0 1 .562-.294Z" /></svg>
-                                    <span>Rename</span>
-                                </button>
-                            </li>
-                            <li>
-                                <button onClick={handleDelete} className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clipRule="evenodd" /></svg>
-                                    <span>Delete</span>
-                                </button>
-                            </li>
-                        </ul>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            
+            {createPortal(
+                <AnimatePresence>
+                    {isMenuOpen && (
+                        <motion.div
+                            ref={menuRef}
+                            initial={{ opacity: 0, scale: 0.95, x: -10 }}
+                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, x: -10 }}
+                            transition={{ duration: 0.1 }}
+                            style={{
+                                position: 'fixed',
+                                top: menuCoords.top,
+                                left: menuCoords.left,
+                                zIndex: 99999
+                            }}
+                            className="w-32 bg-white dark:bg-[#252525] rounded-xl shadow-xl border border-gray-200 dark:border-white/10 p-1 overflow-hidden"
+                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                        >
+                            <ul className="flex flex-col gap-0.5">
+                                <li>
+                                    <button onClick={handleEditClick} className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-200 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M11.355 2.212a.75.75 0 0 1 1.06 0l1.373 1.373a.75.75 0 0 1 0 1.06L5.435 13H3.25A.75.75 0 0 1 2.5 12.25V10l8.293-8.293a.75.75 0 0 1 .562-.294Z" /></svg>
+                                        <span>Rename</span>
+                                    </button>
+                                </li>
+                                <li>
+                                    <button onClick={handleDelete} className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clipRule="evenodd" /></svg>
+                                        <span>Delete</span>
+                                    </button>
+                                </li>
+                            </ul>
+                        </motion.div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 };
