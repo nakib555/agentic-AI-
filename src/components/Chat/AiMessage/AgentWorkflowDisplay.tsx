@@ -7,10 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThinkingWorkflow } from '../../AI/ThinkingWorkflow';
-import { ManualCodeRenderer } from '../../Markdown/ManualCodeRenderer';
-import { WorkflowMarkdownComponents } from '../../Markdown/markdownComponents';
 import type { WorkflowNodeData } from '../../../types';
-import { AgentBriefing } from '../../AI/AgentBriefing';
 
 type AgentWorkflowDisplayProps = {
     plan: string;
@@ -26,17 +23,11 @@ const ChevronDown = () => (
     </svg>
 );
 
-const BrainIcon = () => (
+const WorkflowIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" />
-        <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" />
-        <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4" />
-        <path d="M17.599 6.5a3 3 0 0 0 .399-1.375" />
-        <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5" />
-        <path d="M3.477 10.896a4 4 0 0 1 .585-.396" />
-        <path d="M19.938 10.5a4 4 0 0 1 .585.396" />
-        <path d="M6 18a4 4 0 0 1-1.97-1.375" />
-        <path d="M19.97 16.625A4.002 4.002 0 0 1 18 18" />
+        <rect width="8" height="8" x="3" y="3" rx="2" />
+        <path d="M7 11v4a2 2 0 0 0 2 2h4" />
+        <rect width="8" height="8" x="13" y="13" rx="2" />
     </svg>
 );
 
@@ -63,14 +54,14 @@ export const AgentWorkflowDisplay: React.FC<AgentWorkflowDisplayProps> = ({ plan
                             {isActive ? (
                                 <svg className="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             ) : (
-                                <BrainIcon />
+                                <WorkflowIcon />
                             )}
                          </div>
                          <div className="flex flex-col items-start">
                              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                                 Chain of Thought
+                                 Agent Workflow
                              </span>
-                             {isActive && <span className="text-[10px] font-medium text-indigo-500 dark:text-indigo-400 animate-pulse">Processing...</span>}
+                             {isActive && <span className="text-[10px] font-medium text-indigo-500 dark:text-indigo-400 animate-pulse">Executing...</span>}
                          </div>
                     </div>
                     

@@ -91,14 +91,22 @@ export const ThinkingProcess: React.FC<ThinkingProcessProps> = ({ thinkingText, 
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-                                <path fillRule="evenodd" d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 2.45 3 3.414 3 4.517V17.25a.75.75 0 001.075.676L10 15.08l5.925 2.848A.75.75 0 0017 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0010 2z" clipRule="evenodd" />
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                                <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" />
+                                <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" />
+                                <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4" />
+                                <path d="M17.599 6.5a3 3 0 0 0 .399-1.375" />
+                                <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5" />
+                                <path d="M3.477 10.896a4 4 0 0 1 .585-.396" />
+                                <path d="M19.938 10.5a4 4 0 0 1 .585.396" />
+                                <path d="M6 18a4 4 0 0 1-1.97-1.375" />
+                                <path d="M19.97 16.625A4.002 4.002 0 0 1 18 18" />
                             </svg>
                         )}
                     </div>
                     <div className="flex flex-col items-start">
                         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            {isThinking ? 'Thinking Process' : 'Thought Process'}
+                            {isThinking ? 'Reasoning...' : 'Reasoning Process'}
                         </span>
                     </div>
                 </div>
