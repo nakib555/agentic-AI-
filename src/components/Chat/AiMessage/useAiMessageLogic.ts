@@ -94,10 +94,9 @@ export const useAiMessageLogic = (
     // Streaming Logic: If we are thinking, have a final answer, and no error, we are streaming content.
     const isStreamingFinalAnswer = !!isThinking && hasFinalAnswer && !activeResponse?.error;
     
-    // Waiting Logic: If we are thinking, BUT have no thinking process visible (chat mode) and no answer yet.
-    // Updated: We ignore `hasThinkingText` here because we aren't showing it anymore.
-    // So if it's thinking and there is no workflow and no final answer, we are "waiting".
-    const isWaitingForFinalAnswer = !!isThinking && !hasWorkflow && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
+    // Waiting Logic: If we are thinking and have no answer yet.
+    // We treat workflow steps/thinking as "background work" and do not count them as visible content anymore.
+    const isWaitingForFinalAnswer = !!isThinking && !hasFinalAnswer && !activeResponse?.error && executionState !== 'pending_approval';
     
     // showApprovalUI logic
     const showApprovalUI = executionState === 'pending_approval' && !!activeResponse?.plan;
@@ -114,14 +113,14 @@ export const useAiMessageLogic = (
 
     return {
         activeResponse, 
-        thinkingText, // Now properly exposed, though UI ignores it
+        thinkingText,
         finalAnswerText: rawFinalAnswerText, 
         playOrStopAudio, audioState, isPlaying, ttsError: errorMessage,
         searchSources,
         thinkingIsComplete, hasWorkflow, hasThinkingText, hasFinalAnswer,
         startTime: activeResponse?.startTime,
         endTime: activeResponse?.endTime,
-        isInitialWait: !hasWorkflow && isWaitingForFinalAnswer,
+        isInitialWait: isWaitingForFinalAnswer,
         isStreamingFinalAnswer, isWaitingForFinalAnswer, showApprovalUI, handleRunCode,
         agentPlan, executionLog, parsedFinalAnswer: segmentsToRender
     };

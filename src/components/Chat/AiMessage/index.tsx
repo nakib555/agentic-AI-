@@ -25,8 +25,6 @@ import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 import { useTypewriter } from '../../../hooks/useTypewriter';
 import { parseContentSegments } from '../../../utils/workflowParsing';
 import { CodeExecutionResult } from '../../AI/CodeExecutionResult';
-import { AgentWorkflowDisplay } from './AgentWorkflowDisplay';
-import { ThinkingProcess } from './ThinkingProcess';
 
 // Lazy load the heavy ArtifactRenderer
 const ArtifactRenderer = React.lazy(() => import('../../Artifacts/ArtifactRenderer').then(m => ({ default: m.ArtifactRenderer })));
@@ -149,23 +147,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           </div>
       )}
 
-      {/* --- Workflow / Thinking Visualization --- */}
-      {logic.hasWorkflow ? (
-          <AgentWorkflowDisplay 
-             plan={logic.agentPlan}
-             nodes={logic.executionLog}
-             sendMessage={sendMessage}
-             onRegenerate={() => onRegenerate(id)}
-             messageId={id}
-          />
-      ) : logic.hasThinkingText && (
-          <ThinkingProcess 
-             thinkingText={thinkingText}
-             isThinking={msg.isThinking ?? false}
-             startTime={startTime}
-             endTime={endTime}
-          />
-      )}
+      {/* Note: Thought Process / Workflow Visualization has been hidden per user request */}
 
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer || isStoppedByUser) && (
         <motion.div
