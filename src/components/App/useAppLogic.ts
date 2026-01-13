@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -90,7 +91,7 @@ export const useAppLogic = () => {
 
   // Global Resize Logic
   // Aggregates resizing state from all sidebars to enforce global UI locks (cursor, pointer-events)
-  const isAnyResizing = sidebar.isResizing || sidebar.isThinkingResizing || sidebar.isSourcesResizing || isArtifactResizing;
+  const isAnyResizing = sidebar.isResizing || sidebar.isSourcesResizing || isArtifactResizing;
 
   useEffect(() => {
       if (isAnyResizing) {

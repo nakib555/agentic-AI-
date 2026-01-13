@@ -59,7 +59,6 @@ const ChatArea = lazyLoad(() => import('../Chat/ChatArea'), 'ChatArea');
 const ChatHeader = lazyLoad(() => import('../Chat/ChatHeader'), 'ChatHeader');
 const SourcesSidebar = lazyLoad(() => import('../AI/SourcesSidebar'), 'SourcesSidebar');
 const ArtifactSidebar = lazyLoad(() => import('../Sidebar/ArtifactSidebar'), 'ArtifactSidebar');
-const ThinkingSidebar = lazyLoad(() => import('../Sidebar/ThinkingSidebar'), 'ThinkingSidebar');
 const AppModals = lazyLoad(() => import('./AppModals'), 'AppModals');
 const TestRunner = lazyLoad(() => import('../Testing'), 'TestRunner');
 
@@ -208,18 +207,6 @@ export const App = () => {
           setWidth={logic.handleSetSourcesSidebarWidth}
           isResizing={logic.isSourcesResizing}
           setIsResizing={logic.setIsSourcesResizing}
-        />
-
-        <ThinkingSidebar
-            isOpen={false} // Hidden by default
-            onClose={() => {}} 
-            message={activeMessage}
-            sendMessage={logic.sendMessage}
-            width={logic.thinkingSidebarWidth}
-            setWidth={logic.handleSetThinkingSidebarWidth}
-            isResizing={logic.isThinkingResizing}
-            setIsResizing={logic.setIsThinkingResizing}
-            onRegenerate={logic.regenerateResponse}
         />
 
         <ArtifactSidebar
