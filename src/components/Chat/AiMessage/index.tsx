@@ -25,7 +25,6 @@ import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 import { useTypewriter } from '../../../hooks/useTypewriter';
 import { parseContentSegments } from '../../../utils/workflowParsing';
 import { CodeExecutionResult } from '../../AI/CodeExecutionResult';
-import { ThinkingProcess } from './ThinkingProcess';
 import { AgentWorkflowDisplay } from './AgentWorkflowDisplay';
 import { ExecutionApproval } from '../../AI/ExecutionApproval';
 
@@ -151,8 +150,8 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
 
       {/* --- Workflow Visualization --- */}
-      {/* If we have a structured Agent Plan or Execution Log, AND we are in Agent Mode, use the AgentWorkflowDisplay */}
-      {isAgentMode && hasWorkflow ? (
+      {/* Only show Agent Workflow in Agent Mode */}
+      {isAgentMode && hasWorkflow && (
           <div className="w-full mb-2">
               <AgentWorkflowDisplay 
                   plan={agentPlan}
@@ -162,16 +161,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                   messageId={id}
               />
           </div>
-      ) : (
-          // Fallback to simple Thinking Process for Chat Mode or non-agentic CoT models
-          thinkingText && (
-              <ThinkingProcess 
-                  thinkingText={thinkingText} 
-                  isThinking={msg.isThinking ?? false} 
-                  startTime={startTime}
-                  endTime={endTime}
-              />
-          )
       )}
 
       {/* Approval Step (if needed) */}
