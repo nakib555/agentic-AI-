@@ -21,13 +21,13 @@ const jsonStructureExample = `{
   // 🆔 Unique Session Identifier (UUID v4 recommended)
   "id": "chat-550e8400-e29b-41d4-a716-446655440000",
   
-  // 🏷️ Conversation Title (Displayed in Sidebar)
-  "title": "React Architecture Review",
+  // 🏷️ Conversation Title
+  "title": "Agentic Analysis Session",
   
   // 🤖 AI Model Identifier
   "model": "gemini-2.5-pro",
   
-  // ⚙️ Agent Mode Flag (Optional, defaults to false)
+  // ⚙️ Agent Mode Flag (Set to true for Agent features, false for Chat)
   "isAgentMode": true,
 
   // 📅 Creation Timestamp (Unix Milliseconds)
@@ -37,39 +37,38 @@ const jsonStructureExample = `{
   "messages": [
     {
       "id": "msg-1",
-      "role": "user", // Can be "user" or "model"
+      "role": "user",
+      "text": "Research the latest TypeScript features.",
       
-      // The content of the message
-      "text": "Review the attached logs.",
-      
-      // 📎 File Attachments (Optional)
-      "attachments": [
-        {
-          "name": "error.log",
-          "mimeType": "text/plain",
-          "data": "base64_encoded_string..." 
-        }
-      ],
-      
-      // 🌿 Branching/Edit History (Optional)
+      // 🌿 Branching History (Optional)
       "activeVersionIndex": 0, 
       "versions": [ 
-        { "text": "Review logs.", "createdAt": 1724600005000 } 
+        { "text": "Research TypeScript 5.5", "createdAt": 1724600005000 } 
       ]
     },
     {
       "id": "msg-2",
       "role": "model",
-      "text": "I found a critical error...",
-      "isThinking": false, // Is the model currently generating?
+      "text": "I will search for the latest TypeScript release notes...",
       
-      // 🧠 Response Branching (Optional)
+      // 🧠 Response Branching
       "activeResponseIndex": 0,
       "responses": [
         {
-          "text": "I found a critical error...",
+          "text": "I will search for the latest TypeScript release notes...\\n\\n[STEP] Final Answer:\\nHere are the key features...",
           "startTime": 1724600010000,
-          "endTime": 1724600015000
+          "endTime": 1724600015000,
+          
+          // 🛠️ Tool Execution Logs (Agent Mode Only)
+          "toolCallEvents": [
+            {
+               "id": "call_123",
+               "call": { "name": "duckduckgoSearch", "args": { "query": "TypeScript 5.5 features" } },
+               "result": "TypeScript 5.5 introduces...",
+               "startTime": 1724600012000,
+               "endTime": 1724600014000
+            }
+          ]
         }
       ]
     }
