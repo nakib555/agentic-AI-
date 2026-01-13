@@ -151,8 +151,8 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
 
       {/* --- Workflow Visualization --- */}
-      {/* If we have a structured Agent Plan or Execution Log, use the AgentWorkflowDisplay */}
-      {hasWorkflow ? (
+      {/* If we have a structured Agent Plan or Execution Log, AND we are in Agent Mode, use the AgentWorkflowDisplay */}
+      {isAgentMode && hasWorkflow ? (
           <div className="w-full mb-2">
               <AgentWorkflowDisplay 
                   plan={agentPlan}
@@ -163,7 +163,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
               />
           </div>
       ) : (
-          // Fallback to simple Thinking Process for non-agentic CoT models
+          // Fallback to simple Thinking Process for Chat Mode or non-agentic CoT models
           thinkingText && (
               <ThinkingProcess 
                   thinkingText={thinkingText} 
