@@ -25,14 +25,48 @@ const containerVariants = {
 };
 
 const PROMPTS: { icon: string; text: string; prompt: string; color: PromptColor, agent?: boolean }[] = [
-    { icon: "🧮", text: "1 Tool", prompt: "Use the calculator tool to calculate (153.5 * 44) / 1.5.", color: "cyan", agent: true },
-    { icon: "⛓️", text: "Multi-Tool", prompt: "Search for the GDP of France and Germany in 2023. Then, use Python to calculate the difference and create a small bar chart comparing them.", color: "violet", agent: true },
-    { icon: "🎨", text: "Image", prompt: "Generate an image of a futuristic robot painting a canvas.", color: "fuchsia", agent: true },
-    { icon: "🗺️", text: "Map", prompt: "Show me a map of Central Park, New York.", color: "emerald", agent: true },
-    { icon: "🎬", text: "Video", prompt: "Generate a video of a neon city at night.", color: "rose", agent: true },
-    { icon: "📍", text: "Nearby", prompt: "Find pizza places near me.", color: "blue", agent: true },
-    { icon: "🧠", text: "Reasoning", prompt: "Explain the grandfather paradox in simple terms.", color: "amber" },
-    { icon: "📊", text: "Table", prompt: "Create a markdown table comparing React, Vue, and Angular.", color: "indigo" },
+    { 
+        icon: "📈", 
+        text: "Market Analyst", 
+        prompt: "Research the current stock prices of Apple (AAPL), Microsoft (MSFT), and Google (GOOGL). Then, use Python to generate a bar chart comparing their values.", 
+        color: "violet", 
+        agent: true 
+    },
+    { 
+        icon: "🗺️", 
+        text: "Travel Agent", 
+        prompt: "I want to visit Kyoto, Japan. Find 3 top-rated historical temples, check the current weather there, and display their locations on a map.", 
+        color: "emerald", 
+        agent: true 
+    },
+    { 
+        icon: "🔬", 
+        text: "Data Scientist", 
+        prompt: "Write a Python script to perform a Monte Carlo simulation for estimating the value of Pi, and plot the results.", 
+        color: "indigo",
+        agent: true
+    },
+    { 
+        icon: "🎨", 
+        text: "Creative Studio", 
+        prompt: "Generate an image of a futuristic eco-city. Then, write a short architectural concept description based on the visual.", 
+        color: "fuchsia", 
+        agent: true 
+    },
+    { 
+        icon: "🧠", 
+        text: "Deep Reasoner", 
+        prompt: "Analyze the potential long-term economic impacts of universal basic income (UBI). Provide arguments for and against, citing recent studies.", 
+        color: "amber",
+        agent: true
+    },
+    { 
+        icon: "🎬", 
+        text: "Video Producer", 
+        prompt: "Generate a cinematic video of a detective walking through a rainy neon city at night.", 
+        color: "rose", 
+        agent: true 
+    },
 ];
 
 export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
@@ -41,7 +75,7 @@ export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => (
     initial="hidden"
     animate="visible"
     exit="hidden"
-    className="flex flex-wrap justify-center gap-3 w-full max-w-4xl mx-auto"
+    className="flex flex-wrap justify-center gap-3 w-full max-w-5xl mx-auto"
   >
     {PROMPTS.map((p, i) => (
         <PromptButton 
