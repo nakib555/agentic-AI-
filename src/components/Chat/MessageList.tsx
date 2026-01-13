@@ -179,7 +179,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
         ) : (
             <div className="h-full overflow-y-auto custom-scrollbar">
                  <Suspense fallback={<div className="h-full flex items-center justify-center"><div className="animate-spin w-6 h-6 border-2 border-indigo-500 rounded-full border-t-transparent"></div></div>}>
-                    <WelcomeScreen sendMessage={sendMessage} />
+                    <WelcomeScreen sendMessage={sendMessage} isAgentMode={isAgentMode} />
                  </Suspense>
             </div>
         )

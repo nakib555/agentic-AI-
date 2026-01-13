@@ -12,9 +12,10 @@ const motion = motionTyped as any;
 
 type WelcomeScreenProps = {
   sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
+  isAgentMode: boolean;
 };
 
-export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
+export const WelcomeScreen = ({ sendMessage, isAgentMode }: WelcomeScreenProps) => (
     <div className="flex flex-col items-center justify-center h-full text-center pb-12 px-4 relative overflow-y-auto custom-scrollbar">
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -27,12 +28,17 @@ export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
                 <span className="brand-gradient">I help you?</span>
             </h1>
             <p className="text-lg text-slate-500 dark:text-slate-400 font-medium max-w-lg mx-auto">
-                Your autonomous agent for reasoning, coding, and creation.
+                {isAgentMode 
+                    ? "Your autonomous agent for reasoning, coding, and creation." 
+                    : "Your intelligent companion for conversation and knowledge."}
             </p>
         </motion.div>
         
         <div className="w-full max-w-3xl">
-             <FloatingPrompts onPromptClick={(prompt, options) => sendMessage(prompt, undefined, options)} />
+             <FloatingPrompts 
+                onPromptClick={(prompt, options) => sendMessage(prompt, undefined, options)} 
+                isAgentMode={isAgentMode}
+             />
         </div>
     </div>
 );
