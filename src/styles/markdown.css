@@ -3,5 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-@import './markdown.part1.css';
-@import './markdown.part2.css';
+@import './markdown/typography.css';
+@import './markdown/media.css';
+@import './markdown/components.css';
+@import './markdown/math.css';

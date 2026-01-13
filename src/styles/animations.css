@@ -1,0 +1,38 @@
+/* Animations */
+
+@keyframes highlight-animation {
+  0% { background-color: transparent; }
+  25% { background-color: var(--primary-subtle); }
+  100% { background-color: transparent; }
+}
+
+.highlight-jump {
+  animation: highlight-animation 2s ease-in-out;
+  border-radius: 1.5rem;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: 200% center;
+  }
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    110deg,
+    var(--text-secondary) 20%,
+    var(--text-primary) 30%,
+    var(--primary-main) 50%,
+    var(--text-primary) 70%,
+    var(--text-secondary) 80%
+  );
+  background-size: 200% auto;
+  color: transparent; 
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2.5s linear infinite;
+  display: inline-block;
+  transform: translateZ(0);
+  will-change: background-position;
+}

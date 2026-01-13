@@ -1,0 +1,17 @@
+/* KaTeX Math Styling */
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  vertical-align: middle;
+  margin: 1em 0;
+  padding: 0.5em 0;
+  background-color: transparent;
+  border: none;
+}
+
+.katex {
+  color: var(--text-primary);
+  font-size: 1.15em;
+}

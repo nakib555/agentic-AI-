@@ -1,0 +1,46 @@
+/* Component Specific Styles */
+
+:root {
+  --card-bg: var(--bg-layer-1);
+  --card-text: var(--text-primary);
+  --border-color: var(--border-default);
+}
+
+.content-editable-input {
+  font-size: 0.875rem;
+  caret-color: var(--primary-main);
+}
+
+.content-editable-input[data-placeholder]:empty {
+  display: grid;
+  align-items: center;
+}
+.content-editable-input[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-tertiary);
+  pointer-events: none;
+  grid-area: 1 / 1 / 2 / 2;
+}
+
+.chat-background {
+  position: relative;
+  background-color: var(--bg-page);
+  isolation: isolate;
+  overflow: visible; 
+  user-select: text;
+}
+
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+}
+
+.glass-input {
+  background: var(--bg-input);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
