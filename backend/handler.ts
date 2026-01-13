@@ -239,10 +239,10 @@ export const apiHandler = async (req: any, res: any) => {
     }
 
     // --- READ SETTINGS DIRECTLY (To access both keys) ---
-    // Note: This relies on the getSettings implementation to cache or read from file
     let settings: any = {};
     try {
-        const settingsRes = await getSettings(null, {
+        // Mock the response object to capture settings from getSettings
+        await getSettings(null, {
             status: () => ({ json: (d: any) => { settings = d; } })
         });
     } catch(e) {
@@ -250,9 +250,11 @@ export const apiHandler = async (req: any, res: any) => {
     }
 
     const activeProvider = settings.provider || 'gemini';
-    const geminiKey = settings.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
-    const openRouterKey = settings.openRouterApiKey;
-    const suggestionApiKey = settings.suggestionApiKey || process.env.SUGGESTION_API_KEY;
+    
+    // Trim keys to prevent whitespace issues
+    const geminiKey = (settings.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY || '').trim();
+    const openRouterKey = (settings.openRouterApiKey || '').trim();
+    const suggestionApiKey = (settings.suggestionApiKey || process.env.SUGGESTION_API_KEY || '').trim();
 
     // Determine the "active" key for the main chat task
     const activeApiKey = activeProvider === 'gemini' ? geminiKey : openRouterKey;
@@ -274,7 +276,6 @@ export const apiHandler = async (req: any, res: any) => {
     }
 
     // Initialize Vector Store if Gemini AI is available (it relies on embedding models)
-    // TODO: Add support for OpenRouter embeddings in vectorMemory later
     if (googleAI) {
         await vectorMemory.init(googleAI);
     }

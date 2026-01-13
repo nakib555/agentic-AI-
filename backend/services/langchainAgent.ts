@@ -120,14 +120,19 @@ export const runLangChainAgent = async (
     chatId: string
 ) => {
     try {
-        console.log(`[LangChain] Starting agent with model: ${modelName} (${provider})`);
+        const cleanApiKey = apiKey?.trim();
+        if (!cleanApiKey) {
+            throw new Error(`API Key for ${provider} is empty or missing.`);
+        }
+
+        console.log(`[LangChain] Starting agent. Provider: ${provider}, Model: ${modelName}, KeyLength: ${cleanApiKey.length}`);
 
         let model: any; // BaseChatModel
 
         if (provider === 'gemini') {
             model = new ChatGoogleGenerativeAI({
                 modelName: modelName,
-                apiKey: apiKey,
+                apiKey: cleanApiKey,
                 maxOutputTokens: settings.maxOutputTokens || undefined,
                 temperature: settings.temperature,
                 safetySettings: [
@@ -141,7 +146,8 @@ export const runLangChainAgent = async (
             // OpenRouter Configuration
             model = new ChatOpenAI({
                 modelName: modelName,
-                openAIApiKey: apiKey,
+                openAIApiKey: cleanApiKey,
+                apiKey: cleanApiKey, // Pass as both to ensure compatibility
                 configuration: {
                     baseURL: "https://openrouter.ai/api/v1",
                     defaultHeaders: {
@@ -248,6 +254,18 @@ export const runLangChainAgent = async (
 
     } catch (error: any) {
         console.error("[LangChain] Agent execution failed:", error);
+        
+        // Check for specific OpenRouter Auth errors
+        const errMsg = error.message || '';
+        if (errMsg.includes('401') || errMsg.includes('User not found') || errMsg.includes('Incorrect API key')) {
+             callbacks.onError({ 
+                 code: 'INVALID_API_KEY', 
+                 message: 'Authentication failed. Please check your OpenRouter API Key.', 
+                 details: errMsg 
+             });
+             return;
+        }
+
         callbacks.onError(parseApiError(error));
     }
 };
