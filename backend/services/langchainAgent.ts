@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,6 +9,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { AgentExecutor, createToolCallingAgent } from "langchain/agents";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { HumanMessage, AIMessage, SystemMessage, BaseMessage } from "@langchain/core/messages";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { z } from "zod";
 import { GoogleGenAI } from "@google/genai";
 import { parseApiError } from "../utils/apiError";
@@ -157,17 +159,17 @@ export const runLangChainAgent = async (
         const tools = getLangChainTools(toolExecutor);
 
         // 3. Create Agent
+        const prompt = ChatPromptTemplate.fromMessages([
+            new SystemMessage(settings.systemInstruction || "You are a helpful AI assistant."),
+            ["placeholder", "{chat_history}"],
+            ["human", "{input}"],
+            ["placeholder", "{agent_scratchpad}"],
+        ]);
+
         const agent = createToolCallingAgent({
             llm: model,
             tools,
-            prompt: await import("langchain/prompts").then(m => 
-                m.ChatPromptTemplate.fromMessages([
-                    new SystemMessage(settings.systemInstruction || "You are a helpful AI assistant."),
-                    ["placeholder", "{chat_history}"],
-                    ["human", "{input}"],
-                    ["placeholder", "{agent_scratchpad}"],
-                ])
-            ),
+            prompt,
         });
 
         const executor = new AgentExecutor({
