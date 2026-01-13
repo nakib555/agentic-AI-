@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -17,52 +16,23 @@ import { executeBrowser } from "./browser";
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-// Custom type for tool executor config
-type ToolExecutorConfig = {
-    provider: 'gemini' | 'openrouter';
-    googleAI?: GoogleGenAI;
-    apiKey: string;
-    imageModel: string;
-    videoModel: string;
-    chatId: string;
-    requestFrontendExecution: (callId: string, toolName: string, toolArgs: any) => Promise<string | { error: string }>;
-    skipFrontendCheck?: boolean;
-    onToolUpdate?: (id: string, data: any) => void;
-};
-
-type ToolImplementation = (
-    args: any, 
-    config: ToolExecutorConfig,
-    onUpdate?: (data: any) => void
-) => Promise<string>;
+// We define a custom type for the tool executor to handle the optional onUpdate callback
+type ToolImplementation = (ai: GoogleGenAI, args: any, apiKey: string, chatId: string, onUpdate?: (data: any) => void) => Promise<string>;
 
 const BACKEND_TOOL_IMPLEMENTATIONS: Record<string, ToolImplementation> = {
-    'generateImage': (args, config) => executeImageGenerator(config.googleAI!, args, config.chatId, config.provider, config.apiKey),
-    'duckduckgoSearch': (args, config) => {
-        // Search usually needs Gemini for summarization, fallback to simple search if no Gemini?
-        // For now, if user is on OpenRouter, they might not have GoogleAI. 
-        // We will need to update webSearch to support OpenRouter summarizer or just basic results.
-        // Assuming GoogleAI is available via suggestion key, if not we throw for now or need refactor.
-        if (!config.googleAI) throw new Error("Gemini API Key required for Search Summarization.");
-        return executeWebSearch(config.googleAI, args);
-    },
-    'browser': (args, config, onUpdate) => executeBrowser(args, onUpdate),
-    'analyzeMapVisually': (args, config) => {
-         if (!config.googleAI) throw new Error("Gemini API Key required for Map Analysis.");
-         return executeAnalyzeMapVisually(config.googleAI, args);
-    },
-    'analyzeImageVisually': (args, config) => {
-         if (!config.googleAI) throw new Error("Gemini API Key required for Image Analysis.");
-         return executeAnalyzeImageVisually(config.googleAI, args, config.chatId);
-    },
-    'executeCode': (args, config) => executeCode(args, config.chatId),
-    'generateVideo': (args, config) => executeVideoGenerator(config.googleAI!, args, config.apiKey, config.chatId, config.provider),
-    'calculator': (args) => Promise.resolve(executeCalculator(args)),
-    'writeFile': (args, config) => executeWriteFile(args, config.chatId),
-    'listFiles': (args, config) => executeListFiles(args, config.chatId),
-    'displayFile': (args, config) => executeDisplayFile(args, config.chatId),
-    'deleteFile': (args, config) => executeDeleteFile(args, config.chatId),
-    'displayMap': (args) => Promise.resolve(executeDisplayMap(args)),
+    'generateImage': (ai, args, apiKey, chatId) => executeImageGenerator(ai, args, chatId),
+    'duckduckgoSearch': (ai, args) => executeWebSearch(ai, args),
+    'browser': (ai, args, apiKey, chatId, onUpdate) => executeBrowser(args, onUpdate), // Pass onUpdate
+    'analyzeMapVisually': (ai, args) => executeAnalyzeMapVisually(ai, args),
+    'analyzeImageVisually': (ai, args, apiKey, chatId) => executeAnalyzeImageVisually(ai, args, chatId),
+    'executeCode': (ai, args, apiKey, chatId) => executeCode(args, chatId),
+    'generateVideo': (ai, args, apiKey, chatId) => executeVideoGenerator(ai, args, apiKey!, chatId),
+    'calculator': (ai, args) => Promise.resolve(executeCalculator(args)),
+    'writeFile': (ai, args, apiKey, chatId) => executeWriteFile(args, chatId),
+    'listFiles': (ai, args, apiKey, chatId) => executeListFiles(args, chatId),
+    'displayFile': (ai, args, apiKey, chatId) => executeDisplayFile(args, chatId),
+    'deleteFile': (ai, args, apiKey, chatId) => executeDeleteFile(args, chatId),
+    'displayMap': (ai, args) => Promise.resolve(executeDisplayMap(args)),
 };
 
 const FRONTEND_TOOLS = new Set([
@@ -72,13 +42,24 @@ const FRONTEND_TOOLS = new Set([
     'generateVideo',
 ]);
 
-export const createToolExecutor = (config: ToolExecutorConfig) => {
+export const createToolExecutor = (
+    ai: GoogleGenAI,
+    imageModel: string,
+    videoModel: string,
+    apiKey: string,
+    chatId: string,
+    requestFrontendExecution: (callId: string, toolName: string, toolArgs: any) => Promise<string | { error: string }>,
+    skipFrontendCheck: boolean = false,
+    onToolUpdate?: (id: string, data: any) => void // New callback
+) => {
+    // The returned function now accepts an ID
     return async (name: string, args: any, id: string): Promise<string> => {
-        console.log(`[TOOL_EXECUTOR] Received request to execute tool: "${name}"`, { args, chatId: config.chatId, id });
+        console.log(`[TOOL_EXECUTOR] Received request to execute tool: "${name}"`, { args, chatId, id });
         
-        if (!config.skipFrontendCheck && FRONTEND_TOOLS.has(name)) {
+        if (!skipFrontendCheck && FRONTEND_TOOLS.has(name)) {
+            // Use the provided ID if available, otherwise generate one
             const callId = id || `${name}-${generateId()}`;
-            const result = await config.requestFrontendExecution(callId, name, args);
+            const result = await requestFrontendExecution(callId, name, args);
             if (typeof result === 'object' && result.error) {
                 throw new ToolError(name, 'FRONTEND_EXECUTION_FAILED', result.error);
             }
@@ -93,15 +74,15 @@ export const createToolExecutor = (config: ToolExecutorConfig) => {
 
         try {
             let finalArgs = { ...args };
-            // Inject model overrides from settings if provided
-            if (name === 'generateImage' && config.imageModel) finalArgs.model = config.imageModel;
-            if (name === 'generateVideo' && config.videoModel) finalArgs.model = config.videoModel;
+            if (name === 'generateImage' && imageModel) finalArgs.model = imageModel;
+            if (name === 'generateVideo' && videoModel) finalArgs.model = videoModel;
 
             console.log(`[TOOL_EXECUTOR] Executing backend tool "${name}"...`);
             
-            const boundUpdate = config.onToolUpdate ? (data: any) => config.onToolUpdate!(id, data) : undefined;
+            // Pass a wrapped update function that binds the ID
+            const boundUpdate = onToolUpdate ? (data: any) => onToolUpdate(id, data) : undefined;
             
-            const result = await toolImplementation(finalArgs, config, boundUpdate);
+            const result = await toolImplementation(ai, finalArgs, apiKey, chatId, boundUpdate);
             console.log(`[TOOL_EXECUTOR] Backend tool "${name}" finished successfully.`);
             return result;
         } catch (err) {

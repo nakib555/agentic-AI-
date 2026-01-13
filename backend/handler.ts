@@ -13,13 +13,15 @@ import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './p
 import { parseApiError } from './utils/apiError';
 import { executeTextToSpeech } from "./tools/tts";
 import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory";
-import { runLangChainAgent } from './services/langchainAgent';
+import { runAgenticLoop } from './services/agenticLoop/index';
 import { createToolExecutor } from './tools/index';
-import { getSettings } from './settingsHandler';
+import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations'; 
+import { getApiKey, getSuggestionApiKey, getProvider } from './settingsHandler';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils';
 import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
-import { vectorMemory } from './services/vectorMemory'; 
+import { streamOpenRouter } from './utils/openRouterUtils';
+import { vectorMemory } from './services/vectorMemory'; // Import Vector Memory
 import { executeWithPiston } from './tools/piston';
 
 // Store promises for frontend tool requests that the backend is waiting on
@@ -216,6 +218,8 @@ export const apiHandler = async (req: any, res: any) => {
         const job = activeJobs.get(chatId);
         
         if (!job) {
+            // Chat might exist but stream finished/died.
+            // Return 200 with specific status to avoid browser console 404 errors.
             return res.status(200).json({ status: "stream_not_found" });
         }
         
@@ -238,53 +242,33 @@ export const apiHandler = async (req: any, res: any) => {
         return;
     }
 
-    // --- READ SETTINGS DIRECTLY (To access both keys) ---
-    let settings: any = {};
-    try {
-        // Mock the response object to capture settings from getSettings
-        await getSettings(null, {
-            status: () => ({ json: (d: any) => { settings = d; } })
-        });
-    } catch(e) {
-        console.error("Failed to load settings in handler", e);
-    }
-
-    const activeProvider = settings.provider || 'gemini';
-    
-    // Trim keys to prevent whitespace issues
-    const geminiKey = (settings.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY || '').trim();
-    const openRouterKey = (settings.openRouterApiKey || '').trim();
-    const suggestionApiKey = (settings.suggestionApiKey || process.env.SUGGESTION_API_KEY || '').trim();
-
-    // Determine the "active" key for the main chat task
-    const activeApiKey = activeProvider === 'gemini' ? geminiKey : openRouterKey;
-
-    // Use a robust Gemini key for Gemini tools or Suggestions
-    const toolGeminiKey = suggestionApiKey || (activeProvider === 'gemini' ? geminiKey : undefined);
-    
+    const activeProvider = await getProvider();
+    const mainApiKey = await getApiKey();
+    const suggestionApiKey = await getSuggestionApiKey();
     const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'];
     const isSuggestionTask = SUGGESTION_TASKS.includes(task);
-
-    // AI instance for Gemini tools (Optional if provider is OpenRouter but we have a key)
-    const googleAI = toolGeminiKey ? new GoogleGenAI({ apiKey: toolGeminiKey }) : null;
-
+    let activeApiKey = mainApiKey;
+    if (isSuggestionTask && suggestionApiKey) {
+        activeApiKey = suggestionApiKey;
+    } 
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston', 'feedback'];
-    
-    // Auth Check
-    if (!activeApiKey && !BYPASS_TASKS.includes(task) && !isSuggestionTask) {
+    if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
         return res.status(401).json({ error: "API key not configured on the server." });
     }
+    const ai = (activeProvider === 'gemini' || isSuggestionTask) && activeApiKey 
+        ? new GoogleGenAI({ apiKey: activeApiKey }) 
+        : null;
 
-    // Initialize Vector Store if Gemini AI is available (it relies on embedding models)
-    if (googleAI) {
-        await vectorMemory.init(googleAI);
+    // Initialize Vector Store if AI is available
+    if (ai) {
+        await vectorMemory.init(ai);
     }
 
     try {
         switch (task) {
             case 'chat': 
             case 'regenerate': {
-                const { chatId, model, settings: chatSettings, newMessage, messageId } = req.body;
+                const { chatId, model, settings, newMessage, messageId } = req.body;
                 
                 // 1. Initial Persistence & History Fetch
                 let savedChat = await historyControl.getChat(chatId);
@@ -296,8 +280,8 @@ export const apiHandler = async (req: any, res: any) => {
 
                 if (task === 'chat' && newMessage) {
                     historyMessages.push(newMessage);
-                    // Add User Message to Vector Memory (RAG Ingestion) - currently only supports Gemini
-                    if (googleAI && newMessage.text && newMessage.text.length > 10) {
+                    // Add User Message to Vector Memory (RAG Ingestion)
+                    if (ai && newMessage.text && newMessage.text.length > 10) {
                         vectorMemory.addMemory(newMessage.text, { chatId, role: 'user' }).catch(console.error);
                     }
                     const modelPlaceholder = {
@@ -375,8 +359,7 @@ export const apiHandler = async (req: any, res: any) => {
 
                 // --- RAG RETRIEVAL STEP ---
                 let ragContext = "";
-                // Only retrieve if we have Gemini available for embeddings
-                if (googleAI && newMessage && newMessage.text) {
+                if (ai && newMessage && newMessage.text) {
                     try {
                         const relevantMemories = await vectorMemory.retrieveRelevant(newMessage.text);
                         if (relevantMemories.length > 0) {
@@ -389,8 +372,8 @@ export const apiHandler = async (req: any, res: any) => {
                 }
 
                 // --- SYSTEM PROMPT CONSTRUCTION ---
-                const coreInstruction = chatSettings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
-                const { systemPrompt, aboutUser, aboutResponse } = chatSettings;
+                const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
+                const { systemPrompt, aboutUser, aboutResponse } = settings;
                 
                 let personalizationSection = "";
                 if (aboutUser && aboutUser.trim()) personalizationSection += `\n## 👤 USER PROFILE & CONTEXT\n${aboutUser.trim()}\n`;
@@ -399,6 +382,8 @@ export const apiHandler = async (req: any, res: any) => {
 
                 if (ragContext) personalizationSection += ragContext;
 
+                // CRITICAL FIX: The Core Instructions (Agent Protocols) must be the primary directive.
+                // Personalization is injected as a "Context" layer, but it CANNOT override the output format (JSON/STEP).
                 let finalSystemInstruction = coreInstruction;
                 if (personalizationSection) {
                     finalSystemInstruction = `
@@ -418,8 +403,53 @@ ${personalizationSection}
 `.trim();
                 }
 
+                if (activeProvider === 'openrouter') {
+                    const openRouterMessages = historyForAI.map((msg: any) => ({
+                        role: msg.role === 'model' ? 'assistant' : 'user',
+                        content: msg.text || ''
+                    }));
+                    openRouterMessages.unshift({ role: 'system', content: finalSystemInstruction });
+
+                    try {
+                        await streamOpenRouter(
+                            activeApiKey!,
+                            model,
+                            openRouterMessages,
+                            {
+                                onTextChunk: (text) => {
+                                    writeToClient(job, 'text-chunk', text);
+                                    persistence.addText(text);
+                                },
+                                onComplete: (fullText) => {
+                                    writeToClient(job, 'complete', { finalText: fullText });
+                                    persistence.complete((response) => {
+                                        response.endTime = Date.now();
+                                    });
+                                },
+                                onError: (error) => {
+                                    writeToClient(job, 'error', { message: error.message || 'OpenRouter Error' });
+                                    persistence.complete((response) => {
+                                        response.error = { message: error.message || 'OpenRouter Error' };
+                                    });
+                                }
+                            },
+                            { temperature: settings.temperature, maxTokens: settings.maxOutputTokens }
+                        );
+                    } catch (e: any) {
+                        writeToClient(job, 'error', { message: e.message });
+                        persistence.complete((response) => { response.error = { message: e.message }; });
+                    } finally {
+                        clearInterval(pingInterval);
+                        cleanupJob(chatId);
+                    }
+                    return;
+                }
+
+                if (!ai) throw new Error("Gemini AI not initialized.");
+
                 let fullHistory = transformHistoryToGeminiFormat(historyForAI);
-                
+                const sessionCallIds = new Set<string>();
+
                 const requestFrontendExecution = (callId: string, toolName: string, toolArgs: any) => {
                     return new Promise<string | { error: string }>((resolve) => {
                         if (abortController.signal.aborted) {
@@ -436,6 +466,7 @@ ${personalizationSection}
                             clearTimeout(timeoutId);
                             resolve(result);
                         });
+                        sessionCallIds.add(callId);
                         writeToClient(job, 'frontend-tool-request', { callId, toolName, toolArgs });
                     });
                 };
@@ -444,31 +475,21 @@ ${personalizationSection}
                     writeToClient(job, 'tool-update', { id: callId, ...data });
                 };
                 
-                // Create tool executor supporting both providers
-                const toolExecutor = createToolExecutor({
-                    provider: activeProvider,
-                    googleAI: googleAI as any,
-                    apiKey: activeApiKey!,
-                    imageModel: chatSettings.imageModel,
-                    videoModel: chatSettings.videoModel,
-                    chatId,
-                    requestFrontendExecution,
-                    onToolUpdate
-                });
+                const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, activeApiKey!, chatId, requestFrontendExecution, false, onToolUpdate);
 
                 const finalSettings = {
-                    ...chatSettings,
+                    ...settings,
                     systemInstruction: finalSystemInstruction,
+                    tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ functionDeclarations: [], googleSearch: {} }],
                 };
-
-                // Use LangChain Agent for both Gemini and OpenRouter
+                
                 try {
-                    await runLangChainAgent(
-                        activeProvider,
+                    await runAgenticLoop({
+                        ai,
                         model,
-                        fullHistory,
+                        history: fullHistory, 
                         toolExecutor,
-                        {
+                        callbacks: {
                             onTextChunk: (text) => {
                                 writeToClient(job, 'text-chunk', text);
                                 persistence.addText(text);
@@ -491,16 +512,35 @@ ${personalizationSection}
                                     }
                                 });
                             },
+                            onPlanReady: (plan) => {
+                                return new Promise((resolve) => {
+                                    if (abortController.signal.aborted) {
+                                        resolve(false); 
+                                        return;
+                                    }
+                                    const callId = `plan-approval-${generateId()}`;
+                                    persistence.update((response) => {
+                                        response.plan = { plan, callId };
+                                    });
+                                    frontendToolRequests.set(callId, resolve);
+                                    sessionCallIds.add(callId);
+                                    writeToClient(job, 'plan-ready', { plan, callId });
+                                });
+                            },
+                            onFrontendToolRequest: (callId, name, args) => { },
                             onComplete: (finalText, groundingMetadata) => {
                                 writeToClient(job, 'complete', { finalText, groundingMetadata });
                                 persistence.complete((response) => {
                                     response.endTime = Date.now();
                                     if (groundingMetadata) response.groundingMetadata = groundingMetadata;
                                 });
-                                // Add model response to vector memory (Gemini only currently)
-                                if (finalText.length > 50 && googleAI) {
+                                if (finalText.length > 50) {
                                     vectorMemory.addMemory(finalText, { chatId, role: 'model' }).catch(console.error);
                                 }
+                            },
+                            onCancel: () => {
+                                writeToClient(job, 'cancel', {});
+                                persistence.complete();
                             },
                             onError: (error) => {
                                 writeToClient(job, 'error', error);
@@ -510,13 +550,12 @@ ${personalizationSection}
                                 });
                             },
                         },
-                        finalSettings,
-                        activeApiKey!,
-                        chatId
-                    );
-
+                        settings: finalSettings,
+                        signal: abortController.signal,
+                        threadId: chatId,
+                    });
                 } catch (loopError) {
-                    console.error(`[HANDLER] Agent execution failed:`, loopError);
+                    console.error(`[HANDLER] Loop crash:`, loopError);
                     persistence.complete((response) => { response.error = parseApiError(loopError); });
                 } finally {
                     clearInterval(pingInterval);
@@ -537,10 +576,18 @@ ${personalizationSection}
                 break;
             }
             case 'cancel': {
-                const { requestId } = req.body; 
+                const { requestId } = req.body; // In new system, this is usually chatId, but we support requestId for compat
+                
+                // Try to find job by ID (if it matches) OR iterating
                 let job = activeJobs.get(requestId);
+                if (!job) {
+                    // If requestId passed was not chatId, we might need a lookup map, but frontend sends chatId now usually?
+                    // Let's assume requestId is chatId for cancellation in new system.
+                }
+
                 if (job) {
                     job.controller.abort();
+                    // Don't delete immediately, allow loop to exit gracefully and cleanup
                     res.status(200).send({ message: 'Cancellation request received.' });
                 } else {
                     res.status(404).json({ error: `No active job found for ID: ${requestId}` });
@@ -554,25 +601,23 @@ ${personalizationSection}
                 break;
             }
             case 'title': {
-                // Background tasks use googleAI (Suggestion key or main gemini key)
-                // If OpenRouter is used exclusively without a suggestion key, title generation might fail gracefully.
-                if (!googleAI) return res.status(200).json({ title: '' });
+                if (!ai) return res.status(200).json({ title: '' });
                 const { messages } = req.body;
                 const historyText = messages.slice(0, 3).map((m: any) => `${m.role}: ${m.text}`).join('\n');
                 const prompt = `Generate a short concise title (max 6 words) for this conversation.\n\nCONVERSATION:\n${historyText}\n\nTITLE:`;
                 try {
-                    const response = await generateContentWithRetry(googleAI, { model: 'gemini-2.5-flash', contents: prompt });
+                    const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt });
                     res.status(200).json({ title: response.text?.trim() ?? '' });
                 } catch (e) { res.status(200).json({ title: '' }); }
                 break;
             }
             case 'suggestions': {
-                if (!googleAI) return res.status(200).json({ suggestions: [] });
+                if (!ai) return res.status(200).json({ suggestions: [] });
                 const { conversation } = req.body;
                 const recentHistory = conversation.slice(-5).map((m: any) => `${m.role}: ${(m.text || '').substring(0, 200)}`).join('\n');
                 const prompt = `Suggest 3 short follow-up questions. Return JSON array of strings.\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
                 try {
-                    const response = await generateContentWithRetry(googleAI, { model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
+                    const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
                     let suggestions = [];
                     try { suggestions = JSON.parse(response.text || '[]'); } catch (e) {}
                     res.status(200).json({ suggestions });
@@ -580,39 +625,36 @@ ${personalizationSection}
                 break;
             }
             case 'tts': {
+                if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { text, voice, model } = req.body;
                 try {
-                    // Decide execution based on provider
-                    if (activeProvider === 'openrouter') {
-                         // We need the key to call OpenRouter TTS
-                         if (!activeApiKey) throw new Error("OpenRouter API key missing for TTS");
-                         // Import directly or use tool wrapper? 
-                         // Since handler calls tools, we can reuse logic or call a helper.
-                         // But tool implementation is cleaner.
-                         const ttsTool = await import('./tools/tts');
-                         const audio = await ttsTool.executeOpenRouterTTS(activeApiKey, { text, voice, model });
-                         res.status(200).json({ audio });
-                    } else {
-                         if (!googleAI) throw new Error("GoogleGenAI not initialized (Required for Gemini TTS).");
-                         const audio = await executeTextToSpeech(googleAI, text, voice, model);
-                         res.status(200).json({ audio });
-                    }
+                    const audio = await executeTextToSpeech(ai, text, voice, model);
+                    res.status(200).json({ audio });
                 } catch (e) {
                     res.status(500).json({ error: parseApiError(e) });
                 }
                 break;
             }
             case 'enhance': {
-                if (!googleAI) return res.status(200).send(req.body.userInput);
+                if (!ai) return res.status(200).send(req.body.userInput);
                 const { userInput } = req.body;
                 const prompt = `
 You are an expert Prompt Engineer. Your goal is to rewrite the following user input into a highly effective prompt for an LLM (Large Language Model).
+
 USER INPUT: "${userInput}"
-... (Guidelines omitted for brevity) ...
-IMPROVED PROMPT:`;
+
+GUIDELINES:
+1. **Clarity & Specificity**: Remove ambiguity. Specify the desired format (code, list, essay, etc.) if implied.
+2. **Context**: If the input implies a role (e.g., "fix this code"), assume an expert role (e.g., "Act as a Senior Software Engineer").
+3. **Structure**: Use markdown if helpful, but keep it concise enough to be a prompt.
+4. **Preservation**: Do NOT change the core intent. Do NOT answer the prompt. ONLY rewrite it.
+5. **Output**: Return ONLY the raw text of the improved prompt. Do not add "Here is the improved prompt:" or quotes.
+
+IMPROVED PROMPT:
+`;
                 res.setHeader('Content-Type', 'text/plain');
                 try {
-                    const stream = await generateContentStreamWithRetry(googleAI, { model: 'gemini-2.5-flash', contents: prompt });
+                    const stream = await generateContentStreamWithRetry(ai, { model: 'gemini-3-flash-preview', contents: prompt });
                     for await (const chunk of stream) {
                         const text = chunk.text || '';
                         if (text) res.write(text);
@@ -622,19 +664,19 @@ IMPROVED PROMPT:`;
                 break;
             }
             case 'memory_suggest': {
-                if (!googleAI) return res.status(200).json({ suggestions: [] });
+                if (!ai) return res.status(200).json({ suggestions: [] });
                 const { conversation } = req.body;
                 try {
-                    const suggestions = await executeExtractMemorySuggestions(googleAI, conversation);
+                    const suggestions = await executeExtractMemorySuggestions(ai, conversation);
                     res.status(200).json({ suggestions });
                 } catch (e) { res.status(200).json({ suggestions: [] }); }
                 break;
             }
             case 'memory_consolidate': {
-                if (!googleAI) return res.status(200).json({ memory: [req.body.currentMemory, ...req.body.suggestions].filter(Boolean).join('\n') });
+                if (!ai) return res.status(200).json({ memory: [req.body.currentMemory, ...req.body.suggestions].filter(Boolean).join('\n') });
                 const { currentMemory, suggestions } = req.body;
                 try {
-                    const memory = await executeConsolidateMemory(googleAI, currentMemory, suggestions);
+                    const memory = await executeConsolidateMemory(ai, currentMemory, suggestions);
                     res.status(200).json({ memory });
                 } catch (e) { res.status(200).json({ memory: [currentMemory, ...suggestions].filter(Boolean).join('\n') }); }
                 break;
@@ -645,25 +687,15 @@ IMPROVED PROMPT:`;
                     const result = await executeWithPiston(language, code);
                     res.status(200).json({ result });
                 } catch (error: any) {
+                    // Return error in a consistent format for the frontend
                     res.status(500).json({ error: error.message });
                 }
                 break;
             }
             case 'tool_exec': {
+                 if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { toolName, toolArgs, chatId } = req.body;
-                
-                // Initialize executor with current context
-                const toolExecutor = createToolExecutor({
-                    provider: activeProvider,
-                    googleAI: googleAI as any,
-                    apiKey: activeApiKey!,
-                    imageModel: '',
-                    videoModel: '',
-                    chatId,
-                    requestFrontendExecution: async () => ({error: 'Frontend execution not supported'}),
-                    skipFrontendCheck: true
-                });
-                
+                const toolExecutor = createToolExecutor(ai, '', '', activeApiKey!, chatId, async () => ({error: 'Frontend execution not supported'}), true);
                 const result = await toolExecutor(toolName, toolArgs, 'manual-exec');
                 res.status(200).json({ result });
                 break;

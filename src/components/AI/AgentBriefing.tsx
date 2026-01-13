@@ -31,7 +31,12 @@ const Section: React.FC<{
 );
 
 export const AgentBriefing: React.FC<AgentBriefingProps> = ({ content }) => {
-    // Attempt to parse structured sections if they exist (legacy support)
+    // Parse the markdown to extract Strategy and Tools sections
+    // Expected format: 
+    // ## 🧠 Strategy
+    // ...
+    // ## ⚙️ Planned Tools
+    // ...
     const parsedSections = useMemo(() => {
         const strategyMatch = content.match(/## 🧠 Strategy\s*([\s\S]*?)(?=## ⚙️ Planned Tools|$)/i);
         const toolsMatch = content.match(/## ⚙️ Planned Tools\s*([\s\S]*?)$/i);
@@ -42,8 +47,8 @@ export const AgentBriefing: React.FC<AgentBriefingProps> = ({ content }) => {
         };
     }, [content]);
 
-    // Check if we have specific sections, otherwise treat whole content as the brief
-    const hasStructure = !!parsedSections.strategy || !!parsedSections.tools;
+    // Fallback for older format or if parsing fails
+    const isLegacyFormat = !parsedSections.strategy && !parsedSections.tools;
 
     return (
         <motion.div 
@@ -55,17 +60,17 @@ export const AgentBriefing: React.FC<AgentBriefingProps> = ({ content }) => {
             <div className="px-5 py-3 border-b border-indigo-100 dark:border-white/5 bg-white/40 dark:bg-white/5 backdrop-blur-sm flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
                 <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wide">
-                    Mission Brief
+                    Agent Briefing
                 </span>
             </div>
 
-            <div className="p-5">
-                {!hasStructure ? (
-                    <div className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed">
-                        <ManualCodeRenderer text={content} components={WorkflowMarkdownComponents} isStreaming={false} />
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-8">
+                {isLegacyFormat ? (
+                    <div className="col-span-1 md:col-span-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed workflow-markdown">
+                         <ManualCodeRenderer text={content} components={WorkflowMarkdownComponents} isStreaming={false} />
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <>
                         {parsedSections.strategy && (
                             <Section 
                                 icon={
@@ -87,7 +92,7 @@ export const AgentBriefing: React.FC<AgentBriefingProps> = ({ content }) => {
                                 colorClass="text-emerald-600 dark:text-emerald-400"
                             />
                         )}
-                    </div>
+                    </>
                 )}
             </div>
         </motion.div>
