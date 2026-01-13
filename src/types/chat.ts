@@ -15,4 +15,5 @@ export type ChatSession = {
     maxOutputTokens?: number;
     imageModel?: string;
     videoModel?: string;
+    isAgentMode?: boolean;
 };

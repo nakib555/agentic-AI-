@@ -27,6 +27,9 @@ const jsonStructureExample = `{
   // 🤖 AI Model Identifier
   "model": "gemini-2.5-pro",
   
+  // ⚙️ Agent Mode Flag (Optional, defaults to false)
+  "isAgentMode": true,
+
   // 📅 Creation Timestamp (Unix Milliseconds)
   "createdAt": 1724600000000,
   

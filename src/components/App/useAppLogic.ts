@@ -334,8 +334,9 @@ export const useAppLogic = () => {
         maxOutputTokens: maxTokens,
         imageModel,
         videoModel,
+        isAgentMode // Include current state
     };
-  }, [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel]);
+  }, [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel, isAgentMode]);
 
   // Pass active API key based on provider for client-side tools if necessary (though most are backend now)
   const effectiveClientKey = provider === 'gemini' ? apiKey : openRouterApiKey;
@@ -406,6 +407,11 @@ export const useAppLogic = () => {
         if (currentChat.maxOutputTokens !== undefined) setMaxTokens(currentChat.maxOutputTokens);
         if (currentChat.imageModel) setImageModel(currentChat.imageModel);
         if (currentChat.videoModel) setVideoModel(currentChat.videoModel);
+        
+        // NEW: Sync Agent Mode
+        if (currentChat.isAgentMode !== undefined) {
+            setIsAgentModeState(currentChat.isAgentMode);
+        }
     }
   }, [chat.currentChatId, chat.chatHistory, activeModel]); 
 

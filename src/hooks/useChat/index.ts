@@ -24,6 +24,7 @@ type ChatSettings = {
     maxOutputTokens: number; 
     imageModel: string;
     videoModel: string;
+    isAgentMode?: boolean;
 };
 
 export const useChat = (
@@ -427,6 +428,7 @@ export const useChat = (
                 maxOutputTokens: settings.maxOutputTokens,
                 imageModel: settings.imageModel,
                 videoModel: settings.videoModel,
+                isAgentMode: settings.isAgentMode,
             };
 
             chatCreationPromise = startNewChatHistory(initialModel, settingsToUse, optimisticId);
@@ -692,7 +694,7 @@ export const useChat = (
       sendMessageForTest, 
       editMessage, 
       navigateBranch, 
-      setResponseIndex,
+      setResponseIndex, 
       updateChatModel, 
       updateChatSettings
   };
