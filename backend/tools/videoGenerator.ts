@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -9,8 +10,20 @@ import { fileStore } from "../services/fileStore";
 import { Buffer } from 'buffer';
 import { generateVideosWithRetry } from "../utils/geminiUtils";
 
-export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }, apiKey: string, chatId: string): Promise<string> => {
+export const executeVideoGenerator = async (
+    ai: GoogleGenAI, 
+    args: { prompt: string; aspectRatio?: string; resolution?: string, model: string }, 
+    apiKey: string, 
+    chatId: string,
+    provider: 'gemini' | 'openrouter' = 'gemini'
+): Promise<string> => {
     const { prompt, aspectRatio = '16:9', resolution = '720p', model } = args;
+
+    if (provider === 'openrouter') {
+        // TODO: Implement OpenRouter Video Generation once standard endpoint is available or proxy chat-to-video
+        // For now, throw a clear error or implement specific model logic if known (e.g. Luma via OpenRouter chat?)
+        throw new ToolError('generateVideo', 'PROVIDER_NOT_SUPPORTED', 'Video generation via OpenRouter is not yet fully supported in this implementation.');
+    }
 
     try {
         let operation = await generateVideosWithRetry(ai, {
@@ -45,7 +58,7 @@ export const executeVideoGenerator = async (ai: GoogleGenAI, args: { prompt: str
         const videoArrayBuffer = await response.arrayBuffer();
         const videoBuffer = Buffer.from(videoArrayBuffer);
         const filename = `video_${Date.now()}.mp4`;
-        const virtualPath = `${filename}`; // Save to the root of the chat's folder
+        const virtualPath = `${filename}`; 
         
         await fileStore.saveFile(chatId, virtualPath, videoBuffer);
 

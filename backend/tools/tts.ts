@@ -18,7 +18,6 @@ const cleanTextForTts = (text: string): string => {
     let cleanedText = text;
 
     // 1. Remove all specific UI component tags and their JSON content
-    // We list them explicitly to avoid stripping unknown bracketed text that might be valid.
     const componentTags = [
         'VIDEO_COMPONENT', 'ONLINE_VIDEO_COMPONENT', 
         'IMAGE_COMPONENT', 'ONLINE_IMAGE_COMPONENT', 
@@ -33,48 +32,40 @@ const cleanTextForTts = (text: string): string => {
         cleanedText = cleanedText.replace(regex, '');
     });
   
-    // 2. Handle Code Blocks (```...```)
-    // Instead of silence, we insert a brief pause marker or phrase so the listener knows something was skipped.
+    // 2. Handle Code Blocks
     if (cleanedText.includes('```')) {
-        cleanedText = cleanedText.replace(/```[\s\S]*?```/g, ' . Code block omitted for brevity. ');
+        cleanedText = cleanedText.replace(/```[\s\S]*?```/g, ' . Code block omitted. ');
     }
   
-    // 3. Remove Display Math ($$...$$) - Complex formulas are hard to parse via audio.
+    // 3. Remove Math
     cleanedText = cleanedText.replace(/\$\$[\s\S]*?\$\$/g, ' a mathematical formula ');
-
-    // 4. Process Inline Math ($...$) - Remove delimiters, keep content (often variable names).
     cleanedText = cleanedText.replace(/\$([^$\n]+\$)/g, '$1');
 
-    // 5. Clean Markdown Links & Images
-    // Images: Keep alt text if present.
+    // 4. Clean Markdown Links & Images
     cleanedText = cleanedText.replace(/!\[(.*?)\]\(.*?\)/g, '$1');
-    // Links: Keep link text, discard URL.
     cleanedText = cleanedText.replace(/\[(.*?)\]\(.*?\)/g, '$1');
     
-    // 6. Remove Raw URLs
-    // Prevents TTS from reading out "h t t p s colon slash slash..."
+    // 5. Remove Raw URLs
     cleanedText = cleanedText.replace(/(https?:\/\/[^\s]+)/g, ' link ');
 
-    // 7. Remove HTML Tags
+    // 6. Remove HTML Tags
     cleanedText = cleanedText.replace(/<[^>]*>/g, '');
   
-    // 8. Standard Markdown Symbol Removal
+    // 7. Standard Markdown Symbol Removal
     cleanedText = cleanedText
-      .replace(/^#{1,6}\s/gm, '') // Headers
-      .replace(/(\*\*|__)(.*?)\1/g, '$2') // Bold
-      .replace(/(\*|_)(.*?)\1/g, '$2') // Italic
-      .replace(/~~(.*?)~~/g, '$1') // Strikethrough
-      .replace(/==(.*?)==/g, '$1') // Highlight
-      .replace(/`([^`]+)`/g, '$1') // Inline code
-      .replace(/^>\s/gm, '') // Blockquotes
-      .replace(/^-{3,}\s*$/gm, '') // Horizontal rules
-      .replace(/^\s*[-*+]\s/gm, '') // List bullets
-      .replace(/^\s*\d+\.\s/gm, ''); // Numbered list items
+      .replace(/^#{1,6}\s/gm, '') 
+      .replace(/(\*\*|__)(.*?)\1/g, '$2') 
+      .replace(/(\*|_)(.*?)\1/g, '$2') 
+      .replace(/~~(.*?)~~/g, '$1') 
+      .replace(/==(.*?)==/g, '$1') 
+      .replace(/`([^`]+)`/g, '$1') 
+      .replace(/^>\s/gm, '') 
+      .replace(/^-{3,}\s*$/gm, '') 
+      .replace(/^\s*[-*+]\s/gm, '') 
+      .replace(/^\s*\d+\.\s/gm, ''); 
   
-    // 9. Collapse multiple newlines/spaces to a single space and trim
     cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
     
-    // Fallback if the cleaning removed everything (e.g., purely visual response)
     if (!cleanedText && text.length > 0) {
         return "I have generated the visual content you requested.";
     }
@@ -87,42 +78,64 @@ const STANDARD_GEMINI_VOICES = new Set([
     'Puck', 'Charon', 'Kore', 'Fenrir', 'Zephyr'
 ]);
 
+export const executeOpenRouterTTS = async (apiKey: string, args: { text: string, voice?: string, model?: string }): Promise<string> => {
+    const cleanedText = cleanTextForTts(args.text);
+    if (!cleanedText) throw new Error("No readable text found.");
+
+    // Default to a common OpenAI TTS model if none specified
+    const model = args.model || 'openai/tts-1';
+    // Map our internal voice names to OpenAI standards if needed, or pass through
+    // OpenAI voices: alloy, echo, fable, onyx, nova, shimmer.
+    // If user selected a Gemini voice (Puck), map it to something similar or default.
+    let voice = (args.voice || 'alloy').toLowerCase();
+    const voiceMap: Record<string, string> = {
+        'puck': 'alloy', 'charon': 'onyx', 'kore': 'nova', 'fenrir': 'echo', 'zephyr': 'shimmer'
+    };
+    if (voiceMap[voice]) voice = voiceMap[voice];
+
+    const response = await fetch("https://openrouter.ai/api/v1/audio/speech", {
+         method: "POST",
+         headers: {
+             "Authorization": `Bearer ${apiKey}`,
+             "Content-Type": "application/json",
+             "HTTP-Referer": "https://agentic-ai-chat.local",
+             "X-Title": "Agentic AI Chat",
+         },
+         body: JSON.stringify({
+             model: model,
+             input: cleanedText,
+             voice: voice
+         })
+    });
+
+    if (!response.ok) {
+        throw new Error(await response.text());
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer).toString('base64');
+};
+
 export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: string, model: string): Promise<string> => {
     try {
         const cleanedText = cleanTextForTts(text);
         
         if (!cleanedText) {
-            // Throwing allows the UI to show an error or disable the button.
             throw new Error("No readable text found for speech synthesis.");
         }
 
-        // Use the model provided by the frontend request, or fallback to the standard TTS model
-        // Update default model to current version
         const targetModel = model || "gemini-2.5-flash-preview-tts";
-
         let targetVoice = voice || 'Puck';
         let promptText = cleanedText;
 
-        // Check if the requested voice is a valid prebuilt persona
         if (!STANDARD_GEMINI_VOICES.has(targetVoice)) {
-            // If it's a custom accent/language request (e.g. "British", "Japanese")
-            // we default to a high-quality base voice and instruct the model to adopt the native persona.
-            console.log(`[TTS] Custom accent requested: ${targetVoice}`);
-            
-            // Use 'Zephyr' as a confident, professional base for custom accents.
             const baseVoice = 'Zephyr'; 
-            
-            // Instruct the model to adopt the native characteristics of the requested language/region
             promptText = `Speak the following text exactly as a native ${targetVoice} speaker would, with authentic intonation and accent: "${cleanedText}"`;
-            
             targetVoice = baseVoice;
         }
 
         console.log(`[TTS] Generating speech with model: ${targetModel}, voice: ${targetVoice}`);
 
-        // Use Modality.AUDIO enum as required by SDK
-        // IMPORTANT: We use generateContentWithRetry which now uses generateContent (non-streaming)
-        // This is critical for audio generation stability.
         const response = await generateContentWithRetry(ai, {
             model: targetModel,
             contents: [{ parts: [{ text: promptText }] }],
@@ -158,16 +171,9 @@ export const executeTextToSpeech = async (ai: GoogleGenAI, text: string, voice: 
         let message = originalError.message;
         let suggestion = "Please try again later or select a different voice.";
 
-        if (message.includes('429') || message.includes('quota') || message.includes('RESOURCE_EXHAUSTED')) {
-            suggestion = "The text-to-speech quota has been exceeded. Please check your billing or wait a few minutes.";
-        } else if (message.includes('400') || message.includes('INVALID_ARGUMENT')) {
-            suggestion = "The text provided might be too long or contain characters not supported by the audio model.";
-        } else if (message.includes('safety') || message.includes('blocked')) {
-            suggestion = "The generated audio was blocked by safety settings.";
-        } else if (message.includes('No readable text')) {
-            suggestion = "The response contains only visual elements (images, maps) and no text to read.";
+        if (message.includes('429') || message.includes('quota')) {
+            suggestion = "The text-to-speech quota has been exceeded.";
         }
-
         throw new ToolError('textToSpeech', 'TTS_FAILED', message, originalError, suggestion);
     }
 };
