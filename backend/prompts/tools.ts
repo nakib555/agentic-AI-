@@ -1,4 +1,5 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,6 +7,12 @@
 
 export const TOOLS_OVERVIEW = `
 # 🛠️ THE INSTRUMENTATION LAYER: TOOLKIT & FILESYSTEM PROTOCOLS
+
+## 📊 TOOL METADATA & RESOURCE AWARENESS
+Every tool includes performance metadata in its description (Execution Time, Cost, Permissions).
+*   **Execution Time:** Fast (<1s), Medium (1-10s), Slow (10s+), Very Slow (min+).
+*   **Cost:** Free, Low, Medium, High.
+*   **Strategy:** Prefer "Fast/Free" tools for simple queries. Use "Slow/High" tools only when high-fidelity output is strictly required. **Always** warn users before using "Very Slow" tools (like video generation).
 
 ## 🌐 The Virtual Workspace (The "Mental Sandbox")
 

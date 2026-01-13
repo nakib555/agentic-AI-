@@ -12,7 +12,7 @@ import { FunctionDeclaration, Type } from "@google/genai";
 
 export const calculatorDeclaration: FunctionDeclaration = {
     name: 'calculator',
-    description: 'Evaluates a mathematical expression. Supports arithmetic (+, -, *, /) and JavaScript Math functions (Math.sqrt, Math.sin, Math.pow, Math.PI, etc.).',
+    description: 'Evaluates a mathematical expression. Supports arithmetic (+, -, *, /) and JavaScript Math functions (Math.sqrt, Math.sin, Math.pow, Math.PI, etc.). [Execution: Fast (<100ms) | Cost: Free | Permissions: None]',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -24,7 +24,7 @@ export const calculatorDeclaration: FunctionDeclaration = {
 
 export const codeExecutorDeclaration: FunctionDeclaration = {
     name: 'executeCode',
-    description: 'Executes code in a secure sandboxed environment. Supports Python, JavaScript, and other languages. For Python, it can install packages from PyPI, perform network requests, and read user-provided files.',
+    description: 'Executes code in a secure sandboxed environment. Supports Python, JavaScript, and other languages. For Python, it can install packages from PyPI, perform network requests, and read user-provided files. [Execution: Medium (1-10s) | Cost: Low | Permissions: Internet, Filesystem]',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -40,7 +40,7 @@ export const codeExecutorDeclaration: FunctionDeclaration = {
 
 export const duckduckgoSearchDeclaration: FunctionDeclaration = {
     name: 'duckduckgoSearch',
-    description: 'Dual-function tool. 1) Search: If query is a search term, returns web results. 2) Summarize: If query is a URL, fetches and summarizes that specific page.',
+    description: 'Dual-function tool. 1) Search: If query is a search term, returns web results. 2) Summarize: If query is a URL, fetches and summarizes that specific page. [Execution: Fast (500ms-2s) | Cost: Free | Permissions: Internet]',
     parameters: {
       type: Type.OBJECT,
       properties: { query: { type: Type.STRING, description: 'The search keywords (e.g. "current CEO of Google") or a specific URL (e.g. "https://example.com") to read.' } },
@@ -50,7 +50,7 @@ export const duckduckgoSearchDeclaration: FunctionDeclaration = {
 
 export const browserDeclaration: FunctionDeclaration = {
     name: 'browser',
-    description: 'A headless web browser. Use this to read documentation, verify facts on specific pages, or inspect visual layouts of websites.',
+    description: 'A headless web browser. Use this to read documentation, verify facts on specific pages, or inspect visual layouts of websites. [Execution: Slow (3-15s) | Cost: Medium | Permissions: Internet]',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -75,7 +75,7 @@ export const browserDeclaration: FunctionDeclaration = {
 
 export const imageGeneratorDeclaration: FunctionDeclaration = {
     name: 'generateImage',
-    description: 'Generates images based on a textual description using an AI model. Best for creating illustrations, diagrams, or photorealistic scenes.',
+    description: 'Generates images based on a textual description using an AI model. Best for creating illustrations, diagrams, or photorealistic scenes. [Execution: Slow (5-10s) | Cost: High | Permissions: Internet]',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -89,19 +89,19 @@ export const imageGeneratorDeclaration: FunctionDeclaration = {
 
 export const getCurrentLocationDeclaration: FunctionDeclaration = {
     name: 'getCurrentLocation',
-    description: "Gets the user's current geographical location (latitude and longitude) from their device.",
+    description: "Gets the user's current geographical location (latitude and longitude) from their device. [Execution: Fast | Cost: Free | Permissions: Geolocation]",
     parameters: { type: Type.OBJECT, properties: {} },
 };
   
 export const requestLocationPermissionDeclaration: FunctionDeclaration = {
     name: 'requestLocationPermission',
-    description: "Requests UI permission from the user to access their location. Use this if `getCurrentLocation` fails with a permission error.",
+    description: "Requests UI permission from the user to access their location. Use this if `getCurrentLocation` fails with a permission error. [Execution: User Dependent | Cost: Free | Permissions: Geolocation]",
     parameters: { type: Type.OBJECT, properties: {} },
 };
 
 export const displayMapDeclaration: FunctionDeclaration = {
     name: 'displayMap',
-    description: 'Displays an interactive map widget centered on specific coordinates.',
+    description: 'Displays an interactive map widget centered on specific coordinates. [Execution: Fast | Cost: Free | Permissions: None]',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -116,7 +116,7 @@ export const displayMapDeclaration: FunctionDeclaration = {
   
 export const analyzeMapVisuallyDeclaration: FunctionDeclaration = {
     name: 'analyzeMapVisually',
-    description: 'Analyzes a map at specific coordinates to describe landmarks, geography, and road layout. Use this if you need to "see" the map context.',
+    description: 'Analyzes a map at specific coordinates to describe landmarks, geography, and road layout. Use this if you need to "see" the map context. [Execution: Medium (2-5s) | Cost: Low | Permissions: Internet]',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -129,7 +129,7 @@ export const analyzeMapVisuallyDeclaration: FunctionDeclaration = {
 
 export const analyzeImageVisuallyDeclaration: FunctionDeclaration = {
     name: 'analyzeImageVisually',
-    description: 'Analyzes a visual image file to describe its contents. Essential for verifying generated images or analyzing uploaded files.',
+    description: 'Analyzes a visual image file to describe its contents. Essential for verifying generated images or analyzing uploaded files. [Execution: Medium (2-5s) | Cost: Medium | Permissions: Internet]',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -141,7 +141,7 @@ export const analyzeImageVisuallyDeclaration: FunctionDeclaration = {
 
 export const captureCodeOutputScreenshotDeclaration: FunctionDeclaration = {
     name: 'captureCodeOutputScreenshot',
-    description: 'Captures a screenshot of HTML/JS output rendered by `executeCode`. Use this to "see" plots, graphs, or interactive widgets generated by code.',
+    description: 'Captures a screenshot of HTML/JS output rendered by `executeCode`. Use this to "see" plots, graphs, or interactive widgets generated by code. [Execution: Fast | Cost: Free | Permissions: DOM Access]',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -156,7 +156,7 @@ export const captureCodeOutputScreenshotDeclaration: FunctionDeclaration = {
   
 export const videoGeneratorDeclaration: FunctionDeclaration = {
     name: 'generateVideo',
-    description: 'Generates a short video clip (seconds) from a text prompt. **Warning: This process is slow (2-5 mins). Inform the user before proceeding.**',
+    description: 'Generates a short video clip (seconds) from a text prompt. [Execution: Very Slow (2-5 mins) | Cost: High | Permissions: Internet] **Warning: This process is slow. Inform the user before proceeding.**',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -170,7 +170,7 @@ export const videoGeneratorDeclaration: FunctionDeclaration = {
 
 export const listFilesDeclaration: FunctionDeclaration = {
     name: 'listFiles',
-    description: 'Lists all files currently stored in the virtual filesystem directory.',
+    description: 'Lists all files currently stored in the virtual filesystem directory. [Execution: Fast | Cost: Free | Permissions: Filesystem]',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -182,7 +182,7 @@ export const listFilesDeclaration: FunctionDeclaration = {
   
 export const displayFileDeclaration: FunctionDeclaration = {
     name: 'displayFile',
-    description: 'Renders a file (image, video, PDF) in the chat UI for the user.',
+    description: 'Renders a file (image, video, PDF) in the chat UI for the user. [Execution: Fast | Cost: Free | Permissions: Filesystem]',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -194,7 +194,7 @@ export const displayFileDeclaration: FunctionDeclaration = {
   
 export const deleteFileDeclaration: FunctionDeclaration = {
     name: 'deleteFile',
-    description: 'Permanently deletes a file from the virtual filesystem.',
+    description: 'Permanently deletes a file from the virtual filesystem. [Execution: Fast | Cost: Free | Permissions: Filesystem]',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -206,7 +206,7 @@ export const deleteFileDeclaration: FunctionDeclaration = {
   
 export const writeFileDeclaration: FunctionDeclaration = {
     name: 'writeFile',
-    description: 'Creates or overwrites a text file in the virtual filesystem.',
+    description: 'Creates or overwrites a text file in the virtual filesystem. [Execution: Fast | Cost: Free | Permissions: Filesystem]',
     parameters: {
       type: Type.OBJECT,
       properties: {
