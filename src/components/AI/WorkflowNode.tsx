@@ -39,7 +39,7 @@ const DetailsRenderer: React.FC<{ node: WorkflowNodeData }> = ({ node }) => {
     return (
         <div className="text-sm text-slate-600 dark:text-slate-300 workflow-markdown leading-relaxed pt-2">
             {isStreaming && !showFinalContent && (
-                <FlowToken tps={30} onComplete={() => setAnimationComplete(true)}>
+                <FlowToken tps={40} onComplete={() => setAnimationComplete(true)}>
                     {detailsText}
                 </FlowToken>
             )}
@@ -83,6 +83,8 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
     // Force expand search nodes to show the "box" immediately
     const isSearch = node.type === 'duckduckgoSearch';
     const [isExpanded, setIsExpanded] = useState(isSearch || node.status === 'active' || node.status === 'failed');
+    
+    // Get colors based on the Agent Name (Commander, Researcher, etc.)
     const agentColorInfo = node.agentName ? getAgentColor(node.agentName) : getAgentColor('System');
     
     // Auto-expand if active
@@ -168,7 +170,7 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
         );
     }
 
-    // --- Standard Generic Card ---
+    // --- Standard Generic Card (Agent Steps) ---
     const hasDetails = !!node.details;
     const isTool = node.type === 'tool';
     const toolName = isTool ? (node.details as ToolCallEvent)?.call?.name || 'Tool' : null;
@@ -187,16 +189,17 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
             >
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
+                        {/* Agent Badge */}
                         {node.agentName && (
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium border border-transparent ${agentColorInfo.bg} ${agentColorInfo.text} bg-opacity-30`}>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wide border border-transparent ${agentColorInfo.bg} ${agentColorInfo.text} ${agentColorInfo.border} bg-opacity-30`}>
                                 {node.agentName}
                             </span>
                         )}
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
                             {headerText || 'Processing...'}
                         </span>
                         {node.duration && (
-                            <span className="text-[10px] text-slate-400 font-mono">{node.duration.toFixed(1)}s</span>
+                            <span className="text-[10px] text-slate-400 font-mono ml-auto">{node.duration.toFixed(1)}s</span>
                         )}
                     </div>
                 </div>

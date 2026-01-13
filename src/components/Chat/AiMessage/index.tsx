@@ -25,6 +25,9 @@ import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 import { useTypewriter } from '../../../hooks/useTypewriter';
 import { parseContentSegments } from '../../../utils/workflowParsing';
 import { CodeExecutionResult } from '../../AI/CodeExecutionResult';
+import { ThinkingProcess } from './ThinkingProcess';
+import { AgentWorkflowDisplay } from './AgentWorkflowDisplay';
+import { ExecutionApproval } from '../../AI/ExecutionApproval';
 
 // Lazy load the heavy ArtifactRenderer
 const ArtifactRenderer = React.lazy(() => import('../../Artifacts/ArtifactRenderer').then(m => ({ default: m.ArtifactRenderer })));
@@ -67,7 +70,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
-  const { activeResponse, finalAnswerText, thinkingIsComplete, thinkingText, startTime, endTime } = logic;
+  const { activeResponse, finalAnswerText, thinkingIsComplete, thinkingText, startTime, endTime, hasWorkflow, agentPlan, executionLog, showApprovalUI } = logic;
   
   const typedFinalAnswer = useTypewriter(finalAnswerText, msg.isThinking ?? false);
 
@@ -126,7 +129,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const isStoppedByUser = activeResponse?.error?.code === 'STOPPED_BY_USER';
   const showToolbar = logic.thinkingIsComplete && (logic.hasFinalAnswer || !!activeResponse?.error || isStoppedByUser);
 
-  if (logic.isInitialWait) return <TypingIndicator />;
+  if (logic.isInitialWait && !hasWorkflow) return <TypingIndicator />;
 
   return (
     <motion.div 
@@ -147,7 +150,38 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           </div>
       )}
 
-      {/* Note: Thought Process / Workflow Visualization has been hidden per user request */}
+      {/* --- Workflow Visualization --- */}
+      {/* If we have a structured Agent Plan or Execution Log, use the AgentWorkflowDisplay */}
+      {hasWorkflow ? (
+          <div className="w-full mb-2">
+              <AgentWorkflowDisplay 
+                  plan={agentPlan}
+                  nodes={executionLog}
+                  sendMessage={sendMessage}
+                  onRegenerate={() => onRegenerate(id)}
+                  messageId={id}
+              />
+          </div>
+      ) : (
+          // Fallback to simple Thinking Process for non-agentic CoT models
+          thinkingText && (
+              <ThinkingProcess 
+                  thinkingText={thinkingText} 
+                  isThinking={msg.isThinking ?? false} 
+                  startTime={startTime}
+                  endTime={endTime}
+              />
+          )
+      )}
+
+      {/* Approval Step (if needed) */}
+      {showApprovalUI && activeResponse?.plan && (
+          <ExecutionApproval 
+            plan={activeResponse.plan} 
+            onApprove={approveExecution} 
+            onDeny={denyExecution} 
+          />
+      )}
 
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer || isStoppedByUser) && (
         <motion.div

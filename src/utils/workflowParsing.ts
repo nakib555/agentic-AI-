@@ -32,8 +32,7 @@ const SUPPORTED_COMPONENTS = [
 export const parseContentSegments = (text: string): RenderSegment[] => {
     if (!text) return [];
 
-    // Create a dynamic regex based on supported components
-    // Matches: [TAG]{...}[/TAG]
+    // Regex to capture component tags and their content
     const tagsPattern = SUPPORTED_COMPONENTS.join('|');
     const componentRegex = new RegExp(`(\\[(?:${tagsPattern})\\][\\s\\S]*?\\[\\/(?:${tagsPattern})\\])`, 'g');
     
@@ -114,12 +113,12 @@ export const parseAgenticWorkflow = (
   let finalAnswerText = '';
 
   // 1. Check for Agentic Workflow Markers
-  const planMarker = '[STEP] Strategic Plan:';
-  const planMarkerIndex = rawText.indexOf(planMarker);
+  const briefingMatch = rawText.match(/\[BRIEFING\]([\s\S]*?)\[\/BRIEFING\]/);
+  const planMarker = '[STEP] Strategic Plan:'; // Legacy Fallback
   const finalAnswerMarker = '[STEP] Final Answer:';
   const finalAnswerIndex = rawText.lastIndexOf(finalAnswerMarker);
 
-  const hasSteps = rawText.includes('[STEP]');
+  const hasSteps = rawText.includes('[STEP]') || !!briefingMatch;
 
   if (!hasSteps) {
       // Chat Mode: Everything is the final answer
@@ -128,15 +127,20 @@ export const parseAgenticWorkflow = (
       // Agent Mode: Parse Steps
       let contentStartIndex = 0;
 
-      // Extract Plan
-      if (planMarkerIndex !== -1) {
-          const planStart = planMarkerIndex + planMarker.length;
-          // Plan goes until the next step or Final Answer
-          let planEnd = rawText.indexOf('[STEP]', planStart);
-          if (planEnd === -1) planEnd = rawText.length;
-          
-          planText = rawText.substring(planStart, planEnd).trim();
-          contentStartIndex = planEnd;
+      // Extract Plan / Briefing
+      if (briefingMatch) {
+          planText = briefingMatch[1].trim();
+          contentStartIndex = briefingMatch.index! + briefingMatch[0].length;
+      } else {
+          // Fallback parsing for legacy "Strategic Plan" steps
+          const planMarkerIndex = rawText.indexOf(planMarker);
+          if (planMarkerIndex !== -1) {
+              const planStart = planMarkerIndex + planMarker.length;
+              let planEnd = rawText.indexOf('[STEP]', planStart);
+              if (planEnd === -1) planEnd = rawText.length;
+              planText = rawText.substring(planStart, planEnd).trim();
+              contentStartIndex = planEnd;
+          }
       }
 
       // Extract Final Answer
@@ -152,69 +156,84 @@ export const parseAgenticWorkflow = (
       }
   }
 
-  // Cleanup strings
-  planText = planText.replace(/\[AGENT:.*?\]\s*/, '').replace(/\[USER_APPROVAL_REQUIRED\]/, '').trim();
-  
-  // Clean Agent tags from Final Answer
-  finalAnswerText = finalAnswerText.replace(/^\s*:?\s*\[AGENT:\s*[^\]]+\]\s*/, '').replace(/\[AUTO_CONTINUE\]/g, '').trim();
+  // Cleanup strings (Remove Agent tags from Plan/FinalAnswer so they look clean)
+  planText = planText.replace(/\[AGENT:.*?\]\s*/g, '').replace(/\[USER_APPROVAL_REQUIRED\]/g, '').trim();
+  finalAnswerText = finalAnswerText.replace(/^\s*:?\s*\[AGENT:\s*[^\]]+\]\s*/g, '').replace(/\[AUTO_CONTINUE\]/g, '').trim();
 
-  // Parse Execution Log
+  // Parse Execution Log Steps
   const textNodes: WorkflowNodeData[] = [];
+  
+  // Regex to match [STEP] Title: [AGENT: Name] ... content ...
+  // Non-greedy match for content until next [STEP] or end of string
   const stepRegex = /(?:^|\n)\[STEP\]\s*(.*?):\s*([\s\S]*?)(?=(?:^|\n)\[STEP\]|$)/g;
   
   let match;
   let stepIndex = 0;
+  
+  // We track the last seen agent to attribute tool calls correctly
+  let currentContextAgent = 'System'; 
+
   while ((match = stepRegex.exec(executionText)) !== null) {
     let title = match[1].trim().replace(/:$/, '').trim();
     let details = match[2].trim().replace(/\[AUTO_CONTINUE\]/g, '').trim();
     const lowerCaseTitle = title.toLowerCase();
 
-    if (lowerCaseTitle === 'final answer') continue;
+    // Skip final answer step (handled separately) and legacy plan step
+    if (lowerCaseTitle === 'final answer' || lowerCaseTitle === 'strategic plan') continue;
 
     let type: WorkflowNodeType = 'plan';
     let agentName: string | undefined;
     let handoff: { from: string; to: string } | undefined;
 
+    // Extract AGENT tag from the details body
     const agentMatch = details.match(/^\[AGENT:\s*([^\]]+)\]\s*/);
     if (agentMatch) {
         agentName = agentMatch[1].trim();
+        currentContextAgent = agentName; // Update context
         details = details.replace(agentMatch[0], '').trim();
+    } else {
+        // Inherit from context if not explicitly tagged
+        agentName = currentContextAgent;
     }
 
     const handoffMatch = title.match(/^Handoff:\s*(.*?)\s*->\s*(.*)/i);
+    
     if (handoffMatch) {
         type = 'handoff';
         handoff = { from: handoffMatch[1].trim(), to: handoffMatch[2].trim() };
+        currentContextAgent = handoff.to; // Update context to the new agent
     } else if (lowerCaseTitle.startsWith('validate')) {
         type = 'validation';
     } else if (lowerCaseTitle.startsWith('corrective action')) {
         type = 'correction';
     } else if (lowerCaseTitle === 'think' || lowerCaseTitle === 'adapt') {
         type = 'thought';
-        details = `${title}: ${details}`;
-        title = agentName ? `Thinking` : 'Thinking';
+        details = details || title; // Use title if details empty
+        title = 'Reasoning';
     } else if (lowerCaseTitle === 'observe') {
         type = 'observation';
         title = 'Observation';
     } else if (ACTION_KEYWORDS.has(lowerCaseTitle)) {
         type = 'act_marker';
     } else if (GENERIC_STEP_KEYWORDS.has(lowerCaseTitle)) {
-        details = `${title}: ${details}`;
-        title = '';
+        // Fallback generic steps
     }
+
+    // Default title cleanup
+    if (title.length > 50) title = title.substring(0, 50) + '...';
 
     textNodes.push({
         id: `step-${stepIndex++}`,
         type: type,
         title: title,
-        status: 'pending', 
+        status: 'pending', // Will be updated later
         details: details || 'No details provided.',
         agentName: agentName,
         handoff: handoff,
     });
   }
 
-  // Merge Tool Events
+  // Merge Tool Events with Text Steps
   const toolNodesQueue = toolCallEvents.map(event => {
     const isDuckDuckGoSearch = event.call.name === 'duckduckgoSearch';
     const duration = event.startTime && event.endTime ? (event.endTime - event.startTime) / 1000 : null;
@@ -229,28 +248,28 @@ export const parseAgenticWorkflow = (
         status: nodeStatus,
         details: event,
         duration: duration,
+        agentName: currentContextAgent // Default assignment, updated below
     } as WorkflowNodeData;
   });
 
   const executionLog: WorkflowNodeData[] = [];
-  let lastAgentName: string | undefined;
-
-  // Interleave text steps and tool steps logic
-  // We assume tools generally happen inside 'Act' steps, or immediately follow a step that requested them.
+  
+  // Logic to interleave text steps and tool steps
+  // We assume tools generally happen *inside* or *immediately following* an 'Act' or 'Tool' step marker.
   for (const textNode of textNodes) {
-    if (textNode.agentName) {
-        lastAgentName = textNode.agentName;
-    }
-
+    // If it's an Act marker, try to attach available tools to it
     if (textNode.type === 'act_marker') {
         if (toolNodesQueue.length > 0) {
-            // Assign one or more tools to this Act block
-            // Heuristic: Assign all currently active or pending tools, or the next completed one
             const toolNode = toolNodesQueue.shift();
             if (toolNode) {
-                toolNode.agentName = lastAgentName;
+                toolNode.agentName = textNode.agentName || currentContextAgent;
                 executionLog.push(toolNode);
             }
+        }
+        // We usually don't push the raw 'Act' text marker if we have a real tool to show instead,
+        // to keep the UI clean. But if there's text detail in the Act marker, we might want it.
+        if (textNode.details && textNode.details !== 'No details provided.') {
+             executionLog.push(textNode);
         }
     } else {
         executionLog.push(textNode);
@@ -260,23 +279,23 @@ export const parseAgenticWorkflow = (
   // Append any remaining tools that didn't match an explicit 'Act' block
   // This handles cases where the model calls a tool without an explicit [STEP] Act marker
   for (const toolNode of toolNodesQueue) {
-      toolNode.agentName = lastAgentName || 'System';
       executionLog.push(toolNode);
   }
 
-  // Post-processing for status updates
+  // Post-processing for status updates (Active/Pending/Done)
   if (error) {
-    // If global error, mark the last active item as failed
     let failureAssigned = false;
     for (let i = executionLog.length - 1; i >= 0; i--) {
         const node = executionLog[i];
+        // Mark the last non-done node as failed
         if (node.status === 'active' || node.status === 'pending') {
             node.status = 'failed';
-            node.details = error;
+            node.details = error; // Attach global error to the failed step
             failureAssigned = true;
             break;
         }
     }
+    // If nothing was active, append a failed step
     if (!failureAssigned && executionLog.length > 0) {
         executionLog[executionLog.length - 1].status = 'failed';
         executionLog[executionLog.length - 1].details = error;
@@ -290,7 +309,7 @@ export const parseAgenticWorkflow = (
     });
 
   } else if (isThinkingComplete) {
-    // If thinking is done, everything should be marked done
+    // If thinking is fully done, everything should be marked done
     executionLog.forEach(node => {
       if (node.status !== 'failed') node.status = 'done';
     });
@@ -300,21 +319,18 @@ export const parseAgenticWorkflow = (
     for (let i = executionLog.length - 1; i >= 0; i--) {
         const node = executionLog[i];
         
-        // The last non-done node is the active one
         if (!lastActiveNodeFound && node.status !== 'done') {
             node.status = 'active';
             lastActiveNodeFound = true;
         } else if (node.status === 'active') {
-            // If we found a newer active node, previous actives are done
+            // If we found a newer active node (later in list), mark previous active as done
             node.status = 'done'; 
         } else if (node.status === 'pending' && !lastActiveNodeFound) {
-             // If we haven't found an active node yet, this pending one might be next
-             // but we leave it pending until the stream progresses or finishes
+             // Leave as pending
         }
     }
   }
   
-  // Parse Components from Final Answer
   const finalAnswerSegments = parseContentSegments(finalAnswerText);
 
   return { plan: planText, executionLog, finalAnswer: finalAnswerText, finalAnswerSegments };
