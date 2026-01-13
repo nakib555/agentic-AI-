@@ -48,6 +48,19 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
     let finalAnswerAccumulator = "";
     let finalGroundingMetadata: any = undefined;
 
+    // Enforce a stricter system instruction for the loop if not already present
+    // This helps the model stick to the [STEP] format expected by the frontend parser
+    const agenticSystemSuffix = `
+    
+    IMPORTANT: You are in an automated execution loop.
+    1. Always start your turn with a [STEP] block describing your current thought process or plan.
+    2. If you need to use a tool, output the [STEP] block FIRST, then call the tool.
+    3. If you are done, output [STEP] Final Answer: followed by the response.
+    4. Do not ask the user for permission unless using the 'approveExecution' flow.
+    `;
+
+    const effectiveSystemInstruction = (settings.systemInstruction || '') + agenticSystemSuffix;
+
     try {
         while (turns < MAX_TURNS) {
             if (signal.aborted) throw new Error("AbortError");
@@ -65,7 +78,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 contents: history,
                 config: {
                     ...settings,
-                    systemInstruction: settings.systemInstruction
+                    systemInstruction: effectiveSystemInstruction
                 },
             });
 
@@ -79,7 +92,6 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
                 }
 
                 // Robust text extraction
-                // getText in geminiUtils is now safe, but we double-check handling here implicitly
                 const chunkText = getText(chunk);
                 if (chunkText) {
                     fullTextResponse += chunkText;
@@ -101,6 +113,7 @@ export const runAgenticLoop = async (params: RunAgenticLoopParams): Promise<void
             history.push({ role: 'model', parts: newContentParts });
 
             // 3. Check for Termination (No tools, just text)
+            // If the model output a "Final Answer" marker, we should stop even if it hallucinated a tool call afterwards (rare but possible)
             if (toolCalls.length === 0) {
                 console.log('[AGENT_LOOP] No tool calls detected. Ending loop.');
                 break;
