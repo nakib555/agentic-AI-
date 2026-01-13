@@ -7,6 +7,7 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { ToolError } from "../utils/apiError";
 import { generateContentWithRetry } from "../utils/geminiUtils";
+import { Buffer } from 'buffer';
 
 /**
  * Cleans text for Text-to-Speech by removing markdown, component tags, and excess whitespace.

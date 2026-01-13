@@ -60,6 +60,7 @@ const getLangChainTools = (
         })),
         mkTool("generateImage", "Generate an image description. Use this when the user asks for a picture.", z.object({
             prompt: z.string().describe("Image description"),
+            numberOfImages: z.number().optional().describe("Number of images (1-4)"),
             aspectRatio: z.string().optional().describe("Aspect ratio (1:1, 16:9, etc)"),
         })),
         mkTool("generateVideo", "Generate a video. Use this when the user asks for a video.", z.object({
