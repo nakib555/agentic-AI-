@@ -32,11 +32,6 @@ const Section: React.FC<{
 
 export const AgentBriefing: React.FC<AgentBriefingProps> = ({ content }) => {
     // Parse the markdown to extract Strategy and Tools sections
-    // Expected format: 
-    // ## 🧠 Strategy
-    // ...
-    // ## ⚙️ Planned Tools
-    // ...
     const parsedSections = useMemo(() => {
         const strategyMatch = content.match(/## 🧠 Strategy\s*([\s\S]*?)(?=## ⚙️ Planned Tools|$)/i);
         const toolsMatch = content.match(/## ⚙️ Planned Tools\s*([\s\S]*?)$/i);
@@ -47,24 +42,21 @@ export const AgentBriefing: React.FC<AgentBriefingProps> = ({ content }) => {
         };
     }, [content]);
 
-    // Fallback for older format or if parsing fails
     const isLegacyFormat = !parsedSections.strategy && !parsedSections.tools;
 
     return (
         <motion.div 
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full rounded-2xl overflow-hidden border border-indigo-200/50 dark:border-indigo-500/20 bg-gradient-to-br from-indigo-50/50 to-white dark:from-indigo-900/10 dark:to-[#1e1e1e] shadow-sm mb-6"
+            className="w-full rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1e1e1e] shadow-sm mb-4"
         >
-            {/* Header */}
-            <div className="px-5 py-3 border-b border-indigo-100 dark:border-white/5 bg-white/40 dark:bg-white/5 backdrop-blur-sm flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
-                <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wide">
-                    Agent Briefing
+            <div className="px-4 py-3 border-b border-slate-100 dark:border-white/5 flex items-center gap-2 bg-slate-50/50 dark:bg-white/5">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide">
+                    Initial Plan
                 </span>
             </div>
 
-            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {isLegacyFormat ? (
                     <div className="col-span-1 md:col-span-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed workflow-markdown">
                          <ManualCodeRenderer text={content} components={WorkflowMarkdownComponents} isStreaming={false} />
