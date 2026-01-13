@@ -211,8 +211,7 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, model, isCollaps
             {!shouldCollapse && !isEditing && (
                 <div 
                     className={`
-                        absolute right-2 top-1/2 -translate-y-1/2 flex items-center transition-opacity
-                        ${isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100 focus-within:opacity-100'}
+                        absolute right-2 top-1/2 -translate-y-1/2 flex items-center transition-opacity opacity-100
                     `}
                 >
                     <Tooltip content="More options" position="right" delay={500}>
