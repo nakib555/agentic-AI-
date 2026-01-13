@@ -61,16 +61,21 @@ class Orchestrator {
         const { ai, model, settings, signal, callbacks } = this.params;
         this.log('Starting Durable Execution Loop');
 
-        const agenticSystemSuffix = `
-        
-        CRITICAL ORCHESTRATION INSTRUCTIONS:
-        1.  **Briefing First:** If this is the start of a task, output a [BRIEFING] block.
-        2.  **Step-by-Step:** Use [STEP] blocks for every action.
-        3.  **Error Handling:** If a tool fails, analyze the error in a [STEP] Corrective Action block and retry with fixed parameters.
-        4.  **Finality:** When done, strictly output [STEP] Final Answer:.
-        `;
+        let effectiveSystemInstruction = settings.systemInstruction || '';
 
-        const effectiveSystemInstruction = (settings.systemInstruction || '') + agenticSystemSuffix;
+        // Only append strict orchestration instructions if in Agent Mode.
+        // In Chat Mode, we want a conversational flow without [BRIEFING] or [STEP] blocks.
+        if (settings.isAgentMode) {
+            const agenticSystemSuffix = `
+            
+            CRITICAL ORCHESTRATION INSTRUCTIONS:
+            1.  **Briefing First:** If this is the start of a task, output a [BRIEFING] block.
+            2.  **Step-by-Step:** Use [STEP] blocks for every action.
+            3.  **Error Handling:** If a tool fails, analyze the error in a [STEP] Corrective Action block and retry with fixed parameters.
+            4.  **Finality:** When done, strictly output [STEP] Final Answer:.
+            `;
+            effectiveSystemInstruction += agenticSystemSuffix;
+        }
 
         try {
             while (this.turns < MAX_TURNS) {
