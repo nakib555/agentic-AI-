@@ -91,6 +91,15 @@ export const parseApiError = (error: any): MessageError => {
     const lowerCaseMessage = message.toLowerCase();
     const lowerCaseStatus = status.toLowerCase();
 
+    // Specific check for OpenRouter Authentication Errors
+    if (lowerCaseMessage.includes('openrouter') && (lowerCaseMessage.includes('401') || lowerCaseMessage.includes('user not found') || lowerCaseMessage.includes('unauthorized'))) {
+        return {
+            code: 'INVALID_API_KEY',
+            message: 'Invalid OpenRouter API Key',
+            details: 'The OpenRouter API rejected your key. Please ensure it is configured correctly in Settings.'
+        };
+    }
+
     if (lowerCaseMessage.includes('api key not valid') || lowerCaseMessage.includes('api key not found') || lowerCaseMessage.includes('api key not configured') || lowerCaseStatus === 'permission_denied') {
         return {
             code: 'INVALID_API_KEY',

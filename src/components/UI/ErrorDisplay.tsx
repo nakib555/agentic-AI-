@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -99,8 +98,8 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
         let newSuggestion = error.suggestion;
         const lowerMessage = (error.message || '').toLowerCase();
         
-        if (!newCode) {
-            if (lowerMessage.includes('openrouter') && (lowerMessage.includes('401') || lowerMessage.includes('user not found'))) {
+        if (!newCode || newCode === 'API_ERROR') {
+            if (lowerMessage.includes('openrouter') && (lowerMessage.includes('401') || lowerMessage.includes('user not found') || lowerMessage.includes('unauthorized'))) {
                 newCode = 'INVALID_API_KEY';
                 newSuggestion = 'Your OpenRouter API key appears invalid. Check Settings.';
             } else if (lowerMessage.includes('api key not valid') || lowerMessage.includes('invalid api key')) {
