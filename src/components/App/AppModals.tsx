@@ -149,6 +149,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     setIsImportModalOpen,
     handleFileUploadForImport,
     memoryFiles,
+    memoryContent,
+    updateBackendMemory,
     updateMemoryFiles,
     isConfirmationOpen,
     memorySuggestions,
@@ -224,6 +226,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           onClose={() => setIsMemoryModalOpen(false)}
           memoryFiles={memoryFiles}
           onUpdateMemoryFiles={updateMemoryFiles}
+          memoryContent={memoryContent}
+          onUpdateMemoryContent={updateBackendMemory}
         />
       )}
       {isConfirmationOpen && (

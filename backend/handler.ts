@@ -373,11 +373,12 @@ export const apiHandler = async (req: any, res: any) => {
 
                 // --- SYSTEM PROMPT CONSTRUCTION ---
                 const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
-                const { systemPrompt, aboutUser, aboutResponse } = settings;
+                const { systemPrompt, aboutUser, aboutResponse, memoryContent } = settings;
                 
                 let personalizationSection = "";
                 if (aboutUser && aboutUser.trim()) personalizationSection += `\n## 👤 USER PROFILE & CONTEXT\n${aboutUser.trim()}\n`;
                 if (aboutResponse && aboutResponse.trim()) personalizationSection += `\n## 🎭 RESPONSE STYLE & PERSONA PREFERENCES\n${aboutResponse.trim()}\n`;
+                if (memoryContent && memoryContent.trim()) personalizationSection += `\n## 🧠 CORE MEMORY (Persistent Context)\n${memoryContent.trim()}\n`;
                 if (systemPrompt && systemPrompt.trim()) personalizationSection += `\n## 🔧 CUSTOM USER DIRECTIVES\n${systemPrompt.trim()}\n`;
 
                 if (ragContext) personalizationSection += ragContext;
