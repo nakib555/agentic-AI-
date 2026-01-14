@@ -257,7 +257,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
                         {details && (
                             <button
                                 onClick={() => navigator.clipboard.writeText(JSON.stringify(parsedError, null, 2))}
-                                className={`text-xs font-semibold flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 ${styles.detailsBtn}`}
+                                className={`text-xs font-semibold flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all ${styles.detailsBtn}`}
                                 title="Copy error details to clipboard"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 flex-shrink-0">
@@ -275,7 +275,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) =>
                                 className={`text-xs font-semibold flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-all ${styles.detailsBtn} border border-current/20 hover:bg-current/10 shadow-sm hover:shadow active:scale-95`}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-                                    <path fillRule="evenodd" d="M3 4.25A2.25 2.25 0 0 1 5.25 2h9.5A2.25 2.25 0 0 1 17 4.25v11.5A2.25 2.25 0 0 1 14.75 18h-9.5A2.25 2.25 0 0 1 3 15.75V4.25Z" clipRule="evenodd" />
+                                    <path fillRule="evenodd" d="M3 4.25A2.25 2.25 0 0 1 5.25 2.25H9.5A2.25 2.25 0 0 1 17 4.25v11.5A2.25 2.25 0 0 1 14.75 18h-9.5A2.25 2.25 0 0 1 3 15.75V4.25Z" clipRule="evenodd" />
                                     <path d="M1 10.5a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 1 10.5Zm16 0a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75ZM3.75 10a.75.75 0 0 0 0 1.5h1.5a.75.75 0 0 0 0-1.5h-1.5Zm11 0a.75.75 0 0 0 0 1.5h1.5a.75.75 0 0 0 0-1.5h-1.5ZM5.5 6.25a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1-.75-.75Z" />
                                 </svg>
                                 <span>Open Settings</span>
