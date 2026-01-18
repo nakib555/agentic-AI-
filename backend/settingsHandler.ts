@@ -101,6 +101,7 @@ export const updateSettings = async (req: any, res: any) => {
                 if (newSettings.provider === 'ollama') shouldFetch = true; // Always try fetch for Ollama as URL might be default/env
 
                 if (shouldFetch) {
+                    // For Ollama, the model service will look up the URL from settings or env
                     const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(activeKey, true);
                     res.status(200).json({ ...newSettings, models: chatModels, imageModels, videoModels, ttsModels });
                     return;

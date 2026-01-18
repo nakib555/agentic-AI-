@@ -1,4 +1,5 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -425,7 +426,7 @@ ${personalizationSection}
                     try {
                         await streamOllama(
                             ollamaUrl,
-                            model,
+                            model || globalSettings.activeModel || 'llama3', // Ensure a model is selected
                             ollamaMessages,
                             {
                                 onTextChunk: (text) => {

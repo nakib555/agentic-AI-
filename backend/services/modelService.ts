@@ -78,7 +78,7 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
         
         // Timeout shorter for local network to avoid hanging
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
         const response = await fetch(fetchUrl, {
             method: 'GET',

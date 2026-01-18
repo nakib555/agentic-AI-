@@ -157,7 +157,7 @@ const ApiKeyInput = ({
             description={description} 
             layout="col"
         >
-            <form onSubmit={handleSave} className="space-y-4">
+            <form onSubmit={handleSave} className="space-y-2">
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className={`w-4 h-4 transition-colors duration-200 ${localValue ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
@@ -202,17 +202,31 @@ const ApiKeyInput = ({
                 </div>
               </div>
               
-              <div className="flex items-center justify-between min-h-[20px]">
+              <div className="flex flex-col gap-1">
                  {saveStatus === 'error' && saveError ? (
                      <p className="text-xs font-medium text-red-500 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" /></svg>
                          {saveError}
                      </p>
                  ) : (
-                     <span className="text-xs text-slate-400 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-                        Stored securely on your device.
-                     </span>
+                     <div className="flex items-center justify-between">
+                         <span className="text-xs text-slate-400 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                            Stored securely on your device.
+                         </span>
+                     </div>
+                 )}
+                 {provider === 'ollama' && (
+                    <div className="mt-2 space-y-2">
+                        <p className="text-[10px] text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/10 p-2 rounded border border-amber-100 dark:border-amber-800/30">
+                            <strong>Note:</strong> Set <code>OLLAMA_ORIGINS="*"</code> in your Ollama environment to allow connection.
+                        </p>
+                        {typeof window !== 'undefined' && window.location.protocol === 'https:' && (
+                            <p className="text-[10px] text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/10 p-2 rounded border border-rose-100 dark:border-rose-800/30">
+                                <strong>Secure Site Detected:</strong> Browsers block connections to local IPs (192.168.x.x) from HTTPS. Use <code>http://localhost:11434</code> if Ollama is on this machine, or run this app locally.
+                            </p>
+                        )}
+                    </div>
                  )}
               </div>
             </form>

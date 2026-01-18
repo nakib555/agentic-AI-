@@ -11,6 +11,11 @@ export class OllamaService {
         let url = baseUrl.replace(/\/$/, '');
         if (!url.startsWith('http')) url = 'http://' + url;
         
+        // Mixed Content & Security Check
+        const isPageHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+        const isTargetHttp = url.startsWith('http:');
+        const isTargetLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
+
         try {
             const response = await fetch(`${url}${endpoint}`, options);
             if (!response.ok) {
@@ -19,7 +24,19 @@ export class OllamaService {
             return response;
         } catch (error) {
             console.error("Ollama Request Failed:", error);
-            throw new Error("Failed to connect to Ollama. Ensure OLLAMA_ORIGINS='*' is set.");
+            
+            let msg = "Failed to connect to Ollama.";
+            const errMessage = (error as Error).message || '';
+
+            // Detect Mixed Content Blocking (Browser silently fails fetch, resulting in TypeError)
+            if (isPageHttps && isTargetHttp && !isTargetLocalhost) {
+                 msg = "Security Block: Browsers prevent HTTPS websites from connecting to insecure local IPs (Mixed Content). Please use 'http://localhost:11434', setup HTTPS for Ollama, or run this app locally.";
+            } else if (errMessage.includes('fetch') || errMessage.includes('Failed to fetch')) {
+                 msg += " Ensure Ollama is running and OLLAMA_ORIGINS='*' is set.";
+            } else {
+                 msg += ` ${errMessage}`;
+            }
+            throw new Error(msg);
         }
     }
 
@@ -34,8 +51,10 @@ export class OllamaService {
                 name: m.name,
                 description: `${m.details?.family || 'Model'} | ${(m.size / 1024 / 1024 / 1024).toFixed(1)}GB`
             }));
-        } catch (e) {
-            return [];
+        } catch (e: any) {
+            console.error("Ollama getModels error:", e);
+            // Re-throw with the enhanced message from request()
+            throw e; 
         }
     }
 
