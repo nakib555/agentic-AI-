@@ -77,7 +77,8 @@ const ApiKeyInput = ({
     isOptional = false,
     provider = 'gemini',
     onProviderChange,
-    label
+    label,
+    isHost = false
 }: { 
     value: string, 
     onSave: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void> | void, 
@@ -86,7 +87,8 @@ const ApiKeyInput = ({
     isOptional?: boolean,
     provider: 'gemini' | 'openrouter' | 'ollama',
     onProviderChange?: (provider: 'gemini' | 'openrouter' | 'ollama') => void,
-    label?: string
+    label?: string,
+    isHost?: boolean
 }) => {
     const [localValue, setLocalValue] = useState(value);
     const [showKey, setShowKey] = useState(false);
@@ -139,12 +141,13 @@ const ApiKeyInput = ({
                 triggerClassName="flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors shadow-sm"
             />
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {provider === 'ollama' ? 'Host URL' : 'API Key'}
+                {isHost ? 'Host URL' : 'API Key'}
             </span>
         </div>
     );
 
-    const isOllama = provider === 'ollama';
+    // Only hide key if it is NOT a host URL
+    const isSecret = !isHost;
 
     return (
         <SettingItem 
@@ -155,14 +158,14 @@ const ApiKeyInput = ({
             <form onSubmit={handleSave} className="space-y-4">
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    {isOllama ? (
+                    {isHost ? (
                         <svg className={`w-4 h-4 transition-colors duration-200 ${localValue ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                     ) : (
                         <svg className={`w-4 h-4 transition-colors duration-200 ${localValue ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
                     )}
                 </div>
                 <input
-                    type={!isOllama && !showKey ? "password" : "text"}
+                    type={isSecret && !showKey ? "password" : "text"}
                     autoComplete="off"
                     value={localValue}
                     onChange={e => setLocalValue(e.target.value)}
@@ -170,7 +173,7 @@ const ApiKeyInput = ({
                     className="w-full pl-9 pr-28 py-2.5 bg-slate-100/50 dark:bg-white/5 border border-transparent dark:border-transparent rounded-lg text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-inner"
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 gap-1">
-                    {!isOllama && (
+                    {isSecret && (
                         <button
                             type="button"
                             onClick={() => setShowKey(!showKey)}
@@ -186,7 +189,7 @@ const ApiKeyInput = ({
                     )}
                     <button
                         type="submit"
-                        disabled={saveStatus === 'saving' || (!isOptional && !localValue)}
+                        disabled={saveStatus === 'saving' || (!isOptional && !localValue && !isHost)} 
                         className={`
                             px-3 py-1.5 text-xs font-semibold text-white rounded-md transition-all shadow-sm
                             ${saveStatus === 'saved' 
@@ -350,25 +353,36 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
           throw new Error("Conflict: Main Key cannot be identical to Suggestion Key.");
       }
       
-      // For Ollama, we save the host in a separate field, but this component calls onSaveApiKey with the value.
-      // We need to route it correctly.
+      // Special routing for Ollama HOST vs API KEY
+      // If we are saving the "host" field (which reuses ApiKeyInput component logic)
       if (savedProvider === 'ollama') {
-          onSaveOllamaHost(cleanKey); // key here is actually the host
-      }
-      
-      // Save logic: If provider changed, update provider state too
-      if (savedProvider !== provider) {
-          onProviderChange(savedProvider);
-      }
-      
-      // Don't save key if it's Ollama (we saved host above), unless we want to clear the old key,
-      // but onSaveApiKey usually persists what is passed.
-      if (savedProvider !== 'ollama') {
-        await onSaveApiKey(cleanKey, savedProvider);
+          // If the input was the host url
+          // But wait, the ApiKeyInput for Ollama provider below calls onSave with 'ollama' provider.
+          // To differentiate Host vs Key, we need to know which input triggered this.
+          // Since we are splitting inputs now, we can have separate handlers.
       } else {
-        // Trigger model refresh for Ollama
-        await onSaveApiKey('', savedProvider); 
+           // Save logic: If provider changed, update provider state too
+            if (savedProvider !== provider) {
+                onProviderChange(savedProvider);
+            }
+            await onSaveApiKey(cleanKey, savedProvider);
       }
+  };
+  
+  const handleOllamaHostSave = async (host: string) => {
+      const cleanHost = host.trim();
+      onSaveOllamaHost(cleanHost);
+      // Ensure provider is set to Ollama
+      if (provider !== 'ollama') {
+          onProviderChange('ollama');
+      }
+      // Trigger refresh with empty key if needed, or rely on effect in parent
+      await onSaveApiKey('', 'ollama'); // Force refresh models
+  };
+
+  const handleOllamaKeySave = async (key: string) => {
+      const cleanKey = key.trim();
+      await onSaveApiKey(cleanKey, 'ollama');
   };
 
   const handleSuggestionApiKeySave = async (key: string) => {
@@ -390,25 +404,49 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
       <div className="mb-8">
         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">General Settings</h3>
       </div>
-
-      <ApiKeyInput 
-        provider={provider}
-        onProviderChange={onProviderChange}
-        description={
-            provider === 'gemini' 
-            ? "Required for main chat, reasoning, and tool execution." 
-            : provider === 'openrouter' 
-                ? "Required for accessing OpenRouter models."
-                : "URL of your local Ollama instance (e.g. http://127.0.0.1:11434)."
-        }
-        value={provider === 'gemini' ? apiKey : provider === 'openrouter' ? openRouterApiKey : ollamaHost}
-        onSave={handleMainApiKeySave}
-        placeholder={
-            provider === 'gemini' ? "Enter your Gemini API key" 
-            : provider === 'openrouter' ? "Enter your OpenRouter API key"
-            : "Enter Ollama Host URL"
-        }
-      />
+      
+      {provider === 'ollama' ? (
+          <>
+             {/* Ollama Host Input */}
+             <ApiKeyInput 
+                provider="ollama"
+                onProviderChange={onProviderChange}
+                description="URL of your local Ollama instance (e.g. http://127.0.0.1:11434)."
+                value={ollamaHost}
+                onSave={(val) => handleOllamaHostSave(val)}
+                placeholder="http://127.0.0.1:11434"
+                isHost={true}
+             />
+             
+             {/* Ollama API Key Input (Optional) */}
+             <ApiKeyInput 
+                provider="ollama"
+                // Don't show provider dropdown again
+                label="Ollama API Key (Optional)"
+                description="If your Ollama instance is behind a proxy requiring authentication (e.g. Bearer token)."
+                value={apiKey} // Reuse generic apiKey state for Ollama key when selected
+                onSave={(val) => handleOllamaKeySave(val)}
+                placeholder="Enter Ollama API Key"
+                isOptional={true}
+             />
+          </>
+      ) : (
+          <ApiKeyInput 
+            provider={provider}
+            onProviderChange={onProviderChange}
+            description={
+                provider === 'gemini' 
+                ? "Required for main chat, reasoning, and tool execution." 
+                : "Required for accessing OpenRouter models."
+            }
+            value={provider === 'gemini' ? apiKey : openRouterApiKey}
+            onSave={handleMainApiKeySave}
+            placeholder={
+                provider === 'gemini' ? "Enter your Gemini API key" 
+                : "Enter your OpenRouter API key"
+            }
+          />
+      )}
 
       {provider === 'gemini' && onSaveSuggestionApiKey && (
           <ApiKeyInput 

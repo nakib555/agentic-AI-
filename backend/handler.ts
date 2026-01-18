@@ -466,6 +466,7 @@ ${personalizationSection}
                     try {
                         await streamOllama(
                             ollamaHost,
+                            mainApiKey, // Pass key if available
                             model,
                             ollamaMessages,
                             {

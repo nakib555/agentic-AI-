@@ -51,10 +51,14 @@ const fetchWithRetry = async (url: string, options: any, retries = 5, backoff = 
     return await fetch(url, options);
 };
 
-async function fetchOllamaModels(host: string): Promise<AppModel[]> {
+async function fetchOllamaModels(host: string, apiKey?: string): Promise<AppModel[]> {
     try {
         console.log(`[ModelService] Fetching models from Ollama at ${host}...`);
-        const ollama = new Ollama({ host });
+        const config: any = { host };
+        if (apiKey) {
+            config.headers = { Authorization: `Bearer ${apiKey}` };
+        }
+        const ollama = new Ollama(config);
         const response = await ollama.list();
         
         const models: AppModel[] = (response.models || []).map((m: any) => ({
@@ -220,7 +224,8 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
     let result;
     
     if (provider === 'ollama') {
-        const models = await fetchOllamaModels(ollamaHost);
+        // Pass apiKey if available for authenticated Ollama
+        const models = await fetchOllamaModels(ollamaHost, apiKey);
         result = {
             chatModels: models,
             imageModels: [], // Ollama mainly supports chat/text currently

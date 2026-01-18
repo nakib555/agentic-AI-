@@ -7,6 +7,7 @@ import { Ollama } from 'ollama';
 
 export const streamOllama = async (
     host: string,
+    apiKey: string | undefined,
     model: string,
     messages: any[],
     callbacks: {
@@ -16,10 +17,13 @@ export const streamOllama = async (
     },
     settings: {
         temperature: number;
-        // Other settings like num_ctx could be added here
     }
 ) => {
-    const ollama = new Ollama({ host });
+    const config: any = { host };
+    if (apiKey) {
+        config.headers = { Authorization: `Bearer ${apiKey}` };
+    }
+    const ollama = new Ollama(config);
 
     try {
         const response = await ollama.chat({
@@ -33,6 +37,7 @@ export const streamOllama = async (
 
         let inThinking = false;
         let fullContent = '';
+        let hasThinkingBlock = false;
 
         for await (const part of response) {
             // Handle Thinking (e.g. from DeepSeek R1)
@@ -43,8 +48,9 @@ export const streamOllama = async (
             if (partMsg.thinking) {
                 if (!inThinking) {
                     inThinking = true;
+                    hasThinkingBlock = true;
                     // Format as a Thought Step for the UI parser
-                    const marker = '\n[STEP] Thought: \n';
+                    const marker = '[STEP] Thinking:\n';
                     callbacks.onTextChunk(marker);
                     fullContent += marker;
                 }
@@ -56,9 +62,14 @@ export const streamOllama = async (
                 if (inThinking) {
                     inThinking = false;
                     // Close the thought block and start Final Answer
+                    // The UI parser looks for [STEP] Final Answer: to split thinking from content
                     const marker = '\n\n[STEP] Final Answer:\n';
                     callbacks.onTextChunk(marker);
                     fullContent += marker;
+                } else if (hasThinkingBlock && !fullContent.includes('[STEP] Final Answer:')) {
+                     // Edge case: thinking ended in previous chunk but we didn't emit the marker yet? 
+                     // Unlikely with the logic above, but good for safety.
+                     // Actually, we handle the transition on the *first* content chunk after thinking.
                 }
                 
                 const chunk = partMsg.content;
