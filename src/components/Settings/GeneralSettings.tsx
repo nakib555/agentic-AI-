@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -18,18 +17,21 @@ type GeneralSettingsProps = {
   onShowDataStructure: () => void;
   onExportAllChats: () => void;
   apiKey: string;
-  onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter') => Promise<void>;
+  onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void>;
   suggestionApiKey?: string;
   onSaveSuggestionApiKey?: (key: string) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
   serverUrl: string;
   onSaveServerUrl: (url: string) => Promise<boolean>;
+  ollamaHost: string;
+  onSaveOllamaHost: (host: string) => void;
 };
 
 const PROVIDER_OPTIONS = [
     { id: 'gemini', label: 'Google Gemini', desc: 'Default' },
-    { id: 'openrouter', label: 'OpenRouter', desc: 'Access to Claude, GPT, etc.' }
+    { id: 'openrouter', label: 'OpenRouter', desc: 'Access to Claude, GPT, etc.' },
+    { id: 'ollama', label: 'Ollama', desc: 'Local LLMs' }
 ];
 
 const SYNTAX_OPTIONS = [
@@ -78,12 +80,12 @@ const ApiKeyInput = ({
     label
 }: { 
     value: string, 
-    onSave: (key: string, provider: 'gemini' | 'openrouter') => Promise<void> | void, 
+    onSave: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void> | void, 
     placeholder: string,
     description: string,
     isOptional?: boolean,
-    provider: 'gemini' | 'openrouter',
-    onProviderChange?: (provider: 'gemini' | 'openrouter') => void,
+    provider: 'gemini' | 'openrouter' | 'ollama',
+    onProviderChange?: (provider: 'gemini' | 'openrouter' | 'ollama') => void,
     label?: string
 }) => {
     const [localValue, setLocalValue] = useState(value);
@@ -130,15 +132,19 @@ const ApiKeyInput = ({
         <div className="flex items-center gap-3">
             <SelectDropdown
                 value={provider}
-                onChange={(val) => onProviderChange?.(val as 'gemini' | 'openrouter')}
+                onChange={(val) => onProviderChange?.(val as 'gemini' | 'openrouter' | 'ollama')}
                 options={PROVIDER_OPTIONS}
                 disabled={!onProviderChange}
                 className="w-48"
                 triggerClassName="flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors shadow-sm"
             />
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">API Key</span>
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                {provider === 'ollama' ? 'Host URL' : 'API Key'}
+            </span>
         </div>
     );
+
+    const isOllama = provider === 'ollama';
 
     return (
         <SettingItem 
@@ -149,10 +155,14 @@ const ApiKeyInput = ({
             <form onSubmit={handleSave} className="space-y-4">
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className={`w-4 h-4 transition-colors duration-200 ${localValue ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                    {isOllama ? (
+                        <svg className={`w-4 h-4 transition-colors duration-200 ${localValue ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    ) : (
+                        <svg className={`w-4 h-4 transition-colors duration-200 ${localValue ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                    )}
                 </div>
                 <input
-                    type={showKey ? "text" : "password"}
+                    type={!isOllama && !showKey ? "password" : "text"}
                     autoComplete="off"
                     value={localValue}
                     onChange={e => setLocalValue(e.target.value)}
@@ -160,18 +170,20 @@ const ApiKeyInput = ({
                     className="w-full pl-9 pr-28 py-2.5 bg-slate-100/50 dark:bg-white/5 border border-transparent dark:border-transparent rounded-lg text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-inner"
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 gap-1">
-                    <button
-                        type="button"
-                        onClick={() => setShowKey(!showKey)}
-                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md transition-colors"
-                        title={showKey ? "Hide key" : "Show key"}
-                    >
-                        {showKey ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                        )}
-                    </button>
+                    {!isOllama && (
+                        <button
+                            type="button"
+                            onClick={() => setShowKey(!showKey)}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md transition-colors"
+                            title={showKey ? "Hide key" : "Show key"}
+                        >
+                            {showKey ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            )}
+                        </button>
+                    )}
                     <button
                         type="submit"
                         disabled={saveStatus === 'saving' || (!isOptional && !localValue)}
@@ -320,16 +332,16 @@ const ServerUrlInput = ({
     );
 };
 
-const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'openrouter', openRouterApiKey: string, onProviderChange: (p: 'gemini' | 'openrouter') => void }> = ({ 
+const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'openrouter' | 'ollama', openRouterApiKey: string, onProviderChange: (p: 'gemini' | 'openrouter' | 'ollama') => void }> = ({ 
     onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, onExportAllChats, apiKey, onSaveApiKey,
     suggestionApiKey, onSaveSuggestionApiKey,
     theme, setTheme,
     serverUrl, onSaveServerUrl,
-    provider, openRouterApiKey, onProviderChange
+    provider, openRouterApiKey, onProviderChange, ollamaHost, onSaveOllamaHost
 }) => {
   const [syntaxTheme, setSyntaxTheme] = useState(() => localStorage.getItem('syntax_theme') || 'auto');
 
-  const handleMainApiKeySave = async (key: string, savedProvider: 'gemini' | 'openrouter') => {
+  const handleMainApiKeySave = async (key: string, savedProvider: 'gemini' | 'openrouter' | 'ollama') => {
       const cleanKey = key.trim();
       const cleanSuggestionKey = (suggestionApiKey || '').trim();
 
@@ -338,11 +350,25 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
           throw new Error("Conflict: Main Key cannot be identical to Suggestion Key.");
       }
       
+      // For Ollama, we save the host in a separate field, but this component calls onSaveApiKey with the value.
+      // We need to route it correctly.
+      if (savedProvider === 'ollama') {
+          onSaveOllamaHost(cleanKey); // key here is actually the host
+      }
+      
       // Save logic: If provider changed, update provider state too
       if (savedProvider !== provider) {
           onProviderChange(savedProvider);
       }
-      await onSaveApiKey(cleanKey, savedProvider);
+      
+      // Don't save key if it's Ollama (we saved host above), unless we want to clear the old key,
+      // but onSaveApiKey usually persists what is passed.
+      if (savedProvider !== 'ollama') {
+        await onSaveApiKey(cleanKey, savedProvider);
+      } else {
+        // Trigger model refresh for Ollama
+        await onSaveApiKey('', savedProvider); 
+      }
   };
 
   const handleSuggestionApiKeySave = async (key: string) => {
@@ -368,13 +394,20 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
       <ApiKeyInput 
         provider={provider}
         onProviderChange={onProviderChange}
-        description={provider === 'gemini' 
+        description={
+            provider === 'gemini' 
             ? "Required for main chat, reasoning, and tool execution." 
-            : "Required for accessing OpenRouter models."
+            : provider === 'openrouter' 
+                ? "Required for accessing OpenRouter models."
+                : "URL of your local Ollama instance (e.g. http://127.0.0.1:11434)."
         }
-        value={provider === 'gemini' ? apiKey : openRouterApiKey}
+        value={provider === 'gemini' ? apiKey : provider === 'openrouter' ? openRouterApiKey : ollamaHost}
         onSave={handleMainApiKeySave}
-        placeholder={provider === 'gemini' ? "Enter your Gemini API key" : "Enter your OpenRouter API key"}
+        placeholder={
+            provider === 'gemini' ? "Enter your Gemini API key" 
+            : provider === 'openrouter' ? "Enter your OpenRouter API key"
+            : "Enter Ollama Host URL"
+        }
       />
 
       {provider === 'gemini' && onSaveSuggestionApiKey && (
@@ -397,9 +430,14 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
                  Get Gemini Key 
                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
              </a>
-         ) : (
+         ) : provider === 'openrouter' ? (
              <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
                  Get OpenRouter Key 
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
+             </a>
+         ) : (
+             <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
+                 Download Ollama
                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
              </a>
          )}

@@ -76,13 +76,15 @@ type AppModalsProps = {
   clearAllChats: () => void;
   // API Keys
   apiKey: string;
-  onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter') => Promise<void>;
+  onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void>;
   suggestionApiKey: string;
   onSaveSuggestionApiKey: (key: string) => void;
   // Provider Settings
-  provider: 'gemini' | 'openrouter';
+  provider: 'gemini' | 'openrouter' | 'ollama';
   openRouterApiKey: string;
-  onProviderChange: (provider: 'gemini' | 'openrouter') => void;
+  onProviderChange: (provider: 'gemini' | 'openrouter' | 'ollama') => void;
+  ollamaHost: string;
+  onSaveOllamaHost: (host: string) => void;
   // Custom Instructions
   aboutUser: string;
   setAboutUser: (value: string) => void;
@@ -217,6 +219,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           provider={props.provider}
           openRouterApiKey={props.openRouterApiKey}
           onProviderChange={props.onProviderChange}
+          ollamaHost={props.ollamaHost}
+          onSaveOllamaHost={props.onSaveOllamaHost}
         />
       )}
 

@@ -92,9 +92,10 @@ export async function initDataStore() {
     
     // Default settings
     const defaultSettings = {
-        provider: 'gemini', // 'gemini' | 'openrouter'
+        provider: 'gemini', // 'gemini' | 'openrouter' | 'ollama'
         apiKey: '',
         openRouterApiKey: '',
+        ollamaHost: 'http://127.0.0.1:11434',
         suggestionApiKey: '', // Secondary key for background tasks
         aboutUser: '',
         aboutResponse: '',

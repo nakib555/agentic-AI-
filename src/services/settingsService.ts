@@ -7,9 +7,10 @@ import { fetchFromApi } from '../utils/api';
 import type { Model } from '../types';
 
 export type AppSettings = {
-    provider: 'gemini' | 'openrouter';
+    provider: 'gemini' | 'openrouter' | 'ollama';
     apiKey: string;
     openRouterApiKey: string;
+    ollamaHost: string;
     suggestionApiKey: string; // Secondary key
     aboutUser: string;
     aboutResponse: string;

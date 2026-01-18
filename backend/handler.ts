@@ -16,11 +16,12 @@ import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./too
 import { runAgenticLoop } from './services/agenticLoop/index';
 import { createToolExecutor } from './tools/index';
 import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations'; 
-import { getApiKey, getSuggestionApiKey, getProvider } from './settingsHandler';
+import { getApiKey, getSuggestionApiKey, getProvider, getOllamaHost } from './settingsHandler';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils';
 import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
 import { streamOpenRouter } from './utils/openRouterUtils';
+import { streamOllama } from './utils/ollamaUtils';
 import { vectorMemory } from './services/vectorMemory'; // Import Vector Memory
 import { executeWithPiston } from './tools/piston';
 
@@ -244,6 +245,7 @@ export const apiHandler = async (req: any, res: any) => {
 
     const activeProvider = await getProvider();
     const mainApiKey = await getApiKey();
+    const ollamaHost = await getOllamaHost();
     const suggestionApiKey = await getSuggestionApiKey();
     const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'];
     const isSuggestionTask = SUGGESTION_TASKS.includes(task);
@@ -252,7 +254,11 @@ export const apiHandler = async (req: any, res: any) => {
         activeApiKey = suggestionApiKey;
     } 
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston', 'feedback'];
-    if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
+    
+    // For Ollama, we don't strictly need a key, so skip this check if provider is Ollama AND task is 'chat' or 'regenerate'
+    const isOllamaChat = activeProvider === 'ollama' && (task === 'chat' || task === 'regenerate');
+
+    if (!activeApiKey && !BYPASS_TASKS.includes(task) && !isOllamaChat) {
         return res.status(401).json({ error: "API key not configured on the server." });
     }
     const ai = (activeProvider === 'gemini' || isSuggestionTask) && activeApiKey 
@@ -404,6 +410,7 @@ ${personalizationSection}
 `.trim();
                 }
 
+                // --- OPENROUTER HANDLING ---
                 if (activeProvider === 'openrouter') {
                     const openRouterMessages = historyForAI.map((msg: any) => ({
                         role: msg.role === 'model' ? 'assistant' : 'user',
@@ -445,6 +452,53 @@ ${personalizationSection}
                     }
                     return;
                 }
+
+                // --- OLLAMA HANDLING ---
+                if (activeProvider === 'ollama') {
+                    const ollamaMessages = historyForAI.map((msg: any) => ({
+                        role: msg.role === 'model' ? 'assistant' : 'user',
+                        content: msg.text || ''
+                    }));
+                    
+                    // Ollama uses system message differently in some clients, but standard is just 'system' role
+                    ollamaMessages.unshift({ role: 'system', content: finalSystemInstruction });
+                    
+                    try {
+                        await streamOllama(
+                            ollamaHost,
+                            model,
+                            ollamaMessages,
+                            {
+                                onTextChunk: (text) => {
+                                    writeToClient(job, 'text-chunk', text);
+                                    persistence.addText(text);
+                                },
+                                onComplete: (fullText) => {
+                                    writeToClient(job, 'complete', { finalText: fullText });
+                                    persistence.complete((response) => {
+                                        response.endTime = Date.now();
+                                    });
+                                },
+                                onError: (error) => {
+                                    writeToClient(job, 'error', { message: error.message || 'Ollama Error' });
+                                    persistence.complete((response) => {
+                                        response.error = { message: error.message || 'Ollama Error' };
+                                    });
+                                }
+                            },
+                            { temperature: settings.temperature }
+                        );
+                    } catch (e: any) {
+                         writeToClient(job, 'error', { message: e.message });
+                         persistence.complete((response) => { response.error = { message: e.message }; });
+                    } finally {
+                        clearInterval(pingInterval);
+                        cleanupJob(chatId);
+                    }
+                    return;
+                }
+
+                // --- GEMINI HANDLING (Default) ---
 
                 if (!ai) throw new Error("Gemini AI not initialized.");
 

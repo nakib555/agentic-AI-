@@ -102,6 +102,12 @@ export const App = () => {
 
   const isKeyboardOpen = !logic.isDesktop && logic.visualViewportHeight < (stableHeight * 0.85);
 
+  // Determine if we have a valid configuration to start chatting
+  const hasApiKey = 
+      (logic.provider === 'gemini' && !!logic.apiKey) || 
+      (logic.provider === 'openrouter' && !!logic.openRouterApiKey) || 
+      (logic.provider === 'ollama'); // Ollama doesn't strictly require a key, assuming host is set (default is set)
+
   return (
     <div 
         ref={logic.appContainerRef} 
@@ -191,7 +197,7 @@ export const App = () => {
                     backendStatus={logic.backendStatus}
                     backendError={logic.backendError}
                     onRetryConnection={logic.retryConnection}
-                    hasApiKey={!!logic.apiKey}
+                    hasApiKey={hasApiKey}
                     onEditMessage={logic.editMessage}
                     onNavigateBranch={logic.navigateBranch}
                 />
@@ -285,6 +291,8 @@ export const App = () => {
           provider={logic.provider}
           openRouterApiKey={logic.openRouterApiKey}
           onProviderChange={logic.onProviderChange}
+          ollamaHost={logic.ollamaHost}
+          onSaveOllamaHost={logic.onSaveOllamaHost}
         />
 
         {logic.isTestMode && (

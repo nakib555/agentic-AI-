@@ -5,6 +5,7 @@
 
 import type { Model as AppModel } from '../../src/types';
 import { readData, SETTINGS_FILE_PATH } from '../data-store';
+import { Ollama } from 'ollama';
 
 // Cache structure
 type ModelCache = {
@@ -49,6 +50,25 @@ const fetchWithRetry = async (url: string, options: any, retries = 5, backoff = 
     // Final attempt
     return await fetch(url, options);
 };
+
+async function fetchOllamaModels(host: string): Promise<AppModel[]> {
+    try {
+        console.log(`[ModelService] Fetching models from Ollama at ${host}...`);
+        const ollama = new Ollama({ host });
+        const response = await ollama.list();
+        
+        const models: AppModel[] = (response.models || []).map((m: any) => ({
+            id: m.model, // Ollama uses 'model' as ID
+            name: m.name || m.model,
+            description: `${m.details?.parameter_size || ''} ${m.details?.quantization_level || ''} (${m.details?.family || 'Ollama'})`,
+        }));
+        
+        return sortModelsByName(models);
+    } catch (error: any) {
+        console.error('[ModelService] Failed to fetch Ollama models:', error);
+        throw new Error(`Ollama connection failed: ${error.message}. Is Ollama running?`);
+    }
+}
 
 async function fetchOpenRouterModels(apiKey?: string): Promise<AppModel[]> {
     try {
@@ -179,9 +199,10 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
     // Determine provider from settings
     const settings: any = await readData(SETTINGS_FILE_PATH);
     const provider = settings.provider || 'gemini';
+    const ollamaHost = settings.ollamaHost || 'http://127.0.0.1:11434';
     
-    // Simple hash check (using last 8 chars is usually enough to detect a change in the session context)
-    const currentKeyHash = apiKey.trim().slice(-8);
+    // Hash key + provider + host to ensure cache validity
+    const currentKeyHash = (apiKey || '').trim().slice(-8) + provider + ollamaHost;
     const now = Date.now();
 
     // Check cache first
@@ -197,7 +218,16 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
     }
 
     let result;
-    if (provider === 'openrouter') {
+    
+    if (provider === 'ollama') {
+        const models = await fetchOllamaModels(ollamaHost);
+        result = {
+            chatModels: models,
+            imageModels: [], // Ollama mainly supports chat/text currently
+            videoModels: [],
+            ttsModels: []
+        };
+    } else if (provider === 'openrouter') {
         const allModels = await fetchOpenRouterModels(apiKey);
         
         // Categorize OpenRouter models based on ID keywords

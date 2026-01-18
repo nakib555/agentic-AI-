@@ -129,9 +129,10 @@ export const useAppLogic = () => {
   const [activeModel, setActiveModel] = useState('');
 
   // --- Settings State ---
-  const [provider, setProvider] = useState<'gemini' | 'openrouter'>('gemini');
+  const [provider, setProvider] = useState<'gemini' | 'openrouter' | 'ollama'>('gemini');
   const [apiKey, setApiKey] = useState('');
   const [openRouterApiKey, setOpenRouterApiKey] = useState('');
+  const [ollamaHost, setOllamaHost] = useState('http://127.0.0.1:11434');
   const [suggestionApiKey, setSuggestionApiKey] = useState('');
   const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
@@ -232,6 +233,7 @@ export const useAppLogic = () => {
             setProvider(settings.provider || 'gemini');
             setApiKey(settings.apiKey);
             setOpenRouterApiKey(settings.openRouterApiKey);
+            setOllamaHost(settings.ollamaHost || 'http://127.0.0.1:11434');
             setSuggestionApiKey(settings.suggestionApiKey);
             setAboutUser(settings.aboutUser);
             setAboutResponse(settings.aboutResponse);
@@ -261,13 +263,19 @@ export const useAppLogic = () => {
     }, [setter, key]);
   };
   
-  const handleSetApiKey = useCallback(async (newApiKey: string, providerType: 'gemini' | 'openrouter') => {
-    const isGemini = providerType === 'gemini';
-    if (isGemini) setApiKey(newApiKey);
-    else setOpenRouterApiKey(newApiKey);
-
+  const handleSetApiKey = useCallback(async (newApiKey: string, providerType: 'gemini' | 'openrouter' | 'ollama') => {
+    if (providerType === 'gemini') setApiKey(newApiKey);
+    else if (providerType === 'openrouter') setOpenRouterApiKey(newApiKey);
+    // For Ollama, the key input is repurposed as the Host URL, so we don't set a key state here directly if this function is reused.
+    // However, GeneralSettings calls this with the host value if provider is ollama.
+    // We should handle that via handleSetOllamaHost but for compatibility with the generic handler:
+    
     try {
-        const payload = isGemini ? { apiKey: newApiKey, provider: providerType } : { openRouterApiKey: newApiKey, provider: providerType };
+        let payload: any = { provider: providerType };
+        if (providerType === 'gemini') payload.apiKey = newApiKey;
+        else if (providerType === 'openrouter') payload.openRouterApiKey = newApiKey;
+        else if (providerType === 'ollama') payload.ollamaHost = newApiKey;
+
         const response: UpdateSettingsResponse = await updateSettings(payload);
         if (response.models) {
             processModelData(response);
@@ -280,11 +288,8 @@ export const useAppLogic = () => {
     }
   }, [processModelData, fetchModels]);
 
-  const handleProviderChange = useCallback((newProvider: 'gemini' | 'openrouter') => {
+  const handleProviderChange = useCallback((newProvider: 'gemini' | 'openrouter' | 'ollama') => {
       setProvider(newProvider);
-      // We don't save immediately, wait for API key save or handle it via a separate effect if needed.
-      // But typically user selects provider then enters key then saves.
-      // Or we can save just the provider switch.
       updateSettings({ provider: newProvider }).then(response => {
           if (response.models) processModelData(response);
           else fetchModels();
@@ -322,6 +327,7 @@ export const useAppLogic = () => {
   const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
+  const handleSetOllamaHost = createSettingUpdater(setOllamaHost, 'ollamaHost');
 
   const chatSettings = useMemo(() => {
     return {
@@ -596,6 +602,7 @@ export const useAppLogic = () => {
     availableModels, availableImageModels, availableVideoModels, availableTtsModels,
     modelsLoading, activeModel, onModelChange: handleModelChange,
     apiKey, onSaveApiKey: handleSetApiKey, suggestionApiKey, onSaveSuggestionApiKey: handleSetSuggestionApiKey,
+    ollamaHost, onSaveOllamaHost: handleSetOllamaHost,
     aboutUser, setAboutUser: handleSetAboutUser,
     aboutResponse, setAboutResponse: handleSetAboutResponse, temperature, setTemperature: handleSetTemperature,
     maxTokens, setMaxTokens: handleSetMaxTokens, imageModel, onImageModelChange: handleSetImageModel,

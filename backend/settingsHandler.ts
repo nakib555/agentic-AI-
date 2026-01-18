@@ -45,23 +45,26 @@ export const updateSettings = async (req: any, res: any) => {
         // Persist to Disk
         await writeData(SETTINGS_FILE_PATH, newSettings);
 
-        // Check if critical settings changed (Provider or API Key)
+        // Check if critical settings changed (Provider, API Key, or Host)
         const providerChanged = updates.provider && updates.provider !== currentSettings.provider;
         const keyChanged = (newSettings.provider === 'gemini' && updates.apiKey !== currentSettings.apiKey) ||
                            (newSettings.provider === 'openrouter' && updates.openRouterApiKey !== currentSettings.openRouterApiKey);
+        const hostChanged = newSettings.provider === 'ollama' && updates.ollamaHost !== currentSettings.ollamaHost;
 
-        if (providerChanged || keyChanged) {
+        if (providerChanged || keyChanged || hostChanged) {
             try {
-                // Fetch models based on the NEW provider and NEW key
+                // Fetch models based on the NEW provider and NEW key/host
                 const activeKey = newSettings.provider === 'openrouter' ? newSettings.openRouterApiKey : newSettings.apiKey;
                 // If switching providers, we might not have the key yet, so handle gracefully
-                if (activeKey) {
+                // For Ollama, we don't strictly need a key, just the host.
+                
+                if (newSettings.provider === 'ollama' || activeKey) {
                     const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(activeKey, true);
                     res.status(200).json({ ...newSettings, models: chatModels, imageModels, videoModels, ttsModels });
                     return;
                 }
             } catch (error) {
-                // If fetching models fails (invalid key), just return settings
+                // If fetching models fails (invalid key/host), just return settings
             }
         }
 
@@ -93,11 +96,20 @@ export const getSuggestionApiKey = async (): Promise<string | undefined> => {
     }
 };
 
-export const getProvider = async (): Promise<'gemini' | 'openrouter'> => {
+export const getProvider = async (): Promise<'gemini' | 'openrouter' | 'ollama'> => {
     try {
         const settings = await ensureSettingsLoaded();
         return settings.provider || 'gemini';
     } catch (error) {
         return 'gemini';
     }
-}
+};
+
+export const getOllamaHost = async (): Promise<string> => {
+    try {
+        const settings = await ensureSettingsLoaded();
+        return settings.ollamaHost || 'http://127.0.0.1:11434';
+    } catch (error) {
+        return 'http://127.0.0.1:11434';
+    }
+};
