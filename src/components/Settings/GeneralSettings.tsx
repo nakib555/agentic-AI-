@@ -146,7 +146,7 @@ const ApiKeyInput = ({
                 triggerClassName="flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors shadow-sm"
             />
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {provider === 'ollama' ? 'Configuration' : 'API Key'}
+                {provider === 'ollama' ? 'Host Configuration' : 'API Key'}
             </span>
         </div>
     );
@@ -394,7 +394,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
       switch(p) {
           case 'gemini': return "Required for main chat, reasoning, and tool execution.";
           case 'openrouter': return "Required for accessing OpenRouter models.";
-          case 'ollama': return "URL for your local Ollama instance. Supports env var OLLAMA_BASE_URL.";
+          case 'ollama': return "URL for your local Ollama instance (Supports backend/tools). Ensure CORS is enabled if connecting directly.";
           default: return "";
       }
   };
@@ -403,7 +403,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
       switch(p) {
           case 'gemini': return "Enter your Gemini API key";
           case 'openrouter': return "Enter your OpenRouter API key";
-          case 'ollama': return "Enter Ollama URL (e.g. http://localhost:11434)";
+          case 'ollama': return "Enter Ollama URL (Default: http://localhost:11434)";
           default: return "";
       }
   };

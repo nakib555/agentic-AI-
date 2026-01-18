@@ -21,7 +21,7 @@ import { generateContentWithRetry, generateContentStreamWithRetry } from './util
 import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
 import { streamOpenRouter } from './utils/openRouterUtils';
-import { streamOllama, streamOllamaGenerate } from './utils/ollamaUtils';
+import { streamOllama, streamOllamaGenerate, generateOllama } from './utils/ollamaUtils';
 import { vectorMemory } from './services/vectorMemory'; // Import Vector Memory
 import { executeWithPiston } from './tools/piston';
 import { readData, SETTINGS_FILE_PATH } from './data-store';
@@ -59,9 +59,9 @@ const writeToClient = (job: Job, type: string, payload: any) => {
 };
 
 const cleanupJob = (chatId: string) => {
-    const job = activeJobs.get(chatId);
-    if (job) {
-        job.clients.forEach(c => {
+    const activeJob = activeJobs.get(chatId);
+    if (activeJob) {
+        activeJob.clients.forEach(c => {
             if (!c.writableEnded) c.end();
         });
         activeJobs.delete(chatId);
@@ -650,10 +650,22 @@ ${personalizationSection}
                 break;
             }
             case 'title': {
-                if (!ai) return res.status(200).json({ title: '' });
                 const { messages } = req.body;
                 const historyText = messages.slice(0, 3).map((m: any) => `${m.role}: ${m.text}`).join('\n');
                 const prompt = `Generate a short concise title (max 6 words) for this conversation.\n\nCONVERSATION:\n${historyText}\n\nTITLE:`;
+                
+                // Ollama Support for Title
+                if (activeProvider === 'ollama') {
+                    try {
+                        const title = await generateOllama(ollamaUrl, globalSettings.activeModel || 'llama3', prompt);
+                        return res.status(200).json({ title: title.trim().replace(/^"|"$/g, '') });
+                    } catch(e) {
+                         return res.status(200).json({ title: '' });
+                    }
+                }
+
+                if (!ai) return res.status(200).json({ title: '' });
+                
                 try {
                     const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt });
                     res.status(200).json({ title: response.text?.trim() ?? '' });
@@ -661,10 +673,25 @@ ${personalizationSection}
                 break;
             }
             case 'suggestions': {
-                if (!ai) return res.status(200).json({ suggestions: [] });
                 const { conversation } = req.body;
                 const recentHistory = conversation.slice(-5).map((m: any) => `${m.role}: ${(m.text || '').substring(0, 200)}`).join('\n');
                 const prompt = `Suggest 3 short follow-up questions. Return JSON array of strings.\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
+                
+                // Ollama Support for Suggestions
+                if (activeProvider === 'ollama') {
+                    try {
+                        const raw = await generateOllama(ollamaUrl, globalSettings.activeModel || 'llama3', prompt, { format: 'json' });
+                        const suggestions = JSON.parse(raw);
+                        // Handle potential object wrapper from Ollama JSON
+                        const list = Array.isArray(suggestions) ? suggestions : (suggestions.suggestions || []);
+                        return res.status(200).json({ suggestions: list });
+                    } catch(e) {
+                         return res.status(200).json({ suggestions: [] });
+                    }
+                }
+
+                if (!ai) return res.status(200).json({ suggestions: [] });
+                
                 try {
                     const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
                     let suggestions = [];

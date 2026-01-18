@@ -55,14 +55,16 @@ const findCheckboxInput = (children: React.ReactNode): React.ReactElement | null
     for (const child of childrenArray) {
         if (!React.isValidElement(child)) continue;
         
+        const element = child as React.ReactElement<any>;
+
         // Match found
-        if (child.type === 'input' && child.props.type === 'checkbox') {
-            return child as React.ReactElement;
+        if (element.type === 'input' && element.props.type === 'checkbox') {
+            return element;
         }
         
         // Recurse if the child has children (e.g. <p><input ... /></p>)
-        if (child.props.children) {
-            const found = findCheckboxInput(child.props.children);
+        if (element.props.children) {
+            const found = findCheckboxInput(element.props.children);
             if (found) return found;
         }
     }
@@ -80,14 +82,16 @@ const removeCheckbox = (children: React.ReactNode): React.ReactNode[] => {
         return nodesToTraverse.map((child) => {
             if (removed || !React.isValidElement(child)) return child;
 
-            if (child.type === 'input' && child.props.type === 'checkbox') {
+            const element = child as React.ReactElement<any>;
+
+            if (element.type === 'input' && element.props.type === 'checkbox') {
                 removed = true;
                 return null;
             }
 
-            if (child.props.children) {
+            if (element.props.children) {
                 // If it's a wrapper like <p>, traverse into it
-                const newChildren = React.Children.toArray(child.props.children);
+                const newChildren = React.Children.toArray(element.props.children);
                 // We clone the element with filtered children
                 // Note: deeply filtering creates complexity, simplified approach:
                 // If the checkbox is nested, we usually just want to render the ChecklistItem wrapper
@@ -129,7 +133,7 @@ export const getMarkdownComponents = (options: MarkdownOptions = {}) => ({
             const checkbox = findCheckboxInput(children);
             
             if (checkbox) {
-                const isChecked = checkbox.props.checked || false;
+                const isChecked = (checkbox.props as any).checked || false;
                 
                 // We pass the children through. The ChecklistItem will render its own custom checkbox visuals.
                 // We hide the native input via CSS in main.css (input[type="checkbox"] { display: none; }) 

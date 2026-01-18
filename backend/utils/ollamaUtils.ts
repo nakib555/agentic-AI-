@@ -202,3 +202,43 @@ export const streamOllamaGenerate = async (
         callbacks.onError(error);
     }
 };
+
+export const generateOllama = async (
+    baseUrl: string,
+    model: string,
+    prompt: string,
+    options: { temperature?: number, maxTokens?: number, format?: string } = {}
+): Promise<string> => {
+    if (!baseUrl || !baseUrl.trim()) throw new Error("Ollama URL missing");
+    
+    let cleanUrl = baseUrl.trim().replace(/\/$/, '');
+    if (!cleanUrl.startsWith('http')) cleanUrl = `http://${cleanUrl}`;
+    if (cleanUrl.endsWith('/api/tags')) cleanUrl = cleanUrl.replace(/\/api\/tags$/, '');
+
+    const body: any = {
+        model,
+        prompt,
+        stream: false,
+        options: {
+            temperature: options.temperature,
+            num_predict: options.maxTokens,
+        }
+    };
+    
+    if (options.format === 'json') {
+        body.format = 'json';
+    }
+
+    const response = await fetch(`${cleanUrl}/api/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Ollama API Error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.response || '';
+};

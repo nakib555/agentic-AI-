@@ -309,6 +309,17 @@ ${memoryContent ? `\nMemory:\n${memoryContent}` : ''}
                     // We must save the updated message list to the backend manually here,
                     // since the backend didn't generate it.
                     updateChatProperty(chatId, { messages: chatToPersist.messages });
+
+                    // Trigger title generation if needed (New Chat)
+                    if (chatToPersist.title === "New Chat" && chatToPersist.messages.length >= 2 && !titleGenerationAttemptedRef.current.has(chatId)) {
+                        titleGenerationAttemptedRef.current.add(chatId);
+                        generateChatTitle(chatToPersist.messages)
+                            .then(newTitle => {
+                                const finalTitle = newTitle.length > 45 ? newTitle.substring(0, 42) + '...' : newTitle;
+                                updateChatTitle(chatId, finalTitle);
+                            })
+                            .catch(err => console.error("Failed to generate chat title:", err));
+                    }
                 }
             }
 
