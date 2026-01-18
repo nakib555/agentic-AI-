@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -28,7 +29,7 @@ const sortModelsByName = (models: AppModel[]): AppModel[] => {
 };
 
 // Helper for fetching with retry on 429
-const fetchWithRetry = async (url: string, options: any, retries = 5, backoff = 1000): Promise<Response> => {
+const fetchWithRetry = async (url: string, options: any, retries = 3, backoff = 1000): Promise<Response> => {
     for (let i = 0; i < retries; i++) {
         try {
             const response = await fetch(url, options);
@@ -49,6 +50,40 @@ const fetchWithRetry = async (url: string, options: any, retries = 5, backoff = 
     // Final attempt
     return await fetch(url, options);
 };
+
+async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
+    try {
+        const cleanUrl = baseUrl.replace(/\/$/, '');
+        console.log(`[ModelService] Fetching models from Ollama at ${cleanUrl}...`);
+        
+        // Timeout shorter for local network to avoid hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const response = await fetch(`${cleanUrl}/api/tags`, {
+            method: 'GET',
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            throw new Error(`Ollama API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const models: AppModel[] = (data.models || []).map((m: any) => ({
+            id: m.name,
+            name: m.name,
+            description: `${m.details?.parameter_size || ''} ${m.details?.quantization_level || ''}`.trim() || 'Local Ollama Model',
+        }));
+        
+        return sortModelsByName(models);
+    } catch (error) {
+        console.error('[ModelService] Failed to fetch Ollama models:', error);
+        return [];
+    }
+}
 
 async function fetchOpenRouterModels(apiKey?: string): Promise<AppModel[]> {
     try {
@@ -179,9 +214,10 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
     // Determine provider from settings
     const settings: any = await readData(SETTINGS_FILE_PATH);
     const provider = settings.provider || 'gemini';
+    const ollamaUrl = settings.ollamaUrl || 'http://localhost:11434';
     
     // Simple hash check (using last 8 chars is usually enough to detect a change in the session context)
-    const currentKeyHash = apiKey.trim().slice(-8);
+    const currentKeyHash = (apiKey || '').trim().slice(-8);
     const now = Date.now();
 
     // Check cache first
@@ -196,8 +232,18 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
         return modelCache.data;
     }
 
-    let result;
-    if (provider === 'openrouter') {
+    let result = {
+        chatModels: [] as AppModel[],
+        imageModels: [] as AppModel[],
+        videoModels: [] as AppModel[],
+        ttsModels: [] as AppModel[]
+    };
+
+    if (provider === 'ollama') {
+        const ollamaModels = await fetchOllamaModels(ollamaUrl);
+        // Ollama models are primarily text/chat
+        result.chatModels = ollamaModels;
+    } else if (provider === 'openrouter') {
         const allModels = await fetchOpenRouterModels(apiKey);
         
         // Categorize OpenRouter models based on ID keywords
@@ -275,7 +321,10 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
             ttsModels: sortModelsByName(ttsModels)
         };
     } else {
-        result = await fetchGeminiModels(apiKey);
+        // Gemini Provider
+        if (apiKey) {
+            result = await fetchGeminiModels(apiKey);
+        }
     }
 
     // Update cache

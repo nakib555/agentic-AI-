@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -7,10 +8,11 @@ import { fetchFromApi } from '../utils/api';
 import type { Model } from '../types';
 
 export type AppSettings = {
-    provider: 'gemini' | 'openrouter';
+    provider: 'gemini' | 'openrouter' | 'ollama';
     apiKey: string;
     openRouterApiKey: string;
     suggestionApiKey: string; // Secondary key
+    ollamaUrl: string; // New field
     aboutUser: string;
     aboutResponse: string;
     temperature: number;
@@ -19,7 +21,7 @@ export type AppSettings = {
     videoModel: string;
     isMemoryEnabled: boolean;
     ttsVoice: string;
-    ttsModel: string; // Add this
+    ttsModel: string; 
     isAgentMode: boolean;
     activeModel: string;
 };
@@ -28,7 +30,7 @@ export type UpdateSettingsResponse = AppSettings & {
     models?: Model[];
     imageModels?: Model[];
     videoModels?: Model[];
-    ttsModels?: Model[]; // Add this
+    ttsModels?: Model[]; 
 };
 
 export const getSettings = async (): Promise<AppSettings> => {

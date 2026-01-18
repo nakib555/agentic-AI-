@@ -16,13 +16,15 @@ import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./too
 import { runAgenticLoop } from './services/agenticLoop/index';
 import { createToolExecutor } from './tools/index';
 import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations'; 
-import { getApiKey, getSuggestionApiKey, getProvider } from './settingsHandler';
+import { getApiKey, getSuggestionApiKey, getProvider, getSettings } from './settingsHandler';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils';
 import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
 import { streamOpenRouter } from './utils/openRouterUtils';
+import { streamOllama } from './utils/ollamaUtils';
 import { vectorMemory } from './services/vectorMemory'; // Import Vector Memory
 import { executeWithPiston } from './tools/piston';
+import { readData, SETTINGS_FILE_PATH } from './data-store';
 
 // Store promises for frontend tool requests that the backend is waiting on
 const frontendToolRequests = new Map<string, (result: any) => void>();
@@ -242,19 +244,25 @@ export const apiHandler = async (req: any, res: any) => {
         return;
     }
 
-    const activeProvider = await getProvider();
+    const globalSettings: any = await readData(SETTINGS_FILE_PATH);
+    const activeProvider = globalSettings.provider || 'gemini';
     const mainApiKey = await getApiKey();
     const suggestionApiKey = await getSuggestionApiKey();
+    const ollamaUrl = globalSettings.ollamaUrl || 'http://localhost:11434';
+    
     const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'];
     const isSuggestionTask = SUGGESTION_TASKS.includes(task);
+    
     let activeApiKey = mainApiKey;
     if (isSuggestionTask && suggestionApiKey) {
         activeApiKey = suggestionApiKey;
     } 
+    
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston', 'feedback'];
-    if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
+    if (activeProvider === 'gemini' && !activeApiKey && !BYPASS_TASKS.includes(task)) {
         return res.status(401).json({ error: "API key not configured on the server." });
     }
+    
     const ai = (activeProvider === 'gemini' || isSuggestionTask) && activeApiKey 
         ? new GoogleGenAI({ apiKey: activeApiKey }) 
         : null;
@@ -383,8 +391,6 @@ export const apiHandler = async (req: any, res: any) => {
 
                 if (ragContext) personalizationSection += ragContext;
 
-                // CRITICAL FIX: The Core Instructions (Agent Protocols) must be the primary directive.
-                // Personalization is injected as a "Context" layer, but it CANNOT override the output format (JSON/STEP).
                 let finalSystemInstruction = coreInstruction;
                 if (personalizationSection) {
                     finalSystemInstruction = `
@@ -403,7 +409,53 @@ Adopt the following persona and context, BUT ONLY within the formatting constrai
 ${personalizationSection}
 `.trim();
                 }
+                
+                // --- OLLAMA PROVIDER HANDLING ---
+                if (activeProvider === 'ollama') {
+                    // Map history to simple role/content format
+                    const ollamaMessages = historyForAI.map((msg: any) => ({
+                        role: msg.role === 'model' ? 'assistant' : 'user',
+                        content: msg.text || ''
+                    }));
+                    // Inject system prompt as first message
+                    ollamaMessages.unshift({ role: 'system', content: finalSystemInstruction });
 
+                    try {
+                        await streamOllama(
+                            ollamaUrl,
+                            model,
+                            ollamaMessages,
+                            {
+                                onTextChunk: (text) => {
+                                    writeToClient(job, 'text-chunk', text);
+                                    persistence.addText(text);
+                                },
+                                onComplete: (fullText) => {
+                                    writeToClient(job, 'complete', { finalText: fullText });
+                                    persistence.complete((response) => {
+                                        response.endTime = Date.now();
+                                    });
+                                },
+                                onError: (error) => {
+                                    writeToClient(job, 'error', { message: error.message || 'Ollama Error' });
+                                    persistence.complete((response) => {
+                                        response.error = { message: error.message || 'Ollama Error' };
+                                    });
+                                }
+                            },
+                            { temperature: settings.temperature, maxTokens: settings.maxOutputTokens }
+                        );
+                    } catch (e: any) {
+                        writeToClient(job, 'error', { message: e.message });
+                        persistence.complete((response) => { response.error = { message: e.message }; });
+                    } finally {
+                        clearInterval(pingInterval);
+                        cleanupJob(chatId);
+                    }
+                    return;
+                }
+
+                // --- OPENROUTER PROVIDER HANDLING ---
                 if (activeProvider === 'openrouter') {
                     const openRouterMessages = historyForAI.map((msg: any) => ({
                         role: msg.role === 'model' ? 'assistant' : 'user',
@@ -445,6 +497,8 @@ ${personalizationSection}
                     }
                     return;
                 }
+                
+                // --- GEMINI PROVIDER HANDLING ---
 
                 if (!ai) throw new Error("Gemini AI not initialized.");
 
@@ -577,18 +631,10 @@ ${personalizationSection}
                 break;
             }
             case 'cancel': {
-                const { requestId } = req.body; // In new system, this is usually chatId, but we support requestId for compat
-                
-                // Try to find job by ID (if it matches) OR iterating
+                const { requestId } = req.body; 
                 let job = activeJobs.get(requestId);
-                if (!job) {
-                    // If requestId passed was not chatId, we might need a lookup map, but frontend sends chatId now usually?
-                    // Let's assume requestId is chatId for cancellation in new system.
-                }
-
                 if (job) {
                     job.controller.abort();
-                    // Don't delete immediately, allow loop to exit gracefully and cleanup
                     res.status(200).send({ message: 'Cancellation request received.' });
                 } else {
                     res.status(404).json({ error: `No active job found for ID: ${requestId}` });
@@ -688,7 +734,6 @@ IMPROVED PROMPT:
                     const result = await executeWithPiston(language, code);
                     res.status(200).json({ result });
                 } catch (error: any) {
-                    // Return error in a consistent format for the frontend
                     res.status(500).json({ error: error.message });
                 }
                 break;

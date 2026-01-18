@@ -129,9 +129,10 @@ export const useAppLogic = () => {
   const [activeModel, setActiveModel] = useState('');
 
   // --- Settings State ---
-  const [provider, setProvider] = useState<'gemini' | 'openrouter'>('gemini');
+  const [provider, setProvider] = useState<'gemini' | 'openrouter' | 'ollama'>('gemini');
   const [apiKey, setApiKey] = useState('');
   const [openRouterApiKey, setOpenRouterApiKey] = useState('');
+  const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
   const [suggestionApiKey, setSuggestionApiKey] = useState('');
   const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
@@ -232,6 +233,7 @@ export const useAppLogic = () => {
             setProvider(settings.provider || 'gemini');
             setApiKey(settings.apiKey);
             setOpenRouterApiKey(settings.openRouterApiKey);
+            setOllamaUrl(settings.ollamaUrl || 'http://localhost:11434');
             setSuggestionApiKey(settings.suggestionApiKey);
             setAboutUser(settings.aboutUser);
             setAboutResponse(settings.aboutResponse);
@@ -261,13 +263,21 @@ export const useAppLogic = () => {
     }, [setter, key]);
   };
   
-  const handleSetApiKey = useCallback(async (newApiKey: string, providerType: 'gemini' | 'openrouter') => {
+  const handleSetApiKey = useCallback(async (newApiKey: string, providerType: 'gemini' | 'openrouter' | 'ollama') => {
     const isGemini = providerType === 'gemini';
+    const isOllama = providerType === 'ollama';
+
     if (isGemini) setApiKey(newApiKey);
+    else if (isOllama) setOllamaUrl(newApiKey); // Reusing key input for URL logic
     else setOpenRouterApiKey(newApiKey);
 
     try {
-        const payload = isGemini ? { apiKey: newApiKey, provider: providerType } : { openRouterApiKey: newApiKey, provider: providerType };
+        const payload = isGemini 
+            ? { apiKey: newApiKey, provider: providerType } 
+            : isOllama 
+                ? { ollamaUrl: newApiKey, provider: providerType }
+                : { openRouterApiKey: newApiKey, provider: providerType };
+        
         const response: UpdateSettingsResponse = await updateSettings(payload);
         if (response.models) {
             processModelData(response);
@@ -280,11 +290,8 @@ export const useAppLogic = () => {
     }
   }, [processModelData, fetchModels]);
 
-  const handleProviderChange = useCallback((newProvider: 'gemini' | 'openrouter') => {
+  const handleProviderChange = useCallback((newProvider: 'gemini' | 'openrouter' | 'ollama') => {
       setProvider(newProvider);
-      // We don't save immediately, wait for API key save or handle it via a separate effect if needed.
-      // But typically user selects provider then enters key then saves.
-      // Or we can save just the provider switch.
       updateSettings({ provider: newProvider }).then(response => {
           if (response.models) processModelData(response);
           else fetchModels();
@@ -322,6 +329,8 @@ export const useAppLogic = () => {
   const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
+  
+  const handleSetOllamaUrl = createSettingUpdater(setOllamaUrl, 'ollamaUrl');
 
   const chatSettings = useMemo(() => {
     return {
@@ -339,7 +348,7 @@ export const useAppLogic = () => {
   }, [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel, isAgentMode]);
 
   // Pass active API key based on provider for client-side tools if necessary (though most are backend now)
-  const effectiveClientKey = provider === 'gemini' ? apiKey : openRouterApiKey;
+  const effectiveClientKey = provider === 'gemini' ? apiKey : provider === 'openrouter' ? openRouterApiKey : 'ollama';
   
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, effectiveClientKey, showToast);
   const { updateChatModel, updateChatSettings, editMessage, navigateBranch, setResponseIndex } = chat; // Destructure new functions
@@ -616,6 +625,7 @@ export const useAppLogic = () => {
     artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing,
     // New Props for Provider
     provider, openRouterApiKey, onProviderChange: handleProviderChange,
+    ollamaUrl, onSaveOllamaUrl: async (url: string) => { setOllamaUrl(url); await updateSettings({ ollamaUrl: url }); fetchModels(); },
     // Edit Message and Branch Navigation
     editMessage, navigateBranch,
     // Explicitly expose setResponseIndex as the main handler for response switching

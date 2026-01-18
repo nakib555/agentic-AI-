@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -45,23 +46,30 @@ export const updateSettings = async (req: any, res: any) => {
         // Persist to Disk
         await writeData(SETTINGS_FILE_PATH, newSettings);
 
-        // Check if critical settings changed (Provider or API Key)
+        // Check if critical settings changed (Provider or API Key or URL)
         const providerChanged = updates.provider && updates.provider !== currentSettings.provider;
         const keyChanged = (newSettings.provider === 'gemini' && updates.apiKey !== currentSettings.apiKey) ||
                            (newSettings.provider === 'openrouter' && updates.openRouterApiKey !== currentSettings.openRouterApiKey);
+        const urlChanged = newSettings.provider === 'ollama' && updates.ollamaUrl !== currentSettings.ollamaUrl;
 
-        if (providerChanged || keyChanged) {
+        if (providerChanged || keyChanged || urlChanged) {
             try {
-                // Fetch models based on the NEW provider and NEW key
+                // Fetch models based on the NEW provider and NEW key/url
                 const activeKey = newSettings.provider === 'openrouter' ? newSettings.openRouterApiKey : newSettings.apiKey;
-                // If switching providers, we might not have the key yet, so handle gracefully
-                if (activeKey) {
+                
+                // If switching providers, we check if configuration is roughly valid to try a fetch
+                let shouldFetch = false;
+                if (newSettings.provider === 'gemini' && activeKey) shouldFetch = true;
+                if (newSettings.provider === 'openrouter' && activeKey) shouldFetch = true;
+                if (newSettings.provider === 'ollama' && newSettings.ollamaUrl) shouldFetch = true;
+
+                if (shouldFetch) {
                     const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(activeKey, true);
                     res.status(200).json({ ...newSettings, models: chatModels, imageModels, videoModels, ttsModels });
                     return;
                 }
             } catch (error) {
-                // If fetching models fails (invalid key), just return settings
+                // If fetching models fails, just return settings
             }
         }
 
@@ -78,6 +86,7 @@ export const getApiKey = async (): Promise<string | undefined> => {
         if (settings.provider === 'openrouter') {
             return settings.openRouterApiKey;
         }
+        // Ollama doesn't need an API key usually, but function signature expects one
         return settings.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
     } catch (error) {
         return process.env.API_KEY || process.env.GEMINI_API_KEY;
@@ -93,7 +102,7 @@ export const getSuggestionApiKey = async (): Promise<string | undefined> => {
     }
 };
 
-export const getProvider = async (): Promise<'gemini' | 'openrouter'> => {
+export const getProvider = async (): Promise<'gemini' | 'openrouter' | 'ollama'> => {
     try {
         const settings = await ensureSettingsLoaded();
         return settings.provider || 'gemini';
