@@ -32,12 +32,22 @@ export const getEffectiveOllamaUrl = (settings: any) => {
     const stored = settings.ollamaUrl;
     const env = process.env.OLLAMA_BASE_URL;
     
+    let url = '';
+    
     // If user has explicitly changed it to something, respect that.
     if (stored) {
-        return stored;
+        url = stored;
+    } else {
+        // Fallback to ENV or empty string
+        url = env || '';
     }
-    // Fallback to ENV or empty string
-    return env || '';
+    
+    // Robustness: Remove trailing dots/ellipses (common copy-paste error from truncated logs)
+    if (url) {
+        url = url.trim().replace(/\.+$/, '');
+    }
+
+    return url;
 };
 
 export const getSettings = async (req: any, res: any) => {

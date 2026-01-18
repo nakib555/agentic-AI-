@@ -59,7 +59,8 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
     }
 
     try {
-        let cleanUrl = baseUrl.trim().replace(/\/$/, '');
+        // Sanitize URL: Remove trailing slash and any accidental trailing dots (e.g. from copy-pasting "http://... ...")
+        let cleanUrl = baseUrl.trim().replace(/\/$/, '').replace(/\.+$/, '');
         
         // Robustness: Ensure protocol is present
         if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
@@ -73,7 +74,7 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
              fetchUrl = cleanUrl;
         }
 
-        console.log(`[ModelService] Fetching models from Ollama at ${fetchUrl}...`);
+        console.log(`[ModelService] Fetching models from Ollama at ${fetchUrl}`);
         
         // Timeout increased to 15s to handle slower tunnels (Ngrok/Cloudflare)
         const controller = new AbortController();
