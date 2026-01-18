@@ -99,6 +99,9 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
             const details = m.details || {};
             const parts = [];
             
+            // Add Family (e.g. "llama", "qwen3")
+            if (details.family) parts.push(details.family);
+            
             if (details.parameter_size) parts.push(details.parameter_size);
             if (details.quantization_level) parts.push(details.quantization_level);
             
@@ -116,6 +119,8 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
                 description: description,
             };
         });
+
+        console.log('[ModelService] Ollama models found:', models.map(m => m.name));
         
         return sortModelsByName(models);
     } catch (error) {
