@@ -28,8 +28,11 @@ import { CodeExecutionResult } from '../../AI/CodeExecutionResult';
 import { AgentWorkflowDisplay } from './AgentWorkflowDisplay';
 import { ExecutionApproval } from '../../AI/ExecutionApproval';
 
-// Lazy load the heavy ArtifactRenderer
-const ArtifactRenderer = React.lazy(() => import('../../Artifacts/ArtifactRenderer').then(m => ({ default: m.ArtifactRenderer })));
+// Lazy load the heavy ArtifactRenderer with explicit async resolution
+const ArtifactRenderer = React.lazy(async () => {
+  const module = await import('../../Artifacts/ArtifactRenderer');
+  return { default: module.ArtifactRenderer };
+});
 
 // Optimized spring physics for performance
 const animationProps = {
