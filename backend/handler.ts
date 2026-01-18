@@ -1,4 +1,5 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -478,17 +479,19 @@ ${personalizationSection}
                                     });
                                 },
                                 onError: (error) => {
-                                    writeToClient(job, 'error', { message: error.message || 'Ollama Error' });
+                                    const parsedError = parseApiError(error);
+                                    writeToClient(job, 'error', parsedError);
                                     persistence.complete((response) => {
-                                        response.error = { message: error.message || 'Ollama Error' };
+                                        response.error = parsedError;
                                     });
                                 }
                             },
                             { temperature: settings.temperature }
                         );
                     } catch (e: any) {
-                         writeToClient(job, 'error', { message: e.message });
-                         persistence.complete((response) => { response.error = { message: e.message }; });
+                         const parsedError = parseApiError(e);
+                         writeToClient(job, 'error', parsedError);
+                         persistence.complete((response) => { response.error = parsedError; });
                     } finally {
                         clearInterval(pingInterval);
                         cleanupJob(chatId);

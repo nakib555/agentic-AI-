@@ -1,10 +1,9 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-
-import { Ollama } from 'ollama';
 
 export const streamOllama = async (
     host: string,
@@ -20,42 +19,96 @@ export const streamOllama = async (
         temperature: number;
     }
 ) => {
-    // Configure Ollama with host and optional API key in headers
-    const config: any = { host };
-    
+    const body = JSON.stringify({
+        model,
+        messages,
+        stream: true,
+        options: {
+            temperature: settings.temperature,
+        }
+    });
+
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+    };
     if (apiKey) {
-        config.headers = { 
-            'Authorization': `Bearer ${apiKey}`,
-            'X-API-Key': apiKey // Support alternative header convention if needed by proxies
-        };
+        headers['Authorization'] = `Bearer ${apiKey}`;
     }
     
-    const ollama = new Ollama(config);
+    // As per user request, try the public API first, then fall back to the configured host.
+    const endpoints = [
+        'https://ollama.com/api/chat',
+        `${host.replace(/\/$/, '')}/api/chat`
+    ];
+
+    let response: Response | null = null;
+
+    for (const endpoint of [...new Set(endpoints)]) { // Use Set to avoid duplicate requests if host is ollama.com
+        try {
+            console.log(`[Ollama] Attempting to stream from ${endpoint}...`);
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers,
+                body
+            });
+            if (res.ok) {
+                response = res;
+                console.log(`[Ollama] Successfully connected to ${endpoint}`);
+                break;
+            } else {
+                console.warn(`[Ollama] Connection to ${endpoint} failed with status ${res.status}.`);
+            }
+        } catch (error) {
+            console.warn(`[Ollama] Connection to ${endpoint} failed with error:`, error);
+        }
+    }
+
+    if (!response || !response.body) {
+        const customError = {
+            code: 'OLLAMA_CONNECTION_FAILED',
+            message: `Connection to Ollama failed.`,
+            details: `Tried both public endpoint and configured host '${host}'. Both were unreachable.`,
+            suggestion: `Ensure your local Ollama instance is running or check your internet connection for the public API.`
+        };
+        callbacks.onError(customError);
+        return;
+    }
 
     try {
-        console.log(`[Ollama] Chatting with model ${model} at ${host}...`);
-        const response = await ollama.chat({
-            model: model,
-            messages: messages,
-            stream: true,
-            options: {
-                temperature: settings.temperature,
-            }
-        });
-
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
         let fullContent = '';
-        for await (const part of response) {
-            if (part.message.content) {
-                const chunk = part.message.content;
-                callbacks.onTextChunk(chunk);
-                fullContent += chunk;
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || ''; // Keep partial line in buffer
+
+            for (const line of lines) {
+                if (line.trim() === '') continue;
+                try {
+                    const data = JSON.parse(line);
+                    if (data.message && data.message.content) {
+                        const contentChunk = data.message.content;
+                        callbacks.onTextChunk(contentChunk);
+                        fullContent += contentChunk;
+                    }
+                    if (data.done) {
+                        break;
+                    }
+                } catch (e) {
+                    console.error("Error parsing Ollama stream chunk", line, e);
+                }
             }
         }
-        
-        callbacks.onComplete(fullContent);
 
+        callbacks.onComplete(fullContent);
     } catch (error) {
-        console.error("Ollama stream failed:", error);
+        console.error("Ollama stream failed during processing:", error);
         callbacks.onError(error);
     }
 };
