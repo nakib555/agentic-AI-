@@ -23,8 +23,7 @@ export const streamOllama = async (
             throw new Error("Ollama URL is not configured. Please set it in Settings or environment variables.");
         }
 
-        // Sanitize URL: Remove trailing slash and accidental trailing dots/ellipses
-        let cleanUrl = baseUrl.trim().replace(/\/$/, '').replace(/\.+$/, '');
+        let cleanUrl = baseUrl.trim().replace(/\/$/, '');
         
         // Robustness: Ensure protocol is present
         if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
@@ -129,8 +128,7 @@ export const streamOllamaGenerate = async (
             throw new Error("Ollama URL is not configured.");
         }
 
-        // Sanitize URL: Remove trailing slash and accidental trailing dots
-        let cleanUrl = baseUrl.trim().replace(/\/$/, '').replace(/\.+$/, '');
+        let cleanUrl = baseUrl.trim().replace(/\/$/, '');
 
         // Robustness: Ensure protocol is present
         if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
