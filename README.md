@@ -25,6 +25,10 @@ View your app in AI Studio: https://ai.studio/apps/drive/1xVVpeyj8ng00CXTr6UlyxY
    # Optional: URL of the backend server (defaults to relative path /api)
    # Useful if running frontend and backend on different ports or domains
    BACKEND_URL="http://localhost:3001"
+
+   # Optional: Base URL for Ollama (defaults to http://localhost:11434)
+   # Required if you want to use local Ollama models.
+   OLLAMA_BASE_URL="http://localhost:11434"
    ```
 4. Run the app:
    `npm run dev`
