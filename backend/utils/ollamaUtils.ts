@@ -32,7 +32,6 @@ export const streamOllama = async (
         });
 
         let inThinking = false;
-        let thinkingContent = '';
         let fullContent = '';
 
         for await (const part of response) {
@@ -44,19 +43,19 @@ export const streamOllama = async (
             if (partMsg.thinking) {
                 if (!inThinking) {
                     inThinking = true;
-                    const marker = '\n[STEP] Thought: ';
+                    // Format as a Thought Step for the UI parser
+                    const marker = '\n[STEP] Thought: \n';
                     callbacks.onTextChunk(marker);
                     fullContent += marker;
                 }
                 const chunk = partMsg.thinking;
                 callbacks.onTextChunk(chunk);
-                thinkingContent += chunk;
                 fullContent += chunk;
             } 
             else if (partMsg.content) {
                 if (inThinking) {
                     inThinking = false;
-                    // Close the thought block logic if needed, or just start final answer
+                    // Close the thought block and start Final Answer
                     const marker = '\n\n[STEP] Final Answer:\n';
                     callbacks.onTextChunk(marker);
                     fullContent += marker;
