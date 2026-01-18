@@ -31,6 +31,8 @@ export const streamOllama = async (
         if (cleanUrl.endsWith('/api/tags')) {
              cleanUrl = cleanUrl.replace(/\/api\/tags$/, '');
         }
+
+        console.log(`[OllamaStream] Connecting to: ${cleanUrl}/api/chat with model: ${model}`);
         
         // Convert messages to Ollama format
         // Ollama uses 'role' and 'content', similar to OpenAI
@@ -131,6 +133,8 @@ export const streamOllamaGenerate = async (
         if (cleanUrl.endsWith('/api/tags')) {
              cleanUrl = cleanUrl.replace(/\/api\/tags$/, '');
         }
+
+        console.log(`[OllamaGenerate] Connecting to: ${cleanUrl}/api/generate with model: ${model}`);
         
         const body = {
             model: model,

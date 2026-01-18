@@ -214,11 +214,17 @@ export const useAppLogic = () => {
   const fetchModels = useCallback(async () => {
     try {
         setModelsLoading(true);
+        console.log('[AppLogic] Requesting model list from backend...');
         const response = await fetchFromApi('/api/models');
-        if (!response.ok) return;
+        if (!response.ok) {
+             console.error('[AppLogic] Model fetch failed:', response.status);
+             return;
+        }
         const data = await response.json();
+        console.log('[AppLogic] Received model data:', data);
         processModelData(data);
     } catch (error) {
+        console.error('[AppLogic] Model fetch error:', error);
     } finally {
         setModelsLoading(false);
     }

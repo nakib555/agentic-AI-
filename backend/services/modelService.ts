@@ -53,6 +53,7 @@ const fetchWithRetry = async (url: string, options: any, retries = 3, backoff = 
 };
 
 async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
+    console.log(`[ModelService] fetchOllamaModels called with baseUrl: '${baseUrl}'`);
     try {
         let cleanUrl = baseUrl.trim().replace(/\/$/, '');
         
