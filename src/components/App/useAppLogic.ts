@@ -32,6 +32,7 @@ import { fetchFromApi, setOnVersionMismatch, getApiBaseUrl } from '../../utils/a
 import { testSuite, type TestResult, type TestProgress } from '../Testing/testSuite';
 import { getSettings, updateSettings, type UpdateSettingsResponse } from '../../services/settingsService';
 import { logCollector } from '../../utils/logCollector';
+import { OllamaService } from '../../services/ollamaService';
 
 
 export const useAppLogic = () => {
@@ -202,8 +203,35 @@ export const useAppLogic = () => {
   }, []);
 
   const fetchModels = useCallback(async () => {
+    setModelsLoading(true);
+    
+    // Direct Client-Side Fetch for Ollama
+    if (provider === 'ollama' && ollamaUrl) {
+        try {
+            console.log('[AppLogic] Fetching models directly from local Ollama...');
+            const models = await OllamaService.getModels(ollamaUrl);
+            setAvailableModels(models);
+            
+            // Set first model if none selected
+            if (models.length > 0 && (!activeModelRef.current || !models.some(m => m.id === activeModelRef.current))) {
+                setActiveModel(models[0].id);
+            }
+            
+            // Clear other categories as Ollama doesn't segregate them by API yet
+            setAvailableImageModels([]);
+            setAvailableVideoModels([]);
+            setAvailableTtsModels([]);
+        } catch (e) {
+            console.error('[AppLogic] Local Ollama fetch failed:', e);
+            setAvailableModels([]);
+        } finally {
+            setModelsLoading(false);
+        }
+        return;
+    }
+
+    // Backend Fetch for other providers
     try {
-        setModelsLoading(true);
         console.log('[AppLogic] Requesting model list from backend...');
         const response = await fetchFromApi('/api/models');
         if (!response.ok) {
@@ -218,7 +246,7 @@ export const useAppLogic = () => {
     } finally {
         setModelsLoading(false);
     }
-  }, [processModelData]);
+  }, [processModelData, provider, ollamaUrl]);
 
   // Initial Data Load
   useEffect(() => {
@@ -242,7 +270,9 @@ export const useAppLogic = () => {
             setIsMemoryEnabledState(settings.isMemoryEnabled);
             setTtsVoice(settings.ttsVoice);
             setIsAgentModeState(settings.isAgentMode);
-            fetchModels();
+            // Trigger initial fetch after settings loaded
+            // We can't call fetchModels here directly due to dependency on state that is being set, 
+            // but the useEffect below will catch the provider/url change.
         } catch (error) {
             console.error("Failed to load settings:", error);
         } finally {
@@ -250,7 +280,14 @@ export const useAppLogic = () => {
         }
     };
     loadSettings();
-  }, [fetchModels]);
+  }, []);
+  
+  // Trigger fetch when provider/url changes (and initial load finish)
+  useEffect(() => {
+      if (!settingsLoading) {
+          fetchModels();
+      }
+  }, [provider, ollamaUrl, settingsLoading]); // Intentionally exclude fetchModels to avoid loops
 
   const createSettingUpdater = <T,>(setter: Dispatch<SetStateAction<T>>, key: string) => {
     return useCallback((newValue: T) => {
@@ -275,9 +312,12 @@ export const useAppLogic = () => {
                 : { openRouterApiKey: newApiKey, provider: providerType };
         
         const response: UpdateSettingsResponse = await updateSettings(payload);
-        if (response.models) {
+        
+        // If switching to backend-managed providers, use the response data
+        if (!isOllama && response.models) {
             processModelData(response);
         } else {
+            // For Ollama or missing data, trigger manual fetch
             fetchModels(); 
         }
     } catch (error) {
@@ -289,10 +329,13 @@ export const useAppLogic = () => {
   const handleProviderChange = useCallback((newProvider: 'gemini' | 'openrouter' | 'ollama') => {
       setProvider(newProvider);
       updateSettings({ provider: newProvider }).then(response => {
-          if (response.models) processModelData(response);
-          else fetchModels();
+          // If moving away from Ollama, rely on backend data if available
+          if (newProvider !== 'ollama' && response.models) {
+             processModelData(response);
+          }
+          // fetchModels effect will trigger for Ollama or fallbacks
       });
-  }, [fetchModels, processModelData]);
+  }, [processModelData]);
 
   const handleSaveServerUrl = useCallback(async (newUrl: string): Promise<boolean> => {
       if (typeof window !== 'undefined') {
@@ -346,7 +389,17 @@ export const useAppLogic = () => {
   // Pass active API key based on provider for client-side tools if necessary (though most are backend now)
   const effectiveClientKey = provider === 'gemini' ? apiKey : provider === 'openrouter' ? openRouterApiKey : 'ollama';
   
-  const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, effectiveClientKey, showToast);
+  const chat = useChat(
+      activeModel, 
+      chatSettings, 
+      memory.memoryContent, 
+      isAgentMode, 
+      effectiveClientKey, 
+      provider,    // Pass provider
+      ollamaUrl,   // Pass URL for local calls
+      showToast
+  );
+  
   const { updateChatModel, updateChatSettings, editMessage, navigateBranch, setResponseIndex } = chat; 
 
   const handleSetTemperature = useCallback((val: number) => {

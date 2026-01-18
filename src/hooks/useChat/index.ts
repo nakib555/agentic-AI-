@@ -13,6 +13,8 @@ import { fetchFromApi } from '../../utils/api';
 import { processBackendStream } from '../../services/agenticLoop/stream-processor';
 import { executeFrontendTool } from './tool-executor';
 import { createStreamCallbacks } from './chat-callbacks';
+import { OllamaService } from '../../services/ollamaService';
+import { parseAgenticWorkflow } from '../../utils/workflowParsing';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -33,6 +35,8 @@ export const useChat = (
     memoryContent: string, 
     isAgentMode: boolean, 
     apiKey: string,
+    provider: 'gemini' | 'openrouter' | 'ollama',
+    ollamaUrl: string,
     onShowToast?: (message: string, type: 'info' | 'success' | 'error') => void
 ) => {
     // Destructure all necessary methods from the history hook
@@ -99,8 +103,8 @@ export const useChat = (
         // Abort the frontend fetch immediately for responsiveness
         abortControllerRef.current?.abort();
         
-        // Send explicit cancel request using chatId as ID
-        if (currentChatIdRef.current) {
+        // Send explicit cancel request using chatId as ID if backend job exists
+        if (currentChatIdRef.current && provider !== 'ollama') {
             fetchFromApi('/api/handler?task=cancel', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -125,16 +129,9 @@ export const useChat = (
                 }));
                 updateMessage(chatId, lastMessage.id, { isThinking: false });
                 completeChatLoading(chatId);
-
-                // Fallback for plan approval state cancellation if we are stuck there
-                if (lastMessage.executionState === 'pending_approval') {
-                     const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
-                     const callId = activeResponse?.plan?.callId || 'plan-approval';
-                     handleFrontendToolExecution(callId, 'denyExecution', false);
-                }
             }
         }
-    }, [handleFrontendToolExecution, updateActiveResponseOnMessage, updateMessage, completeChatLoading]);
+    }, [handleFrontendToolExecution, updateActiveResponseOnMessage, updateMessage, completeChatLoading, provider]);
     
     const approveExecution = useCallback((editedPlan: string) => {
         const chatId = currentChatIdRef.current;
@@ -168,7 +165,7 @@ export const useChat = (
 
     // --- RECONNECTION LOGIC ---
     const connectToActiveStream = useCallback(async (chatId: string, messageId: string) => {
-        if (abortControllerRef.current) return; // Already connected or generating
+        if (abortControllerRef.current || provider === 'ollama') return; // Skip reconnection for local ollama
 
         console.log(`[FRONTEND] Attempting to reconnect to stream for chat ${chatId}...`);
         setChatLoadingState(chatId, true);
@@ -226,7 +223,7 @@ export const useChat = (
                 abortControllerRef.current = null;
              }
         }
-    }, [updateActiveResponseOnMessage, updateMessage, completeChatLoading, setChatLoadingState, handleFrontendToolExecution]);
+    }, [updateActiveResponseOnMessage, updateMessage, completeChatLoading, setChatLoadingState, handleFrontendToolExecution, provider]);
 
     // Check for potential reconnection needs on mount/chat switch
     useEffect(() => {
@@ -250,6 +247,80 @@ export const useChat = (
         hasAttemptedReconnection.current = false;
     }, [currentChatId]);
 
+    const startLocalOllamaChat = async (
+        chatId: string,
+        messageId: string, 
+        model: string,
+        historyMessages: Message[],
+        chatConfig: Pick<ChatSession, 'temperature' | 'maxOutputTokens'>
+    ) => {
+        // 1. Prepare messages for Ollama (System prompt + History)
+        const messagesToSend = [];
+        // Add system instruction if available
+        if (settings.aboutUser || settings.aboutResponse || settings.systemPrompt || memoryContent) {
+            const systemContent = `
+${settings.systemPrompt || ''}
+${settings.aboutUser ? `\nAbout User:\n${settings.aboutUser}` : ''}
+${settings.aboutResponse ? `\nResponse Preferences:\n${settings.aboutResponse}` : ''}
+${memoryContent ? `\nMemory:\n${memoryContent}` : ''}
+            `.trim();
+            if (systemContent) messagesToSend.push({ role: 'system', text: systemContent });
+        }
+        
+        // Add conversation history
+        historyMessages.forEach(m => {
+            if (!m.isHidden) {
+                const text = m.role === 'user' ? m.text : (m.responses?.[m.activeResponseIndex]?.text || '');
+                messagesToSend.push({ role: m.role, text });
+            }
+        });
+
+        // 2. Start Streaming
+        try {
+            const stream = OllamaService.streamChat(ollamaUrl, model, messagesToSend, chatConfig);
+            let fullText = "";
+
+            for await (const chunk of stream) {
+                if (abortControllerRef.current?.signal.aborted) break;
+                
+                fullText += chunk;
+                
+                // Update UI state locally
+                updateActiveResponseOnMessage(chatId, messageId, (current) => {
+                     // Since we don't have backend tool parsing for local chat yet, we just update text.
+                     // The AiMessage component will handle parsing formatting.
+                     const parsedWorkflow = parseAgenticWorkflow(fullText, [], false);
+                     return { text: fullText, workflow: parsedWorkflow };
+                });
+            }
+
+            if (!abortControllerRef.current?.signal.aborted) {
+                // Finalize message
+                const finalWorkflow = parseAgenticWorkflow(fullText, [], true);
+                updateActiveResponseOnMessage(chatId, messageId, () => ({ 
+                    endTime: Date.now(), 
+                    workflow: finalWorkflow 
+                }));
+                updateMessage(chatId, messageId, { isThinking: false });
+                
+                // Trigger persistence to backend
+                const chatToPersist = chatHistoryRef.current.find(c => c.id === chatId);
+                if (chatToPersist && chatToPersist.messages) {
+                    // We must save the updated message list to the backend manually here,
+                    // since the backend didn't generate it.
+                    updateChatProperty(chatId, { messages: chatToPersist.messages });
+                }
+            }
+
+        } catch (error: any) {
+            console.error("Local Ollama Error:", error);
+            updateActiveResponseOnMessage(chatId, messageId, () => ({ error: { message: error.message, code: "OLLAMA_ERROR" }, endTime: Date.now() }));
+            updateMessage(chatId, messageId, { isThinking: false });
+        } finally {
+            completeChatLoading(chatId);
+            abortControllerRef.current = null;
+        }
+    };
 
     const startBackendChat = async (
         task: 'chat' | 'regenerate',
@@ -459,14 +530,26 @@ export const useChat = (
             if (!created) return;
         }
 
-        await startBackendChat(
-            'chat',
-            activeChatId, 
-            modelPlaceholder.id, 
-            userMessageObj,
-            chatForSettings, 
-            { ...settings, isAgentMode: options.isThinkingModeEnabled ?? isAgentMode }
-        );
+        if (provider === 'ollama') {
+            const history = (currentChat.messages || []).concat([userMessageObj]);
+            abortControllerRef.current = new AbortController(); // Set generic controller for abort check
+            await startLocalOllamaChat(
+                activeChatId,
+                modelPlaceholder.id,
+                chatForSettings.model,
+                history,
+                { temperature: chatForSettings.temperature, maxOutputTokens: chatForSettings.maxOutputTokens }
+            );
+        } else {
+            await startBackendChat(
+                'chat',
+                activeChatId, 
+                modelPlaceholder.id, 
+                userMessageObj,
+                chatForSettings, 
+                { ...settings, isAgentMode: options.isThinkingModeEnabled ?? isAgentMode }
+            );
+        }
     };
 
     const editMessage = useCallback(async (messageId: string, newText: string) => {
@@ -525,20 +608,32 @@ export const useChat = (
             addMessagesToChat(chatId, [modelPlaceholder]);
             setChatLoadingState(chatId, true);
 
-            await startBackendChat(
-                'regenerate', 
-                chatId,
-                modelPlaceholder.id,
-                null, 
-                currentChat, 
-                { ...settings, isAgentMode }
-            );
+            if (provider === 'ollama') {
+                 // Local regeneration
+                 abortControllerRef.current = new AbortController();
+                 await startLocalOllamaChat(
+                    chatId,
+                    modelPlaceholder.id,
+                    currentChat.model,
+                    truncatedList,
+                    { temperature: currentChat.temperature, maxOutputTokens: currentChat.maxOutputTokens }
+                );
+            } else {
+                await startBackendChat(
+                    'regenerate', 
+                    chatId,
+                    modelPlaceholder.id,
+                    null, 
+                    currentChat, 
+                    { ...settings, isAgentMode }
+                );
+            }
 
         } catch (e) {
             console.error("Failed to edit message:", e);
             if (onShowToast) onShowToast("Failed to edit message branch", 'error');
         }
-    }, [isLoading, updateChatProperty, addMessagesToChat, setChatLoadingState, startBackendChat, cancelGeneration, onShowToast, settings, isAgentMode]);
+    }, [isLoading, updateChatProperty, addMessagesToChat, setChatLoadingState, startBackendChat, cancelGeneration, onShowToast, settings, isAgentMode, provider, ollamaUrl]);
 
     const navigateBranch = useCallback(async (messageId: string, direction: 'next' | 'prev') => {
         if (isLoading) return;
@@ -621,16 +716,27 @@ export const useChat = (
         
         setChatLoadingState(currentChatId, true);
 
-        await startBackendChat(
-            'regenerate',
-            currentChatId, 
-            aiMessageId, 
-            null, 
-            currentChat, 
-            { ...settings, isAgentMode: isAgentMode }
-        );
+        if (provider === 'ollama') {
+            abortControllerRef.current = new AbortController();
+            await startLocalOllamaChat(
+                currentChatId,
+                aiMessageId,
+                currentChat.model,
+                truncatedList,
+                { temperature: currentChat.temperature, maxOutputTokens: currentChat.maxOutputTokens }
+            );
+        } else {
+            await startBackendChat(
+                'regenerate',
+                currentChatId, 
+                aiMessageId, 
+                null, 
+                currentChat, 
+                { ...settings, isAgentMode: isAgentMode }
+            );
+        }
 
-    }, [isLoading, currentChatId, updateChatProperty, setChatLoadingState, cancelGeneration, startBackendChat, settings, isAgentMode]);
+    }, [isLoading, currentChatId, updateChatProperty, setChatLoadingState, cancelGeneration, startBackendChat, settings, isAgentMode, provider, ollamaUrl]);
 
     const setResponseIndex = useCallback(async (messageId: string, index: number) => {
         if (isLoading) return; 
