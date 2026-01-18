@@ -167,10 +167,11 @@ export const useAppLogic = () => {
   
   // --- Data Loading ---
   const processModelData = useCallback((data: { models?: Model[], imageModels?: Model[], videoModels?: Model[], ttsModels?: Model[] }) => {
-    const newModels = data.models || [];
-    const newImageModels = data.imageModels || [];
-    const newVideoModels = data.videoModels || [];
-    const newTtsModels = data.ttsModels || [];
+    // Ensure arrays even if backend sends bad data
+    const newModels = Array.isArray(data.models) ? data.models : [];
+    const newImageModels = Array.isArray(data.imageModels) ? data.imageModels : [];
+    const newVideoModels = Array.isArray(data.videoModels) ? data.videoModels : [];
+    const newTtsModels = Array.isArray(data.ttsModels) ? data.ttsModels : [];
 
     setAvailableModels(newModels);
     setAvailableImageModels(newImageModels);
@@ -187,7 +188,6 @@ export const useAppLogic = () => {
     }
     
     // For specialized models, keep existing unless invalid/empty
-    // Note: If provider switches to OpenRouter, these lists will be empty and these checks handle that gracefully
     const currentImageModel = imageModelRef.current;
     if (newImageModels.length > 0) {
         if (!currentImageModel || !newImageModels.some((m: Model) => m.id === currentImageModel)) {

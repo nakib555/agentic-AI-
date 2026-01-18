@@ -72,7 +72,14 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
         }
 
         const data = await response.json();
-        const models: AppModel[] = (data.models || []).map((m: any) => ({
+        
+        // Validation to prevent "m is not a function" runtime errors if response structure is unexpected
+        if (!data || !Array.isArray(data.models)) {
+            console.warn('[ModelService] Invalid Ollama response structure:', data);
+            return [];
+        }
+
+        const models: AppModel[] = data.models.map((m: any) => ({
             id: m.name,
             name: m.name,
             description: `${m.details?.parameter_size || ''} ${m.details?.quantization_level || ''}`.trim() || 'Local Ollama Model',
