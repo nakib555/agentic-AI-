@@ -244,7 +244,7 @@ const ServerUrlInput = ({
         
         // Allow clearing the override
         if (!urlToTest) {
-            await onSave('');
+            if (onSave) await onSave('');
             if (isMounted.current) {
                 setStatus('success');
                 setMessage('Reset to default');
@@ -260,6 +260,12 @@ const ServerUrlInput = ({
 
         setStatus('verifying');
         setMessage(null);
+
+        if (!onSave) {
+            setStatus('error');
+            setMessage('Save function is missing.');
+            return;
+        }
 
         const success = await onSave(urlToTest);
         
@@ -346,7 +352,11 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
   const handleMainApiKeySave = async (key: string, savedProvider: 'gemini' | 'openrouter' | 'ollama') => {
       // If saving Ollama, use the dedicated save logic for URL instead of Key
       if (savedProvider === 'ollama') {
-          await onSaveOllamaUrl(key); // Reusing Key input field for URL
+          if (onSaveOllamaUrl) {
+              await onSaveOllamaUrl(key); // Reusing Key input field for URL
+          } else {
+              console.error('onSaveOllamaUrl prop is missing!');
+          }
           if (savedProvider !== provider) onProviderChange(savedProvider);
           return;
       }
