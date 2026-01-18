@@ -72,19 +72,39 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
             throw new Error(`Ollama API error: ${response.status}`);
         }
 
-        const data = await response.json();
+        // Get raw text first to log it if JSON parse fails or structure is wrong
+        const rawText = await response.text();
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (e) {
+            console.error('[ModelService] Failed to parse Ollama JSON response:', rawText.substring(0, 500));
+            return [];
+        }
         
-        // Validation to prevent "m is not a function" runtime errors if response structure is unexpected
+        // Deep Validation with detailed logging
         if (!data || !Array.isArray(data.models)) {
-            console.warn('[ModelService] Invalid Ollama response structure:', data);
+            console.error('[ModelService] CRITICAL: Invalid Ollama response structure.', {
+                fullResponse: data,
+                keys: data ? Object.keys(data) : 'null',
+                modelsType: data?.models ? typeof data.models : 'undefined',
+                isArray: Array.isArray(data?.models)
+            });
             return [];
         }
 
-        const models: AppModel[] = data.models.map((m: any) => ({
-            id: m.name,
-            name: m.name,
-            description: `${m.details?.parameter_size || ''} ${m.details?.quantization_level || ''}`.trim() || 'Local Ollama Model',
-        }));
+        const models: AppModel[] = data.models.map((m: any, index: number) => {
+            // Guard against individual invalid items
+            if (!m || typeof m !== 'object') {
+                console.warn(`[ModelService] Invalid model item at index ${index}:`, m);
+                return null;
+            }
+            return {
+                id: m.name,
+                name: m.name,
+                description: `${m.details?.parameter_size || ''} ${m.details?.quantization_level || ''}`.trim() || 'Local Ollama Model',
+            };
+        }).filter((m: any) => m !== null);
         
         return sortModelsByName(models);
     } catch (error) {
@@ -114,12 +134,36 @@ async function fetchOpenRouterModels(apiKey?: string): Promise<AppModel[]> {
             throw new Error(`OpenRouter API error: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
-        const data = await response.json();
-        const models: AppModel[] = (data.data || []).map((m: any) => ({
-            id: m.id,
-            name: m.name || m.id,
-            description: m.description || '',
-        }));
+        const rawText = await response.text();
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (e) {
+            console.error('[ModelService] Failed to parse OpenRouter JSON:', rawText.substring(0, 200));
+            return [];
+        }
+
+        // Deep Validation
+        if (!data || !data.data || !Array.isArray(data.data)) {
+             console.error('[ModelService] CRITICAL: Invalid OpenRouter response structure.', {
+                fullResponse: data,
+                hasDataKey: data ? 'data' in data : false,
+                dataType: data?.data ? typeof data.data : 'undefined'
+             });
+             return [];
+        }
+
+        const models: AppModel[] = data.data.map((m: any, index: number) => {
+            if (!m || typeof m !== 'object') {
+                console.warn(`[ModelService] Invalid OpenRouter model item at index ${index}:`, m);
+                return null;
+            }
+            return {
+                id: m.id,
+                name: m.name || m.id,
+                description: m.description || '',
+            };
+        }).filter((m: any) => m !== null);
         
         return sortModelsByName(models);
     } catch (error) {
@@ -290,9 +334,9 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
             // Image Generation
             if (
                 id.includes('stable-diffusion') || 
-                id.includes('flux') || 
                 id.includes('dall-e') || 
                 id.includes('midjourney') || 
+                id.includes('flux') || 
                 id.includes('imagen') || 
                 id.includes('kandinsky') || 
                 id.includes('playground') ||
