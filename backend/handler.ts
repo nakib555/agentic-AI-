@@ -248,7 +248,8 @@ export const apiHandler = async (req: any, res: any) => {
     const activeProvider = globalSettings.provider || 'gemini';
     const mainApiKey = await getApiKey();
     const suggestionApiKey = await getSuggestionApiKey();
-    const ollamaUrl = globalSettings.ollamaUrl || 'http://localhost:11434';
+    // Use stored setting, or fallback to env var, or fallback to default
+    const ollamaUrl = globalSettings.ollamaUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
     
     const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'];
     const isSuggestionTask = SUGGESTION_TASKS.includes(task);

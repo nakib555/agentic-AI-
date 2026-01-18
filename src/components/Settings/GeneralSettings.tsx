@@ -384,7 +384,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
       switch(p) {
           case 'gemini': return "Required for main chat, reasoning, and tool execution.";
           case 'openrouter': return "Required for accessing OpenRouter models.";
-          case 'ollama': return "URL for your local Ollama instance (e.g. http://192.168.2.104:11434).";
+          case 'ollama': return "URL for your local Ollama instance (default: http://localhost:11434). Supports env var OLLAMA_BASE_URL.";
           default: return "";
       }
   };
@@ -393,7 +393,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
       switch(p) {
           case 'gemini': return "Enter your Gemini API key";
           case 'openrouter': return "Enter your OpenRouter API key";
-          case 'ollama': return "Enter Ollama URL";
+          case 'ollama': return "Enter Ollama URL (e.g. http://localhost:11434)";
           default: return "";
       }
   };

@@ -97,7 +97,7 @@ export async function initDataStore() {
         apiKey: '',
         openRouterApiKey: '',
         suggestionApiKey: '', // Secondary key for background tasks
-        ollamaUrl: 'http://localhost:11434', // Default for Ollama
+        ollamaUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434', // Default for Ollama
         aboutUser: '',
         aboutResponse: '',
         temperature: 0.7,

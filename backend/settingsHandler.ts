@@ -26,6 +26,12 @@ const ensureSettingsLoaded = async () => {
 export const getSettings = async (req: any, res: any) => {
     try {
         const settings = await ensureSettingsLoaded();
+        
+        // Ensure env var fallback is exposed to UI if setting is missing/empty
+        if (!settings.ollamaUrl) {
+            settings.ollamaUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+        }
+        
         res.status(200).json(settings);
     } catch (error) {
         console.error('Failed to get settings:', error);
