@@ -209,8 +209,8 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
 
     const noModelsAvailable = !filteredReasoningModels || filteredReasoningModels.length === 0;
     
-    let descriptionText = "Selected OpenRouter model for reasoning.";
-    if (provider === 'gemini') descriptionText = "The main model used for chat, reasoning, and planning.";
+    let descriptionText = "The main model used for chat, reasoning, and planning.";
+    if (provider === 'openrouter') descriptionText = "Selected OpenRouter model for reasoning.";
     if (provider === 'ollama') descriptionText = "Selected local Ollama model for reasoning.";
 
     return (

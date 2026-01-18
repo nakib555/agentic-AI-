@@ -103,10 +103,11 @@ export const App = () => {
   const isKeyboardOpen = !logic.isDesktop && logic.visualViewportHeight < (stableHeight * 0.85);
 
   // Determine if we have a valid configuration to start chatting
+  // For Ollama, we assume it's ready if provider is selected (default host is used).
   const hasApiKey = 
       (logic.provider === 'gemini' && !!logic.apiKey) || 
       (logic.provider === 'openrouter' && !!logic.openRouterApiKey) || 
-      (logic.provider === 'ollama'); // Ollama doesn't strictly require a key, assuming host is set (default is set)
+      (logic.provider === 'ollama'); 
 
   return (
     <div 
@@ -288,6 +289,7 @@ export const App = () => {
           setTheme={logic.setTheme}
           serverUrl={logic.serverUrl}
           onSaveServerUrl={logic.onSaveServerUrl}
+          // Provider Props for Ollama
           provider={logic.provider}
           openRouterApiKey={logic.openRouterApiKey}
           onProviderChange={logic.onProviderChange}
