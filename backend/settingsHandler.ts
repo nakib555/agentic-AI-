@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -23,47 +22,10 @@ const ensureSettingsLoaded = async () => {
     return cachedSettings;
 };
 
-// Helper to determine the effective Ollama URL
-// Precedence: 
-// 1. Environment Variable (if it points to a specific remote server and stored is just default localhost)
-// 2. User configured non-default value in settings
-// 3. Environment Variable (fallback)
-// 4. Stored setting
-export const getEffectiveOllamaUrl = (settings: any) => {
-    const stored = settings.ollamaUrl;
-    const env = process.env.OLLAMA_BASE_URL;
-    
-    // Heuristic: If the user provided a specific ENV var (likely a remote IP), 
-    // but the stored setting is just the generic default "localhost" (often saved automatically or by accident),
-    // we prioritize the ENV var to prevent the "stale default" from blocking the user's configuration.
-    if (env && stored) {
-        const isStoredDefault = stored === 'http://localhost:11434' || stored === 'http://127.0.0.1:11434';
-        const isEnvRemote = !env.includes('localhost') && !env.includes('127.0.0.1');
-        
-        if (isStoredDefault && isEnvRemote) {
-            return env;
-        }
-    }
-
-    // If user has explicitly changed it to something (and the heuristic above didn't override), respect that.
-    if (stored) {
-        return stored;
-    }
-    // Fallback to ENV or empty string
-    return env || '';
-};
-
 export const getSettings = async (req: any, res: any) => {
     try {
         const settings = await ensureSettingsLoaded();
-        
-        // Create a copy to not mutate cache with computed properties
-        const responseSettings = { ...settings };
-        
-        // Calculate effective URL to show in UI
-        responseSettings.ollamaUrl = getEffectiveOllamaUrl(settings);
-        
-        res.status(200).json(responseSettings);
+        res.status(200).json(settings);
     } catch (error) {
         console.error('Failed to get settings:', error);
         res.status(500).json({ error: 'Failed to retrieve settings.' });
@@ -83,31 +45,23 @@ export const updateSettings = async (req: any, res: any) => {
         // Persist to Disk
         await writeData(SETTINGS_FILE_PATH, newSettings);
 
-        // Check if critical settings changed (Provider or API Key or URL)
+        // Check if critical settings changed (Provider or API Key)
         const providerChanged = updates.provider && updates.provider !== currentSettings.provider;
         const keyChanged = (newSettings.provider === 'gemini' && updates.apiKey !== currentSettings.apiKey) ||
                            (newSettings.provider === 'openrouter' && updates.openRouterApiKey !== currentSettings.openRouterApiKey);
-        const urlChanged = newSettings.provider === 'ollama' && updates.ollamaUrl !== currentSettings.ollamaUrl;
 
-        if (providerChanged || keyChanged || urlChanged) {
+        if (providerChanged || keyChanged) {
             try {
-                // Fetch models based on the NEW provider and NEW key/url
+                // Fetch models based on the NEW provider and NEW key
                 const activeKey = newSettings.provider === 'openrouter' ? newSettings.openRouterApiKey : newSettings.apiKey;
-                
-                // If switching providers, we check if configuration is roughly valid to try a fetch
-                let shouldFetch = false;
-                if (newSettings.provider === 'gemini' && activeKey) shouldFetch = true;
-                if (newSettings.provider === 'openrouter' && activeKey) shouldFetch = true;
-                if (newSettings.provider === 'ollama') shouldFetch = true; // Always try fetch for Ollama as URL might be default/env
-
-                if (shouldFetch) {
-                    // For Ollama, the model service will look up the URL from settings or env
+                // If switching providers, we might not have the key yet, so handle gracefully
+                if (activeKey) {
                     const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(activeKey, true);
                     res.status(200).json({ ...newSettings, models: chatModels, imageModels, videoModels, ttsModels });
                     return;
                 }
             } catch (error) {
-                // If fetching models fails, just return settings
+                // If fetching models fails (invalid key), just return settings
             }
         }
 
@@ -124,7 +78,6 @@ export const getApiKey = async (): Promise<string | undefined> => {
         if (settings.provider === 'openrouter') {
             return settings.openRouterApiKey;
         }
-        // Ollama doesn't need an API key usually, but function signature expects one
         return settings.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
     } catch (error) {
         return process.env.API_KEY || process.env.GEMINI_API_KEY;
@@ -140,7 +93,7 @@ export const getSuggestionApiKey = async (): Promise<string | undefined> => {
     }
 };
 
-export const getProvider = async (): Promise<'gemini' | 'openrouter' | 'ollama'> => {
+export const getProvider = async (): Promise<'gemini' | 'openrouter'> => {
     try {
         const settings = await ensureSettingsLoaded();
         return settings.provider || 'gemini';

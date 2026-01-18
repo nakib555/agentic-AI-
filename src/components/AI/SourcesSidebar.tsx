@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -11,11 +10,10 @@ import { useViewport } from '../../hooks/useViewport';
 
 const motion = motionTyped as any;
 
-// Safe lazy load with explicit async resolution
-const SourcesContent = React.lazy(async () => {
-    const module = await import('./SourcesContent');
-    return { default: module.SourcesContent };
-});
+// Safe lazy load
+const SourcesContent = React.lazy(() => 
+    import('./SourcesContent').then(m => ({ default: m.SourcesContent }))
+);
 
 type SourcesSidebarProps = {
     isOpen: boolean;

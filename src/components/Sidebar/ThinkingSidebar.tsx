@@ -11,11 +11,10 @@ import { useViewport } from '../../hooks/useViewport';
 
 const motion = motionTyped as any;
 
-// Safe lazy load with explicit async resolution
-const ThinkingContent = React.lazy(async () => {
-    const module = await import('./ThinkingContent');
-    return { default: module.ThinkingContent };
-});
+// Safe lazy load
+const ThinkingContent = React.lazy(() => 
+    import('./ThinkingContent').then(m => ({ default: m.ThinkingContent }))
+);
 
 type ThinkingSidebarProps = {
     isOpen: boolean;

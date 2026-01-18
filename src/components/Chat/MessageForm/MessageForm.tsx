@@ -18,11 +18,8 @@ import { AttachedFilePreview } from './AttachedFilePreview';
 
 const motion = motionTyped as any;
 
-// Lazy load the sidebar with explicit async resolution
-const FilePreviewSidebar = React.lazy(async () => {
-    const module = await import('./FilePreviewSidebar');
-    return { default: module.FilePreviewSidebar };
-});
+// Lazy load the sidebar to avoid loading syntax highlighters immediately
+const FilePreviewSidebar = React.lazy(() => import('./FilePreviewSidebar').then(m => ({ default: m.FilePreviewSidebar })));
 
 type MessageFormProps = {
   onSubmit: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;

@@ -33,7 +33,7 @@ type SettingsModalProps = {
   onShowDataStructure: () => void;
   onExportAllChats: () => void;
   apiKey: string;
-  onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void>;
+  onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter') => Promise<void>;
   suggestionApiKey: string;
   onSaveSuggestionApiKey: (key: string) => void;
   aboutUser: string;
@@ -62,11 +62,9 @@ type SettingsModalProps = {
   setTheme: (theme: Theme) => void;
   serverUrl: string;
   onSaveServerUrl: (url: string) => Promise<boolean>;
-  provider: 'gemini' | 'openrouter' | 'ollama';
+  provider: 'gemini' | 'openrouter';
   openRouterApiKey: string;
-  onProviderChange: (provider: 'gemini' | 'openrouter' | 'ollama') => void;
-  ollamaUrl: string;
-  onSaveOllamaUrl: (url: string) => Promise<void>;
+  onProviderChange: (provider: 'gemini' | 'openrouter') => void;
 };
 
 const CATEGORIES = [
@@ -234,8 +232,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                             provider={props.provider}
                                             openRouterApiKey={props.openRouterApiKey}
                                             onProviderChange={props.onProviderChange}
-                                            ollamaUrl={props.ollamaUrl}
-                                            onSaveOllamaUrl={props.onSaveOllamaUrl}
                                         />
                                     )}
                                     {activeCategory === 'personalize' && <PersonalizeSettings {...props} />}

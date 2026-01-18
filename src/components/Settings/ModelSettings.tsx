@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -133,7 +132,7 @@ type ModelSettingsProps = {
   defaultTemperature: number;
   defaultMaxTokens: number;
   disabled: boolean;
-  provider: 'gemini' | 'openrouter' | 'ollama';
+  provider: 'gemini' | 'openrouter';
 };
 
 const ModelSettings: React.FC<ModelSettingsProps> = ({
@@ -208,15 +207,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
     }, [models, imageModels, videoModels, ttsModels]);
 
     const noModelsAvailable = !filteredReasoningModels || filteredReasoningModels.length === 0;
-    
-    const getModelDescription = () => {
-        switch(provider) {
-            case 'gemini': return "The main model used for chat, reasoning, and planning.";
-            case 'openrouter': return "Selected OpenRouter model for reasoning.";
-            case 'ollama': return "Selected local Ollama model for reasoning.";
-            default: return "Select a reasoning model.";
-        }
-    };
+    const isGemini = provider === 'gemini';
 
     return (
         <div className="space-y-10 pb-12">
@@ -233,7 +224,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                 <div>
                     <p className="font-bold text-sm text-amber-800 dark:text-amber-200">Models Unavailable</p>
                     <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-300/80 mt-1 leading-relaxed">
-                      Please configure your API key (or URL for Ollama) in the General tab to load available models.
+                      Please configure your API key in the General tab to load available models.
                     </p>
                 </div>
               </div>
@@ -251,7 +242,7 @@ const ModelSettings: React.FC<ModelSettingsProps> = ({
                 <div className="space-y-6">
                     <SettingItem 
                         label="Primary Reasoning Model" 
-                        description={getModelDescription()}
+                        description={isGemini ? "The main model used for chat, reasoning, and planning." : "Selected OpenRouter model for reasoning."}
                     >
                         <div className="w-full sm:w-[320px]">
                             <ModelSelector 

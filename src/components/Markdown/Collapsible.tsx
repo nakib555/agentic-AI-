@@ -30,7 +30,7 @@ export const Collapsible = ({ children, ...props }: any) => {
   // Extract title from summary element
   let title: React.ReactNode = 'Details';
   if (summaryElement) {
-      const props = (summaryElement as React.ReactElement<any>).props;
+      const props = (summaryElement as React.ReactElement).props;
       // If summary has children (text), use that. Otherwise use defaults.
       if (props && props.children) {
           title = props.children;

@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -93,11 +92,10 @@ export async function initDataStore() {
     
     // Default settings
     const defaultSettings = {
-        provider: 'gemini', // 'gemini' | 'openrouter' | 'ollama'
+        provider: 'gemini', // 'gemini' | 'openrouter'
         apiKey: '',
         openRouterApiKey: '',
         suggestionApiKey: '', // Secondary key for background tasks
-        ollamaUrl: '', // Default to empty to allow env var fallback precedence
         aboutUser: '',
         aboutResponse: '',
         temperature: 0.7,

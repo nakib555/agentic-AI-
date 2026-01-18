@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -17,15 +16,13 @@ import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./too
 import { runAgenticLoop } from './services/agenticLoop/index';
 import { createToolExecutor } from './tools/index';
 import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations'; 
-import { getApiKey, getSuggestionApiKey, getProvider, getSettings, getEffectiveOllamaUrl } from './settingsHandler';
+import { getApiKey, getSuggestionApiKey, getProvider } from './settingsHandler';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils';
 import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
 import { streamOpenRouter } from './utils/openRouterUtils';
-import { streamOllama, streamOllamaGenerate, generateOllama } from './utils/ollamaUtils';
 import { vectorMemory } from './services/vectorMemory'; // Import Vector Memory
 import { executeWithPiston } from './tools/piston';
-import { readData, SETTINGS_FILE_PATH } from './data-store';
 
 // Store promises for frontend tool requests that the backend is waiting on
 const frontendToolRequests = new Map<string, (result: any) => void>();
@@ -60,9 +57,9 @@ const writeToClient = (job: Job, type: string, payload: any) => {
 };
 
 const cleanupJob = (chatId: string) => {
-    const activeJob = activeJobs.get(chatId);
-    if (activeJob) {
-        activeJob.clients.forEach(c => {
+    const job = activeJobs.get(chatId);
+    if (job) {
+        job.clients.forEach(c => {
             if (!c.writableEnded) c.end();
         });
         activeJobs.delete(chatId);
@@ -245,27 +242,19 @@ export const apiHandler = async (req: any, res: any) => {
         return;
     }
 
-    const globalSettings: any = await readData(SETTINGS_FILE_PATH);
-    const activeProvider = globalSettings.provider || 'gemini';
+    const activeProvider = await getProvider();
     const mainApiKey = await getApiKey();
     const suggestionApiKey = await getSuggestionApiKey();
-    
-    // Correctly determine Ollama URL with precedence rules
-    const ollamaUrl = getEffectiveOllamaUrl(globalSettings);
-    
     const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'];
     const isSuggestionTask = SUGGESTION_TASKS.includes(task);
-    
     let activeApiKey = mainApiKey;
     if (isSuggestionTask && suggestionApiKey) {
         activeApiKey = suggestionApiKey;
     } 
-    
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston', 'feedback'];
-    if (activeProvider === 'gemini' && !activeApiKey && !BYPASS_TASKS.includes(task)) {
+    if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
         return res.status(401).json({ error: "API key not configured on the server." });
     }
-    
     const ai = (activeProvider === 'gemini' || isSuggestionTask) && activeApiKey 
         ? new GoogleGenAI({ apiKey: activeApiKey }) 
         : null;
@@ -394,6 +383,8 @@ export const apiHandler = async (req: any, res: any) => {
 
                 if (ragContext) personalizationSection += ragContext;
 
+                // CRITICAL FIX: The Core Instructions (Agent Protocols) must be the primary directive.
+                // Personalization is injected as a "Context" layer, but it CANNOT override the output format (JSON/STEP).
                 let finalSystemInstruction = coreInstruction;
                 if (personalizationSection) {
                     finalSystemInstruction = `
@@ -412,53 +403,7 @@ Adopt the following persona and context, BUT ONLY within the formatting constrai
 ${personalizationSection}
 `.trim();
                 }
-                
-                // --- OLLAMA PROVIDER HANDLING ---
-                if (activeProvider === 'ollama') {
-                    // Map history to simple role/content format
-                    const ollamaMessages = historyForAI.map((msg: any) => ({
-                        role: msg.role === 'model' ? 'assistant' : 'user',
-                        content: msg.text || ''
-                    }));
-                    // Inject system prompt as first message
-                    ollamaMessages.unshift({ role: 'system', content: finalSystemInstruction });
 
-                    try {
-                        await streamOllama(
-                            ollamaUrl,
-                            model || globalSettings.activeModel || 'llama3', // Ensure a model is selected
-                            ollamaMessages,
-                            {
-                                onTextChunk: (text) => {
-                                    writeToClient(job, 'text-chunk', text);
-                                    persistence.addText(text);
-                                },
-                                onComplete: (fullText) => {
-                                    writeToClient(job, 'complete', { finalText: fullText });
-                                    persistence.complete((response) => {
-                                        response.endTime = Date.now();
-                                    });
-                                },
-                                onError: (error) => {
-                                    writeToClient(job, 'error', { message: error.message || 'Ollama Error' });
-                                    persistence.complete((response) => {
-                                        response.error = { message: error.message || 'Ollama Error' };
-                                    });
-                                }
-                            },
-                            { temperature: settings.temperature, maxTokens: settings.maxOutputTokens }
-                        );
-                    } catch (e: any) {
-                        writeToClient(job, 'error', { message: e.message });
-                        persistence.complete((response) => { response.error = { message: e.message }; });
-                    } finally {
-                        clearInterval(pingInterval);
-                        cleanupJob(chatId);
-                    }
-                    return;
-                }
-
-                // --- OPENROUTER PROVIDER HANDLING ---
                 if (activeProvider === 'openrouter') {
                     const openRouterMessages = historyForAI.map((msg: any) => ({
                         role: msg.role === 'model' ? 'assistant' : 'user',
@@ -500,8 +445,6 @@ ${personalizationSection}
                     }
                     return;
                 }
-                
-                // --- GEMINI PROVIDER HANDLING ---
 
                 if (!ai) throw new Error("Gemini AI not initialized.");
 
@@ -634,10 +577,18 @@ ${personalizationSection}
                 break;
             }
             case 'cancel': {
-                const { requestId } = req.body; 
+                const { requestId } = req.body; // In new system, this is usually chatId, but we support requestId for compat
+                
+                // Try to find job by ID (if it matches) OR iterating
                 let job = activeJobs.get(requestId);
+                if (!job) {
+                    // If requestId passed was not chatId, we might need a lookup map, but frontend sends chatId now usually?
+                    // Let's assume requestId is chatId for cancellation in new system.
+                }
+
                 if (job) {
                     job.controller.abort();
+                    // Don't delete immediately, allow loop to exit gracefully and cleanup
                     res.status(200).send({ message: 'Cancellation request received.' });
                 } else {
                     res.status(404).json({ error: `No active job found for ID: ${requestId}` });
@@ -651,22 +602,10 @@ ${personalizationSection}
                 break;
             }
             case 'title': {
+                if (!ai) return res.status(200).json({ title: '' });
                 const { messages } = req.body;
                 const historyText = messages.slice(0, 3).map((m: any) => `${m.role}: ${m.text}`).join('\n');
                 const prompt = `Generate a short concise title (max 6 words) for this conversation.\n\nCONVERSATION:\n${historyText}\n\nTITLE:`;
-                
-                // Ollama Support for Title
-                if (activeProvider === 'ollama') {
-                    try {
-                        const title = await generateOllama(ollamaUrl, globalSettings.activeModel || 'llama3', prompt);
-                        return res.status(200).json({ title: title.trim().replace(/^"|"$/g, '') });
-                    } catch(e) {
-                         return res.status(200).json({ title: '' });
-                    }
-                }
-
-                if (!ai) return res.status(200).json({ title: '' });
-                
                 try {
                     const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt });
                     res.status(200).json({ title: response.text?.trim() ?? '' });
@@ -674,25 +613,10 @@ ${personalizationSection}
                 break;
             }
             case 'suggestions': {
+                if (!ai) return res.status(200).json({ suggestions: [] });
                 const { conversation } = req.body;
                 const recentHistory = conversation.slice(-5).map((m: any) => `${m.role}: ${(m.text || '').substring(0, 200)}`).join('\n');
                 const prompt = `Suggest 3 short follow-up questions. Return JSON array of strings.\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
-                
-                // Ollama Support for Suggestions
-                if (activeProvider === 'ollama') {
-                    try {
-                        const raw = await generateOllama(ollamaUrl, globalSettings.activeModel || 'llama3', prompt, { format: 'json' });
-                        const suggestions = JSON.parse(raw);
-                        // Handle potential object wrapper from Ollama JSON
-                        const list = Array.isArray(suggestions) ? suggestions : (suggestions.suggestions || []);
-                        return res.status(200).json({ suggestions: list });
-                    } catch(e) {
-                         return res.status(200).json({ suggestions: [] });
-                    }
-                }
-
-                if (!ai) return res.status(200).json({ suggestions: [] });
-                
                 try {
                     const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
                     let suggestions = [];
@@ -713,8 +637,8 @@ ${personalizationSection}
                 break;
             }
             case 'enhance': {
+                if (!ai) return res.status(200).send(req.body.userInput);
                 const { userInput } = req.body;
-                
                 const prompt = `
 You are an expert Prompt Engineer. Your goal is to rewrite the following user input into a highly effective prompt for an LLM (Large Language Model).
 
@@ -729,35 +653,6 @@ GUIDELINES:
 
 IMPROVED PROMPT:
 `;
-                
-                // Support for Ollama in Enhance Mode
-                if (activeProvider === 'ollama') {
-                     res.setHeader('Content-Type', 'text/plain');
-                     try {
-                        await streamOllamaGenerate(
-                            ollamaUrl,
-                            globalSettings.activeModel || 'llama3', // Fallback if no model selected
-                            prompt,
-                            {
-                                onTextChunk: (text) => res.write(text),
-                                onComplete: () => res.end(),
-                                onError: (e) => { 
-                                    console.error(e);
-                                    res.write(userInput); // Fallback to original
-                                    res.end();
-                                }
-                            },
-                            { temperature: 0.7, maxTokens: 0 }
-                        );
-                     } catch(e) {
-                         res.write(userInput);
-                         res.end();
-                     }
-                     return;
-                }
-
-                if (!ai) return res.status(200).send(userInput);
-
                 res.setHeader('Content-Type', 'text/plain');
                 try {
                     const stream = await generateContentStreamWithRetry(ai, { model: 'gemini-3-flash-preview', contents: prompt });
@@ -793,6 +688,7 @@ IMPROVED PROMPT:
                     const result = await executeWithPiston(language, code);
                     res.status(200).json({ result });
                 } catch (error: any) {
+                    // Return error in a consistent format for the frontend
                     res.status(500).json({ error: error.message });
                 }
                 break;

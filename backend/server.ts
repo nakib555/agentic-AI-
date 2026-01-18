@@ -1,4 +1,3 @@
-
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -173,9 +172,6 @@ async function startServer() {
 
   app.listen(PORT, () => {
     console.log(`[SERVER] Backend API is running on port ${PORT}`);
-    if (process.env.OLLAMA_BASE_URL) {
-        console.log(`[SERVER] Detected OLLAMA_BASE_URL: ${process.env.OLLAMA_BASE_URL}`);
-    }
   });
 }
 

@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,7 +5,6 @@
 
 import type { Model as AppModel } from '../../src/types';
 import { readData, SETTINGS_FILE_PATH } from '../data-store';
-import { getEffectiveOllamaUrl } from '../settingsHandler';
 
 // Cache structure
 type ModelCache = {
@@ -30,7 +28,7 @@ const sortModelsByName = (models: AppModel[]): AppModel[] => {
 };
 
 // Helper for fetching with retry on 429
-const fetchWithRetry = async (url: string, options: any, retries = 3, backoff = 1000): Promise<Response> => {
+const fetchWithRetry = async (url: string, options: any, retries = 5, backoff = 1000): Promise<Response> => {
     for (let i = 0; i < retries; i++) {
         try {
             const response = await fetch(url, options);
@@ -51,96 +49,6 @@ const fetchWithRetry = async (url: string, options: any, retries = 3, backoff = 
     // Final attempt
     return await fetch(url, options);
 };
-
-async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
-    console.log(`[ModelService] fetchOllamaModels called with baseUrl: '${baseUrl}'`);
-    
-    if (!baseUrl || !baseUrl.trim()) {
-        return [];
-    }
-
-    try {
-        let cleanUrl = baseUrl.trim().replace(/\/$/, '');
-        
-        // Robustness: Ensure protocol is present
-        if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-            cleanUrl = `http://${cleanUrl}`;
-        }
-        
-        // Intelligent URL handling: If the user provided the full tags endpoint, use it directly.
-        // Otherwise, append the standard endpoint.
-        let fetchUrl = `${cleanUrl}/api/tags`;
-        if (cleanUrl.endsWith('/api/tags')) {
-             fetchUrl = cleanUrl;
-        }
-
-        console.log(`[ModelService] Fetching models from Ollama at: ${fetchUrl}`);
-        
-        // Timeout shorter for local network to avoid hanging
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
-
-        const response = await fetch(fetchUrl, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-            },
-            signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-            throw new Error(`Ollama API error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        console.log('[ModelService] Raw Ollama response:', JSON.stringify(data, null, 2));
-        
-        // Robust validation for the structure { models: [...] }
-        if (!data || !Array.isArray(data.models)) {
-            console.warn('[ModelService] Invalid Ollama response structure:', JSON.stringify(data).substring(0, 200));
-            return [];
-        }
-
-        const models: AppModel[] = data.models.map((m: any) => {
-            // Support both 'name' and 'model' keys, defaulting to name
-            const modelName = m.name || m.model || 'Unknown Model';
-            
-            // Format details if available
-            const details = m.details || {};
-            const parts = [];
-            
-            // Add Family (e.g. "llama", "qwen3")
-            if (details.family) parts.push(details.family);
-            
-            if (details.parameter_size) parts.push(details.parameter_size);
-            if (details.quantization_level) parts.push(details.quantization_level);
-            
-            // Calculate size in GB if bytes are provided
-            if (m.size) {
-                const sizeGB = (m.size / (1024 * 1024 * 1024)).toFixed(1);
-                parts.push(`${sizeGB}GB`);
-            }
-            
-            const description = parts.length > 0 ? parts.join(' • ') : 'Local Ollama Model';
-
-            return {
-                id: modelName,
-                name: modelName,
-                description: description,
-            };
-        });
-
-        console.log('[ModelService] Processed Ollama models:', models.map(m => m.name));
-        
-        return sortModelsByName(models);
-    } catch (error) {
-        console.error('[ModelService] Failed to fetch Ollama models:', error);
-        return [];
-    }
-}
 
 async function fetchOpenRouterModels(apiKey?: string): Promise<AppModel[]> {
     try {
@@ -272,11 +180,8 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
     const settings: any = await readData(SETTINGS_FILE_PATH);
     const provider = settings.provider || 'gemini';
     
-    // Correctly determine Ollama URL with precedence
-    const ollamaUrl = getEffectiveOllamaUrl(settings);
-    
     // Simple hash check (using last 8 chars is usually enough to detect a change in the session context)
-    const currentKeyHash = (apiKey || '').trim().slice(-8);
+    const currentKeyHash = apiKey.trim().slice(-8);
     const now = Date.now();
 
     // Check cache first
@@ -291,18 +196,8 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
         return modelCache.data;
     }
 
-    let result = {
-        chatModels: [] as AppModel[],
-        imageModels: [] as AppModel[],
-        videoModels: [] as AppModel[],
-        ttsModels: [] as AppModel[]
-    };
-
-    if (provider === 'ollama') {
-        const ollamaModels = await fetchOllamaModels(ollamaUrl);
-        // Ollama models are primarily text/chat
-        result.chatModels = ollamaModels;
-    } else if (provider === 'openrouter') {
+    let result;
+    if (provider === 'openrouter') {
         const allModels = await fetchOpenRouterModels(apiKey);
         
         // Categorize OpenRouter models based on ID keywords
@@ -380,10 +275,7 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
             ttsModels: sortModelsByName(ttsModels)
         };
     } else {
-        // Gemini Provider
-        if (apiKey) {
-            result = await fetchGeminiModels(apiKey);
-        }
+        result = await fetchGeminiModels(apiKey);
     }
 
     // Update cache

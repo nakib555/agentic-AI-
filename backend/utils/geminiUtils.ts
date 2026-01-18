@@ -57,26 +57,19 @@ async function executeOperationWithRetry<T>(
         } catch (error: any) {
             lastError = error;
             
-            const status = error.status || error.response?.status || 0;
-            const message = (error.message || '').toUpperCase();
+            // Check for Rate Limit (429) or Server Overload (503)
+            const isRateLimit = error.message?.includes('429') || error.status === 429 || error.message?.includes('RESOURCE_EXHAUSTED');
+            const isOverloaded = error.message?.includes('503') || error.status === 503 || error.message?.includes('UNAVAILABLE');
             
-            // Check for Rate Limit (429)
-            // Includes generic 429 status and specific quota error messages
-            const isRateLimit = status === 429 || message.includes('429') || message.includes('RESOURCE_EXHAUSTED') || message.includes('QUOTA');
-            
-            // Check for Server Errors (5xx) or Overload
-            // 503 (Unavailable), 500 (Internal), 502 (Bad Gateway), 504 (Timeout)
-            const isTransient = status >= 500 || message.includes('503') || message.includes('UNAVAILABLE') || message.includes('OVERLOADED') || message.includes('TIMEOUT') || message.includes('INTERNAL SERVER ERROR');
-            
-            if (isRateLimit || isTransient) {
-                // Exponential backoff: 2s, 4s, 8s... + Random Jitter (0-1000ms) to prevent thundering herd
-                const delay = baseDelay * Math.pow(2, i) + (Math.random() * 1000);
-                console.warn(`[GeminiUtils] API Error (${status || 'Unknown'}). Retrying in ${Math.round(delay)}ms... (Attempt ${i+1}/${retries})`);
+            if (isRateLimit || isOverloaded) {
+                // Exponential backoff: 2s, 4s, 8s
+                const delay = baseDelay * Math.pow(2, i) + (Math.random() * 500);
+                console.warn(`[GeminiUtils] API hit limit/overload (Attempt ${i+1}/${retries}). Retrying in ${Math.round(delay)}ms...`);
                 await sleep(delay);
                 continue;
             }
             
-            // If it's a different error (e.g. 400 Bad Request, 401 Unauthorized), throw immediately
+            // If it's a different error, throw immediately
             throw error;
         }
     }

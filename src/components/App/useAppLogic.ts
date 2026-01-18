@@ -8,8 +8,6 @@ import { useState, useEffect, useMemo, useRef, useCallback, type Dispatch, type 
 import { useChat } from '../../hooks/useChat/index';
 import { useTheme } from '../../hooks/useTheme';
 import { useSidebar } from '../../hooks/useSidebar';
-import { useSourcesSidebar } from '../../hooks/useSourcesSidebar';
-import { useArtifactSidebar } from '../../hooks/useArtifactSidebar';
 import { useViewport } from '../../hooks/useViewport';
 import { useMemory } from '../../hooks/useMemory';
 import type { Model, Source } from '../../types';
@@ -32,7 +30,6 @@ import { fetchFromApi, setOnVersionMismatch, getApiBaseUrl } from '../../utils/a
 import { testSuite, type TestResult, type TestProgress } from '../Testing/testSuite';
 import { getSettings, updateSettings, type UpdateSettingsResponse } from '../../services/settingsService';
 import { logCollector } from '../../utils/logCollector';
-import { OllamaService } from '../../services/ollamaService';
 
 
 export const useAppLogic = () => {
@@ -42,25 +39,14 @@ export const useAppLogic = () => {
   // --- Core Hooks ---
   const { theme, setTheme } = useTheme();
   const { isDesktop, visualViewportHeight } = useViewport();
-  
-  // --- Sidebar Hooks ---
   const sidebar = useSidebar();
-  const sourcesSidebar = useSourcesSidebar();
-  
-  // Artifact sidebar with auto-close logic for mobile
-  const artifactSidebar = useArtifactSidebar(() => {
-    // On artifact open:
-    if (!isDesktop) {
-        sidebar.setIsSidebarOpen(false);
-        sourcesSidebar.closeSources();
-    }
-  });
   
   // --- UI State ---
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  
+  const [isSourcesSidebarOpen, setIsSourcesSidebarOpen] = useState(false);
+  const [sourcesForSidebar, setSourcesForSidebar] = useState<Source[]>([]);
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [backendError, setBackendError] = useState<string | null>(null);
   const [isTestMode, setIsTestMode] = useState(false);
@@ -73,6 +59,29 @@ export const useAppLogic = () => {
     destructive?: boolean;
   } | null>(null);
   
+  // Artifact State
+  const [isArtifactOpen, setIsArtifactOpen] = useState(false);
+  const [artifactContent, setArtifactContent] = useState('');
+  const [artifactLanguage, setArtifactLanguage] = useState('');
+  const [artifactWidth, setArtifactWidth] = useState(500);
+  const [isArtifactResizing, setIsArtifactResizing] = useState(false);
+
+  // Listen for Artifact open requests from deep within markdown
+  useEffect(() => {
+      const handleOpenArtifact = (e: CustomEvent) => {
+          setArtifactContent(e.detail.code);
+          setArtifactLanguage(e.detail.language);
+          setIsArtifactOpen(true);
+          // Auto-close other sidebars on mobile to prevent clutter
+          if (!isDesktop) {
+              sidebar.setIsSidebarOpen(false);
+              setIsSourcesSidebarOpen(false);
+          }
+      };
+      window.addEventListener('open-artifact', handleOpenArtifact as EventListener);
+      return () => window.removeEventListener('open-artifact', handleOpenArtifact as EventListener);
+  }, [isDesktop, sidebar]);
+
   // Listen for Open Settings requests (e.g. from error prompts)
   useEffect(() => {
       const handleOpenSettings = () => setIsSettingsOpen(true);
@@ -82,7 +91,7 @@ export const useAppLogic = () => {
 
   // Global Resize Logic
   // Aggregates resizing state from all sidebars to enforce global UI locks (cursor, pointer-events)
-  const isAnyResizing = sidebar.isResizing || sourcesSidebar.isResizing || artifactSidebar.isResizing;
+  const isAnyResizing = sidebar.isResizing || sidebar.isSourcesResizing || isArtifactResizing;
 
   useEffect(() => {
       if (isAnyResizing) {
@@ -120,10 +129,9 @@ export const useAppLogic = () => {
   const [activeModel, setActiveModel] = useState('');
 
   // --- Settings State ---
-  const [provider, setProvider] = useState<'gemini' | 'openrouter' | 'ollama'>('gemini');
+  const [provider, setProvider] = useState<'gemini' | 'openrouter'>('gemini');
   const [apiKey, setApiKey] = useState('');
   const [openRouterApiKey, setOpenRouterApiKey] = useState('');
-  const [ollamaUrl, setOllamaUrl] = useState('');
   const [suggestionApiKey, setSuggestionApiKey] = useState('');
   const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
@@ -158,11 +166,10 @@ export const useAppLogic = () => {
   
   // --- Data Loading ---
   const processModelData = useCallback((data: { models?: Model[], imageModels?: Model[], videoModels?: Model[], ttsModels?: Model[] }) => {
-    // Ensure arrays even if backend sends bad data
-    const newModels = Array.isArray(data.models) ? data.models : [];
-    const newImageModels = Array.isArray(data.imageModels) ? data.imageModels : [];
-    const newVideoModels = Array.isArray(data.videoModels) ? data.videoModels : [];
-    const newTtsModels = Array.isArray(data.ttsModels) ? data.ttsModels : [];
+    const newModels = data.models || [];
+    const newImageModels = data.imageModels || [];
+    const newVideoModels = data.videoModels || [];
+    const newTtsModels = data.ttsModels || [];
 
     setAvailableModels(newModels);
     setAvailableImageModels(newImageModels);
@@ -179,6 +186,7 @@ export const useAppLogic = () => {
     }
     
     // For specialized models, keep existing unless invalid/empty
+    // Note: If provider switches to OpenRouter, these lists will be empty and these checks handle that gracefully
     const currentImageModel = imageModelRef.current;
     if (newImageModels.length > 0) {
         if (!currentImageModel || !newImageModels.some((m: Model) => m.id === currentImageModel)) {
@@ -203,50 +211,17 @@ export const useAppLogic = () => {
   }, []);
 
   const fetchModels = useCallback(async () => {
-    setModelsLoading(true);
-    
-    // Direct Client-Side Fetch for Ollama
-    if (provider === 'ollama' && ollamaUrl) {
-        try {
-            console.log('[AppLogic] Fetching models directly from local Ollama...');
-            const models = await OllamaService.getModels(ollamaUrl);
-            setAvailableModels(models);
-            
-            // Set first model if none selected
-            if (models.length > 0 && (!activeModelRef.current || !models.some(m => m.id === activeModelRef.current))) {
-                setActiveModel(models[0].id);
-            }
-            
-            // Clear other categories as Ollama doesn't segregate them by API yet
-            setAvailableImageModels([]);
-            setAvailableVideoModels([]);
-            setAvailableTtsModels([]);
-        } catch (e) {
-            console.error('[AppLogic] Local Ollama fetch failed:', e);
-            setAvailableModels([]);
-        } finally {
-            setModelsLoading(false);
-        }
-        return;
-    }
-
-    // Backend Fetch for other providers
     try {
-        console.log('[AppLogic] Requesting model list from backend...');
+        setModelsLoading(true);
         const response = await fetchFromApi('/api/models');
-        if (!response.ok) {
-             console.error('[AppLogic] Model fetch failed:', response.status);
-             return;
-        }
+        if (!response.ok) return;
         const data = await response.json();
-        console.log('[AppLogic] Received model data:', data);
         processModelData(data);
     } catch (error) {
-        console.error('[AppLogic] Model fetch error:', error);
     } finally {
         setModelsLoading(false);
     }
-  }, [processModelData, provider, ollamaUrl]);
+  }, [processModelData]);
 
   // Initial Data Load
   useEffect(() => {
@@ -257,7 +232,6 @@ export const useAppLogic = () => {
             setProvider(settings.provider || 'gemini');
             setApiKey(settings.apiKey);
             setOpenRouterApiKey(settings.openRouterApiKey);
-            setOllamaUrl(settings.ollamaUrl || '');
             setSuggestionApiKey(settings.suggestionApiKey);
             setAboutUser(settings.aboutUser);
             setAboutResponse(settings.aboutResponse);
@@ -270,9 +244,7 @@ export const useAppLogic = () => {
             setIsMemoryEnabledState(settings.isMemoryEnabled);
             setTtsVoice(settings.ttsVoice);
             setIsAgentModeState(settings.isAgentMode);
-            // Trigger initial fetch after settings loaded
-            // We can't call fetchModels here directly due to dependency on state that is being set, 
-            // but the useEffect below will catch the provider/url change.
+            fetchModels();
         } catch (error) {
             console.error("Failed to load settings:", error);
         } finally {
@@ -280,14 +252,7 @@ export const useAppLogic = () => {
         }
     };
     loadSettings();
-  }, []);
-  
-  // Trigger fetch when provider/url changes (and initial load finish)
-  useEffect(() => {
-      if (!settingsLoading) {
-          fetchModels();
-      }
-  }, [provider, ollamaUrl, settingsLoading]); // Intentionally exclude fetchModels to avoid loops
+  }, [fetchModels]);
 
   const createSettingUpdater = <T,>(setter: Dispatch<SetStateAction<T>>, key: string) => {
     return useCallback((newValue: T) => {
@@ -296,28 +261,17 @@ export const useAppLogic = () => {
     }, [setter, key]);
   };
   
-  const handleSetApiKey = useCallback(async (newApiKey: string, providerType: 'gemini' | 'openrouter' | 'ollama') => {
+  const handleSetApiKey = useCallback(async (newApiKey: string, providerType: 'gemini' | 'openrouter') => {
     const isGemini = providerType === 'gemini';
-    const isOllama = providerType === 'ollama';
-
     if (isGemini) setApiKey(newApiKey);
-    else if (isOllama) setOllamaUrl(newApiKey); // Reusing key input for URL logic
     else setOpenRouterApiKey(newApiKey);
 
     try {
-        const payload = isGemini 
-            ? { apiKey: newApiKey, provider: providerType } 
-            : isOllama 
-                ? { ollamaUrl: newApiKey, provider: providerType }
-                : { openRouterApiKey: newApiKey, provider: providerType };
-        
+        const payload = isGemini ? { apiKey: newApiKey, provider: providerType } : { openRouterApiKey: newApiKey, provider: providerType };
         const response: UpdateSettingsResponse = await updateSettings(payload);
-        
-        // If switching to backend-managed providers, use the response data
-        if (!isOllama && response.models) {
+        if (response.models) {
             processModelData(response);
         } else {
-            // For Ollama or missing data, trigger manual fetch
             fetchModels(); 
         }
     } catch (error) {
@@ -326,16 +280,16 @@ export const useAppLogic = () => {
     }
   }, [processModelData, fetchModels]);
 
-  const handleProviderChange = useCallback((newProvider: 'gemini' | 'openrouter' | 'ollama') => {
+  const handleProviderChange = useCallback((newProvider: 'gemini' | 'openrouter') => {
       setProvider(newProvider);
+      // We don't save immediately, wait for API key save or handle it via a separate effect if needed.
+      // But typically user selects provider then enters key then saves.
+      // Or we can save just the provider switch.
       updateSettings({ provider: newProvider }).then(response => {
-          // If moving away from Ollama, rely on backend data if available
-          if (newProvider !== 'ollama' && response.models) {
-             processModelData(response);
-          }
-          // fetchModels effect will trigger for Ollama or fallbacks
+          if (response.models) processModelData(response);
+          else fetchModels();
       });
-  }, [processModelData]);
+  }, [fetchModels, processModelData]);
 
   const handleSaveServerUrl = useCallback(async (newUrl: string): Promise<boolean> => {
       if (typeof window !== 'undefined') {
@@ -368,8 +322,6 @@ export const useAppLogic = () => {
   const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
-  
-  const handleSetOllamaUrl = createSettingUpdater(setOllamaUrl, 'ollamaUrl');
 
   const chatSettings = useMemo(() => {
     return {
@@ -387,20 +339,10 @@ export const useAppLogic = () => {
   }, [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel, isAgentMode]);
 
   // Pass active API key based on provider for client-side tools if necessary (though most are backend now)
-  const effectiveClientKey = provider === 'gemini' ? apiKey : provider === 'openrouter' ? openRouterApiKey : 'ollama';
+  const effectiveClientKey = provider === 'gemini' ? apiKey : openRouterApiKey;
   
-  const chat = useChat(
-      activeModel, 
-      chatSettings, 
-      memory.memoryContent, 
-      isAgentMode, 
-      effectiveClientKey, 
-      provider,    // Pass provider
-      ollamaUrl,   // Pass URL for local calls
-      showToast
-  );
-  
-  const { updateChatModel, updateChatSettings, editMessage, navigateBranch, setResponseIndex } = chat; 
+  const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, effectiveClientKey, showToast);
+  const { updateChatModel, updateChatSettings, editMessage, navigateBranch, setResponseIndex } = chat; // Destructure new functions
 
   const handleSetTemperature = useCallback((val: number) => {
       setTemperature(val);
@@ -641,43 +583,12 @@ export const useAppLogic = () => {
     }
     return JSON.stringify(results, null, 2);
   }, [chat, startNewChat]);
-
-  // Handler for showing sources
-  const handleShowSources = useCallback((sources: Source[]) => {
-      sourcesSidebar.openSources(sources);
-      if (!isDesktop) {
-          sidebar.setIsSidebarOpen(false);
-      }
-  }, [sourcesSidebar, isDesktop, sidebar]);
   
   return {
-    appContainerRef, messageListRef, theme, setTheme, isDesktop, visualViewportHeight,
-    // Sidebar Props (Spread the hook return)
-    ...sidebar,
-    handleToggleSidebar: sidebar.toggleSidebar,
-    // Sources Sidebar Props
-    isSourcesSidebarOpen: sourcesSidebar.isOpen,
-    sourcesForSidebar: sourcesSidebar.content,
-    sourcesSidebarWidth: sourcesSidebar.width,
-    handleSetSourcesSidebarWidth: sourcesSidebar.setWidth,
-    isSourcesResizing: sourcesSidebar.isResizing,
-    setIsSourcesResizing: sourcesSidebar.setIsResizing,
-    handleCloseSourcesSidebar: sourcesSidebar.closeSources,
-    handleShowSources,
-    // Artifact Sidebar Props
-    isArtifactOpen: artifactSidebar.isOpen,
-    setIsArtifactOpen: artifactSidebar.setIsOpen,
-    artifactContent: artifactSidebar.content,
-    artifactLanguage: artifactSidebar.language,
-    artifactWidth: artifactSidebar.width,
-    setArtifactWidth: artifactSidebar.setWidth,
-    isArtifactResizing: artifactSidebar.isResizing,
-    setIsArtifactResizing: artifactSidebar.setIsResizing,
-    
-    isAgentMode, ...memory,
+    appContainerRef, messageListRef, theme, setTheme, isDesktop, visualViewportHeight, ...sidebar, isAgentMode, ...memory,
     isAnyResizing, // Export aggregated state
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
-    isImportModalOpen, setIsImportModalOpen, 
+    isImportModalOpen, setIsImportModalOpen, isSourcesSidebarOpen, sourcesForSidebar,
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading, versionMismatch,
     retryConnection: checkBackendStatus,
     confirmation, handleConfirm, handleCancel: () => setConfirmation(null),
@@ -693,13 +604,18 @@ export const useAppLogic = () => {
     setIsAgentMode: handleSetIsAgentMode, ...chat, isChatActive: !!chat.currentChatId && chat.messages.length > 0,
     sendMessage: chat.sendMessage, startNewChat, isNewChatDisabled,
     handleDeleteChatRequest, handleRequestClearAll,
+    handleToggleSidebar: () => isDesktop ? sidebar.handleSetSidebarCollapsed(!sidebar.isSidebarCollapsed) : sidebar.setIsSidebarOpen(!sidebar.isSidebarOpen),
+    handleShowSources: (s: Source[]) => { setSourcesForSidebar(s); setIsSourcesSidebarOpen(true); },
+    handleCloseSourcesSidebar: () => setIsSourcesSidebarOpen(false),
     handleExportChat, handleExportAllChats, handleShareChat, handleImportChat: () => setIsImportModalOpen(true),
     runDiagnosticTests, handleFileUploadForImport, handleDownloadLogs, handleShowDataStructure,
     updateBackendMemory: memory.updateBackendMemory, memoryFiles: memory.memoryFiles, updateMemoryFiles: memory.updateMemoryFiles,
     serverUrl, onSaveServerUrl: handleSaveServerUrl,
+    // Artifact Props
+    isArtifactOpen, setIsArtifactOpen, artifactContent, artifactLanguage, 
+    artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing,
     // New Props for Provider
     provider, openRouterApiKey, onProviderChange: handleProviderChange,
-    ollamaUrl, onSaveOllamaUrl: async (url: string) => { setOllamaUrl(url); await updateSettings({ ollamaUrl: url }); fetchModels(); },
     // Edit Message and Branch Navigation
     editMessage, navigateBranch,
     // Explicitly expose setResponseIndex as the main handler for response switching

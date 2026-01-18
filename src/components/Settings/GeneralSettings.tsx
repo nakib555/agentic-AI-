@@ -1,4 +1,5 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -17,21 +18,18 @@ type GeneralSettingsProps = {
   onShowDataStructure: () => void;
   onExportAllChats: () => void;
   apiKey: string;
-  onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void>;
+  onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter') => Promise<void>;
   suggestionApiKey?: string;
   onSaveSuggestionApiKey?: (key: string) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
   serverUrl: string;
   onSaveServerUrl: (url: string) => Promise<boolean>;
-  ollamaUrl: string;
-  onSaveOllamaUrl: (url: string) => Promise<void>;
 };
 
 const PROVIDER_OPTIONS = [
     { id: 'gemini', label: 'Google Gemini', desc: 'Default' },
-    { id: 'openrouter', label: 'OpenRouter', desc: 'Access to Claude, GPT, etc.' },
-    { id: 'ollama', label: 'Ollama', desc: 'Local LLMs (Llama 3, etc.)' }
+    { id: 'openrouter', label: 'OpenRouter', desc: 'Access to Claude, GPT, etc.' }
 ];
 
 const SYNTAX_OPTIONS = [
@@ -77,21 +75,19 @@ const ApiKeyInput = ({
     isOptional = false,
     provider = 'gemini',
     onProviderChange,
-    label,
-    inputType = 'password'
+    label
 }: { 
     value: string, 
-    onSave: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void> | void, 
+    onSave: (key: string, provider: 'gemini' | 'openrouter') => Promise<void> | void, 
     placeholder: string,
     description: string,
     isOptional?: boolean,
-    provider: 'gemini' | 'openrouter' | 'ollama',
-    onProviderChange?: (provider: 'gemini' | 'openrouter' | 'ollama') => void,
-    label?: string,
-    inputType?: 'text' | 'password'
+    provider: 'gemini' | 'openrouter',
+    onProviderChange?: (provider: 'gemini' | 'openrouter') => void,
+    label?: string
 }) => {
     const [localValue, setLocalValue] = useState(value);
-    const [showKey, setShowKey] = useState(inputType === 'text');
+    const [showKey, setShowKey] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const [saveError, setSaveError] = useState<string | null>(null);
     const isMounted = useRef(true);
@@ -104,11 +100,6 @@ const ApiKeyInput = ({
     useEffect(() => {
         setLocalValue(value);
     }, [value]);
-    
-    // Auto-show text for non-password fields like URLs
-    useEffect(() => {
-        if (inputType === 'text') setShowKey(true);
-    }, [inputType]);
 
     const handleSave = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -139,15 +130,13 @@ const ApiKeyInput = ({
         <div className="flex items-center gap-3">
             <SelectDropdown
                 value={provider}
-                onChange={(val) => onProviderChange?.(val as any)}
+                onChange={(val) => onProviderChange?.(val as 'gemini' | 'openrouter')}
                 options={PROVIDER_OPTIONS}
                 disabled={!onProviderChange}
                 className="w-48"
                 triggerClassName="flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors shadow-sm"
             />
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {provider === 'ollama' ? 'Host URL' : 'API Key'}
-            </span>
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">API Key</span>
         </div>
     );
 
@@ -157,7 +146,7 @@ const ApiKeyInput = ({
             description={description} 
             layout="col"
         >
-            <form onSubmit={handleSave} className="space-y-2">
+            <form onSubmit={handleSave} className="space-y-4">
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className={`w-4 h-4 transition-colors duration-200 ${localValue ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
@@ -171,20 +160,18 @@ const ApiKeyInput = ({
                     className="w-full pl-9 pr-28 py-2.5 bg-slate-100/50 dark:bg-white/5 border border-transparent dark:border-transparent rounded-lg text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-inner"
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 gap-1">
-                    {inputType === 'password' && (
-                        <button
-                            type="button"
-                            onClick={() => setShowKey(!showKey)}
-                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md transition-colors"
-                            title={showKey ? "Hide key" : "Show key"}
-                        >
-                            {showKey ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                            ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                            )}
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        onClick={() => setShowKey(!showKey)}
+                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md transition-colors"
+                        title={showKey ? "Hide key" : "Show key"}
+                    >
+                        {showKey ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        )}
+                    </button>
                     <button
                         type="submit"
                         disabled={saveStatus === 'saving' || (!isOptional && !localValue)}
@@ -192,45 +179,27 @@ const ApiKeyInput = ({
                             px-3 py-1.5 text-xs font-semibold text-white rounded-md transition-all shadow-sm
                             ${saveStatus === 'saved' 
                                 ? 'bg-green-500 hover:bg-green-600 shadow-green-500/20' 
-                                : saveStatus === 'error'
-                                    ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20'
-                                    : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20 hover:-translate-y-0.5 active:translate-y-0'
+                                : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20 hover:-translate-y-0.5 active:translate-y-0'
                             }
                             disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none
                         `}
                     >
-                        {saveStatus === 'saving' ? '...' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Failed' : 'Save'}
+                        {saveStatus === 'saving' ? '...' : saveStatus === 'saved' ? 'Saved' : 'Save'}
                     </button>
                 </div>
               </div>
               
-              <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between min-h-[20px]">
                  {saveStatus === 'error' && saveError ? (
-                     <div className="p-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg animate-in fade-in slide-in-from-top-1">
-                        <p className="text-xs font-medium text-red-600 dark:text-red-400 flex items-start gap-2">
-                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"><path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" /></svg>
-                             <span>{saveError}</span>
-                        </p>
-                     </div>
+                     <p className="text-xs font-medium text-red-500 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" /></svg>
+                         {saveError}
+                     </p>
                  ) : (
-                     <div className="flex items-center justify-between">
-                         <span className="text-xs text-slate-400 flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-                            Stored securely on your device.
-                         </span>
-                     </div>
-                 )}
-                 {provider === 'ollama' && (
-                    <div className="mt-2 space-y-2">
-                        <p className="text-[10px] text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/10 p-2 rounded border border-amber-100 dark:border-amber-800/30">
-                            <strong>Note:</strong> Set <code>OLLAMA_ORIGINS="*"</code> in your Ollama environment to allow connection.
-                        </p>
-                        {typeof window !== 'undefined' && window.location.protocol === 'https:' && (
-                            <p className="text-[10px] text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/10 p-2 rounded border border-rose-100 dark:border-rose-800/30">
-                                <strong>Secure Site Detected:</strong> Browsers block connections to local IPs (192.168.x.x) from HTTPS. Use <code>http://localhost:11434</code> if Ollama is on this machine, or run this app locally.
-                            </p>
-                        )}
-                    </div>
+                     <span className="text-xs text-slate-400 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                        Stored securely on your device.
+                     </span>
                  )}
               </div>
             </form>
@@ -262,7 +231,7 @@ const ServerUrlInput = ({
         
         // Allow clearing the override
         if (!urlToTest) {
-            if (onSave) await onSave('');
+            await onSave('');
             if (isMounted.current) {
                 setStatus('success');
                 setMessage('Reset to default');
@@ -278,12 +247,6 @@ const ServerUrlInput = ({
 
         setStatus('verifying');
         setMessage(null);
-
-        if (!onSave) {
-            setStatus('error');
-            setMessage('Save function is missing.');
-            return;
-        }
 
         const success = await onSave(urlToTest);
         
@@ -357,28 +320,16 @@ const ServerUrlInput = ({
     );
 };
 
-const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'openrouter' | 'ollama', openRouterApiKey: string, onProviderChange: (p: 'gemini' | 'openrouter' | 'ollama') => void }> = ({ 
+const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'openrouter', openRouterApiKey: string, onProviderChange: (p: 'gemini' | 'openrouter') => void }> = ({ 
     onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, onExportAllChats, apiKey, onSaveApiKey,
     suggestionApiKey, onSaveSuggestionApiKey,
     theme, setTheme,
     serverUrl, onSaveServerUrl,
-    provider, openRouterApiKey, onProviderChange,
-    ollamaUrl, onSaveOllamaUrl
+    provider, openRouterApiKey, onProviderChange
 }) => {
   const [syntaxTheme, setSyntaxTheme] = useState(() => localStorage.getItem('syntax_theme') || 'auto');
 
-  const handleMainApiKeySave = async (key: string, savedProvider: 'gemini' | 'openrouter' | 'ollama') => {
-      // If saving Ollama, use the dedicated save logic for URL instead of Key
-      if (savedProvider === 'ollama') {
-          if (onSaveOllamaUrl) {
-              await onSaveOllamaUrl(key); // Reusing Key input field for URL
-          } else {
-              console.error('onSaveOllamaUrl prop is missing!');
-          }
-          if (savedProvider !== provider) onProviderChange(savedProvider);
-          return;
-      }
-      
+  const handleMainApiKeySave = async (key: string, savedProvider: 'gemini' | 'openrouter') => {
       const cleanKey = key.trim();
       const cleanSuggestionKey = (suggestionApiKey || '').trim();
 
@@ -407,27 +358,6 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
       // Dispatch event for useSyntaxTheme hook
       window.dispatchEvent(new Event('syntax-theme-change'));
   };
-  
-  const getProviderDescription = (p: string) => {
-      switch(p) {
-          case 'gemini': return "Required for main chat, reasoning, and tool execution.";
-          case 'openrouter': return "Required for accessing OpenRouter models.";
-          case 'ollama': return "URL for your local Ollama instance (Supports backend/tools). Ensure CORS is enabled if connecting directly.";
-          default: return "";
-      }
-  };
-
-  const getProviderPlaceholder = (p: string) => {
-      switch(p) {
-          case 'gemini': return "Enter your Gemini API key";
-          case 'openrouter': return "Enter your OpenRouter API key";
-          case 'ollama': return "Enter Ollama URL (Default: http://localhost:11434)";
-          default: return "";
-      }
-  };
-  
-  // For Ollama, the value passed to ApiKeyInput is the URL
-  const providerValue = provider === 'gemini' ? apiKey : provider === 'openrouter' ? openRouterApiKey : ollamaUrl;
 
   return (
     <div className="space-y-6">
@@ -438,11 +368,13 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
       <ApiKeyInput 
         provider={provider}
         onProviderChange={onProviderChange}
-        description={getProviderDescription(provider)}
-        value={providerValue}
+        description={provider === 'gemini' 
+            ? "Required for main chat, reasoning, and tool execution." 
+            : "Required for accessing OpenRouter models."
+        }
+        value={provider === 'gemini' ? apiKey : openRouterApiKey}
         onSave={handleMainApiKeySave}
-        placeholder={getProviderPlaceholder(provider)}
-        inputType={provider === 'ollama' ? 'text' : 'password'}
+        placeholder={provider === 'gemini' ? "Enter your Gemini API key" : "Enter your OpenRouter API key"}
       />
 
       {provider === 'gemini' && onSaveSuggestionApiKey && (
@@ -465,14 +397,9 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
                  Get Gemini Key 
                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
              </a>
-         ) : provider === 'openrouter' ? (
+         ) : (
              <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
                  Get OpenRouter Key 
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
-             </a>
-         ) : (
-              <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
-                 Download Ollama
                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
              </a>
          )}

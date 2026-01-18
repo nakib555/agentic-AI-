@@ -9,11 +9,10 @@ import { motion as motionTyped, AnimatePresence, useDragControls } from 'framer-
 const motion = motionTyped as any;
 import type { ChatSession } from '../../types';
 
-// Safe lazy load for SidebarContent with explicit async resolution
-const SidebarContent = React.lazy(async () => {
-    const module = await import('./SidebarContent');
-    return { default: module.SidebarContent };
-});
+// Safe lazy load for SidebarContent
+const SidebarContent = React.lazy(() => 
+    import('./SidebarContent').then(module => ({ default: module.SidebarContent }))
+);
 
 type SidebarProps = {
     isOpen: boolean;

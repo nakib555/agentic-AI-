@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -101,15 +100,6 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
 
-    // Ollama Specific Errors
-    if (lowerCaseMessage.includes('ollama') && (lowerCaseMessage.includes('fetch failed') || lowerCaseMessage.includes('connect') || lowerCaseMessage.includes('refused'))) {
-        return {
-            code: 'CONNECTION_REFUSED',
-            message: 'Cannot connect to Ollama',
-            details: `Failed to connect to the Ollama instance at the configured URL. \n\nEnsure that:\n1. Ollama is running.\n2. The URL is correct.\n3. If running in a container, use the host IP instead of localhost.\n4. OLLAMA_HOST environment variable is set to 0.0.0.0 to accept external connections.\n\nOriginal Error: ${message}`
-        };
-    }
-
     if (lowerCaseMessage.includes('api key not valid') || lowerCaseMessage.includes('api key not found') || lowerCaseMessage.includes('api key not configured') || lowerCaseStatus === 'permission_denied') {
         return {
             code: 'INVALID_API_KEY',
@@ -126,13 +116,12 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
 
-    // 5xx Server Errors (Overloaded, Unavailable, Internal Error, Gateway, Timeout)
-    // Matches status strings or numeric status if available, or keywords in message
-    if (lowerCaseStatus === 'unavailable' || lowerCaseStatus === 'internal' || lowerCaseMessage.includes('503') || lowerCaseMessage.includes('500') || lowerCaseMessage.includes('502') || lowerCaseMessage.includes('504') || lowerCaseMessage.includes('overloaded') || lowerCaseMessage.includes('internal server error')) {
+    // 503 Service Unavailable / Overloaded
+    if (lowerCaseStatus === 'unavailable' || lowerCaseMessage.includes('503') || lowerCaseMessage.includes('overloaded')) {
         return {
-            code: 'SERVER_ERROR',
-            message: 'AI Service Temporarily Unavailable',
-            details: `The model provider is currently experiencing issues (Overload or Internal Error). The system attempted to retry but failed. Please try again later. Original error: ${message}`
+            code: 'UNAVAILABLE',
+            message: 'Model is temporarily unavailable',
+            details: `The model is currently overloaded or down for maintenance. Please try again in a few moments. Original error: ${message}`
         };
     }
     

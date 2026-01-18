@@ -285,8 +285,6 @@ export const App = () => {
           provider={logic.provider}
           openRouterApiKey={logic.openRouterApiKey}
           onProviderChange={logic.onProviderChange}
-          ollamaUrl={logic.ollamaUrl}
-          onSaveOllamaUrl={logic.onSaveOllamaUrl}
         />
 
         {logic.isTestMode && (
