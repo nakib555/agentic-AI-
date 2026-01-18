@@ -63,6 +63,9 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
 
         const response = await fetch(`${cleanUrl}/api/tags`, {
             method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
             signal: controller.signal
         });
         
@@ -72,39 +75,39 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
             throw new Error(`Ollama API error: ${response.status}`);
         }
 
-        // Get raw text first to log it if JSON parse fails or structure is wrong
-        const rawText = await response.text();
-        let data;
-        try {
-            data = JSON.parse(rawText);
-        } catch (e) {
-            console.error('[ModelService] Failed to parse Ollama JSON response:', rawText.substring(0, 500));
-            return [];
-        }
+        const data = await response.json();
         
-        // Deep Validation with detailed logging
+        // Robust validation for the structure { models: [...] }
         if (!data || !Array.isArray(data.models)) {
-            console.error('[ModelService] CRITICAL: Invalid Ollama response structure.', {
-                fullResponse: data,
-                keys: data ? Object.keys(data) : 'null',
-                modelsType: data?.models ? typeof data.models : 'undefined',
-                isArray: Array.isArray(data?.models)
-            });
+            console.warn('[ModelService] Invalid Ollama response structure:', JSON.stringify(data).substring(0, 200));
             return [];
         }
 
-        const models: AppModel[] = data.models.map((m: any, index: number) => {
-            // Guard against individual invalid items
-            if (!m || typeof m !== 'object') {
-                console.warn(`[ModelService] Invalid model item at index ${index}:`, m);
-                return null;
+        const models: AppModel[] = data.models.map((m: any) => {
+            // Support both 'name' and 'model' keys, defaulting to name
+            const modelName = m.name || m.model || 'Unknown Model';
+            
+            // Format details if available
+            const details = m.details || {};
+            const parts = [];
+            
+            if (details.parameter_size) parts.push(details.parameter_size);
+            if (details.quantization_level) parts.push(details.quantization_level);
+            
+            // Calculate size in GB if bytes are provided
+            if (m.size) {
+                const sizeGB = (m.size / (1024 * 1024 * 1024)).toFixed(1);
+                parts.push(`${sizeGB}GB`);
             }
+            
+            const description = parts.length > 0 ? parts.join(' • ') : 'Local Ollama Model';
+
             return {
-                id: m.name,
-                name: m.name,
-                description: `${m.details?.parameter_size || ''} ${m.details?.quantization_level || ''}`.trim() || 'Local Ollama Model',
+                id: modelName,
+                name: modelName,
+                description: description,
             };
-        }).filter((m: any) => m !== null);
+        });
         
         return sortModelsByName(models);
     } catch (error) {
@@ -134,36 +137,12 @@ async function fetchOpenRouterModels(apiKey?: string): Promise<AppModel[]> {
             throw new Error(`OpenRouter API error: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
-        const rawText = await response.text();
-        let data;
-        try {
-            data = JSON.parse(rawText);
-        } catch (e) {
-            console.error('[ModelService] Failed to parse OpenRouter JSON:', rawText.substring(0, 200));
-            return [];
-        }
-
-        // Deep Validation
-        if (!data || !data.data || !Array.isArray(data.data)) {
-             console.error('[ModelService] CRITICAL: Invalid OpenRouter response structure.', {
-                fullResponse: data,
-                hasDataKey: data ? 'data' in data : false,
-                dataType: data?.data ? typeof data.data : 'undefined'
-             });
-             return [];
-        }
-
-        const models: AppModel[] = data.data.map((m: any, index: number) => {
-            if (!m || typeof m !== 'object') {
-                console.warn(`[ModelService] Invalid OpenRouter model item at index ${index}:`, m);
-                return null;
-            }
-            return {
-                id: m.id,
-                name: m.name || m.id,
-                description: m.description || '',
-            };
-        }).filter((m: any) => m !== null);
+        const data = await response.json();
+        const models: AppModel[] = (data.data || []).map((m: any) => ({
+            id: m.id,
+            name: m.name || m.id,
+            description: m.description || '',
+        }));
         
         return sortModelsByName(models);
     } catch (error) {
@@ -334,9 +313,9 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
             // Image Generation
             if (
                 id.includes('stable-diffusion') || 
+                id.includes('flux') || 
                 id.includes('dall-e') || 
                 id.includes('midjourney') || 
-                id.includes('flux') || 
                 id.includes('imagen') || 
                 id.includes('kandinsky') || 
                 id.includes('playground') ||
