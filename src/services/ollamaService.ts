@@ -11,7 +11,7 @@ export class OllamaService {
         let url = baseUrl.replace(/\/$/, '');
         if (!url.startsWith('http')) url = 'http://' + url;
         
-        // Mixed Content & Security Check
+        // Mixed Content & Security Check Logic
         const isPageHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
         const isTargetHttp = url.startsWith('http:');
         const isTargetLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
@@ -27,11 +27,13 @@ export class OllamaService {
             
             let msg = "Failed to connect to Ollama.";
             const errMessage = (error as Error).message || '';
+            const errName = (error as Error).name;
 
-            // Detect Mixed Content Blocking (Browser silently fails fetch, resulting in TypeError)
+            // Detect Mixed Content Blocking (Browser silently fails fetch with TypeError or NetworkError)
+            // This happens when HTTPS page tries to fetch HTTP resource
             if (isPageHttps && isTargetHttp && !isTargetLocalhost) {
                  msg = "Security Block: Browsers prevent HTTPS websites from connecting to insecure local IPs (Mixed Content). Please use 'http://localhost:11434', setup HTTPS for Ollama, or run this app locally.";
-            } else if (errMessage.includes('fetch') || errMessage.includes('Failed to fetch')) {
+            } else if (errMessage.includes('fetch') || errMessage.includes('Failed to fetch') || errName === 'TypeError') {
                  msg += " Ensure Ollama is running and OLLAMA_ORIGINS='*' is set.";
             } else {
                  msg += ` ${errMessage}`;
@@ -52,7 +54,7 @@ export class OllamaService {
                 description: `${m.details?.family || 'Model'} | ${(m.size / 1024 / 1024 / 1024).toFixed(1)}GB`
             }));
         } catch (e: any) {
-            console.error("Ollama getModels error:", e);
+            // console.error("Ollama getModels error:", e);
             // Re-throw with the enhanced message from request()
             throw e; 
         }

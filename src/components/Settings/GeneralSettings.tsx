@@ -192,22 +192,26 @@ const ApiKeyInput = ({
                             px-3 py-1.5 text-xs font-semibold text-white rounded-md transition-all shadow-sm
                             ${saveStatus === 'saved' 
                                 ? 'bg-green-500 hover:bg-green-600 shadow-green-500/20' 
-                                : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20 hover:-translate-y-0.5 active:translate-y-0'
+                                : saveStatus === 'error'
+                                    ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20'
+                                    : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20 hover:-translate-y-0.5 active:translate-y-0'
                             }
                             disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none
                         `}
                     >
-                        {saveStatus === 'saving' ? '...' : saveStatus === 'saved' ? 'Saved' : 'Save'}
+                        {saveStatus === 'saving' ? '...' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Failed' : 'Save'}
                     </button>
                 </div>
               </div>
               
               <div className="flex flex-col gap-1">
                  {saveStatus === 'error' && saveError ? (
-                     <p className="text-xs font-medium text-red-500 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" /></svg>
-                         {saveError}
-                     </p>
+                     <div className="p-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg animate-in fade-in slide-in-from-top-1">
+                        <p className="text-xs font-medium text-red-600 dark:text-red-400 flex items-start gap-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"><path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" /></svg>
+                             <span>{saveError}</span>
+                        </p>
+                     </div>
                  ) : (
                      <div className="flex items-center justify-between">
                          <span className="text-xs text-slate-400 flex items-center gap-1.5">
