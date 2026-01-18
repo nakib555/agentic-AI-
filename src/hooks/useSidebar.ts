@@ -17,10 +17,8 @@ export const useSidebar = () => {
   const [userCollapseChoice, setUserCollapseChoice] = useState<boolean | null>(() => {
     try {
         const savedState = localStorage.getItem('sidebarCollapsed');
-        // If a value exists, parse it. Otherwise, it's null (auto).
         return savedState ? JSON.parse(savedState) : null;
     } catch (e) {
-        console.warn('Failed to access localStorage for sidebarCollapsed:', e);
         return null;
     }
   });
@@ -37,12 +35,12 @@ export const useSidebar = () => {
     return !isWideDesktop;
   }, [isDesktop, isWideDesktop, userCollapseChoice]);
   
-  const handleSetSidebarCollapsed = (collapsed: boolean) => {
+  const handleSetSidebarCollapsed = useCallback((collapsed: boolean) => {
     setUserCollapseChoice(collapsed); // Record user's choice
     try {
         localStorage.setItem('sidebarCollapsed', JSON.stringify(collapsed));
     } catch (e) { /* ignore write errors */ }
-  };
+  }, []);
   
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     try {
@@ -61,25 +59,14 @@ export const useSidebar = () => {
     } catch (e) { /* ignore */ }
   }, []);
 
-  // --- State for Sources Sidebar ---
-  const [isSourcesResizing, setIsSourcesResizing] = useState(false);
-  const [sourcesSidebarWidth, setSourcesSidebarWidth] = useState(() => {
-    try {
-        const savedWidth = localStorage.getItem('sourcesSidebarWidth');
-        return savedWidth ? Math.max(320, Math.min(800, Number(savedWidth))) : 384; 
-    } catch (e) {
-        return 384;
+  // Helper to toggle sidebar state appropriately based on device
+  const toggleSidebar = useCallback(() => {
+    if (isDesktop) {
+      handleSetSidebarCollapsed(!isSidebarCollapsed);
+    } else {
+      setIsSidebarOpen(!isSidebarOpen);
     }
-  });
-
-  const handleSetSourcesSidebarWidth = useCallback((width: number) => {
-    const newWidth = Math.max(320, Math.min(800, width));
-    setSourcesSidebarWidth(newWidth);
-    try {
-        localStorage.setItem('sourcesSidebarWidth', String(newWidth));
-    } catch (e) { /* ignore */ }
-  }, []);
-
+  }, [isDesktop, isSidebarCollapsed, isSidebarOpen, handleSetSidebarCollapsed]);
 
   return {
     isSidebarOpen,
@@ -90,9 +77,6 @@ export const useSidebar = () => {
     handleSetSidebarWidth,
     isResizing,
     setIsResizing,
-    isSourcesResizing,
-    setIsSourcesResizing,
-    sourcesSidebarWidth,
-    handleSetSourcesSidebarWidth,
+    toggleSidebar, // New helper
   };
 };

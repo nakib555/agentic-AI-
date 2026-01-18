@@ -25,14 +25,27 @@ const ensureSettingsLoaded = async () => {
 
 // Helper to determine the effective Ollama URL
 // Precedence: 
-// 1. User configured non-default value in settings
-// 2. Environment Variable
-// 3. Stored setting
+// 1. Environment Variable (if it points to a specific remote server and stored is just default localhost)
+// 2. User configured non-default value in settings
+// 3. Environment Variable (fallback)
+// 4. Stored setting
 export const getEffectiveOllamaUrl = (settings: any) => {
     const stored = settings.ollamaUrl;
     const env = process.env.OLLAMA_BASE_URL;
     
-    // If user has explicitly changed it to something, respect that.
+    // Heuristic: If the user provided a specific ENV var (likely a remote IP), 
+    // but the stored setting is just the generic default "localhost" (often saved automatically or by accident),
+    // we prioritize the ENV var to prevent the "stale default" from blocking the user's configuration.
+    if (env && stored) {
+        const isStoredDefault = stored === 'http://localhost:11434' || stored === 'http://127.0.0.1:11434';
+        const isEnvRemote = !env.includes('localhost') && !env.includes('127.0.0.1');
+        
+        if (isStoredDefault && isEnvRemote) {
+            return env;
+        }
+    }
+
+    // If user has explicitly changed it to something (and the heuristic above didn't override), respect that.
     if (stored) {
         return stored;
     }

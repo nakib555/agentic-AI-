@@ -8,6 +8,8 @@ import { useState, useEffect, useMemo, useRef, useCallback, type Dispatch, type 
 import { useChat } from '../../hooks/useChat/index';
 import { useTheme } from '../../hooks/useTheme';
 import { useSidebar } from '../../hooks/useSidebar';
+import { useSourcesSidebar } from '../../hooks/useSourcesSidebar';
+import { useArtifactSidebar } from '../../hooks/useArtifactSidebar';
 import { useViewport } from '../../hooks/useViewport';
 import { useMemory } from '../../hooks/useMemory';
 import type { Model, Source } from '../../types';
@@ -39,14 +41,25 @@ export const useAppLogic = () => {
   // --- Core Hooks ---
   const { theme, setTheme } = useTheme();
   const { isDesktop, visualViewportHeight } = useViewport();
+  
+  // --- Sidebar Hooks ---
   const sidebar = useSidebar();
+  const sourcesSidebar = useSourcesSidebar();
+  
+  // Artifact sidebar with auto-close logic for mobile
+  const artifactSidebar = useArtifactSidebar(() => {
+    // On artifact open:
+    if (!isDesktop) {
+        sidebar.setIsSidebarOpen(false);
+        sourcesSidebar.closeSources();
+    }
+  });
   
   // --- UI State ---
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isSourcesSidebarOpen, setIsSourcesSidebarOpen] = useState(false);
-  const [sourcesForSidebar, setSourcesForSidebar] = useState<Source[]>([]);
+  
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [backendError, setBackendError] = useState<string | null>(null);
   const [isTestMode, setIsTestMode] = useState(false);
@@ -59,29 +72,6 @@ export const useAppLogic = () => {
     destructive?: boolean;
   } | null>(null);
   
-  // Artifact State
-  const [isArtifactOpen, setIsArtifactOpen] = useState(false);
-  const [artifactContent, setArtifactContent] = useState('');
-  const [artifactLanguage, setArtifactLanguage] = useState('');
-  const [artifactWidth, setArtifactWidth] = useState(500);
-  const [isArtifactResizing, setIsArtifactResizing] = useState(false);
-
-  // Listen for Artifact open requests from deep within markdown
-  useEffect(() => {
-      const handleOpenArtifact = (e: CustomEvent) => {
-          setArtifactContent(e.detail.code);
-          setArtifactLanguage(e.detail.language);
-          setIsArtifactOpen(true);
-          // Auto-close other sidebars on mobile to prevent clutter
-          if (!isDesktop) {
-              sidebar.setIsSidebarOpen(false);
-              setIsSourcesSidebarOpen(false);
-          }
-      };
-      window.addEventListener('open-artifact', handleOpenArtifact as EventListener);
-      return () => window.removeEventListener('open-artifact', handleOpenArtifact as EventListener);
-  }, [isDesktop, sidebar]);
-
   // Listen for Open Settings requests (e.g. from error prompts)
   useEffect(() => {
       const handleOpenSettings = () => setIsSettingsOpen(true);
@@ -91,7 +81,7 @@ export const useAppLogic = () => {
 
   // Global Resize Logic
   // Aggregates resizing state from all sidebars to enforce global UI locks (cursor, pointer-events)
-  const isAnyResizing = sidebar.isResizing || sidebar.isSourcesResizing || isArtifactResizing;
+  const isAnyResizing = sidebar.isResizing || sourcesSidebar.isResizing || artifactSidebar.isResizing;
 
   useEffect(() => {
       if (isAnyResizing) {
@@ -357,7 +347,7 @@ export const useAppLogic = () => {
   const effectiveClientKey = provider === 'gemini' ? apiKey : provider === 'openrouter' ? openRouterApiKey : 'ollama';
   
   const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, effectiveClientKey, showToast);
-  const { updateChatModel, updateChatSettings, editMessage, navigateBranch, setResponseIndex } = chat; // Destructure new functions
+  const { updateChatModel, updateChatSettings, editMessage, navigateBranch, setResponseIndex } = chat; 
 
   const handleSetTemperature = useCallback((val: number) => {
       setTemperature(val);
@@ -598,12 +588,43 @@ export const useAppLogic = () => {
     }
     return JSON.stringify(results, null, 2);
   }, [chat, startNewChat]);
+
+  // Handler for showing sources
+  const handleShowSources = useCallback((sources: Source[]) => {
+      sourcesSidebar.openSources(sources);
+      if (!isDesktop) {
+          sidebar.setIsSidebarOpen(false);
+      }
+  }, [sourcesSidebar, isDesktop, sidebar]);
   
   return {
-    appContainerRef, messageListRef, theme, setTheme, isDesktop, visualViewportHeight, ...sidebar, isAgentMode, ...memory,
+    appContainerRef, messageListRef, theme, setTheme, isDesktop, visualViewportHeight,
+    // Sidebar Props (Spread the hook return)
+    ...sidebar,
+    handleToggleSidebar: sidebar.toggleSidebar,
+    // Sources Sidebar Props
+    isSourcesSidebarOpen: sourcesSidebar.isOpen,
+    sourcesForSidebar: sourcesSidebar.content,
+    sourcesSidebarWidth: sourcesSidebar.width,
+    handleSetSourcesSidebarWidth: sourcesSidebar.setWidth,
+    isSourcesResizing: sourcesSidebar.isResizing,
+    setIsSourcesResizing: sourcesSidebar.setIsResizing,
+    handleCloseSourcesSidebar: sourcesSidebar.closeSources,
+    handleShowSources,
+    // Artifact Sidebar Props
+    isArtifactOpen: artifactSidebar.isOpen,
+    setIsArtifactOpen: artifactSidebar.setIsOpen,
+    artifactContent: artifactSidebar.content,
+    artifactLanguage: artifactSidebar.language,
+    artifactWidth: artifactSidebar.width,
+    setArtifactWidth: artifactSidebar.setWidth,
+    isArtifactResizing: artifactSidebar.isResizing,
+    setIsArtifactResizing: artifactSidebar.setIsResizing,
+    
+    isAgentMode, ...memory,
     isAnyResizing, // Export aggregated state
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
-    isImportModalOpen, setIsImportModalOpen, isSourcesSidebarOpen, sourcesForSidebar,
+    isImportModalOpen, setIsImportModalOpen, 
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading, versionMismatch,
     retryConnection: checkBackendStatus,
     confirmation, handleConfirm, handleCancel: () => setConfirmation(null),
@@ -619,16 +640,10 @@ export const useAppLogic = () => {
     setIsAgentMode: handleSetIsAgentMode, ...chat, isChatActive: !!chat.currentChatId && chat.messages.length > 0,
     sendMessage: chat.sendMessage, startNewChat, isNewChatDisabled,
     handleDeleteChatRequest, handleRequestClearAll,
-    handleToggleSidebar: () => isDesktop ? sidebar.handleSetSidebarCollapsed(!sidebar.isSidebarCollapsed) : sidebar.setIsSidebarOpen(!sidebar.isSidebarOpen),
-    handleShowSources: (s: Source[]) => { setSourcesForSidebar(s); setIsSourcesSidebarOpen(true); },
-    handleCloseSourcesSidebar: () => setIsSourcesSidebarOpen(false),
     handleExportChat, handleExportAllChats, handleShareChat, handleImportChat: () => setIsImportModalOpen(true),
     runDiagnosticTests, handleFileUploadForImport, handleDownloadLogs, handleShowDataStructure,
     updateBackendMemory: memory.updateBackendMemory, memoryFiles: memory.memoryFiles, updateMemoryFiles: memory.updateMemoryFiles,
     serverUrl, onSaveServerUrl: handleSaveServerUrl,
-    // Artifact Props
-    isArtifactOpen, setIsArtifactOpen, artifactContent, artifactLanguage, 
-    artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing,
     // New Props for Provider
     provider, openRouterApiKey, onProviderChange: handleProviderChange,
     ollamaUrl, onSaveOllamaUrl: async (url: string) => { setOllamaUrl(url); await updateSettings({ ollamaUrl: url }); fetchModels(); },
