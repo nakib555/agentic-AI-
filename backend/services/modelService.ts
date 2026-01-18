@@ -55,13 +55,21 @@ const fetchWithRetry = async (url: string, options: any, retries = 3, backoff = 
 async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
     try {
         const cleanUrl = baseUrl.replace(/\/$/, '');
-        console.log(`[ModelService] Fetching models from Ollama at ${cleanUrl}...`);
+        
+        // Intelligent URL handling: If the user provided the full tags endpoint, use it directly.
+        // Otherwise, append the standard endpoint.
+        let fetchUrl = `${cleanUrl}/api/tags`;
+        if (cleanUrl.endsWith('/api/tags')) {
+             fetchUrl = cleanUrl;
+        }
+
+        console.log(`[ModelService] Fetching models from Ollama at ${fetchUrl}...`);
         
         // Timeout shorter for local network to avoid hanging
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-        const response = await fetch(`${cleanUrl}/api/tags`, {
+        const response = await fetch(fetchUrl, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',

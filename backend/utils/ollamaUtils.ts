@@ -19,7 +19,13 @@ export const streamOllama = async (
     }
 ) => {
     try {
-        const cleanUrl = baseUrl.replace(/\/$/, '');
+        let cleanUrl = baseUrl.replace(/\/$/, '');
+        
+        // Robustness: If the user provided a URL ending in /api/tags (common mistake when copying from docs), 
+        // we should strip it to find the base, then append /api/chat.
+        if (cleanUrl.endsWith('/api/tags')) {
+             cleanUrl = cleanUrl.replace(/\/api\/tags$/, '');
+        }
         
         // Convert messages to Ollama format
         // Ollama uses 'role' and 'content', similar to OpenAI
@@ -109,7 +115,12 @@ export const streamOllamaGenerate = async (
     }
 ) => {
     try {
-        const cleanUrl = baseUrl.replace(/\/$/, '');
+        let cleanUrl = baseUrl.replace(/\/$/, '');
+
+        // Robustness: Strip /api/tags if present to get base URL
+        if (cleanUrl.endsWith('/api/tags')) {
+             cleanUrl = cleanUrl.replace(/\/api\/tags$/, '');
+        }
         
         const body = {
             model: model,
