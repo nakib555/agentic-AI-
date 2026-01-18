@@ -16,7 +16,7 @@ import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./too
 import { runAgenticLoop } from './services/agenticLoop/index';
 import { createToolExecutor } from './tools/index';
 import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations'; 
-import { getApiKey, getSuggestionApiKey, getProvider, getSettings } from './settingsHandler';
+import { getApiKey, getSuggestionApiKey, getProvider, getSettings, getEffectiveOllamaUrl } from './settingsHandler';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils';
 import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
@@ -248,8 +248,9 @@ export const apiHandler = async (req: any, res: any) => {
     const activeProvider = globalSettings.provider || 'gemini';
     const mainApiKey = await getApiKey();
     const suggestionApiKey = await getSuggestionApiKey();
-    // Use stored setting, or fallback to env var, or fallback to default
-    const ollamaUrl = globalSettings.ollamaUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+    
+    // Correctly determine Ollama URL with precedence rules
+    const ollamaUrl = getEffectiveOllamaUrl(globalSettings);
     
     const SUGGESTION_TASKS = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'];
     const isSuggestionTask = SUGGESTION_TASKS.includes(task);

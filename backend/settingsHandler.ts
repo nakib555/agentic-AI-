@@ -23,16 +23,36 @@ const ensureSettingsLoaded = async () => {
     return cachedSettings;
 };
 
+// Helper to determine the effective Ollama URL
+// Precedence: 
+// 1. User configured non-default value in settings
+// 2. Environment Variable
+// 3. Stored setting (even if default)
+// 4. Hardcoded default
+export const getEffectiveOllamaUrl = (settings: any) => {
+    const stored = settings.ollamaUrl;
+    const env = process.env.OLLAMA_BASE_URL;
+    const defaultUrl = 'http://localhost:11434';
+    
+    // If user has explicitly changed it to something other than default, respect that.
+    // If it is empty or exactly the default, allow ENV to override.
+    if (env && (!stored || stored === defaultUrl)) {
+        return env;
+    }
+    return stored || env || defaultUrl;
+};
+
 export const getSettings = async (req: any, res: any) => {
     try {
         const settings = await ensureSettingsLoaded();
         
-        // Ensure env var fallback is exposed to UI if setting is missing/empty
-        if (!settings.ollamaUrl) {
-            settings.ollamaUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-        }
+        // Create a copy to not mutate cache with computed properties
+        const responseSettings = { ...settings };
         
-        res.status(200).json(settings);
+        // Calculate effective URL to show in UI
+        responseSettings.ollamaUrl = getEffectiveOllamaUrl(settings);
+        
+        res.status(200).json(responseSettings);
     } catch (error) {
         console.error('Failed to get settings:', error);
         res.status(500).json({ error: 'Failed to retrieve settings.' });
@@ -67,7 +87,7 @@ export const updateSettings = async (req: any, res: any) => {
                 let shouldFetch = false;
                 if (newSettings.provider === 'gemini' && activeKey) shouldFetch = true;
                 if (newSettings.provider === 'openrouter' && activeKey) shouldFetch = true;
-                if (newSettings.provider === 'ollama' && newSettings.ollamaUrl) shouldFetch = true;
+                if (newSettings.provider === 'ollama') shouldFetch = true; // Always try fetch for Ollama as URL might be default/env
 
                 if (shouldFetch) {
                     const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(activeKey, true);

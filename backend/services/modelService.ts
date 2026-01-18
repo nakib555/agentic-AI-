@@ -6,6 +6,7 @@
 
 import type { Model as AppModel } from '../../src/types';
 import { readData, SETTINGS_FILE_PATH } from '../data-store';
+import { getEffectiveOllamaUrl } from '../settingsHandler';
 
 // Cache structure
 type ModelCache = {
@@ -221,7 +222,9 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
     // Determine provider from settings
     const settings: any = await readData(SETTINGS_FILE_PATH);
     const provider = settings.provider || 'gemini';
-    const ollamaUrl = settings.ollamaUrl || 'http://localhost:11434';
+    
+    // Correctly determine Ollama URL with precedence
+    const ollamaUrl = getEffectiveOllamaUrl(settings);
     
     // Simple hash check (using last 8 chars is usually enough to detect a change in the session context)
     const currentKeyHash = (apiKey || '').trim().slice(-8);
