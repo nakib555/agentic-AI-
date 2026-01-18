@@ -27,19 +27,17 @@ const ensureSettingsLoaded = async () => {
 // Precedence: 
 // 1. User configured non-default value in settings
 // 2. Environment Variable
-// 3. Stored setting (even if default)
-// 4. Hardcoded default
+// 3. Stored setting
 export const getEffectiveOllamaUrl = (settings: any) => {
     const stored = settings.ollamaUrl;
     const env = process.env.OLLAMA_BASE_URL;
-    const defaultUrl = 'http://localhost:11434';
     
-    // If user has explicitly changed it to something other than default, respect that.
-    // If it is empty or exactly the default, allow ENV to override.
-    if (env && (!stored || stored === defaultUrl)) {
-        return env;
+    // If user has explicitly changed it to something, respect that.
+    if (stored) {
+        return stored;
     }
-    return stored || env || defaultUrl;
+    // Fallback to ENV or empty string
+    return env || '';
 };
 
 export const getSettings = async (req: any, res: any) => {

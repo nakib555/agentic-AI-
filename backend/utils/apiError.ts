@@ -106,7 +106,7 @@ export const parseApiError = (error: any): MessageError => {
         return {
             code: 'CONNECTION_REFUSED',
             message: 'Cannot connect to Ollama',
-            details: `Failed to connect to the Ollama instance at the configured URL. \n\nEnsure that:\n1. Ollama is running.\n2. The URL is correct (default: http://localhost:11434).\n3. If running in a container, use the host IP instead of localhost.\n4. OLLAMA_HOST environment variable is set to 0.0.0.0 to accept external connections.\n\nOriginal Error: ${message}`
+            details: `Failed to connect to the Ollama instance at the configured URL. \n\nEnsure that:\n1. Ollama is running.\n2. The URL is correct.\n3. If running in a container, use the host IP instead of localhost.\n4. OLLAMA_HOST environment variable is set to 0.0.0.0 to accept external connections.\n\nOriginal Error: ${message}`
         };
     }
 

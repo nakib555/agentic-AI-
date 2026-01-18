@@ -19,7 +19,12 @@ export const streamOllama = async (
     }
 ) => {
     try {
-        let cleanUrl = baseUrl.replace(/\/$/, '');
+        let cleanUrl = baseUrl.trim().replace(/\/$/, '');
+        
+        // Robustness: Ensure protocol is present
+        if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+            cleanUrl = `http://${cleanUrl}`;
+        }
         
         // Robustness: If the user provided a URL ending in /api/tags (common mistake when copying from docs), 
         // we should strip it to find the base, then append /api/chat.
@@ -115,7 +120,12 @@ export const streamOllamaGenerate = async (
     }
 ) => {
     try {
-        let cleanUrl = baseUrl.replace(/\/$/, '');
+        let cleanUrl = baseUrl.trim().replace(/\/$/, '');
+
+        // Robustness: Ensure protocol is present
+        if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+            cleanUrl = `http://${cleanUrl}`;
+        }
 
         // Robustness: Strip /api/tags if present to get base URL
         if (cleanUrl.endsWith('/api/tags')) {

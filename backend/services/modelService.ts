@@ -54,7 +54,12 @@ const fetchWithRetry = async (url: string, options: any, retries = 3, backoff = 
 
 async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
     try {
-        const cleanUrl = baseUrl.replace(/\/$/, '');
+        let cleanUrl = baseUrl.trim().replace(/\/$/, '');
+        
+        // Robustness: Ensure protocol is present
+        if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+            cleanUrl = `http://${cleanUrl}`;
+        }
         
         // Intelligent URL handling: If the user provided the full tags endpoint, use it directly.
         // Otherwise, append the standard endpoint.
