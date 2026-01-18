@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -5,7 +6,6 @@
 
 import type { Model as AppModel } from '../../src/types';
 import { readData, SETTINGS_FILE_PATH } from '../data-store';
-import { Ollama } from 'ollama';
 
 // Cache structure
 type ModelCache = {
@@ -54,23 +54,41 @@ const fetchWithRetry = async (url: string, options: any, retries = 5, backoff = 
 async function fetchOllamaModels(host: string, apiKey?: string): Promise<AppModel[]> {
     try {
         console.log(`[ModelService] Fetching models from Ollama at ${host}...`);
-        const config: any = { host };
-        if (apiKey) {
-            config.headers = { Authorization: `Bearer ${apiKey}` };
-        }
-        const ollama = new Ollama(config);
-        const response = await ollama.list();
         
-        const models: AppModel[] = (response.models || []).map((m: any) => ({
-            id: m.model, // Ollama uses 'model' as ID
-            name: m.name || m.model,
+        // Ensure path is correct for listing models using /api/tags endpoint
+        const baseUrl = host.replace(/\/$/, '');
+        const url = `${baseUrl}/api/tags`;
+        
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json'
+        };
+        
+        if (apiKey) {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
+        const response = await fetch(url, { 
+            method: 'GET',
+            headers 
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Ollama API error: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        
+        const models: AppModel[] = (data.models || []).map((m: any) => ({
+            id: m.name, 
+            name: m.name,
             description: `${m.details?.parameter_size || ''} ${m.details?.quantization_level || ''} (${m.details?.family || 'Ollama'})`,
         }));
         
         return sortModelsByName(models);
     } catch (error: any) {
         console.error('[ModelService] Failed to fetch Ollama models:', error);
-        throw new Error(`Ollama connection failed: ${error.message}. Is Ollama running?`);
+        throw new Error(`Ollama connection failed: ${error.message}. Ensure host is correct and Ollama is running.`);
     }
 }
 
