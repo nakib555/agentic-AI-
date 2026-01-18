@@ -60,13 +60,25 @@ export class OllamaService {
         if (!response.body) throw new Error("No response body");
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        let buffer = '';
 
         while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+                if (buffer.trim()) {
+                    try {
+                        const json = JSON.parse(buffer);
+                        if (json.message?.content) yield json.message.content;
+                    } catch (e) { /* ignore final partial */ }
+                }
+                break;
+            }
             
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            
+            // Keep the last line in the buffer if it's potentially incomplete
+            buffer = lines.pop() || '';
             
             for (const line of lines) {
                 if (!line.trim()) continue;
@@ -77,7 +89,7 @@ export class OllamaService {
                         yield json.message.content;
                     }
                 } catch (e) {
-                    console.warn("Error parsing Ollama chunk", e);
+                    // console.warn("Error parsing Ollama chunk", e);
                 }
             }
         }

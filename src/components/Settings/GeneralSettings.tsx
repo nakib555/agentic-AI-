@@ -146,7 +146,7 @@ const ApiKeyInput = ({
                 triggerClassName="flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors shadow-sm"
             />
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {provider === 'ollama' ? 'Host Configuration' : 'API Key'}
+                {provider === 'ollama' ? 'Host URL' : 'API Key'}
             </span>
         </div>
     );

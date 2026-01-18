@@ -254,9 +254,8 @@ export const useChat = (
         historyMessages: Message[],
         chatConfig: Pick<ChatSession, 'temperature' | 'maxOutputTokens'>
     ) => {
-        // 1. Prepare messages for Ollama (System prompt + History)
+        // 1. Prepare messages
         const messagesToSend = [];
-        // Add system instruction if available
         if (settings.aboutUser || settings.aboutResponse || settings.systemPrompt || memoryContent) {
             const systemContent = `
 ${settings.systemPrompt || ''}
@@ -267,7 +266,6 @@ ${memoryContent ? `\nMemory:\n${memoryContent}` : ''}
             if (systemContent) messagesToSend.push({ role: 'system', text: systemContent });
         }
         
-        // Add conversation history
         historyMessages.forEach(m => {
             if (!m.isHidden) {
                 const text = m.role === 'user' ? m.text : (m.responses?.[m.activeResponseIndex]?.text || '');
@@ -275,24 +273,39 @@ ${memoryContent ? `\nMemory:\n${memoryContent}` : ''}
             }
         });
 
-        // 2. Start Streaming
+        // 2. Start Streaming with Buffering
         try {
             const stream = OllamaService.streamChat(ollamaUrl, model, messagesToSend, chatConfig);
             let fullText = "";
+            let pendingUpdate = false;
+            
+            // Define throttled updater for smoother UI
+            const flushUpdates = () => {
+                if (!pendingUpdate) return;
+                updateActiveResponseOnMessage(chatId, messageId, (current) => {
+                     const parsedWorkflow = parseAgenticWorkflow(fullText, [], false);
+                     return { text: fullText, workflow: parsedWorkflow };
+                });
+                pendingUpdate = false;
+            };
+
+            // Use an interval to flush updates
+            const flushInterval = setInterval(flushUpdates, 60); // 60ms = ~16fps
 
             for await (const chunk of stream) {
                 if (abortControllerRef.current?.signal.aborted) break;
                 
                 fullText += chunk;
+                pendingUpdate = true;
                 
-                // Update UI state locally
-                updateActiveResponseOnMessage(chatId, messageId, (current) => {
-                     // Since we don't have backend tool parsing for local chat yet, we just update text.
-                     // The AiMessage component will handle parsing formatting.
-                     const parsedWorkflow = parseAgenticWorkflow(fullText, [], false);
-                     return { text: fullText, workflow: parsedWorkflow };
-                });
+                // Immediate flush for structural tokens to reduce jitter
+                if (/[\n`\[\]]/.test(chunk)) {
+                    flushUpdates();
+                }
             }
+
+            clearInterval(flushInterval);
+            flushUpdates(); // Final flush
 
             if (!abortControllerRef.current?.signal.aborted) {
                 // Finalize message
@@ -303,14 +316,11 @@ ${memoryContent ? `\nMemory:\n${memoryContent}` : ''}
                 }));
                 updateMessage(chatId, messageId, { isThinking: false });
                 
-                // Trigger persistence to backend
+                // Trigger persistence
                 const chatToPersist = chatHistoryRef.current.find(c => c.id === chatId);
                 if (chatToPersist && chatToPersist.messages) {
-                    // We must save the updated message list to the backend manually here,
-                    // since the backend didn't generate it.
                     updateChatProperty(chatId, { messages: chatToPersist.messages });
 
-                    // Trigger title generation if needed (New Chat)
                     if (chatToPersist.title === "New Chat" && chatToPersist.messages.length >= 2 && !titleGenerationAttemptedRef.current.has(chatId)) {
                         titleGenerationAttemptedRef.current.add(chatId);
                         generateChatTitle(chatToPersist.messages)
@@ -421,7 +431,6 @@ ${memoryContent ? `\nMemory:\n${memoryContent}` : ''}
                 updateMessage(chatId, messageId, { isThinking: false });
                 completeChatLoading(chatId);
                 
-                // Cleanup refs only if we are the active controller
                 if (abortControllerRef.current === controller) {
                     abortControllerRef.current = null;
                     requestIdRef.current = null;
@@ -444,8 +453,6 @@ ${memoryContent ? `\nMemory:\n${memoryContent}` : ''}
                     const suggestions = await generateFollowUpSuggestions(finalChatState.messages);
                      if (suggestions.length > 0) {
                         updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
-                        
-                        // Force a persist of the suggestions
                         const currentChatSnapshot = chatHistoryRef.current.find(c => c.id === chatId);
                         if (currentChatSnapshot && currentChatSnapshot.messages) {
                             const updatedMessages = currentChatSnapshot.messages.map(m => {
@@ -543,7 +550,7 @@ ${memoryContent ? `\nMemory:\n${memoryContent}` : ''}
 
         if (provider === 'ollama') {
             const history = (currentChat.messages || []).concat([userMessageObj]);
-            abortControllerRef.current = new AbortController(); // Set generic controller for abort check
+            abortControllerRef.current = new AbortController();
             await startLocalOllamaChat(
                 activeChatId,
                 modelPlaceholder.id,
@@ -620,7 +627,6 @@ ${memoryContent ? `\nMemory:\n${memoryContent}` : ''}
             setChatLoadingState(chatId, true);
 
             if (provider === 'ollama') {
-                 // Local regeneration
                  abortControllerRef.current = new AbortController();
                  await startLocalOllamaChat(
                     chatId,
@@ -799,7 +805,6 @@ ${memoryContent ? `\nMemory:\n${memoryContent}` : ''}
   
   return { 
       chatHistory, currentChatId, isHistoryLoading,
-      // expose all needed methods from history hook
       updateChatTitle, updateChatProperty, loadChat: loadChatHistory, deleteChat: deleteChatHistory, clearAllChats: clearAllChatsHistory, importChat, startNewChat: startNewChatHistory,
       messages, 
       sendMessage, 
