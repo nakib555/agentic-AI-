@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -19,13 +20,20 @@ export const streamOllama = async (
         temperature: number;
     }
 ) => {
+    // Configure Ollama with host and optional API key in headers
     const config: any = { host };
+    
     if (apiKey) {
-        config.headers = { Authorization: `Bearer ${apiKey}` };
+        config.headers = { 
+            'Authorization': `Bearer ${apiKey}`,
+            'X-API-Key': apiKey // Support alternative header convention if needed by proxies
+        };
     }
+    
     const ollama = new Ollama(config);
 
     try {
+        console.log(`[Ollama] Chatting with model ${model} at ${host}...`);
         const response = await ollama.chat({
             model: model,
             messages: messages,
@@ -66,10 +74,6 @@ export const streamOllama = async (
                     const marker = '\n\n[STEP] Final Answer:\n';
                     callbacks.onTextChunk(marker);
                     fullContent += marker;
-                } else if (hasThinkingBlock && !fullContent.includes('[STEP] Final Answer:')) {
-                     // Edge case: thinking ended in previous chunk but we didn't emit the marker yet? 
-                     // Unlikely with the logic above, but good for safety.
-                     // Actually, we handle the transition on the *first* content chunk after thinking.
                 }
                 
                 const chunk = partMsg.content;

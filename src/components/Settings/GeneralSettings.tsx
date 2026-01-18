@@ -31,7 +31,7 @@ type GeneralSettingsProps = {
 const PROVIDER_OPTIONS = [
     { id: 'gemini', label: 'Google Gemini', desc: 'Default' },
     { id: 'openrouter', label: 'OpenRouter', desc: 'Access to Claude, GPT, etc.' },
-    { id: 'ollama', label: 'Ollama', desc: 'Local or Cloud API' }
+    { id: 'ollama', label: 'Ollama', desc: 'Local or Hosted Instance' }
 ];
 
 const SYNTAX_OPTIONS = [
@@ -123,7 +123,7 @@ const ApiKeyInput = ({
         } catch (error: any) {
             if (isMounted.current) {
                 setSaveStatus('error');
-                setSaveError(error.message || 'Failed to save key.');
+                setSaveError(error.message || 'Failed to save.');
             }
         }
     };
@@ -146,7 +146,6 @@ const ApiKeyInput = ({
         </div>
     );
 
-    // Only hide key if it is NOT a host URL
     const isSecret = !isHost;
 
     return (
@@ -207,7 +206,7 @@ const ApiKeyInput = ({
               <div className="flex items-center justify-between min-h-[20px]">
                  {saveStatus === 'error' && saveError ? (
                      <p className="text-xs font-medium text-red-500 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" /></svg>
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M18 10a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" /></svg>
                          {saveError}
                      </p>
                  ) : (
@@ -388,16 +387,29 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
             ? "Required for main chat, reasoning, and tool execution." 
             : provider === 'openrouter'
             ? "Required for accessing OpenRouter models."
-            : "Required. Enter the API Key for your Ollama Cloud instance or compatible API."
+            : "Required if your local or hosted Ollama instance uses Bearer token authentication."
         }
         value={provider === 'openrouter' ? openRouterApiKey : apiKey}
         onSave={handleMainApiKeySave}
         placeholder={
             provider === 'gemini' ? "Enter your Gemini API key" 
             : provider === 'openrouter' ? "Enter your OpenRouter API key"
-            : "e.g. e4aaae..."
+            : "Enter Ollama API Key (if required)"
         }
+        isOptional={provider === 'ollama'}
       />
+
+      {provider === 'ollama' && (
+          <ApiKeyInput
+            provider="ollama"
+            label="Ollama Host URL"
+            description="The base URL of your Ollama instance. Default is http://127.0.0.1:11434"
+            value={ollamaHost}
+            onSave={(val) => onSaveOllamaHost(val)}
+            placeholder="http://127.0.0.1:11434"
+            isHost
+          />
+      )}
 
       {provider === 'gemini' && onSaveSuggestionApiKey && (
           <ApiKeyInput 
@@ -413,7 +425,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
       )}
 
       <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 pb-4 border-b border-gray-100 dark:border-white/5">
-         <span>Need a key?</span>
+         <span>Need help?</span>
          {provider === 'gemini' ? (
              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
                  Get Gemini Key 
@@ -425,10 +437,16 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
              </a>
          ) : (
-             <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
-                 Download Ollama
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
-             </a>
+             <div className="flex gap-4">
+                <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
+                    Download Ollama
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
+                </a>
+                <span className="text-slate-300 dark:text-slate-700">|</span>
+                <a href="https://ollama.com/library" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
+                    Browse Library
+                </a>
+             </div>
          )}
       </div>
 
