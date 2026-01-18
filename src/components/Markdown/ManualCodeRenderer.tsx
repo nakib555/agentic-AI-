@@ -21,6 +21,14 @@ type ManualCodeRendererProps = {
   isRunDisabled?: boolean;
 };
 
+// Helper to safely unwrap plugins (handles ESM default export vs CJS module.exports)
+const safePlugin = (plugin: any) => {
+    if (!plugin) return () => {}; // No-op if missing
+    if (typeof plugin === 'function') return plugin;
+    if (typeof plugin === 'object' && typeof plugin.default === 'function') return plugin.default;
+    return plugin;
+};
+
 // Robust function to protect code blocks AND math from highlight replacement.
 const processHighlights = (content: string): string => {
     if (!content) return '';
@@ -74,8 +82,8 @@ const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, onRunC
 
     return (
         <ReactMarkdown
-            remarkPlugins={[remarkMath, remarkGfm]}
-            rehypePlugins={[rehypeKatex, rehypeRaw]}
+            remarkPlugins={[safePlugin(remarkMath), safePlugin(remarkGfm)]}
+            rehypePlugins={[safePlugin(rehypeKatex), safePlugin(rehypeRaw)]}
             components={customComponents}
         >
             {processedText}
