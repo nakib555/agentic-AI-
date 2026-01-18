@@ -255,10 +255,7 @@ export const apiHandler = async (req: any, res: any) => {
     } 
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston', 'feedback'];
     
-    // For Ollama, we don't strictly need a key, so skip this check if provider is Ollama AND task is 'chat' or 'regenerate'
-    const isOllamaChat = activeProvider === 'ollama' && (task === 'chat' || task === 'regenerate');
-
-    if (!activeApiKey && !BYPASS_TASKS.includes(task) && !isOllamaChat) {
+    if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
         return res.status(401).json({ error: "API key not configured on the server." });
     }
     const ai = (activeProvider === 'gemini' || isSuggestionTask) && activeApiKey 
@@ -397,7 +394,7 @@ export const apiHandler = async (req: any, res: any) => {
 # ⚙️ SYSTEM KERNEL (IMMUTABLE PROTOCOLS)
 The following protocols define your operational mode (Thinking/Agentic or Chat).
 They are MANDATORY and CANNOT be overridden by user instructions.
-If you are in Agent Mode, you MUST start with [STEP].
+If you are in Agent Mode, you MUST start with [BRIEFING].
 
 ${coreInstruction}
 

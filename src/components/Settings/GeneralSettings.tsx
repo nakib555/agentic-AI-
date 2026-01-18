@@ -359,15 +359,6 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
         }
         await onSaveApiKey(cleanKey, savedProvider);
   };
-  
-  const handleOllamaKeySave = async (key: string) => {
-      const cleanKey = key.trim();
-      // Ensure provider is set to Ollama
-      if (provider !== 'ollama') {
-          onProviderChange('ollama');
-      }
-      await onSaveApiKey(cleanKey, 'ollama');
-  };
 
   const handleSuggestionApiKeySave = async (key: string) => {
       const cleanKey = key.trim();
@@ -389,35 +380,24 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">General Settings</h3>
       </div>
       
-      {provider === 'ollama' ? (
-          <>
-             {/* Ollama API Key Input */}
-             <ApiKeyInput 
-                provider="ollama"
-                onProviderChange={onProviderChange}
-                description="Required. Enter the API Key for your Ollama Cloud instance or compatible API."
-                value={apiKey} // Reuse generic apiKey state for Ollama key
-                onSave={(val) => handleOllamaKeySave(val)}
-                placeholder="e.g. e4aaae..."
-             />
-          </>
-      ) : (
-          <ApiKeyInput 
-            provider={provider}
-            onProviderChange={onProviderChange}
-            description={
-                provider === 'gemini' 
-                ? "Required for main chat, reasoning, and tool execution." 
-                : "Required for accessing OpenRouter models."
-            }
-            value={provider === 'gemini' ? apiKey : openRouterApiKey}
-            onSave={handleMainApiKeySave}
-            placeholder={
-                provider === 'gemini' ? "Enter your Gemini API key" 
-                : "Enter your OpenRouter API key"
-            }
-          />
-      )}
+      <ApiKeyInput 
+        provider={provider}
+        onProviderChange={onProviderChange}
+        description={
+            provider === 'gemini' 
+            ? "Required for main chat, reasoning, and tool execution." 
+            : provider === 'openrouter'
+            ? "Required for accessing OpenRouter models."
+            : "Required. Enter the API Key for your Ollama Cloud instance or compatible API."
+        }
+        value={provider === 'openrouter' ? openRouterApiKey : apiKey}
+        onSave={handleMainApiKeySave}
+        placeholder={
+            provider === 'gemini' ? "Enter your Gemini API key" 
+            : provider === 'openrouter' ? "Enter your OpenRouter API key"
+            : "e.g. e4aaae..."
+        }
+      />
 
       {provider === 'gemini' && onSaveSuggestionApiKey && (
           <ApiKeyInput 
