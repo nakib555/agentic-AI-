@@ -76,4 +76,28 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               </svg>
             </div>
             <h2 className="text-xl font-bold text-content-primary mb-2">Something went wrong</h2>
-            <p className="text-content-secondary mb-6 text-xs font-mono break-words bg-slate-100 dark:
+            <p className="text-content-secondary mb-6 text-xs font-mono break-words bg-slate-100 dark:bg-black/20 p-2 rounded">
+              {this.state.error?.message || "An unexpected error occurred."}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={this.handleDismiss}
+                className="px-4 py-2 text-sm font-semibold text-content-secondary hover:bg-layer-2 rounded-lg transition-colors"
+              >
+                Dismiss
+              </button>
+              <button
+                onClick={this.handleReload}
+                className="px-4 py-2 text-sm font-semibold text-white bg-primary-main hover:bg-primary-hover rounded-lg transition-colors"
+              >
+                Reload
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
