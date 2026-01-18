@@ -126,12 +126,13 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
 
-    // 503 Service Unavailable / Overloaded
-    if (lowerCaseStatus === 'unavailable' || lowerCaseMessage.includes('503') || lowerCaseMessage.includes('overloaded')) {
+    // 5xx Server Errors (Overloaded, Unavailable, Internal Error, Gateway, Timeout)
+    // Matches status strings or numeric status if available, or keywords in message
+    if (lowerCaseStatus === 'unavailable' || lowerCaseStatus === 'internal' || lowerCaseMessage.includes('503') || lowerCaseMessage.includes('500') || lowerCaseMessage.includes('502') || lowerCaseMessage.includes('504') || lowerCaseMessage.includes('overloaded') || lowerCaseMessage.includes('internal server error')) {
         return {
-            code: 'UNAVAILABLE',
-            message: 'Model is temporarily unavailable',
-            details: `The model is currently overloaded or down for maintenance. Please try again in a few moments. Original error: ${message}`
+            code: 'SERVER_ERROR',
+            message: 'AI Service Temporarily Unavailable',
+            details: `The model provider is currently experiencing issues (Overload or Internal Error). The system attempted to retry but failed. Please try again later. Original error: ${message}`
         };
     }
     
