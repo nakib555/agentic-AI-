@@ -93,3 +93,79 @@ export const streamOllama = async (
         callbacks.onError(error);
     }
 };
+
+export const streamOllamaGenerate = async (
+    baseUrl: string,
+    model: string,
+    prompt: string,
+    callbacks: {
+        onTextChunk: (text: string) => void;
+        onComplete: (fullText: string) => void;
+        onError: (error: any) => void;
+    },
+    settings: {
+        temperature: number;
+        maxTokens: number;
+    }
+) => {
+    try {
+        const cleanUrl = baseUrl.replace(/\/$/, '');
+        
+        const body = {
+            model: model,
+            prompt: prompt,
+            stream: true,
+            options: {
+                temperature: settings.temperature,
+                num_predict: settings.maxTokens > 0 ? settings.maxTokens : undefined,
+            }
+        };
+
+        const response = await fetch(`${cleanUrl}/api/generate`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Ollama API Error (${response.status}): ${errorText}`);
+        }
+
+        if (!response.body) throw new Error("No response body from Ollama");
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let fullText = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n").filter(line => line.trim() !== "");
+
+            for (const line of lines) {
+                try {
+                    const data = JSON.parse(line);
+                    
+                    if (data.done) break;
+
+                    if (data.response) {
+                        const delta = data.response;
+                        fullText += delta;
+                        callbacks.onTextChunk(delta);
+                    }
+                } catch (e) { }
+            }
+        }
+
+        callbacks.onComplete(fullText);
+
+    } catch (error) {
+        console.error("Ollama generate stream failed:", error);
+        callbacks.onError(error);
+    }
+};

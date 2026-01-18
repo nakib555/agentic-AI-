@@ -21,7 +21,7 @@ import { generateContentWithRetry, generateContentStreamWithRetry } from './util
 import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
 import { streamOpenRouter } from './utils/openRouterUtils';
-import { streamOllama } from './utils/ollamaUtils';
+import { streamOllama, streamOllamaGenerate } from './utils/ollamaUtils';
 import { vectorMemory } from './services/vectorMemory'; // Import Vector Memory
 import { executeWithPiston } from './tools/piston';
 import { readData, SETTINGS_FILE_PATH } from './data-store';
@@ -684,8 +684,8 @@ ${personalizationSection}
                 break;
             }
             case 'enhance': {
-                if (!ai) return res.status(200).send(req.body.userInput);
                 const { userInput } = req.body;
+                
                 const prompt = `
 You are an expert Prompt Engineer. Your goal is to rewrite the following user input into a highly effective prompt for an LLM (Large Language Model).
 
@@ -700,6 +700,35 @@ GUIDELINES:
 
 IMPROVED PROMPT:
 `;
+                
+                // Support for Ollama in Enhance Mode
+                if (activeProvider === 'ollama') {
+                     res.setHeader('Content-Type', 'text/plain');
+                     try {
+                        await streamOllamaGenerate(
+                            ollamaUrl,
+                            globalSettings.activeModel || 'llama3', // Fallback if no model selected
+                            prompt,
+                            {
+                                onTextChunk: (text) => res.write(text),
+                                onComplete: () => res.end(),
+                                onError: (e) => { 
+                                    console.error(e);
+                                    res.write(userInput); // Fallback to original
+                                    res.end();
+                                }
+                            },
+                            { temperature: 0.7, maxTokens: 0 }
+                        );
+                     } catch(e) {
+                         res.write(userInput);
+                         res.end();
+                     }
+                     return;
+                }
+
+                if (!ai) return res.status(200).send(userInput);
+
                 res.setHeader('Content-Type', 'text/plain');
                 try {
                     const stream = await generateContentStreamWithRetry(ai, { model: 'gemini-3-flash-preview', contents: prompt });
