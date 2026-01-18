@@ -19,6 +19,10 @@ export const streamOllama = async (
     }
 ) => {
     try {
+        if (!baseUrl || !baseUrl.trim()) {
+            throw new Error("Ollama URL is not configured. Please set it in Settings or environment variables.");
+        }
+
         let cleanUrl = baseUrl.trim().replace(/\/$/, '');
         
         // Robustness: Ensure protocol is present
@@ -120,6 +124,10 @@ export const streamOllamaGenerate = async (
     }
 ) => {
     try {
+        if (!baseUrl || !baseUrl.trim()) {
+            throw new Error("Ollama URL is not configured.");
+        }
+
         let cleanUrl = baseUrl.trim().replace(/\/$/, '');
 
         // Robustness: Ensure protocol is present

@@ -53,6 +53,11 @@ const fetchWithRetry = async (url: string, options: any, retries = 3, backoff = 
 };
 
 async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
+    // Prevent malformed requests if URL is missing
+    if (!baseUrl || !baseUrl.trim()) {
+        return [];
+    }
+
     try {
         let cleanUrl = baseUrl.trim().replace(/\/$/, '');
         
@@ -70,9 +75,9 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
 
         console.log(`[ModelService] Fetching models from Ollama at ${fetchUrl}...`);
         
-        // Timeout shorter for local network to avoid hanging
+        // Timeout increased to 15s to handle slower tunnels (Ngrok/Cloudflare)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         const response = await fetch(fetchUrl, {
             method: 'GET',
@@ -125,11 +130,15 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
             };
         });
 
-        console.log('[ModelService] Ollama models found:', models.map(m => m.name));
+        console.log(`[ModelService] Ollama models found: ${models.length}`);
         
         return sortModelsByName(models);
-    } catch (error) {
-        console.error('[ModelService] Failed to fetch Ollama models:', error);
+    } catch (error: any) {
+        if (error.name === 'AbortError') {
+             console.error(`[ModelService] Timeout fetching Ollama models from ${baseUrl}. If running in cloud, ensure Ollama is accessible via public URL (not localhost/192.168.x.x).`);
+        } else {
+             console.error('[ModelService] Failed to fetch Ollama models:', error.message);
+        }
         return [];
     }
 }
