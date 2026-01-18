@@ -246,7 +246,17 @@ export const useAppLogic = () => {
             setIsMemoryEnabledState(settings.isMemoryEnabled);
             setTtsVoice(settings.ttsVoice);
             setIsAgentModeState(settings.isAgentMode);
-            fetchModels();
+            
+            // Only fetch models if we have a key for the current provider
+            // For Ollama, we now require an API Key per user request
+            const hasKeyForProvider = 
+               (settings.provider === 'gemini' && settings.apiKey) ||
+               (settings.provider === 'openrouter' && settings.openRouterApiKey) ||
+               (settings.provider === 'ollama' && settings.apiKey);
+
+            if (hasKeyForProvider) {
+                fetchModels();
+            }
         } catch (error) {
             console.error("Failed to load settings:", error);
         } finally {
@@ -266,15 +276,13 @@ export const useAppLogic = () => {
   const handleSetApiKey = useCallback(async (newApiKey: string, providerType: 'gemini' | 'openrouter' | 'ollama') => {
     if (providerType === 'gemini') setApiKey(newApiKey);
     else if (providerType === 'openrouter') setOpenRouterApiKey(newApiKey);
-    // For Ollama, the key input is repurposed as the Host URL, so we don't set a key state here directly if this function is reused.
-    // However, GeneralSettings calls this with the host value if provider is ollama.
-    // We should handle that via handleSetOllamaHost but for compatibility with the generic handler:
+    else if (providerType === 'ollama') setApiKey(newApiKey); // Store Ollama key in generic apiKey state
     
     try {
         let payload: any = { provider: providerType };
         if (providerType === 'gemini') payload.apiKey = newApiKey;
         else if (providerType === 'openrouter') payload.openRouterApiKey = newApiKey;
-        else if (providerType === 'ollama') payload.ollamaHost = newApiKey;
+        else if (providerType === 'ollama') payload.apiKey = newApiKey;
 
         const response: UpdateSettingsResponse = await updateSettings(payload);
         if (response.models) {
@@ -292,7 +300,12 @@ export const useAppLogic = () => {
       setProvider(newProvider);
       updateSettings({ provider: newProvider }).then(response => {
           if (response.models) processModelData(response);
-          else fetchModels();
+          // Only auto-fetch if we already have the key for this provider
+          // This avoids failed calls on switch
+          else {
+              // We can trigger fetch, but the backend will return empty if key missing.
+              fetchModels();
+          }
       });
   }, [fetchModels, processModelData]);
 
@@ -589,6 +602,13 @@ export const useAppLogic = () => {
     }
     return JSON.stringify(results, null, 2);
   }, [chat, startNewChat]);
+
+  // Determine if we have a valid configuration to start chatting
+  // Updated for Ollama API Key requirement
+  const hasApiKey = 
+      (provider === 'gemini' && !!apiKey) || 
+      (provider === 'openrouter' && !!openRouterApiKey) || 
+      (provider === 'ollama' && !!apiKey);
   
   return {
     appContainerRef, messageListRef, theme, setTheme, isDesktop, visualViewportHeight, ...sidebar, isAgentMode, ...memory,

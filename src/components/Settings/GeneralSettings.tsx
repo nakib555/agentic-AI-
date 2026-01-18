@@ -31,7 +31,7 @@ type GeneralSettingsProps = {
 const PROVIDER_OPTIONS = [
     { id: 'gemini', label: 'Google Gemini', desc: 'Default' },
     { id: 'openrouter', label: 'OpenRouter', desc: 'Access to Claude, GPT, etc.' },
-    { id: 'ollama', label: 'Ollama', desc: 'Local LLMs' }
+    { id: 'ollama', label: 'Ollama', desc: 'Local or Cloud API' }
 ];
 
 const SYNTAX_OPTIONS = [
@@ -353,35 +353,19 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
           throw new Error("Conflict: Main Key cannot be identical to Suggestion Key.");
       }
       
-      // Special routing for Ollama HOST vs API KEY
-      // If we are saving the "host" field (which reuses ApiKeyInput component logic)
-      if (savedProvider === 'ollama') {
-          // If the input was the host url
-          // But wait, the ApiKeyInput for Ollama provider below calls onSave with 'ollama' provider.
-          // To differentiate Host vs Key, we need to know which input triggered this.
-          // Since we are splitting inputs now, we can have separate handlers.
-      } else {
-           // Save logic: If provider changed, update provider state too
-            if (savedProvider !== provider) {
-                onProviderChange(savedProvider);
-            }
-            await onSaveApiKey(cleanKey, savedProvider);
-      }
+      // Save logic: If provider changed, update provider state too
+        if (savedProvider !== provider) {
+            onProviderChange(savedProvider);
+        }
+        await onSaveApiKey(cleanKey, savedProvider);
   };
   
-  const handleOllamaHostSave = async (host: string) => {
-      const cleanHost = host.trim();
-      onSaveOllamaHost(cleanHost);
+  const handleOllamaKeySave = async (key: string) => {
+      const cleanKey = key.trim();
       // Ensure provider is set to Ollama
       if (provider !== 'ollama') {
           onProviderChange('ollama');
       }
-      // Trigger refresh with empty key if needed, or rely on effect in parent
-      await onSaveApiKey('', 'ollama'); // Force refresh models
-  };
-
-  const handleOllamaKeySave = async (key: string) => {
-      const cleanKey = key.trim();
       await onSaveApiKey(cleanKey, 'ollama');
   };
 
@@ -407,27 +391,14 @@ const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'o
       
       {provider === 'ollama' ? (
           <>
-             {/* Ollama Host Input */}
+             {/* Ollama API Key Input */}
              <ApiKeyInput 
                 provider="ollama"
                 onProviderChange={onProviderChange}
-                description="URL of your local Ollama instance (e.g. http://127.0.0.1:11434)."
-                value={ollamaHost}
-                onSave={(val) => handleOllamaHostSave(val)}
-                placeholder="http://127.0.0.1:11434"
-                isHost={true}
-             />
-             
-             {/* Ollama API Key Input (Optional) */}
-             <ApiKeyInput 
-                provider="ollama"
-                // Don't show provider dropdown again
-                label="Ollama API Key (Optional)"
-                description="If your Ollama instance is behind a proxy requiring authentication (e.g. Bearer token)."
-                value={apiKey} // Reuse generic apiKey state for Ollama key when selected
+                description="Required. Enter the API Key for your Ollama Cloud instance or compatible API."
+                value={apiKey} // Reuse generic apiKey state for Ollama key
                 onSave={(val) => handleOllamaKeySave(val)}
-                placeholder="Enter Ollama API Key"
-                isOptional={true}
+                placeholder="e.g. e4aaae..."
              />
           </>
       ) : (

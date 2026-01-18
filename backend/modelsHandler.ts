@@ -11,14 +11,12 @@ export const getAvailableModelsHandler = async (req: any, res: any) => {
     const provider = await getProvider();
     const apiKey = await getApiKey();
 
-    // If provider is NOT ollama, we mandate an API key.
-    // For Ollama, we proceed even without a key (as it uses host URL).
-    if (provider !== 'ollama' && !apiKey) {
+    // Mandate an API key for all providers, including Ollama per user request.
+    if (!apiKey) {
         return res.status(200).json({ models: [], imageModels: [], videoModels: [], ttsModels: [] });
     }
 
     try {
-        // Pass the key we have (or undefined for Ollama)
         const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(apiKey || '');
         
         res.status(200).json({
