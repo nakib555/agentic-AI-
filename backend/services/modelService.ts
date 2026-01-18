@@ -68,7 +68,7 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
              fetchUrl = cleanUrl;
         }
 
-        console.log(`[ModelService] Fetching models from Ollama at ${fetchUrl}...`);
+        console.log(`[ModelService] Fetching models from Ollama at: ${fetchUrl}`);
         
         // Timeout shorter for local network to avoid hanging
         const controller = new AbortController();
@@ -89,6 +89,8 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
         }
 
         const data = await response.json();
+        
+        console.log('[ModelService] Raw Ollama response:', JSON.stringify(data, null, 2));
         
         // Robust validation for the structure { models: [...] }
         if (!data || !Array.isArray(data.models)) {
@@ -125,7 +127,7 @@ async function fetchOllamaModels(baseUrl: string): Promise<AppModel[]> {
             };
         });
 
-        console.log('[ModelService] Ollama models found:', models.map(m => m.name));
+        console.log('[ModelService] Processed Ollama models:', models.map(m => m.name));
         
         return sortModelsByName(models);
     } catch (error) {
