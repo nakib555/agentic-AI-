@@ -16,8 +16,7 @@ export const streamOllama = async (
     },
     settings: {
         temperature: number;
-    },
-    host: string
+    }
 ) => {
     const body = JSON.stringify({
         model,
@@ -35,8 +34,7 @@ export const streamOllama = async (
         headers['Authorization'] = `Bearer ${apiKey}`;
     }
     
-    // Use configured host instead of hardcoded public URL
-    const endpoint = `${host}/api/chat`;
+    const endpoint = 'https://ollama.com/api/chat';
     let response: Response | null = null;
 
     try {
@@ -48,6 +46,7 @@ export const streamOllama = async (
         });
         if (res.ok) {
             response = res;
+            console.log(`[Ollama] Successfully connected to ${endpoint}`);
         } else {
             console.warn(`[Ollama] Connection to ${endpoint} failed with status ${res.status}.`);
             const errorText = await res.text();
@@ -58,8 +57,8 @@ export const streamOllama = async (
         const customError = {
             code: 'OLLAMA_CONNECTION_FAILED',
             message: `Connection to Ollama failed.`,
-            details: `The Ollama endpoint (${endpoint}) was unreachable. Error: ${(error as Error).message}`,
-            suggestion: `Please check your "Connection Host" in settings and ensure Ollama is running.`
+            details: `The public Ollama endpoint was unreachable. Error: ${(error as Error).message}`,
+            suggestion: `Please check your internet connection.`
         };
         callbacks.onError(customError);
         return;
@@ -103,9 +102,6 @@ export const streamOllama = async (
                         const contentChunk = data.message.content;
                         callbacks.onTextChunk(contentChunk);
                         fullContent += contentChunk;
-                    }
-                    if (data.done) {
-                        // Handle final stats if needed
                     }
                 } catch (e) {
                     console.error("Error parsing Ollama stream chunk", line, e);

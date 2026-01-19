@@ -69,9 +69,10 @@ class Orchestrator {
             const agenticSystemSuffix = `
             
             CRITICAL ORCHESTRATION INSTRUCTIONS:
-            1.  **Step-by-Step:** Use [STEP] blocks for every action.
-            2.  **Error Handling:** If a tool fails, analyze the error in a [STEP] Corrective Action block and retry with fixed parameters.
-            3.  **Finality:** When done, strictly output [STEP] Final Answer:.
+            1.  **Briefing First:** If this is the start of a task, output a [BRIEFING] block.
+            2.  **Step-by-Step:** Use [STEP] blocks for every action.
+            3.  **Error Handling:** If a tool fails, analyze the error in a [STEP] Corrective Action block and retry with fixed parameters.
+            4.  **Finality:** When done, strictly output [STEP] Final Answer:.
             `;
             effectiveSystemInstruction += agenticSystemSuffix;
         }

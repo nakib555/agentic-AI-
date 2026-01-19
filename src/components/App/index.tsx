@@ -1,3 +1,5 @@
+
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -290,6 +292,8 @@ export const App = () => {
           provider={logic.provider}
           openRouterApiKey={logic.openRouterApiKey}
           onProviderChange={logic.onProviderChange}
+          ollamaHost={logic.ollamaHost}
+          onSaveOllamaHost={logic.onSaveOllamaHost}
         />
 
         {logic.isTestMode && (

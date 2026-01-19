@@ -1,4 +1,5 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -132,6 +133,7 @@ export const useAppLogic = () => {
   const [provider, setProvider] = useState<'gemini' | 'openrouter' | 'ollama'>('gemini');
   const [apiKey, setApiKey] = useState('');
   const [openRouterApiKey, setOpenRouterApiKey] = useState('');
+  const [ollamaHost, setOllamaHost] = useState('');
   const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
   const [temperature, setTemperature] = useState(DEFAULT_TEMPERATURE);
@@ -231,6 +233,7 @@ export const useAppLogic = () => {
             setProvider(settings.provider || 'gemini');
             setApiKey(settings.apiKey);
             setOpenRouterApiKey(settings.openRouterApiKey);
+            setOllamaHost(settings.ollamaHost || '');
             setAboutUser(settings.aboutUser);
             setAboutResponse(settings.aboutResponse);
             setTemperature(settings.temperature);
@@ -270,9 +273,6 @@ export const useAppLogic = () => {
   };
   
   const handleSetApiKey = useCallback(async (newApiKey: string, providerType: 'gemini' | 'openrouter' | 'ollama') => {
-    // Force set the provider to the type of key being saved to prevent mismatch
-    setProvider(providerType);
-    
     if (providerType === 'gemini') setApiKey(newApiKey);
     else if (providerType === 'openrouter') setOpenRouterApiKey(newApiKey);
     else if (providerType === 'ollama') setApiKey(newApiKey); // Store Ollama key in generic apiKey state
@@ -296,9 +296,7 @@ export const useAppLogic = () => {
   }, [processModelData, fetchModels]);
 
   const handleProviderChange = useCallback((newProvider: 'gemini' | 'openrouter' | 'ollama') => {
-      // Optimistic Update
       setProvider(newProvider);
-      
       updateSettings({ provider: newProvider }).then(response => {
           if (response.models) processModelData(response);
           // Only auto-fetch if we already have the key for this provider
@@ -307,11 +305,13 @@ export const useAppLogic = () => {
               // We can trigger fetch, but the backend will return empty if key missing.
               fetchModels();
           }
-      }).catch(err => {
-          console.error("Failed to update provider:", err);
-          // Optional: Revert UI if update fails (though risky for UX flickering)
       });
   }, [fetchModels, processModelData]);
+
+  const onSaveOllamaHost = useCallback(async (host: string) => {
+    setOllamaHost(host);
+    await updateSettings({ ollamaHost: host });
+  }, []);
 
   const handleSaveServerUrl = useCallback(async (newUrl: string): Promise<boolean> => {
       if (typeof window !== 'undefined') {
@@ -644,6 +644,7 @@ export const useAppLogic = () => {
     artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing,
     // New Props for Provider
     provider, openRouterApiKey, onProviderChange: handleProviderChange,
+    ollamaHost, onSaveOllamaHost,
     // Edit Message and Branch Navigation
     editMessage, navigateBranch,
     // Explicitly expose setResponseIndex as the main handler for response switching

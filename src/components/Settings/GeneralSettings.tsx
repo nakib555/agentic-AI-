@@ -1,4 +1,5 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -25,6 +26,8 @@ type GeneralSettingsProps = {
   provider: 'gemini' | 'openrouter' | 'ollama';
   openRouterApiKey: string;
   onProviderChange: (provider: 'gemini' | 'openrouter' | 'ollama') => void;
+  ollamaHost: string;
+  onSaveOllamaHost: (host: string) => void;
 };
 
 const PROVIDER_OPTIONS = [
@@ -57,19 +60,7 @@ const ActionButton = ({
     </button>
 );
 
-interface ApiKeyInputProps { 
-    value: string;
-    onSave: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void> | void;
-    placeholder: string;
-    description: string;
-    isOptional?: boolean;
-    provider: 'gemini' | 'openrouter' | 'ollama';
-    onProviderChange?: (provider: 'gemini' | 'openrouter' | 'ollama') => void;
-    label?: string;
-    isHost?: boolean;
-}
-
-const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ 
+const ApiKeyInput = ({ 
     value, 
     onSave, 
     placeholder, 
@@ -79,6 +70,16 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
     onProviderChange,
     label,
     isHost = false
+}: { 
+    value: string, 
+    onSave: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void> | void, 
+    placeholder: string,
+    description: string,
+    isOptional?: boolean,
+    provider: 'gemini' | 'openrouter' | 'ollama',
+    onProviderChange?: (provider: 'gemini' | 'openrouter' | 'ollama') => void,
+    label?: string,
+    isHost?: boolean
 }) => {
     const [localValue, setLocalValue] = useState(value);
     const [showKey, setShowKey] = useState(false);
@@ -180,14 +181,16 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
                         )}
                         <button
                             type="submit"
-                            disabled={saveStatus === 'saving'}
+                            disabled={saveStatus === 'saving' || localValue === value}
                             className={`
                                 p-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all
                                 ${saveStatus === 'saved' 
                                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
                                     : saveStatus === 'saving'
                                         ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-                                        : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm'
+                                        : localValue !== value
+                                            ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm'
+                                            : 'bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-slate-500 cursor-not-allowed'
                                 }
                             `}
                         >
@@ -214,6 +217,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
     apiKey, onSaveApiKey,
     theme, setTheme, serverUrl, onSaveServerUrl,
     provider, openRouterApiKey, onProviderChange,
+    ollamaHost, onSaveOllamaHost
 }) => {
   return (
     <div className="space-y-10 pb-12">
@@ -247,33 +251,43 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         </SettingItem>
 
         <div className="space-y-4">
-            {/* Gemini & Ollama API Key - Use key prop to force re-mount on provider change */}
+            {/* Gemini & Ollama API Key */}
             {(provider === 'gemini' || provider === 'ollama') && (
                 <ApiKeyInput 
-                    key={provider}
                     value={apiKey} 
                     onSave={(k) => onSaveApiKey(k, provider)}
                     placeholder={`Enter ${provider === 'gemini' ? 'Google Gemini' : 'Ollama'} API Key`}
                     description={provider === 'gemini' 
                         ? "Required for all AI features. Key is stored on the server."
-                        : "Required only if your Ollama instance uses authentication."
+                        : "Required for authenticated Ollama access."
                     }
                     label={`${provider === 'gemini' ? 'Gemini' : 'Ollama'} API Key`}
                     provider={provider}
-                    isOptional={provider === 'ollama'}
                 />
             )}
 
             {/* OpenRouter API Key */}
             {provider === 'openrouter' && (
                 <ApiKeyInput 
-                    key="openrouter"
                     value={openRouterApiKey} 
                     onSave={(k) => onSaveApiKey(k, 'openrouter')}
                     placeholder="Enter OpenRouter API Key"
                     description="Access various models (Claude, GPT, etc.)."
                     label="OpenRouter API Key"
                     provider="openrouter"
+                />
+            )}
+
+            {/* Ollama Host URL */}
+            {provider === 'ollama' && (
+                <ApiKeyInput
+                    value={ollamaHost}
+                    onSave={(host) => onSaveOllamaHost(host)}
+                    placeholder="e.g. http://127.0.0.1:11434"
+                    description="The host address for your Ollama instance."
+                    label="Ollama Host URL"
+                    isHost={true}
+                    provider="ollama"
                 />
             )}
              

@@ -11,6 +11,7 @@ export type AppSettings = {
     provider: 'gemini' | 'openrouter' | 'ollama';
     apiKey: string;
     openRouterApiKey: string;
+    ollamaHost: string;
     aboutUser: string;
     aboutResponse: string;
     temperature: number;
