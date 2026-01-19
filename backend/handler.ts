@@ -1,5 +1,7 @@
 
 
+
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -17,7 +19,7 @@ import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./too
 import { runAgenticLoop } from './services/agenticLoop/index';
 import { createToolExecutor } from './tools/index';
 import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations'; 
-import { getApiKey, getProvider } from './settingsHandler';
+import { getApiKey, getProvider, getGeminiApiKey } from './settingsHandler';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils';
 import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
@@ -245,17 +247,24 @@ export const apiHandler = async (req: any, res: any) => {
     }
 
     const activeProvider = await getProvider();
-    const mainApiKey = await getApiKey();
-    const activeApiKey = mainApiKey;
+    const mainApiKey = await getApiKey(); // This is the key for the ACTIVE provider (could be OpenRouter)
+    const geminiApiKey = await getGeminiApiKey(); // This is specifically for Gemini
 
     const isSuggestionTask = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'].includes(task);
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston', 'feedback'];
     
-    if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
+    if (!mainApiKey && !BYPASS_TASKS.includes(task)) {
         return res.status(401).json({ error: "API key not configured on the server." });
     }
-    const ai = (activeProvider === 'gemini' || isSuggestionTask) && activeApiKey 
-        ? new GoogleGenAI({ apiKey: activeApiKey }) 
+
+    // Initialize Gemini AI Client for auxiliary tasks or if Gemini is the active provider.
+    // We prioritize using the Gemini key if available, especially for RAG and aux tasks.
+    const aiApiKey = (activeProvider === 'gemini') ? mainApiKey : geminiApiKey;
+    
+    // Note: We instantiate 'ai' if we have a key. If task is auxiliary, we require it.
+    // If main chat is OpenRouter/Ollama, 'ai' is still useful for RAG/Vectors if configured.
+    const ai = aiApiKey 
+        ? new GoogleGenAI({ apiKey: aiApiKey }) 
         : null;
 
     // Initialize Vector Store if AI is available
@@ -405,6 +414,7 @@ ${personalizationSection}
 
                 // --- OPENROUTER HANDLING ---
                 if (activeProvider === 'openrouter') {
+                    // Note: OpenRouter uses mainApiKey (which corresponds to openRouterApiKey from settings)
                     const openRouterMessages = historyForAI.map((msg: any) => ({
                         role: msg.role === 'model' ? 'assistant' : 'user',
                         content: msg.text || ''
@@ -413,7 +423,7 @@ ${personalizationSection}
 
                     try {
                         await streamOpenRouter(
-                            activeApiKey!,
+                            mainApiKey!,
                             model,
                             openRouterMessages,
                             {
@@ -525,7 +535,8 @@ ${personalizationSection}
                     writeToClient(job, 'tool-update', { id: callId, ...data });
                 };
                 
-                const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, activeApiKey!, chatId, requestFrontendExecution, false, onToolUpdate);
+                // For Gemini, aiApiKey (the Google API Key) is what's needed for tools.
+                const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, aiApiKey!, chatId, requestFrontendExecution, false, onToolUpdate);
 
                 const finalSettings = {
                     ...settings,
@@ -745,7 +756,8 @@ IMPROVED PROMPT:
             case 'tool_exec': {
                  if (!ai) throw new Error("GoogleGenAI not initialized.");
                 const { toolName, toolArgs, chatId } = req.body;
-                const toolExecutor = createToolExecutor(ai, '', '', activeApiKey!, chatId, async () => ({error: 'Frontend execution not supported'}), true);
+                // Use aiApiKey (Google Key) for tools, assuming tool_exec is mostly used for Gemini/Veo tasks
+                const toolExecutor = createToolExecutor(ai, '', '', aiApiKey!, chatId, async () => ({error: 'Frontend execution not supported'}), true);
                 const result = await toolExecutor(toolName, toolArgs, 'manual-exec');
                 res.status(200).json({ result });
                 break;
