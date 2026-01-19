@@ -77,18 +77,23 @@ export const streamOllama = async (
     try {
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
-        let fullContent = '';
-        let buffer = '';
+        let fullContent = "";
+        let buffer = "";
 
         while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
 
-            buffer += decoder.decode(value, { stream: true });
+            if (value) {
+                buffer += decoder.decode(value, { stream: true });
+            }
+
             const lines = buffer.split("\n");
-            buffer = lines.pop() || ''; // Keep partial line in buffer
+            
+            // If stream is done, we process all lines. Otherwise, keep the last, potentially partial line.
+            const linesToProcess = done ? lines : lines.slice(0, -1);
+            buffer = done ? '' : lines[lines.length - 1];
 
-            for (const line of lines) {
+            for (const line of linesToProcess) {
                 if (line.trim() === '') continue;
                 try {
                     const data = JSON.parse(line);
@@ -97,16 +102,15 @@ export const streamOllama = async (
                         callbacks.onTextChunk(contentChunk);
                         fullContent += contentChunk;
                     }
-                    if (data.done) {
-                        break;
-                    }
                 } catch (e) {
                     console.error("Error parsing Ollama stream chunk", line, e);
                 }
             }
+            
+            if (done) break;
         }
-
         callbacks.onComplete(fullContent);
+
     } catch (error) {
         console.error("Ollama stream failed during processing:", error);
         callbacks.onError(error);

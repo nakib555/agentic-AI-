@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// FIX: Use namespace import for React to resolve component types correctly.
 import * as React from 'react';
 
 interface ErrorBoundaryProps {
@@ -17,7 +16,7 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// FIX: Explicitly extend `React.Component` to ensure the class has component properties like `props` and `setState`.
+// FIX: The ErrorBoundary class must extend React.Component to be a valid class component. This provides access to `this.props`, `this.state`, and `this.setState`.
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = {
     hasError: false,
