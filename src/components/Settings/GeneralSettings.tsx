@@ -1,9 +1,4 @@
 
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect, useRef } from 'react';
 import { SettingItem } from './SettingItem';
 import { ThemeToggle } from '../Sidebar/ThemeToggle';
@@ -178,16 +173,14 @@ const ApiKeyInput = ({
                         )}
                         <button
                             type="submit"
-                            disabled={saveStatus === 'saving' || localValue === value}
+                            disabled={saveStatus === 'saving'}
                             className={`
                                 p-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all
                                 ${saveStatus === 'saved' 
                                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
                                     : saveStatus === 'saving'
                                         ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-                                        : localValue !== value
-                                            ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm'
-                                            : 'bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-slate-500 cursor-not-allowed'
+                                        : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm'
                                 }
                             `}
                         >
