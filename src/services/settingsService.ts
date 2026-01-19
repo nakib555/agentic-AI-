@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -11,7 +12,6 @@ export type AppSettings = {
     apiKey: string;
     openRouterApiKey: string;
     ollamaHost: string;
-    suggestionApiKey: string; // Secondary key
     aboutUser: string;
     aboutResponse: string;
     temperature: number;

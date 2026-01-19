@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -96,7 +97,6 @@ export async function initDataStore() {
         apiKey: '',
         openRouterApiKey: '',
         ollamaHost: 'http://127.0.0.1:11434',
-        suggestionApiKey: '', // Secondary key for background tasks
         aboutUser: '',
         aboutResponse: '',
         temperature: 0.7,
