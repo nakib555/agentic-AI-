@@ -10,31 +10,44 @@ export class OllamaProvider implements AIProvider {
 
     private async getHost(): Promise<string> {
         const settings: any = await readData(SETTINGS_FILE_PATH);
-        return settings.ollamaHost || 'http://127.0.0.1:11434';
+        // Default to localhost, or use user setting
+        let host = settings.ollamaHost || 'http://127.0.0.1:11434';
+        return host.replace(/\/$/, '');
     }
 
     async getModels(apiKey: string): Promise<AppModel[]> {
-        // Ollama usually uses host, apiKey is optional/auth-proxy dependent
+        // Ollama usually uses host. apiKey is optional (e.g. for auth proxies).
+        // We do NOT mandate an API key here, matching `https://ollama.com/api/tags` behavior
+        // which is public.
         const host = await this.getHost();
         try {
-            // Try public registry first (if accessible) or fallback to local tags
-            const url = `${host.replace(/\/$/, '')}/api/tags`;
+            const url = `${host}/api/tags`;
             const headers: any = {};
-            if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+            if (apiKey) {
+                headers['Authorization'] = `Bearer ${apiKey}`;
+            }
 
             const response = await fetch(url, { headers });
-            if (!response.ok) throw new Error("Failed to fetch Ollama models");
+            
+            if (!response.ok) {
+                 const text = await response.text();
+                 throw new Error(`Failed to fetch Ollama models from ${url}. Status: ${response.status}. ${text}`);
+            }
             
             const data = await response.json();
+            
+            // Map Ollama /api/tags format to AppModel
             return (data.models || []).map((m: any) => ({
                 id: m.name,
                 name: m.name,
-                description: m.details?.family || 'Local Model'
+                description: m.details?.family ? `${m.details.family} (${m.details.parameter_size || '?'})` : 'Local Model'
             })).sort((a: any, b: any) => a.name.localeCompare(b.name));
-        } catch (e) {
-            console.error("Ollama fetch failed", e);
-            // Return fallback
-            return [{ id: 'llama3', name: 'Llama 3 (Fallback)', description: 'Ensure Ollama is running' }];
+
+        } catch (e: any) {
+            console.error("Ollama fetch failed:", e.message);
+            // No hardcoded fallback. Return empty to indicate failure/no models found.
+            // This forces the user to fix their configuration rather than seeing a fake 'Llama 3'.
+            return [];
         }
     }
 

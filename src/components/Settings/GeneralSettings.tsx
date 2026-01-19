@@ -182,21 +182,19 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
                         )}
                         <button
                             type="submit"
-                            disabled={saveStatus === 'saving' || localValue === value}
+                            disabled={saveStatus === 'saving'}
                             className={`
                                 p-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all
                                 ${saveStatus === 'saved' 
                                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
                                     : saveStatus === 'saving'
                                         ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-                                        : localValue !== value
-                                            ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm'
-                                            : 'bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-slate-500 cursor-not-allowed'
+                                        : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm'
                                 }
                             `}
                         >
                              {saveStatus === 'saved' ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
                              ) : saveStatus === 'saving' ? (
                                 <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                              ) : (
@@ -261,10 +259,11 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                     placeholder={`Enter ${provider === 'gemini' ? 'Google Gemini' : 'Ollama'} API Key`}
                     description={provider === 'gemini' 
                         ? "Required for all AI features. Key is stored on the server."
-                        : "Required for authenticated Ollama access."
+                        : "Required only if your Ollama instance uses authentication."
                     }
                     label={`${provider === 'gemini' ? 'Gemini' : 'Ollama'} API Key`}
                     provider={provider}
+                    isOptional={provider === 'ollama'}
                 />
             )}
 
@@ -288,7 +287,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                     value={ollamaHost}
                     onSave={(host) => onSaveOllamaHost(host)}
                     placeholder="e.g. http://127.0.0.1:11434"
-                    description="The host address for your Ollama instance."
+                    description="The address of your Ollama instance (default: localhost:11434)."
                     label="Ollama Host URL"
                     isHost={true}
                     provider="ollama"
