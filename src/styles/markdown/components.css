@@ -1,3 +1,4 @@
+
 /* Markdown Custom Components */
 
 .custom-blockquote {
@@ -21,6 +22,7 @@
   margin-bottom: 0;
 }
 
+/* Workflow / Agent Styling */
 .workflow-markdown {
   font-size: 0.9em;
   color: var(--text-secondary);
@@ -36,6 +38,74 @@
     margin-bottom: 0.25rem;
 }
 
+/* Collapsible Details Container (:::details) */
+details {
+  margin: 1em 0;
+  border: 1px solid var(--border-default);
+  border-radius: 0.5rem;
+  background-color: var(--bg-layer-1);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+details[open] {
+  background-color: var(--bg-layer-2);
+  border-color: var(--border-strong);
+}
+
+summary {
+  cursor: pointer;
+  padding: 0.75em 1em;
+  font-weight: 600;
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  background-color: var(--bg-layer-1);
+  display: flex;
+  align-items: center;
+  user-select: none;
+  list-style: none; /* Hide default triangle */
+  transition: background-color 0.2s;
+}
+
+summary:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-layer-2);
+}
+
+/* Custom Arrow */
+summary::after {
+  content: '';
+  width: 0.4em;
+  height: 0.4em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  margin-left: auto;
+  transition: transform 0.2s;
+  opacity: 0.6;
+}
+
+details[open] summary::after {
+  transform: rotate(-135deg);
+}
+
+details[open] summary {
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* Content inside the details */
+details > div, 
+details > p,
+details > pre {
+  padding: 1em;
+  margin: 0;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  background-color: var(--bg-page); /* Inner content slightly distinct */
+}
+
+/* Highlight / Mark Tag Styling */
 .mark-highlight {
   background-color: transparent;
   padding: 0;
