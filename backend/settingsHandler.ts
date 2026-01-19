@@ -1,4 +1,5 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -42,14 +43,15 @@ export const updateSettings = async (req: any, res: any) => {
         await writeData(SETTINGS_FILE_PATH, newSettings);
 
         // Check if critical settings changed (Provider or API Key)
-        // Note: We use loose comparison for provider since we now support dynamic strings
         const providerChanged = updates.provider && updates.provider !== currentSettings.provider;
         
-        // For Ollama, we trigger a refresh if either apiKey or ollamaHost is present in the update,
-        // even if the value hasn't strictly changed. This allows the user to click "Save" to retry fetching models.
+        // For Ollama, we trigger a refresh if the provider is Ollama and *any* update occurred to key/host.
+        // This allows the "Save" button to act as a "Refresh Models" trigger even if values haven't strictly changed.
+        const isOllamaRefresh = newSettings.provider === 'ollama' && ('apiKey' in updates || 'ollamaHost' in updates || providerChanged);
+        
         const keyChanged = (newSettings.provider === 'gemini' && updates.apiKey !== currentSettings.apiKey) ||
                            (newSettings.provider === 'openrouter' && updates.openRouterApiKey !== currentSettings.openRouterApiKey) ||
-                           (newSettings.provider === 'ollama' && ('apiKey' in updates || 'ollamaHost' in updates));
+                           isOllamaRefresh;
 
         if (providerChanged || keyChanged) {
             try {
@@ -58,7 +60,7 @@ export const updateSettings = async (req: any, res: any) => {
                     ? newSettings.openRouterApiKey 
                     : newSettings.apiKey;
                 
-                // Allow fetching without key for Ollama if user just switched to it (might use public/local)
+                // Allow fetching without key for Ollama if user just switched to it or updated settings
                 if (activeKey || newSettings.provider === 'ollama') {
                     const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(activeKey || '', true);
                     res.status(200).json({ ...newSettings, models: chatModels, imageModels, videoModels, ttsModels });
@@ -66,6 +68,7 @@ export const updateSettings = async (req: any, res: any) => {
                 }
             } catch (error) {
                 // If fetching models fails just return settings
+                console.error("Model fetch failed during settings update:", error);
             }
         }
 

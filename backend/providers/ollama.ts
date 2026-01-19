@@ -10,7 +10,7 @@ export class OllamaProvider implements AIProvider {
 
     private async getHost(): Promise<string> {
         const settings: any = await readData(SETTINGS_FILE_PATH);
-        // Default to localhost, or use user setting
+        // Default to 127.0.0.1 to avoid Node.js localhost IPv6 issues
         let host = settings.ollamaHost || 'http://127.0.0.1:11434';
         return host.replace(/\/$/, '');
     }
@@ -22,10 +22,15 @@ export class OllamaProvider implements AIProvider {
         const host = await this.getHost();
         try {
             const url = `${host}/api/tags`;
-            const headers: any = {};
-            if (apiKey) {
+            
+            // Only attach Authorization header if a key is actually provided and non-empty.
+            // This ensures standard local instances (which reject Auth headers) work out of the box.
+            const headers: Record<string, string> = {};
+            if (apiKey && apiKey.trim().length > 0) {
                 headers['Authorization'] = `Bearer ${apiKey}`;
             }
+
+            console.log(`[OllamaProvider] Fetching models from ${url} ${Object.keys(headers).length > 0 ? '(Authenticated)' : '(No Auth)'}`);
 
             const response = await fetch(url, { headers });
             
