@@ -17,8 +17,8 @@ export class OllamaProvider implements AIProvider {
 
     async getModels(apiKey: string): Promise<AppModel[]> {
         // Ollama usually uses host. apiKey is optional (e.g. for auth proxies).
-        // We do NOT mandate an API key here, matching `https://ollama.com/api/tags` behavior
-        // which is public.
+        // We do NOT mandate an API key here, matching `GET /api/tags` behavior
+        // which is public on the local instance.
         const host = await this.getHost();
         try {
             const url = `${host}/api/tags`;
@@ -45,8 +45,7 @@ export class OllamaProvider implements AIProvider {
 
         } catch (e: any) {
             console.error("Ollama fetch failed:", e.message);
-            // No hardcoded fallback. Return empty to indicate failure/no models found.
-            // This forces the user to fix their configuration rather than seeing a fake 'Llama 3'.
+            // Return empty to indicate failure/no models found.
             return [];
         }
     }
@@ -67,9 +66,11 @@ export class OllamaProvider implements AIProvider {
             ollamaMessages.unshift({ role: 'system', content: options.systemInstruction });
         }
 
-        // streamOllama internally handles fetching the host from settings
+        const host = await this.getHost();
+
+        // Pass the host explicitly to the streaming utility
         await streamOllama(apiKey, model, ollamaMessages, callbacks, {
             temperature: options.temperature
-        });
+        }, host);
     }
 }

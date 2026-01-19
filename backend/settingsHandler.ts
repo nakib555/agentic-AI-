@@ -45,9 +45,11 @@ export const updateSettings = async (req: any, res: any) => {
         // Note: We use loose comparison for provider since we now support dynamic strings
         const providerChanged = updates.provider && updates.provider !== currentSettings.provider;
         
+        // For Ollama, we trigger a refresh if either apiKey or ollamaHost is present in the update,
+        // even if the value hasn't strictly changed. This allows the user to click "Save" to retry fetching models.
         const keyChanged = (newSettings.provider === 'gemini' && updates.apiKey !== currentSettings.apiKey) ||
                            (newSettings.provider === 'openrouter' && updates.openRouterApiKey !== currentSettings.openRouterApiKey) ||
-                           (newSettings.provider === 'ollama' && updates.apiKey !== currentSettings.apiKey);
+                           (newSettings.provider === 'ollama' && ('apiKey' in updates || 'ollamaHost' in updates));
 
         if (providerChanged || keyChanged) {
             try {
