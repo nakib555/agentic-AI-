@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -247,11 +246,11 @@ export const useAppLogic = () => {
             setIsAgentModeState(settings.isAgentMode);
             
             // Only fetch models if we have a key for the current provider
-            // For Ollama, we now require an API Key per user request
+            // For Ollama, we now require an API Key per user request (or just provider switch logic to trigger fetch)
             const hasKeyForProvider = 
                (settings.provider === 'gemini' && settings.apiKey) ||
                (settings.provider === 'openrouter' && settings.openRouterApiKey) ||
-               (settings.provider === 'ollama' && settings.apiKey);
+               (settings.provider === 'ollama');
 
             if (hasKeyForProvider) {
                 fetchModels();
@@ -308,11 +307,6 @@ export const useAppLogic = () => {
       });
   }, [fetchModels, processModelData]);
 
-  const onSaveOllamaHost = useCallback(async (host: string) => {
-    setOllamaHost(host);
-    await updateSettings({ ollamaHost: host });
-  }, []);
-
   const handleSaveServerUrl = useCallback(async (newUrl: string): Promise<boolean> => {
       if (typeof window !== 'undefined') {
           if (!newUrl) localStorage.removeItem('custom_server_url');
@@ -343,6 +337,7 @@ export const useAppLogic = () => {
   const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
+  const handleSetOllamaHost = createSettingUpdater(setOllamaHost, 'ollamaHost');
 
   const chatSettings = useMemo(() => {
     return {
@@ -644,7 +639,7 @@ export const useAppLogic = () => {
     artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing,
     // New Props for Provider
     provider, openRouterApiKey, onProviderChange: handleProviderChange,
-    ollamaHost, onSaveOllamaHost,
+    ollamaHost, onSaveOllamaHost: handleSetOllamaHost,
     // Edit Message and Branch Navigation
     editMessage, navigateBranch,
     // Explicitly expose setResponseIndex as the main handler for response switching

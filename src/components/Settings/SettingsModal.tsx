@@ -63,8 +63,6 @@ type SettingsModalProps = {
   provider: 'gemini' | 'openrouter' | 'ollama';
   openRouterApiKey: string;
   onProviderChange: (provider: 'gemini' | 'openrouter' | 'ollama') => void;
-  ollamaHost: string;
-  onSaveOllamaHost: (host: string) => void;
 };
 
 const CATEGORIES = [
@@ -230,8 +228,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                             provider={props.provider}
                                             openRouterApiKey={props.openRouterApiKey}
                                             onProviderChange={props.onProviderChange}
-                                            ollamaHost={props.ollamaHost}
-                                            onSaveOllamaHost={props.onSaveOllamaHost}
                                         />
                                     )}
                                     {activeCategory === 'personalize' && <PersonalizeSettings {...props} />}

@@ -51,47 +51,23 @@ const fetchWithRetry = async (url: string, options: any, retries = 5, backoff = 
     return await fetch(url, options);
 };
 
-async function fetchOllamaModels(host: string, apiKey?: string): Promise<AppModel[]> {
+async function fetchOllamaModels(): Promise<AppModel[]> {
     try {
-        console.log(`[ModelService] Fetching models for Ollama...`);
-        
-        // Use the public registry URL as requested by the user, which doesn't require an API key
-        // url curl https://ollama.com/api/tags
+        // Use the public registry URL to fetch available Ollama models
         const url = 'https://ollama.com/api/tags';
+        console.log(`[ModelService] Fetching models from Ollama registry: ${url}`);
         
-        const headers: Record<string, string> = {
-            'Content-Type': 'application/json'
-        };
-        
-        console.log(`[ModelService] Requesting models from registry: ${url}`);
         const response = await fetch(url, { 
             method: 'GET',
-            headers 
+            headers: { 'Content-Type': 'application/json' }
         });
         
         if (!response.ok) {
-            console.warn(`[ModelService] Public registry ${url} failed with ${response.status}. Falling back to host tags at ${host}.`);
-            // Fallback to the local host's tags API which is the standard Ollama behavior
-            const fallbackUrl = `${host.replace(/\/$/, '')}/api/tags`;
-            const fallbackHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-            if (apiKey) fallbackHeaders['Authorization'] = `Bearer ${apiKey}`;
-            
-            const fallbackRes = await fetch(fallbackUrl, { headers: fallbackHeaders });
-            if (!fallbackRes.ok) throw new Error("Both registry and host tags failed.");
-            const data = await fallbackRes.json();
-            
-            const models: AppModel[] = (data.models || []).map((m: any) => ({
-                id: m.name, 
-                name: m.name,
-                description: `${m.details?.parameter_size || ''} ${m.details?.quantization_level || ''} (${m.details?.family || 'Ollama'})`,
-            }));
-            return sortModelsByName(models);
+            throw new Error(`Failed to fetch Ollama tags: ${response.status}`);
         }
 
         const data = await response.json();
         
-        // The registry format might differ slightly from the runner format. 
-        // We attempt to map it safely.
         const models: AppModel[] = (data.models || []).map((m: any) => ({
             id: m.name, 
             name: m.name,
@@ -106,7 +82,8 @@ async function fetchOllamaModels(host: string, apiKey?: string): Promise<AppMode
             { id: 'llama3', name: 'Llama 3', description: 'Meta Llama 3 (Ollama)' },
             { id: 'mistral', name: 'Mistral', description: 'Mistral 7B (Ollama)' },
             { id: 'deepseek-v3', name: 'DeepSeek V3', description: 'DeepSeek Reasoning (Ollama)' },
-            { id: 'phi3', name: 'Phi-3', description: 'Microsoft Phi-3 (Ollama)' }
+            { id: 'phi3', name: 'Phi-3', description: 'Microsoft Phi-3 (Ollama)' },
+            { id: 'gemma', name: 'Gemini Gemma', description: 'Google Gemma (Ollama)' }
         ];
     }
 }
@@ -240,10 +217,9 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
     // Determine provider from settings
     const settings: any = await readData(SETTINGS_FILE_PATH);
     const provider = settings.provider || 'gemini';
-    const ollamaHost = settings.ollamaHost || 'http://127.0.0.1:11434';
     
-    // Hash key + provider + host to ensure cache validity
-    const currentKeyHash = (apiKey || '').trim().slice(-8) + provider + ollamaHost;
+    // Hash key + provider to ensure cache validity
+    const currentKeyHash = (apiKey || '').trim().slice(-8) + provider;
     const now = Date.now();
 
     // Check cache first
@@ -261,8 +237,8 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
     let result;
     
     if (provider === 'ollama') {
-        // Pass apiKey if available for authenticated Ollama
-        const models = await fetchOllamaModels(ollamaHost, apiKey);
+        // Fetch from public registry
+        const models = await fetchOllamaModels();
         result = {
             chatModels: models,
             imageModels: [], // Ollama mainly supports chat/text currently
