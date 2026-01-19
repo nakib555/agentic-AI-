@@ -1,4 +1,5 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -46,14 +47,13 @@ export const updateSettings = async (req: any, res: any) => {
         // Persist to Disk
         await writeData(SETTINGS_FILE_PATH, newSettings);
 
-        // Check if critical settings changed (Provider, API Key, or Host)
+        // Check if critical settings changed (Provider or API Key)
         const providerChanged = updates.provider && updates.provider !== currentSettings.provider;
         const keyChanged = (newSettings.provider === 'gemini' && updates.apiKey !== currentSettings.apiKey) ||
                            (newSettings.provider === 'openrouter' && updates.openRouterApiKey !== currentSettings.openRouterApiKey) ||
                            (newSettings.provider === 'ollama' && updates.apiKey !== currentSettings.apiKey); // Check Ollama key too
-        const hostChanged = newSettings.provider === 'ollama' && updates.ollamaHost !== currentSettings.ollamaHost;
 
-        if (providerChanged || keyChanged || hostChanged) {
+        if (providerChanged || keyChanged) {
             try {
                 // Fetch models based on the NEW provider and NEW key/host
                 const activeKey = newSettings.provider === 'openrouter' 
@@ -97,14 +97,5 @@ export const getProvider = async (): Promise<'gemini' | 'openrouter' | 'ollama'>
         return settings.provider || 'gemini';
     } catch (error) {
         return 'gemini';
-    }
-};
-
-export const getOllamaHost = async (): Promise<string> => {
-    try {
-        const settings = await ensureSettingsLoaded();
-        return settings.ollamaHost || 'http://127.0.0.1:11434';
-    } catch (error) {
-        return 'http://127.0.0.1:11434';
     }
 };

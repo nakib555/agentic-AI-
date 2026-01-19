@@ -1,3 +1,5 @@
+
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -21,8 +23,6 @@ type GeneralSettingsProps = {
   setTheme: (theme: Theme) => void;
   serverUrl: string;
   onSaveServerUrl: (url: string) => Promise<boolean>;
-  ollamaHost: string;
-  onSaveOllamaHost: (host: string) => void;
   provider: 'gemini' | 'openrouter' | 'ollama';
   openRouterApiKey: string;
   onProviderChange: (provider: 'gemini' | 'openrouter' | 'ollama') => void;
@@ -214,7 +214,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
     onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, onExportAllChats, 
     apiKey, onSaveApiKey,
     theme, setTheme, serverUrl, onSaveServerUrl,
-    provider, openRouterApiKey, onProviderChange, ollamaHost, onSaveOllamaHost
+    provider, openRouterApiKey, onProviderChange
 }) => {
   return (
     <div className="space-y-10 pb-12">
@@ -248,54 +248,33 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         </SettingItem>
 
         <div className="space-y-4">
-             {/* Gemini API Key */}
-             {provider === 'gemini' && (
-                 <ApiKeyInput 
-                     value={apiKey} 
-                     onSave={(k) => onSaveApiKey(k, 'gemini')}
-                     placeholder="Enter Google Gemini API Key"
-                     description="Required for all AI features. Key is stored locally."
-                     label="Gemini API Key"
-                     provider="gemini"
-                 />
-             )}
+            {/* Gemini & Ollama API Key */}
+            {(provider === 'gemini' || provider === 'ollama') && (
+                <ApiKeyInput 
+                    value={apiKey} 
+                    onSave={(k) => onSaveApiKey(k, provider)}
+                    placeholder={`Enter ${provider === 'gemini' ? 'Google Gemini' : 'Ollama'} API Key`}
+                    description={provider === 'gemini' 
+                        ? "Required for all AI features. Key is stored on the server."
+                        : "Required for authenticated Ollama access."
+                    }
+                    label={`${provider === 'gemini' ? 'Gemini' : 'Ollama'} API Key`}
+                    provider={provider}
+                />
+            )}
 
-             {/* OpenRouter API Key */}
-             {provider === 'openrouter' && (
-                 <ApiKeyInput 
-                     value={openRouterApiKey} 
-                     onSave={(k) => onSaveApiKey(k, 'openrouter')}
-                     placeholder="Enter OpenRouter API Key"
-                     description="Access various models (Claude, GPT, etc.)."
-                     label="OpenRouter API Key"
-                     provider="openrouter"
-                 />
-             )}
-
-             {/* Ollama Host & Key */}
-             {provider === 'ollama' && (
-                 <div className="space-y-4 w-full">
-                     <ApiKeyInput 
-                         value={ollamaHost} 
-                         onSave={(h) => onSaveOllamaHost(h)}
-                         placeholder="http://127.0.0.1:11434"
-                         description="URL of your running Ollama instance."
-                         label="Ollama Host URL"
-                         provider="ollama"
-                         isHost={true}
-                     />
-                     <ApiKeyInput 
-                         value={apiKey} 
-                         onSave={(k) => onSaveApiKey(k, 'ollama')}
-                         placeholder="Enter Optional API Key"
-                         description="Optional key if your Ollama instance requires auth."
-                         label="Ollama API Key (Optional)"
-                         provider="ollama"
-                         isOptional={true}
-                     />
-                 </div>
-             )}
-
+            {/* OpenRouter API Key */}
+            {provider === 'openrouter' && (
+                <ApiKeyInput 
+                    value={openRouterApiKey} 
+                    onSave={(k) => onSaveApiKey(k, 'openrouter')}
+                    placeholder="Enter OpenRouter API Key"
+                    description="Access various models (Claude, GPT, etc.)."
+                    label="OpenRouter API Key"
+                    provider="openrouter"
+                />
+            )}
+             
              <ApiKeyInput 
                 value={serverUrl} 
                 onSave={async (url) => { await onSaveServerUrl(url); }}

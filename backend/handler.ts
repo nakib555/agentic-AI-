@@ -17,7 +17,7 @@ import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./too
 import { runAgenticLoop } from './services/agenticLoop/index';
 import { createToolExecutor } from './tools/index';
 import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations'; 
-import { getApiKey, getProvider, getOllamaHost } from './settingsHandler';
+import { getApiKey, getProvider } from './settingsHandler';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils';
 import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
@@ -246,7 +246,6 @@ export const apiHandler = async (req: any, res: any) => {
 
     const activeProvider = await getProvider();
     const mainApiKey = await getApiKey();
-    const ollamaHost = await getOllamaHost();
     const activeApiKey = mainApiKey;
 
     const isSuggestionTask = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'].includes(task);
@@ -459,7 +458,6 @@ ${personalizationSection}
                     
                     try {
                         await streamOllama(
-                            ollamaHost,
                             mainApiKey, // Pass key if available
                             model,
                             ollamaMessages,

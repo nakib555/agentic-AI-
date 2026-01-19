@@ -6,7 +6,6 @@
  */
 
 export const streamOllama = async (
-    host: string,
     apiKey: string | undefined,
     model: string,
     messages: any[],
@@ -35,40 +34,42 @@ export const streamOllama = async (
         headers['Authorization'] = `Bearer ${apiKey}`;
     }
     
-    // As per user request, try the public API first, then fall back to the configured host.
-    const endpoints = [
-        'https://ollama.com/api/chat',
-        `${host.replace(/\/$/, '')}/api/chat`
-    ];
-
+    const endpoint = 'https://ollama.com/api/chat';
     let response: Response | null = null;
 
-    for (const endpoint of [...new Set(endpoints)]) { // Use Set to avoid duplicate requests if host is ollama.com
-        try {
-            console.log(`[Ollama] Attempting to stream from ${endpoint}...`);
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers,
-                body
-            });
-            if (res.ok) {
-                response = res;
-                console.log(`[Ollama] Successfully connected to ${endpoint}`);
-                break;
-            } else {
-                console.warn(`[Ollama] Connection to ${endpoint} failed with status ${res.status}.`);
-            }
-        } catch (error) {
-            console.warn(`[Ollama] Connection to ${endpoint} failed with error:`, error);
+    try {
+        console.log(`[Ollama] Attempting to stream from ${endpoint}...`);
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            body
+        });
+        if (res.ok) {
+            response = res;
+            console.log(`[Ollama] Successfully connected to ${endpoint}`);
+        } else {
+            console.warn(`[Ollama] Connection to ${endpoint} failed with status ${res.status}.`);
+            const errorText = await res.text();
+            throw new Error(`Ollama API request failed with status ${res.status}: ${errorText}`);
         }
+    } catch (error) {
+        console.warn(`[Ollama] Connection to ${endpoint} failed with error:`, error);
+        const customError = {
+            code: 'OLLAMA_CONNECTION_FAILED',
+            message: `Connection to Ollama failed.`,
+            details: `The public Ollama endpoint was unreachable. Error: ${(error as Error).message}`,
+            suggestion: `Please check your internet connection.`
+        };
+        callbacks.onError(customError);
+        return;
     }
 
     if (!response || !response.body) {
         const customError = {
             code: 'OLLAMA_CONNECTION_FAILED',
             message: `Connection to Ollama failed.`,
-            details: `Tried both public endpoint and configured host '${host}'. Both were unreachable.`,
-            suggestion: `Ensure your local Ollama instance is running or check your internet connection for the public API.`
+            details: `The endpoint was reachable but returned an empty response.`,
+            suggestion: `This may be a temporary issue with the Ollama service.`
         };
         callbacks.onError(customError);
         return;

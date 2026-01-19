@@ -1,4 +1,5 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -132,7 +133,6 @@ export const useAppLogic = () => {
   const [provider, setProvider] = useState<'gemini' | 'openrouter' | 'ollama'>('gemini');
   const [apiKey, setApiKey] = useState('');
   const [openRouterApiKey, setOpenRouterApiKey] = useState('');
-  const [ollamaHost, setOllamaHost] = useState('http://127.0.0.1:11434');
   const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
   const [temperature, setTemperature] = useState(DEFAULT_TEMPERATURE);
@@ -232,7 +232,6 @@ export const useAppLogic = () => {
             setProvider(settings.provider || 'gemini');
             setApiKey(settings.apiKey);
             setOpenRouterApiKey(settings.openRouterApiKey);
-            setOllamaHost(settings.ollamaHost || 'http://127.0.0.1:11434');
             setAboutUser(settings.aboutUser);
             setAboutResponse(settings.aboutResponse);
             setTemperature(settings.temperature);
@@ -337,7 +336,6 @@ export const useAppLogic = () => {
   const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
-  const handleSetOllamaHost = createSettingUpdater(setOllamaHost, 'ollamaHost');
 
   const chatSettings = useMemo(() => {
     return {
@@ -619,7 +617,6 @@ export const useAppLogic = () => {
     availableModels, availableImageModels, availableVideoModels, availableTtsModels,
     modelsLoading, activeModel, onModelChange: handleModelChange,
     apiKey, onSaveApiKey: handleSetApiKey,
-    ollamaHost, onSaveOllamaHost: handleSetOllamaHost,
     aboutUser, setAboutUser: handleSetAboutUser,
     aboutResponse, setAboutResponse: handleSetAboutResponse, temperature, setTemperature: handleSetTemperature,
     maxTokens, setMaxTokens: handleSetMaxTokens, imageModel, onImageModelChange: handleSetImageModel,
