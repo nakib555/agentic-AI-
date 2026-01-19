@@ -351,7 +351,7 @@ export const useChat = (
                     if (finalChatState.title === "New Chat" && finalChatState.messages.length >= 2 && !titleGenerationAttemptedRef.current.has(chatId)) {
                         titleGenerationAttemptedRef.current.add(chatId);
                         
-                        generateChatTitle(finalChatState.messages)
+                        generateChatTitle(finalChatState.messages, finalChatState.model)
                             .then(newTitle => {
                                 const finalTitle = newTitle.length > 45 ? newTitle.substring(0, 42) + '...' : newTitle;
                                 updateChatTitle(chatId, finalTitle);
@@ -359,7 +359,7 @@ export const useChat = (
                             .catch(err => console.error("Failed to generate chat title:", err));
                     }
 
-                    const suggestions = await generateFollowUpSuggestions(finalChatState.messages);
+                    const suggestions = await generateFollowUpSuggestions(finalChatState.messages, finalChatState.model);
                      if (suggestions.length > 0) {
                         updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
                         

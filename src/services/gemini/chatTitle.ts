@@ -7,12 +7,12 @@
 import type { Message } from '../../types';
 import { fetchFromApi } from '../../utils/api';
 
-export const generateChatTitle = async (messages: Message[]): Promise<string> => {
+export const generateChatTitle = async (messages: Message[], model?: string): Promise<string> => {
     try {
         const response = await fetchFromApi('/api/handler?task=title', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages }),
+            body: JSON.stringify({ messages, model }),
             silent: true // Suppress errors for background tasks
         });
 

@@ -1,5 +1,6 @@
 
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -25,6 +26,7 @@ import { streamOpenRouter } from './utils/openRouterUtils';
 import { streamOllama } from './utils/ollamaUtils';
 import { vectorMemory } from './services/vectorMemory'; // Import Vector Memory
 import { executeWithPiston } from './tools/piston';
+import { readData, SETTINGS_FILE_PATH } from './data-store';
 
 // Store promises for frontend tool requests that the backend is waiting on
 const frontendToolRequests = new Map<string, (result: any) => void>();
@@ -211,6 +213,104 @@ class ChatPersistenceManager {
     }
 }
 
+// Helper to perform a simple non-streaming completion across providers
+async function generateProviderCompletion(
+    provider: string, 
+    apiKey: string | undefined, 
+    model: string, 
+    prompt: string, 
+    systemInstruction?: string,
+    jsonMode: boolean = false
+): Promise<string> {
+    if (provider === 'gemini') {
+        if (!apiKey) throw new Error("Gemini API Key missing");
+        const ai = new GoogleGenAI({ apiKey });
+        const targetModel = model || 'gemini-2.5-flash';
+        const config: any = { systemInstruction };
+        if (jsonMode) config.responseMimeType = 'application/json';
+        
+        try {
+            const resp = await generateContentWithRetry(ai, {
+                model: targetModel,
+                contents: prompt,
+                config
+            });
+            return resp.text || '';
+        } catch(e) {
+            console.error("Gemini completion error:", e);
+            return '';
+        }
+    }
+    
+    if (provider === 'openrouter') {
+        if (!apiKey) throw new Error("OpenRouter API Key missing");
+        const targetModel = model || 'google/gemini-flash-1.5'; // Default fallback
+        try {
+             const messages = [];
+             if (systemInstruction) messages.push({ role: 'system', content: systemInstruction });
+             messages.push({ role: 'user', content: prompt });
+             
+             const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://agentic-ai-chat.local",
+                    "X-Title": "Agentic AI Chat",
+                },
+                body: JSON.stringify({
+                    model: targetModel,
+                    messages: messages,
+                    stream: false, // Non-streaming
+                    response_format: jsonMode ? { type: "json_object" } : undefined
+                })
+            });
+            if (!resp.ok) return '';
+            const data = await resp.json();
+            return data.choices?.[0]?.message?.content || '';
+        } catch (e) {
+            console.error("OpenRouter completion error:", e);
+            return '';
+        }
+    }
+
+    if (provider === 'ollama') {
+        const targetModel = model; 
+        if (!targetModel) return ''; 
+        
+        try {
+            const messages = [];
+            if (systemInstruction) messages.push({ role: 'system', content: systemInstruction });
+            messages.push({ role: 'user', content: prompt });
+             
+            // Read configured host
+            let host = 'http://127.0.0.1:11434';
+            try {
+                const savedSettings: any = await readData(SETTINGS_FILE_PATH);
+                if (savedSettings.ollamaHost) host = savedSettings.ollamaHost;
+            } catch(e) {}
+             
+             const resp = await fetch(`${host}/api/chat`, {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({
+                     model: targetModel,
+                     messages,
+                     stream: false,
+                     format: jsonMode ? "json" : undefined
+                 })
+             });
+             if (!resp.ok) return '';
+             const data = await resp.json();
+             return data.message?.content || '';
+        } catch(e) {
+             console.error("Ollama completion error:", e);
+             return '';
+        }
+    }
+    return '';
+}
+
 export const apiHandler = async (req: any, res: any) => {
     const task = req.query.task as string;
     
@@ -251,10 +351,14 @@ export const apiHandler = async (req: any, res: any) => {
     const isSuggestionTask = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'].includes(task);
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston', 'feedback'];
     
-    if (!activeApiKey && !BYPASS_TASKS.includes(task)) {
+    // For suggestion tasks, we handle API key checks inside generateProviderCompletion or specific logic
+    // For chat tasks, we check here.
+    if (!activeApiKey && !BYPASS_TASKS.includes(task) && !isSuggestionTask && activeProvider !== 'ollama') {
         return res.status(401).json({ error: "API key not configured on the server." });
     }
-    const ai = (activeProvider === 'gemini' || isSuggestionTask) && activeApiKey 
+    
+    // Initialize AI instance ONLY if needed for complex streaming or specific Gemini tasks
+    const ai = (activeProvider === 'gemini') && activeApiKey 
         ? new GoogleGenAI({ apiKey: activeApiKey }) 
         : null;
 
@@ -651,25 +755,29 @@ ${personalizationSection}
                 break;
             }
             case 'title': {
-                if (!ai) return res.status(200).json({ title: '' });
-                const { messages } = req.body;
+                const { messages, model } = req.body;
                 const historyText = messages.slice(0, 3).map((m: any) => `${m.role}: ${m.text}`).join('\n');
                 const prompt = `Generate a short concise title (max 6 words) for this conversation.\n\nCONVERSATION:\n${historyText}\n\nTITLE:`;
-                try {
-                    const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt });
-                    res.status(200).json({ title: response.text?.trim() ?? '' });
-                } catch (e) { res.status(200).json({ title: '' }); }
+                
+                const title = await generateProviderCompletion(activeProvider, activeApiKey, model, prompt);
+                res.status(200).json({ title: title.trim() });
                 break;
             }
             case 'suggestions': {
-                if (!ai) return res.status(200).json({ suggestions: [] });
-                const { conversation } = req.body;
+                const { conversation, model } = req.body;
                 const recentHistory = conversation.slice(-5).map((m: any) => `${m.role}: ${(m.text || '').substring(0, 200)}`).join('\n');
-                const prompt = `Suggest 3 short follow-up questions. Return JSON array of strings.\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
+                const prompt = `Suggest 3 short follow-up questions. Return JSON array of strings. Do not use markdown code blocks.\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
+                
                 try {
-                    const response = await generateContentWithRetry(ai, { model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json' } });
+                    const text = await generateProviderCompletion(activeProvider, activeApiKey, model, prompt, undefined, true);
                     let suggestions = [];
-                    try { suggestions = JSON.parse(response.text || '[]'); } catch (e) {}
+                    try { 
+                        // Clean up markdown block if model ignored instructions
+                        const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+                        suggestions = JSON.parse(cleanText || '[]'); 
+                    } catch (e) {}
+                    
+                    if (!Array.isArray(suggestions)) suggestions = [];
                     res.status(200).json({ suggestions });
                 } catch (e) { res.status(200).json({ suggestions: [] }); }
                 break;
@@ -686,7 +794,6 @@ ${personalizationSection}
                 break;
             }
             case 'enhance': {
-                if (!ai) return res.status(200).send(req.body.userInput);
                 const { userInput } = req.body;
                 const prompt = `
 You are an expert Prompt Engineer. Your goal is to rewrite the following user input into a highly effective prompt for an LLM (Large Language Model).
@@ -702,20 +809,22 @@ GUIDELINES:
 
 IMPROVED PROMPT:
 `;
+                // Use streaming response for enhance if supported by all providers, or just simple text.
+                // For simplicity across providers, we use simple completion and stream it back manually.
                 res.setHeader('Content-Type', 'text/plain');
                 try {
-                    const stream = await generateContentStreamWithRetry(ai, { model: 'gemini-3-flash-preview', contents: prompt });
-                    for await (const chunk of stream) {
-                        const text = chunk.text || '';
-                        if (text) res.write(text);
-                    }
+                    const text = await generateProviderCompletion(activeProvider, activeApiKey, 'gemini-3-flash-preview', prompt); // Use fast model default if generic
+                    res.write(text);
                 } catch (e) { res.write(userInput); }
                 res.end();
                 break;
             }
             case 'memory_suggest': {
-                if (!ai) return res.status(200).json({ suggestions: [] });
                 const { conversation } = req.body;
+                // We use Gemini for memory ops if available, otherwise skip or implement provider agnostic logic later.
+                // Current memory tool is Gemini specific.
+                if (!ai) return res.status(200).json({ suggestions: [] });
+                
                 try {
                     const suggestions = await executeExtractMemorySuggestions(ai, conversation);
                     res.status(200).json({ suggestions });
@@ -723,6 +832,7 @@ IMPROVED PROMPT:
                 break;
             }
             case 'memory_consolidate': {
+                 // Current memory tool is Gemini specific.
                 if (!ai) return res.status(200).json({ memory: [req.body.currentMemory, ...req.body.suggestions].filter(Boolean).join('\n') });
                 const { currentMemory, suggestions } = req.body;
                 try {

@@ -7,14 +7,14 @@
 import type { Message } from '../../types';
 import { fetchFromApi } from '../../utils/api';
 
-export const generateFollowUpSuggestions = async (conversation: Message[]): Promise<string[]> => {
+export const generateFollowUpSuggestions = async (conversation: Message[], model?: string): Promise<string[]> => {
     if (conversation.length < 2) return [];
 
     try {
         const response = await fetchFromApi('/api/handler?task=suggestions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ conversation }),
+            body: JSON.stringify({ conversation, model }),
             silent: true // Suppress errors for background tasks
         });
         
