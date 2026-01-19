@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -60,7 +59,19 @@ const ActionButton = ({
     </button>
 );
 
-const ApiKeyInput = ({ 
+interface ApiKeyInputProps { 
+    value: string;
+    onSave: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void> | void;
+    placeholder: string;
+    description: string;
+    isOptional?: boolean;
+    provider: 'gemini' | 'openrouter' | 'ollama';
+    onProviderChange?: (provider: 'gemini' | 'openrouter' | 'ollama') => void;
+    label?: string;
+    isHost?: boolean;
+}
+
+const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ 
     value, 
     onSave, 
     placeholder, 
@@ -70,16 +81,6 @@ const ApiKeyInput = ({
     onProviderChange,
     label,
     isHost = false
-}: { 
-    value: string, 
-    onSave: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void> | void, 
-    placeholder: string,
-    description: string,
-    isOptional?: boolean,
-    provider: 'gemini' | 'openrouter' | 'ollama',
-    onProviderChange?: (provider: 'gemini' | 'openrouter' | 'ollama') => void,
-    label?: string,
-    isHost?: boolean
 }) => {
     const [localValue, setLocalValue] = useState(value);
     const [showKey, setShowKey] = useState(false);
@@ -195,7 +196,7 @@ const ApiKeyInput = ({
                             `}
                         >
                              {saveStatus === 'saved' ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
                              ) : saveStatus === 'saving' ? (
                                 <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                              ) : (
@@ -251,9 +252,10 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         </SettingItem>
 
         <div className="space-y-4">
-            {/* Gemini & Ollama API Key */}
+            {/* Gemini & Ollama API Key - Use key prop to force re-mount on provider change */}
             {(provider === 'gemini' || provider === 'ollama') && (
                 <ApiKeyInput 
+                    key={provider}
                     value={apiKey} 
                     onSave={(k) => onSaveApiKey(k, provider)}
                     placeholder={`Enter ${provider === 'gemini' ? 'Google Gemini' : 'Ollama'} API Key`}
@@ -269,6 +271,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             {/* OpenRouter API Key */}
             {provider === 'openrouter' && (
                 <ApiKeyInput 
+                    key="openrouter"
                     value={openRouterApiKey} 
                     onSave={(k) => onSaveApiKey(k, 'openrouter')}
                     placeholder="Enter OpenRouter API Key"
@@ -281,6 +284,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             {/* Ollama Host URL */}
             {provider === 'ollama' && (
                 <ApiKeyInput
+                    key="ollama-host"
                     value={ollamaHost}
                     onSave={(host) => onSaveOllamaHost(host)}
                     placeholder="e.g. http://127.0.0.1:11434"

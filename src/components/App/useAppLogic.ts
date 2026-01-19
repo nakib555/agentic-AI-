@@ -1,5 +1,6 @@
 
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -273,6 +274,9 @@ export const useAppLogic = () => {
   };
   
   const handleSetApiKey = useCallback(async (newApiKey: string, providerType: 'gemini' | 'openrouter' | 'ollama') => {
+    // Force set the provider to the type of key being saved to prevent mismatch
+    setProvider(providerType);
+    
     if (providerType === 'gemini') setApiKey(newApiKey);
     else if (providerType === 'openrouter') setOpenRouterApiKey(newApiKey);
     else if (providerType === 'ollama') setApiKey(newApiKey); // Store Ollama key in generic apiKey state
@@ -296,7 +300,9 @@ export const useAppLogic = () => {
   }, [processModelData, fetchModels]);
 
   const handleProviderChange = useCallback((newProvider: 'gemini' | 'openrouter' | 'ollama') => {
+      // Optimistic Update
       setProvider(newProvider);
+      
       updateSettings({ provider: newProvider }).then(response => {
           if (response.models) processModelData(response);
           // Only auto-fetch if we already have the key for this provider
@@ -305,6 +311,9 @@ export const useAppLogic = () => {
               // We can trigger fetch, but the backend will return empty if key missing.
               fetchModels();
           }
+      }).catch(err => {
+          console.error("Failed to update provider:", err);
+          // Optional: Revert UI if update fails (though risky for UX flickering)
       });
   }, [fetchModels, processModelData]);
 
