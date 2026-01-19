@@ -16,7 +16,6 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// FIX: Extend React.Component to fix errors related to missing 'props' and 'setState'.
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = {
     hasError: false,
