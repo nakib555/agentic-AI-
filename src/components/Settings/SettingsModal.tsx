@@ -34,8 +34,6 @@ type SettingsModalProps = {
   onExportAllChats: () => void;
   apiKey: string;
   onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void>;
-  suggestionApiKey: string;
-  onSaveSuggestionApiKey: (key: string) => void;
   aboutUser: string;
   setAboutUser: (prompt: string) => void;
   aboutResponse: string;
@@ -225,8 +223,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                                             onExportAllChats={props.onExportAllChats} 
                                             apiKey={props.apiKey} 
                                             onSaveApiKey={props.onSaveApiKey} 
-                                            suggestionApiKey={props.suggestionApiKey}
-                                            onSaveSuggestionApiKey={props.onSaveSuggestionApiKey}
                                             theme={props.theme} 
                                             setTheme={props.setTheme} 
                                             serverUrl={props.serverUrl}

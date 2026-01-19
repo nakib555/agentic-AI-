@@ -250,8 +250,6 @@ export const App = () => {
           clearAllChats={logic.handleRequestClearAll}
           apiKey={logic.apiKey}
           onSaveApiKey={logic.onSaveApiKey}
-          suggestionApiKey={logic.suggestionApiKey}
-          onSaveSuggestionApiKey={logic.onSaveSuggestionApiKey}
           aboutUser={logic.aboutUser}
           setAboutUser={logic.setAboutUser}
           aboutResponse={logic.aboutResponse}

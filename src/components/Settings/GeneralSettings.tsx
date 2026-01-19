@@ -18,31 +18,21 @@ type GeneralSettingsProps = {
   onExportAllChats: () => void;
   apiKey: string;
   onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void>;
-  suggestionApiKey?: string;
-  onSaveSuggestionApiKey?: (key: string) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
   serverUrl: string;
   onSaveServerUrl: (url: string) => Promise<boolean>;
   ollamaHost: string;
   onSaveOllamaHost: (host: string) => void;
+  provider: 'gemini' | 'openrouter' | 'ollama';
+  openRouterApiKey: string;
+  onProviderChange: (provider: 'gemini' | 'openrouter' | 'ollama') => void;
 };
 
 const PROVIDER_OPTIONS = [
     { id: 'gemini', label: 'Google Gemini', desc: 'Default' },
     { id: 'openrouter', label: 'OpenRouter', desc: 'Access to Claude, GPT, etc.' },
     { id: 'ollama', label: 'Ollama', desc: 'Local or Hosted Instance' }
-];
-
-const SYNTAX_OPTIONS = [
-    { id: 'auto', label: 'Auto (Match Theme)', desc: 'Switches automatically' },
-    { id: 'vsc-dark', label: 'VS Code', desc: 'Classic VSCode look' },
-    { id: 'vs', label: 'Visual Studio', desc: 'Classic light theme' },
-    { id: 'dracula', label: 'Dracula', desc: 'High contrast purple' },
-    { id: 'atom-dark', label: 'Atom Dark', desc: 'Soft dark colors' },
-    { id: 'synthwave', label: 'Synthwave 84', desc: 'Neon & Retro' },
-    { id: 'one-light', label: 'One Light', desc: 'Clean light theme' },
-    { id: 'github', label: 'GitHub Light', desc: 'Standard GitHub style' },
 ];
 
 const ActionButton = ({ 
@@ -111,7 +101,7 @@ const ApiKeyInput = ({
 
         setSaveStatus('saving');
         setSaveError(null);
-        
+
         try {
             await onSave(localValue, provider);
             if (isMounted.current) {
@@ -120,386 +110,268 @@ const ApiKeyInput = ({
                     if (isMounted.current) setSaveStatus('idle');
                 }, 2000);
             }
-        } catch (error: any) {
+        } catch (err: any) {
+            console.error("Failed to save key:", err);
             if (isMounted.current) {
                 setSaveStatus('error');
-                setSaveError(error.message || 'Failed to save.');
-            }
-        }
-    };
-
-    const labelComponent = label ? (
-        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{label}</span>
-    ) : (
-        <div className="flex items-center gap-3">
-            <SelectDropdown
-                value={provider}
-                onChange={(val) => onProviderChange?.(val as 'gemini' | 'openrouter' | 'ollama')}
-                options={PROVIDER_OPTIONS}
-                disabled={!onProviderChange}
-                className="w-48"
-                triggerClassName="flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors shadow-sm"
-            />
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {isHost ? 'Host URL' : 'API Key'}
-            </span>
-        </div>
-    );
-
-    const isSecret = !isHost;
-
-    return (
-        <SettingItem 
-            label={labelComponent} 
-            description={description} 
-            layout="col"
-        >
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    {isHost ? (
-                        <svg className={`w-4 h-4 transition-colors duration-200 ${localValue ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    ) : (
-                        <svg className={`w-4 h-4 transition-colors duration-200 ${localValue ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
-                    )}
-                </div>
-                <input
-                    type={isSecret && !showKey ? "password" : "text"}
-                    autoComplete="off"
-                    value={localValue}
-                    onChange={e => setLocalValue(e.target.value)}
-                    placeholder={placeholder}
-                    className="w-full pl-9 pr-28 py-2.5 bg-slate-100/50 dark:bg-white/5 border border-transparent dark:border-transparent rounded-lg text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-inner"
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 gap-1">
-                    {isSecret && (
-                        <button
-                            type="button"
-                            onClick={() => setShowKey(!showKey)}
-                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md transition-colors"
-                            title={showKey ? "Hide key" : "Show key"}
-                        >
-                            {showKey ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                            ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                            )}
-                        </button>
-                    )}
-                    <button
-                        type="submit"
-                        disabled={saveStatus === 'saving' || (!isOptional && !localValue && !isHost)} 
-                        className={`
-                            px-3 py-1.5 text-xs font-semibold text-white rounded-md transition-all shadow-sm
-                            ${saveStatus === 'saved' 
-                                ? 'bg-green-500 hover:bg-green-600 shadow-green-500/20' 
-                                : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20 hover:-translate-y-0.5 active:translate-y-0'
-                            }
-                            disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none
-                        `}
-                    >
-                        {saveStatus === 'saving' ? '...' : saveStatus === 'saved' ? 'Saved' : 'Save'}
-                    </button>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between min-h-[20px]">
-                 {saveStatus === 'error' && saveError ? (
-                     <p className="text-xs font-medium text-red-500 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M18 10a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" /></svg>
-                         {saveError}
-                     </p>
-                 ) : (
-                     <span className="text-xs text-slate-400 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-                        Stored securely on your device.
-                     </span>
-                 )}
-              </div>
-            </form>
-        </SettingItem>
-    );
-};
-
-const ServerUrlInput = ({
-    value,
-    onSave
-}: {
-    value: string,
-    onSave: (url: string) => Promise<boolean>
-}) => {
-    const [localValue, setLocalValue] = useState(value);
-    const [status, setStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
-    const [message, setMessage] = useState<string | null>(null);
-    const isMounted = useRef(true);
-
-    useEffect(() => {
-        isMounted.current = true;
-        return () => { isMounted.current = false; };
-    }, []);
-
-    const handleVerify = async (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-        
-        const urlToTest = localValue.trim().replace(/\/$/, '');
-        
-        // Allow clearing the override
-        if (!urlToTest) {
-            await onSave('');
-            if (isMounted.current) {
-                setStatus('success');
-                setMessage('Reset to default');
-                setTimeout(() => { 
-                    if (isMounted.current) {
-                        setStatus('idle'); 
-                        setMessage(null); 
-                    }
-                }, 2000);
-            }
-            return;
-        }
-
-        setStatus('verifying');
-        setMessage(null);
-
-        const success = await onSave(urlToTest);
-        
-        if (isMounted.current) {
-            if (success) {
-                setStatus('success');
-                setMessage('Connected successfully');
-                setTimeout(() => { 
-                    if (isMounted.current) {
-                        setStatus('idle'); 
-                        setMessage(null); 
-                    }
-                }, 2000);
-            } else {
-                setStatus('error');
-                setMessage('Connection failed. Check URL.');
+                setSaveError(err.message || "Failed to save key");
             }
         }
     };
 
     return (
-        <SettingItem 
-            label="Backend Server URL" 
-            description="Override the API base URL. Defaults to 'BACKEND_URL' env var or relative path. Useful for self-hosting or split deployments." 
-            layout="col"
-        >
-            <form onSubmit={handleVerify} className="space-y-4">
-                <div className="flex gap-2">
-                    <div className="relative flex-1 group">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg className={`w-4 h-4 transition-colors ${status === 'success' ? 'text-green-500' : status === 'error' ? 'text-red-500' : 'text-slate-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                        </div>
-                        <input
-                            type="text"
-                            value={localValue}
-                            onChange={e => setLocalValue(e.target.value)}
-                            placeholder="https://your-backend-url.com"
-                            className="w-full pl-9 pr-4 py-2.5 bg-slate-100/50 dark:bg-white/5 border border-transparent dark:border-transparent rounded-lg text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-black/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-inner"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={status === 'verifying'}
-                        className={`
-                            px-4 py-2.5 text-sm font-semibold text-white rounded-lg transition-all shadow-sm flex items-center gap-2
-                            ${status === 'success' 
-                                ? 'bg-green-600 hover:bg-green-700' 
-                                : status === 'error'
-                                    ? 'bg-red-600 hover:bg-red-700'
-                                    : 'bg-slate-700 hover:bg-slate-800 dark:bg-white/10 dark:hover:bg-white/20 dark:text-slate-200'
-                            }
-                            disabled:opacity-50 disabled:cursor-not-allowed
-                        `}
-                    >
-                        {status === 'verifying' ? (
-                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        ) : status === 'success' ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
+        <div className="w-full bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 transition-all hover:border-indigo-300 dark:hover:border-indigo-500/30">
+             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <div>
+                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        {label || (isHost ? 'Connection Host' : 'API Credential')}
+                        {isOptional && <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/10 px-2 py-0.5 rounded-full">Optional</span>}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{description}</p>
+                </div>
+                {onProviderChange && (
+                     <div className="flex-shrink-0">
+                         {/* Provider Badge */}
+                         <div className="px-3 py-1 rounded-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-600 dark:text-slate-300 shadow-sm flex items-center gap-1.5">
+                             <span className={`w-2 h-2 rounded-full ${provider === 'gemini' ? 'bg-blue-500' : provider === 'openrouter' ? 'bg-purple-500' : 'bg-orange-500'}`}></span>
+                             {provider === 'gemini' ? 'Google Gemini' : provider === 'openrouter' ? 'OpenRouter' : 'Ollama'}
+                         </div>
+                     </div>
+                )}
+            </div>
+
+            <form onSubmit={handleSave} className="relative group">
+                <div className="relative flex items-center">
+                    <div className="absolute left-3 text-slate-400">
+                        {isHost ? (
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
                         ) : (
-                            'Verify'
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
                         )}
-                    </button>
+                    </div>
+                    
+                    <input
+                        type={showKey || isHost ? "text" : "password"}
+                        value={localValue}
+                        onChange={(e) => setLocalValue(e.target.value)}
+                        placeholder={placeholder}
+                        className={`
+                            w-full pl-10 pr-24 py-3 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl 
+                            text-sm font-mono text-slate-700 dark:text-slate-200 
+                            focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 
+                            transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500
+                            ${saveStatus === 'error' ? 'border-red-300 ring-2 ring-red-500/20' : ''}
+                        `}
+                    />
+
+                    <div className="absolute right-2 flex items-center gap-1">
+                        {!isHost && (
+                            <button
+                                type="button"
+                                onClick={() => setShowKey(!showKey)}
+                                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                            >
+                                {showKey ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06l-1.745-1.745a10.029 10.029 0 003.3-4.38 1.651 1.651 0 000-1.185A10.004 10.004 0 009.999 3a9.956 9.956 0 00-4.744 1.194L3.28 2.22zM7.752 6.69l1.092 1.092a2.5 2.5 0 013.374 3.373l1.091 1.092a4 4 0 00-5.557-5.557z" clipRule="evenodd" /><path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 01-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 010-1.186A10.007 10.007 0 012.839 6.02L6.07 9.252a4 4 0 004.678 4.678z" /></svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" /><path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" /></svg>
+                                )}
+                            </button>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={saveStatus === 'saving' || localValue === value}
+                            className={`
+                                p-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all
+                                ${saveStatus === 'saved' 
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                                    : saveStatus === 'saving'
+                                        ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
+                                        : localValue !== value
+                                            ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm'
+                                            : 'bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-slate-500 cursor-not-allowed'
+                                }
+                            `}
+                        >
+                             {saveStatus === 'saved' ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" /></svg>
+                             ) : saveStatus === 'saving' ? (
+                                <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                             ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+                             )}
+                        </button>
+                    </div>
                 </div>
-                {message && (
-                    <p className={`text-xs font-medium flex items-center gap-1 animate-in fade-in slide-in-from-top-1 ${status === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
-                        {message}
-                    </p>
+                {saveError && (
+                    <p className="mt-2 text-xs text-red-500 font-medium ml-1 animate-in fade-in slide-in-from-top-1">{saveError}</p>
                 )}
             </form>
-        </SettingItem>
+        </div>
     );
 };
 
-const GeneralSettings: React.FC<GeneralSettingsProps & { provider: 'gemini' | 'openrouter' | 'ollama', openRouterApiKey: string, onProviderChange: (p: 'gemini' | 'openrouter' | 'ollama') => void }> = ({ 
-    onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, onExportAllChats, apiKey, onSaveApiKey,
-    suggestionApiKey, onSaveSuggestionApiKey,
-    theme, setTheme,
-    serverUrl, onSaveServerUrl,
+const GeneralSettings: React.FC<GeneralSettingsProps> = ({ 
+    onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, onExportAllChats, 
+    apiKey, onSaveApiKey,
+    theme, setTheme, serverUrl, onSaveServerUrl,
     provider, openRouterApiKey, onProviderChange, ollamaHost, onSaveOllamaHost
 }) => {
-  const [syntaxTheme, setSyntaxTheme] = useState(() => localStorage.getItem('syntax_theme') || 'auto');
-
-  const handleMainApiKeySave = async (key: string, savedProvider: 'gemini' | 'openrouter' | 'ollama') => {
-      const cleanKey = key.trim();
-      const cleanSuggestionKey = (suggestionApiKey || '').trim();
-
-      // Check conflict only if we are using Gemini provider for the main key
-      if (savedProvider === 'gemini' && cleanKey && cleanSuggestionKey && cleanKey === cleanSuggestionKey) {
-          throw new Error("Conflict: Main Key cannot be identical to Suggestion Key.");
-      }
-      
-      // Save logic: If provider changed, update provider state too
-        if (savedProvider !== provider) {
-            onProviderChange(savedProvider);
-        }
-        await onSaveApiKey(cleanKey, savedProvider);
-  };
-
-  const handleSuggestionApiKeySave = async (key: string) => {
-      const cleanKey = key.trim();
-      if (onSaveSuggestionApiKey) {
-          onSaveSuggestionApiKey(cleanKey);
-      }
-  };
-
-  const handleSyntaxThemeChange = (newTheme: string) => {
-      setSyntaxTheme(newTheme);
-      localStorage.setItem('syntax_theme', newTheme);
-      // Dispatch event for useSyntaxTheme hook
-      window.dispatchEvent(new Event('syntax-theme-change'));
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="mb-8">
-        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">General Settings</h3>
-      </div>
-      
-      <ApiKeyInput 
-        provider={provider}
-        onProviderChange={onProviderChange}
-        description={
-            provider === 'gemini' 
-            ? "Required for main chat, reasoning, and tool execution." 
-            : provider === 'openrouter'
-            ? "Required for accessing OpenRouter models."
-            : "Required if your local or hosted Ollama instance uses Bearer token authentication."
-        }
-        value={provider === 'openrouter' ? openRouterApiKey : apiKey}
-        onSave={handleMainApiKeySave}
-        placeholder={
-            provider === 'gemini' ? "Enter your Gemini API key" 
-            : provider === 'openrouter' ? "Enter your OpenRouter API key"
-            : "Enter Ollama API Key (if required)"
-        }
-        isOptional={provider === 'ollama'}
-      />
-
-      {provider === 'ollama' && (
-          <ApiKeyInput
-            provider="ollama"
-            label="Ollama Host URL"
-            description="The base URL of your Ollama instance. Default is http://127.0.0.1:11434"
-            value={ollamaHost}
-            onSave={(val) => onSaveOllamaHost(val)}
-            placeholder="http://127.0.0.1:11434"
-            isHost
-          />
-      )}
-
-      {provider === 'gemini' && onSaveSuggestionApiKey && (
-          <ApiKeyInput 
-            provider="gemini"
-            // No provider change for suggestion key
-            label="AI Suggestion API Key (Optional)"
-            description="Used for background tasks (titles, suggestions, memory) to save rate limits on your main key."
-            value={suggestionApiKey || ''}
-            onSave={(k) => handleSuggestionApiKeySave(k)}
-            placeholder="Enter a secondary API key"
-            isOptional
-          />
-      )}
-
-      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 pb-4 border-b border-gray-100 dark:border-white/5">
-         <span>Need help?</span>
-         {provider === 'gemini' ? (
-             <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
-                 Get Gemini Key 
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
-             </a>
-         ) : provider === 'openrouter' ? (
-             <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
-                 Get OpenRouter Key 
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
-             </a>
-         ) : (
-             <div className="flex gap-4">
-                <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
-                    Download Ollama
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clipRule="evenodd" /></svg>
-                </a>
-                <span className="text-slate-300 dark:text-slate-700">|</span>
-                <a href="https://ollama.com/library" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
-                    Browse Library
-                </a>
-             </div>
-         )}
+    <div className="space-y-10 pb-12">
+      {/* Header */}
+      <div>
+        <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">General Configuration</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage connectivity, appearance, and data.</p>
       </div>
 
-      <SettingItem label="Theme" description="Choose your preferred visual style." layout="col">
-        <ThemeToggle theme={theme} setTheme={setTheme} variant="cards" />
-      </SettingItem>
+      {/* Connectivity Section */}
+      <section className="space-y-6">
+        <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2Z" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z" /></svg>
+            </div>
+            <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">AI Provider</h4>
+        </div>
 
-      <SettingItem label="Code Syntax Highlighting" description="Customize how code blocks are rendered.">
-          <div className="w-full sm:w-64">
-              <SelectDropdown 
-                  value={syntaxTheme}
-                  onChange={handleSyntaxThemeChange}
-                  options={SYNTAX_OPTIONS}
-                  icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>}
-              />
-          </div>
-      </SettingItem>
+        <SettingItem 
+            label="Select Provider" 
+            description="Choose the backend AI service."
+        >
+            <div className="w-full sm:w-[320px]">
+                <SelectDropdown
+                    value={provider}
+                    onChange={(val) => onProviderChange(val as any)}
+                    options={PROVIDER_OPTIONS}
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>}
+                />
+            </div>
+        </SettingItem>
 
-      {/* Manual Server URL Override */}
-      <ServerUrlInput value={serverUrl} onSave={onSaveServerUrl} />
+        <div className="space-y-4">
+             {/* Gemini API Key */}
+             {provider === 'gemini' && (
+                 <ApiKeyInput 
+                     value={apiKey} 
+                     onSave={(k) => onSaveApiKey(k, 'gemini')}
+                     placeholder="Enter Google Gemini API Key"
+                     description="Required for all AI features. Key is stored locally."
+                     label="Gemini API Key"
+                     provider="gemini"
+                 />
+             )}
 
-      <div className="pt-8">
-          <div className="flex items-center gap-2 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-slate-400 dark:text-slate-500"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>
-              <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Data & Debugging</h4>
-          </div>
-          
-          <div className="flex flex-wrap gap-3">
-              <ActionButton 
-                  icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
-                  title="Download Logs"
-                  onClick={onDownloadLogs}
-              />
-              <ActionButton 
-                  icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>}
-                  title="View Data Tree"
-                  onClick={onShowDataStructure}
-              />
-              <ActionButton 
-                  icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>}
-                  title="Export All Chats"
-                  onClick={onExportAllChats}
-              />
-              <ActionButton 
-                  icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>}
-                  title="Clear All Chats"
-                  onClick={onClearAllChats}
-                  danger
-              />
-          </div>
-      </div>
+             {/* OpenRouter API Key */}
+             {provider === 'openrouter' && (
+                 <ApiKeyInput 
+                     value={openRouterApiKey} 
+                     onSave={(k) => onSaveApiKey(k, 'openrouter')}
+                     placeholder="Enter OpenRouter API Key"
+                     description="Access various models (Claude, GPT, etc.)."
+                     label="OpenRouter API Key"
+                     provider="openrouter"
+                 />
+             )}
+
+             {/* Ollama Host & Key */}
+             {provider === 'ollama' && (
+                 <div className="space-y-4 w-full">
+                     <ApiKeyInput 
+                         value={ollamaHost} 
+                         onSave={(h) => onSaveOllamaHost(h)}
+                         placeholder="http://127.0.0.1:11434"
+                         description="URL of your running Ollama instance."
+                         label="Ollama Host URL"
+                         provider="ollama"
+                         isHost={true}
+                     />
+                     <ApiKeyInput 
+                         value={apiKey} 
+                         onSave={(k) => onSaveApiKey(k, 'ollama')}
+                         placeholder="Enter Optional API Key"
+                         description="Optional key if your Ollama instance requires auth."
+                         label="Ollama API Key (Optional)"
+                         provider="ollama"
+                         isOptional={true}
+                     />
+                 </div>
+             )}
+
+             <ApiKeyInput 
+                value={serverUrl} 
+                onSave={(url) => onSaveServerUrl(url)}
+                placeholder="Default (Relative Path)"
+                description="Custom Backend URL (optional). Leave empty for default."
+                label="Backend Server URL"
+                isHost={true}
+                provider={provider}
+                isOptional={true}
+            />
+        </div>
+      </section>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/10 to-transparent w-full" />
+
+      {/* Appearance */}
+      <section className="space-y-6">
+        <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="5" /><path d="M12 1v2" /><path d="M12 21v2" /><path d="M4.22 4.22l1.42 1.42" /><path d="M18.36 18.36l1.42 1.42" /><path d="M1 12h2" /><path d="M21 12h2" /><path d="M4.22 19.78l1.42-1.42" /><path d="M18.36 5.64l1.42-1.42" /></svg>
+            </div>
+            <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">Appearance</h4>
+        </div>
+        
+        <SettingItem 
+            label="Theme Preference" 
+            description="Choose your preferred visual style."
+            layout="col"
+        >
+            <ThemeToggle theme={theme} setTheme={setTheme} variant="cards" />
+        </SettingItem>
+      </section>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/10 to-transparent w-full" />
+
+      {/* Data Management */}
+      <section className="space-y-6">
+        <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+            </div>
+            <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">Data Management</h4>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+            <ActionButton 
+                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>}
+                title="Export History" 
+                onClick={onExportAllChats} 
+            />
+            <ActionButton 
+                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>}
+                title="Download Logs" 
+                onClick={onDownloadLogs} 
+            />
+            <ActionButton 
+                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
+                title="Run Diagnostics" 
+                onClick={onRunTests} 
+            />
+             <ActionButton 
+                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>}
+                title="Debug Data" 
+                onClick={onShowDataStructure} 
+            />
+            <ActionButton 
+                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>}
+                title="Clear All Chats" 
+                onClick={onClearAllChats} 
+                danger 
+            />
+        </div>
+      </section>
     </div>
   );
 };
 
-export default React.memo(GeneralSettings);
+export default GeneralSettings;

@@ -77,8 +77,6 @@ type AppModalsProps = {
   // API Keys
   apiKey: string;
   onSaveApiKey: (key: string, provider: 'gemini' | 'openrouter' | 'ollama') => Promise<void>;
-  suggestionApiKey: string;
-  onSaveSuggestionApiKey: (key: string) => void;
   // Provider Settings
   provider: 'gemini' | 'openrouter' | 'ollama';
   openRouterApiKey: string;
@@ -188,8 +186,6 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           onExportAllChats={props.onExportAllChats}
           apiKey={props.apiKey}
           onSaveApiKey={props.onSaveApiKey}
-          suggestionApiKey={props.suggestionApiKey}
-          onSaveSuggestionApiKey={props.onSaveSuggestionApiKey}
           aboutUser={props.aboutUser}
           setAboutUser={props.setAboutUser}
           aboutResponse={props.aboutResponse}

@@ -91,15 +91,6 @@ export const getApiKey = async (): Promise<string | undefined> => {
     }
 };
 
-export const getSuggestionApiKey = async (): Promise<string | undefined> => {
-    try {
-        const settings = await ensureSettingsLoaded();
-        return settings.suggestionApiKey || process.env.SUGGESTION_API_KEY;
-    } catch (error) {
-        return process.env.SUGGESTION_API_KEY;
-    }
-};
-
 export const getProvider = async (): Promise<'gemini' | 'openrouter' | 'ollama'> => {
     try {
         const settings = await ensureSettingsLoaded();

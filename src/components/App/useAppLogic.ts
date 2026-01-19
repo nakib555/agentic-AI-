@@ -133,7 +133,6 @@ export const useAppLogic = () => {
   const [apiKey, setApiKey] = useState('');
   const [openRouterApiKey, setOpenRouterApiKey] = useState('');
   const [ollamaHost, setOllamaHost] = useState('http://127.0.0.1:11434');
-  const [suggestionApiKey, setSuggestionApiKey] = useState('');
   const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
   const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
   const [temperature, setTemperature] = useState(DEFAULT_TEMPERATURE);
@@ -234,7 +233,6 @@ export const useAppLogic = () => {
             setApiKey(settings.apiKey);
             setOpenRouterApiKey(settings.openRouterApiKey);
             setOllamaHost(settings.ollamaHost || 'http://127.0.0.1:11434');
-            setSuggestionApiKey(settings.suggestionApiKey);
             setAboutUser(settings.aboutUser);
             setAboutResponse(settings.aboutResponse);
             setTemperature(settings.temperature);
@@ -333,7 +331,6 @@ export const useAppLogic = () => {
       }
   }, [fetchModels, serverUrl]);
 
-  const handleSetSuggestionApiKey = createSettingUpdater(setSuggestionApiKey, 'suggestionApiKey');
   const handleSetAboutUser = createSettingUpdater(setAboutUser, 'aboutUser');
   const handleSetAboutResponse = createSettingUpdater(setAboutResponse, 'aboutResponse');
   const handleSetTtsModel = createSettingUpdater(setTtsModel, 'ttsModel');
@@ -621,7 +618,7 @@ export const useAppLogic = () => {
     toast, closeToast, showToast,
     availableModels, availableImageModels, availableVideoModels, availableTtsModels,
     modelsLoading, activeModel, onModelChange: handleModelChange,
-    apiKey, onSaveApiKey: handleSetApiKey, suggestionApiKey, onSaveSuggestionApiKey: handleSetSuggestionApiKey,
+    apiKey, onSaveApiKey: handleSetApiKey,
     ollamaHost, onSaveOllamaHost: handleSetOllamaHost,
     aboutUser, setAboutUser: handleSetAboutUser,
     aboutResponse, setAboutResponse: handleSetAboutResponse, temperature, setTemperature: handleSetTemperature,
