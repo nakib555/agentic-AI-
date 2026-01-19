@@ -33,10 +33,10 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
     // 1. Get Settings
     const settings: any = await readData(SETTINGS_FILE_PATH);
     const providerId = settings.provider || 'gemini';
-    const ollamaHost = settings.ollamaHost || '';
     
     // 2. Check Cache
-    const currentKeyHash = (apiKey || '').trim().slice(-8) + providerId + ollamaHost;
+    // Removed ollamaHost from cache key as functionality is deprecated
+    const currentKeyHash = (apiKey || '').trim().slice(-8) + providerId;
     const now = Date.now();
 
     if (

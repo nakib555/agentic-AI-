@@ -2,23 +2,16 @@
 import { AIProvider, ChatOptions, StreamCallbacks } from './types';
 import type { Model as AppModel } from '../../src/types';
 import { streamOllama } from '../utils/ollamaUtils';
-import { readData, SETTINGS_FILE_PATH } from '../data-store';
 
 export class OllamaProvider implements AIProvider {
     id = 'ollama';
     name = 'Ollama';
 
-    private async getHost(): Promise<string> {
-        // Default to 127.0.0.1 to avoid Node.js localhost IPv6 issues
-        const host = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
-        return host.replace(/\/$/, '');
-    }
-
     async getModels(apiKey: string): Promise<AppModel[]> {
         // Ollama usually uses host. apiKey is optional (e.g. for auth proxies).
         // We do NOT mandate an API key here, matching `GET /api/tags` behavior
         // which is public on the local instance.
-        const host = await this.getHost();
+        const host = 'http://127.0.0.1:11434';
         try {
             const url = `${host}/api/tags`;
             
@@ -70,7 +63,7 @@ export class OllamaProvider implements AIProvider {
             ollamaMessages.unshift({ role: 'system', content: options.systemInstruction });
         }
 
-        const host = await this.getHost();
+        const host = 'http://127.0.0.1:11434';
 
         // Pass the host explicitly to the streaming utility
         await streamOllama(apiKey, model, ollamaMessages, callbacks, {
