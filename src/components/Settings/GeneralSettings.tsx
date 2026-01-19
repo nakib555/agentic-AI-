@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -299,7 +298,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
 
              <ApiKeyInput 
                 value={serverUrl} 
-                onSave={(url) => onSaveServerUrl(url)}
+                onSave={async (url) => { await onSaveServerUrl(url); }}
                 placeholder="Default (Relative Path)"
                 description="Custom Backend URL (optional). Leave empty for default."
                 label="Backend Server URL"

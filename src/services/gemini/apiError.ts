@@ -93,7 +93,8 @@ export const parseApiError = (error: any): MessageError => {
         return {
             code: 'INVALID_API_KEY',
             message: 'Invalid OpenRouter API Key',
-            details: 'The OpenRouter API rejected your key. Please ensure it is configured correctly in Settings.'
+            details: 'The OpenRouter API rejected your key. Please ensure it is configured correctly in Settings.',
+            suggestion: 'Your OpenRouter API key appears invalid. Please update it in the General Settings tab.'
         };
     }
 
@@ -102,7 +103,8 @@ export const parseApiError = (error: any): MessageError => {
         return {
             code: 'INVALID_API_KEY',
             message: 'Invalid or Missing API Key',
-            details: 'The API key is missing, invalid, or has expired. Please ensure it is configured correctly in your environment variables.'
+            details: 'The API key is missing, invalid, or has expired. Please ensure it is configured correctly in your environment variables.',
+            suggestion: 'Your API key is invalid or missing. Please update it in the General Settings tab.'
         };
     }
 
@@ -111,7 +113,8 @@ export const parseApiError = (error: any): MessageError => {
         return {
             code: 'RATE_LIMIT_EXCEEDED',
             message: 'API Rate Limit Exceeded',
-            details: `You have sent too many requests or exceeded your quota. Please check your API plan and billing details. Original error: ${message}`
+            details: `You have sent too many requests or exceeded your quota. Please check your API plan and billing details. Original error: ${message}`,
+            suggestion: 'You have sent too many requests. Please wait a moment before trying again.'
         };
     }
 
@@ -120,7 +123,8 @@ export const parseApiError = (error: any): MessageError => {
         return {
             code: 'UNAVAILABLE',
             message: 'Model is temporarily unavailable',
-            details: `The model is currently overloaded or down for maintenance. Please try again in a few moments. Original error: ${message}`
+            details: `The model is currently overloaded or down for maintenance. Please try again in a few moments. Original error: ${message}`,
+            suggestion: 'The AI service is currently overloaded. Please try again in a few moments.'
         };
     }
     
@@ -129,7 +133,8 @@ export const parseApiError = (error: any): MessageError => {
         return {
             code: 'CONTENT_BLOCKED',
             message: 'Response Blocked by Safety Filter',
-            details: 'The model\'s response was blocked due to the safety policy. This can happen if the prompt or the generated content is deemed unsafe. Please try rephrasing your request.'
+            details: 'The model\'s response was blocked due to the safety policy. This can happen if the prompt or the generated content is deemed unsafe. Please try rephrasing your request.',
+            suggestion: 'The response was blocked due to safety filters. Please try rephrasing your request.'
         };
     }
     
@@ -138,7 +143,8 @@ export const parseApiError = (error: any): MessageError => {
         return {
             code: 'MODEL_NOT_FOUND',
             message: 'Model Not Found',
-            details: `The model ID specified in the request could not be found. Please check the model name and ensure you have access to it. Original error: ${message}`
+            details: `The model ID specified in the request could not be found. Please check the model name and ensure you have access to it. Original error: ${message}`,
+            suggestion: 'The selected model is unavailable. This may be due to regional restrictions or API key limitations. Please select a different model in Settings.'
         };
     }
     
@@ -147,7 +153,8 @@ export const parseApiError = (error: any): MessageError => {
         return {
             code: 'INVALID_ARGUMENT',
             message: 'Invalid Request Sent',
-            details: `The request was malformed or contained invalid parameters. Details: ${message}`
+            details: `The request was malformed or contained invalid parameters. Details: ${message}`,
+            suggestion: 'The request was malformed. This may be a temporary issue; please try again.'
         };
     }
 
@@ -156,7 +163,8 @@ export const parseApiError = (error: any): MessageError => {
         return {
             code: 'NETWORK_ERROR',
             message: 'Network Error',
-            details: `A network problem occurred, possibly due to a lost internet connection. Original error: ${details}`
+            details: `A network problem occurred, possibly due to a lost internet connection. Original error: ${details}`,
+            suggestion: 'A network problem occurred. Please check your internet connection and the backend server URL in Settings.'
         };
     }
 
