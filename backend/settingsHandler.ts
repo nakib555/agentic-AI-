@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -17,7 +16,6 @@ const ensureSettingsLoaded = async () => {
             cachedSettings = await readData(SETTINGS_FILE_PATH);
         } catch (error) {
             console.error('Failed to load settings into cache:', error);
-            // Fallback or re-throw depending on severity, but here we likely want to know it failed.
             throw error;
         }
     }
@@ -40,34 +38,32 @@ export const updateSettings = async (req: any, res: any) => {
         const updates = req.body;
         
         const newSettings = { ...currentSettings, ...updates };
-        
-        // Update Cache Immediately
         cachedSettings = newSettings;
-        
-        // Persist to Disk
         await writeData(SETTINGS_FILE_PATH, newSettings);
 
         // Check if critical settings changed (Provider or API Key)
+        // Note: We use loose comparison for provider since we now support dynamic strings
         const providerChanged = updates.provider && updates.provider !== currentSettings.provider;
+        
         const keyChanged = (newSettings.provider === 'gemini' && updates.apiKey !== currentSettings.apiKey) ||
                            (newSettings.provider === 'openrouter' && updates.openRouterApiKey !== currentSettings.openRouterApiKey) ||
-                           (newSettings.provider === 'ollama' && updates.apiKey !== currentSettings.apiKey); // Check Ollama key too
+                           (newSettings.provider === 'ollama' && updates.apiKey !== currentSettings.apiKey);
 
         if (providerChanged || keyChanged) {
             try {
                 // Fetch models based on the NEW provider and NEW key/host
                 const activeKey = newSettings.provider === 'openrouter' 
                     ? newSettings.openRouterApiKey 
-                    : newSettings.apiKey; // Both Gemini and Ollama now use the main 'apiKey' field/variable logic or specifically handled
+                    : newSettings.apiKey;
                 
-                // Strictly require a key to fetch models, even for Ollama per new requirement
-                if (activeKey) {
-                    const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(activeKey, true);
+                // Allow fetching without key for Ollama if user just switched to it (might use public/local)
+                if (activeKey || newSettings.provider === 'ollama') {
+                    const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(activeKey || '', true);
                     res.status(200).json({ ...newSettings, models: chatModels, imageModels, videoModels, ttsModels });
                     return;
                 }
             } catch (error) {
-                // If fetching models fails (invalid key/host), just return settings
+                // If fetching models fails just return settings
             }
         }
 
@@ -84,7 +80,6 @@ export const getApiKey = async (): Promise<string | undefined> => {
         if (settings.provider === 'openrouter') {
             return settings.openRouterApiKey;
         }
-        // For Gemini and Ollama, we use the standard apiKey field
         return settings.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
     } catch (error) {
         return process.env.API_KEY || process.env.GEMINI_API_KEY;
@@ -94,14 +89,13 @@ export const getApiKey = async (): Promise<string | undefined> => {
 export const getGeminiApiKey = async (): Promise<string | undefined> => {
     try {
         const settings = await ensureSettingsLoaded();
-        // Specifically retrieve the Gemini key regardless of active provider
         return settings.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
     } catch (error) {
         return process.env.API_KEY || process.env.GEMINI_API_KEY;
     }
 };
 
-export const getProvider = async (): Promise<'gemini' | 'openrouter' | 'ollama'> => {
+export const getProvider = async (): Promise<string> => {
     try {
         const settings = await ensureSettingsLoaded();
         return settings.provider || 'gemini';
