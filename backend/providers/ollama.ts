@@ -9,9 +9,8 @@ export class OllamaProvider implements AIProvider {
     name = 'Ollama';
 
     private async getHost(): Promise<string> {
-        const settings: any = await readData(SETTINGS_FILE_PATH);
         // Default to 127.0.0.1 to avoid Node.js localhost IPv6 issues
-        let host = settings.ollamaHost || 'http://127.0.0.1:11434';
+        const host = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
         return host.replace(/\/$/, '');
     }
 

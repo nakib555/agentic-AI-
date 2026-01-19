@@ -1,5 +1,6 @@
 
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -97,7 +98,6 @@ export async function initDataStore() {
         provider: 'gemini', // 'gemini' | 'openrouter' | 'ollama'
         apiKey: '',
         openRouterApiKey: '',
-        ollamaHost: '',
         aboutUser: '',
         aboutResponse: '',
         temperature: 0.7,

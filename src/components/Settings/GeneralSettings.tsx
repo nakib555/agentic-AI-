@@ -25,8 +25,6 @@ type GeneralSettingsProps = {
   provider: 'gemini' | 'openrouter' | 'ollama';
   openRouterApiKey: string;
   onProviderChange: (provider: 'gemini' | 'openrouter' | 'ollama') => void;
-  ollamaHost: string;
-  onSaveOllamaHost: (host: string) => void;
 };
 
 const PROVIDER_OPTIONS = [
@@ -216,7 +214,6 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
     apiKey, onSaveApiKey,
     theme, setTheme, serverUrl, onSaveServerUrl,
     provider, openRouterApiKey, onProviderChange,
-    ollamaHost, onSaveOllamaHost
 }) => {
   return (
     <div className="space-y-10 pb-12">
@@ -277,20 +274,6 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                     description="Access various models (Claude, GPT, etc.)."
                     label="OpenRouter API Key"
                     provider="openrouter"
-                />
-            )}
-
-            {/* Ollama Host URL */}
-            {provider === 'ollama' && (
-                <ApiKeyInput
-                    key="ollama-host"
-                    value={ollamaHost}
-                    onSave={(host) => onSaveOllamaHost(host)}
-                    placeholder="e.g. http://127.0.0.1:11434"
-                    description="The address of your Ollama instance (default: localhost:11434)."
-                    label="Ollama Host URL"
-                    isHost={true}
-                    provider="ollama"
                 />
             )}
              

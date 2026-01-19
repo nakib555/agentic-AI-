@@ -1,5 +1,6 @@
 
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -45,9 +46,9 @@ export const updateSettings = async (req: any, res: any) => {
         // Check if critical settings changed (Provider or API Key)
         const providerChanged = updates.provider && updates.provider !== currentSettings.provider;
         
-        // For Ollama, we trigger a refresh if the provider is Ollama and *any* update occurred to key/host.
+        // For Ollama, we trigger a refresh if the provider is Ollama and *any* update occurred to key.
         // This allows the "Save" button to act as a "Refresh Models" trigger even if values haven't strictly changed.
-        const isOllamaRefresh = newSettings.provider === 'ollama' && ('apiKey' in updates || 'ollamaHost' in updates || providerChanged);
+        const isOllamaRefresh = newSettings.provider === 'ollama' && ('apiKey' in updates || providerChanged);
         
         const keyChanged = (newSettings.provider === 'gemini' && updates.apiKey !== currentSettings.apiKey) ||
                            (newSettings.provider === 'openrouter' && updates.openRouterApiKey !== currentSettings.openRouterApiKey) ||
