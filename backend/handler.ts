@@ -233,6 +233,16 @@ export const apiHandler = async (req: any, res: any) => {
                 if (activeProvider === 'gemini' && ai) {
                     let fullHistory = transformHistoryToGeminiFormat(historyForAI);
                     
+                    // Safety check for empty history
+                    if (!fullHistory || fullHistory.length === 0) {
+                        // Fallback: If no history, try to reconstruct from newMessage if available, else error
+                        if (newMessage && newMessage.text) {
+                             fullHistory = [{ role: 'user', parts: [{ text: newMessage.text }] }];
+                        } else {
+                             throw new Error("Contents are required: Conversation history is empty.");
+                        }
+                    }
+
                     try {
                         const streamResult = await generateContentStreamWithRetry(ai, {
                             model,
@@ -260,8 +270,9 @@ export const apiHandler = async (req: any, res: any) => {
 
                     } catch (loopError) {
                         console.error(`[HANDLER] Stream error:`, loopError);
-                        persistence.complete((response) => { response.error = parseApiError(loopError); });
-                        writeToClient(job, 'error', parseApiError(loopError));
+                        const apiError = parseApiError(loopError);
+                        persistence.complete((response) => { response.error = apiError; });
+                        writeToClient(job, 'error', apiError);
                     } finally {
                         clearInterval(pingInterval);
                         cleanupJob(chatId);
@@ -365,14 +376,59 @@ export const apiHandler = async (req: any, res: any) => {
                     job.controller.abort();
                     res.status(200).send({ message: 'Cancellation request received.' });
                 } else {
-                    res.status(404).json({ error: `No active job found` });
+                    // Send 200 even if not found to avoid client-side errors for idempotent requests
+                    res.status(200).json({ message: 'Job not found or already completed.' });
                 }
                 break;
             }
             case 'title': {
-                 // Basic title generation logic
-                 res.status(200).json({ title: 'New Conversation' });
+                 const { messages, model } = req.body;
+                 if (!ai) {
+                     res.status(200).json({ title: 'New Conversation' });
+                     return;
+                 }
+
+                 const historyText = (messages || []).slice(0, 5).map((m: any) => `${m.role}: ${m.text}`).join('\n');
+                 const prompt = `Generate a concise, 3-5 word title for this chat conversation. Return ONLY the title text, no quotes or markdown.\n\nConversation:\n${historyText}`;
+
+                 try {
+                     const result = await generateContentWithRetry(ai, {
+                         model: model || 'gemini-2.5-flash',
+                         contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                     });
+                     const title = (result.text || 'New Chat').trim().replace(/^["']|["']$/g, '');
+                     res.status(200).json({ title });
+                 } catch (e) {
+                     console.error("Title generation failed:", e);
+                     res.status(200).json({ title: 'New Conversation' });
+                 }
                  break;
+            }
+            case 'suggestions': {
+                const { conversation, model } = req.body;
+                if (!ai) {
+                    res.status(200).json({ suggestions: [] });
+                    return;
+                }
+                
+                const historyText = (conversation || []).map((m: any) => `${m.role}: ${m.text}`).join('\n');
+                const prompt = `Given the conversation below, generate 3 short, relevant follow-up questions the user might ask next. Return ONLY a JSON array of strings. \n\nConversation:\n${historyText}`;
+                
+                try {
+                    const result = await generateContentWithRetry(ai, {
+                        model: model || 'gemini-2.5-flash',
+                        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                        config: { responseMimeType: 'application/json' }
+                    });
+                    const text = result.text || '[]';
+                    const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim();
+                    const suggestions = JSON.parse(jsonStr);
+                    res.status(200).json({ suggestions });
+                } catch (e) {
+                    console.error("Suggestions failed:", e);
+                    res.status(200).json({ suggestions: [] });
+                }
+                break;
             }
             case 'tts': {
                 if (!ai) throw new Error("GoogleGenAI not initialized.");
