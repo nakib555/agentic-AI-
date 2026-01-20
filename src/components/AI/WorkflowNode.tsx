@@ -37,12 +37,6 @@ const ToolIcon = () => (
     </svg>
 );
 
-const CheckIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
-        <polyline points="20 6 9 17 4 12"></polyline>
-    </svg>
-);
-
 const ErrorIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -93,7 +87,7 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
     // --- Timeline Icon Logic ---
     let Icon = ThoughtIcon;
     let iconBg = isDone ? 'bg-slate-100 dark:bg-white/10 text-slate-500' : 'bg-white dark:bg-[#1a1a1a] text-slate-400 border-slate-300 dark:border-white/20';
-    let ringColor = 'ring-white dark:ring-[#1a1a1a]'; // Cuts the timeline line
+    let ringColor = 'ring-white dark:ring-[#18181b]';
 
     if (isActive) {
         iconBg = 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/40';
@@ -101,7 +95,6 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
         Icon = ErrorIcon;
         iconBg = 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/40';
     } else if (isDone) {
-        // Icon = CheckIcon; // Optional: Switch to checkmark on done
         iconBg = 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30';
     }
 
@@ -130,11 +123,12 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
 
     return (
         <div className="group relative pl-2 pb-2">
-            {/* Timeline Icon Marker - Absolutely positioned relative to the container, creating the spine alignment */}
-            <div className="absolute -left-[27px] sm:-left-[35px] top-0.5 flex flex-col items-center z-20">
-                <div className={`w-8 h-8 rounded-full border-2 ${iconBg} ${ringColor} ring-4 flex items-center justify-center transition-colors duration-300`}>
+            {/* Timeline Icon Marker */}
+            {/* Offset to align with parent timeline border */}
+            <div className="absolute -left-[37px] top-1.5 flex flex-col items-center z-20">
+                <div className={`w-6 h-6 rounded-full border-2 ${iconBg} ${ringColor} ring-4 flex items-center justify-center transition-colors duration-300`}>
                     {isActive ? (
-                        <svg className="animate-spin w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <svg className="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     ) : (
                         <Icon />
                     )}
@@ -200,7 +194,7 @@ const WorkflowNodeRaw = ({ node, sendMessage, onRegenerate, messageId, isLast }:
     );
 };
 
-// Helper for search source extraction (reused from old WorkflowNode)
+// Helper for search source extraction
 const extractSourcesFromSearchResult = (result: string) => {
     try {
         const sourcesMatch = result.match(/\[SOURCES_PILLS\]([\s\S]*?)\[\/SOURCES_PILLS\]/s);
