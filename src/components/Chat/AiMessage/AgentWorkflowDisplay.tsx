@@ -1,13 +1,10 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ThinkingWorkflow } from '../../AI/ThinkingWorkflow';
-import type { WorkflowNodeData } from '../../../types';
+import React, { useEffect, useRef } from 'react';
+import type { WorkflowNodeData, ToolCallEvent } from '../../../types';
 
 type AgentWorkflowDisplayProps = {
     plan: string;
@@ -17,85 +14,136 @@ type AgentWorkflowDisplayProps = {
     messageId: string;
 };
 
-const ChevronDown = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <path d="m6 9 6 6 6-6"/>
-    </svg>
-);
+const LogNode: React.FC<{ node: WorkflowNodeData }> = ({ node }) => {
+    const isTool = node.type === 'tool' || node.type === 'duckduckgoSearch';
+    const isError = node.status === 'failed';
+    const isDone = node.status === 'done';
+    const isActive = node.status === 'active';
+    
+    // Status Prefix
+    let prefix = <span className="text-gray-600">[WAIT]</span>;
+    if (isActive) prefix = <span className="text-yellow-500 animate-pulse">[BUSY]</span>;
+    if (isDone) prefix = <span className="text-green-500">[DONE]</span>;
+    if (isError) prefix = <span className="text-red-500">[FAIL]</span>;
 
-const WorkflowIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <rect width="8" height="8" x="3" y="3" rx="2" />
-        <path d="M7 11v4a2 2 0 0 0 2 2h4" />
-        <rect width="8" height="8" x="13" y="13" rx="2" />
-    </svg>
-);
+    // Content
+    let content = null;
 
-export const AgentWorkflowDisplay: React.FC<AgentWorkflowDisplayProps> = ({ plan, nodes, sendMessage, onRegenerate, messageId }) => {
-    // Auto-expand if active, otherwise collapse by default for cleanliness
-    const isActive = nodes.some(n => n.status === 'active');
-    const [isExpanded, setIsExpanded] = useState(isActive);
+    if (isTool) {
+        const details = node.details as ToolCallEvent;
+        // Format args nicely if possible
+        let argsStr = '';
+        try {
+            argsStr = JSON.stringify(details.call?.args || {});
+        } catch (e) {
+            argsStr = '...';
+        }
 
-    // Keep expanded if it becomes active
-    useEffect(() => {
-        if (isActive) setIsExpanded(true);
-    }, [isActive]);
+        content = (
+            <div className="flex flex-col">
+                <div className="flex items-start gap-2">
+                    <span className="text-purple-400 font-bold flex-shrink-0">exec</span>
+                    <span className="text-gray-200 font-semibold">{node.title}</span>
+                </div>
+                {argsStr !== '{}' && (
+                    <div className="text-gray-500 text-[10px] break-all pl-1 border-l-2 border-gray-800 ml-1 mt-0.5">
+                        {argsStr}
+                    </div>
+                )}
+                {details.result && (
+                    <div className="mt-1 pl-2 text-gray-400/80 text-[10px] border-l-2 border-green-900/30 ml-1 truncate">
+                        <span className="text-green-600 mr-1">➜</span> 
+                        {details.result.length > 200 ? details.result.substring(0, 200) + '...' : details.result}
+                    </div>
+                )}
+            </div>
+        );
+    } else {
+        // Text Step
+        let detailsText = '';
+        if (typeof node.details === 'string') {
+            detailsText = node.details;
+        }
+
+        content = (
+             <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                    <span className="text-blue-400 font-bold text-[10px] uppercase">{node.type}</span>
+                    <span className="text-gray-300 font-semibold">{node.title || 'Processing'}</span>
+                </div>
+                {detailsText && detailsText !== 'No details provided.' && (
+                    <div className="mt-0.5 pl-2 text-gray-500 text-[10px] leading-tight border-l-2 border-gray-800 ml-1 whitespace-pre-wrap font-sans opacity-80">
+                        {detailsText}
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     return (
-        <div className="w-full mb-6">
-            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-black/20 overflow-hidden">
-                {/* Header Toggle */}
-                <button 
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
-                >
-                    <div className="flex items-center gap-3">
-                         <div className={`p-1.5 rounded-md ${isActive ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'}`}>
-                            {isActive ? (
-                                <svg className="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            ) : (
-                                <WorkflowIcon />
-                            )}
-                         </div>
-                         <div className="flex flex-col items-start">
-                             <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                                 Agent Workflow
-                             </span>
-                             {isActive && <span className="text-[10px] font-medium text-indigo-500 dark:text-indigo-400 animate-pulse">Executing...</span>}
-                         </div>
-                    </div>
-                    
-                    <motion.div
-                        animate={{ rotate: isExpanded ? 180 : 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="text-slate-400"
-                    >
-                        <ChevronDown />
-                    </motion.div>
-                </button>
+        <div className="flex gap-3 font-mono text-xs py-1 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors px-1">
+            <div className="flex-shrink-0 opacity-80 w-12 text-right font-bold tracking-tighter">{prefix}</div>
+            <div className="flex-1 min-w-0 overflow-hidden">{content}</div>
+        </div>
+    );
+};
 
-                {/* Content */}
-                <AnimatePresence>
-                    {isExpanded && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.3, ease: "easeInOut" }}
-                        >
-                            <div className="p-4 pt-2">
-                                <ThinkingWorkflow
-                                    plan={plan} // Pass plan into workflow to render as the first "Node"
-                                    nodes={nodes}
-                                    sendMessage={sendMessage}
-                                    onRegenerate={onRegenerate}
-                                    messageId={messageId}
-                                />
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+export const AgentWorkflowDisplay: React.FC<AgentWorkflowDisplayProps> = ({ plan, nodes }) => {
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to bottom when new nodes appear or status changes
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, [nodes.length, nodes[nodes.length - 1]?.status]);
+
+    return (
+        <div className="w-full my-4 rounded-md bg-[#09090b] border border-gray-800 font-mono text-xs text-gray-300 shadow-xl overflow-hidden relative group">
+             {/* Terminal Header */}
+             <div className="flex items-center justify-between px-3 py-2 bg-[#121212] border-b border-gray-800 select-none">
+                 <div className="flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/20 border border-red-500/50"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-500/20 border border-green-500/50"></div>
+                    </div>
+                    <span className="ml-2 text-gray-500 font-bold tracking-wider text-[10px]">AGENT_RUNTIME_LOG</span>
+                 </div>
+                 <div className="text-[9px] text-gray-600 bg-gray-900 px-1.5 py-0.5 rounded border border-gray-800">
+                     v2.0
+                 </div>
+             </div>
+
+             <div ref={scrollRef} className="flex flex-col p-2 max-h-[350px] overflow-y-auto custom-scrollbar bg-[#0c0c0c] relative">
+                {/* Scanline Effect */}
+                <div className="absolute inset-0 bg-gradient-to-b from-white/0 to-white/[0.02] pointer-events-none z-10 bg-[length:100%_4px]" style={{ backgroundSize: '100% 4px' }}></div>
+                
+                {plan && (
+                    <div className="mb-4 pb-3 border-b border-gray-800 border-dashed relative z-0">
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-blue-500">#</span>
+                            <span className="text-gray-400 font-bold uppercase">Mission Strategy</span>
+                        </div>
+                        <div className="pl-4 text-gray-500 whitespace-pre-wrap leading-relaxed opacity-90 border-l border-blue-900/30 ml-0.5 text-[11px] font-sans">
+                            {plan.replace(/##/g, '').trim()}
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex flex-col gap-0.5 relative z-0">
+                    {nodes.map((node, i) => (
+                        <LogNode key={node.id || i} node={node} />
+                    ))}
+                </div>
+                
+                {nodes.some(n => n.status === 'active') && (
+                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-gray-800 border-dashed text-gray-500 animate-pulse pl-1">
+                        <span className="w-2 h-4 bg-green-500/50 block"></span>
+                        <span className="tracking-widest text-[10px]">PROCESSING_STREAM...</span>
+                    </div>
+                )}
+             </div>
         </div>
     );
 };
