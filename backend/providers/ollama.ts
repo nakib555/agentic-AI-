@@ -21,7 +21,7 @@ const getEffectiveEndpoint = async (): Promise<string> => {
     } catch (e) {
         // Ignore errors reading settings, fall back to env/default
     }
-    return (process.env.OLLAMA_HOST || 'http://127.0.0.1:11434').replace(/\/$/, '');
+    return (process.env.OLLAMA_HOST || '').replace(/\/$/, '');
 };
 
 const OllamaProvider: AIProvider = {
@@ -31,6 +31,12 @@ const OllamaProvider: AIProvider = {
     async getModels(apiKey: string): Promise<ModelLists> {
         try {
             const effectiveEndpoint = await getEffectiveEndpoint();
+            
+            // If no endpoint is configured (empty string), return empty lists immediately
+            if (!effectiveEndpoint) {
+                return { chatModels: [], imageModels: [], videoModels: [], ttsModels: [] };
+            }
+
             const url = `${effectiveEndpoint}/api/tags`;
             
             console.log(`[OllamaProvider] Fetching installed models from: ${url}`);
@@ -78,6 +84,12 @@ const OllamaProvider: AIProvider = {
     async chat(options: ChatOptions): Promise<void> {
         const { model, messages, systemInstruction, temperature, callbacks, apiKey, signal } = options;
 
+        const effectiveEndpoint = await getEffectiveEndpoint();
+        if (!effectiveEndpoint) {
+            callbacks.onError(new Error("Ollama host URL is not configured. Please set it in Settings."));
+            return;
+        }
+
         const ollamaMessages = messages
             .filter(m => !m.isHidden)
             .map(msg => {
@@ -96,8 +108,6 @@ const OllamaProvider: AIProvider = {
         if (systemInstruction) {
             ollamaMessages.unshift({ role: 'system', content: systemInstruction });
         }
-
-        const effectiveEndpoint = await getEffectiveEndpoint();
 
         try {
             const response = await fetch(`${effectiveEndpoint}/api/chat`, {
@@ -175,6 +185,8 @@ const OllamaProvider: AIProvider = {
         const { model, prompt, systemInstruction, apiKey, jsonMode } = options;
         const effectiveEndpoint = await getEffectiveEndpoint();
         
+        if (!effectiveEndpoint) return '';
+
         try {
              const messages = [];
              if (systemInstruction) messages.push({ role: 'system', content: systemInstruction });
