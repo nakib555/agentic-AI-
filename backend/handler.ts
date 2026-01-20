@@ -1,6 +1,8 @@
 
 
 
+
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -282,17 +284,18 @@ async function generateProviderCompletion(
             const messages = [];
             if (systemInstruction) messages.push({ role: 'system', content: systemInstruction });
             messages.push({ role: 'user', content: prompt });
-             
-            // Read configured host
-            let host = 'http://127.0.0.1:11434';
-            try {
-                const savedSettings: any = await readData(SETTINGS_FILE_PATH);
-                if (savedSettings.ollamaHost) host = savedSettings.ollamaHost;
-            } catch(e) {}
-             
-             const resp = await fetch(`${host}/api/chat`, {
+            
+            // User requested hosted endpoint
+            const endpoint = 'https://ollama.com/api/chat';
+            
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (apiKey) {
+                headers['Authorization'] = `Bearer ${apiKey}`;
+            }
+
+             const resp = await fetch(endpoint, {
                  method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
+                 headers,
                  body: JSON.stringify({
                      model: targetModel,
                      messages,
@@ -562,7 +565,7 @@ ${personalizationSection}
                     
                     try {
                         await streamOllama(
-                            mainApiKey, // Pass key if available
+                            mainApiKey, // Pass key if available for hosted API
                             model,
                             ollamaMessages,
                             {
