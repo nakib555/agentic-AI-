@@ -48,7 +48,7 @@ export const hydrateContentBlocks = (msg: Message): ContentBlock[] => {
             blocks.push({
                 id: `tool-${event.id}`,
                 type: 'tool_execution',
-                toolName: event.call.name,
+                toolName: event.call.name || 'Unknown Tool',
                 status: event.result ? (event.result.startsWith('Tool execution failed') ? 'error' : 'success') : 'running',
                 input: event.call.args,
                 output: event.result,

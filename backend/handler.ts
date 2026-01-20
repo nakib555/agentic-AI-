@@ -278,7 +278,7 @@ export const apiHandler = async (req: any, res: any) => {
 
                         for await (const chunk of streamResult) {
                             if (abortController.signal.aborted) break;
-                            const text = chunk.text();
+                            const text = chunk.text; // Fixed: Use property access, not method call
                             if (text) {
                                 writeToClient(job, 'text-chunk', text);
                                 persistence.addText(text);

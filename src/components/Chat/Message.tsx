@@ -60,7 +60,6 @@ const MessageComponentRaw: React.FC<{
                 messageFormRef={messageFormRef}
                 onRegenerate={onRegenerate}
                 onSetActiveResponseIndex={onSetActiveResponseIndex}
-                isAgentMode={isAgentMode}
                 userQuery={userQuery}
                 isLast={isLast}
             />
