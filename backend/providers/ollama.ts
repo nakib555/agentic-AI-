@@ -18,10 +18,8 @@ const OllamaProvider: AIProvider = {
     async getModels(apiKey: string): Promise<ModelLists> {
         try {
             // Determine the endpoint. Use env var OLLAMA_HOST if present, else default to localhost.
-            // Note: If running in a container, 'localhost' is the container. 
-            // Users should configure OLLAMA_HOST to point to their actual machine (e.g. host.docker.internal) if using Docker.
-            const host = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
-            const url = `${host}/api/tags`;
+            // only use https://ollama.com/api/tags for modle fetching
+            const url = `https://ollama.com/api/tags`;
             
             console.log(`[OllamaProvider] Fetching installed models from: ${url}`);
             
