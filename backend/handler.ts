@@ -10,7 +10,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { parseApiError } from './utils/apiError';
 import { getApiKey, getProvider } from './settingsHandler';
-import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils';
+import { generateContentWithRetry, generateContentStreamWithRetry, getText } from './utils/geminiUtils';
 import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
 import { streamOpenRouter } from './utils/openRouterUtils';
@@ -256,7 +256,9 @@ export const apiHandler = async (req: any, res: any) => {
 
                         for await (const chunk of streamResult) {
                             if (abortController.signal.aborted) break;
-                            const text = chunk.text;
+                            
+                            // Safe text access
+                            const text = getText(chunk);
                             if (text) {
                                 writeToClient(job, 'text-chunk', text);
                                 persistence.addText(text);
