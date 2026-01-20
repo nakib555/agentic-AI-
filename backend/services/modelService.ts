@@ -25,8 +25,15 @@ export async function listAvailableModels(apiKey: string, forceRefresh = false):
     const settings: any = await readData(SETTINGS_FILE_PATH);
     const providerId = settings.provider || 'gemini';
     
-    // Hash key + provider to ensure cache validity
-    const currentKeyHash = (apiKey || '').trim().slice(-8) + providerId;
+    // Hash key + provider + (optional) host to ensure cache validity
+    let currentKeyHash = (apiKey || '').trim().slice(-8) + providerId;
+    
+    // Crucial: For Ollama, include the host URL in the cache key.
+    // This ensures that changing the host immediately invalidates the cache.
+    if (providerId === 'ollama') {
+        currentKeyHash += (settings.ollamaHost || '').trim();
+    }
+    
     const now = Date.now();
 
     // Check cache first

@@ -13,15 +13,30 @@ const sortModelsByName = (models: AppModel[]): AppModel[] => {
 };
 
 const getEffectiveEndpoint = async (): Promise<string> => {
+    let host = '';
     try {
         const settings: any = await readData(SETTINGS_FILE_PATH);
-        if (settings.ollamaHost) {
-            return settings.ollamaHost.replace(/\/$/, '');
-        }
+        host = settings.ollamaHost || '';
     } catch (e) {
-        // Ignore errors reading settings, fall back to env/default
+        // Ignore errors reading settings, fall back to env
     }
-    return (process.env.OLLAMA_HOST || '').replace(/\/$/, '');
+    
+    if (!host) {
+        host = process.env.OLLAMA_HOST || '';
+    }
+
+    // Normalization Logic
+    host = host.trim().replace(/\/$/, ''); // Remove trailing slash
+    
+    // Remove explicit endpoint suffixes if user accidentally pasted full URL
+    host = host.replace(/\/api\/chat$/, '').replace(/\/api\/tags$/, '');
+
+    // Ensure protocol exists (Node.js fetch requires it)
+    if (host && !host.startsWith('http://') && !host.startsWith('https://')) {
+        host = `http://${host}`;
+    }
+    
+    return host;
 };
 
 const OllamaProvider: AIProvider = {
@@ -50,7 +65,7 @@ const OllamaProvider: AIProvider = {
             });
             
             if (!response.ok) {
-                 throw new Error(`Local instance unreachable at ${url}`);
+                 throw new Error(`Local instance unreachable at ${url}. Status: ${response.status}`);
             }
     
             const data = await response.json();
@@ -69,7 +84,7 @@ const OllamaProvider: AIProvider = {
                 ttsModels: []
             };
         } catch (error: any) {
-            console.error('[OllamaProvider] Failed to fetch models:', error);
+            console.error('[OllamaProvider] Failed to fetch models:', error.message);
             
             // Return empty list instead of throwing to prevent UI crash
             return {
@@ -110,6 +125,7 @@ const OllamaProvider: AIProvider = {
         }
 
         try {
+            console.log(`[OllamaProvider] Connecting to chat endpoint: ${effectiveEndpoint}/api/chat`);
             const response = await fetch(`${effectiveEndpoint}/api/chat`, {
                 method: 'POST',
                 headers: { 
@@ -127,7 +143,7 @@ const OllamaProvider: AIProvider = {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(`Ollama Error: ${errorText}`);
+                throw new Error(`Ollama Error (${response.status}): ${errorText}`);
             }
             
             if (!response.body) throw new Error("No response body");
@@ -168,9 +184,10 @@ const OllamaProvider: AIProvider = {
 
         } catch (error: any) {
             if (error.name !== 'AbortError') {
-                if (error.message && error.message.includes('fetch failed')) {
+                const msg = error.message || '';
+                if (msg.includes('fetch failed') || msg.includes('ECONNREFUSED')) {
                     if (effectiveEndpoint.includes('127.0.0.1') || effectiveEndpoint.includes('localhost')) {
-                         callbacks.onError(new Error("Failed to connect to Ollama at localhost. If you are running this app in the cloud, it cannot access your local computer directly. You must deploy Ollama publicly or use a tunnel (like ngrok)."));
+                         callbacks.onError(new Error("Failed to connect to Ollama at localhost. If you are running this app in the cloud (e.g. Render/Vercel), it cannot access your local computer. You must deploy Ollama publicly or use a tunnel like ngrok."));
                     } else {
                          callbacks.onError(new Error(`Failed to connect to Ollama at ${effectiveEndpoint}. Please check if the server is running and accessible.`));
                     }
