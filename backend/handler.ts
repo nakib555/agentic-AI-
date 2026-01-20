@@ -5,7 +5,6 @@
  */
 
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
-import { GoogleGenAI } from "@google/genai";
 import { promises as fs } from 'fs';
 import path from 'path';
 import { systemInstruction as agenticSystemInstruction } from "./prompts/system";
@@ -13,19 +12,15 @@ import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './p
 import { parseApiError } from './utils/apiError';
 import { executeTextToSpeech } from "./tools/tts";
 import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory";
-import { runAgenticLoop } from './services/agenticLoop/index';
 import { createToolExecutor } from './tools/index';
-import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations'; 
 import { getApiKey, getProvider } from './settingsHandler';
-import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils';
 import { generateProviderCompletion } from './utils/generateProviderCompletion';
 import { historyControl } from './services/historyControl';
-import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
-import { streamOpenRouter } from './utils/openRouterUtils';
-import { streamOllama } from './utils/ollamaUtils';
-import { vectorMemory } from './services/vectorMemory'; // Import Vector Memory
+import { vectorMemory } from './services/vectorMemory';
 import { executeWithPiston } from './tools/piston';
 import { readData, SETTINGS_FILE_PATH } from './data-store';
+import { providerRegistry } from './providers/registry'; // New Registry Import
+import { GoogleGenAI } from "@google/genai"; // Still needed for TTS and Tools initialization if provider relies on it
 
 // Store promises for frontend tool requests that the backend is waiting on
 const frontendToolRequests = new Map<string, (result: any) => void>();
@@ -36,8 +31,8 @@ interface Job {
     chatId: string;
     messageId: string;
     controller: AbortController;
-    clients: Set<any>; // Using any for Express Response to avoid type conflicts in some envs
-    eventBuffer: string[]; // Buffer of serialized event strings for reconnection
+    clients: Set<any>; 
+    eventBuffer: string[]; 
     persistence: ChatPersistenceManager;
     createdAt: number;
 }
@@ -215,7 +210,7 @@ class ChatPersistenceManager {
 export const apiHandler = async (req: any, res: any) => {
     const task = req.query.task as string;
     
-    // --- RECONNECTION HANDLING (No API Key Check needed as it re-joins existing session) ---
+    // --- RECONNECTION HANDLING ---
     if (task === 'connect') {
         const { chatId } = req.body; 
         const job = activeJobs.get(chatId);
@@ -231,7 +226,6 @@ export const apiHandler = async (req: any, res: any) => {
         job.clients.add(res);
         console.log(`[HANDLER] Client reconnected to job ${chatId}`);
         
-        // Replay buffer
         for (const event of job.eventBuffer) {
             res.write(event);
         }
@@ -243,29 +237,23 @@ export const apiHandler = async (req: any, res: any) => {
         return;
     }
 
-    const activeProvider = await getProvider();
+    const activeProviderName = await getProvider();
     const mainApiKey = await getApiKey();
     const activeApiKey = mainApiKey;
     
-    // Load general settings to access activeModel
     const globalSettings: any = await readData(SETTINGS_FILE_PATH);
     const activeModel = globalSettings.activeModel || 'gemini-2.5-flash';
 
     const isSuggestionTask = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'].includes(task);
-    const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston', 'feedback'];
+    const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston', 'feedback', 'tool_exec'];
     
-    // For suggestion tasks, we handle API key checks inside generateProviderCompletion or specific logic
-    // For chat tasks, we check here.
-    if (!activeApiKey && !BYPASS_TASKS.includes(task) && !isSuggestionTask && activeProvider !== 'ollama') {
+    if (!activeApiKey && !BYPASS_TASKS.includes(task) && !isSuggestionTask && activeProviderName !== 'ollama') {
         return res.status(401).json({ error: "API key not configured on the server." });
     }
     
-    // Initialize AI instance ONLY if needed for complex streaming or specific Gemini tasks
-    const ai = (activeProvider === 'gemini') && activeApiKey 
-        ? new GoogleGenAI({ apiKey: activeApiKey }) 
-        : null;
+    // AI instance still needed for VectorMemory and TTS (Gemini based)
+    const ai = (activeApiKey) ? new GoogleGenAI({ apiKey: activeApiKey }) : null;
 
-    // Initialize Vector Store if AI is available
     if (ai) {
         await vectorMemory.init(ai);
     }
@@ -276,17 +264,14 @@ export const apiHandler = async (req: any, res: any) => {
             case 'regenerate': {
                 const { chatId, model, settings, newMessage, messageId } = req.body;
                 
-                // 1. Initial Persistence & History Fetch
                 let savedChat = await historyControl.getChat(chatId);
                 if (!savedChat) return res.status(404).json({ error: "Chat not found" });
 
                 let historyMessages = savedChat.messages || [];
-                // Context for the AI to read (everything before the new/regenerating message)
                 let historyForAI: any[] = [];
 
                 if (task === 'chat' && newMessage) {
                     historyMessages.push(newMessage);
-                    // Add User Message to Vector Memory (RAG Ingestion)
                     if (ai && newMessage.text && newMessage.text.length > 10) {
                         vectorMemory.addMemory(newMessage.text, { chatId, role: 'user' }).catch(console.error);
                     }
@@ -304,12 +289,10 @@ export const apiHandler = async (req: any, res: any) => {
                     historyForAI = historyMessages.slice(0, -1);
                 } else if (task === 'regenerate') {
                      const targetIndex = historyMessages.findIndex((m: any) => m.id === messageId);
-                     
                      if (targetIndex !== -1) {
-                         // Context is everything BEFORE the target message
                          historyForAI = historyMessages.slice(0, targetIndex);
                      } else {
-                         // Fallback
+                         // Fallback creation
                          const modelPlaceholder = {
                             id: messageId,
                             role: 'model' as const,
@@ -325,24 +308,20 @@ export const apiHandler = async (req: any, res: any) => {
                      }
                 }
 
-                if (!savedChat) throw new Error("Failed to initialize chat persistence");
-
-                // --- Cancel Existing Job if Present ---
                 if (activeJobs.has(chatId)) {
-                    console.log(`[HANDLER] Cancelling existing job for ${chatId} due to new request.`);
+                    console.log(`[HANDLER] Cancelling existing job for ${chatId}`);
                     const oldJob = activeJobs.get(chatId);
                     oldJob?.controller.abort();
                     activeJobs.delete(chatId);
                 }
 
-                // --- Setup New Job ---
                 const persistence = new ChatPersistenceManager(chatId, messageId);
                 const abortController = new AbortController();
                 const job: Job = {
                     chatId,
                     messageId,
                     controller: abortController,
-                    clients: new Set([res]), // Add current request as first client
+                    clients: new Set([res]), 
                     eventBuffer: [],
                     persistence,
                     createdAt: Date.now()
@@ -354,264 +333,142 @@ export const apiHandler = async (req: any, res: any) => {
                 res.flushHeaders();
 
                 writeToClient(job, 'start', { requestId: chatId });
-
-                // Ping interval to keep connection alive
                 const pingInterval = setInterval(() => writeToClient(job, 'ping', {}), 10000);
                 
-                req.on('close', () => {
-                    // Just remove this client, don't abort the job yet (let it run for reconnection)
-                    job.clients.delete(res);
-                });
+                req.on('close', () => { job.clients.delete(res); });
 
-                // --- RAG RETRIEVAL STEP ---
                 let ragContext = "";
                 if (ai && newMessage && newMessage.text) {
                     try {
                         const relevantMemories = await vectorMemory.retrieveRelevant(newMessage.text);
                         if (relevantMemories.length > 0) {
-                            ragContext = `\n## 🧠 RELEVANT MEMORIES (RAG)\nThe following past information may be relevant to the user's current request:\n- ${relevantMemories.join('\n- ')}\n\n`;
-                            console.log(`[RAG] Retrieved ${relevantMemories.length} context chunks.`);
+                            ragContext = `\n## 🧠 RELEVANT MEMORIES (RAG)\nThe following past information may be relevant:\n- ${relevantMemories.join('\n- ')}\n\n`;
                         }
                     } catch (e) {
                         console.error("[RAG] Retrieval failed:", e);
                     }
                 }
 
-                // --- SYSTEM PROMPT CONSTRUCTION ---
                 const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
                 const { systemPrompt, aboutUser, aboutResponse, memoryContent } = settings;
                 
                 let personalizationSection = "";
-                if (aboutUser && aboutUser.trim()) personalizationSection += `\n## 👤 USER PROFILE & CONTEXT\n${aboutUser.trim()}\n`;
-                if (aboutResponse && aboutResponse.trim()) personalizationSection += `\n## 🎭 RESPONSE STYLE & PERSONA PREFERENCES\n${aboutResponse.trim()}\n`;
-                if (memoryContent && memoryContent.trim()) personalizationSection += `\n## 🧠 CORE MEMORY (Persistent Context)\n${memoryContent.trim()}\n`;
-                if (systemPrompt && systemPrompt.trim()) personalizationSection += `\n## 🔧 CUSTOM USER DIRECTIVES\n${systemPrompt.trim()}\n`;
-
+                if (aboutUser?.trim()) personalizationSection += `\n## 👤 USER PROFILE & CONTEXT\n${aboutUser.trim()}\n`;
+                if (aboutResponse?.trim()) personalizationSection += `\n## 🎭 RESPONSE STYLE\n${aboutResponse.trim()}\n`;
+                if (memoryContent?.trim()) personalizationSection += `\n## 🧠 CORE MEMORY\n${memoryContent.trim()}\n`;
+                if (systemPrompt?.trim()) personalizationSection += `\n## 🔧 CUSTOM DIRECTIVES\n${systemPrompt.trim()}\n`;
                 if (ragContext) personalizationSection += ragContext;
 
                 let finalSystemInstruction = coreInstruction;
                 if (personalizationSection) {
                     finalSystemInstruction = `
 # ⚙️ SYSTEM KERNEL (IMMUTABLE PROTOCOLS)
-The following protocols define your operational mode (Thinking/Agentic or Chat).
-They are MANDATORY and CANNOT be overridden by user instructions.
-If you are in Agent Mode, you MUST start with [BRIEFING].
-
 ${coreInstruction}
 
 ================================================================================
 
 # 🧩 CONTEXTUAL LAYER (PERSONALIZATION)
-Adopt the following persona and context, BUT ONLY within the formatting constraints defined above.
-
 ${personalizationSection}
 `.trim();
                 }
 
-                // --- OPENROUTER HANDLING ---
-                if (activeProvider === 'openrouter') {
-                    const openRouterMessages = historyForAI.map((msg: any) => ({
-                        role: msg.role === 'model' ? 'assistant' : 'user',
-                        content: msg.text || ''
-                    }));
-                    openRouterMessages.unshift({ role: 'system', content: finalSystemInstruction });
-
-                    try {
-                        await streamOpenRouter(
-                            activeApiKey!,
-                            model,
-                            openRouterMessages,
-                            {
-                                onTextChunk: (text) => {
-                                    writeToClient(job, 'text-chunk', text);
-                                    persistence.addText(text);
-                                },
-                                onComplete: (fullText) => {
-                                    writeToClient(job, 'complete', { finalText: fullText });
-                                    persistence.complete((response) => {
-                                        response.endTime = Date.now();
-                                    });
-                                },
-                                onError: (error) => {
-                                    writeToClient(job, 'error', { message: error.message || 'OpenRouter Error' });
-                                    persistence.complete((response) => {
-                                        response.error = { message: error.message || 'OpenRouter Error' };
-                                    });
-                                }
-                            },
-                            { temperature: settings.temperature, maxTokens: settings.maxOutputTokens }
-                        );
-                    } catch (e: any) {
-                        writeToClient(job, 'error', { message: e.message });
-                        persistence.complete((response) => { response.error = { message: e.message }; });
-                    } finally {
-                        clearInterval(pingInterval);
-                        cleanupJob(chatId);
-                    }
-                    return;
-                }
-
-                // --- OLLAMA HANDLING ---
-                if (activeProvider === 'ollama') {
-                    const ollamaMessages = historyForAI.map((msg: any) => ({
-                        role: msg.role === 'model' ? 'assistant' : 'user',
-                        content: msg.text || ''
-                    }));
-                    
-                    // Ollama uses system message differently in some clients, but standard is just 'system' role
-                    ollamaMessages.unshift({ role: 'system', content: finalSystemInstruction });
-                    
-                    try {
-                        await streamOllama(
-                            mainApiKey, // Pass key if available for hosted API
-                            model,
-                            ollamaMessages,
-                            {
-                                onTextChunk: (text) => {
-                                    writeToClient(job, 'text-chunk', text);
-                                    persistence.addText(text);
-                                },
-                                onComplete: (fullText) => {
-                                    writeToClient(job, 'complete', { finalText: fullText });
-                                    persistence.complete((response) => {
-                                        response.endTime = Date.now();
-                                    });
-                                },
-                                onError: (error) => {
-                                    const parsedError = parseApiError(error);
-                                    writeToClient(job, 'error', parsedError);
-                                    persistence.complete((response) => {
-                                        response.error = parsedError;
-                                    });
-                                }
-                            },
-                            { temperature: settings.temperature }
-                        );
-                    } catch (e: any) {
-                         const parsedError = parseApiError(e);
-                         writeToClient(job, 'error', parsedError);
-                         persistence.complete((response) => { response.error = parsedError; });
-                    } finally {
-                        clearInterval(pingInterval);
-                        cleanupJob(chatId);
-                    }
-                    return;
-                }
-
-                // --- GEMINI HANDLING (Default) ---
-
-                if (!ai) throw new Error("Gemini AI not initialized.");
-
-                let fullHistory = transformHistoryToGeminiFormat(historyForAI);
-                const sessionCallIds = new Set<string>();
-
-                const requestFrontendExecution = (callId: string, toolName: string, toolArgs: any) => {
-                    return new Promise<string | { error: string }>((resolve) => {
-                        if (abortController.signal.aborted) {
-                            resolve({ error: "Job aborted." });
-                            return;
-                        }
-                        const timeoutId = setTimeout(() => {
-                            if (frontendToolRequests.has(callId)) {
-                                frontendToolRequests.delete(callId);
-                                resolve({ error: "Tool execution timed out." });
-                            }
-                        }, 60000); 
-                        frontendToolRequests.set(callId, (result) => {
-                            clearTimeout(timeoutId);
-                            resolve(result);
-                        });
-                        sessionCallIds.add(callId);
-                        writeToClient(job, 'frontend-tool-request', { callId, toolName, toolArgs });
-                    });
-                };
-                
-                const onToolUpdate = (callId: string, data: any) => {
-                    writeToClient(job, 'tool-update', { id: callId, ...data });
-                };
-                
-                const toolExecutor = createToolExecutor(ai, settings.imageModel, settings.videoModel, activeApiKey!, chatId, requestFrontendExecution, false, onToolUpdate);
-
-                const finalSettings = {
-                    ...settings,
-                    systemInstruction: finalSystemInstruction,
-                    tools: settings.isAgentMode ? [{ functionDeclarations: toolDeclarations }] : [{ functionDeclarations: [], googleSearch: {} }],
-                };
-                
+                // --- PROVIDER DISPATCH ---
                 try {
-                    await runAgenticLoop({
-                        ai,
+                    const provider = await providerRegistry.getProvider(activeProviderName);
+
+                    const requestFrontendExecution = (callId: string, toolName: string, toolArgs: any) => {
+                        return new Promise<string | { error: string }>((resolve) => {
+                            if (abortController.signal.aborted) {
+                                resolve({ error: "Job aborted." });
+                                return;
+                            }
+                            const timeoutId = setTimeout(() => {
+                                if (frontendToolRequests.has(callId)) {
+                                    frontendToolRequests.delete(callId);
+                                    resolve({ error: "Tool execution timed out." });
+                                }
+                            }, 60000); 
+                            frontendToolRequests.set(callId, (result) => {
+                                clearTimeout(timeoutId);
+                                resolve(result);
+                            });
+                            writeToClient(job, 'frontend-tool-request', { callId, toolName, toolArgs });
+                        });
+                    };
+
+                    const onToolUpdate = (callId: string, data: any) => {
+                        writeToClient(job, 'tool-update', { id: callId, ...data });
+                    };
+
+                    // Only create tool executor if we have Gemini AI instance (since many backend tools rely on it)
+                    // If AI is null (e.g. OpenRouter), tool executor won't work for some tools, provider handles grace.
+                    const toolExecutor = ai ? createToolExecutor(ai, settings.imageModel, settings.videoModel, activeApiKey!, chatId, requestFrontendExecution, false, onToolUpdate) : undefined;
+
+                    await provider.chat({
                         model,
-                        history: fullHistory, 
+                        messages: historyForAI,
+                        newMessage,
+                        systemInstruction: finalSystemInstruction,
+                        temperature: settings.temperature,
+                        maxTokens: settings.maxOutputTokens,
+                        apiKey: activeApiKey,
+                        isAgentMode: settings.isAgentMode,
                         toolExecutor,
+                        signal: abortController.signal,
+                        chatId,
                         callbacks: {
                             onTextChunk: (text) => {
                                 writeToClient(job, 'text-chunk', text);
                                 persistence.addText(text);
                             },
-                            onNewToolCalls: (toolCallEvents) => {
-                                writeToClient(job, 'tool-call-start', toolCallEvents);
-                                persistence.update((response) => {
-                                    response.toolCallEvents = [...(response.toolCallEvents || []), ...toolCallEvents];
-                                });
+                            onNewToolCalls: (events) => {
+                                writeToClient(job, 'tool-call-start', events);
+                                persistence.update((r) => { r.toolCallEvents = [...(r.toolCallEvents || []), ...events]; });
                             },
                             onToolResult: (id, result) => {
                                 writeToClient(job, 'tool-call-end', { id, result });
-                                persistence.update((response) => {
-                                    if (response.toolCallEvents) {
-                                        const event = response.toolCallEvents.find((e: any) => e.id === id);
-                                        if (event) {
-                                            event.result = result;
-                                            event.endTime = Date.now();
-                                        }
-                                    }
+                                persistence.update((r) => { 
+                                    const event = r.toolCallEvents?.find((e: any) => e.id === id);
+                                    if(event) { event.result = result; event.endTime = Date.now(); }
                                 });
                             },
                             onPlanReady: (plan) => {
                                 return new Promise((resolve) => {
-                                    if (abortController.signal.aborted) {
-                                        resolve(false); 
-                                        return;
-                                    }
+                                    if (abortController.signal.aborted) { resolve(false); return; }
                                     const callId = `plan-approval-${generateId()}`;
-                                    persistence.update((response) => {
-                                        response.plan = { plan, callId };
-                                    });
+                                    persistence.update((r) => { r.plan = { plan, callId }; });
                                     frontendToolRequests.set(callId, resolve);
-                                    sessionCallIds.add(callId);
                                     writeToClient(job, 'plan-ready', { plan, callId });
                                 });
                             },
-                            onFrontendToolRequest: (callId, name, args) => { },
-                            onComplete: (finalText, groundingMetadata) => {
-                                writeToClient(job, 'complete', { finalText, groundingMetadata });
-                                persistence.complete((response) => {
-                                    response.endTime = Date.now();
-                                    if (groundingMetadata) response.groundingMetadata = groundingMetadata;
+                            onFrontendToolRequest: (callId, name, args) => {},
+                            onComplete: (data) => {
+                                writeToClient(job, 'complete', data);
+                                persistence.complete((r) => {
+                                    r.endTime = Date.now();
+                                    if (data.groundingMetadata) r.groundingMetadata = data.groundingMetadata;
                                 });
-                                if (finalText.length > 50) {
-                                    vectorMemory.addMemory(finalText, { chatId, role: 'model' }).catch(console.error);
+                                if (data.finalText.length > 50 && ai) {
+                                    vectorMemory.addMemory(data.finalText, { chatId, role: 'model' }).catch(console.error);
                                 }
+                            },
+                            onError: (err) => {
+                                const parsed = parseApiError(err);
+                                writeToClient(job, 'error', parsed);
+                                persistence.complete((r) => { r.error = parsed; r.endTime = Date.now(); });
                             },
                             onCancel: () => {
                                 writeToClient(job, 'cancel', {});
                                 persistence.complete();
-                            },
-                            onError: (error) => {
-                                writeToClient(job, 'error', error);
-                                persistence.complete((response) => {
-                                    response.error = error;
-                                    response.endTime = Date.now();
-                                });
-                            },
-                        },
-                        settings: finalSettings,
-                        signal: abortController.signal,
-                        threadId: chatId,
+                            }
+                        }
                     });
-                } catch (loopError) {
-                    console.error(`[HANDLER] Loop crash:`, loopError);
-                    persistence.complete((response) => { response.error = parseApiError(loopError); });
+
+                } catch (e: any) {
+                    console.error(`[HANDLER] Chat logic failed:`, e);
+                    const parsedError = parseApiError(e);
+                    writeToClient(job, 'error', parsedError);
+                    persistence.complete((response) => { response.error = parsedError; });
                 } finally {
                     clearInterval(pingInterval);
                     cleanupJob(chatId);
@@ -633,7 +490,6 @@ ${personalizationSection}
             case 'cancel': {
                 const { requestId } = req.body;
                 let job = activeJobs.get(requestId);
-
                 if (job) {
                     job.controller.abort();
                     res.status(200).send({ message: 'Cancellation request received.' });
@@ -652,8 +508,7 @@ ${personalizationSection}
                 const { messages, model } = req.body;
                 const historyText = messages.slice(0, 3).map((m: any) => `${m.role}: ${m.text}`).join('\n');
                 const prompt = `Generate a short concise title (max 6 words) for this conversation.\n\nCONVERSATION:\n${historyText}\n\nTITLE:`;
-                
-                const title = await generateProviderCompletion(activeProvider, activeApiKey, model, prompt);
+                const title = await generateProviderCompletion(activeProviderName, activeApiKey, model, prompt);
                 res.status(200).json({ title: title.trim() });
                 break;
             }
@@ -661,23 +516,20 @@ ${personalizationSection}
                 const { conversation, model } = req.body;
                 const recentHistory = conversation.slice(-5).map((m: any) => `${m.role}: ${(m.text || '').substring(0, 200)}`).join('\n');
                 const prompt = `Suggest 3 short follow-up questions. Return JSON array of strings. Do not use markdown code blocks.\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
-                
                 try {
-                    const text = await generateProviderCompletion(activeProvider, activeApiKey, model, prompt, undefined, true);
+                    const text = await generateProviderCompletion(activeProviderName, activeApiKey, model, prompt, undefined, true);
                     let suggestions = [];
                     try { 
-                        // Clean up markdown block if model ignored instructions
                         const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
                         suggestions = JSON.parse(cleanText || '[]'); 
                     } catch (e) {}
-                    
                     if (!Array.isArray(suggestions)) suggestions = [];
                     res.status(200).json({ suggestions });
                 } catch (e) { res.status(200).json({ suggestions: [] }); }
                 break;
             }
             case 'tts': {
-                if (!ai) throw new Error("GoogleGenAI not initialized.");
+                if (!ai) throw new Error("GoogleGenAI not initialized (Required for TTS).");
                 const { text, voice, model } = req.body;
                 try {
                     const audio = await executeTextToSpeech(ai, text, voice, model);
@@ -690,22 +542,15 @@ ${personalizationSection}
             case 'enhance': {
                 const { userInput } = req.body;
                 const prompt = `
-You are an expert Prompt Engineer. Your goal is to rewrite the following user input into a highly effective prompt for an LLM (Large Language Model).
+You are an expert Prompt Engineer. Rewrite this input into a highly effective prompt.
 
 USER INPUT: "${userInput}"
 
-GUIDELINES:
-1. **Clarity & Specificity**: Remove ambiguity. Specify the desired format (code, list, essay, etc.) if implied.
-2. **Context**: If the input implies a role (e.g., "fix this code"), assume an expert role (e.g., "Act as a Senior Software Engineer").
-3. **Structure**: Use markdown if helpful, but keep it concise enough to be a prompt.
-4. **Preservation**: Do NOT change the core intent. Do NOT answer the prompt. ONLY rewrite it.
-5. **Output**: Return ONLY the raw text of the improved prompt. Do not add "Here is the improved prompt:" or quotes.
-
-IMPROVED PROMPT:
+Output ONLY the raw text of the improved prompt.
 `;
                 res.setHeader('Content-Type', 'text/plain');
                 try {
-                    const text = await generateProviderCompletion(activeProvider, activeApiKey, 'gemini-3-flash-preview', prompt); 
+                    const text = await generateProviderCompletion(activeProviderName, activeApiKey, 'gemini-3-flash-preview', prompt); 
                     res.write(text);
                 } catch (e) { res.write(userInput); }
                 res.end();
@@ -714,7 +559,7 @@ IMPROVED PROMPT:
             case 'memory_suggest': {
                 const { conversation } = req.body;
                 try {
-                    const suggestions = await executeExtractMemorySuggestions(activeProvider, activeApiKey, activeModel, conversation);
+                    const suggestions = await executeExtractMemorySuggestions(activeProviderName, activeApiKey, activeModel, conversation);
                     res.status(200).json({ suggestions });
                 } catch (e) { res.status(200).json({ suggestions: [] }); }
                 break;
@@ -722,7 +567,7 @@ IMPROVED PROMPT:
             case 'memory_consolidate': {
                 const { currentMemory, suggestions } = req.body;
                 try {
-                    const memory = await executeConsolidateMemory(activeProvider, activeApiKey, activeModel, currentMemory, suggestions);
+                    const memory = await executeConsolidateMemory(activeProviderName, activeApiKey, activeModel, currentMemory, suggestions);
                     res.status(200).json({ memory });
                 } catch (e) { res.status(200).json({ memory: [currentMemory, ...suggestions].filter(Boolean).join('\n') }); }
                 break;
