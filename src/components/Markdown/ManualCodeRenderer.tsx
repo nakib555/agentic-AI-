@@ -66,7 +66,9 @@ const processHighlights = (content: string): string => {
 
 const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, onRunCode, isRunDisabled, isStreaming }) => {
     // Use the typewriter hook to progressively reveal text during streaming
-    const displayedText = useTypewriter(text, isStreaming);
+    // Ensure we handle empty text gracefully to prevent layout shift
+    const safeText = text || '';
+    const displayedText = useTypewriter(safeText, isStreaming);
 
     const processedText = useMemo(() => processHighlights(displayedText), [displayedText]);
     
