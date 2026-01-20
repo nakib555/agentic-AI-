@@ -12,9 +12,8 @@
 @import './components.css';
 @import './animations.css';
 
-/* 3. Feature Styles */
+/* 3. Markdown Styles */
 @import './markdown.css';
-@import './chat.css';
 
 /* 4. Tailwind Directives */
 @tailwind base;

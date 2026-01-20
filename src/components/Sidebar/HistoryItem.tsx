@@ -95,37 +95,12 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, model, isCollaps
     
     // Calculate menu position when opening
     useEffect(() => {
-        if (isMenuOpen && buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
-            const menuWidth = 128; // w-32
-            const menuHeight = 85; // approximate height
-            const padding = 4;
-
-            let top = rect.bottom + padding;
-            let left = rect.right - menuWidth; // Align right edge
-
-            // Check if it overflows bottom of viewport
-            if (top + menuHeight > window.innerHeight) {
-                // Flip to top
-                top = rect.top - menuHeight - padding;
-            }
-
-            // Check horizontal boundaries
-            // If pushing left goes off-screen (unlikely unless button is very left), clamp
-            if (left < padding) {
-                left = padding;
-            }
-            
-            // If button is so far right (or menu is wide) that right alignment clips left, 
-            // or we prefer left alignment if space permits. 
-            // But usually "Align Right" is standard for kebab menus on right side.
-            
-            // Just ensure right side doesn't overflow viewport width
-            if (left + menuWidth > window.innerWidth) {
-                left = window.innerWidth - menuWidth - padding;
-            }
-
-            setMenuCoords({ top, left });
+        if (isMenuOpen && containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            setMenuCoords({
+                top: rect.top,
+                left: rect.right + 5 // Small gap to the right of the item
+            });
 
             // Close on scroll/resize to prevent detached menu
             const handleScroll = () => setIsMenuOpen(false);
@@ -256,9 +231,9 @@ export const HistoryItem: React.FC<HistoryItemProps> = ({ text, model, isCollaps
                     {isMenuOpen && (
                         <motion.div
                             ref={menuRef}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
+                            initial={{ opacity: 0, scale: 0.95, x: -10 }}
+                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, x: -10 }}
                             transition={{ duration: 0.1 }}
                             style={{
                                 position: 'fixed',
