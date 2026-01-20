@@ -1,3 +1,4 @@
+
 /* Markdown Media & Tables */
 
 .markdown-content img,
@@ -20,15 +21,12 @@
 
 .markdown-content table {
   width: 100%;
-  border-collapse: separate;
+  border-collapse: collapse;
   border-spacing: 0;
   margin: 0;
   font-size: 0.9em;
-  display: block;
-  overflow-x: auto;
-  white-space: nowrap;
-  border: 1px solid var(--border-default);
-  border-radius: 0.5rem;
+  white-space: normal; /* Enable wrapping */
+  /* Remove conflicting display/overflow properties to allow table layout */
 }
 
 .markdown-content thead {
