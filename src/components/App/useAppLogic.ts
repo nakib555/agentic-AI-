@@ -331,13 +331,28 @@ export const useAppLogic = () => {
       }
   }, [fetchModels, serverUrl]);
 
+  // Specifically handle Ollama Host updates to trigger model refresh
+  const handleSetOllamaHost = useCallback(async (host: string) => {
+      setOllamaHost(host);
+      try {
+          const response = await updateSettings({ ollamaHost: host });
+          if (response.models) {
+              processModelData(response);
+          } else {
+              fetchModels();
+          }
+      } catch (error) {
+          console.error("Failed to update Ollama host:", error);
+          throw error;
+      }
+  }, [processModelData, fetchModels]);
+
   const handleSetAboutUser = createSettingUpdater(setAboutUser, 'aboutUser');
   const handleSetAboutResponse = createSettingUpdater(setAboutResponse, 'aboutResponse');
   const handleSetTtsModel = createSettingUpdater(setTtsModel, 'ttsModel');
   const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
   const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
-  const handleSetOllamaHost = createSettingUpdater(setOllamaHost, 'ollamaHost');
 
   const chatSettings = useMemo(() => {
     return {
