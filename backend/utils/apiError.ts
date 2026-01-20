@@ -3,14 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Copied from src/services/gemini/apiError.ts for backend use.
-
-export type MessageError = {
-    code?: string;
-    message: string;
-    details?: string;
-    suggestion?: string;
-};
+import { MessageError } from '../types';
 
 export class ToolError extends Error {
     public cause?: Error;
@@ -24,6 +17,7 @@ export class ToolError extends Error {
         cause?: Error,
         suggestion?: string,
     ) {
+        // The message of this ToolError instance will be what's thrown.
         super(`Tool '${toolName}' failed with code ${code}. Reason: ${originalMessage}`);
         this.name = 'ToolError';
         this.code = `TOOL_${code}`;
@@ -32,8 +26,17 @@ export class ToolError extends Error {
     }
 }
 
-
+/**
+ * Parses a generic Error from the Gemini API into a structured MessageError.
+ * @param error The error object thrown by the API client.
+ * @returns A structured MessageError with user-friendly content.
+ */
 export const parseApiError = (error: any): MessageError => {
+    // If it's already a well-formed MessageError (e.g. from backend pass-through), use it.
+    if (error && typeof error === 'object' && 'code' in error && 'message' in error && !('stack' in error)) {
+         return error as MessageError;
+    }
+
     if (error instanceof ToolError) {
         return {
             code: error.code,
@@ -43,6 +46,19 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
     
+    // Check if the Error object has attached metadata (from src/hooks/useChat/index.ts or src/utils/api.ts logic)
+    if (error instanceof Error) {
+        if ((error as any).code) {
+            return {
+                code: (error as any).code,
+                message: error.message,
+                details: (error as any).details || error.stack,
+                suggestion: (error as any).suggestion
+            };
+        }
+    }
+    
+    // Extract message, details, and status for robust classification
     let message = 'An unexpected API error occurred';
     let details = '';
     let status = '';
@@ -51,13 +67,15 @@ export const parseApiError = (error: any): MessageError => {
         message = error.message;
         details = error.stack || error.toString();
     } else if (typeof error === 'object' && error !== null) {
-        if ((error as any).error && typeof (error as any).error.message === 'string') {
-            message = (error as any).error.message;
-            if ((error as any).error.status && typeof (error as any).error.status === 'string') {
-                status = (error as any).error.status;
+        // Handle Google API's specific structured error response like:
+        // {"error":{"code":429,"message":"...", "status":"RESOURCE_EXHAUSTED"}}
+        if (error.error && typeof error.error.message === 'string') {
+            message = error.error.message;
+            if (error.error.status && typeof error.error.status === 'string') {
+                status = error.error.status;
             }
-        } else if (typeof (error as any).message === 'string') {
-            message = (error as any).message;
+        } else if (typeof error.message === 'string') {
+            message = error.message;
         }
         try {
             details = JSON.stringify(error, null, 2);
@@ -101,6 +119,7 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
 
+    // 1. Invalid API Key
     if (lowerCaseMessage.includes('api key not valid') || lowerCaseMessage.includes('api key not found') || lowerCaseMessage.includes('api key not configured') || lowerCaseStatus === 'permission_denied') {
         return {
             code: 'INVALID_API_KEY',
@@ -110,6 +129,7 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
 
+    // 2. Rate Limiting / Quota Exceeded
     if (lowerCaseStatus === 'resource_exhausted' || lowerCaseMessage.includes('429') || lowerCaseMessage.includes('rate limit')) {
         return {
             code: 'RATE_LIMIT_EXCEEDED',
@@ -119,7 +139,7 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
 
-    // 503 Service Unavailable / Overloaded
+    // 3. 503 Service Unavailable / Overloaded
     if (lowerCaseStatus === 'unavailable' || lowerCaseMessage.includes('503') || lowerCaseMessage.includes('overloaded')) {
         return {
             code: 'UNAVAILABLE',
@@ -129,6 +149,7 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
     
+    // 4. Content Blocked by Safety Settings
     if (lowerCaseMessage.includes('response was blocked') || lowerCaseMessage.includes('safety policy')) {
         return {
             code: 'CONTENT_BLOCKED',
@@ -138,6 +159,7 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
     
+    // 5. Model Not Found
     if (lowerCaseStatus === 'not_found' || lowerCaseMessage.includes('404') || lowerCaseMessage.includes('model not found')) {
         return {
             code: 'MODEL_NOT_FOUND',
@@ -147,6 +169,7 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
     
+    // 6. Invalid Argument (e.g., malformed request)
     if (lowerCaseStatus === 'invalid_argument' || lowerCaseMessage.includes('400') || lowerCaseMessage.includes('bad request')) {
         return {
             code: 'INVALID_ARGUMENT',
@@ -156,28 +179,21 @@ export const parseApiError = (error: any): MessageError => {
         };
     }
 
-    if (lowerCaseMessage.includes('failed to fetch')) {
+    // 7. Network Error
+    // Added specific check for 'fetch failed'
+    if (lowerCaseMessage.includes('failed to fetch') || lowerCaseMessage.includes('fetch failed') || lowerCaseMessage.includes('network error')) {
         return {
             code: 'NETWORK_ERROR',
             message: 'Network Error',
-            details: `A network problem occurred, possibly due to a lost internet connection. Original error: ${details}`,
+            details: `A network problem occurred, possibly due to a lost internet connection or unreachable server. Original error: ${details}`,
             suggestion: 'A network problem occurred. Please check your internet connection and the backend server URL in Settings.'
         };
     }
 
-    // Handle File System Errors (ENOENT, write failed)
-    if (lowerCaseMessage.includes('failed to save') || lowerCaseMessage.includes('write failed') || lowerCaseMessage.includes('enoent') || lowerCaseMessage.includes('rename')) {
-        return {
-            code: 'FILE_SYSTEM_ERROR',
-            message: 'Storage Error',
-            details: `The server failed to save data to persistent storage. This might be a temporary filesystem issue. Details: ${message}`,
-            suggestion: 'The server failed to save data. This may be a temporary filesystem issue.'
-        };
-    }
-
+    // Fallback for other generic API or network errors
     return {
         code: 'API_ERROR',
-        message: message,
-        details: details,
+        message: message, // Use the extracted message
+        details: details, // Use the extracted details
     };
 };

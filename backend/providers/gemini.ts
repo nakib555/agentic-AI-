@@ -179,8 +179,21 @@ const GeminiProvider: AIProvider = {
                 }
              }
              
-             const response = await result.response;
-             groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+             // CRITICAL FIX: Safe access to response properties.
+             // The stream might have finished without a final response object if it was interrupted or blocked.
+             try {
+                const response = await result.response;
+                if (response && response.candidates && response.candidates.length > 0) {
+                     groundingMetadata = response.candidates[0].groundingMetadata;
+                }
+             } catch (e) {
+                // If fetching the final response fails but we have text, we can proceed.
+                // If we have NO text and it failed, then it's a real error.
+                if (!fullText) {
+                    throw e;
+                }
+                console.warn('[GeminiProvider] Stream finished but final response object was missing.', e);
+             }
              
              callbacks.onComplete({ finalText: fullText, groundingMetadata });
 

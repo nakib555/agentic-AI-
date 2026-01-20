@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -17,8 +18,8 @@ const OllamaProvider: AIProvider = {
     async getModels(apiKey: string): Promise<ModelLists> {
         try {
             // Determine the endpoint. Use env var OLLAMA_HOST if present, else default to localhost.
-            // only use https://ollama.com/api/tags for modle fetching
-            const url = `https://ollama.com/api/tags`;
+            const effectiveEndpoint = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
+            const url = `${effectiveEndpoint}/api/tags`;
             
             console.log(`[OllamaProvider] Fetching installed models from: ${url}`);
             
@@ -31,8 +32,6 @@ const OllamaProvider: AIProvider = {
             });
             
             if (!response.ok) {
-                 // Fallback to public registry tags if local connection fails (optional, but good for demo)
-                 console.warn(`[OllamaProvider] Failed to reach local instance at ${url}. Trying public registry...`);
                  throw new Error('Local instance unreachable');
             }
     
@@ -51,11 +50,10 @@ const OllamaProvider: AIProvider = {
                 videoModels: [],
                 ttsModels: []
             };
-        } catch (error) {
+        } catch (error: any) {
             console.error('[OllamaProvider] Failed to fetch models:', error);
             
-            // Return empty list instead of throwing to prevent UI crash, 
-            // allowing user to see "No models available" and fix config.
+            // Return empty list instead of throwing to prevent UI crash
             return {
                 chatModels: [],
                 imageModels: [],
@@ -148,7 +146,15 @@ const OllamaProvider: AIProvider = {
 
         } catch (error: any) {
             if (error.name !== 'AbortError') {
-                callbacks.onError(error);
+                if (error.message && error.message.includes('fetch failed')) {
+                    if (effectiveEndpoint.includes('127.0.0.1') || effectiveEndpoint.includes('localhost')) {
+                         callbacks.onError(new Error("Failed to connect to Ollama at localhost. If you are running this app in the cloud, it cannot access your local computer directly. You must deploy Ollama publicly or use a tunnel (like ngrok)."));
+                    } else {
+                         callbacks.onError(new Error(`Failed to connect to Ollama at ${effectiveEndpoint}. Please check if the server is running and accessible.`));
+                    }
+                } else {
+                    callbacks.onError(error);
+                }
             }
         }
     },

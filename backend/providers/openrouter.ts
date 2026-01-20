@@ -66,8 +66,9 @@ const OpenRouterProvider: AIProvider = {
                 videoModels: sortModelsByName(videoModels),
                 ttsModels: sortModelsByName(ttsModels)
             };
-        } catch (error) {
+        } catch (error: any) {
             console.error('[OpenRouterProvider] Failed to fetch models:', error);
+            // Don't crash the whole app if models fail to load, just return empty
             return { chatModels: [], imageModels: [], videoModels: [], ttsModels: [] };
         }
     },
@@ -155,8 +156,13 @@ const OpenRouterProvider: AIProvider = {
 
             callbacks.onComplete({ finalText: fullText });
 
-        } catch (error) {
-            callbacks.onError(error);
+        } catch (error: any) {
+            // Enhanced error handling for connectivity issues
+            if (error.message && error.message.includes('fetch failed')) {
+                callbacks.onError(new Error("Failed to connect to OpenRouter. Please check your internet connection."));
+            } else {
+                callbacks.onError(error);
+            }
         }
     },
 
