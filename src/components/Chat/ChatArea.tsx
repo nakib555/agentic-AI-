@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -27,8 +28,6 @@ type ChatAreaProps = {
   messageListRef: React.RefObject<MessageListHandle>;
   onRegenerate: (messageId: string) => void;
   onSetActiveResponseIndex: (messageId: string, index: number) => void;
-  isAgentMode: boolean;
-  setIsAgentMode: (isAgent: boolean) => void;
   backendStatus: 'online' | 'offline' | 'checking';
   backendError: string | null;
   onRetryConnection: () => void;
@@ -42,7 +41,7 @@ export const ChatArea = ({
     ttsVoice, ttsModel, setTtsVoice, currentChatId, activeModel,
     onShowSources, approveExecution, denyExecution,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
-    isAgentMode, setIsAgentMode, backendStatus, backendError, onRetryConnection, hasApiKey,
+    backendStatus, backendError, onRetryConnection, hasApiKey,
     onEditMessage, onNavigateBranch
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
@@ -127,7 +126,6 @@ export const ChatArea = ({
           messageFormRef={messageFormRef}
           onRegenerate={onRegenerate}
           onSetActiveResponseIndex={handleSetActiveResponseIndex}
-          isAgentMode={isAgentMode}
           onEditMessage={onEditMessage}
           onNavigateBranch={onNavigateBranch}
       />
@@ -168,8 +166,6 @@ export const ChatArea = ({
             isAppLoading={isAppLoading}
             backendStatus={backendStatus}
             onCancel={onCancel}
-            isAgentMode={isAgentMode}
-            setIsAgentMode={setIsAgentMode}
             messages={messages}
             hasApiKey={hasApiKey}
             ttsVoice={ttsVoice}

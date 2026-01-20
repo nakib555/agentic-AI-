@@ -9,7 +9,6 @@ import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { useMessageForm } from './useMessageForm';
 import { UploadMenu } from './UploadMenu';
 import { VoiceVisualizer } from '../../UI/VoiceVisualizer';
-import { ModeToggle } from '../../UI/ModeToggle';
 import { MessageFormHandle } from './types';
 import { Message } from '../../../types';
 import { TextType } from '../../UI/TextType';
@@ -18,7 +17,6 @@ import { AttachedFilePreview } from './AttachedFilePreview';
 
 const motion = motionTyped as any;
 
-// Lazy load the sidebar to avoid loading syntax highlighters immediately
 const FilePreviewSidebar = React.lazy(() => import('./FilePreviewSidebar').then(m => ({ default: m.FilePreviewSidebar })));
 
 type MessageFormProps = {
@@ -27,8 +25,6 @@ type MessageFormProps = {
   isAppLoading: boolean;
   backendStatus: 'online' | 'offline' | 'checking';
   onCancel: () => void;
-  isAgentMode: boolean;
-  setIsAgentMode: (isAgent: boolean) => void;
   messages: Message[];
   hasApiKey: boolean;
   ttsVoice: string;
@@ -40,17 +36,16 @@ type MessageFormProps = {
 export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((props, ref) => {
   const { 
     onSubmit, isLoading, isAppLoading, backendStatus, onCancel, 
-    isAgentMode, setIsAgentMode, hasApiKey 
+    hasApiKey 
   } = props;
 
   const [isDragging, setIsDragging] = useState(false);
 
   const logic = useMessageForm(
-    (msg, files, options) => onSubmit(msg, files, { ...options, isThinkingModeEnabled: isAgentMode }),
+    (msg, files, options) => onSubmit(msg, files, { ...options, isThinkingModeEnabled: false }),
     isLoading,
     ref,
     props.messages,
-    isAgentMode,
     hasApiKey
   );
 
@@ -58,7 +53,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
   const isSendDisabled = !logic.canSubmit || isAppLoading || backendStatus === 'offline';
   const hasFiles = logic.processedFiles.length > 0;
 
-  // --- Drag & Drop Handlers ---
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -68,7 +62,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Prevent flickering when entering children elements
     if (e.currentTarget.contains(e.relatedTarget as Node)) return;
     setIsDragging(false);
   };
@@ -103,7 +96,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         )}
       </AnimatePresence>
 
-      {/* Content Preview Sidebar (Desktop) / Modal (Mobile) */}
       <Suspense fallback={null}>
           <FilePreviewSidebar 
             isOpen={!!logic.previewFile}
@@ -146,7 +138,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         onDrop={handleDrop}
       >
         
-        {/* Drop Indicator Overlay */}
         <AnimatePresence>
             {isDragging && (
                 <motion.div
@@ -167,7 +158,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
             )}
         </AnimatePresence>
 
-        {/* File List Area - High Contrast */}
         <AnimatePresence>
             {hasFiles && (
                 <motion.div
@@ -195,9 +185,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
             )}
         </AnimatePresence>
 
-        {/* Text Input */}
         <div className="flex flex-col relative flex-1">
-            {/* Animated Placeholder Overlay */}
             {!logic.inputValue && !isDragging && (
                <div className="absolute inset-0 px-4 py-3 pointer-events-none select-none opacity-60 z-0 overflow-hidden">
                   <TextType 
@@ -229,10 +217,8 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
             />
         </div>
 
-        {/* Bottom Toolbar */}
         <div className="flex items-center justify-between px-3 pb-3 pt-1 gap-3 relative z-10 bg-transparent">
             <div className="flex items-center gap-1">
-                {/* Upload Button */}
                 <Tooltip content="Attach files" position="top">
                     <button
                         ref={logic.attachButtonRef}
@@ -248,21 +234,9 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                         </svg>
                     </button>
                 </Tooltip>
-                
-                {/* Agent Mode Toggle */}
-                <Tooltip content={isAgentMode ? "Switch to Chat Mode" : "Switch to Agent Mode"} position="top">
-                    <div>
-                        <ModeToggle 
-                            isAgentMode={isAgentMode} 
-                            onToggle={setIsAgentMode} 
-                            disabled={isGeneratingResponse} 
-                        />
-                    </div>
-                </Tooltip>
             </div>
 
             <div className="flex items-center gap-2">
-                {/* Voice Input */}
                 <Tooltip content="Voice Input" position="top">
                     <button
                         onClick={logic.handleMicClick}
@@ -284,7 +258,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                     </button>
                 </Tooltip>
 
-                {/* Prompt Enhancer */}
                 <Tooltip content="Enhance Prompt" position="top">
                     <button
                         onClick={logic.handleEnhancePrompt}
@@ -315,7 +288,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                     </button>
                 </Tooltip>
 
-                {/* Send/Stop Button */}
                 <Tooltip content={isGeneratingResponse ? "Stop generating" : "Send message"} position="top">
                     <motion.button
                         type="button"
@@ -335,13 +307,11 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                     >
                         {isGeneratingResponse ? ( 
                             <div className="relative w-5 h-5 flex items-center justify-center">
-                                {/* Loading Spinner - Fades out on hover */}
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-full h-full transition-opacity duration-200 group-hover:opacity-0">
                                     <circle cx="24" cy="24" r="16" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeDasharray="80 100" strokeDashoffset="0" className="text-primary-main">
                                         <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="1s" repeatCount="indefinite" />
                                     </circle>
                                 </svg>
-                                {/* Stop Icon - Fades in on hover */}
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-status-error-text">
                                         <rect x="6" y="6" width="12" height="12" rx="2" />
@@ -359,7 +329,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
         </div>
       </div>
 
-      {/* Footer Info */}
       <div className="flex justify-center items-center pt-3 pb-0">
           <motion.p 
             initial={{ opacity: 0, y: 5 }}

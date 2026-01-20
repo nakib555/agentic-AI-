@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -27,7 +26,6 @@ function lazyLoad<T extends React.ComponentType<any>>(
         if (!component) {
           throw new Error(`Module does not export component '${name}'`);
         }
-        // Cleanup reload flag on successful load
         try { sessionStorage.removeItem(`reload_attempt_${name}`); } catch {}
         return { default: component };
       })
@@ -71,8 +69,6 @@ export const App = () => {
     : null;
   const chatTitle = currentChat ? currentChat.title : null;
   
-  const activeMessage = currentChat?.messages?.length ? currentChat.messages[currentChat.messages.length - 1] : null;
-
   // --- Keyboard Detection Logic ---
   const [stableHeight, setStableHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 0);
   const widthRef = useRef(typeof window !== 'undefined' ? window.innerWidth : 0);
@@ -103,8 +99,6 @@ export const App = () => {
 
   const isKeyboardOpen = !logic.isDesktop && logic.visualViewportHeight < (stableHeight * 0.85);
 
-  // Determine if we have a valid configuration to start chatting
-  // For Ollama, we assume it's ready if provider is selected (default host is used).
   const hasApiKey = 
       (logic.provider === 'gemini' && !!logic.apiKey) || 
       (logic.provider === 'openrouter' && !!logic.openRouterApiKey) || 
@@ -194,8 +188,6 @@ export const App = () => {
                     denyExecution={logic.denyExecution}
                     onRegenerate={logic.regenerateResponse}
                     onSetActiveResponseIndex={logic.setActiveResponseIndex}
-                    isAgentMode={logic.isAgentMode}
-                    setIsAgentMode={logic.setIsAgentMode}
                     backendStatus={logic.backendStatus}
                     backendError={logic.backendError}
                     onRetryConnection={logic.retryConnection}
@@ -288,7 +280,6 @@ export const App = () => {
           setTheme={logic.setTheme}
           serverUrl={logic.serverUrl}
           onSaveServerUrl={logic.onSaveServerUrl}
-          // Provider Props for Ollama
           provider={logic.provider}
           openRouterApiKey={logic.openRouterApiKey}
           onProviderChange={logic.onProviderChange}

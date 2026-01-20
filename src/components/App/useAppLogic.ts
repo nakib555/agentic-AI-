@@ -141,7 +141,6 @@ export const useAppLogic = () => {
   const [videoModel, setVideoModel] = useState('');
   const [ttsModel, setTtsModel] = useState('');
   const [ttsVoice, setTtsVoice] = useState(DEFAULT_TTS_VOICE);
-  const [isAgentMode, setIsAgentModeState] = useState(true);
   const [serverUrl, setServerUrl] = useState(() => getApiBaseUrl());
   
   // Memory state is managed by its own hook
@@ -185,8 +184,6 @@ export const useAppLogic = () => {
         if (!currentActiveModel) setActiveModel('');
     }
     
-    // For specialized models, keep existing unless invalid/empty
-    // Note: If provider switches to OpenRouter, these lists will be empty and these checks handle that gracefully
     const currentImageModel = imageModelRef.current;
     if (newImageModels.length > 0) {
         if (!currentImageModel || !newImageModels.some((m: Model) => m.id === currentImageModel)) {
@@ -243,10 +240,7 @@ export const useAppLogic = () => {
             setTtsModel(settings.ttsModel);
             setIsMemoryEnabledState(settings.isMemoryEnabled);
             setTtsVoice(settings.ttsVoice);
-            setIsAgentModeState(settings.isAgentMode);
             
-            // Only fetch models if we have a key for the current provider
-            // For Ollama, we now require an API Key per user request (or just provider switch logic to trigger fetch)
             const hasKeyForProvider = 
                (settings.provider === 'gemini' && settings.apiKey) ||
                (settings.provider === 'openrouter' && settings.openRouterApiKey) ||
@@ -274,7 +268,7 @@ export const useAppLogic = () => {
   const handleSetApiKey = useCallback(async (newApiKey: string, providerType: 'gemini' | 'openrouter' | 'ollama') => {
     if (providerType === 'gemini') setApiKey(newApiKey);
     else if (providerType === 'openrouter') setOpenRouterApiKey(newApiKey);
-    else if (providerType === 'ollama') setApiKey(newApiKey); // Store Ollama key in generic apiKey state
+    else if (providerType === 'ollama') setApiKey(newApiKey); 
     
     try {
         let payload: any = { provider: providerType };
@@ -298,10 +292,7 @@ export const useAppLogic = () => {
       setProvider(newProvider);
       updateSettings({ provider: newProvider }).then(response => {
           if (response.models) processModelData(response);
-          // Only auto-fetch if we already have the key for this provider
-          // This avoids failed calls on switch
           else {
-              // We can trigger fetch, but the backend will return empty if key missing.
               fetchModels();
           }
       });
@@ -335,14 +326,11 @@ export const useAppLogic = () => {
   const handleSetAboutResponse = createSettingUpdater(setAboutResponse, 'aboutResponse');
   const handleSetTtsModel = createSettingUpdater(setTtsModel, 'ttsModel');
   const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
-  const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
   const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
   const handleSetOllamaHost = createSettingUpdater(setOllamaHost, 'ollamaHost');
 
   const chatSettings = useMemo(() => {
     return {
-        // We do not combine them here anymore to avoid duplication in the backend.
-        // The backend handles the structuring and prioritization.
         systemPrompt: '', 
         aboutUser: aboutUser.trim(),
         aboutResponse: aboutResponse.trim(),
@@ -350,15 +338,13 @@ export const useAppLogic = () => {
         maxOutputTokens: maxTokens,
         imageModel,
         videoModel,
-        isAgentMode // Include current state
     };
-  }, [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel, isAgentMode]);
+  }, [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel]);
 
-  // Pass active API key based on provider for client-side tools if necessary (though most are backend now)
   const effectiveClientKey = provider === 'gemini' ? apiKey : openRouterApiKey;
   
-  const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, effectiveClientKey, showToast);
-  const { updateChatModel, updateChatSettings, editMessage, navigateBranch, setResponseIndex } = chat; // Destructure new functions
+  const chat = useChat(activeModel, chatSettings, memory.memoryContent, effectiveClientKey, showToast);
+  const { updateChatModel, updateChatSettings, editMessage, navigateBranch, setResponseIndex } = chat;
 
   const handleSetTemperature = useCallback((val: number) => {
       setTemperature(val);
@@ -384,20 +370,16 @@ export const useAppLogic = () => {
       if (chat.currentChatId) updateChatSettings(chat.currentChatId, { videoModel: val });
   }, [chat.currentChatId, updateChatSettings]);
 
-  // Ref for debouncing model settings saves
   const settingsSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleModelChange = useCallback((modelId: string) => {
-    // 1. Instant UI update
     setActiveModel(modelId);
     
-    // 2. Debounce Global Settings Save
     if (settingsSaveTimeoutRef.current) clearTimeout(settingsSaveTimeoutRef.current);
     settingsSaveTimeoutRef.current = setTimeout(() => {
         updateSettings({ activeModel: modelId }).catch(console.error);
     }, 1000);
 
-    // 3. Debounce Chat Persistence (if active chat)
     if (chat.currentChatId) {
         updateChatModel(chat.currentChatId, modelId, 1000);
     }
@@ -406,15 +388,12 @@ export const useAppLogic = () => {
   const prevChatIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Only update prevChatIdRef if it actually changed
     if (chat.currentChatId !== prevChatIdRef.current) {
         prevChatIdRef.current = chat.currentChatId;
     }
 
     const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
     if (currentChat) {
-        // Force sync activeModel with chat model if they differ
-        // This ensures visual consistency if the backend/hook updates independently
         if (currentChat.model && currentChat.model !== activeModel) {
             setActiveModel(currentChat.model);
         }
@@ -423,11 +402,6 @@ export const useAppLogic = () => {
         if (currentChat.maxOutputTokens !== undefined) setMaxTokens(currentChat.maxOutputTokens);
         if (currentChat.imageModel) setImageModel(currentChat.imageModel);
         if (currentChat.videoModel) setVideoModel(currentChat.videoModel);
-        
-        // NEW: Sync Agent Mode
-        if (currentChat.isAgentMode !== undefined) {
-            setIsAgentModeState(currentChat.isAgentMode);
-        }
     }
   }, [chat.currentChatId, chat.chatHistory, activeModel]); 
 
@@ -554,7 +528,7 @@ export const useAppLogic = () => {
 
   const handleDeleteChatRequest = useCallback((chatId: string) => {
       requestConfirmation(
-          'Are you sure you want to delete this chat? This will also delete any associated files.',
+          'Are you sure you want to delete this chat?',
           async () => {
             try {
                 await chat.deleteChat(chatId);
@@ -600,16 +574,14 @@ export const useAppLogic = () => {
     return JSON.stringify(results, null, 2);
   }, [chat, startNewChat]);
 
-  // Determine if we have a valid configuration to start chatting
-  // Updated for Ollama API Key requirement
   const hasApiKey = 
       (provider === 'gemini' && !!apiKey) || 
       (provider === 'openrouter' && !!openRouterApiKey) || 
       (provider === 'ollama' && !!apiKey);
   
   return {
-    appContainerRef, messageListRef, theme, setTheme, isDesktop, visualViewportHeight, ...sidebar, isAgentMode, ...memory,
-    isAnyResizing, // Export aggregated state
+    appContainerRef, messageListRef, theme, setTheme, isDesktop, visualViewportHeight, ...sidebar, ...memory,
+    isAnyResizing, 
     isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
     isImportModalOpen, setIsImportModalOpen, isSourcesSidebarOpen, sourcesForSidebar,
     backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading, versionMismatch,
@@ -624,7 +596,7 @@ export const useAppLogic = () => {
     maxTokens, setMaxTokens: handleSetMaxTokens, imageModel, onImageModelChange: handleSetImageModel,
     videoModel, onVideoModelChange: handleSetVideoModel, ttsModel, onTtsModelChange: handleSetTtsModel,
     ttsVoice, setTtsVoice: handleSetTtsVoice, isMemoryEnabled, setIsMemoryEnabled: handleSetIsMemoryEnabled,
-    setIsAgentMode: handleSetIsAgentMode, ...chat, isChatActive: !!chat.currentChatId && chat.messages.length > 0,
+    ...chat, isChatActive: !!chat.currentChatId && chat.messages.length > 0,
     sendMessage: chat.sendMessage, startNewChat, isNewChatDisabled,
     handleDeleteChatRequest, handleRequestClearAll,
     handleToggleSidebar: () => isDesktop ? sidebar.handleSetSidebarCollapsed(!sidebar.isSidebarCollapsed) : sidebar.setIsSidebarOpen(!sidebar.isSidebarOpen),
@@ -634,15 +606,11 @@ export const useAppLogic = () => {
     runDiagnosticTests, handleFileUploadForImport, handleDownloadLogs, handleShowDataStructure,
     updateBackendMemory: memory.updateBackendMemory, memoryFiles: memory.memoryFiles, updateMemoryFiles: memory.updateMemoryFiles,
     serverUrl, onSaveServerUrl: handleSaveServerUrl,
-    // Artifact Props
     isArtifactOpen, setIsArtifactOpen, artifactContent, artifactLanguage, 
     artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing,
-    // New Props for Provider
     provider, openRouterApiKey, onProviderChange: handleProviderChange,
     ollamaHost, onSaveOllamaHost: handleSetOllamaHost,
-    // Edit Message and Branch Navigation
     editMessage, navigateBranch,
-    // Explicitly expose setResponseIndex as the main handler for response switching
     setActiveResponseIndex: setResponseIndex
   };
 };

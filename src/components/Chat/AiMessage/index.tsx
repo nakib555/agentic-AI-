@@ -16,7 +16,6 @@ import type { MessageFormHandle } from '../MessageForm/index';
 import { useAiMessageLogic } from './useAiMessageLogic';
 import { MessageToolbar } from './MessageToolbar';
 import { TypingIndicator } from '../TypingIndicator';
-import { ExecutionApproval } from '../../AI/ExecutionApproval';
 
 const animationProps = {
   initial: { opacity: 0, y: 10, scale: 0.99 },
@@ -37,26 +36,23 @@ type AiMessageProps = {
     messageFormRef: React.RefObject<MessageFormHandle>;
     onRegenerate: (messageId: string) => void;
     onSetActiveResponseIndex: (messageId: string, index: number) => void;
-    isAgentMode: boolean;
     userQuery?: string; 
     isLast?: boolean; 
 };
 
 const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, ttsModel, currentChatId, 
-          onShowSources, approveExecution, denyExecution, onRegenerate,
+          onShowSources, onRegenerate,
           onSetActiveResponseIndex, isLast = false } = props;
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
-  const { activeResponse, showApprovalUI } = logic;
+  const { activeResponse } = logic;
   
-  // HYDRATION: Convert raw state to Activity Blocks
   const contentBlocks = useMemo(() => hydrateContentBlocks(msg), [msg]);
 
   const isStoppedByUser = activeResponse?.error?.code === 'STOPPED_BY_USER';
   
-  // Show toolbar if we have any completed blocks or an error
   const showToolbar = contentBlocks.length > 0 || !!activeResponse?.error || isStoppedByUser;
 
   if (contentBlocks.length === 0 && logic.isInitialWait) return <TypingIndicator />;
@@ -66,28 +62,16 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
         {...animationProps} 
         className="w-full flex flex-col items-start gap-2 origin-bottom-left group/message min-w-0"
     >
-      {/* 1. Execution Plan Approval UI (Special Case) */}
-      {showApprovalUI && activeResponse?.plan && (
-          <ExecutionApproval 
-            plan={activeResponse.plan} 
-            onApprove={approveExecution} 
-            onDeny={denyExecution} 
-          />
-      )}
-
-      {/* 2. Main Block Renderer */}
       <div className="w-full flex flex-col gap-2">
          {contentBlocks.map((block) => (
              <BlockRenderer key={block.id} block={block} sendMessage={sendMessage} />
          ))}
       </div>
       
-      {/* 3. Global Error (if not captured in a block) */}
       {activeResponse?.error && !isStoppedByUser && !contentBlocks.some(b => b.type === 'final_text' && b.status === 'error') && (
           <ErrorDisplay error={activeResponse.error} onRetry={() => onRegenerate(id)} />
       )}
 
-      {/* 4. Stopped Indicator */}
       {isStoppedByUser && (
           <motion.div
               initial={{ opacity: 0, y: 5 }}
@@ -98,7 +82,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           </motion.div>
       )}
       
-      {/* 5. Suggestions */}
       {isLast && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
             <motion.div
                 initial={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -109,7 +92,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
             </motion.div>
       )}
 
-      {/* 6. Footer Toolbar */}
       {showToolbar && (
           <div className="w-full mt-2 transition-opacity duration-300">
             <MessageToolbar

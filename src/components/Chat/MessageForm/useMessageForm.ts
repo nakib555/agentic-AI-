@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// This is the simplified main hook for the MessageForm component.
-// It composes smaller, more focused hooks for file handling and input enhancements.
-
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { type MessageFormHandle, type ProcessedFile } from './types';
 import { useFileHandling } from './useFileHandling';
@@ -19,7 +16,6 @@ export const useMessageForm = (
   isLoading: boolean,
   ref: React.ForwardedRef<MessageFormHandle>,
   messages: Message[],
-  isAgentMode: boolean,
   hasApiKey: boolean
 ) => {
   const [inputValue, setInputValue] = useState('');
@@ -45,10 +41,9 @@ export const useMessageForm = (
     return lastVisibleMessage.text || '';
   }, [messages]);
 
-  const placeholder = usePlaceholder(!inputValue.trim() && !isFocused, lastMessageText, isAgentMode, hasApiKey);
+  const placeholder = usePlaceholder(!inputValue.trim() && !isFocused, lastMessageText, false, hasApiKey);
 
   useEffect(() => {
-    // Restore text draft from local storage on initial load
     try {
         const savedText = localStorage.getItem('messageDraft_text');
         if (savedText) {
@@ -58,7 +53,6 @@ export const useMessageForm = (
   }, []);
 
   useEffect(() => {
-    // Save text draft to local storage
     try {
         if (inputValue.trim() || fileHandling.processedFiles.length > 0) {
           localStorage.setItem('messageDraft_text', inputValue);
@@ -68,24 +62,17 @@ export const useMessageForm = (
     } catch (e) { /* ignore */ }
   }, [inputValue, fileHandling.processedFiles.length]);
   
-  // Handle automatic resizing of the input area
-  // Optimization: useLayoutEffect ensures the height is adjusted synchronously before the paint,
-  // preventing the visual "jump" or jitter often seen with useEffect during rapid typing.
   useLayoutEffect(() => {
     const element = inputRef.current;
     if (!element) return;
 
-    // Reset height to allow shrinking
     element.style.height = 'auto';
     
-    // Calculate new height
     const scrollHeight = element.scrollHeight;
     
-    // Increased max height to support better multi-line editing experience
     const MAX_HEIGHT_PX = 120;
     const SINGLE_LINE_THRESHOLD = 32; 
     
-    // Only update state if needed to prevent excessive re-renders
     const shouldBeExpanded = scrollHeight > SINGLE_LINE_THRESHOLD || fileHandling.processedFiles.length > 0;
     if (isExpanded !== shouldBeExpanded) {
         setIsExpanded(shouldBeExpanded);
@@ -100,7 +87,6 @@ export const useMessageForm = (
     }
   }, [inputValue, fileHandling.processedFiles.length, isExpanded]);
 
-  // Handle clicks outside the upload menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isUploadMenuOpen && attachButtonRef.current && !attachButtonRef.current.contains(event.target as Node) && uploadMenuRef.current && !uploadMenuRef.current.contains(event.target as Node)) {
@@ -121,9 +107,7 @@ export const useMessageForm = (
     } catch (e) { /* ignore */ }
   };
 
-  // Centralized Validation Logic
   const isProcessingFiles = fileHandling.processedFiles.some(f => f.progress < 100 && !f.error);
-  // Ensure we check for trimmed content OR files.
   const hasContent = inputValue.trim().length > 0 || fileHandling.processedFiles.length > 0;
   
   const canSubmit = hasContent && !isLoading && !enhancements.isEnhancing && !isProcessingFiles;
@@ -153,7 +137,6 @@ export const useMessageForm = (
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        // Only submit if valid, otherwise do nothing (prevent newline)
         if (canSubmit) {
             handleSubmit();
         }
@@ -170,11 +153,11 @@ export const useMessageForm = (
     inputValue, setInputValue,
     isExpanded, isUploadMenuOpen, setIsUploadMenuOpen,
     isFocused, setIsFocused,
-    previewFile, setPreviewFile, // Exported state for sidebar
+    previewFile, setPreviewFile,
     placeholder,
     inputRef, attachButtonRef, uploadMenuRef,
     handleSubmit, handlePaste, handleKeyDown,
-    canSubmit, // Export validation state
+    canSubmit,
     isProcessingFiles,
     ...fileHandling,
     ...enhancements,
