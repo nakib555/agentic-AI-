@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -10,6 +11,7 @@ type ParseResult = {
 
 /**
  * Parses the raw text from a model's message into distinct "thinking" and "final answer" parts.
+ * Updated to be more robust for mixed-mode content and prevent hiding valid text.
  * @param text The raw text content from the message.
  * @param isThinking A boolean indicating if the model is still processing.
  * @param hasError A boolean indicating if an error occurred.
@@ -19,12 +21,13 @@ export const parseMessageText = (text: string, isThinking: boolean, hasError: bo
   const finalAnswerMarker = '[STEP] Final Answer:';
   const finalAnswerIndex = text.lastIndexOf(finalAnswerMarker);
 
-  // 1. If final answer marker exists, we have a clean split
+  // 1. Explicit Final Answer Split (Highest Priority)
+  // If the model explicitly marks the final answer, we always respect it.
   if (finalAnswerIndex !== -1) {
     const thinkingText = text.substring(0, finalAnswerIndex);
     let rawFinalAnswer = text.substring(finalAnswerIndex + finalAnswerMarker.length);
     
-    // Strip potential agent metadata from the start of the final answer
+    // Strip the agent tag (e.g., ": [AGENT: Reporter]") from the beginning of the final answer.
     const agentTagRegex = /^\s*:?\s*\[AGENT:\s*[^\]]+\]\s*/;
     rawFinalAnswer = rawFinalAnswer.replace(agentTagRegex, '');
 
@@ -32,34 +35,22 @@ export const parseMessageText = (text: string, isThinking: boolean, hasError: bo
     return { thinkingText, finalAnswerText };
   }
 
-  // 2. If an error occurred, everything is considered part of the "failed thought"
-  if (hasError) {
-    return { thinkingText: text, finalAnswerText: '' };
-  }
-  
-  // 3. If model is still thinking
-  if (isThinking) {
-    const trimmed = text.trimStart();
+  // 2. Implicit Classification
+  // If no final answer marker is found, we decide based on the *structure* of the text.
+  // We strictly identify "Agent Mode" content by checking if it STARTS with a step marker.
+  // This prevents chatty models that mention "[STEP]" in conversation from being hidden.
 
-    // If text starts with Agentic protocol markers, it's definitely thinking
-    if (trimmed.startsWith('[STEP]')) {
-        return { thinkingText: text, finalAnswerText: '' };
-    }
-    
-    // Buffer early characters that look like they might start a tag to avoid jumping
-    if (trimmed.startsWith('[') && trimmed.length < 15 && !trimmed.includes(']')) {
-        return { thinkingText: '', finalAnswerText: '' };
-    }
+  const trimmed = text.trimStart();
+  const isAgentStructure = trimmed.startsWith('[STEP]') || trimmed.startsWith('[BRIEFING]');
 
-    // Default for Chat Mode: show content immediately as the final answer
-    return { thinkingText: '', finalAnswerText: text };
-  }
-
-  // 4. Completed but no markers: Check if it LOOKS like it was an Agent process
-  if (text.includes('[STEP]')) {
+  if (isAgentStructure) {
+      // It looks like an internal thought trace or agent log. 
+      // Hide it from the main bubble (it will be rendered by the Workflow UI).
       return { thinkingText: text, finalAnswerText: '' };
   }
 
-  // 5. Fallback: Pure direct answer
+  // 3. Default Fallback
+  // It's a direct response (Chat Mode), or a mixed response that didn't follow strict protocol.
+  // Show it as the final answer to ensure visibility.
   return { thinkingText: '', finalAnswerText: text.trim() };
 };
