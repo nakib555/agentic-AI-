@@ -17,23 +17,33 @@ const OllamaProvider: AIProvider = {
 
     async getModels(apiKey: string): Promise<ModelLists> {
         try {
-            // For now, we fetch from public registry as list-tags is local-only
-            // To make this fully local, we'd need to proxy the request to the user's localhost ollama instance
-            // But since this code runs on the backend (server), 'localhost' refers to the server.
-            // If the user runs Ollama on their machine, they must expose it or configure the host.
-            // Using public registry tags for now as a fallback list.
-            const url = 'https://ollama.com/api/tags';
-            console.log(`[OllamaProvider] Fetching models from registry: ${url}`);
+            // Determine the endpoint. Use env var OLLAMA_HOST if present, else default to localhost.
+            // Note: If running in a container, 'localhost' is the container. 
+            // Users should configure OLLAMA_HOST to point to their actual machine (e.g. host.docker.internal) if using Docker.
+            const host = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
+            const url = `${host}/api/tags`;
             
-            const response = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+            console.log(`[OllamaProvider] Fetching installed models from: ${url}`);
             
-            if (!response.ok) throw new Error('Failed to fetch Ollama tags');
+            const response = await fetch(url, { 
+                method: 'GET', 
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+                } 
+            });
+            
+            if (!response.ok) {
+                 // Fallback to public registry tags if local connection fails (optional, but good for demo)
+                 console.warn(`[OllamaProvider] Failed to reach local instance at ${url}. Trying public registry...`);
+                 throw new Error('Local instance unreachable');
+            }
     
             const data = await response.json();
             const models: AppModel[] = (data.models || []).map((m: any) => ({
                 id: m.name, 
                 name: m.name,
-                description: m.description || `Ollama Model (${m.name})`,
+                description: m.details ? `${m.details.parameter_size} parameters | ${m.details.quantization_level}` : `Ollama Model (${m.name})`,
             }));
             
             const sorted = sortModelsByName(models);
@@ -46,12 +56,11 @@ const OllamaProvider: AIProvider = {
             };
         } catch (error) {
             console.error('[OllamaProvider] Failed to fetch models:', error);
+            
+            // Return empty list instead of throwing to prevent UI crash, 
+            // allowing user to see "No models available" and fix config.
             return {
-                chatModels: [
-                    { id: 'llama3', name: 'Llama 3', description: 'Meta Llama 3' },
-                    { id: 'mistral', name: 'Mistral', description: 'Mistral 7B' },
-                    { id: 'deepseek-v3', name: 'DeepSeek V3', description: 'DeepSeek Reasoning' },
-                ],
+                chatModels: [],
                 imageModels: [],
                 videoModels: [],
                 ttsModels: []
@@ -81,13 +90,7 @@ const OllamaProvider: AIProvider = {
             ollamaMessages.unshift({ role: 'system', content: systemInstruction });
         }
 
-        const endpoint = 'https://ollama.com/api/chat'; // Placeholder - usually configured via ENV
-        // If we are running this, we assume the environment is configured to point to the correct Ollama host
-        // Or we use the default localhost proxy if we were to support it. 
-        // For this refactor, we stick to the existing logic which assumed a specific endpoint or logic.
-        // Actually, the previous implementation in `ollamaUtils.ts` hardcoded `http://localhost:11434/api/chat` for local dev
-        // or relied on the server to be able to hit it.
-        const effectiveEndpoint = process.env.OLLAMA_HOST || 'http://localhost:11434';
+        const effectiveEndpoint = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
 
         try {
             const response = await fetch(`${effectiveEndpoint}/api/chat`, {
@@ -155,7 +158,7 @@ const OllamaProvider: AIProvider = {
 
     async complete(options: CompletionOptions): Promise<string> {
         const { model, prompt, systemInstruction, apiKey, jsonMode } = options;
-        const effectiveEndpoint = process.env.OLLAMA_HOST || 'http://localhost:11434';
+        const effectiveEndpoint = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
         
         try {
              const messages = [];

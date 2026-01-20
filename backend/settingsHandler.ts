@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -60,9 +59,9 @@ export const updateSettings = async (req: any, res: any) => {
                     ? newSettings.openRouterApiKey 
                     : newSettings.apiKey; // Both Gemini and Ollama now use the main 'apiKey' field/variable logic or specifically handled
                 
-                // Strictly require a key to fetch models, even for Ollama per new requirement
-                if (activeKey) {
-                    const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(activeKey, true);
+                // Strictly require a key to fetch models, unless provider is Ollama which supports keyless local operation
+                if (activeKey || newSettings.provider === 'ollama') {
+                    const { chatModels, imageModels, videoModels, ttsModels } = await listAvailableModels(activeKey || '', true);
                     res.status(200).json({ ...newSettings, models: chatModels, imageModels, videoModels, ttsModels });
                     return;
                 }

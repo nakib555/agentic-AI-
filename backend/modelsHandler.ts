@@ -11,8 +11,8 @@ export const getAvailableModelsHandler = async (req: any, res: any) => {
     const provider = await getProvider();
     const apiKey = await getApiKey();
 
-    // Mandate an API key for all providers, including Ollama per user request.
-    if (!apiKey) {
+    // Mandate an API key for all providers, except Ollama which can be local/open.
+    if (!apiKey && provider !== 'ollama') {
         return res.status(200).json({ models: [], imageModels: [], videoModels: [], ttsModels: [] });
     }
 
