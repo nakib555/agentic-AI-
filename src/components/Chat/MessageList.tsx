@@ -202,7 +202,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                 itemContent={itemContent}
                 components={{
                     Header: () => <div className="h-4 md:h-6" />,
-                    Footer: () => <div className="h-32 md:h-48" />
+                    Footer: () => <div className="h-4 md:h-6" />
                 }}
             />
         </div>
