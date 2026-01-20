@@ -1,8 +1,4 @@
 
-
-
-
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -22,6 +18,7 @@ import { createToolExecutor } from './tools/index';
 import { toolDeclarations, codeExecutorDeclaration } from './tools/declarations'; 
 import { getApiKey, getProvider } from './settingsHandler';
 import { generateContentWithRetry, generateContentStreamWithRetry } from './utils/geminiUtils';
+import { generateProviderCompletion } from './utils/generateProviderCompletion';
 import { historyControl } from './services/historyControl';
 import { transformHistoryToGeminiFormat } from './utils/historyTransformer';
 import { streamOpenRouter } from './utils/openRouterUtils';
@@ -215,105 +212,6 @@ class ChatPersistenceManager {
     }
 }
 
-// Helper to perform a simple non-streaming completion across providers
-async function generateProviderCompletion(
-    provider: string, 
-    apiKey: string | undefined, 
-    model: string, 
-    prompt: string, 
-    systemInstruction?: string,
-    jsonMode: boolean = false
-): Promise<string> {
-    if (provider === 'gemini') {
-        if (!apiKey) throw new Error("Gemini API Key missing");
-        const ai = new GoogleGenAI({ apiKey });
-        const targetModel = model || 'gemini-2.5-flash';
-        const config: any = { systemInstruction };
-        if (jsonMode) config.responseMimeType = 'application/json';
-        
-        try {
-            const resp = await generateContentWithRetry(ai, {
-                model: targetModel,
-                contents: prompt,
-                config
-            });
-            return resp.text || '';
-        } catch(e) {
-            console.error("Gemini completion error:", e);
-            return '';
-        }
-    }
-    
-    if (provider === 'openrouter') {
-        if (!apiKey) throw new Error("OpenRouter API Key missing");
-        const targetModel = model || 'google/gemini-flash-1.5'; // Default fallback
-        try {
-             const messages = [];
-             if (systemInstruction) messages.push({ role: 'system', content: systemInstruction });
-             messages.push({ role: 'user', content: prompt });
-             
-             const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${apiKey}`,
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "https://agentic-ai-chat.local",
-                    "X-Title": "Agentic AI Chat",
-                },
-                body: JSON.stringify({
-                    model: targetModel,
-                    messages: messages,
-                    stream: false, // Non-streaming
-                    response_format: jsonMode ? { type: "json_object" } : undefined
-                })
-            });
-            if (!resp.ok) return '';
-            const data = await resp.json();
-            return data.choices?.[0]?.message?.content || '';
-        } catch (e) {
-            console.error("OpenRouter completion error:", e);
-            return '';
-        }
-    }
-
-    if (provider === 'ollama') {
-        const targetModel = model; 
-        if (!targetModel) return ''; 
-        
-        try {
-            const messages = [];
-            if (systemInstruction) messages.push({ role: 'system', content: systemInstruction });
-            messages.push({ role: 'user', content: prompt });
-            
-            // User requested hosted endpoint
-            const endpoint = 'https://ollama.com/api/chat';
-            
-            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-            if (apiKey) {
-                headers['Authorization'] = `Bearer ${apiKey}`;
-            }
-
-             const resp = await fetch(endpoint, {
-                 method: 'POST',
-                 headers,
-                 body: JSON.stringify({
-                     model: targetModel,
-                     messages,
-                     stream: false,
-                     format: jsonMode ? "json" : undefined
-                 })
-             });
-             if (!resp.ok) return '';
-             const data = await resp.json();
-             return data.message?.content || '';
-        } catch(e) {
-             console.error("Ollama completion error:", e);
-             return '';
-        }
-    }
-    return '';
-}
-
 export const apiHandler = async (req: any, res: any) => {
     const task = req.query.task as string;
     
@@ -323,8 +221,6 @@ export const apiHandler = async (req: any, res: any) => {
         const job = activeJobs.get(chatId);
         
         if (!job) {
-            // Chat might exist but stream finished/died.
-            // Return 200 with specific status to avoid browser console 404 errors.
             return res.status(200).json({ status: "stream_not_found" });
         }
         
@@ -350,6 +246,10 @@ export const apiHandler = async (req: any, res: any) => {
     const activeProvider = await getProvider();
     const mainApiKey = await getApiKey();
     const activeApiKey = mainApiKey;
+    
+    // Load general settings to access activeModel
+    const globalSettings: any = await readData(SETTINGS_FILE_PATH);
+    const activeModel = globalSettings.activeModel || 'gemini-2.5-flash';
 
     const isSuggestionTask = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'].includes(task);
     const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston', 'feedback'];
@@ -489,8 +389,6 @@ export const apiHandler = async (req: any, res: any) => {
 
                 if (ragContext) personalizationSection += ragContext;
 
-                // CRITICAL FIX: The Core Instructions (Agent Protocols) must be the primary directive.
-                // Personalization is injected as a "Context" layer, but it CANNOT override the output format (JSON/STEP).
                 let finalSystemInstruction = coreInstruction;
                 if (personalizationSection) {
                     finalSystemInstruction = `
@@ -733,18 +631,11 @@ ${personalizationSection}
                 break;
             }
             case 'cancel': {
-                const { requestId } = req.body; // In new system, this is usually chatId, but we support requestId for compat
-                
-                // Try to find job by ID (if it matches) OR iterating
+                const { requestId } = req.body;
                 let job = activeJobs.get(requestId);
-                if (!job) {
-                    // If requestId passed was not chatId, we might need a lookup map, but frontend sends chatId now usually?
-                    // Let's assume requestId is chatId for cancellation in new system.
-                }
 
                 if (job) {
                     job.controller.abort();
-                    // Don't delete immediately, allow loop to exit gracefully and cleanup
                     res.status(200).send({ message: 'Cancellation request received.' });
                 } else {
                     res.status(404).json({ error: `No active job found for ID: ${requestId}` });
@@ -812,11 +703,9 @@ GUIDELINES:
 
 IMPROVED PROMPT:
 `;
-                // Use streaming response for enhance if supported by all providers, or just simple text.
-                // For simplicity across providers, we use simple completion and stream it back manually.
                 res.setHeader('Content-Type', 'text/plain');
                 try {
-                    const text = await generateProviderCompletion(activeProvider, activeApiKey, 'gemini-3-flash-preview', prompt); // Use fast model default if generic
+                    const text = await generateProviderCompletion(activeProvider, activeApiKey, 'gemini-3-flash-preview', prompt); 
                     res.write(text);
                 } catch (e) { res.write(userInput); }
                 res.end();
@@ -824,22 +713,16 @@ IMPROVED PROMPT:
             }
             case 'memory_suggest': {
                 const { conversation } = req.body;
-                // We use Gemini for memory ops if available, otherwise skip or implement provider agnostic logic later.
-                // Current memory tool is Gemini specific.
-                if (!ai) return res.status(200).json({ suggestions: [] });
-                
                 try {
-                    const suggestions = await executeExtractMemorySuggestions(ai, conversation);
+                    const suggestions = await executeExtractMemorySuggestions(activeProvider, activeApiKey, activeModel, conversation);
                     res.status(200).json({ suggestions });
                 } catch (e) { res.status(200).json({ suggestions: [] }); }
                 break;
             }
             case 'memory_consolidate': {
-                 // Current memory tool is Gemini specific.
-                if (!ai) return res.status(200).json({ memory: [req.body.currentMemory, ...req.body.suggestions].filter(Boolean).join('\n') });
                 const { currentMemory, suggestions } = req.body;
                 try {
-                    const memory = await executeConsolidateMemory(ai, currentMemory, suggestions);
+                    const memory = await executeConsolidateMemory(activeProvider, activeApiKey, activeModel, currentMemory, suggestions);
                     res.status(200).json({ memory });
                 } catch (e) { res.status(200).json({ memory: [currentMemory, ...suggestions].filter(Boolean).join('\n') }); }
                 break;
@@ -850,7 +733,6 @@ IMPROVED PROMPT:
                     const result = await executeWithPiston(language, code);
                     res.status(200).json({ result });
                 } catch (error: any) {
-                    // Return error in a consistent format for the frontend
                     res.status(500).json({ error: error.message });
                 }
                 break;
