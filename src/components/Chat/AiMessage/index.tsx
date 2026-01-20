@@ -243,21 +243,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
         </motion.div>
       )}
       
-      {/* Conditionally render suggestions only if this is the last message */}
-      <AnimatePresence>
-        {isLast && logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
-            <motion.div
-                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
-                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="w-full overflow-hidden"
-            >
-                <SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} />
-            </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Show toolbar if thinking is complete AND we have something to show (text, error, or stopped state) */}
       {showToolbar && (
           <div className="w-full mt-2 transition-opacity duration-300">
@@ -278,6 +263,22 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
             />
           </div>
       )}
+
+      {/* Conditionally render suggestions only if this is the last message */}
+      {/* Moved to BOTTOM as per request */}
+      <AnimatePresence>
+        {isLast && logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
+            <motion.div
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="w-full overflow-hidden"
+            >
+                <SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} />
+            </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
