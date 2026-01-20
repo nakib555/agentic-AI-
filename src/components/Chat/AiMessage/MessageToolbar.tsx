@@ -61,12 +61,11 @@ const IconButton: React.FC<{
             onClick={onClick}
             disabled={disabled}
             className={`
-                flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200 
+                toolbar-icon-button
                 ${active 
-                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' 
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'
+                    ? 'toolbar-icon-button-active' 
+                    : 'toolbar-icon-button-inactive'
                 }
-                disabled:opacity-40 disabled:cursor-not-allowed
             `}
         >
             {children}
@@ -109,8 +108,8 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
     };
 
     return (
-        <div className="w-full flex flex-wrap items-center justify-between gap-y-3 pt-3 mt-1 select-none border-t border-slate-100 dark:border-white/5">
-            <div className="flex items-center gap-1">
+        <div className="message-toolbar-container">
+            <div className="message-toolbar-left-group">
                 <IconButton title={isCopied ? 'Copied!' : 'Copy'} onClick={handleCopy}>
                     <AnimatePresence mode="wait" initial={false}>
                         {isCopied ? (
@@ -138,7 +137,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                     </svg>
                 </IconButton>
 
-                <div className="w-px h-3 bg-slate-300 dark:bg-white/20 mx-2"></div>
+                <div className="message-toolbar-divider"></div>
 
                 <div className="flex items-center">
                     <TtsButton 
@@ -187,7 +186,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                     </AnimatePresence>
                 </div>
                 
-                <div className="w-px h-3 bg-slate-300 dark:bg-white/20 mx-2"></div>
+                <div className="message-toolbar-divider"></div>
                 
                 <IconButton 
                     title="Good response" 
@@ -205,7 +204,7 @@ export const MessageToolbar: React.FC<MessageToolbarProps> = ({
                 </IconButton>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="message-toolbar-right-group">
                  <SourcesPills sources={sources} onShowSources={() => onShowSources(sources)} />
                  <BranchSwitcher count={responseCount} activeIndex={activeResponseIndex} onChange={onResponseChange} />
             </div>

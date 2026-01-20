@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -132,11 +133,11 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   return (
     <motion.div 
         {...animationProps} 
-        className="w-full flex flex-col items-start gap-3 origin-bottom-left group/message min-w-0"
+        className="ai-message-container"
     >
       {/* NEW: Render attachments on the message object if present */}
       {msg.attachments && msg.attachments.length > 0 && (
-          <div className="w-full flex flex-col gap-2 mb-2">
+          <div className="ai-message-attachments">
               {msg.attachments.map((attachment, index) => (
                   <FileAttachment 
                       key={`msg-att-${index}`}
@@ -151,7 +152,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       {/* --- Workflow Visualization --- */}
       {/* Only show Agent Workflow in Agent Mode */}
       {isAgentMode && hasWorkflow && (
-          <div className="w-full mb-2">
+          <div className="ai-message-workflow-container">
               <AgentWorkflowDisplay 
                   plan={agentPlan}
                   nodes={executionLog}
@@ -176,7 +177,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="w-full flex flex-col gap-3 min-w-0"
+          className="ai-message-content"
         >
           {logic.isWaitingForFinalAnswer && <TypingIndicator />}
           
@@ -185,7 +186,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
               <ErrorDisplay error={activeResponse.error} onRetry={() => onRegenerate(id)} />
           )}
           
-          <div className="markdown-content max-w-none w-full text-slate-800 dark:text-gray-100 leading-relaxed break-words min-w-0">
+          <div className="ai-message-markdown">
             {displaySegments.map((segment: any, index: number) => {
                 const key = `${id}-${index}`;
                 if (segment.type === 'component') {
@@ -232,12 +233,12 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
               <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/30 rounded-lg w-fit"
+                  className="ai-message-stopped"
               >
-                  <div className="text-amber-500 dark:text-amber-400">
+                  <div className="ai-message-stopped-icon">
                       <StopIcon />
                   </div>
-                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Generation Stopped</span>
+                  <span className="ai-message-stopped-text">Generation Stopped</span>
               </motion.div>
           )}
         </motion.div>
@@ -245,7 +246,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       
       {/* Show toolbar if thinking is complete AND we have something to show (text, error, or stopped state) */}
       {showToolbar && (
-          <div className="w-full mt-2 transition-opacity duration-300">
+          <div className="ai-message-toolbar-wrapper">
             <MessageToolbar
                 chatId={currentChatId}
                 messageId={id}
@@ -265,7 +266,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
 
       {/* Conditionally render suggestions only if this is the last message */}
-      {/* Moved to BOTTOM as per request */}
       <AnimatePresence>
         {isLast && logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
             <motion.div
@@ -273,7 +273,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                 animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
                 exit={{ opacity: 0, height: 0, marginTop: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="w-full overflow-hidden"
+                className="ai-message-suggestions-wrapper"
             >
                 <SuggestedActions actions={activeResponse.suggestedActions} onActionClick={sendMessage} />
             </motion.div>
