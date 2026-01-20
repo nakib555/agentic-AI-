@@ -35,6 +35,65 @@ export type Source = {
   title: string;
 };
 
+// --- Block Types ---
+
+export type BlockStatus = 'running' | 'success' | 'error' | 'completed';
+
+export type ThoughtChainBlock = {
+  id: string;
+  type: 'thought_chain';
+  status: BlockStatus;
+  content: string;
+  isExpanded?: boolean;
+};
+
+export type ToolExecutionBlock = {
+  id: string;
+  type: 'tool_execution';
+  toolName: string;
+  status: BlockStatus;
+  input: any;
+  output?: any;
+  variant?: 'code_interpreter' | 'generic';
+  timestamp?: number;
+};
+
+export type MediaRenderBlock = {
+  id: string;
+  type: 'media_render';
+  status: BlockStatus;
+  data: {
+    mimeType: string;
+    url: string;
+    altText?: string;
+    filename?: string;
+  };
+};
+
+export type ComponentRenderBlock = {
+  id: string;
+  type: 'component_render';
+  status: BlockStatus;
+  componentType: 'MAP' | 'LOCATION_PERMISSION' | 'VEO_API_KEY';
+  data: any;
+};
+
+export type FinalTextBlock = {
+  id: string;
+  type: 'final_text';
+  status: BlockStatus;
+  content: string;
+};
+
+export type ContentBlock = 
+  | ThoughtChainBlock 
+  | ToolExecutionBlock 
+  | MediaRenderBlock 
+  | ComponentRenderBlock 
+  | FinalTextBlock;
+
+// -------------------
+
 export type ModelResponse = {
   text: string;
   toolCallEvents?: ToolCallEvent[];
@@ -42,17 +101,20 @@ export type ModelResponse = {
   startTime: number;
   endTime?: number;
   suggestedActions?: string[];
-  plan?: { plan: string; callId?: string }; // Updated to support callId
+  plan?: { plan: string; callId?: string }; 
   groundingMetadata?: any;
   workflow?: ParsedWorkflow;
-  historyPayload?: Message[]; // Snapshot of the conversation "future" relative to this response
+  historyPayload?: Message[]; 
+  
+  // Computed property for UI
+  contentBlocks?: ContentBlock[];
 };
 
 export type UserMessageVersion = {
     text: string;
     attachments?: Attachment[];
     createdAt: number;
-    historyPayload?: Message[]; // Snapshot of the conversation "future" relative to this version
+    historyPayload?: Message[]; 
 };
 
 export type Message = {
@@ -60,7 +122,7 @@ export type Message = {
   role: 'user' | 'model';
 
   // --- User Message Properties ---
-  text: string; // For user role, this is the primary content (or active version content).
+  text: string; 
   attachments?: Attachment[];
   
   // Branching support for User messages
@@ -68,11 +130,11 @@ export type Message = {
   activeVersionIndex?: number;
   
   // --- Model Message Properties ---
-  responses?: ModelResponse[]; // An array of all generated responses.
-  activeResponseIndex: number; // The index of the currently visible response.
+  responses?: ModelResponse[]; 
+  activeResponseIndex: number; 
 
   // --- Common State Properties ---
-  isThinking?: boolean; // True when a new response is being generated.
+  isThinking?: boolean; 
   isHidden?: boolean;
   isPinned?: boolean;
   executionState?: 'pending_approval' | 'approved' | 'denied';
