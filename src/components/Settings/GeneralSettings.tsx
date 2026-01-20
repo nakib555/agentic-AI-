@@ -60,6 +60,13 @@ const ApiKeyInput = ({ label, value, placeholder, onSave, buttonLabel, descripti
     const [inputValue, setInputValue] = useState(value);
     const [isSaved, setIsSaved] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Track mounted state to prevent state updates on unmounted component
+    const isMounted = useRef(true);
+    useEffect(() => {
+        isMounted.current = true;
+        return () => { isMounted.current = false; };
+    }, []);
 
     useEffect(() => setInputValue(value), [value]);
 
@@ -68,12 +75,16 @@ const ApiKeyInput = ({ label, value, placeholder, onSave, buttonLabel, descripti
         setIsSaving(true);
         try {
             await onSave(inputValue);
-            setIsSaved(true);
-            setTimeout(() => setIsSaved(false), 2000);
+            if (isMounted.current) {
+                setIsSaved(true);
+                setTimeout(() => {
+                    if (isMounted.current) setIsSaved(false);
+                }, 2000);
+            }
         } catch (e) {
             console.error("Save failed", e);
         } finally {
-            setIsSaving(false);
+            if (isMounted.current) setIsSaving(false);
         }
     };
 

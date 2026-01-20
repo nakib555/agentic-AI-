@@ -4,660 +4,537 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useMemo, useRef, useCallback, type Dispatch, type SetStateAction } from 'react';
-import { useChat } from '../../hooks/useChat/index';
-import { useTheme } from '../../hooks/useTheme';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSidebar } from '../../hooks/useSidebar';
+import { useTheme } from '../../hooks/useTheme';
 import { useViewport } from '../../hooks/useViewport';
+import { useChat } from '../../hooks/useChat/index';
 import { useMemory } from '../../hooks/useMemory';
+import { getSettings, updateSettings, AppSettings } from '../../services/settingsService';
+import { fetchFromApi, setOnVersionMismatch } from '../../utils/api';
 import type { Model, Source } from '../../types';
-import {
-  exportChatToJson,
-  exportChatToMarkdown,
-  exportChatToPdf,
-  exportChatToClipboard,
-  exportAllChatsToJson,
-} from '../../utils/exportUtils/index';
-import type { MessageListHandle } from '../Chat/MessageList';
-import {
-  DEFAULT_ABOUT_USER,
-  DEFAULT_ABOUT_RESPONSE,
-  DEFAULT_TEMPERATURE,
-  DEFAULT_MAX_TOKENS,
-  DEFAULT_TTS_VOICE
-} from './constants';
-import { fetchFromApi, setOnVersionMismatch, getApiBaseUrl } from '../../utils/api';
-import { testSuite, type TestResult, type TestProgress } from '../Testing/testSuite';
-import { getSettings, updateSettings, type UpdateSettingsResponse } from '../../services/settingsService';
-import { logCollector } from '../../utils/logCollector';
-
+import { DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS, DEFAULT_TTS_VOICE, DEFAULT_ABOUT_USER, DEFAULT_ABOUT_RESPONSE } from './constants';
+import { testSuite, type TestProgress } from '../Testing/testSuite';
+import type { MessageFormHandle } from '../Chat/MessageForm/types';
+import { MessageListHandle } from '../Chat/MessageList';
 
 export const useAppLogic = () => {
-  const appContainerRef = useRef<HTMLDivElement>(null);
-  const messageListRef = useRef<MessageListHandle>(null);
+    // --- UI State ---
+    const { isDesktop, isWideDesktop, visualViewportHeight } = useViewport();
+    const sidebar = useSidebar();
+    const { theme, setTheme } = useTheme();
+    const appContainerRef = useRef<HTMLDivElement>(null);
+    const messageListRef = useRef<MessageListHandle>(null);
 
-  // --- Core Hooks ---
-  const { theme, setTheme } = useTheme();
-  const { isDesktop, visualViewportHeight } = useViewport();
-  const sidebar = useSidebar();
-  
-  // --- UI State ---
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isSourcesSidebarOpen, setIsSourcesSidebarOpen] = useState(false);
-  const [sourcesForSidebar, setSourcesForSidebar] = useState<Source[]>([]);
-  const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
-  const [backendError, setBackendError] = useState<string | null>(null);
-  const [isTestMode, setIsTestMode] = useState(false);
-  const [settingsLoading, setSettingsLoading] = useState(true);
-  const [versionMismatch, setVersionMismatch] = useState(false);
-  const [confirmation, setConfirmation] = useState<{
-    prompt: string;
-    onConfirm: () => void;
-    onCancel?: () => void;
-    destructive?: boolean;
-  } | null>(null);
-  
-  // Artifact State
-  const [isArtifactOpen, setIsArtifactOpen] = useState(false);
-  const [artifactContent, setArtifactContent] = useState('');
-  const [artifactLanguage, setArtifactLanguage] = useState('');
-  const [artifactWidth, setArtifactWidth] = useState(500);
-  const [isArtifactResizing, setIsArtifactResizing] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [isTestMode, setIsTestMode] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
+    const [confirmation, setConfirmation] = useState<{ prompt: string; onConfirm: () => void; onCancel?: () => void; destructive?: boolean } | null>(null);
+    const [versionMismatch, setVersionMismatch] = useState(false);
 
-  // Listen for Artifact open requests from deep within markdown
-  useEffect(() => {
-      const handleOpenArtifact = (e: CustomEvent) => {
-          setArtifactContent(e.detail.code);
-          setArtifactLanguage(e.detail.language);
-          setIsArtifactOpen(true);
-          // Auto-close other sidebars on mobile to prevent clutter
-          if (!isDesktop) {
-              sidebar.setIsSidebarOpen(false);
-              setIsSourcesSidebarOpen(false);
-          }
-      };
-      window.addEventListener('open-artifact', handleOpenArtifact as EventListener);
-      return () => window.removeEventListener('open-artifact', handleOpenArtifact as EventListener);
-  }, [isDesktop, sidebar]);
-
-  // Listen for Open Settings requests (e.g. from error prompts)
-  useEffect(() => {
-      const handleOpenSettings = () => setIsSettingsOpen(true);
-      window.addEventListener('open-settings', handleOpenSettings);
-      return () => window.removeEventListener('open-settings', handleOpenSettings);
-  }, []);
-
-  // Global Resize Logic
-  // Aggregates resizing state from all sidebars to enforce global UI locks (cursor, pointer-events)
-  const isAnyResizing = sidebar.isResizing || sidebar.isSourcesResizing || isArtifactResizing;
-
-  useEffect(() => {
-      if (isAnyResizing) {
-          document.body.style.cursor = 'col-resize';
-          document.body.style.userSelect = 'none';
-          document.body.style.webkitUserSelect = 'none'; // Safari
-      } else {
-          document.body.style.cursor = '';
-          document.body.style.userSelect = '';
-          document.body.style.webkitUserSelect = '';
-      }
-      return () => {
-          document.body.style.cursor = '';
-          document.body.style.userSelect = '';
-          document.body.style.webkitUserSelect = '';
-      };
-  }, [isAnyResizing]);
-
-  // Toast Notification State
-  const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
-
-  const showToast = useCallback((message: string, type: 'info' | 'success' | 'error' = 'info') => {
-      setToast({ message, type });
-  }, []);
-
-  const closeToast = useCallback(() => setToast(null), []);
-
-
-  // --- Model Management ---
-  const [availableModels, setAvailableModels] = useState<Model[]>([]);
-  const [availableImageModels, setAvailableImageModels] = useState<Model[]>([]);
-  const [availableVideoModels, setAvailableVideoModels] = useState<Model[]>([]);
-  const [availableTtsModels, setAvailableTtsModels] = useState<Model[]>([]);
-  const [modelsLoading, setModelsLoading] = useState(true);
-  const [activeModel, setActiveModel] = useState('');
-
-  // --- Settings State ---
-  const [provider, setProvider] = useState<'gemini' | 'openrouter' | 'ollama'>('gemini');
-  const [apiKey, setApiKey] = useState('');
-  const [openRouterApiKey, setOpenRouterApiKey] = useState('');
-  const [ollamaHost, setOllamaHost] = useState('');
-  const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
-  const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
-  const [temperature, setTemperature] = useState(DEFAULT_TEMPERATURE);
-  const [maxTokens, setMaxTokens] = useState(DEFAULT_MAX_TOKENS);
-  const [imageModel, setImageModel] = useState('');
-  const [videoModel, setVideoModel] = useState('');
-  const [ttsModel, setTtsModel] = useState('');
-  const [ttsVoice, setTtsVoice] = useState(DEFAULT_TTS_VOICE);
-  const [isAgentMode, setIsAgentModeState] = useState(true);
-  const [serverUrl, setServerUrl] = useState(() => getApiBaseUrl());
-  
-  // Memory state is managed by its own hook
-  const [isMemoryEnabled, setIsMemoryEnabledState] = useState(false);
-  const memory = useMemory(isMemoryEnabled);
-
-  // --- Initialization ---
-  useEffect(() => {
-    setOnVersionMismatch(() => setVersionMismatch(true));
-  }, []);
-
-  // --- State Refs to break dependency cycles ---
-  const activeModelRef = useRef(activeModel);
-  const imageModelRef = useRef(imageModel);
-  const videoModelRef = useRef(videoModel);
-  const ttsModelRef = useRef(ttsModel);
-
-  useEffect(() => { activeModelRef.current = activeModel; }, [activeModel]);
-  useEffect(() => { imageModelRef.current = imageModel; }, [imageModel]);
-  useEffect(() => { videoModelRef.current = videoModel; }, [videoModel]);
-  useEffect(() => { ttsModelRef.current = ttsModel; }, [ttsModel]);
-  
-  // --- Data Loading ---
-  const processModelData = useCallback((data: { models?: Model[], imageModels?: Model[], videoModels?: Model[], ttsModels?: Model[] }) => {
-    const newModels = data.models || [];
-    const newImageModels = data.imageModels || [];
-    const newVideoModels = data.videoModels || [];
-    const newTtsModels = data.ttsModels || [];
-
-    setAvailableModels(newModels);
-    setAvailableImageModels(newImageModels);
-    setAvailableVideoModels(newVideoModels);
-    setAvailableTtsModels(newTtsModels);
+    // --- Data State ---
+    const [settingsLoading, setSettingsLoading] = useState(true);
+    const [modelsLoading, setModelsLoading] = useState(false);
+    const [availableModels, setAvailableModels] = useState<Model[]>([]);
+    const [availableImageModels, setAvailableImageModels] = useState<Model[]>([]);
+    const [availableVideoModels, setAvailableVideoModels] = useState<Model[]>([]);
+    const [availableTtsModels, setAvailableTtsModels] = useState<Model[]>([]);
     
-    const currentActiveModel = activeModelRef.current;
-    if (newModels.length > 0) {
-        if (!currentActiveModel || !newModels.some((m: Model) => m.id === currentActiveModel)) {
-            setActiveModel(newModels[0].id);
-        }
-    } else {
-        if (!currentActiveModel) setActiveModel('');
-    }
-    
-    // For specialized models, keep existing unless invalid/empty
-    // Note: If provider switches to OpenRouter, these lists will be empty and these checks handle that gracefully
-    const currentImageModel = imageModelRef.current;
-    if (newImageModels.length > 0) {
-        if (!currentImageModel || !newImageModels.some((m: Model) => m.id === currentImageModel)) {
-            setImageModel(newImageModels[0].id);
-        }
-    }
+    // --- Settings State ---
+    const [provider, setProvider] = useState<'gemini' | 'openrouter' | 'ollama'>('gemini');
+    const [apiKey, setApiKey] = useState('');
+    const [openRouterApiKey, setOpenRouterApiKey] = useState('');
+    const [ollamaHost, setOllamaHost] = useState('');
+    const [serverUrl, setServerUrl] = useState('');
+    const [activeModel, setActiveModel] = useState('');
+    const [imageModel, setImageModel] = useState('');
+    const [videoModel, setVideoModel] = useState('');
+    const [ttsModel, setTtsModel] = useState('');
+    const [temperature, setTemperature] = useState(DEFAULT_TEMPERATURE);
+    const [maxTokens, setMaxTokens] = useState(DEFAULT_MAX_TOKENS);
+    const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
+    const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
+    const [ttsVoice, setTtsVoice] = useState(DEFAULT_TTS_VOICE);
+    const [isAgentMode, setIsAgentMode] = useState(false);
+    const [isMemoryEnabled, setIsMemoryEnabledState] = useState(false);
 
-    const currentVideoModel = videoModelRef.current;
-    if (newVideoModels.length > 0) {
-        if (!currentVideoModel || !newVideoModels.some((m: Model) => m.id === currentVideoModel)) {
-            setVideoModel(newVideoModels[0].id);
-        }
-    }
+    // --- Sidebars State ---
+    const [isSourcesSidebarOpen, setIsSourcesSidebarOpen] = useState(false);
+    const [sourcesForSidebar, setSourcesForSidebar] = useState<Source[]>([]);
+    const [isArtifactOpen, setIsArtifactOpen] = useState(false);
+    const [artifactContent, setArtifactContent] = useState('');
+    const [artifactLanguage, setArtifactLanguage] = useState('');
+    const [artifactWidth, setArtifactWidth] = useState(500);
+    const [isArtifactResizing, setIsArtifactResizing] = useState(false);
 
-    const currentTtsModel = ttsModelRef.current;
-    if (newTtsModels.length > 0) {
-        if (!currentTtsModel || !newTtsModels.some((m: Model) => m.id === currentTtsModel)) {
-            setTtsModel(newTtsModels[0].id);
-        }
-    }
+    // --- Backend Status ---
+    const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+    const [backendError, setBackendError] = useState<string | null>(null);
 
-  }, []);
+    // --- Notifications ---
+    const showToast = useCallback((message: string, type: 'info' | 'success' | 'error' = 'info') => {
+        setToast({ message, type });
+    }, []);
 
-  const fetchModels = useCallback(async () => {
-    try {
+    const closeToast = useCallback(() => {
+        setToast(null);
+    }, []);
+
+    // --- Version Mismatch Handling ---
+    useEffect(() => {
+        setOnVersionMismatch(() => setVersionMismatch(true));
+    }, []);
+
+    // --- Memory Hook ---
+    const memory = useMemory(isMemoryEnabled);
+
+    // --- Chat Hook ---
+    const chat = useChat(
+        activeModel, 
+        { 
+            systemPrompt: "", // Built dynamically in backend based on aboutUser/Response
+            aboutUser,
+            aboutResponse,
+            temperature, 
+            maxOutputTokens: maxTokens,
+            imageModel,
+            videoModel,
+            isAgentMode
+        }, 
+        memory.memoryContent, 
+        isAgentMode,
+        provider === 'openrouter' ? openRouterApiKey : apiKey, // Select appropriate key for chat logic
+        showToast
+    );
+
+    // --- Helper to process models from backend response ---
+    const processModelData = useCallback((data: any) => {
+        if (data.models) setAvailableModels(data.models);
+        if (data.imageModels) setAvailableImageModels(data.imageModels);
+        if (data.videoModels) setAvailableVideoModels(data.videoModels);
+        if (data.ttsModels) setAvailableTtsModels(data.ttsModels);
+    }, []);
+
+    // --- Initial Data Loading ---
+    const fetchModels = useCallback(async () => {
         setModelsLoading(true);
-        const response = await fetchFromApi('/api/models');
-        if (!response.ok) return;
-        const data = await response.json();
-        processModelData(data);
-    } catch (error) {
-    } finally {
-        setModelsLoading(false);
-    }
-  }, [processModelData]);
-
-  // Initial Data Load
-  useEffect(() => {
-    const loadSettings = async () => {
         try {
-            setSettingsLoading(true);
-            const settings = await getSettings();
-            setProvider(settings.provider || 'gemini');
-            setApiKey(settings.apiKey);
-            setOpenRouterApiKey(settings.openRouterApiKey);
-            setOllamaHost(settings.ollamaHost || '');
-            setAboutUser(settings.aboutUser);
-            setAboutResponse(settings.aboutResponse);
-            setTemperature(settings.temperature);
-            setMaxTokens(settings.maxTokens);
-            setActiveModel(settings.activeModel);
-            setImageModel(settings.imageModel);
-            setVideoModel(settings.videoModel);
-            setTtsModel(settings.ttsModel);
-            setIsMemoryEnabledState(settings.isMemoryEnabled);
-            setTtsVoice(settings.ttsVoice);
-            setIsAgentModeState(settings.isAgentMode);
-            
-            // Only fetch models if we have a key for the current provider
-            // For Ollama, we now require an API Key per user request (or just provider switch logic to trigger fetch)
-            const hasKeyForProvider = 
-               (settings.provider === 'gemini' && settings.apiKey) ||
-               (settings.provider === 'openrouter' && settings.openRouterApiKey) ||
-               (settings.provider === 'ollama');
-
-            if (hasKeyForProvider) {
-                fetchModels();
+            const res = await fetchFromApi('/api/models');
+            if (res.ok) {
+                const data = await res.json();
+                processModelData(data);
             }
-        } catch (error) {
-            console.error("Failed to load settings:", error);
+        } catch (e) {
+            console.error("Failed to fetch models:", e);
         } finally {
-            setSettingsLoading(false);
+            setModelsLoading(false);
         }
-    };
-    loadSettings();
-  }, [fetchModels]);
+    }, [processModelData]);
 
-  const createSettingUpdater = <T,>(setter: Dispatch<SetStateAction<T>>, key: string) => {
-    return useCallback((newValue: T) => {
-        setter(newValue);
-        updateSettings({ [key]: newValue });
-    }, [setter, key]);
-  };
-  
-  const handleSetApiKey = useCallback(async (newApiKey: string, providerType: 'gemini' | 'openrouter' | 'ollama') => {
-    if (providerType === 'gemini') setApiKey(newApiKey);
-    else if (providerType === 'openrouter') setOpenRouterApiKey(newApiKey);
-    else if (providerType === 'ollama') setApiKey(newApiKey); // Store Ollama key in generic apiKey state
-    
-    try {
-        let payload: any = { provider: providerType };
-        if (providerType === 'gemini') payload.apiKey = newApiKey;
-        else if (providerType === 'openrouter') payload.openRouterApiKey = newApiKey;
-        else if (providerType === 'ollama') payload.apiKey = newApiKey;
-
-        const response: UpdateSettingsResponse = await updateSettings(payload);
-        if (response.models) {
-            processModelData(response);
-        } else {
-            fetchModels(); 
-        }
-    } catch (error) {
-        setAvailableModels([]);
-        throw error;
-    }
-  }, [processModelData, fetchModels]);
-
-  const handleProviderChange = useCallback((newProvider: 'gemini' | 'openrouter' | 'ollama') => {
-      setProvider(newProvider);
-      updateSettings({ provider: newProvider }).then(response => {
-          if (response.models) processModelData(response);
-          // Only auto-fetch if we already have the key for this provider
-          // This avoids failed calls on switch
-          else {
-              // We can trigger fetch, but the backend will return empty if key missing.
-              fetchModels();
-          }
-      });
-  }, [fetchModels, processModelData]);
-
-  const handleSaveServerUrl = useCallback(async (newUrl: string): Promise<boolean> => {
-      if (typeof window !== 'undefined') {
-          if (!newUrl) localStorage.removeItem('custom_server_url');
-          else localStorage.setItem('custom_server_url', newUrl);
-      }
-      try {
-          const response = await fetchFromApi('/api/health');
-          if (response.ok) {
-              setServerUrl(newUrl);
-              setBackendStatus('online');
-              setBackendError(null);
-              fetchModels();
-              return true;
-          }
-          throw new Error('Health check failed');
-      } catch (error) {
-          if (typeof window !== 'undefined') {
-              if (serverUrl) localStorage.setItem('custom_server_url', serverUrl);
-              else localStorage.removeItem('custom_server_url');
-          }
-          return false;
-      }
-  }, [fetchModels, serverUrl]);
-
-  // Specifically handle Ollama Host updates to trigger model refresh
-  const handleSetOllamaHost = useCallback(async (host: string) => {
-      setOllamaHost(host);
-      try {
-          const response = await updateSettings({ ollamaHost: host });
-          if (response.models) {
-              processModelData(response);
-          } else {
-              fetchModels();
-          }
-      } catch (error) {
-          console.error("Failed to update Ollama host:", error);
-          throw error;
-      }
-  }, [processModelData, fetchModels]);
-
-  const handleSetAboutUser = createSettingUpdater(setAboutUser, 'aboutUser');
-  const handleSetAboutResponse = createSettingUpdater(setAboutResponse, 'aboutResponse');
-  const handleSetTtsModel = createSettingUpdater(setTtsModel, 'ttsModel');
-  const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
-  const handleSetIsAgentMode = createSettingUpdater(setIsAgentModeState, 'isAgentMode');
-  const handleSetIsMemoryEnabled = createSettingUpdater(setIsMemoryEnabledState, 'isMemoryEnabled');
-
-  const chatSettings = useMemo(() => {
-    return {
-        // We do not combine them here anymore to avoid duplication in the backend.
-        // The backend handles the structuring and prioritization.
-        systemPrompt: '', 
-        aboutUser: aboutUser.trim(),
-        aboutResponse: aboutResponse.trim(),
-        temperature,
-        maxOutputTokens: maxTokens,
-        imageModel,
-        videoModel,
-        isAgentMode // Include current state
-    };
-  }, [aboutUser, aboutResponse, temperature, maxTokens, imageModel, videoModel, isAgentMode]);
-
-  // Pass active API key based on provider for client-side tools if necessary (though most are backend now)
-  const effectiveClientKey = provider === 'gemini' ? apiKey : openRouterApiKey;
-  
-  const chat = useChat(activeModel, chatSettings, memory.memoryContent, isAgentMode, effectiveClientKey, showToast);
-  const { updateChatModel, updateChatSettings, editMessage, navigateBranch, setResponseIndex } = chat; // Destructure new functions
-
-  const handleSetTemperature = useCallback((val: number) => {
-      setTemperature(val);
-      updateSettings({ temperature: val });
-      if (chat.currentChatId) updateChatSettings(chat.currentChatId, { temperature: val });
-  }, [chat.currentChatId, updateChatSettings]);
-
-  const handleSetMaxTokens = useCallback((val: number) => {
-      setMaxTokens(val);
-      updateSettings({ maxTokens: val });
-      if (chat.currentChatId) updateChatSettings(chat.currentChatId, { maxOutputTokens: val });
-  }, [chat.currentChatId, updateChatSettings]);
-
-  const handleSetImageModel = useCallback((val: string) => {
-      setImageModel(val);
-      updateSettings({ imageModel: val });
-      if (chat.currentChatId) updateChatSettings(chat.currentChatId, { imageModel: val });
-  }, [chat.currentChatId, updateChatSettings]);
-
-  const handleSetVideoModel = useCallback((val: string) => {
-      setVideoModel(val);
-      updateSettings({ videoModel: val });
-      if (chat.currentChatId) updateChatSettings(chat.currentChatId, { videoModel: val });
-  }, [chat.currentChatId, updateChatSettings]);
-
-  // Ref for debouncing model settings saves
-  const settingsSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleModelChange = useCallback((modelId: string) => {
-    // 1. Instant UI update
-    setActiveModel(modelId);
-    
-    // 2. Debounce Global Settings Save
-    if (settingsSaveTimeoutRef.current) clearTimeout(settingsSaveTimeoutRef.current);
-    settingsSaveTimeoutRef.current = setTimeout(() => {
-        updateSettings({ activeModel: modelId }).catch(console.error);
-    }, 1000);
-
-    // 3. Debounce Chat Persistence (if active chat)
-    if (chat.currentChatId) {
-        updateChatModel(chat.currentChatId, modelId, 1000);
-    }
-  }, [chat.currentChatId, updateChatModel]);
-
-  const prevChatIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    // Only update prevChatIdRef if it actually changed
-    if (chat.currentChatId !== prevChatIdRef.current) {
-        prevChatIdRef.current = chat.currentChatId;
-    }
-
-    const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
-    if (currentChat) {
-        // Force sync activeModel with chat model if they differ
-        // This ensures visual consistency if the backend/hook updates independently
-        if (currentChat.model && currentChat.model !== activeModel) {
-            setActiveModel(currentChat.model);
-        }
-        
-        if (currentChat.temperature !== undefined) setTemperature(currentChat.temperature);
-        if (currentChat.maxOutputTokens !== undefined) setMaxTokens(currentChat.maxOutputTokens);
-        if (currentChat.imageModel) setImageModel(currentChat.imageModel);
-        if (currentChat.videoModel) setVideoModel(currentChat.videoModel);
-        
-        // NEW: Sync Agent Mode
-        if (currentChat.isAgentMode !== undefined) {
-            setIsAgentModeState(currentChat.isAgentMode);
-        }
-    }
-  }, [chat.currentChatId, chat.chatHistory, activeModel]); 
-
-  const checkBackendStatusTimeoutRef = useRef<number | null>(null);
-
-  const checkBackendStatus = useCallback(async () => {
-    if (checkBackendStatusTimeoutRef.current) {
-        window.clearTimeout(checkBackendStatusTimeoutRef.current);
-        checkBackendStatusTimeoutRef.current = null;
-    }
-
-    try {
-        setBackendStatus('checking');
-        const response = await fetchFromApi('/api/health');
-        const contentType = response.headers.get("content-type");
-        if (response.ok && contentType && contentType.includes("application/json")) {
-            setBackendStatus('online');
-            setBackendError(null);
-        } else {
-            throw new Error("Invalid response from server");
-        }
-    } catch (error) {
-        setBackendStatus('offline');
-        setBackendError("Connection lost. Please check your backend URL.");
-        checkBackendStatusTimeoutRef.current = window.setTimeout(checkBackendStatus, 5000);
-    }
-  }, []);
-
-  useEffect(() => {
-    checkBackendStatus();
-    return () => {
-        if (checkBackendStatusTimeoutRef.current) {
-            window.clearTimeout(checkBackendStatusTimeoutRef.current);
-        }
-    };
-  }, [checkBackendStatus]);
-
-
-  const startNewChat = useCallback(async () => {
-    const mostRecentChat = chat.chatHistory[0];
-    if (mostRecentChat && mostRecentChat.title === 'New Chat' && mostRecentChat.messages?.length === 0) {
-      if (chat.currentChatId !== mostRecentChat.id) chat.loadChat(mostRecentChat.id);
-      return;
-    }
-    await chat.startNewChat(activeModel, chatSettings);
-  }, [chat, activeModel, chatSettings]);
-  
-  const isNewChatDisabled = useMemo(() => {
-      const mostRecentChat = chat.chatHistory[0];
-      return mostRecentChat && mostRecentChat.title === 'New Chat' && mostRecentChat.messages?.length === 0 && chat.currentChatId === mostRecentChat.id;
-  }, [chat.chatHistory, chat.currentChatId]);
-
-  const requestConfirmation = useCallback((prompt: string, onConfirm: () => void, options?: { onCancel?: () => void; destructive?: boolean }) => {
-      setConfirmation({ prompt, onConfirm, onCancel: options?.onCancel, destructive: options?.destructive });
-  }, []);
-
-  const handleConfirm = useCallback(() => {
-      confirmation?.onConfirm();
-      setConfirmation(null);
-  }, [confirmation]);
-
-  
-  useEffect(() => {
-    const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
-    if (currentChat && !currentChat.isLoading && currentChat.messages?.length > 0) {
-      memory.updateMemory(currentChat);
-    }
-  }, [chat.isLoading, chat.currentChatId, chat.chatHistory, memory.updateMemory]);
-
-  const handleExportChat = useCallback((format: 'md' | 'json' | 'pdf') => {
-    const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
-    if (!currentChat) return;
-    if (format === 'json') exportChatToJson(currentChat);
-    if (format === 'md') exportChatToMarkdown(currentChat);
-    if (format === 'pdf') exportChatToPdf(currentChat);
-  }, [chat.currentChatId, chat.chatHistory]);
-
-  const handleExportAllChats = useCallback(() => {
-      exportAllChatsToJson(chat.chatHistory);
-  }, [chat.chatHistory]);
-
-  const handleShareChat = () => {
-    const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
-    if (currentChat) exportChatToClipboard(currentChat);
-  };
-  
-  const handleFileUploadForImport = (file: File) => {
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          chat.importChat(JSON.parse(event.target?.result as string));
-        } catch { alert('Invalid chat file format.'); }
-      };
-      reader.readAsText(file);
-    }
-  };
-
-  const handleDownloadLogs = useCallback(() => {
-    const blob = new Blob([logCollector.formatLogs()], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `logs-${Date.now()}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, []);
-
-  const handleShowDataStructure = useCallback(async () => {
-    try {
-        const response = await fetchFromApi('/api/handler?task=debug_data_tree', { method: 'POST' });
-        const data = await response.json();
-        if (data.ascii) console.log(data.ascii);
-        
-        const blob = new Blob([JSON.stringify(data.json || data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `data-structure.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-    } catch { alert('Failed to fetch data structure.'); }
-  }, []);
-
-  const handleDeleteChatRequest = useCallback((chatId: string) => {
-      requestConfirmation(
-          'Are you sure you want to delete this chat? This will also delete any associated files.',
-          async () => {
+    useEffect(() => {
+        const init = async () => {
             try {
-                await chat.deleteChat(chatId);
-                showToast('Chat deleted.', 'success');
+                const settings = await getSettings();
+                setProvider(settings.provider || 'gemini');
+                setApiKey(settings.apiKey || '');
+                setOpenRouterApiKey(settings.openRouterApiKey || '');
+                setOllamaHost(settings.ollamaHost || '');
+                setActiveModel(settings.activeModel || '');
+                setImageModel(settings.imageModel || '');
+                setVideoModel(settings.videoModel || '');
+                setTtsModel(settings.ttsModel || '');
+                setTemperature(settings.temperature ?? DEFAULT_TEMPERATURE);
+                setMaxTokens(settings.maxTokens ?? DEFAULT_MAX_TOKENS);
+                setAboutUser(settings.aboutUser ?? DEFAULT_ABOUT_USER);
+                setAboutResponse(settings.aboutResponse ?? DEFAULT_ABOUT_RESPONSE);
+                setTtsVoice(settings.ttsVoice ?? DEFAULT_TTS_VOICE);
+                setIsAgentMode(settings.isAgentMode ?? false);
+                setIsMemoryEnabledState(settings.isMemoryEnabled ?? false);
+                
+                // Fetch models if we have a key or provider is ollama
+                if ((settings.provider === 'gemini' && settings.apiKey) || 
+                    (settings.provider === 'openrouter' && settings.openRouterApiKey) ||
+                    (settings.provider === 'ollama')) {
+                    fetchModels();
+                }
+                
+                setBackendStatus('online');
             } catch (e) {
-                showToast('Failed to delete chat.', 'error');
+                console.error("Failed to load settings:", e);
+                setBackendStatus('offline');
+                setBackendError("Could not connect to backend server.");
+            } finally {
+                setSettingsLoading(false);
             }
-          },
-          { destructive: true }
-      );
-  }, [chat.deleteChat, requestConfirmation, showToast]);
+        };
+        init();
+    }, []);
 
-  const handleRequestClearAll = useCallback(() => {
-      requestConfirmation(
-          'Are you sure you want to delete all conversation history? This cannot be undone.',
-          async () => {
-              try {
-                  await chat.clearAllChats();
-                  showToast('All conversations cleared successfully', 'success');
-              } catch (error) {
-                  showToast('Failed to clear conversations', 'error');
-              }
-          },
-          { destructive: true }
-      );
-  }, [requestConfirmation, chat.clearAllChats, showToast]);
-
-  const runDiagnosticTests = useCallback(async (onProgress: (progress: TestProgress) => void) => {
-    const results: TestResult[] = [];
-    for (let i = 0; i < testSuite.length; i++) {
-        const testCase = testSuite[i];
-        onProgress({ total: testSuite.length, current: i + 1, description: testCase.description, status: 'running', results });
+    // --- Settings Updaters ---
+    
+    // Generic updater generator
+    const createSettingUpdater = <T,>(setter: (val: T) => void, key: keyof AppSettings) => async (val: T) => {
+        setter(val);
         try {
-            await startNewChat();
-            const responseMessage = await chat.sendMessageForTest(testCase.prompt, testCase.options);
-            const validation = await testCase.validate(responseMessage);
-            results.push(validation);
-        } catch (error: any) {
-            results.push({ description: testCase.description, pass: false, details: `Error: ${error.message}` });
+            await updateSettings({ [key]: val });
+        } catch (error) {
+            console.error(`Failed to update ${key}:`, error);
+            showToast(`Failed to save ${key} setting.`, 'error');
         }
-        onProgress({ total: testSuite.length, current: i + 1, description: testCase.description, status: results[results.length-1].pass ? 'pass' : 'fail', results });
-    }
-    return JSON.stringify(results, null, 2);
-  }, [chat, startNewChat]);
+    };
 
-  // Determine if we have a valid configuration to start chatting
-  // Updated for Ollama API Key requirement
-  const hasApiKey = 
-      (provider === 'gemini' && !!apiKey) || 
-      (provider === 'openrouter' && !!openRouterApiKey) || 
-      (provider === 'ollama' && !!apiKey);
-  
-  return {
-    appContainerRef, messageListRef, theme, setTheme, isDesktop, visualViewportHeight, ...sidebar, isAgentMode, ...memory,
-    isAnyResizing, // Export aggregated state
-    isSettingsOpen, setIsSettingsOpen, isMemoryModalOpen, setIsMemoryModalOpen,
-    isImportModalOpen, setIsImportModalOpen, isSourcesSidebarOpen, sourcesForSidebar,
-    backendStatus, backendError, isTestMode, setIsTestMode, settingsLoading, versionMismatch,
-    retryConnection: checkBackendStatus,
-    confirmation, handleConfirm, handleCancel: () => setConfirmation(null),
-    toast, closeToast, showToast,
-    availableModels, availableImageModels, availableVideoModels, availableTtsModels,
-    modelsLoading, activeModel, onModelChange: handleModelChange,
-    apiKey, onSaveApiKey: handleSetApiKey,
-    aboutUser, setAboutUser: handleSetAboutUser,
-    aboutResponse, setAboutResponse: handleSetAboutResponse, temperature, setTemperature: handleSetTemperature,
-    maxTokens, setMaxTokens: handleSetMaxTokens, imageModel, onImageModelChange: handleSetImageModel,
-    videoModel, onVideoModelChange: handleSetVideoModel, ttsModel, onTtsModelChange: handleSetTtsModel,
-    ttsVoice, setTtsVoice: handleSetTtsVoice, isMemoryEnabled, setIsMemoryEnabled: handleSetIsMemoryEnabled,
-    setIsAgentMode: handleSetIsAgentMode, ...chat, isChatActive: !!chat.currentChatId && chat.messages.length > 0,
-    sendMessage: chat.sendMessage, startNewChat, isNewChatDisabled,
-    handleDeleteChatRequest, handleRequestClearAll,
-    handleToggleSidebar: () => isDesktop ? sidebar.handleSetSidebarCollapsed(!sidebar.isSidebarCollapsed) : sidebar.setIsSidebarOpen(!sidebar.isSidebarOpen),
-    handleShowSources: (s: Source[]) => { setSourcesForSidebar(s); setIsSourcesSidebarOpen(true); },
-    handleCloseSourcesSidebar: () => setIsSourcesSidebarOpen(false),
-    handleExportChat, handleExportAllChats, handleShareChat, handleImportChat: () => setIsImportModalOpen(true),
-    runDiagnosticTests, handleFileUploadForImport, handleDownloadLogs, handleShowDataStructure,
-    updateBackendMemory: memory.updateBackendMemory, memoryFiles: memory.memoryFiles, updateMemoryFiles: memory.updateMemoryFiles,
-    serverUrl, onSaveServerUrl: handleSaveServerUrl,
-    // Artifact Props
-    isArtifactOpen, setIsArtifactOpen, artifactContent, artifactLanguage, 
-    artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing,
-    // New Props for Provider
-    provider, openRouterApiKey, onProviderChange: handleProviderChange,
-    ollamaHost, onSaveOllamaHost: handleSetOllamaHost,
-    // Edit Message and Branch Navigation
-    editMessage, navigateBranch,
-    // Explicitly expose setResponseIndex as the main handler for response switching
-    setActiveResponseIndex: setResponseIndex
-  };
+    const handleSetAboutUser = createSettingUpdater(setAboutUser, 'aboutUser');
+    const handleSetAboutResponse = createSettingUpdater(setAboutResponse, 'aboutResponse');
+    const handleSetTemperature = createSettingUpdater(setTemperature, 'temperature');
+    const handleSetMaxTokens = createSettingUpdater(setMaxTokens, 'maxTokens');
+    const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
+    const handleSetIsAgentMode = createSettingUpdater(setIsAgentMode, 'isAgentMode');
+    
+    // Specialized Updaters
+    const onModelChange = useCallback(async (modelId: string) => {
+        setActiveModel(modelId);
+        try {
+            await updateSettings({ activeModel: modelId });
+            chat.updateChatModel(chat.currentChatId || '', modelId);
+        } catch (e) { console.error(e); }
+    }, [chat.updateChatModel, chat.currentChatId]);
+
+    const onImageModelChange = createSettingUpdater(setImageModel, 'imageModel');
+    const onVideoModelChange = createSettingUpdater(setVideoModel, 'videoModel');
+    const onTtsModelChange = createSettingUpdater(setTtsModel, 'ttsModel');
+
+    const handleSetIsMemoryEnabled = useCallback(async (enabled: boolean) => {
+        setIsMemoryEnabledState(enabled);
+        try {
+            await updateSettings({ isMemoryEnabled: enabled });
+        } catch (e) { console.error(e); }
+    }, []);
+
+    const onProviderChange = useCallback(async (newProvider: 'gemini' | 'openrouter' | 'ollama') => {
+        setProvider(newProvider);
+        try {
+            const response = await updateSettings({ provider: newProvider });
+            
+            // If the backend returned new models for this provider, update them
+            if (response.models) {
+                processModelData(response);
+            } else {
+                // Otherwise fetch explicitly
+                await fetchModels();
+            }
+            
+            showToast(`Switched provider to ${newProvider === 'gemini' ? 'Google Gemini' : newProvider === 'openrouter' ? 'OpenRouter' : 'Ollama'}.`, 'success');
+        } catch (error) {
+            console.error("Failed to update provider:", error);
+            showToast("Failed to switch provider.", 'error');
+        }
+    }, [processModelData, fetchModels, showToast]);
+
+    const onSaveApiKey = useCallback(async (key: string, providerType: 'gemini' | 'openrouter' | 'ollama') => {
+        if (providerType === 'gemini') setApiKey(key);
+        if (providerType === 'openrouter') setOpenRouterApiKey(key);
+        // For Ollama, the key is optional (auth header)
+        
+        try {
+            const updatePayload: Partial<AppSettings> = {};
+            if (providerType === 'gemini') updatePayload.apiKey = key;
+            if (providerType === 'openrouter') updatePayload.openRouterApiKey = key;
+            if (providerType === 'ollama') updatePayload.apiKey = key; // Reusing apiKey field for generic auth
+
+            const response = await updateSettings(updatePayload);
+            
+            // Refresh models with the new key
+            if (response.models) {
+                processModelData(response);
+            } else {
+                await fetchModels();
+            }
+            
+            showToast('API Key saved successfully.', 'success');
+        } catch (error) {
+            console.error("Failed to save API key:", error);
+            showToast('Failed to save API Key.', 'error');
+        }
+    }, [processModelData, fetchModels, showToast]);
+
+    const onSaveOllamaHost = useCallback(async (host: string) => {
+        setOllamaHost(host);
+        try {
+            const response = await updateSettings({ ollamaHost: host });
+            if (response.models) {
+                processModelData(response);
+            } else {
+                await fetchModels();
+            }
+            showToast('Ollama host updated.', 'success');
+        } catch (error) {
+            console.error("Failed to update Ollama host:", error);
+            showToast('Failed to update Ollama host.', 'error');
+        }
+    }, [processModelData, fetchModels, showToast]);
+
+    const onSaveServerUrl = useCallback(async (url: string) => {
+        setServerUrl(url);
+        localStorage.setItem('custom_server_url', url);
+        // Force reload to apply new base URL for all api calls
+        window.location.reload();
+        return true;
+    }, []);
+
+    // --- Modal & Sidebar Handlers ---
+    const handleShowSources = useCallback((sources: Source[]) => {
+        setSourcesForSidebar(sources);
+        setIsSourcesSidebarOpen(true);
+    }, []);
+
+    const handleCloseSourcesSidebar = useCallback(() => setIsSourcesSidebarOpen(false), []);
+
+    // Open artifact handler
+    useEffect(() => {
+        const handleOpenArtifact = (e: CustomEvent) => {
+            const { code, language } = e.detail;
+            setArtifactContent(code);
+            setArtifactLanguage(language);
+            setIsArtifactOpen(true);
+        };
+        window.addEventListener('open-artifact', handleOpenArtifact as EventListener);
+        return () => window.removeEventListener('open-artifact', handleOpenArtifact as EventListener);
+    }, []);
+
+    const handleFileUploadForImport = useCallback((file: File) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const content = e.target?.result as string;
+                const importedChat = JSON.parse(content);
+                chat.importChat(importedChat);
+                showToast('Chat imported successfully.', 'success');
+            } catch (err) {
+                console.error("Import failed:", err);
+                showToast('Failed to import chat. Invalid file format.', 'error');
+            }
+        };
+        reader.readAsText(file);
+    }, [chat.importChat, showToast]);
+
+    const handleExportAllChats = useCallback(() => {
+        import('../../utils/exportUtils').then(mod => {
+            (mod as any).exportAllChatsToJson(chat.chatHistory);
+        });
+    }, [chat.chatHistory]);
+
+    const handleDownloadLogs = useCallback(() => {
+        import('../../utils/logCollector').then(mod => {
+            const logs = mod.logCollector.formatLogs();
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `agentic-ai-logs-${new Date().toISOString()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    }, []);
+
+    const handleShowDataStructure = useCallback(() => {
+        fetchFromApi('/api/handler?task=debug_data_tree')
+            .then(res => res.json())
+            .then(data => {
+                console.log("Server Data Structure:", data);
+                alert("Data structure logged to console.");
+            })
+            .catch(e => showToast("Failed to fetch data structure", "error"));
+    }, [showToast]);
+
+    // --- Confirmation Dialog ---
+    const handleRequestClearAll = useCallback(() => {
+        setConfirmation({
+            prompt: "Are you sure you want to delete all chat history? This cannot be undone.",
+            destructive: true,
+            onConfirm: () => {
+                chat.clearAllChats();
+                setConfirmation(null);
+                showToast("All chats cleared.", "info");
+            },
+            onCancel: () => setConfirmation(null)
+        });
+    }, [chat.clearAllChats, showToast]);
+
+    const handleDeleteChatRequest = useCallback((id: string) => {
+        setConfirmation({
+            prompt: "Delete this conversation?",
+            destructive: true,
+            onConfirm: () => {
+                chat.deleteChat(id);
+                setConfirmation(null);
+            },
+            onCancel: () => setConfirmation(null)
+        });
+    }, [chat.deleteChat]);
+
+    const handleConfirm = useCallback(() => {
+        confirmation?.onConfirm();
+    }, [confirmation]);
+
+    const handleCancel = useCallback(() => {
+        if (confirmation?.onCancel) confirmation.onCancel();
+        setConfirmation(null);
+    }, [confirmation]);
+
+    // --- Test Runner ---
+    const runDiagnosticTests = useCallback(async (onProgress: (p: TestProgress) => void) => {
+        let logs = "Running Diagnostic Tests...\n\n";
+        let passed = 0;
+        let failed = 0;
+        const total = testSuite.length;
+
+        for (let i = 0; i < total; i++) {
+            const test = testSuite[i];
+            onProgress({
+                total,
+                current: i + 1,
+                description: test.description,
+                status: 'running',
+                results: []
+            });
+
+            try {
+                const msg = await chat.sendMessageForTest(test.prompt, test.options);
+                const result = await test.validate(msg);
+                
+                if (result.pass) passed++; else failed++;
+                logs += `[${result.pass ? 'PASS' : 'FAIL'}] ${test.description}\nDetails: ${result.details}\n\n`;
+            } catch (e: any) {
+                failed++;
+                logs += `[ERROR] ${test.description}\nException: ${e.message}\n\n`;
+            }
+        }
+
+        logs += `\nSUMMARY: ${passed} Passed, ${failed} Failed.`;
+        return logs;
+    }, [chat.sendMessageForTest]);
+
+    // --- Connection Retry ---
+    const retryConnection = useCallback(() => {
+        setBackendStatus('checking');
+        setBackendError(null);
+        fetchModels().then(() => setBackendStatus('online')).catch(() => {
+            setBackendStatus('offline');
+            setBackendError("Connection failed.");
+        });
+    }, [fetchModels]);
+
+    // --- Export ---
+    const handleExportChat = useCallback((format: 'md' | 'json' | 'pdf') => {
+        if (!chat.currentChatId) return;
+        const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
+        if (!currentChat) return;
+
+        import('../../utils/exportUtils').then(mod => {
+            if (format === 'json') (mod as any).exportChatToJson(currentChat);
+            else if (format === 'md') (mod as any).exportChatToMarkdown(currentChat);
+            else if (format === 'pdf') (mod as any).exportChatToPdf(currentChat);
+        });
+    }, [chat.currentChatId, chat.chatHistory]);
+
+    const handleShareChat = useCallback(() => {
+        if (!chat.currentChatId) return;
+        const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
+        if (!currentChat) return;
+        
+        import('../../utils/exportUtils').then(mod => {
+            (mod as any).exportChatToClipboard(currentChat);
+        });
+    }, [chat.currentChatId, chat.chatHistory]);
+
+    return {
+        // App State
+        isDesktop, isWideDesktop, visualViewportHeight,
+        appContainerRef, messageListRef,
+        theme, setTheme,
+        
+        // Modals & UI
+        isSettingsOpen, setIsSettingsOpen,
+        isMemoryModalOpen, setIsMemoryModalOpen,
+        isImportModalOpen, setIsImportModalOpen,
+        isTestMode, setIsTestMode,
+        toast, showToast, closeToast,
+        confirmation, handleConfirm, handleCancel,
+        versionMismatch,
+        isAnyResizing: sidebar.isResizing || sidebar.isSourcesResizing || isArtifactResizing,
+        isNewChatDisabled: modelsLoading || settingsLoading || chat.isLoading,
+        handleToggleSidebar: () => sidebar.setIsSidebarOpen(!sidebar.isSidebarOpen),
+        handleShowSources,
+
+        // Data & Backend
+        settingsLoading, modelsLoading, backendStatus, backendError, retryConnection,
+        availableModels, availableImageModels, availableVideoModels, availableTtsModels,
+        
+        // Settings
+        provider, openRouterApiKey, ollamaHost,
+        onProviderChange, onSaveApiKey, onSaveOllamaHost,
+        serverUrl, onSaveServerUrl,
+        apiKey,
+        
+        activeModel, onModelChange,
+        imageModel, onImageModelChange,
+        videoModel, onVideoModelChange,
+        ttsModel, onTtsModelChange,
+        
+        temperature, setTemperature: handleSetTemperature,
+        maxTokens, setMaxTokens: handleSetMaxTokens,
+        
+        aboutUser, setAboutUser: handleSetAboutUser,
+        aboutResponse, setAboutResponse: handleSetAboutResponse,
+        ttsVoice, setTtsVoice: handleSetTtsVoice,
+        
+        isAgentMode, setIsAgentMode: handleSetIsAgentMode,
+        
+        // Memory
+        memory,
+        isMemoryEnabled,
+        setIsMemoryEnabled: handleSetIsMemoryEnabled,
+        memoryContent: memory.memoryContent,
+        memoryFiles: memory.memoryFiles,
+        clearMemory: memory.clearMemory,
+        updateBackendMemory: memory.updateBackendMemory,
+        updateMemoryFiles: memory.updateMemoryFiles,
+        isConfirmationOpen: memory.isConfirmationOpen,
+        memorySuggestions: memory.memorySuggestions,
+        confirmMemoryUpdate: memory.confirmMemoryUpdate,
+        cancelMemoryUpdate: memory.cancelMemoryUpdate,
+
+        // Sidebar Hooks
+        ...sidebar,
+        
+        // Chat Hooks
+        ...chat,
+        setActiveResponseIndex: chat.setResponseIndex,
+        handleRequestClearAll, handleDeleteChatRequest,
+        handleImportChat: () => setIsImportModalOpen(true),
+        handleFileUploadForImport,
+        handleExportAllChats,
+        handleDownloadLogs,
+        handleShowDataStructure,
+        handleExportChat,
+        handleShareChat,
+        isChatActive: !!chat.currentChatId,
+        
+        // Secondary Sidebars
+        isSourcesSidebarOpen, handleCloseSourcesSidebar, sourcesForSidebar, 
+        sourcesSidebarWidth: sidebar.sourcesSidebarWidth, 
+        handleSetSourcesSidebarWidth: sidebar.handleSetSourcesSidebarWidth,
+        isSourcesResizing: sidebar.isSourcesResizing,
+        setIsSourcesResizing: sidebar.setIsSourcesResizing,
+
+        isArtifactOpen, setIsArtifactOpen, artifactContent, artifactLanguage,
+        artifactWidth, setArtifactWidth, isArtifactResizing, setIsArtifactResizing,
+
+        // Tests
+        runDiagnosticTests
+    };
 };
