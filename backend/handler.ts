@@ -123,38 +123,6 @@ class ChatPersistenceManager {
     }
 }
 
-async function generateProviderCompletion(
-    provider: string, 
-    apiKey: string | undefined, 
-    model: string, 
-    prompt: string, 
-    systemInstruction?: string,
-    jsonMode: boolean = false
-): Promise<string> {
-    if (provider === 'gemini') {
-        if (!apiKey) throw new Error("Gemini API Key missing");
-        const ai = new GoogleGenAI({ apiKey });
-        const targetModel = model || 'gemini-2.5-flash';
-        const config: any = { systemInstruction };
-        if (jsonMode) config.responseMimeType = 'application/json';
-        
-        try {
-            const resp = await generateContentWithRetry(ai, {
-                model: targetModel,
-                contents: prompt,
-                config
-            });
-            return resp.text || '';
-        } catch(e) {
-            console.error("Gemini completion error:", e);
-            return '';
-        }
-    }
-    
-    // ... OpenRouter and Ollama simplified handlers ...
-    return '';
-}
-
 export const apiHandler = async (req: any, res: any) => {
     const task = req.query.task as string;
     
@@ -278,14 +246,14 @@ export const apiHandler = async (req: any, res: any) => {
 
                         for await (const chunk of streamResult) {
                             if (abortController.signal.aborted) break;
-                            const text = chunk.text; // Fixed: Use property access, not method call
+                            const text = chunk.text;
                             if (text) {
                                 writeToClient(job, 'text-chunk', text);
                                 persistence.addText(text);
                             }
                         }
 
-                        writeToClient(job, 'complete', { finalText: '' }); // Final text logic handled by persistence accumulation
+                        writeToClient(job, 'complete', { finalText: '' });
                         persistence.complete((response) => {
                             response.endTime = Date.now();
                         });
@@ -298,6 +266,95 @@ export const apiHandler = async (req: any, res: any) => {
                         clearInterval(pingInterval);
                         cleanupJob(chatId);
                     }
+                }
+                
+                // --- OPENROUTER HANDLING ---
+                else if (activeProvider === 'openrouter') {
+                    const callbacks = {
+                        onTextChunk: (text: string) => {
+                            if (!abortController.signal.aborted) {
+                                writeToClient(job, 'text-chunk', text);
+                                persistence.addText(text);
+                            }
+                        },
+                        onComplete: (fullText: string) => {
+                            writeToClient(job, 'complete', { finalText: fullText });
+                            persistence.complete((response) => { response.endTime = Date.now(); });
+                            clearInterval(pingInterval);
+                            cleanupJob(chatId);
+                        },
+                        onError: (error: any) => {
+                            const err = parseApiError(error);
+                            persistence.complete((response) => { response.error = err; });
+                            writeToClient(job, 'error', err);
+                            clearInterval(pingInterval);
+                            cleanupJob(chatId);
+                        }
+                    };
+
+                    const openRouterHistory = historyForAI.map((m: any) => ({
+                        role: m.role,
+                        parts: [{ text: m.text }] // Adapter for internal structure
+                    }));
+                    // Insert System prompt at the start
+                    if (finalSystemInstruction) {
+                        openRouterHistory.unshift({ role: 'system', parts: [{ text: finalSystemInstruction }] });
+                    }
+
+                    streamOpenRouter(
+                        activeApiKey || '',
+                        model,
+                        openRouterHistory,
+                        callbacks,
+                        {
+                            temperature: settings.temperature,
+                            maxTokens: settings.maxOutputTokens
+                        }
+                    );
+                }
+
+                // --- OLLAMA HANDLING ---
+                else if (activeProvider === 'ollama') {
+                    const callbacks = {
+                        onTextChunk: (text: string) => {
+                            if (!abortController.signal.aborted) {
+                                writeToClient(job, 'text-chunk', text);
+                                persistence.addText(text);
+                            }
+                        },
+                        onComplete: (fullText: string) => {
+                            writeToClient(job, 'complete', { finalText: fullText });
+                            persistence.complete((response) => { response.endTime = Date.now(); });
+                            clearInterval(pingInterval);
+                            cleanupJob(chatId);
+                        },
+                        onError: (error: any) => {
+                            const err = parseApiError(error);
+                            persistence.complete((response) => { response.error = err; });
+                            writeToClient(job, 'error', err);
+                            clearInterval(pingInterval);
+                            cleanupJob(chatId);
+                        }
+                    };
+
+                    const ollamaHistory = historyForAI.map((m: any) => ({
+                        role: m.role,
+                        parts: [{ text: m.text }]
+                    }));
+                    if (finalSystemInstruction) {
+                        ollamaHistory.unshift({ role: 'system', parts: [{ text: finalSystemInstruction }] });
+                    }
+
+                    streamOllama(
+                        activeApiKey,
+                        model,
+                        ollamaHistory,
+                        callbacks,
+                        {
+                            temperature: settings.temperature,
+                            host: process.env.OLLAMA_HOST // Optional env override
+                        }
+                    );
                 }
                 break;
             }

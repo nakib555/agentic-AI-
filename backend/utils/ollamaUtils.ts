@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -16,11 +15,18 @@ export const streamOllama = async (
     },
     settings: {
         temperature: number;
+        host?: string;
     }
 ) => {
+    // Map internal message format to Ollama format
+    const apiMessages = messages.map(m => ({
+        role: m.role === 'model' ? 'assistant' : m.role,
+        content: typeof m.parts === 'string' ? m.parts : (m.parts?.[0]?.text || m.text || '')
+    }));
+
     const body = JSON.stringify({
         model,
-        messages,
+        messages: apiMessages,
         stream: true,
         options: {
             temperature: settings.temperature,
@@ -34,44 +40,42 @@ export const streamOllama = async (
         headers['Authorization'] = `Bearer ${apiKey}`;
     }
     
-    const endpoint = 'https://ollama.com/api/chat';
+    // Allow custom host via settings, fallback to localhost
+    let endpoint = settings.host || 'http://localhost:11434';
+    // Remove trailing slash if present
+    endpoint = endpoint.replace(/\/$/, '');
+    const url = `${endpoint}/api/chat`;
+
     let response: Response | null = null;
 
     try {
-        console.log(`[Ollama] Attempting to stream from ${endpoint}...`);
-        const res = await fetch(endpoint, {
+        console.log(`[Ollama] Attempting to stream from ${url}...`);
+        const res = await fetch(url, {
             method: 'POST',
             headers,
             body
         });
+        
         if (res.ok) {
             response = res;
-            console.log(`[Ollama] Successfully connected to ${endpoint}`);
         } else {
-            console.warn(`[Ollama] Connection to ${endpoint} failed with status ${res.status}.`);
             const errorText = await res.text();
             throw new Error(`Ollama API request failed with status ${res.status}: ${errorText}`);
         }
     } catch (error) {
-        console.warn(`[Ollama] Connection to ${endpoint} failed with error:`, error);
+        console.warn(`[Ollama] Connection to ${url} failed:`, error);
         const customError = {
             code: 'OLLAMA_CONNECTION_FAILED',
             message: `Connection to Ollama failed.`,
-            details: `The public Ollama endpoint was unreachable. Error: ${(error as Error).message}`,
-            suggestion: `Please check your internet connection.`
+            details: `Ensure Ollama is running at ${endpoint} and CORS is allowed. Error: ${(error as Error).message}`,
+            suggestion: `Check if 'ollama serve' is running and OLLAMA_ORIGINS="*" is set.`
         };
         callbacks.onError(customError);
         return;
     }
 
     if (!response || !response.body) {
-        const customError = {
-            code: 'OLLAMA_CONNECTION_FAILED',
-            message: `Connection to Ollama failed.`,
-            details: `The endpoint was reachable but returned an empty response.`,
-            suggestion: `This may be a temporary issue with the Ollama service.`
-        };
-        callbacks.onError(customError);
+        callbacks.onError({ message: "Ollama returned an empty response body." });
         return;
     }
 
@@ -83,33 +87,51 @@ export const streamOllama = async (
 
         while (true) {
             const { done, value } = await reader.read();
+            if (done) break;
 
-            if (value) {
-                buffer += decoder.decode(value, { stream: true });
-            }
-
+            buffer += decoder.decode(value, { stream: true });
+            
+            // Ollama sends one JSON object per line
             const lines = buffer.split("\n");
             
-            // If stream is done, we process all lines. Otherwise, keep the last, potentially partial line.
-            const linesToProcess = done ? lines : lines.slice(0, -1);
-            buffer = done ? '' : lines[lines.length - 1];
+            // Keep the last line in the buffer as it might be incomplete
+            buffer = lines.pop() || "";
 
-            for (const line of linesToProcess) {
+            for (const line of lines) {
                 if (line.trim() === '') continue;
                 try {
                     const data = JSON.parse(line);
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
                     if (data.message && data.message.content) {
                         const contentChunk = data.message.content;
                         callbacks.onTextChunk(contentChunk);
                         fullContent += contentChunk;
                     }
+                    
+                    if (data.done) {
+                        // Stream finished logic can go here if needed
+                    }
                 } catch (e) {
-                    console.error("Error parsing Ollama stream chunk", line, e);
+                    console.warn("Error parsing Ollama stream chunk", line);
                 }
             }
-            
-            if (done) break;
         }
+        
+        // Process residual buffer
+        if (buffer.trim()) {
+             try {
+                const data = JSON.parse(buffer);
+                if (data.message && data.message.content) {
+                    callbacks.onTextChunk(data.message.content);
+                    fullContent += data.message.content;
+                }
+             } catch(e) {}
+        }
+
         callbacks.onComplete(fullContent);
 
     } catch (error) {
