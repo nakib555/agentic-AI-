@@ -14,6 +14,7 @@ import { useViewport } from '../../hooks/useViewport';
 
 const motion = motionTyped as any;
 
+// Safe lazy loads
 const WelcomeScreen = React.lazy(() => import('./WelcomeScreen/index').then(m => ({ default: m.WelcomeScreen })));
 const ChatSkeleton = React.lazy(() => import('../UI/ChatSkeleton').then(m => ({ default: m.ChatSkeleton })));
 
@@ -35,10 +36,13 @@ type MessageListProps = {
   messageFormRef: React.RefObject<MessageFormHandle>;
   onRegenerate: (messageId: string) => void;
   onSetActiveResponseIndex: (messageId: string, index: number) => void;
+  isAgentMode: boolean;
   onEditMessage?: (messageId: string, newText: string) => void;
   onNavigateBranch?: (messageId: string, direction: 'next' | 'prev') => void;
 };
 
+// Wrapper to inject context (like previous user message)
+// We memoize this to prevent re-creation if props haven't changed.
 const MessageWrapper = React.memo(({ 
     msg,
     index,
@@ -52,8 +56,10 @@ const MessageWrapper = React.memo(({
     messages: Message[];
     contextProps: Omit<MessageListProps, 'messages'>;
 }) => {
+    // Determine context for AI messages (the prompt that triggered it)
     let userQuery = '';
     if (msg.role === 'model') {
+        // Find the most recent user message before this one
         for (let i = index - 1; i >= 0; i--) {
             if (messages[i].role === 'user' && !messages[i].isHidden) {
                 userQuery = messages[i].text;
@@ -67,7 +73,8 @@ const MessageWrapper = React.memo(({
             msg={msg} 
             isLast={isLast}
             {...contextProps}
-            {...({ userQuery, isAgentMode: false } as any)} 
+            // Pass the custom prop to AiMessage via MessageComponent
+            {...({ userQuery } as any)} 
         />
     );
 });
@@ -76,26 +83,32 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
     messages, sendMessage, isLoading, ttsVoice, ttsModel, currentChatId, 
     onShowSources, approveExecution, 
     denyExecution, messageFormRef, onRegenerate, onSetActiveResponseIndex,
-    onEditMessage, onNavigateBranch
+    isAgentMode, onEditMessage, onNavigateBranch
 }, ref) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
   const { isDesktop } = useViewport();
 
+  // Safeguard against undefined messages prop
   const visibleMessages = useMemo(() => (messages || []).filter(msg => !msg.isHidden), [messages]);
   
+  // Track previous length to detect new messages
   const prevMessagesLength = useRef(visibleMessages.length);
 
+  // Auto-scroll on new message
   useEffect(() => {
       const currentLength = visibleMessages.length;
       const prevLength = prevMessagesLength.current;
 
       if (currentLength > prevLength) {
           const lastMessage = visibleMessages[currentLength - 1];
+          // Scroll if it's a user message (always show what I just sent)
+          // OR if we were already at the bottom (standard sticky behavior)
           const shouldScroll = lastMessage?.role === 'user' || atBottom;
 
           if (shouldScroll) {
+              // Use setTimeout to ensure DOM has updated with the new item
               setTimeout(() => {
                   virtuosoRef.current?.scrollToIndex({ 
                       index: currentLength - 1, 
@@ -109,8 +122,10 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
       prevMessagesLength.current = currentLength;
   }, [visibleMessages, atBottom]);
 
+  // Expose scroll methods to parent via ref
   useImperativeHandle(ref, () => ({
     scrollToBottom: () => {
+      // Use smooth scrolling only when triggered manually
       virtuosoRef.current?.scrollToIndex({ index: visibleMessages.length - 1, behavior: 'smooth', align: 'end' });
     },
     scrollToMessage: (messageId: string) => {
@@ -125,18 +140,21 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
       virtuosoRef.current?.scrollToIndex({ index: visibleMessages.length - 1, behavior: 'smooth', align: 'end' });
   }, [visibleMessages.length]);
 
+  // Memoize the context props object.
+  // Note: We intentionally include 'isLoading' here. The optimization happens in MessageComponent's React.memo check.
   const contextProps = useMemo(() => ({
       sendMessage, isLoading, ttsVoice, ttsModel, currentChatId,
       onShowSources, approveExecution, denyExecution, messageFormRef,
-      onRegenerate, onSetActiveResponseIndex, onEditMessage,
+      onRegenerate, onSetActiveResponseIndex, isAgentMode, onEditMessage,
       onNavigateBranch
   }), [
       sendMessage, isLoading, ttsVoice, ttsModel, currentChatId,
       onShowSources, approveExecution, denyExecution, messageFormRef,
-      onRegenerate, onSetActiveResponseIndex, onEditMessage,
+      onRegenerate, onSetActiveResponseIndex, isAgentMode, onEditMessage,
       onNavigateBranch
   ]);
 
+  // Memoize itemContent so Virtuoso doesn't re-render all items on every parent render
   const itemContent = useCallback((index: number, msg: Message) => (
       <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4">
           <MessageWrapper 
@@ -161,7 +179,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
         ) : (
             <div className="h-full overflow-y-auto custom-scrollbar">
                  <Suspense fallback={<div className="h-full flex items-center justify-center"><div className="animate-spin w-6 h-6 border-2 border-indigo-500 rounded-full border-t-transparent"></div></div>}>
-                    <WelcomeScreen sendMessage={sendMessage} isAgentMode={false} />
+                    <WelcomeScreen sendMessage={sendMessage} isAgentMode={isAgentMode} />
                  </Suspense>
             </div>
         )

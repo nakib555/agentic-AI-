@@ -25,13 +25,6 @@ export const streamOpenRouter = async (
             throw new Error("OpenRouter API key is missing or empty. Please check your settings.");
         }
 
-        // OpenRouter expects "user" messages to have "content", and "system" messages to be mapped correctly.
-        // We assume 'messages' passed in are already roughly compatible (role, content).
-        const apiMessages = messages.map(m => ({
-            role: m.role === 'model' ? 'assistant' : m.role,
-            content: typeof m.parts === 'string' ? m.parts : (m.parts?.[0]?.text || m.text || '')
-        }));
-
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -42,7 +35,7 @@ export const streamOpenRouter = async (
             },
             body: JSON.stringify({
                 model: model,
-                messages: apiMessages,
+                messages: messages,
                 stream: true,
                 temperature: settings.temperature,
                 max_tokens: settings.maxTokens > 0 ? settings.maxTokens : undefined,
@@ -70,52 +63,31 @@ export const streamOpenRouter = async (
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let fullText = "";
-        let buffer = "";
 
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            buffer += decoder.decode(value, { stream: true });
-            
-            // Split by double newline usually separates SSE events, but standard is \n
-            const lines = buffer.split("\n");
-            
-            // Keep the last line in the buffer as it might be incomplete
-            buffer = lines.pop() || "";
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n").filter(line => line.trim() !== "");
 
             for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed || !trimmed.startsWith("data: ")) continue;
+                if (line.startsWith("data: ")) {
+                    const dataStr = line.replace("data: ", "");
+                    if (dataStr === "[DONE]") break;
 
-                const dataStr = trimmed.replace("data: ", "").trim();
-                
-                if (dataStr === "[DONE]") continue;
-
-                try {
-                    const data = JSON.parse(dataStr);
-                    const delta = data.choices?.[0]?.delta?.content;
-                    
-                    if (delta) {
-                        fullText += delta;
-                        callbacks.onTextChunk(delta);
+                    try {
+                        const data = JSON.parse(dataStr);
+                        const delta = data.choices[0]?.delta?.content;
+                        if (delta) {
+                            fullText += delta;
+                            callbacks.onTextChunk(delta);
+                        }
+                    } catch (e) {
+                        console.error("Error parsing OpenRouter chunk", e);
                     }
-                } catch (e) {
-                    console.warn("Error parsing OpenRouter chunk", trimmed);
                 }
             }
-        }
-
-        // Process any remaining buffer
-        if (buffer.trim().startsWith("data: ") && buffer.trim() !== "data: [DONE]") {
-             try {
-                const data = JSON.parse(buffer.replace("data: ", "").trim());
-                const delta = data.choices?.[0]?.delta?.content;
-                if (delta) {
-                    fullText += delta;
-                    callbacks.onTextChunk(delta);
-                }
-             } catch (e) {}
         }
 
         callbacks.onComplete(fullText);

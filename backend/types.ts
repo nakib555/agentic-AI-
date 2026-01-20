@@ -13,21 +13,12 @@ export type MessageError = {
     suggestion?: string;
 };
 
-export type BrowserSession = {
-    url: string;
-    title?: string;
-    screenshot?: string; // base64
-    logs: string[];
-    status: 'running' | 'completed' | 'failed';
-};
-
 export type ToolCallEvent = {
     id: string;
     call: FunctionCall;
     result?: string;
     startTime?: number;
     endTime?: number;
-    browserSession?: BrowserSession;
 };
 
 export type WorkflowNodeStatus = 'pending' | 'active' | 'done' | 'failed';

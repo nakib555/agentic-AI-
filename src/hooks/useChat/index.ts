@@ -11,6 +11,7 @@ import { useChatHistory } from '../useChatHistory';
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
 import { fetchFromApi } from '../../utils/api';
 import { processBackendStream } from '../../services/agenticLoop/stream-processor';
+import { executeFrontendTool } from './tool-executor';
 import { createStreamCallbacks } from './chat-callbacks';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -23,15 +24,18 @@ type ChatSettings = {
     maxOutputTokens: number; 
     imageModel: string;
     videoModel: string;
+    isAgentMode?: boolean;
 };
 
 export const useChat = (
     initialModel: string, 
     settings: ChatSettings, 
     memoryContent: string, 
+    isAgentMode: boolean, 
     apiKey: string,
     onShowToast?: (message: string, type: 'info' | 'success' | 'error') => void
 ) => {
+    // Destructure all necessary methods from the history hook
     const { 
         chatHistory, 
         currentChatId, 
@@ -54,7 +58,11 @@ export const useChat = (
     const requestIdRef = useRef<string | null>(null); 
     const testResolverRef = useRef<((value: Message | PromiseLike<Message>) => void) | null>(null);
     const hasAttemptedReconnection = useRef(false);
+    
+    // Track title generation attempts to prevent loops
     const titleGenerationAttemptedRef = useRef<Set<string>>(new Set());
+
+    // Refs to hold the latest state for callbacks
     const chatHistoryRef = useRef(chatHistory);
     useEffect(() => { chatHistoryRef.current = chatHistory; }, [chatHistory]);
     const currentChatIdRef = useRef(currentChatId);
@@ -69,6 +77,7 @@ export const useChat = (
         return chatHistory.find(c => c.id === currentChatId)?.isLoading ?? false;
     }, [chatHistory, currentChatId]);
 
+    // Effect to resolve test promise when loading completes
     useEffect(() => {
         if (!isLoading && testResolverRef.current && currentChatId) {
             const chat = chatHistory.find(c => c.id === currentChatId);
@@ -82,9 +91,15 @@ export const useChat = (
         }
     }, [isLoading, chatHistory, currentChatId]);
 
+    const handleFrontendToolExecution = useCallback((callId: string, toolName: string, toolArgs: any) => {
+        executeFrontendTool(callId, toolName, toolArgs);
+    }, []);
+
     const cancelGeneration = useCallback(() => {
+        // Abort the frontend fetch immediately for responsiveness
         abortControllerRef.current?.abort();
         
+        // Send explicit cancel request using chatId as ID
         if (currentChatIdRef.current) {
             fetchFromApi('/api/handler?task=cancel', {
                 method: 'POST',
@@ -110,26 +125,64 @@ export const useChat = (
                 }));
                 updateMessage(chatId, lastMessage.id, { isThinking: false });
                 completeChatLoading(chatId);
+
+                // Fallback for plan approval state cancellation if we are stuck there
+                if (lastMessage.executionState === 'pending_approval') {
+                     const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
+                     const callId = activeResponse?.plan?.callId || 'plan-approval';
+                     handleFrontendToolExecution(callId, 'denyExecution', false);
+                }
             }
         }
-    }, [updateActiveResponseOnMessage, updateMessage, completeChatLoading]);
+    }, [handleFrontendToolExecution, updateActiveResponseOnMessage, updateMessage, completeChatLoading]);
     
-    // approveExecution and denyExecution removed as they are agent-specific
+    const approveExecution = useCallback((editedPlan: string) => {
+        const chatId = currentChatIdRef.current;
+        if (chatId) {
+            const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+            if (currentChat?.messages?.length) {
+                const lastMessage = currentChat.messages[currentChat.messages.length - 1];
+                const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
+                const callId = activeResponse?.plan?.callId || 'plan-approval';
 
+                updateMessage(chatId, lastMessage.id, { executionState: 'approved' });
+                handleFrontendToolExecution(callId, 'approveExecution', editedPlan);
+            }
+        }
+    }, [updateMessage, handleFrontendToolExecution]);
+  
+    const denyExecution = useCallback(() => {
+        const chatId = currentChatIdRef.current;
+        if (chatId) {
+            const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
+            if (currentChat?.messages?.length) {
+                const lastMessage = currentChat.messages[currentChat.messages.length - 1];
+                const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
+                const callId = activeResponse?.plan?.callId || 'plan-approval';
+
+                updateMessage(chatId, lastMessage.id, { executionState: 'denied' });
+                handleFrontendToolExecution(callId, 'denyExecution', false);
+            }
+        }
+    }, [updateMessage, handleFrontendToolExecution]);
+
+    // --- RECONNECTION LOGIC ---
     const connectToActiveStream = useCallback(async (chatId: string, messageId: string) => {
-        if (abortControllerRef.current) return;
+        if (abortControllerRef.current) return; // Already connected or generating
 
+        console.log(`[FRONTEND] Attempting to reconnect to stream for chat ${chatId}...`);
         setChatLoadingState(chatId, true);
+        
         const controller = new AbortController();
         abortControllerRef.current = controller;
 
         try {
             const response = await fetchFromApi('/api/handler?task=connect', {
-                method: 'POST',
+                method: 'POST', // Connect task is POST to send body
                 headers: { 'Content-Type': 'application/json' },
                 signal: controller.signal,
                 body: JSON.stringify({ chatId }),
-                silent: true
+                silent: true // Suppress 404 errors during reconnection checks
             });
 
             if (!response.ok) {
@@ -140,6 +193,7 @@ export const useChat = (
             if (contentType && contentType.includes("application/json")) {
                 const data = await response.json().catch(() => ({}));
                 if (data.status === 'stream_not_found') {
+                    console.log("[FRONTEND] Stream finished or expired. Closing local state.");
                     updateMessage(chatId, messageId, { isThinking: false });
                     completeChatLoading(chatId);
                     return;
@@ -154,7 +208,7 @@ export const useChat = (
                 updateActiveResponseOnMessage,
                 updateMessage,
                 completeChatLoading,
-                handleFrontendToolExecution: () => {}, // No-op as tools disabled
+                handleFrontendToolExecution,
                 onCancel: () => {
                     updateMessage(chatId, messageId, { isThinking: false });
                     completeChatLoading(chatId);
@@ -164,6 +218,7 @@ export const useChat = (
             await processBackendStream(response, callbacks, controller.signal);
 
         } catch (error) {
+            console.error("[FRONTEND] Reconnection error:", error);
             updateMessage(chatId, messageId, { isThinking: false });
             completeChatLoading(chatId);
         } finally {
@@ -171,10 +226,13 @@ export const useChat = (
                 abortControllerRef.current = null;
              }
         }
-    }, [updateActiveResponseOnMessage, updateMessage, completeChatLoading, setChatLoadingState]);
+    }, [updateActiveResponseOnMessage, updateMessage, completeChatLoading, setChatLoadingState, handleFrontendToolExecution]);
 
+    // Check for potential reconnection needs on mount/chat switch
     useEffect(() => {
+        // Only run once per chat load
         if (hasAttemptedReconnection.current || !currentChatId) return;
+        
         const chat = chatHistoryRef.current.find(c => c.id === currentChatId);
         if (chat && chat.messages && chat.messages.length > 0) {
             const lastMsg = chat.messages[chat.messages.length - 1];
@@ -187,6 +245,7 @@ export const useChat = (
         }
     }, [currentChatId, connectToActiveStream]);
 
+    // Reset attempt flag on chat change
     useEffect(() => {
         hasAttemptedReconnection.current = false;
     }, [currentChatId]);
@@ -198,7 +257,7 @@ export const useChat = (
         messageId: string, 
         newMessage: Message | null,
         chatConfig: Pick<ChatSession, 'model' | 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>,
-        runtimeSettings: ChatSettings
+        runtimeSettings: { isAgentMode: boolean } & ChatSettings
     ) => {
         const controller = new AbortController();
         abortControllerRef.current = controller;
@@ -210,6 +269,7 @@ export const useChat = (
                 model: chatConfig.model,
                 newMessage: newMessage,
                 settings: {
+                    isAgentMode: runtimeSettings.isAgentMode,
                     systemPrompt: runtimeSettings.systemPrompt,
                     aboutUser: runtimeSettings.aboutUser,
                     aboutResponse: runtimeSettings.aboutResponse,
@@ -230,13 +290,22 @@ export const useChat = (
 
             if (!response.ok) {
                 let errorMessage = `Request failed with status ${response.status}`;
+                let errorDetails: any = null;
                 try {
                     const errorJson = await response.json();
-                    errorMessage = errorJson.error?.message || errorMessage;
+                    const struct = errorJson.error || errorJson;
+                    errorMessage = struct.message || errorMessage;
+                    errorDetails = struct;
                 } catch (e) {
                     errorMessage = await response.text() || errorMessage;
                 }
-                throw new Error(errorMessage);
+                const error = new Error(errorMessage);
+                if (errorDetails) {
+                    (error as any).code = errorDetails.code;
+                    (error as any).details = errorDetails.details;
+                    (error as any).suggestion = errorDetails.suggestion;
+                }
+                throw error;
             }
             
             if (!response.body) throw new Error("Response body is missing");
@@ -247,7 +316,7 @@ export const useChat = (
                 updateActiveResponseOnMessage,
                 updateMessage,
                 completeChatLoading,
-                handleFrontendToolExecution: () => {},
+                handleFrontendToolExecution,
                 onStart: (requestId) => { requestIdRef.current = requestId; },
                 onCancel: () => {
                     if (controller && !controller.signal.aborted) {
@@ -259,7 +328,10 @@ export const useChat = (
             await processBackendStream(response, callbacks, controller.signal);
 
         } catch (error) {
-            if ((error as Error).name !== 'AbortError') {
+            if ((error as Error).message === 'Version mismatch') {
+                // Handled globally
+            } else if ((error as Error).name !== 'AbortError') {
+                console.error('[FRONTEND] Backend stream failed.', error);
                 updateActiveResponseOnMessage(chatId, messageId, () => ({ error: parseApiError(error), endTime: Date.now() }));
             }
         } finally {
@@ -267,15 +339,18 @@ export const useChat = (
                 updateMessage(chatId, messageId, { isThinking: false });
                 completeChatLoading(chatId);
                 
+                // Cleanup refs only if we are the active controller
                 if (abortControllerRef.current === controller) {
                     abortControllerRef.current = null;
                     requestIdRef.current = null;
                 }
                 
                 const finalChatState = chatHistoryRef.current.find(c => c.id === chatId);
+                
                 if (finalChatState && apiKey && finalChatState.messages) {
                     if (finalChatState.title === "New Chat" && finalChatState.messages.length >= 2 && !titleGenerationAttemptedRef.current.has(chatId)) {
                         titleGenerationAttemptedRef.current.add(chatId);
+                        
                         generateChatTitle(finalChatState.messages, finalChatState.model)
                             .then(newTitle => {
                                 const finalTitle = newTitle.length > 45 ? newTitle.substring(0, 42) + '...' : newTitle;
@@ -287,6 +362,8 @@ export const useChat = (
                     const suggestions = await generateFollowUpSuggestions(finalChatState.messages, finalChatState.model);
                      if (suggestions.length > 0) {
                         updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
+                        
+                        // Force a persist of the suggestions
                         const currentChatSnapshot = chatHistoryRef.current.find(c => c.id === chatId);
                         if (currentChatSnapshot && currentChatSnapshot.messages) {
                             const updatedMessages = currentChatSnapshot.messages.map(m => {
@@ -306,16 +383,35 @@ export const useChat = (
                         }
                     }
                 }
+
+                setTimeout(() => {
+                    const chatToPersist = chatHistoryRef.current.find(c => c.id === chatId);
+                    if (chatToPersist && chatToPersist.messages) {
+                        const cleanMessages = chatToPersist.messages.map(m => 
+                            m.id === messageId ? { ...m, isThinking: false } : m
+                        );
+                        updateChatProperty(chatId, { messages: cleanMessages });
+                    }
+                }, 200);
+
             } else {
                 updateMessage(chatId, messageId, { isThinking: false });
                 completeChatLoading(chatId);
+                if (abortControllerRef.current === controller) {
+                    abortControllerRef.current = null;
+                    requestIdRef.current = null;
+                }
             }
         }
     };
     
-    const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean, isThinkingModeEnabled?: boolean } = {}) => {
-        if (isLoading) return;
+    const sendMessage = async (userMessage: string, files?: File[], options: { isHidden?: boolean; isThinkingModeEnabled?: boolean } = {}) => {
+        if (isLoading) {
+            return;
+        }
+        
         requestIdRef.current = null; 
+    
         const currentHistory = chatHistoryRef.current;
         const activeChatIdFromRef = currentChatIdRef.current;
         
@@ -326,13 +422,17 @@ export const useChat = (
         if (!activeChatId || !currentChat) {
             const optimisticId = generateId(); 
             activeChatId = optimisticId;
+            
             const settingsToUse = {
                 temperature: settings.temperature,
                 maxOutputTokens: settings.maxOutputTokens,
                 imageModel: settings.imageModel,
                 videoModel: settings.videoModel,
+                isAgentMode: settings.isAgentMode,
             };
+
             chatCreationPromise = startNewChatHistory(initialModel, settingsToUse, optimisticId);
+            
             currentChat = {
                 id: optimisticId,
                 title: "New Chat",
@@ -344,6 +444,7 @@ export const useChat = (
         }
     
         const attachmentsData = files?.length ? await Promise.all(files.map(async f => ({ name: f.name, mimeType: f.type, data: await fileToBase64(f) }))) : undefined;
+    
         const userMessageObj: Message = { id: generateId(), role: 'user', text: userMessage, isHidden: options.isHidden, attachments: attachmentsData, activeResponseIndex: 0 };
         addMessagesToChat(activeChatId, [userMessageObj]);
     
@@ -352,9 +453,20 @@ export const useChat = (
         setChatLoadingState(activeChatId, true);
     
         const chatForSettings = currentChat || { model: initialModel, ...settings };
-        if (chatCreationPromise) await chatCreationPromise;
 
-        await startBackendChat('chat', activeChatId, modelPlaceholder.id, userMessageObj, chatForSettings, settings);
+        if (chatCreationPromise) {
+            const created = await chatCreationPromise;
+            if (!created) return;
+        }
+
+        await startBackendChat(
+            'chat',
+            activeChatId, 
+            modelPlaceholder.id, 
+            userMessageObj,
+            chatForSettings, 
+            { ...settings, isAgentMode: options.isThinkingModeEnabled ?? isAgentMode }
+        );
     };
 
     const editMessage = useCallback(async (messageId: string, newText: string) => {
@@ -413,93 +525,150 @@ export const useChat = (
             addMessagesToChat(chatId, [modelPlaceholder]);
             setChatLoadingState(chatId, true);
 
-            await startBackendChat('regenerate', chatId, modelPlaceholder.id, null, currentChat, settings);
+            await startBackendChat(
+                'regenerate', 
+                chatId,
+                modelPlaceholder.id,
+                null, 
+                currentChat, 
+                { ...settings, isAgentMode }
+            );
 
         } catch (e) {
             console.error("Failed to edit message:", e);
+            if (onShowToast) onShowToast("Failed to edit message branch", 'error');
         }
-    }, [isLoading, updateChatProperty, addMessagesToChat, setChatLoadingState, startBackendChat, cancelGeneration, settings]);
+    }, [isLoading, updateChatProperty, addMessagesToChat, setChatLoadingState, startBackendChat, cancelGeneration, onShowToast, settings, isAgentMode]);
 
     const navigateBranch = useCallback(async (messageId: string, direction: 'next' | 'prev') => {
         if (isLoading) return;
         const chatId = currentChatIdRef.current;
         if (!chatId) return;
+
         const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
         if (!currentChat || !currentChat.messages) return;
+
         const messageIndex = currentChat.messages.findIndex(m => m.id === messageId);
         if (messageIndex === -1) return;
+
         const updatedMessages = JSON.parse(JSON.stringify(currentChat.messages)) as Message[];
         const targetMessage = updatedMessages[messageIndex];
+
         if (!targetMessage.versions || targetMessage.versions.length < 2) return;
+
         const currentIndex = targetMessage.activeVersionIndex ?? 0;
         let newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+        
         if (newIndex < 0) newIndex = 0;
         if (newIndex >= targetMessage.versions.length) newIndex = targetMessage.versions.length - 1;
+        
         if (newIndex === currentIndex) return;
+
         const currentFuture = updatedMessages.slice(messageIndex + 1);
         targetMessage.versions[currentIndex].historyPayload = currentFuture;
+
         const targetVersion = targetMessage.versions[newIndex];
         const restoredFuture = targetVersion.historyPayload || [];
+
         targetMessage.text = targetVersion.text;
         targetMessage.attachments = targetVersion.attachments;
         targetMessage.activeVersionIndex = newIndex;
+
         const newMessagesList = [...updatedMessages.slice(0, messageIndex), targetMessage, ...restoredFuture];
+
         try {
             await updateChatProperty(chatId, { messages: newMessagesList });
-        } catch (e) {}
-    }, [isLoading, updateChatProperty]);
+        } catch (e) {
+            console.error("Failed to switch branch:", e);
+            if (onShowToast) onShowToast("Failed to switch branch", 'error');
+        }
+
+    }, [isLoading, updateChatProperty, onShowToast]);
 
     const regenerateResponse = useCallback(async (aiMessageId: string) => {
         if (isLoading) cancelGeneration();
         if (!currentChatId) return;
+
         requestIdRef.current = null; 
+
         const currentChat = chatHistoryRef.current.find(c => c.id === currentChatId); 
         if (!currentChat || !currentChat.messages) return;
+
         const messageIndex = currentChat.messages.findIndex(m => m.id === aiMessageId);
-        if (messageIndex < 1 || currentChat.messages[messageIndex-1].role !== 'user') return;
+        if (messageIndex < 1 || currentChat.messages[messageIndex-1].role !== 'user') {
+            console.error("Cannot regenerate: AI message is not preceded by a user message.");
+            return;
+        }
         
         const updatedMessages = JSON.parse(JSON.stringify(currentChat.messages)) as Message[];
         const targetMessage = updatedMessages[messageIndex];
         const currentResponseIndex = targetMessage.activeResponseIndex;
+
         const futureMessages = updatedMessages.slice(messageIndex + 1);
         if (targetMessage.responses && targetMessage.responses[currentResponseIndex]) {
             targetMessage.responses[currentResponseIndex].historyPayload = futureMessages;
         }
+
         const newResponse: ModelResponse = { text: '', toolCallEvents: [], startTime: Date.now() };
         if (!targetMessage.responses) targetMessage.responses = [];
         targetMessage.responses.push(newResponse);
         targetMessage.activeResponseIndex = targetMessage.responses.length - 1;
         targetMessage.isThinking = true;
+
         const truncatedList = [...updatedMessages.slice(0, messageIndex), targetMessage];
+
         await updateChatProperty(currentChatId, { messages: truncatedList });
+        
         setChatLoadingState(currentChatId, true);
-        await startBackendChat('regenerate', currentChatId, aiMessageId, null, currentChat, settings);
-    }, [isLoading, currentChatId, updateChatProperty, setChatLoadingState, cancelGeneration, startBackendChat, settings]);
+
+        await startBackendChat(
+            'regenerate',
+            currentChatId, 
+            aiMessageId, 
+            null, 
+            currentChat, 
+            { ...settings, isAgentMode: isAgentMode }
+        );
+
+    }, [isLoading, currentChatId, updateChatProperty, setChatLoadingState, cancelGeneration, startBackendChat, settings, isAgentMode]);
 
     const setResponseIndex = useCallback(async (messageId: string, index: number) => {
         if (isLoading) return; 
         const chatId = currentChatIdRef.current;
         if (!chatId) return;
+
         const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
         if (!currentChat || !currentChat.messages) return;
+
         const messageIndex = currentChat.messages.findIndex(m => m.id === messageId);
         if (messageIndex === -1) return;
+
         const updatedMessages = JSON.parse(JSON.stringify(currentChat.messages)) as Message[];
         const targetMessage = updatedMessages[messageIndex];
+
         if (!targetMessage.responses || targetMessage.responses.length < 2) return;
+
         const currentIndex = targetMessage.activeResponseIndex;
         if (index < 0 || index >= targetMessage.responses.length) return;
         if (index === currentIndex) return;
+
         const currentFuture = updatedMessages.slice(messageIndex + 1);
         targetMessage.responses[currentIndex].historyPayload = currentFuture;
+
         const targetResponse = targetMessage.responses[index];
         const restoredFuture = targetResponse.historyPayload || [];
+
         targetMessage.activeResponseIndex = index;
+
         const newMessagesList = [...updatedMessages.slice(0, messageIndex), targetMessage, ...restoredFuture];
+
         try {
             await updateChatProperty(chatId, { messages: newMessagesList });
-        } catch (e) {}
-    }, [isLoading, updateChatProperty]);
+        } catch (e) {
+            console.error("Failed to switch response branch:", e);
+            if (onShowToast) onShowToast("Failed to switch response branch", 'error');
+        }
+    }, [isLoading, updateChatProperty, onShowToast]);
 
     const updateChatModel = useCallback((chatId: string, model: string, debounceMs: number = 0) => updateChatProperty(chatId, { model }, debounceMs), [updateChatProperty]);
     const updateChatSettings = useCallback((chatId: string, settings: Partial<Pick<ChatSession, 'temperature' | 'maxOutputTokens' | 'imageModel' | 'videoModel'>>, debounceMs: number = 0) => updateChatProperty(chatId, settings, debounceMs), [updateChatProperty]);
@@ -513,13 +682,14 @@ export const useChat = (
   
   return { 
       chatHistory, currentChatId, isHistoryLoading,
+      // expose all needed methods from history hook
       updateChatTitle, updateChatProperty, loadChat: loadChatHistory, deleteChat: deleteChatHistory, clearAllChats: clearAllChatsHistory, importChat, startNewChat: startNewChatHistory,
       messages, 
       sendMessage, 
       isLoading, 
       cancelGeneration, 
-      approveExecution: () => {}, 
-      denyExecution: () => {}, 
+      approveExecution, 
+      denyExecution, 
       regenerateResponse, 
       sendMessageForTest, 
       editMessage, 
