@@ -64,7 +64,12 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
     >
       <div className="w-full flex flex-col gap-2">
          {contentBlocks.map((block) => (
-             <BlockRenderer key={block.id} block={block} sendMessage={sendMessage} />
+             <BlockRenderer 
+                key={block.id} 
+                block={block} 
+                sendMessage={sendMessage} 
+                onRegenerate={() => onRegenerate(id)}
+             />
          ))}
       </div>
       

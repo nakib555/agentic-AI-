@@ -6,6 +6,7 @@
 
 import type { Message, ContentBlock, ToolCallEvent, MediaRenderBlock, ComponentRenderBlock } from '../types/message';
 import { parseMessageText } from './messageParser';
+import { parseContentSegments } from './workflowParser';
 
 /**
  * Hydrates the raw message state into a linear list of "Activity Blocks".
@@ -67,20 +68,55 @@ export const hydrateContentBlocks = (msg: Message): ContentBlock[] => {
         });
     }
 
-    // 3. Final Text (The Voice)
+    // 3. Final Text (The Voice) - Parsed into Text + Component Blocks
     if (finalAnswerText) {
-        // Strip out the component tags from final text to avoid double rendering
-        const cleanText = cleanComponentTags(finalAnswerText);
+        const segments = parseContentSegments(finalAnswerText);
         
-        blocks.push({
-            id: 'final-text',
-            type: 'final_text',
-            status: (isThinking && !hasError) ? 'running' : 'completed',
-            content: cleanText
+        segments.forEach((segment, index) => {
+            const isLast = index === segments.length - 1;
+            // A block is "running" (streaming) only if it's the last one and the message is still thinking
+            const blockStatus = (isThinking && !hasError && isLast) ? 'running' : 'completed';
+            const blockId = `final-content-${index}`;
+
+            if (segment.type === 'text') {
+                if (segment.content) {
+                     blocks.push({
+                        id: blockId,
+                        type: 'final_text',
+                        status: blockStatus,
+                        content: segment.content
+                    });
+                }
+            } else if (segment.type === 'component') {
+                const { componentType, data } = segment;
+                
+                // Fixed: Check for 'FILE' which is the correct internal type from parser, not 'FILE_ATTACHMENT'
+                if (componentType === 'IMAGE' || componentType === 'VIDEO' || componentType === 'ONLINE_IMAGE' || componentType === 'ONLINE_VIDEO' || componentType === 'FILE') { 
+                     blocks.push({
+                        id: blockId,
+                        type: 'media_render',
+                        status: 'success',
+                        data: {
+                            mimeType: data.mimeType || (componentType.includes('VIDEO') ? 'video/mp4' : 'image/png'),
+                            url: data.srcUrl || data.url,
+                            altText: data.alt || data.prompt || data.filename,
+                            filename: data.filename
+                        }
+                    });
+                } else if (['MAP', 'BROWSER', 'CODE_OUTPUT', 'LOCATION_PERMISSION', 'VEO_API_KEY'].includes(componentType || '')) {
+                     blocks.push({
+                        id: blockId,
+                        type: 'component_render',
+                        status: 'success',
+                        componentType: componentType as any,
+                        data: data
+                    });
+                }
+            }
         });
     }
     
-    // If we have an error and no text, show it
+    // If we have an error and no text, show it as a block
     if (hasError && !finalAnswerText) {
         blocks.push({
             id: 'error-block',
@@ -93,7 +129,8 @@ export const hydrateContentBlocks = (msg: Message): ContentBlock[] => {
     return blocks;
 };
 
-// Helper to extract component tags into Blocks
+// Helper to extract component tags from Tool Results into Blocks
+// Note: This logic duplicates parseContentSegments slightly but is kept for Tool Result strings specifically which might not be full workflow text.
 const parseComponentTags = (text: string): (MediaRenderBlock | ComponentRenderBlock)[] => {
     const blocks: (MediaRenderBlock | ComponentRenderBlock)[] = [];
     
@@ -163,9 +200,4 @@ const parseComponentTags = (text: string): (MediaRenderBlock | ComponentRenderBl
         }
     }
     return blocks;
-};
-
-const cleanComponentTags = (text: string): string => {
-    // Remove component tags that are now rendered as blocks to prevent duplication
-    return text.replace(/\[(IMAGE_COMPONENT|VIDEO_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\][\s\S]*?\[\/\1\]/g, '');
 };

@@ -17,6 +17,7 @@ import { VideoDisplay } from '../../AI/VideoDisplay';
 import { FileAttachment } from '../../AI/FileAttachment';
 import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 import { CodeExecutionResult } from '../../AI/CodeExecutionResult';
+import { VeoApiKeyRequest } from '../../AI/VeoApiKeyRequest';
 
 // --- Icons ---
 const ThoughtIcon = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>; // Info
@@ -144,7 +145,7 @@ const MediaRender = ({ block }: { block: MediaRenderBlock }) => {
     return <FileAttachment filename={filename || 'file'} srcUrl={url} mimeType={mimeType} />;
 };
 
-const ComponentRender = ({ block, sendMessage }: { block: ComponentRenderBlock, sendMessage: any }) => {
+const ComponentRender = ({ block, sendMessage, onRegenerate }: { block: ComponentRenderBlock, sendMessage: any, onRegenerate?: () => void }) => {
     const { componentType, data } = block;
 
     if (componentType === 'MAP') {
@@ -152,6 +153,9 @@ const ComponentRender = ({ block, sendMessage }: { block: ComponentRenderBlock, 
     }
     if (componentType === 'LOCATION_PERMISSION') {
         return <LocationPermissionRequest text={data.text} sendMessage={sendMessage} />;
+    }
+    if (componentType === 'VEO_API_KEY') {
+        return <VeoApiKeyRequest text={data.text} onRegenerate={onRegenerate || (() => {})} />;
     }
     if (componentType === 'BROWSER') {
         return <BrowserSessionDisplay url={data.url} title={data.title} screenshot={data.screenshot} logs={data.logs} />;
@@ -164,7 +168,7 @@ const ComponentRender = ({ block, sendMessage }: { block: ComponentRenderBlock, 
 
 // --- Main Renderer ---
 
-export const BlockRenderer: React.FC<{ block: ContentBlock, sendMessage: any }> = ({ block, sendMessage }) => {
+export const BlockRenderer: React.FC<{ block: ContentBlock, sendMessage: any, onRegenerate?: () => void }> = ({ block, sendMessage, onRegenerate }) => {
     switch (block.type) {
         case 'thought_chain':
             return <ThoughtChain block={block} />;
@@ -173,7 +177,7 @@ export const BlockRenderer: React.FC<{ block: ContentBlock, sendMessage: any }> 
         case 'media_render':
             return <MediaRender block={block} />;
         case 'component_render':
-            return <ComponentRender block={block} sendMessage={sendMessage} />;
+            return <ComponentRender block={block} sendMessage={sendMessage} onRegenerate={onRegenerate} />;
         case 'final_text':
             return (
                 <div className="markdown-content mt-4 mb-2">
