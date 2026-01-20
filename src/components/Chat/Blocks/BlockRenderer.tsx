@@ -15,6 +15,8 @@ import { LocationPermissionRequest } from '../../AI/LocationPermissionRequest';
 import { ImageDisplay } from '../../AI/ImageDisplay';
 import { VideoDisplay } from '../../AI/VideoDisplay';
 import { FileAttachment } from '../../AI/FileAttachment';
+import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
+import { CodeExecutionResult } from '../../AI/CodeExecutionResult';
 
 // --- Icons ---
 const ThoughtIcon = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>; // Info
@@ -151,7 +153,13 @@ const ComponentRender = ({ block, sendMessage }: { block: ComponentRenderBlock, 
     if (componentType === 'LOCATION_PERMISSION') {
         return <LocationPermissionRequest text={data.text} sendMessage={sendMessage} />;
     }
-    return <div className="p-4 border border-dashed rounded text-xs text-slate-400">Unknown Widget</div>;
+    if (componentType === 'BROWSER') {
+        return <BrowserSessionDisplay url={data.url} title={data.title} screenshot={data.screenshot} logs={data.logs} />;
+    }
+    if (componentType === 'CODE_OUTPUT') {
+        return <CodeExecutionResult outputId={data.outputId} htmlOutput={data.htmlOutput} textOutput={data.textOutput} />;
+    }
+    return <div className="p-4 border border-dashed rounded text-xs text-slate-400">Unknown Widget: {componentType}</div>;
 };
 
 // --- Main Renderer ---

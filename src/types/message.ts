@@ -74,7 +74,7 @@ export type ComponentRenderBlock = {
   id: string;
   type: 'component_render';
   status: BlockStatus;
-  componentType: 'MAP' | 'LOCATION_PERMISSION' | 'VEO_API_KEY';
+  componentType: 'MAP' | 'LOCATION_PERMISSION' | 'VEO_API_KEY' | 'BROWSER' | 'CODE_OUTPUT';
   data: any;
 };
 

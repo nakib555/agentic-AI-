@@ -70,8 +70,6 @@ export const hydrateContentBlocks = (msg: Message): ContentBlock[] => {
     // 3. Final Text (The Voice)
     if (finalAnswerText) {
         // Strip out the component tags from final text to avoid double rendering
-        // (Since we rendered them as blocks above, or we keep them if they are embedded in text. 
-        //  Strategy: We convert tags to Blocks, so we should clean the text).
         const cleanText = cleanComponentTags(finalAnswerText);
         
         blocks.push({
@@ -100,7 +98,7 @@ const parseComponentTags = (text: string): (MediaRenderBlock | ComponentRenderBl
     const blocks: (MediaRenderBlock | ComponentRenderBlock)[] = [];
     
     // Regex for [TAG]{json}[/TAG]
-    const regex = /\[(IMAGE_COMPONENT|VIDEO_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|LOCATION_PERMISSION_REQUEST)\](.*?)\[\/\1\]/gs;
+    const regex = /\[(IMAGE_COMPONENT|VIDEO_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|LOCATION_PERMISSION_REQUEST|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\](.*?)\[\/\1\]/gs;
     let match;
 
     while ((match = regex.exec(text)) !== null) {
@@ -142,7 +140,24 @@ const parseComponentTags = (text: string): (MediaRenderBlock | ComponentRenderBl
                     componentType: 'MAP',
                     data: json
                 });
+            } else if (tag === 'BROWSER_COMPONENT') {
+                blocks.push({
+                    id,
+                    type: 'component_render',
+                    status: 'success',
+                    componentType: 'BROWSER',
+                    data: json
+                });
+            } else if (tag === 'CODE_OUTPUT_COMPONENT') {
+                blocks.push({
+                    id,
+                    type: 'component_render',
+                    status: 'success',
+                    componentType: 'CODE_OUTPUT',
+                    data: json
+                });
             }
+
         } catch (e) {
             console.error("Failed to parse component block", e);
         }
@@ -152,5 +167,5 @@ const parseComponentTags = (text: string): (MediaRenderBlock | ComponentRenderBl
 
 const cleanComponentTags = (text: string): string => {
     // Remove component tags that are now rendered as blocks to prevent duplication
-    return text.replace(/\[(IMAGE_COMPONENT|VIDEO_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT)\][\s\S]*?\[\/\1\]/g, '');
+    return text.replace(/\[(IMAGE_COMPONENT|VIDEO_COMPONENT|MAP_COMPONENT|FILE_ATTACHMENT_COMPONENT|BROWSER_COMPONENT|CODE_OUTPUT_COMPONENT)\][\s\S]*?\[\/\1\]/g, '');
 };
