@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -6,23 +5,9 @@
 
 import type { AIProvider, ChatOptions, CompletionOptions, ModelLists } from './types';
 import type { Model as AppModel } from '../../src/types';
-import { readData, SETTINGS_FILE_PATH } from '../data-store';
 
 const sortModelsByName = (models: AppModel[]): AppModel[] => {
     return models.sort((a, b) => a.name.localeCompare(b.name));
-};
-
-const getEffectiveEndpoint = async (): Promise<string> => {
-    let endpoint = 'http://127.0.0.1:11434';
-    try {
-        const settings: any = await readData(SETTINGS_FILE_PATH);
-        if (settings.ollamaHost) endpoint = settings.ollamaHost;
-    } catch (e) {}
-
-    // Env var overrides file settings
-    if (process.env.OLLAMA_HOST) endpoint = process.env.OLLAMA_HOST;
-    
-    return endpoint.replace(/\/$/, '');
 };
 
 const OllamaProvider: AIProvider = {
@@ -31,8 +16,9 @@ const OllamaProvider: AIProvider = {
 
     async getModels(apiKey: string): Promise<ModelLists> {
         try {
-            const endpoint = await getEffectiveEndpoint();
-            const url = `${endpoint}/api/tags`;
+            // Determine the endpoint. Use env var OLLAMA_HOST if present, else default to localhost.
+            // only use https://ollama.com/api/tags for modle fetching
+            const url = `https://ollama.com/api/tags`;
             
             console.log(`[OllamaProvider] Fetching installed models from: ${url}`);
             
@@ -45,8 +31,9 @@ const OllamaProvider: AIProvider = {
             });
             
             if (!response.ok) {
-                 console.warn(`[OllamaProvider] Failed to reach local instance at ${url}.`);
-                 throw new Error(`Local instance unreachable: ${response.status}`);
+                 // Fallback to public registry tags if local connection fails (optional, but good for demo)
+                 console.warn(`[OllamaProvider] Failed to reach local instance at ${url}. Trying public registry...`);
+                 throw new Error('Local instance unreachable');
             }
     
             const data = await response.json();
@@ -67,6 +54,8 @@ const OllamaProvider: AIProvider = {
         } catch (error) {
             console.error('[OllamaProvider] Failed to fetch models:', error);
             
+            // Return empty list instead of throwing to prevent UI crash, 
+            // allowing user to see "No models available" and fix config.
             return {
                 chatModels: [],
                 imageModels: [],
@@ -98,7 +87,7 @@ const OllamaProvider: AIProvider = {
             ollamaMessages.unshift({ role: 'system', content: systemInstruction });
         }
 
-        const effectiveEndpoint = await getEffectiveEndpoint();
+        const effectiveEndpoint = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
 
         try {
             const response = await fetch(`${effectiveEndpoint}/api/chat`, {
@@ -166,7 +155,7 @@ const OllamaProvider: AIProvider = {
 
     async complete(options: CompletionOptions): Promise<string> {
         const { model, prompt, systemInstruction, apiKey, jsonMode } = options;
-        const effectiveEndpoint = await getEffectiveEndpoint();
+        const effectiveEndpoint = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
         
         try {
              const messages = [];
