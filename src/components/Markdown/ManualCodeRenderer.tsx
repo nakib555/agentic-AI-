@@ -12,6 +12,7 @@ import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import { getMarkdownComponents } from './markdownComponents';
 import 'katex/dist/katex.min.css';
+import { useTypewriter } from '../../hooks/useTypewriter';
 
 type ManualCodeRendererProps = {
   text: string;
@@ -63,8 +64,11 @@ const processHighlights = (content: string): string => {
     }).join('');
 };
 
-const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, onRunCode, isRunDisabled }) => {
-    const processedText = useMemo(() => processHighlights(text), [text]);
+const ManualCodeRendererRaw: React.FC<ManualCodeRendererProps> = ({ text, onRunCode, isRunDisabled, isStreaming }) => {
+    // Use the typewriter hook to progressively reveal text during streaming
+    const displayedText = useTypewriter(text, isStreaming);
+
+    const processedText = useMemo(() => processHighlights(displayedText), [displayedText]);
     
     // We memoize the components object to prevent unnecessary re-renders of ReactMarkdown
     // created by getMarkdownComponents if the props haven't changed.
