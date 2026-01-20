@@ -6,9 +6,22 @@
 
 import type { AIProvider, ChatOptions, CompletionOptions, ModelLists } from './types';
 import type { Model as AppModel } from '../../src/types';
+import { readData, SETTINGS_FILE_PATH } from '../data-store';
 
 const sortModelsByName = (models: AppModel[]): AppModel[] => {
     return models.sort((a, b) => a.name.localeCompare(b.name));
+};
+
+const getEffectiveEndpoint = async (): Promise<string> => {
+    try {
+        const settings: any = await readData(SETTINGS_FILE_PATH);
+        if (settings.ollamaHost) {
+            return settings.ollamaHost.replace(/\/$/, '');
+        }
+    } catch (e) {
+        // Ignore errors reading settings, fall back to env/default
+    }
+    return (process.env.OLLAMA_HOST || 'http://127.0.0.1:11434').replace(/\/$/, '');
 };
 
 const OllamaProvider: AIProvider = {
@@ -17,8 +30,7 @@ const OllamaProvider: AIProvider = {
 
     async getModels(apiKey: string): Promise<ModelLists> {
         try {
-            // Determine the endpoint. Use env var OLLAMA_HOST if present, else default to localhost.
-            const effectiveEndpoint = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
+            const effectiveEndpoint = await getEffectiveEndpoint();
             const url = `${effectiveEndpoint}/api/tags`;
             
             console.log(`[OllamaProvider] Fetching installed models from: ${url}`);
@@ -32,7 +44,7 @@ const OllamaProvider: AIProvider = {
             });
             
             if (!response.ok) {
-                 throw new Error('Local instance unreachable');
+                 throw new Error(`Local instance unreachable at ${url}`);
             }
     
             const data = await response.json();
@@ -85,7 +97,7 @@ const OllamaProvider: AIProvider = {
             ollamaMessages.unshift({ role: 'system', content: systemInstruction });
         }
 
-        const effectiveEndpoint = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
+        const effectiveEndpoint = await getEffectiveEndpoint();
 
         try {
             const response = await fetch(`${effectiveEndpoint}/api/chat`, {
@@ -161,7 +173,7 @@ const OllamaProvider: AIProvider = {
 
     async complete(options: CompletionOptions): Promise<string> {
         const { model, prompt, systemInstruction, apiKey, jsonMode } = options;
-        const effectiveEndpoint = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
+        const effectiveEndpoint = await getEffectiveEndpoint();
         
         try {
              const messages = [];

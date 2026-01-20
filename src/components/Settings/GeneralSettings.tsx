@@ -20,6 +20,8 @@ type GeneralSettingsProps = {
   provider: 'gemini' | 'openrouter' | 'ollama';
   openRouterApiKey: string;
   onProviderChange: (provider: 'gemini' | 'openrouter' | 'ollama') => void;
+  ollamaHost?: string;
+  onSaveOllamaHost?: (host: string) => void;
 };
 
 const PROVIDER_OPTIONS = [
@@ -207,6 +209,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
     apiKey, onSaveApiKey,
     theme, setTheme, serverUrl, onSaveServerUrl,
     provider, openRouterApiKey, onProviderChange,
+    ollamaHost, onSaveOllamaHost
 }) => {
   return (
     <div className="space-y-10 pb-12">
@@ -240,20 +243,41 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         </SettingItem>
 
         <div className="space-y-4">
-            {/* Gemini & Ollama API Key */}
-            {(provider === 'gemini' || provider === 'ollama') && (
+            {/* Gemini API Key */}
+            {provider === 'gemini' && (
                 <ApiKeyInput 
                     value={apiKey} 
                     onSave={(k) => onSaveApiKey(k, provider)}
-                    placeholder={`Enter ${provider === 'gemini' ? 'Google Gemini' : 'Ollama'} API Key`}
-                    description={provider === 'gemini' 
-                        ? "Required for all AI features. Key is stored on the server."
-                        : "Optional for Ollama if authentication is configured."
-                    }
-                    label={`${provider === 'gemini' ? 'Gemini' : 'Ollama'} API Key`}
+                    placeholder="Enter Google Gemini API Key"
+                    description="Required for all AI features. Key is stored on the server."
+                    label="Gemini API Key"
                     provider={provider}
-                    isOptional={provider === 'ollama'}
                 />
+            )}
+
+            {/* Ollama Config */}
+            {provider === 'ollama' && (
+                <>
+                    <ApiKeyInput 
+                        value={ollamaHost || ''} 
+                        onSave={async (host) => { if(onSaveOllamaHost) onSaveOllamaHost(host); }}
+                        placeholder="http://127.0.0.1:11434"
+                        description="The URL of your Ollama instance. Default is localhost:11434."
+                        label="Ollama Host URL"
+                        isHost={true}
+                        provider={provider}
+                        isOptional={true}
+                    />
+                    <ApiKeyInput 
+                        value={apiKey} 
+                        onSave={(k) => onSaveApiKey(k, provider)}
+                        placeholder="Enter Ollama API Key (if required)"
+                        description="Optional. Only needed if your instance requires authentication."
+                        label="Ollama API Key"
+                        provider={provider}
+                        isOptional={true}
+                    />
+                </>
             )}
 
             {/* OpenRouter API Key */}

@@ -50,7 +50,7 @@ export const updateSettings = async (req: any, res: any) => {
         const providerChanged = updates.provider && updates.provider !== currentSettings.provider;
         const keyChanged = (newSettings.provider === 'gemini' && updates.apiKey !== currentSettings.apiKey) ||
                            (newSettings.provider === 'openrouter' && updates.openRouterApiKey !== currentSettings.openRouterApiKey) ||
-                           (newSettings.provider === 'ollama' && updates.apiKey !== currentSettings.apiKey); // Check Ollama key too
+                           (newSettings.provider === 'ollama' && (updates.apiKey !== currentSettings.apiKey || updates.ollamaHost !== currentSettings.ollamaHost)); 
 
         if (providerChanged || keyChanged) {
             try {
