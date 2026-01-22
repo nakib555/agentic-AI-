@@ -5,18 +5,18 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSidebar } from '../../hooks/useSidebar';
-import { useTheme } from '../../hooks/useTheme';
-import { useViewport } from '../../hooks/useViewport';
-import { useChat } from '../../hooks/useChat/index';
-import { useMemory } from '../../hooks/useMemory';
-import { getSettings, updateSettings, AppSettings } from '../../services/settingsService';
-import { fetchFromApi, setOnVersionMismatch } from '../../utils/api';
-import type { Model, Source } from '../../types';
-import { DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS, DEFAULT_TTS_VOICE, DEFAULT_ABOUT_USER, DEFAULT_ABOUT_RESPONSE } from './constants';
-import { testSuite, type TestProgress } from '../Testing/testSuite';
-import type { MessageFormHandle } from '../Chat/MessageForm/types';
-import { MessageListHandle } from '../Chat/MessageList';
+import { useSidebar } from './useSidebar';
+import { useTheme } from './useTheme';
+import { useViewport } from './useViewport';
+import { useChat } from './useChat/index';
+import { useMemory } from './useMemory';
+import { getSettings, updateSettings, AppSettings } from '../services/settingsService';
+import { fetchFromApi, setOnVersionMismatch } from '../utils/api';
+import type { Model, Source } from '../types';
+import { DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS, DEFAULT_TTS_VOICE, DEFAULT_ABOUT_USER, DEFAULT_ABOUT_RESPONSE } from '../components/App/constants';
+import { testSuite, type TestProgress } from '../components/Testing/testSuite';
+import type { MessageFormHandle } from '../components/Chat/MessageForm/types';
+import { MessageListHandle } from '../components/Chat/MessageList';
 
 export const useAppLogic = () => {
     // --- UI State ---
@@ -57,7 +57,6 @@ export const useAppLogic = () => {
     const [aboutUser, setAboutUser] = useState(DEFAULT_ABOUT_USER);
     const [aboutResponse, setAboutResponse] = useState(DEFAULT_ABOUT_RESPONSE);
     const [ttsVoice, setTtsVoice] = useState(DEFAULT_TTS_VOICE);
-    const [isAgentMode, setIsAgentMode] = useState(false);
     const [isMemoryEnabled, setIsMemoryEnabledState] = useState(false);
 
     // --- Sidebars State ---
@@ -101,10 +100,10 @@ export const useAppLogic = () => {
             maxOutputTokens: maxTokens,
             imageModel,
             videoModel,
-            isAgentMode
+            isAgentMode: false // Force agent mode off
         }, 
         memory.memoryContent, 
-        isAgentMode,
+        false, // Force agent mode off
         provider === 'openrouter' ? openRouterApiKey : apiKey, // Select appropriate key for chat logic
         showToast
     );
@@ -150,7 +149,7 @@ export const useAppLogic = () => {
                 setAboutUser(settings.aboutUser ?? DEFAULT_ABOUT_USER);
                 setAboutResponse(settings.aboutResponse ?? DEFAULT_ABOUT_RESPONSE);
                 setTtsVoice(settings.ttsVoice ?? DEFAULT_TTS_VOICE);
-                setIsAgentMode(settings.isAgentMode ?? false);
+                // Agent mode is intentionally ignored from settings
                 setIsMemoryEnabledState(settings.isMemoryEnabled ?? false);
                 
                 // Fetch models if we have a key or provider is ollama
@@ -180,8 +179,8 @@ export const useAppLogic = () => {
         try {
             await updateSettings({ [key]: val });
         } catch (error) {
-            console.error(`Failed to update ${key}:`, error);
-            showToast(`Failed to save ${key} setting.`, 'error');
+            console.error(`Failed to update ${String(key)}:`, error);
+            showToast(`Failed to save ${String(key)} setting.`, 'error');
         }
     };
 
@@ -190,14 +189,15 @@ export const useAppLogic = () => {
     const handleSetTemperature = createSettingUpdater(setTemperature, 'temperature');
     const handleSetMaxTokens = createSettingUpdater(setMaxTokens, 'maxTokens');
     const handleSetTtsVoice = createSettingUpdater(setTtsVoice, 'ttsVoice');
-    const handleSetIsAgentMode = createSettingUpdater(setIsAgentMode, 'isAgentMode');
     
     // Specialized Updaters
     const onModelChange = useCallback(async (modelId: string) => {
         setActiveModel(modelId);
         try {
             await updateSettings({ activeModel: modelId });
-            chat.updateChatModel(chat.currentChatId || '', modelId);
+            if (chat.currentChatId) {
+                chat.updateChatModel(chat.currentChatId, modelId);
+            }
         } catch (e) { console.error(e); }
     }, [chat.updateChatModel, chat.currentChatId]);
 
@@ -320,13 +320,13 @@ export const useAppLogic = () => {
     }, [chat.importChat, showToast]);
 
     const handleExportAllChats = useCallback(() => {
-        import('../../utils/exportUtils').then(mod => {
+        import('../utils/exportUtils').then(mod => {
             (mod as any).exportAllChatsToJson(chat.chatHistory);
         });
     }, [chat.chatHistory]);
 
     const handleDownloadLogs = useCallback(() => {
-        import('../../utils/logCollector').then(mod => {
+        import('../utils/logCollector').then(mod => {
             const logs = mod.logCollector.formatLogs();
             const blob = new Blob([logs], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
@@ -434,7 +434,7 @@ export const useAppLogic = () => {
         const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
         if (!currentChat) return;
 
-        import('../../utils/exportUtils').then(mod => {
+        import('../utils/exportUtils').then(mod => {
             if (format === 'json') (mod as any).exportChatToJson(currentChat);
             else if (format === 'md') (mod as any).exportChatToMarkdown(currentChat);
             else if (format === 'pdf') (mod as any).exportChatToPdf(currentChat);
@@ -446,7 +446,7 @@ export const useAppLogic = () => {
         const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
         if (!currentChat) return;
         
-        import('../../utils/exportUtils').then(mod => {
+        import('../utils/exportUtils').then(mod => {
             (mod as any).exportChatToClipboard(currentChat);
         });
     }, [chat.currentChatId, chat.chatHistory]);
@@ -492,7 +492,8 @@ export const useAppLogic = () => {
         aboutResponse, setAboutResponse: handleSetAboutResponse,
         ttsVoice, setTtsVoice: handleSetTtsVoice,
         
-        isAgentMode, setIsAgentMode: handleSetIsAgentMode,
+        isAgentMode: false,
+        setIsAgentMode: () => {},
         
         // Memory
         memory,

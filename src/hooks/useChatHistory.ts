@@ -189,10 +189,12 @@ export const useChatHistory = () => {
   }, []);
   
   const addMessagesToChat = useCallback((chatId: string, messages: Message[]) => {
+    if (!chatId) return;
     setChatHistory(prev => prev.map(s => s.id !== chatId ? s : { ...s, messages: [...(s.messages || []), ...messages] }));
   }, []);
 
   const addModelResponse = useCallback((chatId: string, messageId: string, newResponse: ModelResponse) => {
+    if (!chatId) return;
     setChatHistory(prev => prev.map(chat => {
       if (chat.id !== chatId || !chat.messages) return chat;
       const index = chat.messages.findIndex(m => m.id === messageId);
@@ -207,6 +209,7 @@ export const useChatHistory = () => {
   }, []);
   
   const updateActiveResponseOnMessage = useCallback((chatId: string, messageId: string, updateFn: (response: ModelResponse) => Partial<ModelResponse>) => {
+    if (!chatId) return;
     setChatHistory(prev => prev.map(chat => {
       if (chat.id !== chatId || !chat.messages) return chat;
       const index = chat.messages.findIndex(m => m.id === messageId);
@@ -224,6 +227,8 @@ export const useChatHistory = () => {
   }, []);
 
   const updateChatProperty = useCallback(async (chatId: string, update: Partial<ChatSession>, debounceMs: number = 0) => {
+      if (!chatId) return;
+
       // 1. Optimistic Update (Always Instant)
       setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, ...update } : s));
 
@@ -261,6 +266,7 @@ export const useChatHistory = () => {
   }, []);
 
   const setActiveResponseIndex = useCallback((chatId: string, messageId: string, index: number) => {
+    if (!chatId) return;
     const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
     if (!currentChat || !currentChat.messages) return;
 
@@ -290,6 +296,7 @@ export const useChatHistory = () => {
   }, []);
 
   const setChatLoadingState = useCallback((chatId: string, isLoading: boolean) => {
+    if (!chatId) return;
     setChatHistory(prev => prev.map(s => s.id === chatId ? { ...s, isLoading } : s));
   }, []);
 
@@ -298,6 +305,7 @@ export const useChatHistory = () => {
   }, [setChatLoadingState]);
 
   const updateMessage = useCallback((chatId: string, messageId: string, update: Partial<Message>) => {
+    if (!chatId) return;
     setChatHistory(prev => prev.map(chat => {
         if (chat.id !== chatId || !chat.messages) return chat;
         const index = chat.messages.findIndex(m => m.id === messageId);

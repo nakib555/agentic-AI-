@@ -7,7 +7,6 @@
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { systemInstruction as agenticSystemInstruction } from "./prompts/system";
 import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './prompts/chatPersona';
 import { parseApiError } from './utils/apiError';
 import { executeTextToSpeech } from "./tools/tts";
@@ -349,7 +348,7 @@ export const apiHandler = async (req: any, res: any) => {
                     }
                 }
 
-                const coreInstruction = settings.isAgentMode ? agenticSystemInstruction : chatModeSystemInstruction;
+                const coreInstruction = chatModeSystemInstruction;
                 const { systemPrompt, aboutUser, aboutResponse, memoryContent } = settings;
                 
                 let personalizationSection = "";
@@ -412,7 +411,7 @@ ${personalizationSection}
                         temperature: settings.temperature,
                         maxTokens: settings.maxOutputTokens,
                         apiKey: activeApiKey,
-                        isAgentMode: settings.isAgentMode,
+                        isAgentMode: false,
                         toolExecutor,
                         signal: abortController.signal,
                         chatId,

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { SettingItem } from './SettingItem';
 import { ThemeToggle } from '../Sidebar/ThemeToggle';
@@ -70,7 +71,8 @@ const ApiKeyInput = ({ label, value, placeholder, onSave, buttonLabel, descripti
 
     useEffect(() => setInputValue(value), [value]);
 
-    const handleSave = async () => {
+    const handleSave = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (isSaving) return;
         setIsSaving(true);
         try {
@@ -89,7 +91,7 @@ const ApiKeyInput = ({ label, value, placeholder, onSave, buttonLabel, descripti
     };
 
     return (
-        <div className="flex flex-col gap-2 w-full">
+        <form className="flex flex-col gap-2 w-full" onSubmit={handleSave}>
             {label && <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest px-1">{label}</label>}
             <div className="flex gap-2">
                 <div className="relative flex-1 group">
@@ -98,11 +100,12 @@ const ApiKeyInput = ({ label, value, placeholder, onSave, buttonLabel, descripti
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         placeholder={placeholder}
+                        autoComplete={isPassword ? "new-password" : "off"}
                         className="w-full pl-4 pr-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-sm"
                     />
                 </div>
                 <button
-                    onClick={handleSave}
+                    type="submit"
                     disabled={isSaving || !inputValue}
                     className={`
                         px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[80px]
@@ -127,7 +130,7 @@ const ApiKeyInput = ({ label, value, placeholder, onSave, buttonLabel, descripti
                 </button>
             </div>
             {description && <p className="text-[11px] text-slate-500 dark:text-slate-500 px-1">{description}</p>}
-        </div>
+        </form>
     );
 };
 

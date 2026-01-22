@@ -12,7 +12,7 @@ const motion = motionTyped as any;
 
 type WelcomeScreenProps = {
   sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
-  isAgentMode: boolean;
+  isAgentMode: boolean; // Kept for prop compatibility but unused
 };
 
 export const WelcomeScreen = ({ sendMessage, isAgentMode }: WelcomeScreenProps) => (
@@ -28,16 +28,14 @@ export const WelcomeScreen = ({ sendMessage, isAgentMode }: WelcomeScreenProps) 
                 <span className="brand-gradient">I help you?</span>
             </h1>
             <p className="text-lg text-slate-500 dark:text-slate-400 font-medium max-w-lg mx-auto">
-                {isAgentMode 
-                    ? "Your autonomous agent for reasoning, coding, and creation." 
-                    : "Your intelligent companion for conversation and knowledge."}
+                Your intelligent companion for conversation and knowledge.
             </p>
         </motion.div>
         
         <div className="w-full max-w-3xl">
              <FloatingPrompts 
                 onPromptClick={(prompt, options) => sendMessage(prompt, undefined, options)} 
-                isAgentMode={isAgentMode}
+                isAgentMode={false}
              />
         </div>
     </div>

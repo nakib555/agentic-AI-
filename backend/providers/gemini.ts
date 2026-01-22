@@ -9,7 +9,6 @@ import type { AIProvider, ChatOptions, CompletionOptions, ModelLists } from './t
 import type { Model as AppModel } from '../../src/types';
 import { generateContentWithRetry, generateContentStreamWithRetry, getText, generateImagesWithRetry, generateVideosWithRetry } from '../utils/geminiUtils';
 import { transformHistoryToGeminiFormat } from '../utils/historyTransformer';
-import { runAgenticLoop } from '../services/agenticLoop/index';
 import { toolDeclarations } from '../tools/declarations';
 
 // Helper to sort models
@@ -114,40 +113,6 @@ const GeminiProvider: AIProvider = {
         
         // Transform to Gemini Content[] format
         const fullHistory = transformHistoryToGeminiFormat(historyForAI);
-
-        // --- AGENTIC LOOP ---
-        if (isAgentMode && toolExecutor) {
-            const finalSettings = {
-                temperature,
-                maxOutputTokens: maxTokens,
-                systemInstruction,
-                tools: [{ functionDeclarations: toolDeclarations }], // Use definitions from shared declarations
-            };
-
-            await runAgenticLoop({
-                ai,
-                model,
-                history: fullHistory,
-                toolExecutor,
-                callbacks: {
-                    onTextChunk: callbacks.onTextChunk,
-                    onNewToolCalls: callbacks.onNewToolCalls || (() => {}),
-                    onToolResult: callbacks.onToolResult || (() => {}),
-                    onPlanReady: callbacks.onPlanReady || (async () => false),
-                    onFrontendToolRequest: callbacks.onFrontendToolRequest || (() => {}),
-                    // Wrap the callback to match expected signature: (finalText, groundingMetadata) -> { finalText, groundingMetadata }
-                    onComplete: (finalText, groundingMetadata) => {
-                        callbacks.onComplete({ finalText, groundingMetadata });
-                    },
-                    onCancel: callbacks.onCancel || (() => {}),
-                    onError: callbacks.onError,
-                },
-                settings: finalSettings,
-                signal: signal || new AbortController().signal,
-                threadId: chatId || 'unknown',
-            });
-            return;
-        }
 
         // --- STANDARD STREAMING CHAT ---
         // For Chat Mode (non-agentic) or if no tool executor provided
