@@ -11,7 +11,6 @@ import { useChatHistory } from '../useChatHistory';
 import { generateChatTitle, parseApiError, generateFollowUpSuggestions } from '../../services/gemini/index';
 import { fetchFromApi } from '../../utils/api';
 import { processBackendStream } from '../../services/agenticLoop/stream-processor';
-import { executeFrontendTool } from './tool-executor';
 import { createStreamCallbacks } from './chat-callbacks';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -24,18 +23,15 @@ type ChatSettings = {
     maxOutputTokens: number; 
     imageModel: string;
     videoModel: string;
-    isAgentMode?: boolean;
 };
 
 export const useChat = (
     initialModel: string, 
     settings: ChatSettings, 
     memoryContent: string, 
-    isAgentMode: boolean, 
     apiKey: string,
     onShowToast?: (message: string, type: 'info' | 'success' | 'error') => void
 ) => {
-    // Destructure all necessary methods from the history hook
     const { 
         chatHistory, 
         currentChatId, 
@@ -59,10 +55,8 @@ export const useChat = (
     const testResolverRef = useRef<((value: Message | PromiseLike<Message>) => void) | null>(null);
     const hasAttemptedReconnection = useRef(false);
     
-    // Track title generation attempts to prevent loops
     const titleGenerationAttemptedRef = useRef<Set<string>>(new Set());
 
-    // Refs to hold the latest state for callbacks
     const chatHistoryRef = useRef(chatHistory);
     useEffect(() => { chatHistoryRef.current = chatHistory; }, [chatHistory]);
     const currentChatIdRef = useRef(currentChatId);
@@ -77,7 +71,6 @@ export const useChat = (
         return chatHistory.find(c => c.id === currentChatId)?.isLoading ?? false;
     }, [chatHistory, currentChatId]);
 
-    // Effect to resolve test promise when loading completes
     useEffect(() => {
         if (!isLoading && testResolverRef.current && currentChatId) {
             const chat = chatHistory.find(c => c.id === currentChatId);
@@ -91,15 +84,9 @@ export const useChat = (
         }
     }, [isLoading, chatHistory, currentChatId]);
 
-    const handleFrontendToolExecution = useCallback((callId: string, toolName: string, toolArgs: any) => {
-        executeFrontendTool(callId, toolName, toolArgs);
-    }, []);
-
     const cancelGeneration = useCallback(() => {
-        // Abort the frontend fetch immediately for responsiveness
         abortControllerRef.current?.abort();
         
-        // Send explicit cancel request using chatId as ID
         if (currentChatIdRef.current) {
             fetchFromApi('/api/handler?task=cancel', {
                 method: 'POST',
@@ -125,50 +112,13 @@ export const useChat = (
                 }));
                 updateMessage(chatId, lastMessage.id, { isThinking: false });
                 completeChatLoading(chatId);
-
-                // Fallback for plan approval state cancellation if we are stuck there
-                if (lastMessage.executionState === 'pending_approval') {
-                     const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
-                     const callId = activeResponse?.plan?.callId || 'plan-approval';
-                     handleFrontendToolExecution(callId, 'denyExecution', false);
-                }
             }
         }
-    }, [handleFrontendToolExecution, updateActiveResponseOnMessage, updateMessage, completeChatLoading]);
+    }, [updateActiveResponseOnMessage, updateMessage, completeChatLoading]);
     
-    const approveExecution = useCallback((editedPlan: string) => {
-        const chatId = currentChatIdRef.current;
-        if (chatId) {
-            const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-            if (currentChat?.messages?.length) {
-                const lastMessage = currentChat.messages[currentChat.messages.length - 1];
-                const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
-                const callId = activeResponse?.plan?.callId || 'plan-approval';
-
-                updateMessage(chatId, lastMessage.id, { executionState: 'approved' });
-                handleFrontendToolExecution(callId, 'approveExecution', editedPlan);
-            }
-        }
-    }, [updateMessage, handleFrontendToolExecution]);
-  
-    const denyExecution = useCallback(() => {
-        const chatId = currentChatIdRef.current;
-        if (chatId) {
-            const currentChat = chatHistoryRef.current.find(c => c.id === chatId);
-            if (currentChat?.messages?.length) {
-                const lastMessage = currentChat.messages[currentChat.messages.length - 1];
-                const activeResponse = lastMessage.responses?.[lastMessage.activeResponseIndex];
-                const callId = activeResponse?.plan?.callId || 'plan-approval';
-
-                updateMessage(chatId, lastMessage.id, { executionState: 'denied' });
-                handleFrontendToolExecution(callId, 'denyExecution', false);
-            }
-        }
-    }, [updateMessage, handleFrontendToolExecution]);
-
     // --- RECONNECTION LOGIC ---
     const connectToActiveStream = useCallback(async (chatId: string, messageId: string) => {
-        if (abortControllerRef.current) return; // Already connected or generating
+        if (abortControllerRef.current) return; 
 
         console.log(`[FRONTEND] Attempting to reconnect to stream for chat ${chatId}...`);
         setChatLoadingState(chatId, true);
@@ -178,11 +128,11 @@ export const useChat = (
 
         try {
             const response = await fetchFromApi('/api/handler?task=connect', {
-                method: 'POST', // Connect task is POST to send body
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 signal: controller.signal,
                 body: JSON.stringify({ chatId }),
-                silent: true // Suppress 404 errors during reconnection checks
+                silent: true
             });
 
             if (!response.ok) {
@@ -208,7 +158,7 @@ export const useChat = (
                 updateActiveResponseOnMessage,
                 updateMessage,
                 completeChatLoading,
-                handleFrontendToolExecution,
+                handleFrontendToolExecution: () => {}, // No-op for chat mode
                 onCancel: () => {
                     updateMessage(chatId, messageId, { isThinking: false });
                     completeChatLoading(chatId);
@@ -226,11 +176,9 @@ export const useChat = (
                 abortControllerRef.current = null;
              }
         }
-    }, [updateActiveResponseOnMessage, updateMessage, completeChatLoading, setChatLoadingState, handleFrontendToolExecution]);
+    }, [updateActiveResponseOnMessage, updateMessage, completeChatLoading, setChatLoadingState]);
 
-    // Check for potential reconnection needs on mount/chat switch
     useEffect(() => {
-        // Only run once per chat load
         if (hasAttemptedReconnection.current || !currentChatId) return;
         
         const chat = chatHistoryRef.current.find(c => c.id === currentChatId);
@@ -245,7 +193,6 @@ export const useChat = (
         }
     }, [currentChatId, connectToActiveStream]);
 
-    // Reset attempt flag on chat change
     useEffect(() => {
         hasAttemptedReconnection.current = false;
     }, [currentChatId]);
@@ -269,7 +216,7 @@ export const useChat = (
                 model: chatConfig.model,
                 newMessage: newMessage,
                 settings: {
-                    isAgentMode: runtimeSettings.isAgentMode,
+                    isAgentMode: false,
                     systemPrompt: runtimeSettings.systemPrompt,
                     aboutUser: runtimeSettings.aboutUser,
                     aboutResponse: runtimeSettings.aboutResponse,
@@ -316,7 +263,7 @@ export const useChat = (
                 updateActiveResponseOnMessage,
                 updateMessage,
                 completeChatLoading,
-                handleFrontendToolExecution,
+                handleFrontendToolExecution: () => {},
                 onStart: (requestId) => { requestIdRef.current = requestId; },
                 onCancel: () => {
                     if (controller && !controller.signal.aborted) {
@@ -339,7 +286,6 @@ export const useChat = (
                 updateMessage(chatId, messageId, { isThinking: false });
                 completeChatLoading(chatId);
                 
-                // Cleanup refs only if we are the active controller
                 if (abortControllerRef.current === controller) {
                     abortControllerRef.current = null;
                     requestIdRef.current = null;
@@ -363,7 +309,6 @@ export const useChat = (
                      if (suggestions.length > 0) {
                         updateActiveResponseOnMessage(chatId, messageId, () => ({ suggestedActions: suggestions }));
                         
-                        // Force a persist of the suggestions
                         const currentChatSnapshot = chatHistoryRef.current.find(c => c.id === chatId);
                         if (currentChatSnapshot && currentChatSnapshot.messages) {
                             const updatedMessages = currentChatSnapshot.messages.map(m => {
@@ -428,7 +373,7 @@ export const useChat = (
                 maxOutputTokens: settings.maxOutputTokens,
                 imageModel: settings.imageModel,
                 videoModel: settings.videoModel,
-                isAgentMode: settings.isAgentMode,
+                isAgentMode: false,
             };
 
             chatCreationPromise = startNewChatHistory(initialModel, settingsToUse, optimisticId);
@@ -465,7 +410,7 @@ export const useChat = (
             modelPlaceholder.id, 
             userMessageObj,
             chatForSettings, 
-            { ...settings, isAgentMode: options.isThinkingModeEnabled ?? isAgentMode }
+            { ...settings, isAgentMode: false }
         );
     };
 
@@ -531,14 +476,14 @@ export const useChat = (
                 modelPlaceholder.id,
                 null, 
                 currentChat, 
-                { ...settings, isAgentMode }
+                { ...settings, isAgentMode: false }
             );
 
         } catch (e) {
             console.error("Failed to edit message:", e);
             if (onShowToast) onShowToast("Failed to edit message branch", 'error');
         }
-    }, [isLoading, updateChatProperty, addMessagesToChat, setChatLoadingState, startBackendChat, cancelGeneration, onShowToast, settings, isAgentMode]);
+    }, [isLoading, updateChatProperty, addMessagesToChat, setChatLoadingState, startBackendChat, cancelGeneration, onShowToast, settings]);
 
     const navigateBranch = useCallback(async (messageId: string, direction: 'next' | 'prev') => {
         if (isLoading) return;
@@ -627,10 +572,10 @@ export const useChat = (
             aiMessageId, 
             null, 
             currentChat, 
-            { ...settings, isAgentMode: isAgentMode }
+            { ...settings, isAgentMode: false }
         );
 
-    }, [isLoading, currentChatId, updateChatProperty, setChatLoadingState, cancelGeneration, startBackendChat, settings, isAgentMode]);
+    }, [isLoading, currentChatId, updateChatProperty, setChatLoadingState, cancelGeneration, startBackendChat, settings]);
 
     const setResponseIndex = useCallback(async (messageId: string, index: number) => {
         if (isLoading) return; 
@@ -682,14 +627,11 @@ export const useChat = (
   
   return { 
       chatHistory, currentChatId, isHistoryLoading,
-      // expose all needed methods from history hook
       updateChatTitle, updateChatProperty, loadChat: loadChatHistory, deleteChat: deleteChatHistory, clearAllChats: clearAllChatsHistory, importChat, startNewChat: startNewChatHistory,
       messages, 
       sendMessage, 
       isLoading, 
       cancelGeneration, 
-      approveExecution, 
-      denyExecution, 
       regenerateResponse, 
       sendMessageForTest, 
       editMessage, 

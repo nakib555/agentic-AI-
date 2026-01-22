@@ -44,14 +44,11 @@ type AiMessageProps = {
     ttsModel: string;
     currentChatId: string | null;
     onShowSources: (sources: Source[]) => void;
-    approveExecution: (editedPlan: string) => void;
-    denyExecution: () => void;
     messageFormRef: React.RefObject<MessageFormHandle>;
     onRegenerate: (messageId: string) => void;
     onSetActiveResponseIndex: (messageId: string, index: number) => void;
-    isAgentMode: boolean;
-    userQuery?: string; // Optional prompt context
-    isLast?: boolean; // New prop to control suggestions visibility
+    userQuery?: string;
+    isLast?: boolean;
 };
 
 const StopIcon = () => (
@@ -63,11 +60,11 @@ const StopIcon = () => (
 const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, ttsModel, currentChatId, 
           onShowSources, messageFormRef, onRegenerate,
-          onSetActiveResponseIndex, isAgentMode, isLast = false } = props;
+          onSetActiveResponseIndex, isLast = false } = props;
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
-  const { activeResponse, finalAnswerText, hasWorkflow } = logic;
+  const { activeResponse, finalAnswerText } = logic;
   
   const typedFinalAnswer = useTypewriter(finalAnswerText, msg.isThinking ?? false);
 
@@ -126,7 +123,7 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const isStoppedByUser = activeResponse?.error?.code === 'STOPPED_BY_USER';
   const showToolbar = logic.thinkingIsComplete && (logic.hasFinalAnswer || !!activeResponse?.error || isStoppedByUser);
 
-  if (logic.isInitialWait && !hasWorkflow) return <TypingIndicator />;
+  if (logic.isInitialWait) return <TypingIndicator />;
 
   return (
     <motion.div 
@@ -195,8 +192,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                             text={segment.content!} 
                             components={MarkdownComponents} 
                             isStreaming={msg.isThinking ?? false} 
-                            onRunCode={isAgentMode ? logic.handleRunCode : undefined} 
-                            isRunDisabled={isLoading} 
                         />
                     );
                 }

@@ -12,10 +12,9 @@ const motion = motionTyped as any;
 
 type WelcomeScreenProps = {
   sendMessage: (message: string, files?: File[], options?: { isHidden?: boolean; isThinkingModeEnabled?: boolean; }) => void;
-  isAgentMode: boolean; // Kept for prop compatibility but unused
 };
 
-export const WelcomeScreen = ({ sendMessage, isAgentMode }: WelcomeScreenProps) => (
+export const WelcomeScreen = ({ sendMessage }: WelcomeScreenProps) => (
     <div className="flex flex-col items-center justify-center h-full text-center pb-12 px-4 relative overflow-y-auto custom-scrollbar">
         <motion.div
             initial={{ opacity: 0, y: 20 }}

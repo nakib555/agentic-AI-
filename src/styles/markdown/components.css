@@ -1,3 +1,4 @@
+
 /* Markdown Custom Components */
 
 .custom-blockquote {
@@ -19,21 +20,6 @@
 }
 .custom-blockquote p:last-child {
   margin-bottom: 0;
-}
-
-.workflow-markdown {
-  font-size: 0.9em;
-  color: var(--text-secondary);
-}
-.workflow-markdown p { margin-bottom: 0.75em; }
-
-.workflow-markdown ul {
-    list-style-type: disc;
-    padding-left: 1.25rem;
-}
-
-.workflow-markdown li {
-    margin-bottom: 0.25rem;
 }
 
 .mark-highlight {

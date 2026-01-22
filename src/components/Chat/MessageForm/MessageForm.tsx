@@ -26,8 +26,6 @@ type MessageFormProps = {
   isAppLoading: boolean;
   backendStatus: 'online' | 'offline' | 'checking';
   onCancel: () => void;
-  isAgentMode: boolean;
-  setIsAgentMode: (isAgent: boolean) => void;
   messages: Message[];
   hasApiKey: boolean;
   ttsVoice: string;
@@ -44,13 +42,12 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
 
   const [isDragging, setIsDragging] = useState(false);
 
-  // Force isAgentMode to false inside the form logic
   const logic = useMessageForm(
     (msg, files, options) => onSubmit(msg, files, { ...options, isThinkingModeEnabled: false }),
     isLoading,
     ref,
     props.messages,
-    false, // Agent Mode Disabled
+    false,
     hasApiKey
   );
 
@@ -68,7 +65,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Prevent flickering when entering children elements
     if (e.currentTarget.contains(e.relatedTarget as Node)) return;
     setIsDragging(false);
   };

@@ -99,11 +99,9 @@ export const useAppLogic = () => {
             temperature, 
             maxOutputTokens: maxTokens,
             imageModel,
-            videoModel,
-            isAgentMode: false // Force agent mode off
+            videoModel
         }, 
         memory.memoryContent, 
-        false, // Force agent mode off
         provider === 'openrouter' ? openRouterApiKey : apiKey, // Select appropriate key for chat logic
         showToast
     );
@@ -149,7 +147,6 @@ export const useAppLogic = () => {
                 setAboutUser(settings.aboutUser ?? DEFAULT_ABOUT_USER);
                 setAboutResponse(settings.aboutResponse ?? DEFAULT_ABOUT_RESPONSE);
                 setTtsVoice(settings.ttsVoice ?? DEFAULT_TTS_VOICE);
-                // Agent mode is intentionally ignored from settings
                 setIsMemoryEnabledState(settings.isMemoryEnabled ?? false);
                 
                 // Fetch models if we have a key or provider is ollama
@@ -491,9 +488,6 @@ export const useAppLogic = () => {
         aboutUser, setAboutUser: handleSetAboutUser,
         aboutResponse, setAboutResponse: handleSetAboutResponse,
         ttsVoice, setTtsVoice: handleSetTtsVoice,
-        
-        isAgentMode: false,
-        setIsAgentMode: () => {},
         
         // Memory
         memory,

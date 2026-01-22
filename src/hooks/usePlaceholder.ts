@@ -110,102 +110,14 @@ const CHAT_FALLBACK_PLACEHOLDERS = [
   'How does a 3D printer work?',
 ];
 
-// Custom-made fallback placeholders for Agent mode
-const AGENT_FALLBACK_PLACEHOLDERS = [
-  'Generate an image of a majestic lion...',
-  'Write a python script to...',
-  'Find coffee shops near me and show them on a map',
-  'Create a presentation about...',
-  'Analyze this data for trends...',
-  'Generate a video of a futuristic city skyline',
-  'Write and execute code to calculate the first 100 prime numbers',
-  'Search for the latest news on AI and summarize the top 3 articles',
-  'Create a markdown table comparing two smartphone models',
-  'Find the current stock price of Google',
-  "Generate an image of a 'cyberpunk alleyway in the rain'",
-  'Write a JavaScript function to sort an array of objects',
-  'Show me a map of hiking trails near my location',
-  'Create a 3-slide presentation on the benefits of remote work',
-  'Analyze this CSV file and create a bar chart of the results',
-  'Generate a short video of a dog skateboarding',
-  'Write a Python script that scrapes a website and saves the headlines',
-  'Find restaurants near me that are open now',
-  'Create a detailed strategic plan for launching a new app',
-  'Search for scientific papers on quantum entanglement and summarize them',
-  'Generate a logo concept for a coffee shop called "The Daily Grind"',
-  'Execute a shell command to list files in the current directory',
-  'Find the latitude and longitude of the Empire State Building',
-  'Analyze the sentiment of this text: "The movie was fantastic!"',
-  'Create a complex visualization of a dataset',
-  'Generate a 10-second video clip of a storm at sea',
-  'Write a Python script to convert a CSV to a JSON file',
-  'Show me on a map the route from San Francisco to Los Angeles',
-  'Research and compile a list of competitors for a new SaaS product',
-  'Generate a photorealistic image of an astronaut on Mars',
-  'Write and execute code to solve a Sudoku puzzle',
-  'Find the top 5 most populated cities in the world and display them on a map',
-  'Create a business plan outline for a startup',
-  'Analyze this code for bugs and suggest improvements',
-  'Generate a video of a bustling medieval market',
-  'Write a Python script that uses the requests library to call an API',
-  'Find the best-rated Italian restaurants within 5 miles of my location',
-  'Research the history of artificial intelligence and present a timeline',
-  "Generate an abstract oil painting of 'chaos and order'",
-  'Write and run a SQL query to select all users over 30',
-  'Find the weather forecast for the next 3 days',
-  'Create a mind map of ideas for a new novel',
-  'Analyze this image and describe its contents in detail',
-  'Generate a video of a bee collecting nectar in slow motion',
-  'Write a Python script to parse a log file and count errors',
-  'Display a map showing all national parks in California',
-  'Research and compare the specs of the latest gaming consoles',
-  'Generate a 3D render of a futuristic sports car',
-  'Write a function to find the factorial of a number',
-  'Search for flight prices from JFK to LHR for next week',
-  'Create a Gantt chart for a project timeline',
-  'Analyze this text and extract all named entities',
-  'Generate a video of a time-lapse of a flower blooming',
-  'Write a Python script to automate sending emails',
-  'Show me a map with all the subway stations in my city',
-  'Research and write a report on the current state of renewable energy',
-  'Generate a watercolor painting of a quiet forest stream',
-  'Write code to implement a binary search algorithm',
-  'Find directions to the nearest hospital',
-  'Create a step-by-step plan to learn a new programming language',
-  'Analyze this audio file and transcribe the speech',
-  'Generate a video showing the construction of a skyscraper in fast-forward',
-  'Write a Python script to resize all images in a folder',
-  'Show me a map of all the volcanoes on Earth',
-  'Research and write a technical whitepaper on blockchain technology',
-  'Generate a synthwave-style image of a car driving into the sunset',
-  'Write code to perform a Monte Carlo simulation',
-  'Find the opening hours for the local library',
-  'Develop a content calendar for a social media account',
-  'Analyze this dataset and create a predictive model',
-  'Generate a video of a cat DJing at a party',
-  'Write a Python script to create a Discord bot',
-  "Show me a map of the world's major shipping lanes",
-  'Research and write a legal brief on a specific case',
-  'Generate a steampunk-inspired illustration of a clockwork city',
-  'Write code to implement a neural network from scratch',
-  'Find the best route for a cross-country road trip',
-  'Design a user interface for a mobile weather app',
-  'Analyze this git repository for contribution patterns',
-  'Generate a cinematic trailer for a fictional movie',
-  'Write a Python script to perform optical character recognition on an image',
-  'Show me a map of all the Tesla supercharger stations in my state',
-];
-
 /**
  * A custom hook to manage a dynamic placeholder for an input field.
  * Returns a shuffled list of placeholders appropriate for the current mode.
  * The consuming component (MessageForm) uses this list to render the typing effect.
  */
 export const usePlaceholder = (isEnabled: boolean, conversationContext: string, isAgentMode: boolean, hasApiKey: boolean) => {
-    // Return a shuffled list of placeholders based on the current mode
     return useMemo(() => {
-        const list = isAgentMode ? AGENT_FALLBACK_PLACEHOLDERS : CHAT_FALLBACK_PLACEHOLDERS;
-        // Simple shuffle
+        const list = CHAT_FALLBACK_PLACEHOLDERS;
         return [...list].sort(() => 0.5 - Math.random());
     }, [isAgentMode]);
 };

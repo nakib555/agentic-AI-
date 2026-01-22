@@ -11,18 +11,13 @@ import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './p
 import { parseApiError } from './utils/apiError';
 import { executeTextToSpeech } from "./tools/tts";
 import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory";
-import { createToolExecutor } from './tools/index';
 import { getApiKey, getProvider } from './settingsHandler';
 import { generateProviderCompletion } from './utils/generateProviderCompletion';
 import { historyControl } from './services/historyControl';
 import { vectorMemory } from './services/vectorMemory';
-import { executeWithPiston } from './tools/piston';
 import { readData, SETTINGS_FILE_PATH } from './data-store';
-import { providerRegistry } from './providers/registry'; // New Registry Import
-import { GoogleGenAI } from "@google/genai"; // Still needed for TTS and Tools initialization if provider relies on it
-
-// Store promises for frontend tool requests that the backend is waiting on
-const frontendToolRequests = new Map<string, (result: any) => void>();
+import { providerRegistry } from './providers/registry'; 
+import { GoogleGenAI } from "@google/genai";
 
 // --- JOB MANAGEMENT SYSTEM ---
 
@@ -65,7 +60,6 @@ const cleanupJob = (chatId: string) => {
 
 const generateId = () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-// ... (Keep existing generateAsciiTree and generateDirectoryStructure functions) ...
 async function generateAsciiTree(dirPath: string, prefix: string = ''): Promise<string> {
     let output = '';
     let entries;
@@ -243,8 +237,8 @@ export const apiHandler = async (req: any, res: any) => {
     const globalSettings: any = await readData(SETTINGS_FILE_PATH);
     const activeModel = globalSettings.activeModel || 'gemini-2.5-flash';
 
-    const isSuggestionTask = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'].includes(task);
-    const BYPASS_TASKS = ['tool_response', 'cancel', 'debug_data_tree', 'run_piston', 'feedback', 'tool_exec'];
+    const isSuggestionTask = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate'].includes(task);
+    const BYPASS_TASKS = ['cancel', 'debug_data_tree', 'feedback'];
     
     if (!activeApiKey && !BYPASS_TASKS.includes(task) && !isSuggestionTask && activeProviderName !== 'ollama') {
         return res.status(401).json({ error: "API key not configured on the server." });
@@ -375,34 +369,6 @@ ${personalizationSection}
                 try {
                     const provider = await providerRegistry.getProvider(activeProviderName);
 
-                    const requestFrontendExecution = (callId: string, toolName: string, toolArgs: any) => {
-                        return new Promise<string | { error: string }>((resolve) => {
-                            if (abortController.signal.aborted) {
-                                resolve({ error: "Job aborted." });
-                                return;
-                            }
-                            const timeoutId = setTimeout(() => {
-                                if (frontendToolRequests.has(callId)) {
-                                    frontendToolRequests.delete(callId);
-                                    resolve({ error: "Tool execution timed out." });
-                                }
-                            }, 60000); 
-                            frontendToolRequests.set(callId, (result) => {
-                                clearTimeout(timeoutId);
-                                resolve(result);
-                            });
-                            writeToClient(job, 'frontend-tool-request', { callId, toolName, toolArgs });
-                        });
-                    };
-
-                    const onToolUpdate = (callId: string, data: any) => {
-                        writeToClient(job, 'tool-update', { id: callId, ...data });
-                    };
-
-                    // Only create tool executor if we have Gemini AI instance (since many backend tools rely on it)
-                    // If AI is null (e.g. OpenRouter), tool executor won't work for some tools, provider handles grace.
-                    const toolExecutor = ai ? createToolExecutor(ai, settings.imageModel, settings.videoModel, activeApiKey!, chatId, requestFrontendExecution, false, onToolUpdate) : undefined;
-
                     await provider.chat({
                         model,
                         messages: historyForAI,
@@ -412,7 +378,6 @@ ${personalizationSection}
                         maxTokens: settings.maxOutputTokens,
                         apiKey: activeApiKey,
                         isAgentMode: false,
-                        toolExecutor,
                         signal: abortController.signal,
                         chatId,
                         callbacks: {
@@ -421,24 +386,13 @@ ${personalizationSection}
                                 persistence.addText(text);
                             },
                             onNewToolCalls: (events) => {
-                                writeToClient(job, 'tool-call-start', events);
-                                persistence.update((r) => { r.toolCallEvents = [...(r.toolCallEvents || []), ...events]; });
+                                // No-op in pure chat mode, but kept interface compatible
                             },
                             onToolResult: (id, result) => {
-                                writeToClient(job, 'tool-call-end', { id, result });
-                                persistence.update((r) => { 
-                                    const event = r.toolCallEvents?.find((e: any) => e.id === id);
-                                    if(event) { event.result = result; event.endTime = Date.now(); }
-                                });
+                                // No-op
                             },
                             onPlanReady: (plan) => {
-                                return new Promise((resolve) => {
-                                    if (abortController.signal.aborted) { resolve(false); return; }
-                                    const callId = `plan-approval-${generateId()}`;
-                                    persistence.update((r) => { r.plan = { plan, callId }; });
-                                    frontendToolRequests.set(callId, resolve);
-                                    writeToClient(job, 'plan-ready', { plan, callId });
-                                });
+                                return Promise.resolve(false);
                             },
                             onFrontendToolRequest: (callId, name, args) => {},
                             onComplete: (data) => {
@@ -471,18 +425,6 @@ ${personalizationSection}
                 } finally {
                     clearInterval(pingInterval);
                     cleanupJob(chatId);
-                }
-                break;
-            }
-            case 'tool_response': {
-                const { callId, result, error } = req.body;
-                const resolver = frontendToolRequests.get(callId);
-                if (resolver) {
-                    resolver(error ? { error } : result);
-                    frontendToolRequests.delete(callId);
-                    res.status(200).send();
-                } else {
-                    res.status(404).json({ error: `No pending tool request found for callId: ${callId}` });
                 }
                 break;
             }
@@ -569,24 +511,6 @@ Output ONLY the raw text of the improved prompt.
                     const memory = await executeConsolidateMemory(activeProviderName, activeApiKey, activeModel, currentMemory, suggestions);
                     res.status(200).json({ memory });
                 } catch (e) { res.status(200).json({ memory: [currentMemory, ...suggestions].filter(Boolean).join('\n') }); }
-                break;
-            }
-            case 'run_piston': {
-                const { language, code } = req.body;
-                try {
-                    const result = await executeWithPiston(language, code);
-                    res.status(200).json({ result });
-                } catch (error: any) {
-                    res.status(500).json({ error: error.message });
-                }
-                break;
-            }
-            case 'tool_exec': {
-                 if (!ai) throw new Error("GoogleGenAI not initialized.");
-                const { toolName, toolArgs, chatId } = req.body;
-                const toolExecutor = createToolExecutor(ai, '', '', activeApiKey!, chatId, async () => ({error: 'Frontend execution not supported'}), true);
-                const result = await toolExecutor(toolName, toolArgs, 'manual-exec');
-                res.status(200).json({ result });
                 break;
             }
             case 'debug_data_tree': {

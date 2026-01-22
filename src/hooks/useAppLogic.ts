@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -98,11 +99,9 @@ export const useAppLogic = () => {
             temperature, 
             maxOutputTokens: maxTokens,
             imageModel,
-            videoModel,
-            isAgentMode: false // Force agent mode off
+            videoModel
         }, 
         memory.memoryContent, 
-        false, // Force agent mode off
         provider === 'openrouter' ? openRouterApiKey : apiKey, // Select appropriate key for chat logic
         showToast
     );
