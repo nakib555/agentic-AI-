@@ -90,6 +90,16 @@ export const getApiKey = async (): Promise<string | undefined> => {
     }
 };
 
+export const getGeminiKey = async (): Promise<string | undefined> => {
+    try {
+        const settings = await ensureSettingsLoaded();
+        // Always try to return the Gemini key, regardless of active provider
+        return settings.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+    } catch (error) {
+        return process.env.API_KEY || process.env.GEMINI_API_KEY;
+    }
+};
+
 export const getProvider = async (): Promise<'gemini' | 'openrouter' | 'ollama'> => {
     try {
         const settings = await ensureSettingsLoaded();

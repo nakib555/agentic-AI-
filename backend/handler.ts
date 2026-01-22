@@ -11,7 +11,7 @@ import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './p
 import { parseApiError } from './utils/apiError';
 import { executeTextToSpeech } from "./tools/tts";
 import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory";
-import { getApiKey, getProvider } from './settingsHandler';
+import { getApiKey, getProvider, getGeminiKey } from './settingsHandler';
 import { generateProviderCompletion } from './utils/generateProviderCompletion';
 import { historyControl } from './services/historyControl';
 import { vectorMemory } from './services/vectorMemory';
@@ -230,9 +230,15 @@ export const apiHandler = async (req: any, res: any) => {
         return;
     }
 
+    // --- CONTEXT SETUP ---
     const activeProviderName = await getProvider();
-    const mainApiKey = await getApiKey();
-    const activeApiKey = mainApiKey;
+    
+    // chatApiKey is the key for the selected provider (e.g. OpenRouter key)
+    const chatApiKey = await getApiKey(); 
+    
+    // geminiKey is specifically for auxiliary services (TTS, Embeddings, Memory)
+    // We try to get it even if the main provider is OpenRouter/Ollama
+    const geminiKey = await getGeminiKey();
     
     const globalSettings: any = await readData(SETTINGS_FILE_PATH);
     const activeModel = globalSettings.activeModel || 'gemini-2.5-flash';
@@ -240,15 +246,16 @@ export const apiHandler = async (req: any, res: any) => {
     const isSuggestionTask = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate'].includes(task);
     const BYPASS_TASKS = ['cancel', 'debug_data_tree', 'feedback'];
     
-    if (!activeApiKey && !BYPASS_TASKS.includes(task) && !isSuggestionTask && activeProviderName !== 'ollama') {
-        return res.status(401).json({ error: "API key not configured on the server." });
+    // Validation: Require key for paid providers, skip for Ollama/bypass
+    if (!chatApiKey && !BYPASS_TASKS.includes(task) && !isSuggestionTask && activeProviderName !== 'ollama') {
+        return res.status(401).json({ error: "API key not configured for the selected provider." });
     }
     
-    // AI instance still needed for VectorMemory and TTS (Gemini based)
-    const ai = (activeApiKey) ? new GoogleGenAI({ apiKey: activeApiKey }) : null;
+    // Initialize Auxiliary AI (Gemini) for TTS/Memory if available
+    const auxAi = (geminiKey) ? new GoogleGenAI({ apiKey: geminiKey }) : null;
 
-    if (ai) {
-        await vectorMemory.init(ai);
+    if (auxAi) {
+        await vectorMemory.init(auxAi);
     }
 
     try {
@@ -265,7 +272,8 @@ export const apiHandler = async (req: any, res: any) => {
 
                 if (task === 'chat' && newMessage) {
                     historyMessages.push(newMessage);
-                    if (ai && newMessage.text && newMessage.text.length > 10) {
+                    // Only add vector memory if we have a Gemini Client (auxAi)
+                    if (auxAi && newMessage.text && newMessage.text.length > 10) {
                         vectorMemory.addMemory(newMessage.text, { chatId, role: 'user' }).catch(console.error);
                     }
                     const modelPlaceholder = {
@@ -331,7 +339,8 @@ export const apiHandler = async (req: any, res: any) => {
                 req.on('close', () => { job.clients.delete(res); });
 
                 let ragContext = "";
-                if (ai && newMessage && newMessage.text) {
+                // RAG only available if auxAi (Gemini) is initialized
+                if (auxAi && newMessage && newMessage.text) {
                     try {
                         const relevantMemories = await vectorMemory.retrieveRelevant(newMessage.text);
                         if (relevantMemories.length > 0) {
@@ -376,7 +385,7 @@ ${personalizationSection}
                         systemInstruction: finalSystemInstruction,
                         temperature: settings.temperature,
                         maxTokens: settings.maxOutputTokens,
-                        apiKey: activeApiKey,
+                        apiKey: chatApiKey, // Use the provider-specific key
                         isAgentMode: false,
                         signal: abortController.signal,
                         chatId,
@@ -401,7 +410,8 @@ ${personalizationSection}
                                     r.endTime = Date.now();
                                     if (data.groundingMetadata) r.groundingMetadata = data.groundingMetadata;
                                 });
-                                if (data.finalText.length > 50 && ai) {
+                                // Only vectorize if Gemini is available
+                                if (data.finalText.length > 50 && auxAi) {
                                     vectorMemory.addMemory(data.finalText, { chatId, role: 'model' }).catch(console.error);
                                 }
                             },
@@ -449,7 +459,7 @@ ${personalizationSection}
                 const { messages, model } = req.body;
                 const historyText = messages.slice(0, 3).map((m: any) => `${m.role}: ${m.text}`).join('\n');
                 const prompt = `Generate a short concise title (max 6 words) for this conversation.\n\nCONVERSATION:\n${historyText}\n\nTITLE:`;
-                const title = await generateProviderCompletion(activeProviderName, activeApiKey, model, prompt);
+                const title = await generateProviderCompletion(activeProviderName, chatApiKey, model, prompt);
                 res.status(200).json({ title: title.trim() });
                 break;
             }
@@ -458,7 +468,7 @@ ${personalizationSection}
                 const recentHistory = conversation.slice(-5).map((m: any) => `${m.role}: ${(m.text || '').substring(0, 200)}`).join('\n');
                 const prompt = `Suggest 3 short follow-up questions. Return JSON array of strings. Do not use markdown code blocks.\n\nCONVERSATION:\n${recentHistory}\n\nJSON SUGGESTIONS:`;
                 try {
-                    const text = await generateProviderCompletion(activeProviderName, activeApiKey, model, prompt, undefined, true);
+                    const text = await generateProviderCompletion(activeProviderName, chatApiKey, model, prompt, undefined, true);
                     let suggestions = [];
                     try { 
                         const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
@@ -470,10 +480,10 @@ ${personalizationSection}
                 break;
             }
             case 'tts': {
-                if (!ai) throw new Error("GoogleGenAI not initialized (Required for TTS).");
+                if (!auxAi) throw new Error("TTS Unavailable: Google Gemini API key not configured in settings.");
                 const { text, voice, model } = req.body;
                 try {
-                    const audio = await executeTextToSpeech(ai, text, voice, model);
+                    const audio = await executeTextToSpeech(auxAi, text, voice, model);
                     res.status(200).json({ audio });
                 } catch (e) {
                     res.status(500).json({ error: parseApiError(e) });
@@ -491,7 +501,7 @@ Output ONLY the raw text of the improved prompt.
 `;
                 res.setHeader('Content-Type', 'text/plain');
                 try {
-                    const text = await generateProviderCompletion(activeProviderName, activeApiKey, 'gemini-3-flash-preview', prompt); 
+                    const text = await generateProviderCompletion(activeProviderName, chatApiKey, 'gemini-3-flash-preview', prompt); 
                     res.write(text);
                 } catch (e) { res.write(userInput); }
                 res.end();
@@ -500,7 +510,7 @@ Output ONLY the raw text of the improved prompt.
             case 'memory_suggest': {
                 const { conversation } = req.body;
                 try {
-                    const suggestions = await executeExtractMemorySuggestions(activeProviderName, activeApiKey, activeModel, conversation);
+                    const suggestions = await executeExtractMemorySuggestions(activeProviderName, chatApiKey, activeModel, conversation);
                     res.status(200).json({ suggestions });
                 } catch (e) { res.status(200).json({ suggestions: [] }); }
                 break;
@@ -508,7 +518,7 @@ Output ONLY the raw text of the improved prompt.
             case 'memory_consolidate': {
                 const { currentMemory, suggestions } = req.body;
                 try {
-                    const memory = await executeConsolidateMemory(activeProviderName, activeApiKey, activeModel, currentMemory, suggestions);
+                    const memory = await executeConsolidateMemory(activeProviderName, chatApiKey, activeModel, currentMemory, suggestions);
                     res.status(200).json({ memory });
                 } catch (e) { res.status(200).json({ memory: [currentMemory, ...suggestions].filter(Boolean).join('\n') }); }
                 break;
