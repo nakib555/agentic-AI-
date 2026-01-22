@@ -19,19 +19,16 @@ const MessageComponentRaw: React.FC<{
     ttsModel: string;
     currentChatId: string | null;
     onShowSources: (sources: Source[]) => void;
-    approveExecution: (editedPlan: string) => void;
-    denyExecution: () => void;
     messageFormRef: React.RefObject<MessageFormHandle>;
     onRegenerate: (messageId: string) => void;
     onSetActiveResponseIndex: (messageId: string, index: number) => void;
-    isAgentMode: boolean;
     userQuery?: string;
     onEditMessage?: (messageId: string, newText: string) => void;
     onNavigateBranch?: (messageId: string, direction: 'next' | 'prev') => void;
 }> = ({ 
     msg, isLoading, isLast, sendMessage, ttsVoice, ttsModel, currentChatId, 
-    onShowSources, approveExecution, denyExecution, messageFormRef,
-    onRegenerate, onSetActiveResponseIndex, isAgentMode, userQuery,
+    onShowSources, messageFormRef,
+    onRegenerate, onSetActiveResponseIndex, userQuery,
     onEditMessage, onNavigateBranch
 }) => {
   const messageContent = () => {
@@ -55,12 +52,9 @@ const MessageComponentRaw: React.FC<{
                 ttsModel={ttsModel} 
                 currentChatId={currentChatId} 
                 onShowSources={onShowSources}
-                approveExecution={approveExecution}
-                denyExecution={denyExecution}
                 messageFormRef={messageFormRef}
                 onRegenerate={onRegenerate}
                 onSetActiveResponseIndex={onSetActiveResponseIndex}
-                isAgentMode={isAgentMode}
                 userQuery={userQuery}
                 isLast={isLast}
             />

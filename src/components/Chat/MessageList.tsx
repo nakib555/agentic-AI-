@@ -72,7 +72,7 @@ const MessageWrapper = React.memo(({
             isLast={isLast}
             {...contextProps}
             // Pass the custom prop to AiMessage via MessageComponent
-            {...({ userQuery, approveExecution: () => {}, denyExecution: () => {} } as any)} 
+            {...({ userQuery } as any)} 
         />
     );
 });
@@ -175,7 +175,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
         ) : (
             <div className="h-full overflow-y-auto custom-scrollbar">
                  <Suspense fallback={<div className="h-full flex items-center justify-center"><div className="animate-spin w-6 h-6 border-2 border-indigo-500 rounded-full border-t-transparent"></div></div>}>
-                    <WelcomeScreen sendMessage={sendMessage} isAgentMode={isAgentMode} />
+                    <WelcomeScreen sendMessage={sendMessage} />
                  </Suspense>
             </div>
         )
