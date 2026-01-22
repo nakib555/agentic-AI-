@@ -5,18 +5,18 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSidebar } from './useSidebar';
-import { useTheme } from './useTheme';
-import { useViewport } from './useViewport';
-import { useChat } from './useChat/index';
-import { useMemory } from './useMemory';
-import { getSettings, updateSettings, AppSettings } from '../services/settingsService';
-import { fetchFromApi, setOnVersionMismatch } from '../utils/api';
-import type { Model, Source } from '../types';
-import { DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS, DEFAULT_TTS_VOICE, DEFAULT_ABOUT_USER, DEFAULT_ABOUT_RESPONSE } from '../components/App/constants';
-import { testSuite, type TestProgress } from '../components/Testing/testSuite';
-import type { MessageFormHandle } from '../components/Chat/MessageForm/types';
-import { MessageListHandle } from '../components/Chat/MessageList';
+import { useSidebar } from '../../hooks/useSidebar';
+import { useTheme } from '../../hooks/useTheme';
+import { useViewport } from '../../hooks/useViewport';
+import { useChat } from '../../hooks/useChat/index';
+import { useMemory } from '../../hooks/useMemory';
+import { getSettings, updateSettings, AppSettings } from '../../services/settingsService';
+import { fetchFromApi, setOnVersionMismatch } from '../../utils/api';
+import type { Model, Source } from '../../types';
+import { DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS, DEFAULT_TTS_VOICE, DEFAULT_ABOUT_USER, DEFAULT_ABOUT_RESPONSE } from './constants';
+import { testSuite, type TestProgress } from '../Testing/testSuite';
+import type { MessageFormHandle } from '../Chat/MessageForm/types';
+import { MessageListHandle } from '../Chat/MessageList';
 
 export const useAppLogic = () => {
     // --- UI State ---
@@ -192,9 +192,7 @@ export const useAppLogic = () => {
         setActiveModel(modelId);
         try {
             await updateSettings({ activeModel: modelId });
-            if (chat.currentChatId) {
-                chat.updateChatModel(chat.currentChatId, modelId);
-            }
+            chat.updateChatModel(chat.currentChatId || '', modelId);
         } catch (e) { console.error(e); }
     }, [chat.updateChatModel, chat.currentChatId]);
 
@@ -317,13 +315,13 @@ export const useAppLogic = () => {
     }, [chat.importChat, showToast]);
 
     const handleExportAllChats = useCallback(() => {
-        import('../utils/exportUtils').then(mod => {
+        import('../../utils/exportUtils').then(mod => {
             (mod as any).exportAllChatsToJson(chat.chatHistory);
         });
     }, [chat.chatHistory]);
 
     const handleDownloadLogs = useCallback(() => {
-        import('../utils/logCollector').then(mod => {
+        import('../../utils/logCollector').then(mod => {
             const logs = mod.logCollector.formatLogs();
             const blob = new Blob([logs], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
@@ -431,7 +429,7 @@ export const useAppLogic = () => {
         const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
         if (!currentChat) return;
 
-        import('../utils/exportUtils').then(mod => {
+        import('../../utils/exportUtils').then(mod => {
             if (format === 'json') (mod as any).exportChatToJson(currentChat);
             else if (format === 'md') (mod as any).exportChatToMarkdown(currentChat);
             else if (format === 'pdf') (mod as any).exportChatToPdf(currentChat);
@@ -443,7 +441,7 @@ export const useAppLogic = () => {
         const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
         if (!currentChat) return;
         
-        import('../utils/exportUtils').then(mod => {
+        import('../../utils/exportUtils').then(mod => {
             (mod as any).exportChatToClipboard(currentChat);
         });
     }, [chat.currentChatId, chat.chatHistory]);

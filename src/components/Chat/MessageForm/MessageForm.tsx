@@ -47,7 +47,7 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
     isLoading,
     ref,
     props.messages,
-    false,
+    false, // Permanently disable agent mode
     hasApiKey
   );
 

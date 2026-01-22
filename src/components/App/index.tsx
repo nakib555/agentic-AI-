@@ -13,6 +13,7 @@ import {
   DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 } from './constants';
 import { VersionMismatchOverlay } from '../UI/VersionMismatchOverlay';
+import type { ChatSession } from '../../types';
 
 // Helper for safe lazy loading named exports with auto-reload logic for chunks
 function lazyLoad<T extends React.ComponentType<any>>(
@@ -66,7 +67,7 @@ export const App = () => {
   const logic = useAppLogic();
 
   const currentChat = logic.currentChatId
-    ? logic.chatHistory.find(c => c.id === logic.currentChatId)
+    ? logic.chatHistory.find((c: ChatSession) => c.id === logic.currentChatId)
     : null;
   const chatTitle = currentChat ? currentChat.title : null;
   

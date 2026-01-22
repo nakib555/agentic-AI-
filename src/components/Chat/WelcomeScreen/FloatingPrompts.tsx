@@ -11,7 +11,7 @@ const motion = motionTyped as any;
 
 type FloatingPromptsProps = {
   onPromptClick: (prompt: string, options?: { isThinkingModeEnabled?: boolean }) => void;
-  isAgentMode: boolean;
+  isAgentMode: boolean; // Retained for compatibility but ignored
 };
 
 const containerVariants = {
