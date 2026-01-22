@@ -147,7 +147,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3, type: "spring", bounce: 0.25 }}
-            className="bg-page w-full max-w-5xl h-[85dvh] rounded-[0.65rem] shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-white/10"
+            className="bg-page w-full max-w-5xl h-[85dvh] min-h-[300px] rounded-[0.65rem] shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-white/10"
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
             {/* Header */}
@@ -202,7 +202,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                 </nav>
 
                 {/* Content Area - Lazy Loaded */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-page w-full">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-page w-full">
                     <div className="p-4 md:p-8 lg:p-10 max-w-3xl mx-auto min-h-full">
                         <Suspense fallback={<SettingsSkeleton />}>
                             <AnimatePresence mode="wait">

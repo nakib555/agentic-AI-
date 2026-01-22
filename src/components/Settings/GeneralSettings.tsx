@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import { SettingItem } from './SettingItem';
 import { ThemeToggle } from '../Sidebar/ThemeToggle';
@@ -40,7 +39,7 @@ const ActionButton = ({
     <button 
         onClick={onClick}
         className={`
-            group relative flex items-center gap-3 px-5 py-3 rounded-2xl border text-sm font-semibold transition-all duration-300 outline-none focus:ring-2 focus:ring-offset-1 dark:focus:ring-offset-[#09090b]
+            group relative flex items-center gap-3 px-5 py-3 rounded-2xl border text-sm font-semibold transition-all duration-300 outline-none focus:ring-2 focus:ring-offset-1 dark:focus:ring-offset-[#09090b] w-full sm:w-auto
             ${danger 
                 ? 'bg-white dark:bg-white/5 border-red-200/70 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/10 focus:ring-red-500' 
                 : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-none focus:ring-indigo-500'
@@ -48,12 +47,12 @@ const ActionButton = ({
         `}
     >
         <div className={`
-            flex items-center justify-center w-8 h-8 rounded-xl transition-transform duration-300 group-hover:scale-110
+            flex items-center justify-center w-8 h-8 rounded-xl transition-transform duration-300 group-hover:scale-110 flex-shrink-0
             ${danger ? 'bg-red-100 dark:bg-red-500/20' : 'bg-slate-100 dark:bg-white/10'}
         `}>
             {icon}
         </div>
-        <span>{title}</span>
+        <span className="truncate">{title}</span>
     </button>
 );
 
@@ -91,10 +90,10 @@ const ApiKeyInput = ({ label, value, placeholder, onSave, buttonLabel, descripti
     };
 
     return (
-        <form className="flex flex-col gap-2 w-full" onSubmit={handleSave}>
+        <form className="flex flex-col gap-2 w-full max-w-full" onSubmit={handleSave}>
             {label && <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest px-1">{label}</label>}
-            <div className="flex gap-2">
-                <div className="relative flex-1 group">
+            <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                <div className="relative flex-1 group min-w-[200px] w-full sm:w-auto">
                     <input
                         type={isPassword ? "password" : "text"}
                         value={inputValue}
@@ -108,7 +107,7 @@ const ApiKeyInput = ({ label, value, placeholder, onSave, buttonLabel, descripti
                     type="submit"
                     disabled={isSaving || !inputValue}
                     className={`
-                        px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[80px]
+                        px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[80px] w-full sm:w-auto
                         ${isSaved 
                             ? 'bg-green-500 hover:bg-green-600 shadow-green-500/20' 
                             : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20'
@@ -140,13 +139,13 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
     provider, openRouterApiKey, onProviderChange, ollamaHost, onSaveOllamaHost
 }) => {
     return (
-        <div className="space-y-10 pb-12">
+        <div className="space-y-10 pb-12 w-full max-w-full overflow-hidden">
             <div className="mb-8">
                 <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">General Configuration</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage API keys, connectivity, and system preferences.</p>
             </div>
 
-            <section className="space-y-6">
+            <section className="space-y-6 w-full">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2Z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>
@@ -165,7 +164,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                 </div>
 
                 {provider === 'gemini' && (
-                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300 w-full">
                         <ApiKeyInput 
                             label="Google Gemini API Key" 
                             value={apiKey} 
@@ -180,7 +179,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                 )}
 
                 {provider === 'openrouter' && (
-                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300 w-full">
                         <ApiKeyInput 
                             label="OpenRouter API Key" 
                             value={openRouterApiKey} 
@@ -195,7 +194,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                 )}
                 
                 {provider === 'ollama' && (
-                    <div className="space-y-6 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="space-y-6 pt-2 animate-in fade-in slide-in-from-top-2 duration-300 w-full">
                         <ApiKeyInput 
                             label="Ollama Host URL" 
                             value={ollamaHost || ''} 
@@ -225,7 +224,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/10 to-transparent w-full" />
 
             {/* Appearance */}
-            <section className="space-y-6">
+            <section className="space-y-6 w-full">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="p-2 rounded-lg bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="5"/><path d="M12 1v2"/><path d="M12 21v2"/><path d="M4.22 4.22l1.42 1.42"/><path d="M18.36 18.36l1.42 1.42"/><path d="M1 12h2"/><path d="M21 12h2"/><path d="M4.22 19.78l1.42-1.42"/><path d="M18.36 5.64l1.42-1.42"/></svg>
@@ -233,9 +232,10 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                     <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">Appearance</h4>
                 </div>
 
-                <div className="space-y-4">
-                    <SettingItem label="Theme Preference" description="Choose your preferred visual theme." wrapControls={false}>
-                        <div className="w-full sm:w-auto">
+                <div className="space-y-4 w-full">
+                    {/* Explicitly allow wrapping for mobile */}
+                    <SettingItem label="Theme Preference" description="Choose your preferred visual theme." wrapControls={true}>
+                        <div className="w-full sm:w-auto min-w-[200px]">
                            <ThemeToggle theme={theme} setTheme={setTheme} variant="cards" />
                         </div>
                     </SettingItem>
@@ -245,7 +245,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/10 to-transparent w-full" />
             
             {/* Connectivity */}
-            <section className="space-y-6">
+            <section className="space-y-6 w-full">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M2 12h20"/><path d="M2 12l5-5"/><path d="M2 12l5 5"/><path d="M22 12l-5-5"/><path d="M22 12l-5 5"/><rect x="8" y="7" width="8" height="10" rx="2"/></svg>
@@ -266,7 +266,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/10 to-transparent w-full" />
 
             {/* Data & Actions */}
-            <section className="space-y-6">
+            <section className="space-y-6 w-full">
                 <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
@@ -274,7 +274,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                     <h4 className="text-base font-bold text-slate-700 dark:text-slate-200">Data & Maintenance</h4>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                     <ActionButton 
                         icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>}
                         title="Export All Data"
