@@ -235,7 +235,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                     bottom: coords.bottom,
                     zIndex: 99999, // Ensure it sits on top of everything, including modals
                 }}
-                className="bg-white dark:bg-[#1a1a1a] border border-gray-200/50 dark:border-white/10 rounded-[0.65rem] shadow-2xl overflow-hidden ring-1 ring-black/5"
+                className="bg-white dark:bg-[#1a1a1a] border border-gray-200/50 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/5"
             >
                 <div 
                     className="overflow-y-auto custom-scrollbar p-1.5 space-y-0.5"
