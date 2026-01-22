@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -25,45 +24,6 @@ const containerVariants = {
       },
     },
 };
-
-const AGENT_PROMPTS: { icon: string; text: string; prompt: string; color: PromptColor }[] = [
-    { 
-        icon: "📈", 
-        text: "Market Analyst", 
-        prompt: "Research the current stock prices of Apple (AAPL), Microsoft (MSFT), and Google (GOOGL). Then, use Python to generate a bar chart comparing their values.", 
-        color: "violet"
-    },
-    { 
-        icon: "🗺️", 
-        text: "Travel Agent", 
-        prompt: "I want to visit Kyoto, Japan. Find 3 top-rated historical temples, check the current weather there, and display their locations on a map.", 
-        color: "emerald"
-    },
-    { 
-        icon: "🔬", 
-        text: "Data Scientist", 
-        prompt: "Write a Python script to perform a Monte Carlo simulation for estimating the value of Pi, and plot the results.", 
-        color: "indigo"
-    },
-    { 
-        icon: "🎨", 
-        text: "Creative Studio", 
-        prompt: "Generate an image of a futuristic eco-city. Then, write a short architectural concept description based on the visual.", 
-        color: "fuchsia"
-    },
-    { 
-        icon: "🧠", 
-        text: "Deep Reasoner", 
-        prompt: "Analyze the potential long-term economic impacts of universal basic income (UBI). Provide arguments for and against, citing recent studies.", 
-        color: "amber"
-    },
-    { 
-        icon: "🎬", 
-        text: "Video Producer", 
-        prompt: "Generate a cinematic video of a detective walking through a rainy neon city at night.", 
-        color: "rose"
-    },
-];
 
 const CHAT_PROMPTS: { icon: string; text: string; prompt: string; color: PromptColor }[] = [
     {
@@ -104,12 +64,11 @@ const CHAT_PROMPTS: { icon: string; text: string; prompt: string; color: PromptC
     }
 ];
 
-export const FloatingPrompts = ({ onPromptClick, isAgentMode }: FloatingPromptsProps) => {
-  const prompts = isAgentMode ? AGENT_PROMPTS : CHAT_PROMPTS;
+export const FloatingPrompts = ({ onPromptClick }: FloatingPromptsProps) => {
+  const prompts = CHAT_PROMPTS;
 
   return (
     <motion.div
-      key={isAgentMode ? 'agent' : 'chat'} // Key forces re-animation on switch
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -122,7 +81,7 @@ export const FloatingPrompts = ({ onPromptClick, isAgentMode }: FloatingPromptsP
                 icon={p.icon} 
                 text={p.text} 
                 color={p.color}
-                onClick={() => onPromptClick(p.prompt, { isThinkingModeEnabled: isAgentMode })} 
+                onClick={() => onPromptClick(p.prompt, { isThinkingModeEnabled: false })} 
             />
         ))}
     </motion.div>

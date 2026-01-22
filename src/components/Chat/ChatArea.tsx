@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -22,13 +23,9 @@ type ChatAreaProps = {
   currentChatId: string | null;
   activeModel: string;
   onShowSources: (sources: Source[]) => void;
-  approveExecution: (editedPlan: string) => void;
-  denyExecution: () => void;
   messageListRef: React.RefObject<MessageListHandle>;
   onRegenerate: (messageId: string) => void;
   onSetActiveResponseIndex: (messageId: string, index: number) => void;
-  isAgentMode: boolean;
-  setIsAgentMode: (isAgent: boolean) => void;
   backendStatus: 'online' | 'offline' | 'checking';
   backendError: string | null;
   onRetryConnection: () => void;
@@ -40,9 +37,9 @@ type ChatAreaProps = {
 export const ChatArea = ({ 
     messages, isLoading, isAppLoading, sendMessage, onCancel, 
     ttsVoice, ttsModel, setTtsVoice, currentChatId, activeModel,
-    onShowSources, approveExecution, denyExecution,
+    onShowSources,
     messageListRef, onRegenerate, onSetActiveResponseIndex,
-    isAgentMode, setIsAgentMode, backendStatus, backendError, onRetryConnection, hasApiKey,
+    backendStatus, backendError, onRetryConnection, hasApiKey,
     onEditMessage, onNavigateBranch
 }: ChatAreaProps) => {
   const messageFormRef = useRef<MessageFormHandle>(null);
@@ -122,12 +119,10 @@ export const ChatArea = ({
           ttsModel={ttsModel}
           currentChatId={currentChatId}
           onShowSources={onShowSources}
-          approveExecution={approveExecution}
-          denyExecution={denyExecution}
           messageFormRef={messageFormRef}
           onRegenerate={onRegenerate}
           onSetActiveResponseIndex={handleSetActiveResponseIndex}
-          isAgentMode={isAgentMode}
+          isAgentMode={false}
           onEditMessage={onEditMessage}
           onNavigateBranch={onNavigateBranch}
       />
@@ -168,8 +163,8 @@ export const ChatArea = ({
             isAppLoading={isAppLoading}
             backendStatus={backendStatus}
             onCancel={onCancel}
-            isAgentMode={isAgentMode}
-            setIsAgentMode={setIsAgentMode}
+            isAgentMode={false}
+            setIsAgentMode={() => {}}
             messages={messages}
             hasApiKey={hasApiKey}
             ttsVoice={ttsVoice}

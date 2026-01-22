@@ -31,8 +31,6 @@ type MessageListProps = {
   ttsModel: string;
   currentChatId: string | null;
   onShowSources: (sources: Source[]) => void;
-  approveExecution: (editedPlan: string) => void;
-  denyExecution: () => void;
   messageFormRef: React.RefObject<MessageFormHandle>;
   onRegenerate: (messageId: string) => void;
   onSetActiveResponseIndex: (messageId: string, index: number) => void;
@@ -74,15 +72,14 @@ const MessageWrapper = React.memo(({
             isLast={isLast}
             {...contextProps}
             // Pass the custom prop to AiMessage via MessageComponent
-            {...({ userQuery } as any)} 
+            {...({ userQuery, approveExecution: () => {}, denyExecution: () => {} } as any)} 
         />
     );
 });
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({ 
     messages, sendMessage, isLoading, ttsVoice, ttsModel, currentChatId, 
-    onShowSources, approveExecution, 
-    denyExecution, messageFormRef, onRegenerate, onSetActiveResponseIndex,
+    onShowSources, messageFormRef, onRegenerate, onSetActiveResponseIndex,
     isAgentMode, onEditMessage, onNavigateBranch
 }, ref) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
@@ -141,15 +138,14 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   }, [visibleMessages.length]);
 
   // Memoize the context props object.
-  // Note: We intentionally include 'isLoading' here. The optimization happens in MessageComponent's React.memo check.
   const contextProps = useMemo(() => ({
       sendMessage, isLoading, ttsVoice, ttsModel, currentChatId,
-      onShowSources, approveExecution, denyExecution, messageFormRef,
+      onShowSources, messageFormRef,
       onRegenerate, onSetActiveResponseIndex, isAgentMode, onEditMessage,
       onNavigateBranch
   }), [
       sendMessage, isLoading, ttsVoice, ttsModel, currentChatId,
-      onShowSources, approveExecution, denyExecution, messageFormRef,
+      onShowSources, messageFormRef,
       onRegenerate, onSetActiveResponseIndex, isAgentMode, onEditMessage,
       onNavigateBranch
   ]);

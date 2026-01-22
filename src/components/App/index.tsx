@@ -1,5 +1,4 @@
 
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -190,12 +189,8 @@ export const App = () => {
                     currentChatId={logic.currentChatId}
                     activeModel={logic.activeModel} 
                     onShowSources={logic.handleShowSources}
-                    approveExecution={logic.approveExecution}
-                    denyExecution={logic.denyExecution}
                     onRegenerate={logic.regenerateResponse}
                     onSetActiveResponseIndex={logic.setActiveResponseIndex}
-                    isAgentMode={logic.isAgentMode}
-                    setIsAgentMode={logic.setIsAgentMode}
                     backendStatus={logic.backendStatus}
                     backendError={logic.backendError}
                     onRetryConnection={logic.retryConnection}

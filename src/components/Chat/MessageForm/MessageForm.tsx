@@ -9,7 +9,6 @@ import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { useMessageForm } from './useMessageForm';
 import { UploadMenu } from './UploadMenu';
 import { VoiceVisualizer } from '../../UI/VoiceVisualizer';
-import { ModeToggle } from '../../UI/ModeToggle';
 import { MessageFormHandle } from './types';
 import { Message } from '../../../types';
 import { TextType } from '../../UI/TextType';
@@ -40,17 +39,18 @@ type MessageFormProps = {
 export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((props, ref) => {
   const { 
     onSubmit, isLoading, isAppLoading, backendStatus, onCancel, 
-    isAgentMode, setIsAgentMode, hasApiKey 
+    hasApiKey 
   } = props;
 
   const [isDragging, setIsDragging] = useState(false);
 
+  // Force isAgentMode to false inside the form logic
   const logic = useMessageForm(
-    (msg, files, options) => onSubmit(msg, files, { ...options, isThinkingModeEnabled: isAgentMode }),
+    (msg, files, options) => onSubmit(msg, files, { ...options, isThinkingModeEnabled: false }),
     isLoading,
     ref,
     props.messages,
-    isAgentMode,
+    false, // Agent Mode Disabled
     hasApiKey
   );
 
@@ -247,17 +247,6 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                             <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                         </svg>
                     </button>
-                </Tooltip>
-                
-                {/* Agent Mode Toggle */}
-                <Tooltip content={isAgentMode ? "Switch to Chat Mode" : "Switch to Agent Mode"} position="top">
-                    <div>
-                        <ModeToggle 
-                            isAgentMode={isAgentMode} 
-                            onToggle={setIsAgentMode} 
-                            disabled={isGeneratingResponse} 
-                        />
-                    </div>
                 </Tooltip>
             </div>
 

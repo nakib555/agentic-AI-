@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -24,8 +25,6 @@ import { BrowserSessionDisplay } from '../../AI/BrowserSessionDisplay';
 import { useTypewriter } from '../../../hooks/useTypewriter';
 import { parseContentSegments } from '../../../utils/workflowParsing';
 import { CodeExecutionResult } from '../../AI/CodeExecutionResult';
-import { AgentWorkflowDisplay } from './AgentWorkflowDisplay';
-import { ExecutionApproval } from '../../AI/ExecutionApproval';
 
 // Lazy load the heavy ArtifactRenderer
 const ArtifactRenderer = React.lazy(() => import('../../Artifacts/ArtifactRenderer').then(m => ({ default: m.ArtifactRenderer })));
@@ -63,12 +62,12 @@ const StopIcon = () => (
 
 const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   const { msg, isLoading, sendMessage, ttsVoice, ttsModel, currentChatId, 
-          onShowSources, approveExecution, denyExecution, messageFormRef, onRegenerate,
-          onSetActiveResponseIndex, isAgentMode, userQuery, isLast = false } = props;
+          onShowSources, messageFormRef, onRegenerate,
+          onSetActiveResponseIndex, isAgentMode, isLast = false } = props;
   const { id } = msg;
 
   const logic = useAiMessageLogic(msg, ttsVoice, ttsModel, sendMessage, isLoading);
-  const { activeResponse, finalAnswerText, thinkingIsComplete, thinkingText, startTime, endTime, hasWorkflow, agentPlan, executionLog, showApprovalUI } = logic;
+  const { activeResponse, finalAnswerText, hasWorkflow } = logic;
   
   const typedFinalAnswer = useTypewriter(finalAnswerText, msg.isThinking ?? false);
 
@@ -146,29 +145,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                   />
               ))}
           </div>
-      )}
-
-      {/* --- Workflow Visualization --- */}
-      {/* Only show Agent Workflow in Agent Mode */}
-      {isAgentMode && hasWorkflow && (
-          <div className="w-full mb-2">
-              <AgentWorkflowDisplay 
-                  plan={agentPlan}
-                  nodes={executionLog}
-                  sendMessage={sendMessage}
-                  onRegenerate={() => onRegenerate(id)}
-                  messageId={id}
-              />
-          </div>
-      )}
-
-      {/* Approval Step (if needed) */}
-      {showApprovalUI && activeResponse?.plan && (
-          <ExecutionApproval 
-            plan={activeResponse.plan} 
-            onApprove={approveExecution} 
-            onDeny={denyExecution} 
-          />
       )}
 
       {(logic.hasFinalAnswer || activeResponse?.error || logic.isWaitingForFinalAnswer || isStoppedByUser) && (
@@ -265,7 +241,6 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       )}
 
       {/* Conditionally render suggestions only if this is the last message */}
-      {/* Moved to BOTTOM as per request */}
       <AnimatePresence>
         {isLast && logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
             <motion.div
