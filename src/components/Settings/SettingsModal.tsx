@@ -151,12 +151,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-layer-1/80 backdrop-blur-md z-20 flex-shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-5 border-b border-border bg-layer-1/80 backdrop-blur-md z-20 flex-shrink-0">
               <div>
-                <h2 id="settings-title" className="text-xl font-bold text-content-primary tracking-tight">
+                <h2 id="settings-title" className="text-lg md:text-xl font-bold text-content-primary tracking-tight">
                   Settings
                 </h2>
-                <p className="text-xs text-content-tertiary font-medium mt-0.5">Preferences & Configuration</p>
+                <p className="text-[10px] md:text-xs text-content-tertiary font-medium mt-0.5">Preferences & Configuration</p>
               </div>
               <button
                 onClick={onClose}
@@ -172,14 +172,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
             
             <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-layer-2/50 overflow-hidden">
                 {/* Navigation Sidebar */}
-                <nav className="flex-shrink-0 p-2 md:p-6 md:w-72 bg-layer-1/50 z-10 border-b md:border-b-0 md:border-r border-border backdrop-blur-xl flex flex-col gap-6">
+                <nav className="flex-shrink-0 p-2 md:p-4 lg:p-6 md:w-64 lg:w-72 bg-layer-1/50 z-10 border-b md:border-b-0 md:border-r border-border backdrop-blur-xl flex flex-col gap-4 md:gap-6">
                     
                     <div className="hidden md:block px-2">
                         <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Configuration</h3>
                     </div>
 
                     <LayoutGroup id="settings-nav">
-                        <ul className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible px-2 md:px-0 py-2 md:py-0 scroll-smooth snap-x">
+                        <ul className="flex flex-row md:flex-col gap-1 md:gap-2 overflow-x-auto md:overflow-visible px-2 md:px-0 py-2 md:py-0 scroll-smooth snap-x no-scrollbar md:custom-scrollbar">
                             {CATEGORIES.map(cat => (
                                 <li key={cat.id} className="flex-shrink-0 snap-start">
                                     <SettingsCategoryButton
@@ -203,7 +203,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
 
                 {/* Content Area - Lazy Loaded */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-page w-full">
-                    <div className="p-6 md:p-10 max-w-3xl mx-auto min-h-full">
+                    <div className="p-4 md:p-8 lg:p-10 max-w-3xl mx-auto min-h-full">
                         <Suspense fallback={<SettingsSkeleton />}>
                             <AnimatePresence mode="wait">
                                 <motion.div
