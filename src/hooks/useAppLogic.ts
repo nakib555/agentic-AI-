@@ -274,10 +274,12 @@ export const useAppLogic = () => {
     const onSaveServerUrl = useCallback(async (url: string) => {
         setServerUrl(url);
         localStorage.setItem('custom_server_url', url);
-        // Force reload to apply new base URL for all api calls
-        window.location.reload();
+        
+        // Notify the user that the change is applied immediately
+        showToast('Server URL updated. Subsequent requests will use the new URL.', 'success');
+        
         return true;
-    }, []);
+    }, [showToast]);
 
     // --- Modal & Sidebar Handlers ---
     const handleShowSources = useCallback((sources: Source[]) => {

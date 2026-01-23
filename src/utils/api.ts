@@ -8,18 +8,9 @@
  * Determines the base URL for API requests based on the execution environment.
  */
 export const getApiBaseUrl = (): string => {
-    // 1. Manual Override from LocalStorage (Highest Priority)
-    // Allows users to explicitly set a backend URL in Settings, overriding everything else.
-    try {
-        if (typeof window !== 'undefined') {
-            const customUrl = localStorage.getItem('custom_server_url');
-            if (customUrl) return customUrl.replace(/\/$/, '');
-        }
-    } catch (e) {}
-
-    // 2. Build Configuration / Environment Variable (VITE_API_BASE_URL)
+    // 1. Build Configuration / Environment Variable (VITE_API_BASE_URL) - Highest Priority
     // This allows deployments (like Cloudflare Pages) to define the backend URL via env vars.
-    // In Vite, this is replaced at build time or available in dev mode.
+    // If this is set, it overrides manual user settings.
     try {
         // @ts-ignore - Vite specific
         const envUrl = import.meta.env.VITE_API_BASE_URL;
@@ -29,6 +20,15 @@ export const getApiBaseUrl = (): string => {
     } catch (e) {
         // Ignore if import.meta is not available or fails
     }
+
+    // 2. Manual Override from LocalStorage (User Input)
+    // Used if no environment variable is provided.
+    try {
+        if (typeof window !== 'undefined') {
+            const customUrl = localStorage.getItem('custom_server_url');
+            if (customUrl) return customUrl.replace(/\/$/, '');
+        }
+    } catch (e) {}
 
     // 3. Safe environment detection
     // Some bundlers/runtimes don't support import.meta.env
