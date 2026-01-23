@@ -5,11 +5,11 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSidebar } from '../../hooks/useSidebar';
-import { useTheme } from '../../hooks/useTheme';
-import { useViewport } from '../../hooks/useViewport';
-import { useChat } from '../../hooks/useChat/index';
-import { useMemory } from '../../hooks/useMemory';
+import { useSidebar } from './useSidebar';
+import { useTheme } from './useTheme';
+import { useViewport } from './useViewport';
+import { useChat } from './useChat/index';
+import { useMemory } from './useMemory';
 import { getSettings, updateSettings, AppSettings } from '../../services/settingsService';
 import { fetchFromApi, setOnVersionMismatch } from '../../utils/api';
 import type { Model, Source } from '../../types';
@@ -47,7 +47,16 @@ export const useAppLogic = () => {
     const [apiKey, setApiKey] = useState('');
     const [openRouterApiKey, setOpenRouterApiKey] = useState('');
     const [ollamaHost, setOllamaHost] = useState('');
-    const [serverUrl, setServerUrl] = useState('');
+    
+    // Initialize serverUrl from localStorage to show current override in UI
+    const [serverUrl, setServerUrl] = useState(() => {
+        try {
+            return localStorage.getItem('custom_server_url') || '';
+        } catch {
+            return '';
+        }
+    });
+
     const [activeModel, setActiveModel] = useState('');
     const [imageModel, setImageModel] = useState('');
     const [videoModel, setVideoModel] = useState('');
@@ -84,6 +93,11 @@ export const useAppLogic = () => {
     // --- Version Mismatch Handling ---
     useEffect(() => {
         setOnVersionMismatch(() => setVersionMismatch(true));
+        
+        // Listen for open-settings event
+        const handleOpenSettings = () => setIsSettingsOpen(true);
+        window.addEventListener('open-settings', handleOpenSettings);
+        return () => window.removeEventListener('open-settings', handleOpenSettings);
     }, []);
 
     // --- Memory Hook ---
@@ -122,9 +136,17 @@ export const useAppLogic = () => {
             if (res.ok) {
                 const data = await res.json();
                 processModelData(data);
+                setBackendStatus('online');
+                setBackendError(null);
+            } else {
+                 const text = await res.text();
+                 throw new Error(`Status: ${res.status} - ${text}`);
             }
         } catch (e) {
             console.error("Failed to fetch models:", e);
+            setBackendStatus('offline');
+            setBackendError(e instanceof Error ? e.message : "Could not connect to backend server.");
+            // Keep models empty on failure so UI knows
         } finally {
             setModelsLoading(false);
         }
@@ -153,10 +175,11 @@ export const useAppLogic = () => {
                 if ((settings.provider === 'gemini' && settings.apiKey) || 
                     (settings.provider === 'openrouter' && settings.openRouterApiKey) ||
                     (settings.provider === 'ollama')) {
-                    fetchModels();
+                    await fetchModels();
+                } else {
+                    // No key configured yet, but backend is technically reachable (since getSettings succeeded)
+                    setBackendStatus('online');
                 }
-                
-                setBackendStatus('online');
             } catch (e) {
                 console.error("Failed to load settings:", e);
                 setBackendStatus('offline');
@@ -273,10 +296,32 @@ export const useAppLogic = () => {
     const onSaveServerUrl = useCallback(async (url: string) => {
         setServerUrl(url);
         localStorage.setItem('custom_server_url', url);
-        // Force reload to apply new base URL for all api calls
-        window.location.reload();
+        
+        // Immediately try to connect to the new URL to give feedback
+        setBackendStatus('checking');
+        setBackendError(null);
+        
+        try {
+             // We can reuse fetchModels logic here or just do a simple check
+             // fetchFromApi will pick up the new localStorage value immediately
+             const res = await fetchFromApi('/api/models');
+             if (res.ok) {
+                 const data = await res.json();
+                 processModelData(data);
+                 setBackendStatus('online');
+                 showToast('Backend connection updated.', 'success');
+             } else {
+                  throw new Error(`Status: ${res.status}`);
+             }
+        } catch (e) {
+             console.error("Failed to connect with new URL:", e);
+             setBackendStatus('offline');
+             setBackendError("Could not connect to backend server.");
+             showToast('Could not connect to the new server URL.', 'error');
+        }
+
         return true;
-    }, []);
+    }, [processModelData, showToast]);
 
     // --- Modal & Sidebar Handlers ---
     const handleShowSources = useCallback((sources: Source[]) => {
@@ -315,13 +360,13 @@ export const useAppLogic = () => {
     }, [chat.importChat, showToast]);
 
     const handleExportAllChats = useCallback(() => {
-        import('../../utils/exportUtils').then(mod => {
+        import('../utils/exportUtils').then(mod => {
             (mod as any).exportAllChatsToJson(chat.chatHistory);
         });
     }, [chat.chatHistory]);
 
     const handleDownloadLogs = useCallback(() => {
-        import('../../utils/logCollector').then(mod => {
+        import('../utils/logCollector').then(mod => {
             const logs = mod.logCollector.formatLogs();
             const blob = new Blob([logs], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
@@ -417,9 +462,10 @@ export const useAppLogic = () => {
     const retryConnection = useCallback(() => {
         setBackendStatus('checking');
         setBackendError(null);
-        fetchModels().then(() => setBackendStatus('online')).catch(() => {
-            setBackendStatus('offline');
-            setBackendError("Connection failed.");
+        fetchModels().then(() => {
+            // fetchModels sets success status on success
+        }).catch(() => {
+            // fetchModels sets failure status on failure
         });
     }, [fetchModels]);
 
@@ -429,7 +475,7 @@ export const useAppLogic = () => {
         const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
         if (!currentChat) return;
 
-        import('../../utils/exportUtils').then(mod => {
+        import('../utils/exportUtils').then(mod => {
             if (format === 'json') (mod as any).exportChatToJson(currentChat);
             else if (format === 'md') (mod as any).exportChatToMarkdown(currentChat);
             else if (format === 'pdf') (mod as any).exportChatToPdf(currentChat);
@@ -441,7 +487,7 @@ export const useAppLogic = () => {
         const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
         if (!currentChat) return;
         
-        import('../../utils/exportUtils').then(mod => {
+        import('../utils/exportUtils').then(mod => {
             (mod as any).exportChatToClipboard(currentChat);
         });
     }, [chat.currentChatId, chat.chatHistory]);

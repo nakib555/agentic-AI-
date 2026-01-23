@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -82,6 +83,9 @@ export const parseApiError = (error: any): MessageError => {
         } catch (e) {
             details = 'Could not stringify the error object.';
         }
+    } else if (typeof error === 'string') {
+        message = error;
+        details = error;
     } else {
         message = String(error);
         details = String(error);
@@ -180,12 +184,11 @@ export const parseApiError = (error: any): MessageError => {
     }
 
     // 7. Network Error
-    // Added specific check for 'fetch failed'
-    if (lowerCaseMessage.includes('failed to fetch') || lowerCaseMessage.includes('fetch failed') || lowerCaseMessage.includes('network error')) {
+    if (lowerCaseMessage.includes('failed to fetch')) {
         return {
             code: 'NETWORK_ERROR',
             message: 'Network Error',
-            details: `A network problem occurred, possibly due to a lost internet connection or unreachable server. Original error: ${details}`,
+            details: `A network problem occurred, possibly due to a lost internet connection. Original error: ${details}`,
             suggestion: 'A network problem occurred. Please check your internet connection and the backend server URL in Settings.'
         };
     }

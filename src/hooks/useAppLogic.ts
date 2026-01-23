@@ -84,6 +84,11 @@ export const useAppLogic = () => {
     // --- Version Mismatch Handling ---
     useEffect(() => {
         setOnVersionMismatch(() => setVersionMismatch(true));
+        
+        // Listen for open-settings event
+        const handleOpenSettings = () => setIsSettingsOpen(true);
+        window.addEventListener('open-settings', handleOpenSettings);
+        return () => window.removeEventListener('open-settings', handleOpenSettings);
     }, []);
 
     // --- Memory Hook ---
@@ -122,9 +127,17 @@ export const useAppLogic = () => {
             if (res.ok) {
                 const data = await res.json();
                 processModelData(data);
+                setBackendStatus('online');
+                setBackendError(null);
+            } else {
+                 const text = await res.text();
+                 throw new Error(`Status: ${res.status} - ${text}`);
             }
         } catch (e) {
             console.error("Failed to fetch models:", e);
+            setBackendStatus('offline');
+            setBackendError(e instanceof Error ? e.message : "Could not connect to backend server.");
+            // Keep models empty on failure so UI knows
         } finally {
             setModelsLoading(false);
         }
@@ -147,17 +160,17 @@ export const useAppLogic = () => {
                 setAboutUser(settings.aboutUser ?? DEFAULT_ABOUT_USER);
                 setAboutResponse(settings.aboutResponse ?? DEFAULT_ABOUT_RESPONSE);
                 setTtsVoice(settings.ttsVoice ?? DEFAULT_TTS_VOICE);
-                // Agent mode is intentionally ignored from settings
                 setIsMemoryEnabledState(settings.isMemoryEnabled ?? false);
                 
                 // Fetch models if we have a key or provider is ollama
                 if ((settings.provider === 'gemini' && settings.apiKey) || 
                     (settings.provider === 'openrouter' && settings.openRouterApiKey) ||
                     (settings.provider === 'ollama')) {
-                    fetchModels();
+                    await fetchModels();
+                } else {
+                    // No key configured yet, but backend is technically reachable (since getSettings succeeded)
+                    setBackendStatus('online');
                 }
-                
-                setBackendStatus('online');
             } catch (e) {
                 console.error("Failed to load settings:", e);
                 setBackendStatus('offline');
@@ -274,12 +287,10 @@ export const useAppLogic = () => {
     const onSaveServerUrl = useCallback(async (url: string) => {
         setServerUrl(url);
         localStorage.setItem('custom_server_url', url);
-        
-        // Notify the user that the change is applied immediately
-        showToast('Server URL updated. Subsequent requests will use the new URL.', 'success');
-        
+        // Force reload to apply new base URL for all api calls
+        window.location.reload();
         return true;
-    }, [showToast]);
+    }, []);
 
     // --- Modal & Sidebar Handlers ---
     const handleShowSources = useCallback((sources: Source[]) => {
@@ -420,9 +431,10 @@ export const useAppLogic = () => {
     const retryConnection = useCallback(() => {
         setBackendStatus('checking');
         setBackendError(null);
-        fetchModels().then(() => setBackendStatus('online')).catch(() => {
-            setBackendStatus('offline');
-            setBackendError("Connection failed.");
+        fetchModels().then(() => {
+            // fetchModels sets success status on success
+        }).catch(() => {
+            // fetchModels sets failure status on failure
         });
     }, [fetchModels]);
 
@@ -489,9 +501,6 @@ export const useAppLogic = () => {
         aboutUser, setAboutUser: handleSetAboutUser,
         aboutResponse, setAboutResponse: handleSetAboutResponse,
         ttsVoice, setTtsVoice: handleSetTtsVoice,
-        
-        isAgentMode: false,
-        setIsAgentMode: () => {},
         
         // Memory
         memory,
