@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 
@@ -127,16 +127,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         }
     }, []);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                containerRef.current && !containerRef.current.contains(event.target as Node) &&
-                menuRef.current && !menuRef.current.contains(event.target as Node)
-            ) {
-                setIsOpen(false);
-            }
-        };
-        
+    useLayoutEffect(() => {
         if (isOpen) {
             updatePosition();
             
@@ -147,16 +138,25 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                 }, 0);
             }
 
+            const handleClickOutside = (event: MouseEvent) => {
+                if (
+                    containerRef.current && !containerRef.current.contains(event.target as Node) &&
+                    menuRef.current && !menuRef.current.contains(event.target as Node)
+                ) {
+                    setIsOpen(false);
+                }
+            };
+
             document.addEventListener('mousedown', handleClickOutside);
             window.addEventListener('resize', updatePosition);
             window.addEventListener('scroll', updatePosition, true);
+            
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside);
+                window.removeEventListener('resize', updatePosition);
+                window.removeEventListener('scroll', updatePosition, true);
+            };
         }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            window.removeEventListener('resize', updatePosition);
-            window.removeEventListener('scroll', updatePosition, true);
-        };
     }, [isOpen, updatePosition]);
 
     const toggleOpen = () => {
@@ -268,10 +268,10 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                     {isOpen && (
                         <motion.div
                             ref={menuRef}
-                            initial={{ opacity: 0, scale: 0.95, y: coords.bottom ? 10 : -10 }}
+                            initial={{ opacity: 0, scale: 0.95, y: coords.bottom ? 5 : -5 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: coords.bottom ? 10 : -10 }}
-                            transition={{ duration: 0.15, ease: "easeOut" }}
+                            exit={{ opacity: 0, scale: 0.95, y: coords.bottom ? 5 : -5 }}
+                            transition={{ duration: 0.1, ease: "easeOut" }}
                             style={{
                                 position: 'fixed',
                                 left: coords.left,

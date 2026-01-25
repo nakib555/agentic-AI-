@@ -3,20 +3,19 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useState, Suspense } from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence, motion as motionTyped, LayoutGroup } from 'framer-motion';
 import type { Model } from '../../types';
 import { SettingsCategoryButton } from './SettingsCategoryButton';
 import type { Theme } from '../../hooks/useTheme';
-import { SettingsSkeleton } from './SettingsSkeleton';
+
+// Static imports for instant tab switching
+import GeneralSettings from './GeneralSettings';
+import ModelSettings from './ModelSettings';
+import PersonalizeSettings from './PersonalizeSettings';
+import SpeechMemorySettings from './SpeechMemorySettings';
 
 const motion = motionTyped as any;
-
-// Lazy load the settings tabs to optimize bundle size and startup time
-const GeneralSettings = React.lazy(() => import('./GeneralSettings'));
-const ModelSettings = React.lazy(() => import('./ModelSettings'));
-const PersonalizeSettings = React.lazy(() => import('./PersonalizeSettings'));
-const SpeechMemorySettings = React.lazy(() => import('./SpeechMemorySettings'));
 
 type SettingsModalProps = {
   isOpen: boolean;
@@ -135,7 +134,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.15 }}
           onClick={onClose}
           className="fixed inset-0 bg-black/40 backdrop-blur-none md:backdrop-blur-sm z-[60] flex items-center justify-center p-4 sm:p-6 overflow-hidden"
           role="dialog"
@@ -146,7 +145,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.3, type: "spring", bounce: 0.25 }}
+            transition={{ duration: 0.2, type: "spring", bounce: 0.25 }}
             className="bg-page w-full max-w-5xl h-[85dvh] min-h-[300px] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-white/10"
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
@@ -201,80 +200,78 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                     </LayoutGroup>
                 </nav>
 
-                {/* Content Area - Lazy Loaded */}
+                {/* Content Area - Static Import for speed */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-page w-full">
                     <div className="p-4 md:p-8 lg:p-10 max-w-3xl mx-auto min-h-full">
-                        <Suspense fallback={<SettingsSkeleton />}>
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={activeCategory}
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    transition={{ duration: 0.2, ease: "easeOut" }}
-                                    className="w-full"
-                                >
-                                    {activeCategory === 'general' && (
-                                        <GeneralSettings 
-                                            onClearAllChats={props.onClearAllChats} 
-                                            onRunTests={props.onRunTests} 
-                                            onDownloadLogs={props.onDownloadLogs} 
-                                            onShowDataStructure={props.onShowDataStructure}
-                                            onExportAllChats={props.onExportAllChats} 
-                                            apiKey={props.apiKey} 
-                                            onSaveApiKey={props.onSaveApiKey} 
-                                            theme={props.theme} 
-                                            setTheme={props.setTheme} 
-                                            serverUrl={props.serverUrl}
-                                            onSaveServerUrl={props.onSaveServerUrl}
-                                            provider={props.provider}
-                                            openRouterApiKey={props.openRouterApiKey}
-                                            onProviderChange={props.onProviderChange}
-                                            ollamaHost={props.ollamaHost}
-                                            onSaveOllamaHost={props.onSaveOllamaHost}
-                                        />
-                                    )}
-                                    {activeCategory === 'personalize' && <PersonalizeSettings {...props} />}
-                                    {activeCategory === 'model' && (
-                                        <ModelSettings
-                                            models={props.models}
-                                            imageModels={props.imageModels}
-                                            videoModels={props.videoModels}
-                                            ttsModels={props.ttsModels}
-                                            selectedModel={props.selectedModel}
-                                            onModelChange={props.onModelChange}
-                                            temperature={props.temperature}
-                                            setTemperature={props.setTemperature}
-                                            maxTokens={props.maxTokens}
-                                            setMaxTokens={props.setMaxTokens}
-                                            imageModel={props.imageModel}
-                                            onImageModelChange={props.onImageModelChange}
-                                            videoModel={props.videoModel}
-                                            onVideoModelChange={props.onVideoModelChange}
-                                            ttsModel={props.ttsModel}
-                                            onTtsModelChange={props.onTtsModelChange}
-                                            defaultTemperature={props.defaultTemperature}
-                                            defaultMaxTokens={props.defaultMaxTokens}
-                                            disabled={props.disabled}
-                                            provider={props.provider}
-                                        />
-                                    )}
-                                    {activeCategory === 'speech' && (
-                                        <SpeechMemorySettings 
-                                            isMemoryEnabled={props.isMemoryEnabled} 
-                                            setIsMemoryEnabled={props.setIsMemoryEnabled} 
-                                            onManageMemory={props.onManageMemory} 
-                                            disabled={props.disabled}
-                                            ttsVoice={props.ttsVoice}
-                                            setTtsVoice={props.setTtsVoice}
-                                            ttsModels={props.ttsModels}
-                                            ttsModel={props.ttsModel}
-                                            onTtsModelChange={props.onTtsModelChange}
-                                        />
-                                    )}
-                                </motion.div>
-                            </AnimatePresence>
-                        </Suspense>
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeCategory}
+                                initial={{ opacity: 0, x: 5 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -5 }}
+                                transition={{ duration: 0.15, ease: "easeOut" }}
+                                className="w-full"
+                            >
+                                {activeCategory === 'general' && (
+                                    <GeneralSettings 
+                                        onClearAllChats={props.onClearAllChats} 
+                                        onRunTests={props.onRunTests} 
+                                        onDownloadLogs={props.onDownloadLogs} 
+                                        onShowDataStructure={props.onShowDataStructure}
+                                        onExportAllChats={props.onExportAllChats} 
+                                        apiKey={props.apiKey} 
+                                        onSaveApiKey={props.onSaveApiKey} 
+                                        theme={props.theme} 
+                                        setTheme={props.setTheme} 
+                                        serverUrl={props.serverUrl}
+                                        onSaveServerUrl={props.onSaveServerUrl}
+                                        provider={props.provider}
+                                        openRouterApiKey={props.openRouterApiKey}
+                                        onProviderChange={props.onProviderChange}
+                                        ollamaHost={props.ollamaHost}
+                                        onSaveOllamaHost={props.onSaveOllamaHost}
+                                    />
+                                )}
+                                {activeCategory === 'personalize' && <PersonalizeSettings {...props} />}
+                                {activeCategory === 'model' && (
+                                    <ModelSettings
+                                        models={props.models}
+                                        imageModels={props.imageModels}
+                                        videoModels={props.videoModels}
+                                        ttsModels={props.ttsModels}
+                                        selectedModel={props.selectedModel}
+                                        onModelChange={props.onModelChange}
+                                        temperature={props.temperature}
+                                        setTemperature={props.setTemperature}
+                                        maxTokens={props.maxTokens}
+                                        setMaxTokens={props.setMaxTokens}
+                                        imageModel={props.imageModel}
+                                        onImageModelChange={props.onImageModelChange}
+                                        videoModel={props.videoModel}
+                                        onVideoModelChange={props.onVideoModelChange}
+                                        ttsModel={props.ttsModel}
+                                        onTtsModelChange={props.onTtsModelChange}
+                                        defaultTemperature={props.defaultTemperature}
+                                        defaultMaxTokens={props.defaultMaxTokens}
+                                        disabled={props.disabled}
+                                        provider={props.provider}
+                                    />
+                                )}
+                                {activeCategory === 'speech' && (
+                                    <SpeechMemorySettings 
+                                        isMemoryEnabled={props.isMemoryEnabled} 
+                                        setIsMemoryEnabled={props.setIsMemoryEnabled} 
+                                        onManageMemory={props.onManageMemory} 
+                                        disabled={props.disabled}
+                                        ttsVoice={props.ttsVoice}
+                                        setTtsVoice={props.setTtsVoice}
+                                        ttsModels={props.ttsModels}
+                                        ttsModel={props.ttsModel}
+                                        onTtsModelChange={props.onTtsModelChange}
+                                    />
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
                     </div>
                 </div>
             </div>
@@ -284,3 +281,5 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
     </AnimatePresence>
   );
 });
+
+export default SettingsModal;

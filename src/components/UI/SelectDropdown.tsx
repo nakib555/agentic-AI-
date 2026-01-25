@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useLayoutEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion as motionTyped, AnimatePresence } from 'framer-motion';
 
@@ -63,35 +63,38 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
         }
     }, []);
 
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (
-                containerRef.current && !containerRef.current.contains(e.target as Node) &&
-                menuRef.current && !menuRef.current.contains(e.target as Node)
-            ) {
-                setIsOpen(false);
-            }
-        };
-        
+    // useLayoutEffect prevents visual glitch/jump by calculating position before paint
+    useLayoutEffect(() => {
         if (isOpen) {
             updatePosition();
             
             // Auto-scroll to selected item
             if (selectedItemRef.current) {
+                // We use setTimeout to allow one frame for rendering menu items before scrolling
                 setTimeout(() => {
                     selectedItemRef.current?.scrollIntoView({ block: 'center', behavior: 'instant' });
                 }, 0);
             }
 
+            const handleClickOutside = (e: MouseEvent) => {
+                if (
+                    containerRef.current && !containerRef.current.contains(e.target as Node) &&
+                    menuRef.current && !menuRef.current.contains(e.target as Node)
+                ) {
+                    setIsOpen(false);
+                }
+            };
+
             document.addEventListener('mousedown', handleClickOutside);
             window.addEventListener('resize', updatePosition);
             window.addEventListener('scroll', updatePosition, true);
+            
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside);
+                window.removeEventListener('resize', updatePosition);
+                window.removeEventListener('scroll', updatePosition, true);
+            };
         }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            window.removeEventListener('resize', updatePosition);
-            window.removeEventListener('scroll', updatePosition, true);
-        };
     }, [isOpen, updatePosition]);
 
     const toggleOpen = () => {
@@ -139,10 +142,10 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
                     {isOpen && (
                         <motion.div
                             ref={menuRef}
-                            initial={{ opacity: 0, y: coords.bottom ? 10 : -10, scale: 0.98 }}
+                            initial={{ opacity: 0, y: coords.bottom ? 5 : -5, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: coords.bottom ? 10 : -10, scale: 0.98 }}
-                            transition={{ duration: 0.15, ease: "easeOut" }}
+                            exit={{ opacity: 0, y: coords.bottom ? 5 : -5, scale: 0.98 }}
+                            transition={{ duration: 0.1, ease: "easeOut" }}
                             style={{ 
                                 position: 'fixed',
                                 top: coords.top,

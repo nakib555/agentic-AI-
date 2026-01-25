@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import type { Model } from '../../types';
@@ -95,8 +95,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         const spaceOnRight = viewportWidth - rect.left - padding;
         const spaceOnLeft = rect.right - padding;
         
-        // Prefer left align (growing right) if space permits the minWidth
-        // OR if right side has strictly more space than left side
+        // Prefer left align (growing right) if space permits.
         const alignLeft = spaceOnRight >= minWidth || spaceOnRight > spaceOnLeft;
 
         let left: number | undefined;
@@ -123,17 +122,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     }
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // Check if click is outside both the button (selectorRef) and the portal menu (menuRef)
-      if (
-          selectorRef.current && !selectorRef.current.contains(event.target as Node) &&
-          menuRef.current && !menuRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
+  useLayoutEffect(() => {
     if (isOpen) {
         updatePosition(); // Initial position calculation
         
@@ -144,17 +133,25 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             }, 0);
         }
         
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                selectorRef.current && !selectorRef.current.contains(event.target as Node) &&
+                menuRef.current && !menuRef.current.contains(event.target as Node)
+            ) {
+              setIsOpen(false);
+            }
+        };
+
         document.addEventListener('mousedown', handleClickOutside);
-        // Using capture phase for scroll to detect scrolling in any parent container
         window.addEventListener('resize', updatePosition);
         window.addEventListener('scroll', updatePosition, true); 
+        
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+        };
     }
-    
-    return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-        window.removeEventListener('resize', updatePosition);
-        window.removeEventListener('scroll', updatePosition, true);
-    };
   }, [isOpen, updatePosition]);
 
   const toggleOpen = () => {
@@ -215,16 +212,15 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         </div>
       </button>
 
-      {/* Render the dropdown using a Portal to break out of overflow:hidden parents */}
       {createPortal(
         <AnimatePresence>
             {isOpen && (
             <motion.div
                 ref={menuRef}
-                initial={{ opacity: 0, scale: 0.95, y: coords.bottom ? 10 : -10 }}
+                initial={{ opacity: 0, scale: 0.95, y: coords.bottom ? 5 : -5 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: coords.bottom ? 10 : -10 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
+                exit={{ opacity: 0, scale: 0.95, y: coords.bottom ? 5 : -5 }}
+                transition={{ duration: 0.1, ease: "easeOut" }}
                 style={{
                     position: 'fixed',
                     left: coords.left,
@@ -233,7 +229,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                     maxWidth: coords.maxWidth,
                     top: coords.top,
                     bottom: coords.bottom,
-                    zIndex: 99999, // Ensure it sits on top of everything, including modals
+                    zIndex: 99999,
                 }}
                 className="bg-white dark:bg-[#1a1a1a] border border-gray-200/50 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/5"
             >
