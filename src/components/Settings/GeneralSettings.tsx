@@ -139,7 +139,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
     provider, openRouterApiKey, onProviderChange, ollamaHost, onSaveOllamaHost
 }) => {
     return (
-        <div className="space-y-10 pb-12 w-full max-w-full overflow-hidden">
+        <div className="space-y-10 pb-12 w-full max-w-full">
             <div className="mb-8">
                 <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">General Configuration</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage API keys, connectivity, and system preferences.</p>

@@ -178,7 +178,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                     </div>
 
                     <LayoutGroup id="settings-nav">
-                        <ul className="flex flex-row md:flex-col gap-1 md:gap-2 overflow-x-auto md:overflow-visible px-2 md:px-0 py-2 md:py-0 scroll-smooth snap-x no-scrollbar md:custom-scrollbar">
+                        {/* Increased horizontal padding (px-4) for mobile nav to prevent edge clipping */}
+                        <ul className="flex flex-row md:flex-col gap-1 md:gap-2 overflow-x-auto md:overflow-visible px-4 md:px-0 py-2 md:py-0 scroll-smooth snap-x no-scrollbar md:custom-scrollbar">
                             {CATEGORIES.map(cat => (
                                 <li key={cat.id} className="flex-shrink-0 snap-start">
                                     <SettingsCategoryButton
@@ -201,8 +202,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = React.memo((props) =>
                 </nav>
 
                 {/* Content Area - Static Import for speed */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-page w-full">
-                    <div className="p-4 md:p-8 lg:p-10 max-w-3xl mx-auto min-h-full">
+                {/* Removed overflow-x-hidden to prevent shadow clipping */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-page w-full">
+                    {/* Increased padding (px-6) for better spacing on mobile */}
+                    <div className="px-6 py-6 md:p-8 lg:p-10 max-w-3xl mx-auto min-h-full">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={activeCategory}
