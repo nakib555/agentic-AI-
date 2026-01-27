@@ -5,11 +5,11 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSidebar } from './useSidebar';
-import { useTheme } from './useTheme';
-import { useViewport } from './useViewport';
-import { useChat } from './useChat/index';
-import { useMemory } from './useMemory';
+import { useSidebar } from '../../hooks/useSidebar';
+import { useTheme } from '../../hooks/useTheme';
+import { useViewport } from '../../hooks/useViewport';
+import { useChat } from '../../hooks/useChat/index';
+import { useMemory } from '../../hooks/useMemory';
 import { getSettings, updateSettings, AppSettings } from '../../services/settingsService';
 import { fetchFromApi, setOnVersionMismatch } from '../../utils/api';
 import type { Model, Source } from '../../types';
@@ -47,16 +47,7 @@ export const useAppLogic = () => {
     const [apiKey, setApiKey] = useState('');
     const [openRouterApiKey, setOpenRouterApiKey] = useState('');
     const [ollamaHost, setOllamaHost] = useState('');
-    
-    // Initialize serverUrl from localStorage to show current override in UI
-    const [serverUrl, setServerUrl] = useState(() => {
-        try {
-            return localStorage.getItem('custom_server_url') || '';
-        } catch {
-            return '';
-        }
-    });
-
+    const [serverUrl, setServerUrl] = useState('');
     const [activeModel, setActiveModel] = useState('');
     const [imageModel, setImageModel] = useState('');
     const [videoModel, setVideoModel] = useState('');

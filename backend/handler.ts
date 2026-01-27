@@ -559,8 +559,11 @@ Output ONLY the raw text of the improved prompt.
                     // For others, we might need a local estimator or just return 0/mock.
                     if (activeProviderName === 'gemini' && chatApiKey) {
                          const ai = new GoogleGenAI({ apiKey: chatApiKey });
-                         const modelInstance = ai.getGenerativeModel({ model: model || 'gemini-1.5-flash' });
-                         const countResult = await modelInstance.countTokens(textToCount);
+                         // Updated to use ai.models.countTokens instead of deprecated getGenerativeModel
+                         const countResult = await ai.models.countTokens({
+                             model: model || 'gemini-2.5-flash',
+                             contents: [{ parts: [{ text: textToCount }] }]
+                         });
                          res.status(200).json({ totalTokens: countResult.totalTokens });
                     } else {
                          // Fallback estimation: ~4 chars per token
