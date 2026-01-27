@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback, useLayoutEffect, useRef } from 'react';
-import { motion as motionTyped, useDragControls, AnimatePresence, useMotionValue, animate } from 'framer-motion';
+import { motion as motionTyped, useDragControls, AnimatePresence, useMotionValue, animate, useTransform } from 'framer-motion';
 import { useViewport } from '../../hooks/useViewport';
 import { ArtifactContent } from './ArtifactContent';
 
@@ -34,6 +34,17 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
     // Mobile specific state
     const y = useMotionValue(typeof window !== 'undefined' ? window.innerHeight : 800);
     const contentRef = useRef<HTMLDivElement>(null);
+    
+    // Dynamic height calculation for mobile drag
+    // Keeps the bottom of the content container anchored to the bottom of the screen
+    // so scrollbars are always visible even when the sheet is dragged down (peeking).
+    const maxSheetHeight = typeof window !== 'undefined' ? window.innerHeight * 0.85 : 800;
+    const dynamicHeight = useTransform(y, (latestY) => {
+        // When y=0 (fully open), height is max. When y increases (dragged down), height shrinks.
+        // We clamp to avoid negative heights or excessive growth during rubber-banding.
+        const calculated = maxSheetHeight - latestY;
+        return Math.max(100, Math.min(calculated, maxSheetHeight)); 
+    });
 
     // Mobile Sheet Logic: Calculate optimal height and animate
     useLayoutEffect(() => {
@@ -101,13 +112,6 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
         window.addEventListener('mouseup', handleMouseUp);
     }, [setIsResizing, setWidth]);
 
-    // On mobile, even when closed, we keep the component mounted (just off-screen)
-    // to preserve the state of the internal playground/iframe.
-    // We only return null if we are strictly desktop and closed?
-    // Actually desktop controls visibility via width animation.
-    // So we basically never return null here anymore to ensure persistence.
-    // But we should ensure it's not interactive when closed.
-    
     // Safety check for initialization
     if (!content && !isOpen) return null;
 
@@ -148,9 +152,10 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
                 // Ensure interactions are disabled when closed to prevent ghost clicks
                 aria-hidden={!isOpen}
             >
-                <div 
+                <motion.div 
                     ref={contentRef}
-                    className="flex flex-col h-full overflow-hidden w-full relative"
+                    className="flex flex-col overflow-hidden w-full relative"
+                    style={{ height: isDesktop ? '100%' : dynamicHeight }}
                 >
                     {/* Drag handle for mobile */}
                     {!isDesktop && (
@@ -168,7 +173,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
                         language={language}
                         onClose={onClose}
                     />
-                </div>
+                </motion.div>
 
                 {/* Resize Handle (Desktop only) */}
                 {isDesktop && (
