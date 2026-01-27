@@ -130,7 +130,11 @@ const GeminiProvider: AIProvider = {
                      onToolResult: callbacks.onToolResult || (() => {}),
                      onPlanReady: callbacks.onPlanReady || (async () => false),
                      onFrontendToolRequest: callbacks.onFrontendToolRequest || (() => {}),
-                     onCancel: callbacks.onCancel || (() => {})
+                     onCancel: callbacks.onCancel || (() => {}),
+                     // Adapter for onComplete signature mismatch
+                     onComplete: (finalText, groundingMetadata) => {
+                        callbacks.onComplete({ finalText, groundingMetadata });
+                     }
                  },
                  settings: {
                      temperature,

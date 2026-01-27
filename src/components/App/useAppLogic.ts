@@ -6,11 +6,11 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSidebar } from './useSidebar';
-import { useTheme } from './useTheme';
-import { useViewport } from './useViewport';
-import { useChat } from './useChat/index';
-import { useMemory } from './useMemory';
+import { useSidebar } from '../../hooks/useSidebar';
+import { useTheme } from '../../hooks/useTheme';
+import { useViewport } from '../../hooks/useViewport';
+import { useChat } from '../../hooks/useChat/index';
+import { useMemory } from '../../hooks/useMemory';
 import { getSettings, updateSettings, AppSettings } from '../../services/settingsService';
 import { fetchFromApi, setOnVersionMismatch } from '../../utils/api';
 import type { Model, Source } from '../../types';
@@ -18,6 +18,7 @@ import { DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS, DEFAULT_TTS_VOICE, DEFAULT_ABO
 import { testSuite, type TestProgress } from '../Testing/testSuite';
 import type { MessageFormHandle } from '../Chat/MessageForm/types';
 import { MessageListHandle } from '../Chat/MessageList';
+import type { ChatSession } from '../../types';
 
 export const useAppLogic = () => {
     // --- UI State ---
@@ -442,7 +443,7 @@ export const useAppLogic = () => {
     // --- Export ---
     const handleExportChat = useCallback((format: 'md' | 'json' | 'pdf') => {
         if (!chat.currentChatId) return;
-        const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
+        const currentChat = chat.chatHistory.find((c: ChatSession) => c.id === chat.currentChatId);
         if (!currentChat) return;
 
         import('../../utils/exportUtils/index').then(mod => {
@@ -454,7 +455,7 @@ export const useAppLogic = () => {
 
     const handleShareChat = useCallback(() => {
         if (!chat.currentChatId) return;
-        const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
+        const currentChat = chat.chatHistory.find((c: ChatSession) => c.id === chat.currentChatId);
         if (!currentChat) return;
         
         import('../../utils/exportUtils/index').then(mod => {
