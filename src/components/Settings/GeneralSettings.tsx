@@ -57,10 +57,11 @@ const ActionButton = ({
     </button>
 );
 
-const ApiKeyInput = ({ label, value, placeholder, onSave, buttonLabel, description, isPassword = true }: any) => {
+const ApiKeyInput = ({ label, value, placeholder, onSave, buttonLabel, description, isPassword = true, suggestions = [] }: any) => {
     const [inputValue, setInputValue] = useState(value);
     const [isSaved, setIsSaved] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const listId = React.useId();
     
     // Track mounted state to prevent state updates on unmounted component
     const isMounted = useRef(true);
@@ -100,9 +101,17 @@ const ApiKeyInput = ({ label, value, placeholder, onSave, buttonLabel, descripti
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         placeholder={placeholder}
-                        autoComplete={isPassword ? "new-password" : "off"}
+                        autoComplete={isPassword ? "new-password" : "url"}
+                        list={suggestions.length > 0 ? listId : undefined}
                         className="w-full pl-4 pr-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-sm"
                     />
+                    {suggestions.length > 0 && (
+                        <datalist id={listId}>
+                            {suggestions.map((opt: string) => (
+                                <option key={opt} value={opt} />
+                            ))}
+                        </datalist>
+                    )}
                 </div>
                 <button
                     type="submit"
@@ -204,6 +213,10 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                             buttonLabel="Save Host"
                             description="Enter the URL of your Ollama instance"
                             isPassword={false}
+                            suggestions={[
+                                "http://localhost:11434",
+                                "http://127.0.0.1:11434"
+                            ]}
                         />
                         <ApiKeyInput 
                             label="Auth Header (Optional)" 
