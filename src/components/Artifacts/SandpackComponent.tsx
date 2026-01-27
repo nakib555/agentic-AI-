@@ -14,7 +14,7 @@ type LiveCodesProps = {
     mode?: 'inline' | 'full';
 };
 
-const LIVECODES_CDN = "https://cdn.jsdelivr.net/npm/livecodes@0.12.0/livecodes.umd.js";
+const LIVECODES_CDN = "https://cdn.jsdelivr.net/npm/livecodes@0.15.0/livecodes.umd.js";
 
 // Global promise to track script loading status across multiple instances
 let scriptLoadingPromise: Promise<void> | null = null;
@@ -262,15 +262,4 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
     return (
         <div className="relative w-full h-full bg-white dark:bg-[#1e1e1e]">
             {isLoading && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white dark:bg-[#1e1e1e]">
-                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                    <span className="text-xs font-medium text-slate-500">Initializing Environment...</span>
-                    <span className="text-[10px] text-slate-400 mt-1">This may take a moment</span>
-                </div>
-            )}
-            <div ref={containerRef} style={{ height: '100%', width: '100%', border: 'none' }} />
-        </div>
-    );
-};
-
-export default LiveCodesEmbed;
+                <div className="absolute inset-0 flex flex-col items-center justify
