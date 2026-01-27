@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,7 +9,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useSyntaxTheme } from '../../hooks/useSyntaxTheme';
 import { ErrorBoundary } from '../ErrorBoundary';
 
-// Lazy load the LiveCodes component (formerly SandpackComponent)
+// Lazy load the LiveCodes component
 const LiveCodesEmbed = React.lazy(() => import('./SandpackComponent'));
 
 type ArtifactRendererProps = {
@@ -18,8 +19,17 @@ type ArtifactRendererProps = {
     title?: string;
 };
 
+// Icons
+const RefreshIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+        <path d="M3 3v5h5"></path>
+    </svg>
+);
+
 export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, content, language = 'html', title }) => {
     const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
+    const [refreshKey, setRefreshKey] = useState(0);
     const syntaxStyle = useSyntaxTheme();
     
     // Theme detection
@@ -47,6 +57,10 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
             setActiveTab('source');
         }
     }, [language, content.length, isRenderable]);
+
+    const handleRefresh = () => {
+        setRefreshKey(prev => prev + 1);
+    };
 
     const renderPreview = () => {
         if (type === 'data') {
@@ -102,6 +116,7 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                         </div>
                      }>
                          <LiveCodesEmbed
+                            key={refreshKey}
                             code={content}
                             language={language}
                             theme={isDark ? "dark" : "light"}
@@ -120,21 +135,32 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
                 <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">
                     {title || (type === 'code' ? 'Code Snippet' : 'Data View')}
                 </span>
-                <div className="flex bg-layer-3 p-0.5 rounded-lg">
-                    {isRenderable && (
-                        <button 
-                            onClick={() => setActiveTab('preview')}
-                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTab === 'preview' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
+                <div className="flex items-center gap-2">
+                    {isRenderable && activeTab === 'preview' && (
+                         <button 
+                            onClick={handleRefresh}
+                            className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:text-indigo-500 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                            title="Reload Preview"
                         >
-                            Preview
+                            <RefreshIcon />
                         </button>
                     )}
-                    <button 
-                        onClick={() => setActiveTab('source')}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTab === 'source' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
-                    >
-                        Source
-                    </button>
+                    <div className="flex bg-layer-3 p-0.5 rounded-lg">
+                        {isRenderable && (
+                            <button 
+                                onClick={() => setActiveTab('preview')}
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTab === 'preview' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
+                            >
+                                Preview
+                            </button>
+                        )}
+                        <button 
+                            onClick={() => setActiveTab('source')}
+                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTab === 'source' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
+                        >
+                            Source
+                        </button>
+                    </div>
                 </div>
             </div>
 

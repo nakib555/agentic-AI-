@@ -16,29 +16,40 @@ type LiveCodesProps = {
 
 const LIVECODES_CDN = "https://cdn.jsdelivr.net/npm/livecodes@0.12.0/livecodes.umd.js";
 
-// Helper to load script safely
+// Global promise to track script loading status across multiple instances
+let scriptLoadingPromise: Promise<void> | null = null;
+
 const loadLiveCodesScript = () => {
-    return new Promise<void>((resolve, reject) => {
+    if (scriptLoadingPromise) return scriptLoadingPromise;
+
+    scriptLoadingPromise = new Promise((resolve, reject) => {
         if ((window as any).livecodes) {
             resolve();
-            return;
-        }
-
-        // Check if already present in DOM but not yet loaded
-        const existingScript = document.querySelector(`script[src="${LIVECODES_CDN}"]`);
-        if (existingScript) {
-            existingScript.addEventListener('load', () => resolve());
-            existingScript.addEventListener('error', () => reject(new Error('LiveCodes script failed to load')));
             return;
         }
 
         const script = document.createElement('script');
         script.src = LIVECODES_CDN;
         script.async = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Failed to load LiveCodes script'));
+        script.dataset.name = 'livecodes-loader';
+        
+        script.onload = () => {
+            if ((window as any).livecodes) {
+                resolve();
+            } else {
+                reject(new Error('LiveCodes script loaded but global object not found'));
+            }
+        };
+        
+        script.onerror = () => {
+            scriptLoadingPromise = null; // Reset on failure so we can retry
+            reject(new Error('Failed to load LiveCodes script from CDN'));
+        };
+        
         document.head.appendChild(script);
     });
+
+    return scriptLoadingPromise;
 };
 
 // Helper to determine LiveCodes configuration based on language
@@ -117,14 +128,22 @@ const getLiveCodesConfig = (code: string, lang: string) => {
 
 const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const appRef = useRef<any>(null);
+    const playgroundRef = useRef<any>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         let isMounted = true;
-        
+
         const init = async () => {
+            // Cleanup previous instance if exists
+            if (playgroundRef.current) {
+                try {
+                    await playgroundRef.current.destroy();
+                } catch(e) { /* ignore cleanup errors */ }
+                playgroundRef.current = null;
+            }
+
             if (!containerRef.current) return;
             
             setIsLoading(true);
@@ -137,16 +156,13 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
                 const livecodesGlobal = (window as any).livecodes;
                 if (!livecodesGlobal) throw new Error("LiveCodes global not found");
 
-                // Robust check for createPlayground function
-                // In some UMD versions, livecodes is the function, in others it's an object containing createPlayground
-                const createPlayground = typeof livecodesGlobal.createPlayground === 'function' 
-                    ? livecodesGlobal.createPlayground 
-                    : (typeof livecodesGlobal === 'function' ? livecodesGlobal : null);
+                const createPlayground = livecodesGlobal.createPlayground;
 
                 if (!createPlayground) {
-                    console.error("LiveCodes global:", livecodesGlobal);
                     throw new Error("LiveCodes initialization function not found");
                 }
+
+                if (!isMounted) return;
 
                 const config = getLiveCodesConfig(code, language);
                 
@@ -160,41 +176,59 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
                     config: {
                         ...config,
                         mode: 'result', // Start in result mode
+                        tools: {
+                            status: 'none', // Hide status bar for cleaner look
+                        }
                     },
                     params: {
                         theme: theme,
                         console: 'open',
-                        loading: 'lazy',
+                        loading: 'lazy', // Lazy load internal assets
                         run: true,
+                        embed: true,
                     }
                 });
                 
                 if (isMounted) {
-                    appRef.current = app;
+                    playgroundRef.current = app;
                     setIsLoading(false);
+                } else {
+                    // Component unmounted while initializing
+                    await app.destroy();
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error("LiveCodes initialization failed:", err);
                 if (isMounted) {
-                    setError("Failed to load preview environment.");
+                    setError(err.message || "Failed to load preview environment.");
                     setIsLoading(false);
                 }
             }
         };
 
-        init();
+        // Small delay to ensure DOM layout is stable
+        const timer = setTimeout(init, 50);
 
         return () => {
             isMounted = false;
+            clearTimeout(timer);
+            if (playgroundRef.current) {
+                playgroundRef.current.destroy().catch(() => {});
+            }
         };
     }, [code, language, theme]);
 
     if (error) {
         return (
-            <div className="h-full w-full flex flex-col items-center justify-center bg-gray-50 dark:bg-[#1e1e1e] text-red-500 p-4 text-center">
+            <div className="h-full w-full flex flex-col items-center justify-center bg-gray-50 dark:bg-[#1e1e1e] text-red-500 p-4 text-center border-t border-red-200 dark:border-red-900/30">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 mb-2 opacity-50"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <p className="text-sm font-medium">{error}</p>
-                <button onClick={() => window.location.reload()} className="mt-2 text-xs text-indigo-500 hover:underline">Reload Page</button>
+                <p className="text-xs text-slate-500 mt-1 max-w-xs">The external editor library failed to load. Check your internet connection.</p>
+                <button 
+                    onClick={() => { setError(null); setIsLoading(true); window.location.reload(); }} 
+                    className="mt-4 px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-500 transition-colors"
+                >
+                    Retry Connection
+                </button>
             </div>
         );
     }
@@ -203,8 +237,9 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
         <div className="relative w-full h-full bg-white dark:bg-[#1e1e1e]">
             {isLoading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white dark:bg-[#1e1e1e]">
-                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
                     <span className="text-xs font-medium text-slate-500">Initializing Environment...</span>
+                    <span className="text-[10px] text-slate-400 mt-1">This may take a moment</span>
                 </div>
             )}
             <div ref={containerRef} style={{ height: '100%', width: '100%', border: 'none' }} />
@@ -212,5 +247,4 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
     );
 };
 
-// Export as default to maintain compatibility with existing lazy loads
 export default LiveCodesEmbed;

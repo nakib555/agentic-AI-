@@ -41,6 +41,13 @@ const EyeIcon = () => (
     </svg>
 );
 
+const RefreshIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+        <path d="M3 3v5h5"></path>
+    </svg>
+);
+
 type ArtifactContentProps = {
     content: string;
     language: string;
@@ -51,6 +58,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     const syntaxStyle = useSyntaxTheme();
     const [activeTab, setActiveTab] = useState<'code' | 'preview'>('code');
     const [isCopied, setIsCopied] = React.useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
     
     // Theme detection
     const [isDark, setIsDark] = useState(false);
@@ -81,6 +89,10 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
         navigator.clipboard.writeText(content);
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
+    };
+
+    const handleRefresh = () => {
+        setRefreshKey(prev => prev + 1);
     };
 
     const displayLanguage = useMemo(() => {
@@ -127,6 +139,18 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                 </div>
                 
                 <div className="flex items-center gap-2 ml-auto">
+                    {activeTab === 'preview' && (
+                         <Tooltip content="Reload Preview" position="bottom" delay={500}>
+                            <button 
+                                onClick={handleRefresh}
+                                className="p-2 rounded-lg text-content-secondary hover:text-indigo-500 hover:bg-layer-2 transition-colors"
+                                aria-label="Reload preview"
+                            >
+                                <RefreshIcon />
+                            </button>
+                        </Tooltip>
+                    )}
+
                     <Tooltip content="Copy Code" position="bottom" delay={500}>
                         <button 
                             onClick={handleCopy}
@@ -201,6 +225,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                                     </div>
                                  }>
                                      <LiveCodesEmbed
+                                        key={refreshKey} // Force remount on refresh
                                         theme={isDark ? "dark" : "light"}
                                         code={content}
                                         language={language}
