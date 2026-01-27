@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -153,59 +154,59 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             {/* Main Content Area */}
             <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col w-full">
                 {/* CODE VIEW */}
-                <div 
-                    className={`flex-1 relative overflow-auto custom-scrollbar bg-code-surface ${activeTab === 'code' ? 'block' : 'hidden'}`}
-                >
-                    <SyntaxHighlighter
-                        language={language}
-                        style={syntaxStyle}
-                        customStyle={{ 
-                            margin: 0, 
-                            padding: '1.5rem', 
-                            minHeight: '100%', 
-                            fontSize: '13px', 
-                            lineHeight: '1.5',
-                            fontFamily: "'Fira Code', monospace",
-                            background: 'transparent',
-                        }}
-                        showLineNumbers={true}
-                        wrapLines={false} 
-                        lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
-                        fallbackLanguage="text"
-                    >
-                        {content || ''}
-                    </SyntaxHighlighter>
-                </div>
+                {activeTab === 'code' && (
+                    <div className="flex-1 relative overflow-auto custom-scrollbar bg-code-surface">
+                        <SyntaxHighlighter
+                            language={language}
+                            style={syntaxStyle}
+                            customStyle={{ 
+                                margin: 0, 
+                                padding: '1.5rem', 
+                                minHeight: '100%', 
+                                fontSize: '13px', 
+                                lineHeight: '1.5',
+                                fontFamily: "'Fira Code', monospace",
+                                background: 'transparent',
+                            }}
+                            showLineNumbers={true}
+                            wrapLines={false} 
+                            lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', opacity: 0.3 }}
+                            fallbackLanguage="text"
+                        >
+                            {content || ''}
+                        </SyntaxHighlighter>
+                    </div>
+                )}
 
                 {/* PREVIEW VIEW using LiveCodes */}
-                <div 
-                    className={`flex-1 relative flex flex-col bg-layer-2 ${activeTab === 'preview' ? 'block' : 'hidden'}`}
-                >
-                    <div className="flex-1 w-full h-full relative bg-white dark:bg-[#1e1e1e]">
-                         <ErrorBoundary fallback={
-                             <div className="flex flex-col items-center justify-center h-full p-4 text-center bg-white dark:bg-[#1e1e1e]">
-                                 <div className="text-red-500 mb-2">⚠ Preview Unavailable</div>
-                                 <p className="text-sm">Failed to load LiveCodes environment.</p>
-                                 <button onClick={() => setActiveTab('code')} className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-sm transition-colors">
-                                     View Code Source
-                                 </button>
-                             </div>
-                         }>
-                             <Suspense fallback={
-                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#1e1e1e]">
-                                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                                    <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
-                                </div>
+                {activeTab === 'preview' && (
+                    <div className="flex-1 relative flex flex-col bg-layer-2">
+                        <div className="flex-1 w-full h-full relative bg-white dark:bg-[#1e1e1e]">
+                             <ErrorBoundary fallback={
+                                 <div className="flex flex-col items-center justify-center h-full p-4 text-center bg-white dark:bg-[#1e1e1e]">
+                                     <div className="text-red-500 mb-2">⚠ Preview Unavailable</div>
+                                     <p className="text-sm">Failed to load LiveCodes environment.</p>
+                                     <button onClick={() => setActiveTab('code')} className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-sm transition-colors">
+                                         View Code Source
+                                     </button>
+                                 </div>
                              }>
-                                 <LiveCodesEmbed
-                                    theme={isDark ? "dark" : "light"}
-                                    code={content}
-                                    language={language}
-                                 />
-                            </Suspense>
-                        </ErrorBoundary>
+                                 <Suspense fallback={
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#1e1e1e]">
+                                        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                        <span className="text-xs font-medium text-slate-500">Starting Environment...</span>
+                                    </div>
+                                 }>
+                                     <LiveCodesEmbed
+                                        theme={isDark ? "dark" : "light"}
+                                        code={content}
+                                        language={language}
+                                     />
+                                </Suspense>
+                            </ErrorBoundary>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
