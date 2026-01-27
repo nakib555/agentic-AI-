@@ -171,6 +171,7 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
                 const config = getLiveCodesConfig(code, language);
                 
                 // Initialize LiveCodes
+                // FIX: Pass params as strings to prevent "object is not iterable" errors in some embed environments
                 app = await livecodesGlobal.createPlayground(containerRef.current, {
                     config: {
                         ...config,
@@ -182,9 +183,9 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
                     },
                     params: {
                         console: 'open',
-                        loading: 'eager', // Use eager loading to show UI faster
-                        run: true,
-                        embed: true,
+                        loading: 'eager', 
+                        run: 'true', // Ensure boolean params are passed as strings
+                        embed: 'true',
                     }
                 });
                 
