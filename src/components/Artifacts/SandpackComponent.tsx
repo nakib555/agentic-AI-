@@ -28,25 +28,19 @@ const loadLiveCodesScript = () => {
             return;
         }
 
-        const script = document.createElement('script');
-        script.src = LIVECODES_CDN;
-        script.async = true;
-        script.dataset.name = 'livecodes-loader';
-        
-        script.onload = () => {
-            if ((window as any).livecodes) {
+        // Use dynamic import for ESM module loading
+        // We use /* @vite-ignore */ to prevent build-time resolution attempts of the CDN URL
+        import(/* @vite-ignore */ LIVECODES_CDN)
+            .then((module) => {
+                // Attach module to window to match expected global usage pattern
+                (window as any).livecodes = module;
                 resolve();
-            } else {
-                reject(new Error('LiveCodes script loaded but global object not found'));
-            }
-        };
-        
-        script.onerror = () => {
-            scriptLoadingPromise = null; // Reset on failure so we can retry
-            reject(new Error('Failed to load LiveCodes script from CDN'));
-        };
-        
-        document.head.appendChild(script);
+            })
+            .catch((err) => {
+                console.error("Failed to load LiveCodes module:", err);
+                scriptLoadingPromise = null; // Reset on failure so we can retry
+                reject(new Error('Failed to load LiveCodes script from CDN'));
+            });
     });
 
     return scriptLoadingPromise;
