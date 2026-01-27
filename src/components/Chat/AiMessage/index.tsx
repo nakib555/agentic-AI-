@@ -121,7 +121,10 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
   };
 
   const isStoppedByUser = activeResponse?.error?.code === 'STOPPED_BY_USER';
-  const showToolbar = logic.thinkingIsComplete && (logic.hasFinalAnswer || !!activeResponse?.error || isStoppedByUser);
+  
+  // Only show toolbar when generation AND typing effect are fully complete.
+  const isTypingComplete = typedFinalAnswer.length === finalAnswerText.length;
+  const showToolbar = logic.thinkingIsComplete && isTypingComplete && (logic.hasFinalAnswer || !!activeResponse?.error || isStoppedByUser);
 
   if (logic.isInitialWait) return <TypingIndicator />;
 
@@ -216,7 +219,11 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
       
       {/* Show toolbar if thinking is complete AND we have something to show (text, error, or stopped state) */}
       {showToolbar && (
-          <div className="w-full mt-2 transition-opacity duration-300">
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full mt-2"
+          >
             <MessageToolbar
                 chatId={currentChatId}
                 messageId={id}
@@ -232,12 +239,12 @@ const AiMessageRaw: React.FC<AiMessageProps> = (props) => {
                 activeResponseIndex={msg.activeResponseIndex}
                 onResponseChange={(index) => onSetActiveResponseIndex(id, index)}
             />
-          </div>
+          </motion.div>
       )}
 
       {/* Conditionally render suggestions only if this is the last message */}
       <AnimatePresence>
-        {isLast && logic.thinkingIsComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
+        {isLast && logic.thinkingIsComplete && isTypingComplete && activeResponse?.suggestedActions && activeResponse.suggestedActions.length > 0 && !activeResponse.error && (
             <motion.div
                 initial={{ opacity: 0, height: 0, marginTop: 0 }}
                 animate={{ opacity: 1, height: 'auto', marginTop: 12 }}

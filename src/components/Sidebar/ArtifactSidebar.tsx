@@ -162,6 +162,7 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
                         <div 
                             className="flex justify-center pt-3 pb-1 flex-shrink-0 bg-layer-1 cursor-grab active:cursor-grabbing touch-none w-full" 
                             onPointerDown={(e: any) => dragControls.start(e)}
+                            style={{ touchAction: 'none' }}
                             aria-hidden="true"
                         >
                             <div className="h-1.5 w-12 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
