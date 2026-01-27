@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -133,8 +134,19 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
                 // Ensure script is loaded
                 await loadLiveCodesScript();
                 
-                const livecodes = (window as any).livecodes;
-                if (!livecodes) throw new Error("LiveCodes global not found");
+                const livecodesGlobal = (window as any).livecodes;
+                if (!livecodesGlobal) throw new Error("LiveCodes global not found");
+
+                // Robust check for createPlayground function
+                // In some UMD versions, livecodes is the function, in others it's an object containing createPlayground
+                const createPlayground = typeof livecodesGlobal.createPlayground === 'function' 
+                    ? livecodesGlobal.createPlayground 
+                    : (typeof livecodesGlobal === 'function' ? livecodesGlobal : null);
+
+                if (!createPlayground) {
+                    console.error("LiveCodes global:", livecodesGlobal);
+                    throw new Error("LiveCodes initialization function not found");
+                }
 
                 const config = getLiveCodesConfig(code, language);
                 
@@ -144,7 +156,7 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
                 }
                 
                 // Initialize LiveCodes
-                const app = await livecodes(containerRef.current, {
+                const app = await createPlayground(containerRef.current, {
                     config: {
                         ...config,
                         mode: 'result', // Start in result mode
