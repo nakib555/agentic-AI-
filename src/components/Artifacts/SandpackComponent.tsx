@@ -262,4 +262,15 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
     return (
         <div className="relative w-full h-full bg-white dark:bg-[#1e1e1e]">
             {isLoading && (
-                <div className="absolute inset-0 flex flex-col items-center justify
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white dark:bg-[#1e1e1e]">
+                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                    <span className="text-xs font-medium text-slate-500">Initializing Environment...</span>
+                    <span className="text-[10px] text-slate-400 mt-1">This may take a moment</span>
+                </div>
+            )}
+            <div ref={containerRef} style={{ height: '100%', width: '100%', border: 'none' }} />
+        </div>
+    );
+};
+
+export default LiveCodesEmbed;
