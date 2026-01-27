@@ -14,7 +14,7 @@ type LiveCodesProps = {
     mode?: 'inline' | 'full';
 };
 
-const LIVECODES_CDN = "https://cdn.jsdelivr.net/npm/livecodes@0.15.0/livecodes.umd.js";
+const LIVECODES_CDN = "https://cdn.jsdelivr.net/npm/livecodes@0.12.0/livecodes.js";
 
 // Global promise to track script loading status across multiple instances
 let scriptLoadingPromise: Promise<void> | null = null;
