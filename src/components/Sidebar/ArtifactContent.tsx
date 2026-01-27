@@ -68,6 +68,7 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
     }, [language]);
 
     // Auto-switch tab based on language detection
+    // Note: This only runs when props change, so manual tab switching is preserved during simple re-renders
     useEffect(() => {
         if (content.length < 50000 && isPreviewable) {
             setActiveTab('preview');
@@ -152,10 +153,11 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
             </div>
 
             {/* Main Content Area */}
+            {/* We use 'hidden' class to toggle visibility instead of unmounting to preserve state (LiveCodes edits) */}
             <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col w-full">
                 {/* CODE VIEW */}
-                {activeTab === 'code' && (
-                    <div className="flex-1 relative overflow-auto custom-scrollbar bg-code-surface">
+                <div className={`flex-1 relative overflow-auto custom-scrollbar bg-code-surface ${activeTab === 'code' ? 'flex' : 'hidden'}`}>
+                    <div className="w-full min-h-full">
                         <SyntaxHighlighter
                             language={language}
                             style={syntaxStyle}
@@ -176,11 +178,12 @@ export const ArtifactContent: React.FC<ArtifactContentProps> = React.memo(({ con
                             {content || ''}
                         </SyntaxHighlighter>
                     </div>
-                )}
+                </div>
 
                 {/* PREVIEW VIEW using LiveCodes */}
-                {activeTab === 'preview' && (
-                    <div className="flex-1 relative flex flex-col bg-layer-2">
+                {/* Only render if language supports preview to save resources */}
+                {isPreviewable && (
+                    <div className={`flex-1 relative flex-col bg-layer-2 ${activeTab === 'preview' ? 'flex' : 'hidden'}`}>
                         <div className="flex-1 w-full h-full relative bg-white dark:bg-[#1e1e1e]">
                              <ErrorBoundary fallback={
                                  <div className="flex flex-col items-center justify-center h-full p-4 text-center bg-white dark:bg-[#1e1e1e]">

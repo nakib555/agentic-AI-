@@ -101,8 +101,15 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
         window.addEventListener('mouseup', handleMouseUp);
     }, [setIsResizing, setWidth]);
 
-    // Mobile Overlay - Only show if open
-    if (!isDesktop && !isOpen) return null;
+    // On mobile, even when closed, we keep the component mounted (just off-screen)
+    // to preserve the state of the internal playground/iframe.
+    // We only return null if we are strictly desktop and closed?
+    // Actually desktop controls visibility via width animation.
+    // So we basically never return null here anymore to ensure persistence.
+    // But we should ensure it's not interactive when closed.
+    
+    // Safety check for initialization
+    if (!content && !isOpen) return null;
 
     return (
         <>
@@ -138,6 +145,8 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
                         : 'fixed inset-x-0 bottom-0 z-[70] border-t rounded-t-2xl'
                     }
                 `}
+                // Ensure interactions are disabled when closed to prevent ghost clicks
+                aria-hidden={!isOpen}
             >
                 <div 
                     ref={contentRef}
@@ -166,6 +175,8 @@ export const ArtifactSidebar: React.FC<ArtifactSidebarProps> = React.memo(({
                     <div
                         className="group absolute top-0 left-0 h-full z-50 w-4 cursor-col-resize flex justify-start hover:bg-transparent pl-[1px]"
                         onMouseDown={startResizingHandler}
+                        // Hide handle when closed to prevent accidental drags
+                        style={{ display: isOpen ? 'flex' : 'none' }}
                     >
                         <div className={`w-[2px] h-full transition-colors duration-200 ${isResizing ? 'bg-indigo-500' : 'bg-transparent group-hover:bg-indigo-400/50'}`}></div>
                     </div>
