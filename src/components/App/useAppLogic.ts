@@ -1,15 +1,16 @@
 
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSidebar } from '../../hooks/useSidebar';
-import { useTheme } from '../../hooks/useTheme';
-import { useViewport } from '../../hooks/useViewport';
-import { useChat } from '../../hooks/useChat/index';
-import { useMemory } from '../../hooks/useMemory';
+import { useSidebar } from './useSidebar';
+import { useTheme } from './useTheme';
+import { useViewport } from './useViewport';
+import { useChat } from './useChat/index';
+import { useMemory } from './useMemory';
 import { getSettings, updateSettings, AppSettings } from '../../services/settingsService';
 import { fetchFromApi, setOnVersionMismatch } from '../../utils/api';
 import type { Model, Source } from '../../types';

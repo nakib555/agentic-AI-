@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -10,6 +9,7 @@ import type { Model as AppModel } from '../../src/types';
 import { generateContentWithRetry, generateContentStreamWithRetry, getText, generateImagesWithRetry, generateVideosWithRetry } from '../utils/geminiUtils';
 import { transformHistoryToGeminiFormat } from '../utils/historyTransformer';
 import { toolDeclarations } from '../tools/declarations';
+import { runAgenticLoop } from '../services/agenticLoop/index';
 
 // Helper to sort models
 const sortModelsByName = (models: AppModel[]): AppModel[] => {
@@ -113,6 +113,35 @@ const GeminiProvider: AIProvider = {
         
         // Transform to Gemini Content[] format
         const fullHistory = transformHistoryToGeminiFormat(historyForAI);
+
+        // --- AGENT MODE ---
+        if (isAgentMode && toolExecutor && chatId) {
+            if (!toolExecutor) throw new Error("Tool executor required for Agent Mode");
+             // Agent Loop logic handled in separate service
+             await runAgenticLoop({
+                 ai,
+                 model,
+                 history: fullHistory,
+                 toolExecutor,
+                 callbacks: {
+                     ...callbacks,
+                     // Provide default no-op functions for optional callbacks
+                     onNewToolCalls: callbacks.onNewToolCalls || (() => {}),
+                     onToolResult: callbacks.onToolResult || (() => {}),
+                     onPlanReady: callbacks.onPlanReady || (async () => false),
+                     onFrontendToolRequest: callbacks.onFrontendToolRequest || (() => {}),
+                     onCancel: callbacks.onCancel || (() => {})
+                 },
+                 settings: {
+                     temperature,
+                     maxOutputTokens: maxTokens,
+                     systemInstruction
+                 },
+                 signal: signal!,
+                 threadId: chatId
+             });
+             return;
+        }
 
         // --- STANDARD STREAMING CHAT ---
         // For Chat Mode (non-agentic) or if no tool executor provided
