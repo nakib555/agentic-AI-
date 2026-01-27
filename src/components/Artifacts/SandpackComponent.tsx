@@ -171,8 +171,6 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
                 const config = getLiveCodesConfig(code, language);
                 
                 // Initialize LiveCodes
-                // FIX: Removed 'params' object which was causing "object is not iterable" errors in Object.fromEntries
-                // Moved relevant settings to 'config' object where supported.
                 app = await livecodesGlobal.createPlayground(containerRef.current, {
                     config: {
                         ...config,
@@ -180,10 +178,11 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
                         theme: theme,   // Initial theme
                         autoupdate: true, // Equivalent to run: true
                         tools: {
-                            status: 'none', // Hide status bar for cleaner look
+                            enabled: ['console'], // Explicitly enable console
+                            active: 'console',    // Make console the active tool
+                            status: 'closed',     // Show status bar but keep tools closed initially
                         }
                     },
-                    // Intentionally omitting params to avoid iterator errors in library
                 });
                 
                 if (isMounted) {
@@ -233,7 +232,11 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
                     theme: theme,
                     mode: 'result',
                     autoupdate: true,
-                    tools: { status: 'none' }
+                    tools: { 
+                        enabled: ['console'],
+                        active: 'console',
+                        status: 'closed'
+                    }
                 });
             } catch (e) {
                 console.warn("Failed to update LiveCodes config", e);
