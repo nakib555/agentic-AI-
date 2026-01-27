@@ -112,36 +112,51 @@ export const deleteAllHistory = async (req: any, res: any) => {
 
 export const importChat = async (req: any, res: any) => {
     try {
-        const importedChat = req.body as ChatSession;
-        
-        // Robust Validation
-        if (!importedChat || typeof importedChat !== 'object') {
-             return res.status(400).json({ error: "Invalid chat format: Root must be an object." });
-        }
-        if (typeof importedChat.title !== 'string') {
-             return res.status(400).json({ error: "Invalid chat format: Title missing or invalid." });
-        }
-        if (!Array.isArray(importedChat.messages)) {
-             return res.status(400).json({ error: "Invalid chat format: Messages array missing." });
-        }
-        
-        // Deep check a few messages to ensure structure
-        const isValidStructure = importedChat.messages.every((m: any) => 
-            m && typeof m.id === 'string' && (m.role === 'user' || m.role === 'model')
-        );
-        
-        if (!isValidStructure) {
-             return res.status(400).json({ error: "Invalid chat format: Corrupt message structure." });
+        const payload = req.body;
+        const createdChats: ChatSession[] = [];
+
+        // Helper to process and validate a single chat object
+        const processSingleChat = async (data: any) => {
+            if (!data || typeof data !== 'object') return null;
+
+            // Basic structural check
+            if (!Array.isArray(data.messages)) {
+                console.warn("[Import] Skipping item with missing messages array.");
+                return null;
+            }
+            
+            // Deep check a few messages to ensure structure if possible
+            // We'll be lenient to allow partial data imports
+            
+            const newChat: ChatSession = {
+                ...data,
+                id: generateId(), // Always regenerate ID to avoid collision
+                title: typeof data.title === 'string' ? data.title : "Imported Chat",
+                createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
+                isLoading: false,
+            };
+            
+            await historyControl.createChat(newChat);
+            return newChat;
+        };
+
+        if (Array.isArray(payload)) {
+            // Bulk Import
+            for (const item of payload) {
+                const imported = await processSingleChat(item);
+                if (imported) createdChats.push(imported);
+            }
+        } else {
+            // Single Import
+            const imported = await processSingleChat(payload);
+            if (imported) {
+                createdChats.push(imported);
+            } else {
+                 return res.status(400).json({ error: "Invalid chat format. Expected a chat object or an array of chats." });
+            }
         }
 
-        const newChat: ChatSession = {
-            ...importedChat,
-            id: generateId(), // Always regenerate ID to avoid collision
-            createdAt: Date.now(),
-            isLoading: false,
-        };
-        await historyControl.createChat(newChat);
-        res.status(201).json(newChat);
+        res.status(201).json(createdChats);
     } catch (error) {
         console.error("Failed to import chat:", error);
         res.status(500).json({ error: "Failed to import chat." });

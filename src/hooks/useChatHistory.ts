@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -174,16 +173,23 @@ export const useChatHistory = () => {
     }
   }, []);
 
-  const importChat = useCallback(async (importedChat: ChatSession) => {
+  const importChat = useCallback(async (importedData: any) => {
     try {
-        const newChat = await fetchApi('/api/import', {
+        const response = await fetchApi('/api/import', {
             method: 'POST',
-            body: JSON.stringify(importedChat),
+            body: JSON.stringify(importedData),
         });
-        setChatHistory(prev => [newChat, ...prev]);
-        setCurrentChatId(newChat.id);
+        
+        // Handle both single (object) and bulk (array) imports
+        const newChats = Array.isArray(response) ? response : [response];
+        
+        if (newChats.length > 0) {
+            setChatHistory(prev => [...newChats, ...prev]);
+            setCurrentChatId(newChats[0].id); // Switch to first imported chat
+        }
     } catch (error) {
         if (isVersionMismatch(error)) return;
+        console.error("Import failed:", error);
         alert('Import failed. Please check the file format.');
     }
   }, []);
