@@ -11,6 +11,7 @@ import { CHAT_PERSONA_AND_UI_FORMATTING as chatModeSystemInstruction } from './p
 import { parseApiError } from './utils/apiError';
 import { executeTextToSpeech } from "./tools/tts";
 import { executeExtractMemorySuggestions, executeConsolidateMemory } from "./tools/memory";
+import { executeWithPiston } from "./tools/piston";
 import { getApiKey, getProvider, getGeminiKey } from './settingsHandler';
 import { generateProviderCompletion } from './utils/generateProviderCompletion';
 import { historyControl } from './services/historyControl';
@@ -243,8 +244,8 @@ export const apiHandler = async (req: any, res: any) => {
     const globalSettings: any = await readData(SETTINGS_FILE_PATH);
     const activeModel = globalSettings.activeModel || 'gemini-2.5-flash';
 
-    const isSuggestionTask = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate'].includes(task);
-    const BYPASS_TASKS = ['cancel', 'debug_data_tree', 'feedback'];
+    const isSuggestionTask = ['title', 'suggestions', 'enhance', 'memory_suggest', 'memory_consolidate', 'run_piston'].includes(task);
+    const BYPASS_TASKS = ['cancel', 'debug_data_tree', 'feedback', 'count_tokens'];
     
     // Validation: Require key for paid providers, skip for Ollama/bypass
     if (!chatApiKey && !BYPASS_TASKS.includes(task) && !isSuggestionTask && activeProviderName !== 'ollama') {
@@ -523,11 +524,53 @@ Output ONLY the raw text of the improved prompt.
                 } catch (e) { res.status(200).json({ memory: [currentMemory, ...suggestions].filter(Boolean).join('\n') }); }
                 break;
             }
+            case 'run_piston': {
+                const { language, code } = req.body;
+                try {
+                    const result = await executeWithPiston(language, code);
+                    res.status(200).json({ result });
+                } catch (e) {
+                    const parsedError = parseApiError(e);
+                    res.status(500).json({ error: parsedError.message });
+                }
+                break;
+            }
             case 'debug_data_tree': {
                 const dataPath = path.join((process as any).cwd(), 'data');
                 const ascii = `data/\n` + await generateAsciiTree(dataPath);
                 const structure = await generateDirectoryStructure(dataPath);
                 res.status(200).json({ ascii, json: structure });
+                break;
+            }
+            // Count Tokens Task
+            case 'count_tokens': {
+                const { newMessage, model } = req.body;
+                let textToCount = "";
+                
+                if (newMessage) {
+                    if (newMessage.text) textToCount += newMessage.text;
+                    // Approximate token count for images/files if exact not possible easily
+                    // This is a rough estimation for UX purposes
+                    if (newMessage.attachments) textToCount += ` [${newMessage.attachments.length} attachments]`;
+                }
+
+                try {
+                    // If using Gemini, we can use countTokens API. 
+                    // For others, we might need a local estimator or just return 0/mock.
+                    if (activeProviderName === 'gemini' && chatApiKey) {
+                         const ai = new GoogleGenAI({ apiKey: chatApiKey });
+                         const modelInstance = ai.getGenerativeModel({ model: model || 'gemini-1.5-flash' });
+                         const countResult = await modelInstance.countTokens(textToCount);
+                         res.status(200).json({ totalTokens: countResult.totalTokens });
+                    } else {
+                         // Fallback estimation: ~4 chars per token
+                         const estimated = Math.ceil(textToCount.length / 4);
+                         res.status(200).json({ totalTokens: estimated });
+                    }
+                } catch (e) {
+                    // Fallback on error
+                    res.status(200).json({ totalTokens: Math.ceil(textToCount.length / 4) });
+                }
                 break;
             }
             default:

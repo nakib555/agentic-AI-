@@ -78,7 +78,9 @@ const languageMap: { [key: string]: string } = {
 
 // Languages that support text-based execution via Piston
 const RUNNABLE_LANGUAGES = new Set([
-    'python', 'javascript', 'typescript', 'go', 'rust', 'c', 'cpp', 'java', 'bash', 'ruby', 'php', 'swift', 'perl', 'lua'
+    'python', 'javascript', 'typescript', 'go', 'rust', 'c', 'cpp', 'java', 'bash', 'ruby', 'php', 'swift', 'perl', 'lua',
+    'awk', 'brainfuck', 'csharp', 'cobol', 'crystal', 'dart', 'elixir', 'emacs', 'erlang', 'fortran', 'golfscript', 'groovy', 
+    'haskell', 'julia', 'kotlin', 'lisp', 'nasm', 'nim', 'ocaml', 'octave', 'pascal', 'powershell', 'r', 'scala', 'zig'
 ]);
 
 type CodeBlockProps = {
