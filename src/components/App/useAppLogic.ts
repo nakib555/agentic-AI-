@@ -296,32 +296,10 @@ export const useAppLogic = () => {
     const onSaveServerUrl = useCallback(async (url: string) => {
         setServerUrl(url);
         localStorage.setItem('custom_server_url', url);
-        
-        // Immediately try to connect to the new URL to give feedback
-        setBackendStatus('checking');
-        setBackendError(null);
-        
-        try {
-             // We can reuse fetchModels logic here or just do a simple check
-             // fetchFromApi will pick up the new localStorage value immediately
-             const res = await fetchFromApi('/api/models');
-             if (res.ok) {
-                 const data = await res.json();
-                 processModelData(data);
-                 setBackendStatus('online');
-                 showToast('Backend connection updated.', 'success');
-             } else {
-                  throw new Error(`Status: ${res.status}`);
-             }
-        } catch (e) {
-             console.error("Failed to connect with new URL:", e);
-             setBackendStatus('offline');
-             setBackendError("Could not connect to backend server.");
-             showToast('Could not connect to the new server URL.', 'error');
-        }
-
+        // Force reload to apply new base URL for all api calls
+        window.location.reload();
         return true;
-    }, [processModelData, showToast]);
+    }, []);
 
     // --- Modal & Sidebar Handlers ---
     const handleShowSources = useCallback((sources: Source[]) => {
@@ -360,13 +338,13 @@ export const useAppLogic = () => {
     }, [chat.importChat, showToast]);
 
     const handleExportAllChats = useCallback(() => {
-        import('../utils/exportUtils').then(mod => {
+        import('../../utils/exportUtils/index').then(mod => {
             (mod as any).exportAllChatsToJson(chat.chatHistory);
         });
     }, [chat.chatHistory]);
 
     const handleDownloadLogs = useCallback(() => {
-        import('../utils/logCollector').then(mod => {
+        import('../../utils/logCollector').then(mod => {
             const logs = mod.logCollector.formatLogs();
             const blob = new Blob([logs], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
@@ -475,7 +453,7 @@ export const useAppLogic = () => {
         const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
         if (!currentChat) return;
 
-        import('../utils/exportUtils').then(mod => {
+        import('../../utils/exportUtils/index').then(mod => {
             if (format === 'json') (mod as any).exportChatToJson(currentChat);
             else if (format === 'md') (mod as any).exportChatToMarkdown(currentChat);
             else if (format === 'pdf') (mod as any).exportChatToPdf(currentChat);
@@ -487,7 +465,7 @@ export const useAppLogic = () => {
         const currentChat = chat.chatHistory.find(c => c.id === chat.currentChatId);
         if (!currentChat) return;
         
-        import('../utils/exportUtils').then(mod => {
+        import('../../utils/exportUtils/index').then(mod => {
             (mod as any).exportChatToClipboard(currentChat);
         });
     }, [chat.currentChatId, chat.chatHistory]);
