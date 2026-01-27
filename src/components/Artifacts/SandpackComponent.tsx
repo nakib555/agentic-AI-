@@ -14,7 +14,8 @@ type LiveCodesProps = {
     mode?: 'inline' | 'full';
 };
 
-const LIVECODES_CDN = "https://cdn.jsdelivr.net/npm/livecodes@0.12.0/livecodes.js";
+// Use UMD build for reliable global injection via script tag
+const LIVECODES_CDN = "https://cdn.jsdelivr.net/npm/livecodes/livecodes.umd.js";
 
 // Global promise to track script loading status across multiple instances
 let scriptLoadingPromise: Promise<void> | null = null;
@@ -23,24 +24,31 @@ const loadLiveCodesScript = () => {
     if (scriptLoadingPromise) return scriptLoadingPromise;
 
     scriptLoadingPromise = new Promise((resolve, reject) => {
+        // If already loaded
         if ((window as any).livecodes) {
             resolve();
             return;
         }
 
-        // Use dynamic import for ESM module loading
-        // We use /* @vite-ignore */ to prevent build-time resolution attempts of the CDN URL
-        import(/* @vite-ignore */ LIVECODES_CDN)
-            .then((module) => {
-                // Attach module to window to match expected global usage pattern
-                (window as any).livecodes = module;
+        const script = document.createElement('script');
+        script.src = LIVECODES_CDN;
+        script.async = true;
+        
+        script.onload = () => {
+            if ((window as any).livecodes) {
                 resolve();
-            })
-            .catch((err) => {
-                console.error("Failed to load LiveCodes module:", err);
-                scriptLoadingPromise = null; // Reset on failure so we can retry
-                reject(new Error('Failed to load LiveCodes script from CDN'));
-            });
+            } else {
+                reject(new Error('LiveCodes loaded but global object not found'));
+            }
+        };
+
+        script.onerror = (e) => {
+            console.error("LiveCodes script load error:", e);
+            scriptLoadingPromise = null; // Allow retry
+            reject(new Error('Failed to load LiveCodes script from CDN'));
+        };
+
+        document.head.appendChild(script);
     });
 
     return scriptLoadingPromise;
@@ -132,10 +140,13 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
         let app: any = null;
 
         const init = async () => {
-            // Prevent double initialization
-            if (playgroundRef.current) return;
-
             if (!containerRef.current) return;
+            
+            // If already initialized, just return
+            if (playgroundRef.current) {
+                setIsLoading(false);
+                return;
+            }
             
             setIsLoading(true);
             setError(null);
@@ -145,11 +156,7 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
                 await loadLiveCodesScript();
                 
                 const livecodesGlobal = (window as any).livecodes;
-                if (!livecodesGlobal) throw new Error("LiveCodes global not found");
-
-                const createPlayground = livecodesGlobal.createPlayground;
-
-                if (!createPlayground) {
+                if (!livecodesGlobal || !livecodesGlobal.createPlayground) {
                     throw new Error("LiveCodes initialization function not found");
                 }
 
@@ -164,7 +171,7 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
                 const config = getLiveCodesConfig(code, language);
                 
                 // Initialize LiveCodes
-                app = await createPlayground(containerRef.current, {
+                app = await livecodesGlobal.createPlayground(containerRef.current, {
                     config: {
                         ...config,
                         mode: 'result', // Start in result mode
@@ -175,7 +182,7 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
                     },
                     params: {
                         console: 'open',
-                        loading: 'lazy', // Lazy load internal assets
+                        loading: 'eager', // Use eager loading to show UI faster
                         run: true,
                         embed: true,
                     }
@@ -234,8 +241,10 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
             }
         };
 
-        update();
-    }, [code, language, theme]);
+        if (!isLoading) {
+            update();
+        }
+    }, [code, language, theme, isLoading]);
 
     if (error) {
         return (
