@@ -162,9 +162,9 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, isStre
     };
 
     return (
-      <div className="my-6 rounded-lg overflow-hidden shadow-sm font-sans group bg-code-surface transition-colors duration-300 border border-border-subtle">
+      <div className="my-6 rounded-lg shadow-sm font-sans group bg-code-surface transition-colors duration-300 border border-border-subtle relative">
         {/* Header */}
-        <div className="flex justify-between items-center px-4 py-2 bg-layer-2/50 border-b border-border-subtle select-none backdrop-blur-sm">
+        <div className="sticky top-0 z-10 flex justify-between items-center px-4 py-2 bg-layer-2/80 border-b border-border-subtle select-none backdrop-blur-md rounded-t-lg">
           <div className="flex items-center gap-3">
              <span className="text-xs font-semibold text-content-tertiary font-mono">
                 {displayLang}
