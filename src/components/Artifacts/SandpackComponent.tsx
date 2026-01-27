@@ -132,17 +132,14 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Initialization Effect: Runs only once to create the playground
     useEffect(() => {
         let isMounted = true;
+        let app: any = null;
 
         const init = async () => {
-            // Cleanup previous instance if exists
-            if (playgroundRef.current) {
-                try {
-                    await playgroundRef.current.destroy();
-                } catch(e) { /* ignore cleanup errors */ }
-                playgroundRef.current = null;
-            }
+            // Prevent double initialization
+            if (playgroundRef.current) return;
 
             if (!containerRef.current) return;
             
@@ -164,24 +161,25 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
 
                 if (!isMounted) return;
 
-                const config = getLiveCodesConfig(code, language);
-                
                 // Clear container before mounting to prevent duplicates
                 if (containerRef.current) {
                    containerRef.current.innerHTML = '';
                 }
+
+                // Initial Configuration
+                const config = getLiveCodesConfig(code, language);
                 
                 // Initialize LiveCodes
-                const app = await createPlayground(containerRef.current, {
+                app = await createPlayground(containerRef.current, {
                     config: {
                         ...config,
                         mode: 'result', // Start in result mode
+                        theme: theme,   // Initial theme
                         tools: {
                             status: 'none', // Hide status bar for cleaner look
                         }
                     },
                     params: {
-                        theme: theme,
                         console: 'open',
                         loading: 'lazy', // Lazy load internal assets
                         run: true,
@@ -211,10 +209,38 @@ const LiveCodesEmbed: React.FC<LiveCodesProps> = ({ code, language, theme }) => 
         return () => {
             isMounted = false;
             clearTimeout(timer);
+            if (app) app.destroy();
             if (playgroundRef.current) {
                 playgroundRef.current.destroy().catch(() => {});
+                playgroundRef.current = null;
             }
         };
+        // We purposefully omit code/theme/language from deps here to prevent re-creation.
+        // Updates are handled by the second useEffect using setConfig.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); 
+
+    // Update Effect: Runs when props change to update existing playground
+    useEffect(() => {
+        const update = async () => {
+            if (!playgroundRef.current) return;
+
+            try {
+                const config = getLiveCodesConfig(code, language);
+                
+                // Use setConfig to update state without full reload
+                await playgroundRef.current.setConfig({
+                    ...config,
+                    theme: theme,
+                    mode: 'result',
+                    tools: { status: 'none' }
+                });
+            } catch (e) {
+                console.warn("Failed to update LiveCodes config", e);
+            }
+        };
+
+        update();
     }, [code, language, theme]);
 
     if (error) {

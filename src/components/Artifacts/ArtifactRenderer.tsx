@@ -32,11 +32,19 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, conten
     const [refreshKey, setRefreshKey] = useState(0);
     const syntaxStyle = useSyntaxTheme();
     
-    // Theme detection
-    const [isDark, setIsDark] = useState(false);
+    // Theme detection with lazy initializer to avoid initial flash
+    const [isDark, setIsDark] = useState(() => {
+        if (typeof document !== 'undefined') {
+            return document.documentElement.classList.contains('dark');
+        }
+        return false;
+    });
+
     useEffect(() => {
         const checkDark = () => setIsDark(document.documentElement.classList.contains('dark'));
+        // Initial check in case it changed between state init and effect
         checkDark();
+        
         const observer = new MutationObserver(checkDark);
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
         return () => observer.disconnect();
