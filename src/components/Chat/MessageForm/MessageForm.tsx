@@ -220,13 +220,13 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                 disabled={isGeneratingResponse}
                 rows={1}
                 aria-label="Message Input"
-                className="w-full bg-transparent text-content-primary px-4 py-3 max-h-[120px] focus:outline-none resize-none overflow-y-auto leading-relaxed custom-scrollbar placeholder:text-transparent z-10"
+                className="w-full bg-transparent text-content-primary px-4 pt-3 pb-2 max-h-[120px] focus:outline-none resize-none overflow-y-auto leading-relaxed custom-scrollbar placeholder:text-transparent z-10"
                 style={{ minHeight: '3rem' }}
             />
         </div>
 
         {/* Bottom Toolbar */}
-        <div className="flex items-center justify-between px-3 pb-3 pt-1 gap-3 relative z-10 bg-transparent">
+        <div className="flex items-center justify-between px-3 pb-2 pt-1 gap-3 relative z-10 bg-transparent">
             <div className="flex items-center gap-1">
                 {/* Upload Button */}
                 <Tooltip content="Attach files" position="top">
