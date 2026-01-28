@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children?: ReactNode;
@@ -15,8 +15,7 @@ interface State {
   error: Error | null;
 }
 
-// Fixed: Correctly extend Component<Props, State> using named import to ensure proper inheritance of props and setState
-export class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends React.Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null
@@ -27,14 +26,12 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  // Fixed: Use ErrorInfo type from react for proper typing of the second argument
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error in ErrorBoundary:', error, errorInfo);
   }
 
   public render() {
     if (this.state.hasError) {
-      // Fixed: Access props through the component instance which is now correctly recognized as extending Component
       if (this.props.fallback) {
         return this.props.fallback;
       }
@@ -52,7 +49,6 @@ export class ErrorBoundary extends Component<Props, State> {
           </p>
           <div className="flex gap-3">
               <button
-                // Fixed: Access setState through the React.Component instance, now properly inherited
                 onClick={() => this.setState({ hasError: false, error: null })}
                 className="px-4 py-2 bg-white dark:bg-white/10 text-red-700 dark:text-red-200 text-sm font-semibold rounded-xl border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-white/20 transition-colors shadow-sm"
               >
@@ -69,7 +65,6 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Fixed: Access children through the component instance's props, inherited from Component
     return this.props.children;
   }
 }

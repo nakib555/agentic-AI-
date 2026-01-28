@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -67,15 +68,18 @@ export class VectorMemory {
                 contents: [{ parts: [{ text }] }]
             });
             
-            // Handle standard SDK response structure
-            if (result.embedding && result.embedding.values) {
-                return result.embedding.values;
+            // Cast to any to handle type mismatch between SDK versions (embedding vs embeddings)
+            // The build error TS2551 suggests 'embeddings' exists on the type, but runtime might vary.
+            const response = result as any;
+
+            // Handle singular embedding (common in some versions)
+            if (response.embedding && response.embedding.values) {
+                return response.embedding.values;
             }
             
-            // Fallback for different API versions if any
-            const anyResult = result as any;
-            if (anyResult.embeddings && anyResult.embeddings[0]?.values) {
-                return anyResult.embeddings[0].values;
+            // Handle plural embeddings (suggested by TypeScript error)
+            if (response.embeddings && response.embeddings.length > 0 && response.embeddings[0].values) {
+                return response.embeddings[0].values;
             }
 
             return [];
