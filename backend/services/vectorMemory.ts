@@ -28,7 +28,9 @@ function cosineSimilarity(vecA: number[], vecB: number[]): number {
         normA += vecA[i] * vecA[i];
         normB += vecB[i] * vecB[i];
     }
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    const magnitude = Math.sqrt(normA) * Math.sqrt(normB);
+    if (magnitude === 0) return 0;
+    return dotProduct / magnitude;
 }
 
 export class VectorMemory {
@@ -40,12 +42,13 @@ export class VectorMemory {
 
     async init(ai: GoogleGenAI) {
         this.ai = ai;
+        if (this.initialized) return;
+        
         try {
             const data = await fs.readFile(VECTOR_STORE_PATH, 'utf-8');
             this.store = JSON.parse(data);
         } catch (e) {
             this.store = [];
-            // Create file if not exists
             await this.save();
         }
         this.initialized = true;
@@ -63,12 +66,21 @@ export class VectorMemory {
                 model: "text-embedding-004",
                 contents: [{ parts: [{ text }] }]
             });
-            // Fix for TS2551: Handle potential API type mismatch (embedding vs embeddings)
-            const response = result as any;
-            const embedding = response.embedding || (response.embeddings && response.embeddings[0]);
-            return embedding?.values || [];
+            
+            // Handle standard SDK response structure
+            if (result.embedding && result.embedding.values) {
+                return result.embedding.values;
+            }
+            
+            // Fallback for different API versions if any
+            const anyResult = result as any;
+            if (anyResult.embeddings && anyResult.embeddings[0]?.values) {
+                return anyResult.embeddings[0].values;
+            }
+
+            return [];
         } catch (e) {
-            console.error("Embedding failed:", e);
+            console.error("[VectorMemory] Embedding failed:", e);
             return [];
         }
     }
@@ -77,8 +89,8 @@ export class VectorMemory {
         if (!text || !this.ai) return;
         
         // Chunking optimization: split huge texts
-        if (text.length > 1000) {
-            const chunks = text.match(/.{1,1000}/g) || [];
+        if (text.length > 2000) {
+            const chunks = text.match(/.{1,2000}/g) || [];
             for (const chunk of chunks) {
                 await this.addMemory(chunk, metadata);
             }
@@ -90,18 +102,23 @@ export class VectorMemory {
 
         const entry: VectorEntry = {
             id: Math.random().toString(36).substring(7),
-            text,
+            text: text.trim(),
             vector,
             metadata,
             timestamp: Date.now()
         };
 
         this.store.push(entry);
+        // Limit total memory size to prevent excessive file growth
+        if (this.store.length > 1000) {
+            this.store.shift();
+        }
+        
         await this.save();
         console.log(`[VectorMemory] Added memory: "${text.substring(0, 50)}..."`);
     }
 
-    async retrieveRelevant(query: string, limit = 3, threshold = 0.6): Promise<string[]> {
+    async retrieveRelevant(query: string, limit = 3, threshold = 0.5): Promise<string[]> {
         if (!this.ai || this.store.length === 0) return [];
 
         const queryVector = await this.getEmbedding(query);
@@ -112,7 +129,6 @@ export class VectorMemory {
             score: cosineSimilarity(queryVector, entry.vector)
         }));
 
-        // Sort by score descending
         scored.sort((a, b) => b.score - a.score);
 
         return scored

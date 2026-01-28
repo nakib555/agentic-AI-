@@ -1,9 +1,27 @@
-
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
+
+import { readData, SETTINGS_FILE_PATH } from '../data-store';
+
+const getEffectiveEndpoint = async (): Promise<string> => {
+    let host = '';
+    try {
+        const settings: any = await readData(SETTINGS_FILE_PATH);
+        host = settings.ollamaHost || '';
+    } catch (e) {}
+    
+    if (!host) {
+        host = process.env.OLLAMA_HOST || 'http://localhost:11434';
+    }
+
+    host = host.trim().replace(/\/$/, '');
+    if (host && !host.startsWith('http://') && !host.startsWith('https://')) {
+        host = `http://${host}`;
+    }
+    return host;
+};
 
 export const streamOllama = async (
     apiKey: string | undefined,
@@ -34,48 +52,24 @@ export const streamOllama = async (
         headers['Authorization'] = `Bearer ${apiKey}`;
     }
     
-    const endpoint = 'https://ollama.com/api/chat';
-    let response: Response | null = null;
-
     try {
+        const host = await getEffectiveEndpoint();
+        const endpoint = `${host}/api/chat`;
+        
         console.log(`[Ollama] Attempting to stream from ${endpoint}...`);
-        const res = await fetch(endpoint, {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers,
             body
         });
-        if (res.ok) {
-            response = res;
-            console.log(`[Ollama] Successfully connected to ${endpoint}`);
-        } else {
-            console.warn(`[Ollama] Connection to ${endpoint} failed with status ${res.status}.`);
-            const errorText = await res.text();
-            throw new Error(`Ollama API request failed with status ${res.status}: ${errorText}`);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Ollama API request failed with status ${response.status}: ${errorText}`);
         }
-    } catch (error) {
-        console.warn(`[Ollama] Connection to ${endpoint} failed with error:`, error);
-        const customError = {
-            code: 'OLLAMA_CONNECTION_FAILED',
-            message: `Connection to Ollama failed.`,
-            details: `The public Ollama endpoint was unreachable. Error: ${(error as Error).message}`,
-            suggestion: `Please check your internet connection.`
-        };
-        callbacks.onError(customError);
-        return;
-    }
 
-    if (!response || !response.body) {
-        const customError = {
-            code: 'OLLAMA_CONNECTION_FAILED',
-            message: `Connection to Ollama failed.`,
-            details: `The endpoint was reachable but returned an empty response.`,
-            suggestion: `This may be a temporary issue with the Ollama service.`
-        };
-        callbacks.onError(customError);
-        return;
-    }
+        if (!response.body) throw new Error("No response body from Ollama");
 
-    try {
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let fullContent = "";
@@ -89,8 +83,6 @@ export const streamOllama = async (
             }
 
             const lines = buffer.split("\n");
-            
-            // If stream is done, we process all lines. Otherwise, keep the last, potentially partial line.
             const linesToProcess = done ? lines : lines.slice(0, -1);
             buffer = done ? '' : lines[lines.length - 1];
 
@@ -113,7 +105,7 @@ export const streamOllama = async (
         callbacks.onComplete(fullContent);
 
     } catch (error) {
-        console.error("Ollama stream failed during processing:", error);
+        console.error("Ollama stream failed:", error);
         callbacks.onError(error);
     }
 };
