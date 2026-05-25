@@ -11,6 +11,7 @@ import type { MessageFormHandle } from './MessageForm/index';
 import { AnimatePresence, motion as motionTyped } from 'framer-motion';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { useViewport } from '../../hooks/useViewport';
+import { useSettingsStore } from '../../store/settingsStore';
 
 const motion = motionTyped as any;
 
@@ -94,6 +95,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
   const { isDesktop } = useViewport();
+  const autoScrollEnabled = useSettingsStore(s => s.autoScrollEnabled);
 
   const prevMessagesLength = useRef(visibleMessages.length);
 
@@ -102,7 +104,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
       const currentLength = visibleMessages.length;
       const prevLength = prevMessagesLength.current;
 
-      if (currentLength > prevLength) {
+      if (autoScrollEnabled && currentLength > prevLength) {
           const lastMessage = visibleMessages[currentLength - 1];
           // Scroll if it's a user message (always show what I just sent)
           // OR if we were already at the bottom (standard sticky behavior)
@@ -121,7 +123,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
       }
       
       prevMessagesLength.current = currentLength;
-  }, [visibleMessages, atBottom]);
+  }, [visibleMessages, atBottom, autoScrollEnabled]);
 
   // Expose scroll methods to parent via ref
   useImperativeHandle(ref, () => ({
@@ -159,27 +161,15 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
       const isNew = !seenMessageIds.current.has(msg.id);
       if (isNew) {
           seenMessageIds.current.add(msg.id);
-          return (
-              <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }} 
-                  className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4"
-              >
-                  <MessageWrapper 
-                      msg={msg}
-                      index={index}
-                      isLast={index === visibleMessages.length - 1}
-                      messages={visibleMessages}
-                      contextProps={contextProps}
-                  />
-              </motion.div>
-          );
       }
 
-      // Memory Optimized Path: Avoid motion wrappers for already revealed messages
       return (
-          <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4">
+          <motion.div
+              initial={isNew ? { opacity: 0, y: 30 } : { opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }} 
+              className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4"
+          >
               <MessageWrapper 
                   msg={msg}
                   index={index}
@@ -187,7 +177,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                   messages={visibleMessages}
                   contextProps={contextProps}
               />
-          </div>
+          </motion.div>
       );
   }, [visibleMessages, contextProps]);
 
@@ -211,7 +201,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
                 ref={virtuosoRef}
                 style={{ height: '100%', width: '100%' }}
                 data={visibleMessages}
-                followOutput={atBottom ? "auto" : false} 
+                followOutput={autoScrollEnabled && atBottom ? "auto" : false} 
                 increaseViewportBy={600} 
                 overscan={400} 
                 initialTopMostItemIndex={visibleMessages.length - 1}

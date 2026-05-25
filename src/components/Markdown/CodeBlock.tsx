@@ -107,9 +107,13 @@ const CodeBlockRaw: React.FC<CodeBlockProps> = ({ language, children, isStreamin
     const [runOutput, setRunOutput] = useState<string | null>(null);
     const [showOutput, setShowOutput] = useState(false);
     
-    const syntaxStyle = useSyntaxTheme();
-
+    // Code folding logic
     const codeContent = String(children).replace(/\n$/, '');
+    const lineCount = useMemo(() => codeContent.split('\n').length, [codeContent]);
+    const isCollapsible = lineCount > 12;
+    const [isCollapsed, setIsCollapsed] = useState(isCollapsible);
+
+    const syntaxStyle = useSyntaxTheme();
 
     const handleCopy = () => {
         if (!codeContent) return;
@@ -182,6 +186,27 @@ const CodeBlockRaw: React.FC<CodeBlockProps> = ({ language, children, isStreamin
           </div>
           
           <div className="flex items-center gap-2">
+            {isCollapsible && (
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium text-content-secondary hover:text-content-primary hover:bg-layer-3 transition-all"
+                title={isCollapsed ? "Expand snippet" : "Collapse snippet"}
+                aria-label={isCollapsed ? "Expand snippet" : "Collapse snippet"}
+              >
+                  {isCollapsed ? (
+                      <>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M10 2a.75.75 0 01.75.75v5.59l1.95-2.1a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0L6.2 7.26a.75.75 0 111.1-1.02l1.95 2.1V2.75A.75.75 0 0110 2zM10 18a.75.75 0 01-.75-.75v-5.59l-1.95 2.1a.75.75 0 11-1.1-1.02l3.25-3.5a.75.75 0 011.1 0l3.25 3.5a.75.75 0 11-1.1 1.02l-1.95-2.1v5.59A.75.75 0 0110 18z" clipRule="evenodd" /></svg>
+                          <span>Expand</span>
+                      </>
+                  ) : (
+                      <>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M10 2a.75.75 0 01.75.75v5.59l1.95-2.1a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0L6.2 7.26a.75.75 0 111.1-1.02l1.95 2.1V2.75A.75.75 0 0110 2zM10 18a.75.75 0 01-.75-.75v-5.59l-1.95 2.1a.75.75 0 11-1.1-1.02l3.25-3.5a.75.75 0 011.1 0l3.25 3.5a.75.75 0 11-1.1 1.02l-1.95-2.1v5.59A.75.75 0 0110 18z" clipRule="evenodd" /></svg>
+                          <span>Collapse</span>
+                      </>
+                  )}
+              </button>
+            )}
+
             {!isStreaming && isRunnable && (
                  <button
                     onClick={handleRun}
@@ -234,17 +259,29 @@ const CodeBlockRaw: React.FC<CodeBlockProps> = ({ language, children, isStreamin
         </div>
         
         {/* Editor Body */}
-        <div className="relative overflow-x-auto text-[13px] leading-6 custom-scrollbar bg-code-surface">
+        <div className={`relative text-[13px] leading-6 bg-code-surface transition-all duration-300 ${isCollapsed ? 'max-h-64 overflow-hidden' : 'overflow-x-auto custom-scrollbar'}`}>
             <SyntaxHighlighter
                 language={highlighterLang}
                 style={syntaxStyle}
-                customStyle={CUSTOM_STYLE}
+                customStyle={{...CUSTOM_STYLE, ...(isCollapsed ? { overflowX: 'hidden' } : {})}}
                 showLineNumbers={false}
                 wrapLines={false}
                 fallbackLanguage="text"
             >
                 {codeContent}
             </SyntaxHighlighter>
+
+            {isCollapsed && (
+                <button 
+                    onClick={() => setIsCollapsed(false)}
+                    className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-code-surface to-transparent flex items-end justify-center pb-3 hover:from-code-surface/90 transition-all font-medium text-xs opacity-100 w-full"
+                >
+                   <span className="bg-layer-2 px-3 py-1.5 rounded-full border border-border-subtle shadow-sm flex items-center gap-2 text-content-primary hover:bg-layer-3 transition-colors">
+                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M10 5a.75.75 0 01.75.75v3.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06l3.22 3.22V5.75A.75.75 0 0110 5z" clipRule="evenodd" /></svg>
+                       Expand Code
+                   </span>
+                </button>
+            )}
         </div>
 
         {/* Execution Output Panel */}

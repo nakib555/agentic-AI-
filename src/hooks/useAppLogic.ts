@@ -112,6 +112,8 @@ export const useAppLogic = () => {
         } catch (e: any) { console.error("Failed to update memory enabled status:", e.message || e); }
     }, [settings]);
 
+    const handleSetAutoScrollEnabled = createSettingUpdater(settings.setAutoScrollEnabled, 'autoScrollEnabled');
+
     const onSaveOllamaHost = useCallback(async (host: string) => {
         try {
             const response: any = await apiClient.put('/api/settings', { ollamaHost: host });
@@ -341,6 +343,9 @@ export const useAppLogic = () => {
         setSystemPrompt: handleSetSystemPrompt,
         ttsVoice: settings.ttsVoice, 
         setTtsVoice: handleSetTtsVoice,
+        
+        autoScrollEnabled: settings.autoScrollEnabled,
+        setAutoScrollEnabled: handleSetAutoScrollEnabled,
         
         memory,
         isMemoryEnabled: settings.isMemoryEnabled,

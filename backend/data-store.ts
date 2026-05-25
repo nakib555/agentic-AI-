@@ -135,8 +135,9 @@ export async function initDataStore() {
         isMemoryEnabled: false,
         ttsVoice: 'Kore',
         ttsModel: '', // Dynamic
+        activeModel: '',
         isAgentMode: false,
-        activeModel: '', 
+        autoScrollEnabled: true,
     };
     await initDataFile(SETTINGS_FILE_PATH, defaultSettings);
     

@@ -32,6 +32,7 @@ interface SettingsState {
   systemPrompt: string;
   ttsVoice: string;
   isMemoryEnabled: boolean;
+  autoScrollEnabled: boolean;
   
   // Data (Models list - cached)
   availableModels: Model[];
@@ -60,6 +61,7 @@ interface SettingsState {
   setSystemPrompt: (text: string) => void;
   setTtsVoice: (voice: string) => void;
   setIsMemoryEnabled: (enabled: boolean) => void;
+  setAutoScrollEnabled: (enabled: boolean) => void;
   
   setAvailableModels: (models: Model[]) => void;
   setAvailableImageModels: (models: Model[]) => void;
@@ -89,6 +91,7 @@ export const useSettingsStore = create<SettingsState>()(
       systemPrompt: '',
       ttsVoice: DEFAULT_TTS_VOICE,
       isMemoryEnabled: false,
+      autoScrollEnabled: true,
       
       availableModels: [],
       availableImageModels: [],
@@ -115,6 +118,7 @@ export const useSettingsStore = create<SettingsState>()(
       setSystemPrompt: (systemPrompt) => set({ systemPrompt }),
       setTtsVoice: (ttsVoice) => set({ ttsVoice }),
       setIsMemoryEnabled: (isMemoryEnabled) => set({ isMemoryEnabled }),
+      setAutoScrollEnabled: (autoScrollEnabled) => set({ autoScrollEnabled }),
       
       setAvailableModels: (availableModels) => set({ availableModels }),
       setAvailableImageModels: (availableImageModels) => set({ availableImageModels }),
@@ -140,7 +144,8 @@ export const useSettingsStore = create<SettingsState>()(
         aboutResponse: state.aboutResponse,
         systemPrompt: state.systemPrompt,
         ttsVoice: state.ttsVoice,
-        isMemoryEnabled: state.isMemoryEnabled
+        isMemoryEnabled: state.isMemoryEnabled,
+        autoScrollEnabled: state.autoScrollEnabled
       }),
     }
   )

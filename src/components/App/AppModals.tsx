@@ -130,6 +130,9 @@ type AppModalsProps = {
   // Server URL
   serverUrl: string;
   onSaveServerUrl: (url: string) => Promise<boolean>;
+  
+  autoScrollEnabled: boolean;
+  setAutoScrollEnabled: (enabled: boolean) => void;
 };
 
 // Global Fallback for modal chunks loading
@@ -224,6 +227,8 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
           onProviderChange={props.onProviderChange}
           ollamaHost={props.ollamaHost}
           onSaveOllamaHost={props.onSaveOllamaHost}
+          autoScrollEnabled={props.autoScrollEnabled}
+          setAutoScrollEnabled={props.setAutoScrollEnabled}
         />
       )}
 

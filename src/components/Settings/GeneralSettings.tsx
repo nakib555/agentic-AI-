@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Key, Globe, Layout, Link, Database, Trash2, Download, Activity, Terminal, Check, Eye, EyeOff, RotateCcw } from 'lucide-react';
 import { SettingItem } from './SettingItem';
+import { ToggleSwitch } from '../UI/ToggleSwitch';
 import { ThemeToggle } from '../Sidebar/ThemeToggle';
 import type { Theme } from '../../hooks/useTheme';
 import { SelectDropdown } from '../UI/SelectDropdown';
@@ -30,6 +31,8 @@ type GeneralSettingsProps = {
   onProviderChange: (provider: 'gemini' | 'openrouter' | 'ollama') => void;
   ollamaHost?: string;
   onSaveOllamaHost?: (host: string) => Promise<void> | void;
+  autoScrollEnabled: boolean;
+  setAutoScrollEnabled: (enabled: boolean) => void;
 };
 
 const PROVIDER_OPTIONS = [
@@ -204,7 +207,8 @@ const ActionButton = ({
 const GeneralSettings: React.FC<GeneralSettingsProps> = ({ 
     onClearAllChats, onRunTests, onDownloadLogs, onShowDataStructure, onExportAllChats, 
     apiKey, onSaveApiKey, theme, setTheme, serverUrl, onSaveServerUrl,
-    provider, openRouterApiKey, ollamaApiKey, onProviderChange, ollamaHost, onSaveOllamaHost
+    provider, openRouterApiKey, ollamaApiKey, onProviderChange, ollamaHost, onSaveOllamaHost,
+    autoScrollEnabled, setAutoScrollEnabled
 }) => {
     const isCustomUrl = isUsingCustomBaseUrl();
 
@@ -301,6 +305,13 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
                         <div className="w-full sm:w-auto min-w-[200px]">
                            <ThemeToggle theme={theme} setTheme={setTheme} variant="cards" />
                         </div>
+                    </SettingItem>
+                    
+                    <SettingItem label="Auto-Scroll" description="Automatically scroll to the bottom when receiving new messages.">
+                        <ToggleSwitch
+                            checked={autoScrollEnabled}
+                            onChange={(checked) => setAutoScrollEnabled(checked)}
+                        />
                     </SettingItem>
                 </div>
             </section>

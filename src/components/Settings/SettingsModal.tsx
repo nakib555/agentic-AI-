@@ -68,6 +68,8 @@ type SettingsModalProps = {
   onProviderChange: (provider: 'gemini' | 'openrouter' | 'ollama') => void;
   ollamaHost?: string;
   onSaveOllamaHost?: (host: string) => Promise<void> | void;
+  autoScrollEnabled: boolean;
+  setAutoScrollEnabled: (enabled: boolean) => void;
 };
 
 const CATEGORIES = [
@@ -187,6 +189,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                     onProviderChange={props.onProviderChange}
                     ollamaHost={props.ollamaHost}
                     onSaveOllamaHost={props.onSaveOllamaHost}
+                    autoScrollEnabled={props.autoScrollEnabled}
+                    setAutoScrollEnabled={props.setAutoScrollEnabled}
                   />
                   </div>
                 )}

@@ -21,6 +21,7 @@ export type AppSettings = {
     imageModel: string;
     videoModel: string;
     isMemoryEnabled: boolean;
+    autoScrollEnabled?: boolean;
     ttsVoice: string;
     ttsModel: string; 
     activeModel: string;
