@@ -84,14 +84,17 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
     onEditMessage, onNavigateBranch
 }, ref) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
+  
+  // Track previous length to detect new messages
+  const visibleMessages = useMemo(() => (messages || []).filter(msg => !msg.isHidden), [messages]);
+  
+  // Initialize with messages present on mount so they don't animate in
+  const seenMessageIds = useRef<Set<string>>(new Set(visibleMessages.map(m => m.id)));
+  
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
   const { isDesktop } = useViewport();
 
-  // Safeguard against undefined messages prop
-  const visibleMessages = useMemo(() => (messages || []).filter(msg => !msg.isHidden), [messages]);
-  
-  // Track previous length to detect new messages
   const prevMessagesLength = useRef(visibleMessages.length);
 
   // Auto-scroll on new message
@@ -152,17 +155,41 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(({
   ]);
 
   // Memoize itemContent so Virtuoso doesn't re-render all items on every parent render
-  const itemContent = useCallback((index: number, msg: Message) => (
-      <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4">
-          <MessageWrapper 
-              msg={msg}
-              index={index}
-              isLast={index === visibleMessages.length - 1}
-              messages={visibleMessages}
-              contextProps={contextProps}
-          />
-      </div>
-  ), [visibleMessages, contextProps]);
+  const itemContent = useCallback((index: number, msg: Message) => {
+      const isNew = !seenMessageIds.current.has(msg.id);
+      if (isNew) {
+          seenMessageIds.current.add(msg.id);
+          return (
+              <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }} 
+                  className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4"
+              >
+                  <MessageWrapper 
+                      msg={msg}
+                      index={index}
+                      isLast={index === visibleMessages.length - 1}
+                      messages={visibleMessages}
+                      contextProps={contextProps}
+                  />
+              </motion.div>
+          );
+      }
+
+      // Memory Optimized Path: Avoid motion wrappers for already revealed messages
+      return (
+          <div className="px-4 sm:px-6 md:px-8 max-w-4xl mx-auto w-full py-2 sm:py-4">
+              <MessageWrapper 
+                  msg={msg}
+                  index={index}
+                  isLast={index === visibleMessages.length - 1}
+                  messages={visibleMessages}
+                  contextProps={contextProps}
+              />
+          </div>
+      );
+  }, [visibleMessages, contextProps]);
 
   return (
     <div className="flex-1 min-h-0 relative w-full">
