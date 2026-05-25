@@ -16,6 +16,7 @@ import { Message } from '../../../types';
 import { TextType } from '../../UI/TextType';
 import { Tooltip } from '../../UI/Tooltip';
 import { AttachedFilePreview } from './AttachedFilePreview';
+import { Virtuoso } from 'react-virtuoso';
 
 const motion = motionTyped as any;
 
@@ -173,19 +174,26 @@ export const MessageForm = forwardRef<MessageFormHandle, MessageFormProps>((prop
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="flex flex-nowrap overflow-x-auto gap-3 px-4 pb-3 pt-4 border-b border-border-subtle bg-input-sub scrollbar-hide"
+                    className="w-full border-b border-border-subtle bg-input-sub overflow-hidden"
                 >
-                    {logic.processedFiles.map(file => (
-                        <AttachedFilePreview
-                            key={file.id}
-                            file={file.file}
-                            onRemove={() => logic.handleRemoveFile(file.id)}
-                            onPreview={() => logic.setPreviewFile(file)}
-                            onProcess={() => setMediaToProcess(file)}
-                            progress={file.progress}
-                            error={file.error}
-                        />
-                    ))}
+                    <Virtuoso
+                        horizontalDirection
+                        data={logic.processedFiles}
+                        style={{ height: '96px', width: '100%' }}
+                        className="custom-scrollbar"
+                        itemContent={(index, file) => (
+                            <div className="py-4 pl-4 pr-3 h-full flex items-center">
+                                <AttachedFilePreview
+                                    file={file.file}
+                                    onRemove={() => logic.handleRemoveFile(file.id)}
+                                    onPreview={() => logic.setPreviewFile(file)}
+                                    onProcess={() => setMediaToProcess(file)}
+                                    progress={file.progress}
+                                    error={file.error}
+                                />
+                            </div>
+                        )}
+                    />
                 </motion.div>
             )}
         </AnimatePresence>
